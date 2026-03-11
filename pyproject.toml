@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "bartlebot"
+version = "0.1.0"
+description = "Wizard101 behavior tree bot"
+authors = []
+packages = [{include = "bartlebot"}]
+
+[tool.poetry.dependencies]
+python = "^3.13"
+PyQt6 = "*"
+qasync = "*"
+pyperclip = "*"
+wizwalker = {git = "https://github.com/Deimos-Wizard101/wizwalker", branch = "development"}
+WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", branch = "lib-update"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
