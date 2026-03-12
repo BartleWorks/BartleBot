@@ -79,7 +79,6 @@ class BotInfoPanel(QScrollArea):
         self.setWidget(content)
         self.setWidgetResizable(True)
         self.setMinimumWidth(190)
-        self.setMaximumWidth(230)
 
         self.set_config(None)
 

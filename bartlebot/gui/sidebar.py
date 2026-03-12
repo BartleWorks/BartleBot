@@ -24,7 +24,6 @@ class ClientSidebar(QScrollArea):
         self.setWidget(self._content)
         self.setWidgetResizable(True)
         self.setMinimumWidth(220)
-        self.setMaximumWidth(260)
 
         # Refresh timer
         self._timer = QTimer(self)

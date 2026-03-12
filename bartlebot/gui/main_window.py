@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QLabel,
-    QVBoxLayout, QHBoxLayout, QWidget,
-    QMenuBar, QFrame, QTabWidget, QStackedWidget,
+    QVBoxLayout, QWidget,
+    QMenuBar, QTabWidget, QStackedWidget, QSplitter,
 )
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt
@@ -85,20 +85,16 @@ class MainWindow(QMainWindow):
         # ── Left sidebar (permanent) ───────────────────────────────────
         self.bot_info_panel = BotInfoPanel()
 
-        # ── Outer layout ───────────────────────────────────────────────
-        outer = QHBoxLayout()
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(0)
+        # ── Outer splitter (left sidebar | tabs | right sidebar) ───────
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.setChildrenCollapsible(False)
+        splitter.addWidget(self.bot_info_panel)
+        splitter.addWidget(self.tabs)
+        splitter.addWidget(self._right_stack)
+        splitter.setStretchFactor(1, 1)  # tabs take all extra space
+        splitter.setSizes([220, 800, 220])
 
-        outer.addWidget(self.bot_info_panel)
-        outer.addWidget(_vdivider())
-        outer.addWidget(self.tabs, 1)
-        outer.addWidget(_vdivider())
-        outer.addWidget(self._right_stack)
-
-        central = QWidget()
-        central.setLayout(outer)
-        self.setCentralWidget(central)
+        self.setCentralWidget(splitter)
 
     def _build_statusbar(self) -> None:
         self.zone_label = QLabel("Waiting for client…")
@@ -155,9 +151,3 @@ def _placeholder_tab(text: str) -> QWidget:
     layout.addWidget(label)
     return widget
 
-
-def _vdivider() -> QFrame:
-    div = QFrame()
-    div.setFrameShape(QFrame.Shape.VLine)
-    div.setFrameShadow(QFrame.Shadow.Sunken)
-    return div

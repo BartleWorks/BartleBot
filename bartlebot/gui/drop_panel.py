@@ -3,7 +3,7 @@
 import csv
 
 from PyQt6.QtWidgets import (
-    QFileDialog, QLabel, QPushButton,
+    QFileDialog, QHeaderView, QLabel, QPushButton,
     QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 from PyQt6.QtGui import QFont
@@ -33,7 +33,6 @@ class DropPanel(QWidget):
         layout.addWidget(export_btn)
 
         self.setMinimumWidth(190)
-        self.setMaximumWidth(230)
 
     # ------------------------------------------------------------------
     # Public API
@@ -45,7 +44,9 @@ class DropPanel(QWidget):
         for i in range(count):
             table = QTableWidget(0, 2)
             table.setHorizontalHeaderLabels(["Item", "Qty"])
-            table.horizontalHeader().setStretchLastSection(True)
+            header = table.horizontalHeader()
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
             table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
             table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             table.verticalHeader().setVisible(False)
