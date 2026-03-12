@@ -9,7 +9,7 @@ import qasync
 from wizwalker import ClientHandler
 
 from bartlebot.bot.machine import BotMachine
-from bartlebot.bot.schema import BotConfig
+from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 
@@ -70,6 +70,23 @@ async def client_loop(window: MainWindow) -> None:
 # ---------------------------------------------------------------------------
 # File operations
 # ---------------------------------------------------------------------------
+def new_bot(window: MainWindow) -> None:
+    global _loaded_config, _last_save_path
+
+    config = BotConfig(
+        name="New Bot",
+        initial="state_1",
+        states=[StateModel(id="state_1", node_type="go_to_zone")],
+        transitions=[],
+    )
+    _loaded_config = config
+    _last_save_path = None
+    window.set_bot_name(config.name, "Untitled")
+    window.bot_info_panel.set_config(config)
+    window.set_save_enabled(True)
+    window.set_start_enabled(_start_enabled())
+
+
 def open_bot(window: MainWindow) -> None:
     global _loaded_config, _last_save_path
 
@@ -187,6 +204,7 @@ async def main(app: QApplication) -> None:
     window = MainWindow()
     window.show()
 
+    window.on_new_bot = lambda: new_bot(window)
     window.on_open_bot = lambda: open_bot(window)
     window.on_save_bot = lambda: save_bot(window)
     window.on_save_bot_as = lambda: save_bot_as(window)

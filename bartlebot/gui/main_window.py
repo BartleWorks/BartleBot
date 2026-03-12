@@ -20,6 +20,7 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1100, 650)
 
         # Callbacks wired from bartlebot.py
+        self.on_new_bot = lambda: None
         self.on_open_bot = lambda: None
         self.on_save_bot = lambda: None
         self.on_save_bot_as = lambda: None
@@ -37,6 +38,11 @@ class MainWindow(QMainWindow):
         self.setMenuBar(menu_bar)
 
         file_menu = menu_bar.addMenu("File")
+
+        new_action = QAction("New Bot", self)
+        new_action.setShortcut(QKeySequence("Ctrl+N"))
+        new_action.triggered.connect(lambda: self.on_new_bot())
+        file_menu.addAction(new_action)
 
         open_action = QAction("Open Bot…", self)
         open_action.setShortcut(QKeySequence("Ctrl+O"))

@@ -28,7 +28,7 @@ class ClientSidebar(QScrollArea):
 
         # Refresh timer
         self._timer = QTimer(self)
-        self._timer.setInterval(1000)
+        self._timer.setInterval(100)
         self._timer.timeout.connect(self._schedule_refresh)
         self._timer.start()
 
