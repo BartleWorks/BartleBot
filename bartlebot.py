@@ -1,62 +1,17 @@
 import sys
 import asyncio
 import traceback
+from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 import qasync
 
 from wizwalker import ClientHandler
 
 from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
-
-# ---------------------------------------------------------------------------
-# MVP bot config — two-state zone loop.
-# Fill in real zone strings and XYZ coordinates before running.
-# ---------------------------------------------------------------------------
-
-MVP_BOT_CONFIG = {
-    "initial": "go_to_zone_a",
-    "states": [
-        {
-            "id": "go_to_zone_a",
-            "node_type": "go_to_zone",
-            "params": {
-                "from_zone": "WizardCity/WC_Streets/WC_Unicorn",
-                "to_zone": "WizardCity/WC_Streets/Interiors/WC_Unicorn_H3",
-                "xyz": {"x": -12750.010, "y": 6295.667, "z": -119.930},
-            },
-        },
-        {
-            "id": "go_to_zone_b",
-            "node_type": "go_to_zone",
-            "params": {
-                "from_zone": "WizardCity/WC_Streets/Interiors/WC_Unicorn_H3",
-                "to_zone": "WizardCity/WC_Streets/WC_Unicorn",
-                "xyz": {"x": 637.394, "y": 29.265, "z": 1.974},
-            },
-        },
-    ],
-    "transitions": [
-        # Success: advance to the other zone.
-        {
-            "trigger": "advance",
-            "source": "go_to_zone_a",
-            "dest": "go_to_zone_b",
-            "conditions": ["last_result_is_success"],
-        },
-        {
-            "trigger": "advance",
-            "source": "go_to_zone_b",
-            "dest": "go_to_zone_a",
-            "conditions": ["last_result_is_success"],
-        },
-        # Failure: retry the same state.
-        {"trigger": "advance", "source": "go_to_zone_a", "dest": "go_to_zone_a"},
-        {"trigger": "advance", "source": "go_to_zone_b", "dest": "go_to_zone_b"},
-    ],
-}
 
 
 # ---------------------------------------------------------------------------
@@ -65,7 +20,17 @@ MVP_BOT_CONFIG = {
 _handler = ClientHandler()
 _clients: list = []
 _current_machine: BotMachine | None = None
-_bot_task: asyncio.Task | None = None
+
+# ---------------------------------------------------------------------------
+# Loaded bot state
+# ---------------------------------------------------------------------------
+_loaded_config: BotConfig | None = None
+_last_save_path: str | None = None
+
+
+def _start_enabled() -> bool:
+    """Start is only enabled when both a client is hooked and a bot is loaded."""
+    return bool(_clients) and _loaded_config is not None
 
 
 async def client_loop(window: MainWindow) -> None:
@@ -84,7 +49,7 @@ async def client_loop(window: MainWindow) -> None:
 
             await asyncio.gather(*[c.activate_hooks() for c in clients])
             _clients = clients
-            window.set_start_enabled(True)
+            window.set_start_enabled(_start_enabled())
 
             while True:
                 zone = await clients[0].zone_name()
@@ -100,17 +65,81 @@ async def client_loop(window: MainWindow) -> None:
 
 
 # ---------------------------------------------------------------------------
+# File operations
+# ---------------------------------------------------------------------------
+def open_bot(window: MainWindow) -> None:
+    global _loaded_config, _last_save_path
+
+    path, _ = QFileDialog.getOpenFileName(
+        window, "Open Bot", "", "Bot Files (*.json)"
+    )
+    if not path:
+        return
+
+    try:
+        config = BotConfig.load(path)
+    except Exception as e:
+        QMessageBox.critical(window, "Failed to load bot", str(e))
+        return
+
+    _loaded_config = config
+    _last_save_path = path
+    window.set_bot_name(config.name, Path(path).name)
+    window.set_save_enabled(True)
+    window.set_start_enabled(_start_enabled())
+
+
+def save_bot(window: MainWindow) -> None:
+    global _last_save_path
+
+    if _loaded_config is None:
+        return
+
+    if _last_save_path is None:
+        save_bot_as(window)
+        return
+
+    try:
+        _loaded_config.save(_last_save_path)
+    except Exception as e:
+        QMessageBox.critical(window, "Failed to save bot", str(e))
+
+
+def save_bot_as(window: MainWindow) -> None:
+    global _last_save_path
+
+    if _loaded_config is None:
+        return
+
+    path, _ = QFileDialog.getSaveFileName(
+        window, "Save Bot As", "", "Bot Files (*.json)"
+    )
+    if not path:
+        return
+
+    if not path.endswith(".json"):
+        path += ".json"
+
+    try:
+        _loaded_config.save(path)
+        _last_save_path = path
+        window.set_bot_name(_loaded_config.name, Path(path).name)
+    except Exception as e:
+        QMessageBox.critical(window, "Failed to save bot", str(e))
+
+
+# ---------------------------------------------------------------------------
 # Bot start / stop
 # ---------------------------------------------------------------------------
 async def start_bot(window: MainWindow) -> None:
-    global _current_machine, _bot_task
+    global _current_machine
 
-    if not _clients:
+    if not _clients or _loaded_config is None:
         return
 
     machine = BotMachine(
         clients=_clients,
-        config=MVP_BOT_CONFIG,
+        config=_loaded_config.to_machine_config(),
         node_registry=NODE_REGISTRY,
         on_state_change=window.set_fsm_state,
     )
@@ -118,7 +147,7 @@ async def start_bot(window: MainWindow) -> None:
 
     window.set_start_enabled(False)
     window.set_stop_enabled(True)
-    window.set_fsm_state(MVP_BOT_CONFIG["initial"])
+    window.set_fsm_state(_loaded_config.initial)
 
     try:
         await machine.run()
@@ -126,7 +155,7 @@ async def start_bot(window: MainWindow) -> None:
         _current_machine = None
         window.set_fsm_state("Idle")
         window.set_stop_enabled(False)
-        window.set_start_enabled(bool(_clients))
+        window.set_start_enabled(_start_enabled())
 
 
 def stop_bot() -> None:
@@ -140,6 +169,10 @@ def stop_bot() -> None:
 async def main(app: QApplication) -> None:
     window = MainWindow()
     window.show()
+
+    window.on_open_bot = lambda: open_bot(window)
+    window.on_save_bot = lambda: save_bot(window)
+    window.on_save_bot_as = lambda: save_bot_as(window)
 
     window.start_button.clicked.connect(
         lambda: asyncio.create_task(start_bot(window))

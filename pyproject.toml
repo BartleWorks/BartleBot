@@ -11,6 +11,7 @@ PyQt6 = "*"
 qasync = "*"
 pyperclip = "*"
 transitions = {extras = ["asyncio"], version = "*"}
+pydantic = "*"
 wizwalker = {git = "https://github.com/Deimos-Wizard101/wizwalker", branch = "development"}
 WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", branch = "lib-update"}
 
