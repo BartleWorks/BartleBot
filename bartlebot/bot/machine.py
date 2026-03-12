@@ -52,8 +52,6 @@ class BotMachine:
 
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
-        self._stop_flag.clear()
-
         while not self._stop_flag.is_set():
             state_id = self.state
             state_def = self._state_map[state_id]
