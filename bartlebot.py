@@ -34,7 +34,7 @@ def _start_enabled() -> bool:
 
 
 async def client_loop(window: MainWindow) -> None:
-    """Continuously monitors for hooked clients and updates the zone label."""
+    """Continuously monitors for hooked clients and updates the sidebar."""
     global _clients
 
     while True:
@@ -43,12 +43,14 @@ async def client_loop(window: MainWindow) -> None:
             if not clients:
                 window.set_zone("No client found")
                 _clients = []
+                window.client_sidebar.set_clients([])
                 window.set_start_enabled(False)
                 await asyncio.sleep(3.0)
                 continue
 
             await asyncio.gather(*[c.activate_hooks() for c in clients])
             _clients = clients
+            window.client_sidebar.set_clients(clients)
             window.set_start_enabled(_start_enabled())
 
             while True:
@@ -58,6 +60,7 @@ async def client_loop(window: MainWindow) -> None:
 
         except Exception:
             _clients = []
+            window.client_sidebar.set_clients([])
             window.set_start_enabled(False)
             window.set_zone("Error — retrying…")
             print(traceback.format_exc())
@@ -85,6 +88,7 @@ def open_bot(window: MainWindow) -> None:
     _loaded_config = config
     _last_save_path = path
     window.set_bot_name(config.name, Path(path).name)
+    window.bot_info_panel.set_config(config)
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
 
@@ -142,20 +146,33 @@ async def start_bot(window: MainWindow) -> None:
         config=_loaded_config.to_machine_config(),
         node_registry=NODE_REGISTRY,
         on_state_change=window.set_fsm_state,
+        on_transition=window.running_tab.on_transition,
     )
     _current_machine = machine
 
     window.set_start_enabled(False)
-    window.set_stop_enabled(True)
-    window.set_fsm_state(_loaded_config.initial)
+    window.switch_to_running_tab()
+    window.drop_panel.setup_clients(len(_clients))
+    window.drop_panel.clear()
+    window.running_tab.setup_graph(_loaded_config.to_machine_config())
+    window.running_tab.set_running()
 
     try:
         await machine.run()
     finally:
         _current_machine = None
-        window.set_fsm_state("Idle")
-        window.set_stop_enabled(False)
+        window.running_tab.set_idle()
         window.set_start_enabled(_start_enabled())
+
+
+def pause_bot() -> None:
+    if _current_machine:
+        _current_machine.pause()
+
+
+def resume_bot() -> None:
+    if _current_machine:
+        _current_machine.resume()
 
 
 def stop_bot() -> None:
@@ -174,10 +191,10 @@ async def main(app: QApplication) -> None:
     window.on_save_bot = lambda: save_bot(window)
     window.on_save_bot_as = lambda: save_bot_as(window)
 
-    window.start_button.clicked.connect(
-        lambda: asyncio.create_task(start_bot(window))
-    )
-    window.stop_button.clicked.connect(stop_bot)
+    window.running_tab.on_run = lambda: asyncio.create_task(start_bot(window))
+    window.running_tab.on_pause = pause_bot
+    window.running_tab.on_resume = resume_bot
+    window.running_tab.stop_button.clicked.connect(stop_bot)
 
     asyncio.create_task(client_loop(window))
 

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -32,6 +33,13 @@ class StateModel(BaseModel):
     params: dict = Field(default_factory=dict)
 
 
+class BotOptionModel(BaseModel):
+    name: str
+    type: Literal["bool", "int", "float", "str"]
+    default: bool | int | float | str = False
+    description: str | None = None
+
+
 class BotConfig(BaseModel):
     name: str
     description: str | None = None
@@ -39,6 +47,10 @@ class BotConfig(BaseModel):
     clients: str | list[int] = "all"
     initial: str
     default_combat_config: str | None = None
+    start_location: str | None = None
+    drops: list[str] = Field(default_factory=list)
+    credits: str | None = None
+    options: list[BotOptionModel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel]
 
