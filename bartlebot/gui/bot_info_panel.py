@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QCheckBox, QComboBox, QDoubleSpinBox, QFrame, QFormLayout,
-    QLabel, QLineEdit, QPlainTextEdit, QScrollArea, QSizePolicy,
+    QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
+    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QScrollArea, QSizePolicy,
     QSpinBox, QVBoxLayout, QWidget,
 )
 
@@ -16,6 +15,67 @@ if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
 _PLACEHOLDER = "—"
+
+
+class SectionHeader(QWidget):
+
+    toggled = pyqtSignal(bool)
+
+    def __init__(self, title: str, parent=None):
+        super().__init__(parent)
+
+        self._expanded = True
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.arrow = QLabel("▼")
+        self.arrow.setFixedWidth(12)
+
+        self.label = QLabel(title)
+
+        font = self.label.font()
+        font.setBold(True)
+        self.label.setFont(font)
+
+        layout.addWidget(self.arrow)
+        layout.addWidget(self.label)
+        layout.addStretch()
+
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mousePressEvent(self, event):  # noqa: ARG002
+        self._expanded = not self._expanded
+        self.arrow.setText("▼" if self._expanded else "▶")
+        self.toggled.emit(self._expanded)
+
+
+class CollapsibleSection(QWidget):
+    """A section with a clickable header that shows/hides its body."""
+
+    def __init__(self, title: str, parent=None):
+        super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
+        vbox = QVBoxLayout(self)
+        vbox.setContentsMargins(0, 0, 0, 0)
+        vbox.setSpacing(2)
+
+        self._header = SectionHeader(title)
+        self._body = QWidget()
+        self._body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
+        vbox.addWidget(self._header)
+        vbox.addWidget(self._body)
+
+        self._header.toggled.connect(self._body.setVisible)
+
+    def set_content_layout(self, layout) -> None:
+        self._body.setLayout(layout)
+
+    @property
+    def body(self) -> QWidget:
+        return self._body
 
 
 class BotInfoPanel(QScrollArea):
@@ -35,7 +95,7 @@ class BotInfoPanel(QScrollArea):
         self._outer.setSpacing(4)
 
         # ── Bot Info ──────────────────────────────────────────────────
-        self._outer.addWidget(_section_header("Bot Info"))
+        info_section = CollapsibleSection("Bot Info")
 
         form = QFormLayout()
         form.setSpacing(2)
@@ -64,19 +124,14 @@ class BotInfoPanel(QScrollArea):
         form.addRow(_field_label("Credits"), self._credits_edit)
         form.addRow(_field_label("Drops"), self._drops_edit)
         form.addRow(_field_label("Initial State"), self._initial_combo)
-        self._outer.addLayout(form)
 
-        # ── Divider ───────────────────────────────────────────────────
-        div = QFrame()
-        div.setFrameShape(QFrame.Shape.HLine)
-        div.setFrameShadow(QFrame.Shadow.Sunken)
-        self._outer.addWidget(div)
+        info_section.set_content_layout(form)
+        self._outer.addWidget(info_section)
 
         # ── Options ───────────────────────────────────────────────────
-        self._outer.addWidget(_section_header("Options"))
+        self._options_section = CollapsibleSection("Options")
 
-        self._options_container = QWidget()
-        self._options_layout = QVBoxLayout(self._options_container)
+        self._options_layout = QVBoxLayout()
         self._options_layout.setContentsMargins(0, 0, 0, 0)
         self._options_layout.setSpacing(4)
 
@@ -84,7 +139,9 @@ class BotInfoPanel(QScrollArea):
         self._no_options_lbl.setText(_PLACEHOLDER)
         self._options_layout.addWidget(self._no_options_lbl)
 
-        self._outer.addWidget(self._options_container)
+        self._options_section.set_content_layout(self._options_layout)
+        self._outer.addWidget(self._options_section)
+
         self._outer.addStretch()
 
         self.setWidget(content)
@@ -241,14 +298,6 @@ class BotInfoPanel(QScrollArea):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-def _section_header(text: str) -> QLabel:
-    lbl = QLabel(text)
-    font = QFont()
-    font.setBold(True)
-    lbl.setFont(font)
-    return lbl
-
 
 def _field_label(text: str) -> QLabel:
     lbl = QLabel(text + ":")
