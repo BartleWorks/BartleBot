@@ -99,7 +99,7 @@ class BotInfoPanel(QScrollArea):
 
         form = QFormLayout()
         form.setSpacing(2)
-        form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
+        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         # File is set externally (not part of the config) — stays a label
         self._file_lbl = _value_label(wrap=True)
@@ -109,7 +109,7 @@ class BotInfoPanel(QScrollArea):
         self._version_edit = _value_edit()
         self._desc_edit = _value_edit_multi(lines=3)
         self._start_edit = _value_edit()
-        self._credits_edit = _value_edit()
+        self._authors_edit = _value_edit()
         self._drops_edit = _value_edit()
         self._drops_edit.setToolTip("Comma-separated list of expected drop items")
 
@@ -121,7 +121,7 @@ class BotInfoPanel(QScrollArea):
         form.addRow(_field_label("Version"), self._version_edit)
         form.addRow(_field_label("Description"), self._desc_edit)
         form.addRow(_field_label("Start"), self._start_edit)
-        form.addRow(_field_label("Credits"), self._credits_edit)
+        form.addRow(_field_label("Author(s)"), self._authors_edit)
         form.addRow(_field_label("Drops"), self._drops_edit)
         form.addRow(_field_label("Initial State"), self._initial_combo)
 
@@ -146,14 +146,14 @@ class BotInfoPanel(QScrollArea):
 
         self.setWidget(content)
         self.setWidgetResizable(True)
-        self.setMinimumWidth(190)
+        self.setMinimumWidth(300)
 
         # Connect change signals
         self._name_edit.textChanged.connect(self._on_name_changed)
         self._version_edit.textChanged.connect(self._on_version_changed)
         self._desc_edit.textChanged.connect(self._on_desc_changed)
         self._start_edit.textChanged.connect(self._on_start_changed)
-        self._credits_edit.textChanged.connect(self._on_credits_changed)
+        self._authors_edit.textChanged.connect(self._on_authors_changed)
         self._drops_edit.textChanged.connect(self._on_drops_changed)
         self._initial_combo.currentTextChanged.connect(self._on_initial_changed)
 
@@ -174,7 +174,7 @@ class BotInfoPanel(QScrollArea):
         self._suppress = True
         line_edits = (
             self._name_edit, self._version_edit,
-            self._start_edit, self._credits_edit, self._drops_edit,
+            self._start_edit, self._authors_edit, self._drops_edit,
         )
         if config is None:
             for w in line_edits:
@@ -189,7 +189,7 @@ class BotInfoPanel(QScrollArea):
             self._name_edit.setText(config.name or "")
             self._version_edit.setText(config.version or "")
             self._start_edit.setText(config.start_location or "")
-            self._credits_edit.setText(config.credits or "")
+            self._authors_edit.setText(config.authors or "")
             self._drops_edit.setText(", ".join(config.drops) if config.drops else "")
             self._desc_edit.setPlainText(config.description or "")
             self._populate_initial_combo(config.states, config.initial)
@@ -209,7 +209,7 @@ class BotInfoPanel(QScrollArea):
             return
         line_edits = (
             self._name_edit, self._version_edit,
-            self._start_edit, self._credits_edit, self._drops_edit,
+            self._start_edit, self._authors_edit, self._drops_edit,
         )
         for w in line_edits:
             w.setReadOnly(not editable)
@@ -244,10 +244,10 @@ class BotInfoPanel(QScrollArea):
         self._config.start_location = text or None
         self.on_config_changed()
 
-    def _on_credits_changed(self, text: str) -> None:
+    def _on_authors_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
-        self._config.credits = text or None
+        self._config.authors = text or None
         self.on_config_changed()
 
     def _on_drops_changed(self, text: str) -> None:
