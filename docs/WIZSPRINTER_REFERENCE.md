@@ -77,7 +77,7 @@ await client.use_potion_if_needed()
 ### Safety Utilities
 
 ```python
-await client.find_safe_entities_from(entities, safe_distance=600.0) -> List
+await client.find_safe_entities_from(entities, safe_distance=700.0) -> List
 # Returns entities that are at least safe_distance away from all mobs
 ```
 
