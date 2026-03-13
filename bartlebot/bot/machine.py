@@ -21,12 +21,16 @@ class BotMachine:
         config: dict,
         node_registry: dict,
         on_state_change: Callable[[str], None] | None = None,
+        on_transition: Callable[[str, str, str], None] | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
         self._registry = node_registry
         self._on_state_change = on_state_change
+        self._on_transition = on_transition
         self._stop_flag = asyncio.Event()
+        self._resume_event = asyncio.Event()
+        self._resume_event.set()  # not paused by default
         self.last_result: str | None = None
 
         self._state_map = {s["id"]: s for s in config["states"]}
@@ -43,18 +47,32 @@ class BotMachine:
             ignore_invalid_triggers=False,
         )
 
-    # --- Transition conditions (referenced by name in config) ---
+    # --- Transition conditions ---
 
-    def last_result_is_success(self) -> bool:
-        return self.last_result == "SUCCESS"
+    def __getattr__(self, name: str):
+        """Dynamically provide _result_is_<VALUE> condition methods.
+
+        BotConfig.to_machine_config() converts when="SUCCESS" into the condition
+        name "_result_is_SUCCESS". This __getattr__ supplies the callable on
+        demand without requiring upfront registration for every return value.
+        """
+        if name.startswith("_result_is_"):
+            expected = name[len("_result_is_"):]
+            return lambda: self.last_result == expected
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     # --- Public API ---
 
+    @property
+    def is_paused(self) -> bool:
+        return not self._resume_event.is_set()
+
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
-        self._stop_flag.clear()
-
         while not self._stop_flag.is_set():
+            await self._resume_event.wait()  # block here while paused
+            if self._stop_flag.is_set():
+                break
             state_id = self.state
             state_def = self._state_map[state_id]
 
@@ -69,8 +87,20 @@ class BotMachine:
                 self.last_result = "FAILURE"
 
             if not self._stop_flag.is_set():
+                prev_state = state_id
                 await self.advance()
+                if self._on_transition:
+                    self._on_transition(prev_state, self.last_result or "", self.state)
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""
         self._stop_flag.set()
+        self._resume_event.set()  # unblock any paused wait so stop is seen immediately
+
+    def pause(self) -> None:
+        """Suspend the FSM after the current node finishes."""
+        self._resume_event.clear()
+
+    def resume(self) -> None:
+        """Resume a paused FSM."""
+        self._resume_event.set()

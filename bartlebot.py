@@ -1,62 +1,19 @@
 import sys
 import asyncio
 import traceback
+from pathlib import Path
 
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 import qasync
 
 from wizwalker import ClientHandler
 
 from bartlebot.bot.machine import BotMachine
+from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.gui.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
-
-# ---------------------------------------------------------------------------
-# MVP bot config — two-state zone loop.
-# Fill in real zone strings and XYZ coordinates before running.
-# ---------------------------------------------------------------------------
-
-MVP_BOT_CONFIG = {
-    "initial": "go_to_zone_a",
-    "states": [
-        {
-            "id": "go_to_zone_a",
-            "node_type": "go_to_zone",
-            "params": {
-                "from_zone": "WizardCity/WC_Streets/WC_Unicorn",
-                "to_zone": "WizardCity/WC_Streets/Interiors/WC_Unicorn_H3",
-                "xyz": {"x": -12750.010, "y": 6295.667, "z": -119.930},
-            },
-        },
-        {
-            "id": "go_to_zone_b",
-            "node_type": "go_to_zone",
-            "params": {
-                "from_zone": "WizardCity/WC_Streets/Interiors/WC_Unicorn_H3",
-                "to_zone": "WizardCity/WC_Streets/WC_Unicorn",
-                "xyz": {"x": 637.394, "y": 29.265, "z": 1.974},
-            },
-        },
-    ],
-    "transitions": [
-        # Success: advance to the other zone.
-        {
-            "trigger": "advance",
-            "source": "go_to_zone_a",
-            "dest": "go_to_zone_b",
-            "conditions": ["last_result_is_success"],
-        },
-        {
-            "trigger": "advance",
-            "source": "go_to_zone_b",
-            "dest": "go_to_zone_a",
-            "conditions": ["last_result_is_success"],
-        },
-        # Failure: retry the same state.
-        {"trigger": "advance", "source": "go_to_zone_a", "dest": "go_to_zone_a"},
-        {"trigger": "advance", "source": "go_to_zone_b", "dest": "go_to_zone_b"},
-    ],
-}
+from bartlebot import recent_files
 
 
 # ---------------------------------------------------------------------------
@@ -65,34 +22,65 @@ MVP_BOT_CONFIG = {
 _handler = ClientHandler()
 _clients: list = []
 _current_machine: BotMachine | None = None
-_bot_task: asyncio.Task | None = None
+
+# ---------------------------------------------------------------------------
+# Loaded bot state
+# ---------------------------------------------------------------------------
+_loaded_config: BotConfig | None = None
+_last_save_path: str | None = None
+
+
+def _start_enabled() -> bool:
+    """Start is only enabled when both a client is hooked and a bot is loaded."""
+    return bool(_clients) and _loaded_config is not None
 
 
 async def client_loop(window: MainWindow) -> None:
-    """Continuously monitors for hooked clients and updates the zone label."""
+    """Continuously monitors for hooked clients and updates the sidebar."""
     global _clients
 
     while True:
         try:
-            clients = _handler.get_new_clients()
+            # Clean up any clients whose process has exited
+            _handler.remove_dead_clients()
+
+            new_clients = _handler.get_new_clients()
+            if new_clients:
+                try:
+                    await asyncio.gather(*[c.activate_hooks() for c in new_clients])
+                except Exception:
+                    # Hook activation failed (e.g. client still initialising).
+                    # Unregister the failed clients so they're retried next cycle.
+                    for c in new_clients:
+                        if c in _handler.clients:
+                            _handler.clients.remove(c)
+                        if c.window_handle in _handler._managed_handles:
+                            _handler._managed_handles.remove(c.window_handle)
+                    print(traceback.format_exc())
+                    await asyncio.sleep(3.0)
+                    continue
+
+            clients = list(_handler.clients)
             if not clients:
                 window.set_zone("No client found")
                 _clients = []
+                window.client_sidebar.set_clients([])
                 window.set_start_enabled(False)
                 await asyncio.sleep(3.0)
                 continue
 
-            await asyncio.gather(*[c.activate_hooks() for c in clients])
-            _clients = clients
-            window.set_start_enabled(True)
+            if clients != _clients:
+                _clients = clients
+                window.client_sidebar.set_clients(clients)
+                window.set_start_enabled(_start_enabled())
 
-            while True:
-                zone = await clients[0].zone_name()
-                window.set_zone(zone)
-                await asyncio.sleep(1.0)
+            zone = await clients[0].zone_name()
+            window.set_zone(zone)
+            await asyncio.sleep(1.0)
 
         except Exception:
             _clients = []
+            window.client_sidebar.set_clients([])
             window.set_start_enabled(False)
             window.set_zone("Error — retrying…")
             print(traceback.format_exc())
@@ -100,33 +88,131 @@ async def client_loop(window: MainWindow) -> None:
 
 
 # ---------------------------------------------------------------------------
+# File operations
+# ---------------------------------------------------------------------------
+def new_bot(window: MainWindow) -> None:
+    global _loaded_config, _last_save_path
+
+    config = BotConfig(
+        name="New Bot",
+        initial="state_1",
+        states=[StateModel(id="state_1", node_type="go_to_zone")],
+        transitions=[],
+    )
+    _loaded_config = config
+    _last_save_path = None
+    window.set_bot_name(config.name, "Untitled")
+    window.bot_info_panel.set_config(config)
+    window.bot_canvas.setup(config)
+    window.set_save_enabled(True)
+    window.set_start_enabled(_start_enabled())
+
+
+def open_bot(window: MainWindow, path: str | None = None) -> None:
+    global _loaded_config, _last_save_path
+
+    if path is None:
+        path, _ = QFileDialog.getOpenFileName(
+            window, "Open Bot", "", "Bot Files (*.json)"
+        )
+    if not path:
+        return
+
+    try:
+        config = BotConfig.load(path)
+    except Exception as e:
+        QMessageBox.critical(window, "Failed to load bot", str(e))
+        return
+
+    _loaded_config = config
+    _last_save_path = path
+    window.set_bot_name(config.name, Path(path).name)
+    window.bot_info_panel.set_config(config)
+    window.bot_canvas.setup(config)
+    window.set_save_enabled(True)
+    window.set_start_enabled(_start_enabled())
+    window.update_recent_menu(recent_files.add(path))
+
+
+def save_bot(window: MainWindow) -> None:
+    global _last_save_path
+
+    if _loaded_config is None:
+        return
+
+    if _last_save_path is None:
+        save_bot_as(window)
+        return
+
+    try:
+        _loaded_config.save(_last_save_path)
+    except Exception as e:
+        QMessageBox.critical(window, "Failed to save bot", str(e))
+
+
+def save_bot_as(window: MainWindow) -> None:
+    global _last_save_path
+
+    if _loaded_config is None:
+        return
+
+    path, _ = QFileDialog.getSaveFileName(
+        window, "Save Bot As", "", "Bot Files (*.json)"
+    )
+    if not path:
+        return
+
+    if not path.endswith(".json"):
+        path += ".json"
+
+    try:
+        _loaded_config.save(path)
+        _last_save_path = path
+        window.set_bot_name(_loaded_config.name, Path(path).name)
+        window.update_recent_menu(recent_files.add(path))
+    except Exception as e:
+        QMessageBox.critical(window, "Failed to save bot", str(e))
+
+
+# ---------------------------------------------------------------------------
 # Bot start / stop
 # ---------------------------------------------------------------------------
 async def start_bot(window: MainWindow) -> None:
-    global _current_machine, _bot_task
+    global _current_machine
 
-    if not _clients:
+    if not _clients or _loaded_config is None:
         return
 
     machine = BotMachine(
         clients=_clients,
-        config=MVP_BOT_CONFIG,
+        config=_loaded_config.to_machine_config(),
         node_registry=NODE_REGISTRY,
         on_state_change=window.set_fsm_state,
+        on_transition=window.bot_canvas.on_transition,
     )
     _current_machine = machine
 
     window.set_start_enabled(False)
-    window.set_stop_enabled(True)
-    window.set_fsm_state(MVP_BOT_CONFIG["initial"])
+    window.drop_panel.setup_clients(len(_clients))
+    window.drop_panel.clear()
+    window.bot_canvas.set_running()
 
     try:
         await machine.run()
     finally:
         _current_machine = None
-        window.set_fsm_state("Idle")
-        window.set_stop_enabled(False)
-        window.set_start_enabled(bool(_clients))
+        window.bot_canvas.set_idle()
+        window.set_start_enabled(_start_enabled())
+
+
+def pause_bot() -> None:
+    if _current_machine:
+        _current_machine.pause()
+
+
+def resume_bot() -> None:
+    if _current_machine:
+        _current_machine.resume()
 
 
 def stop_bot() -> None:
@@ -141,10 +227,34 @@ async def main(app: QApplication) -> None:
     window = MainWindow()
     window.show()
 
-    window.start_button.clicked.connect(
-        lambda: asyncio.create_task(start_bot(window))
-    )
-    window.stop_button.clicked.connect(stop_bot)
+    window.on_new_bot = lambda: new_bot(window)
+    window.on_open_bot = lambda: open_bot(window)
+    window.on_save_bot = lambda: save_bot(window)
+    window.on_save_bot_as = lambda: save_bot_as(window)
+
+    def _config_changed() -> None:
+        window.set_save_enabled(True)
+        if _loaded_config is not None:
+            window.bot_info_panel.refresh_states(_loaded_config.states)
+            window.bot_canvas.refresh_initial(_loaded_config.initial)
+
+    def _mode_changed(mode: BotMode) -> None:
+        window.bot_info_panel.set_editable(mode == BotMode.EDIT)
+
+    def _save_and_done() -> None:
+        save_bot(window)
+
+    window.bot_canvas.on_config_changed = _config_changed
+    window.bot_canvas.on_mode_changed = _mode_changed
+    window.bot_canvas.on_save_and_done = _save_and_done
+    window.bot_canvas.on_run = lambda: asyncio.create_task(start_bot(window))
+    window.bot_canvas.on_pause = pause_bot
+    window.bot_canvas.on_resume = resume_bot
+    window.bot_canvas.stop_button.clicked.connect(stop_bot)
+
+    window.bot_info_panel.on_config_changed = _config_changed
+    window.on_open_recent = lambda path: open_bot(window, path)
+    window.update_recent_menu(recent_files.load())
 
     asyncio.create_task(client_loop(window))
 

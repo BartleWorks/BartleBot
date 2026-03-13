@@ -11,6 +11,7 @@ load and save. Validation errors are surfaced in the GUI.
   "description": "Optional description of what this bot does.",
   "version": "1.0",
   "clients": "all",
+  "initial": "go_to_zone_a",
   "default_combat_config": "any<blade> @ self\nany<damage> @ enemy",
   "states": [ ... ],
   "transitions": [ ... ]
@@ -19,10 +20,11 @@ load and save. Validation errors are surfaced in the GUI.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `name` | string | yes | Display name |
+| `name` | string | yes | Display name. |
 | `description` | string | no | Human-readable description |
 | `version` | string | yes | Schema version (currently `"1.0"`) |
 | `clients` | `"all"` or list of ints | yes | Which hooked clients to run on. `"all"` = all hooked clients. List of 0-based indices for a subset. |
+| `initial` | string | yes | ID of the state the FSM starts in. Must match one of the `id` values in `states`. |
 | `default_combat_config` | string | no | WizSprinter combat DSL config applied to all `handle_combat` nodes that do not define their own `combat_config` param. |
 | `states` | array | yes | List of FSM state (node) objects |
 | `transitions` | array | yes | List of FSM transition (edge) objects |
