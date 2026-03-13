@@ -6,7 +6,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 import qasync
 
-from wizwalker import ClientHandler
+from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -19,7 +19,7 @@ from bartlebot import recent_files
 # ---------------------------------------------------------------------------
 # Client management
 # ---------------------------------------------------------------------------
-_handler = ClientHandler()
+_handler = WizSprinter()
 _clients: list = []
 _current_machine: BotMachine | None = None
 
@@ -187,8 +187,10 @@ async def start_bot(window: MainWindow) -> None:
         clients=_clients,
         config=_loaded_config.to_machine_config(),
         node_registry=NODE_REGISTRY,
+        bot_config=_loaded_config,
         on_state_change=window.set_fsm_state,
         on_transition=window.bot_canvas.on_transition,
+        on_drop=window.drop_panel.add_drop,
     )
     _current_machine = machine
 

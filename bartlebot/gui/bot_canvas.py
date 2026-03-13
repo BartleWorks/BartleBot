@@ -426,6 +426,19 @@ class _DynamicParamForm(QWidget):
             placeholder = QLabel("This node type has no parameters.")
             placeholder.setStyleSheet("color: #888;")
             self._form.addRow(placeholder)
+        # Wire disabled_by: when controller checkbox is checked, disable the target widget
+        for field in schema:
+            if field.disabled_by and field.disabled_by in self._widgets:
+                controller = self._widgets[field.disabled_by]
+                controlled = self._widgets[field.key]
+                display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                if isinstance(controller, QCheckBox):
+                    display_w.setEnabled(not controller.isChecked())
+                    controller.checkStateChanged.connect(
+                        lambda state, w=display_w: w.setEnabled(
+                            state != Qt.CheckState.Checked
+                        )
+                    )
         self._suppress = False
 
     def get_params(self) -> dict:
@@ -434,6 +447,8 @@ class _DynamicParamForm(QWidget):
             if isinstance(w, tuple):
                 x_s, y_s, z_s, _ = w
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
+            elif isinstance(w, QPlainTextEdit):
+                result[key] = w.toPlainText()
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):
@@ -445,6 +460,15 @@ class _DynamicParamForm(QWidget):
         return result
 
     def _make_widget(self, field_type: str, val: Any, help_text: str, key: str = "") -> Any:
+        if field_type == "text":
+            w = QPlainTextEdit()
+            w.setPlainText(str(val) if val is not None else "")
+            w.setFixedHeight(120)
+            w.setPlaceholderText("Enter combat DSL…")
+            if help_text:
+                w.setToolTip(help_text)
+            w.textChanged.connect(self._emit_changed)
+            return w
         if field_type == "str":
             w = QLineEdit()
             w.setText(str(val) if val is not None else "")

@@ -142,6 +142,24 @@ class BotInfoPanel(QScrollArea):
         self._options_section.set_content_layout(self._options_layout)
         self._outer.addWidget(self._options_section)
 
+        # ── Combat Config ─────────────────────────────────────────────
+        self._combat_section = CollapsibleSection("Combat Config")
+
+        combat_layout = QVBoxLayout()
+        combat_layout.setContentsMargins(0, 0, 0, 4)
+        combat_layout.setSpacing(4)
+
+        self._use_bartlebot_default_chk = QCheckBox("Use BartleBot default combat config")
+        self._use_bartlebot_default_chk.setChecked(True)
+        combat_layout.addWidget(self._use_bartlebot_default_chk)
+
+        self._combat_config_edit = _value_edit_multi(lines=8)
+        self._combat_config_edit.setPlaceholderText("Enter WizSprinter combat DSL…")
+        combat_layout.addWidget(self._combat_config_edit)
+
+        self._combat_section.set_content_layout(combat_layout)
+        self._outer.addWidget(self._combat_section)
+
         self._outer.addStretch()
 
         self.setWidget(content)
@@ -156,6 +174,12 @@ class BotInfoPanel(QScrollArea):
         self._authors_edit.textChanged.connect(self._on_authors_changed)
         self._drops_edit.textChanged.connect(self._on_drops_changed)
         self._initial_combo.currentTextChanged.connect(self._on_initial_changed)
+        self._use_bartlebot_default_chk.toggled.connect(self._on_use_bartlebot_default_changed)
+        self._combat_config_edit.textChanged.connect(self._on_combat_config_changed)
+        # Checkbox controls whether the DSL text field is editable
+        self._use_bartlebot_default_chk.toggled.connect(
+            lambda checked: self._combat_config_edit.setReadOnly(checked)
+        )
 
         self.set_config(None)
 
@@ -185,6 +209,10 @@ class BotInfoPanel(QScrollArea):
             self._initial_combo.clear()
             self._initial_combo.setEnabled(False)
             self._rebuild_options([])
+            self._use_bartlebot_default_chk.setChecked(True)
+            self._use_bartlebot_default_chk.setEnabled(False)
+            self._combat_config_edit.setPlainText("")
+            self._combat_config_edit.setReadOnly(True)
         else:
             self._name_edit.setText(config.name or "")
             self._version_edit.setText(config.version or "")
@@ -194,6 +222,8 @@ class BotInfoPanel(QScrollArea):
             self._desc_edit.setPlainText(config.description or "")
             self._populate_initial_combo(config.states, config.initial)
             self._rebuild_options(config.options)
+            self._use_bartlebot_default_chk.setChecked(config.use_bartlebot_default_combat_config)
+            self._combat_config_edit.setPlainText(config.default_combat_config or "")
             # Fields remain read-only; set_editable(True) enables them in EDIT mode
         self._suppress = False
 
@@ -215,6 +245,10 @@ class BotInfoPanel(QScrollArea):
             w.setReadOnly(not editable)
         self._desc_edit.setReadOnly(not editable)
         self._initial_combo.setEnabled(editable)
+        self._use_bartlebot_default_chk.setEnabled(editable)
+        # Combat DSL field is only editable when the checkbox is unchecked
+        use_default = self._use_bartlebot_default_chk.isChecked()
+        self._combat_config_edit.setReadOnly(not editable or use_default)
 
     # ------------------------------------------------------------------
     # Change handlers
@@ -262,6 +296,19 @@ class BotInfoPanel(QScrollArea):
         self._config.initial = text
         self.on_config_changed()
 
+    def _on_use_bartlebot_default_changed(self, checked: bool) -> None:
+        if self._suppress or self._config is None:
+            return
+        self._config.use_bartlebot_default_combat_config = checked
+        self.on_config_changed()
+
+    def _on_combat_config_changed(self) -> None:
+        if self._suppress or self._config is None:
+            return
+        text = self._combat_config_edit.toPlainText()
+        self._config.default_combat_config = text or None
+        self.on_config_changed()
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -290,9 +337,27 @@ class BotInfoPanel(QScrollArea):
         self._no_options_lbl.hide()
         for opt in options:
             row, widget = _build_option_row(opt)
+            self._connect_option_widget(widget, opt)
             self._options_layout.addWidget(row)
             self._option_rows.append(row)
             self._option_widgets[opt.name] = widget
+
+    def _connect_option_widget(self, widget: QWidget, opt) -> None:
+        """Connect a widget's change signal to update opt.default and emit on_config_changed."""
+        def _update(value) -> None:
+            if self._suppress or self._config is None:
+                return
+            opt.default = value
+            self.on_config_changed()
+
+        if isinstance(widget, QCheckBox):
+            widget.toggled.connect(_update)
+        elif isinstance(widget, QSpinBox):
+            widget.valueChanged.connect(_update)
+        elif isinstance(widget, QDoubleSpinBox):
+            widget.valueChanged.connect(_update)
+        elif isinstance(widget, QLineEdit):
+            widget.textChanged.connect(_update)
 
 
 # ---------------------------------------------------------------------------

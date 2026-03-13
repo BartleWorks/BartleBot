@@ -13,7 +13,7 @@
 │ Description  │                                  │ Zone: [........]  │
 │ Start loc.   │                                  │ [Copy Zone]       │
 │ Drops        ├──────────────────────────────────┤ XYZ: [.........]  │
-│ Credits      │ Node / Edge Parameters           │ [Copy XYZ]        │
+│ Authors      │ Node / Edge Parameters           │ [Copy XYZ]        │
 │              │ (selected item fields)            │ [Enter Freecam]   │
 │ ─────────── │                                  │ [TP to Freecam]   │
 │ Options      │                                  │                   │
@@ -34,7 +34,7 @@
 │ Description  │                                  │ ──────────────── │
 │ Start loc.   │  (FSM graph — read-only)         │ Pixie Hat  | 1 |p1│
 │ Drops        │                                  │ ...               │
-│ Credits      ├──────────────────────────────────┤                   │
+│ Authors      ├──────────────────────────────────┤                   │
 │              │ [00:01:23] → enter_dungeon        │                   │
 │ ─────────── │ [00:01:31] SUCCESS → fight_cyclops│ [Export CSV]      │
 │ Options      │ [00:02:04] → fight_cyclops        │                   │
@@ -65,7 +65,7 @@ Read-only display of bot metadata. Fields map to `BotConfig` top-level fields:
 | Description | `config.description` |
 | Start location | `config.start_location` (new field, free-text) |
 | Expected drops | `config.drops` (new field, list of strings) |
-| Credits / Author | `config.credits` (new field, free-text) |
+| Authors / Author | `config.authors` (new field, free-text) |
 | Version | `config.version` |
 
 Editing is done via the Bot Settings panel in the Edit tab (accessible from the toolbar or menu).
@@ -96,7 +96,7 @@ class BotConfig(BaseModel):
     ...
     start_location: str | None = None
     drops: list[str] = []
-    credits: str | None = None
+    authors: str | None = None
     options: list[BotOptionModel] = []
 ```
 
@@ -172,7 +172,7 @@ A collapsible sub-panel at the bottom of the Edit tab canvas area. Shows fields 
 - Conditions list: add/remove condition rows, each with type dropdown + param fields
 
 **Bot Settings panel** (accessible via toolbar or menu, not tied to a selected item):
-- `name`, `description`, `version`, `start_location`, `drops`, `credits` fields
+- `name`, `description`, `version`, `start_location`, `drops`, `authors` fields
 - `clients` selector
 - `default_combat_config` (`QPlainTextEdit`)
 - Options list: add/remove/edit `BotOptionModel` entries

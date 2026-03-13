@@ -1,0 +1,59 @@
+{
+  "name": "Rattlebones",
+  "description": "Fights Rattlebones once",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Unicorn Way",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "go_to_zone",
+      "label": "Enter boss tower",
+      "position": {
+        "x": 0.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Unicorn",
+        "to_zone": "WizardCity/WC_Streets/Interiors/WC_Unicorn_T2",
+        "xyz": {
+          "x": -16492.58,
+          "y": 19092.53,
+          "z": 33.5
+        }
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "handle_combat",
+      "label": "Fight boss",
+      "position": {
+        "x": 262.1671284965035,
+        "y": 14.0
+      },
+      "params": {
+        "enemy": "",
+        "combat_config": "any<damage>@enemy"
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "SUCCESS"
+    }
+  ]
+}
