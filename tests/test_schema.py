@@ -19,8 +19,8 @@ VALID_DATA = {
         {"id": "state_b", "node_type": "go_to_zone", "params": {"from_zone": "ZoneB", "to_zone": "ZoneA", "xyz": {"x": 1.0, "y": 2.0, "z": 3.0}}},
     ],
     "transitions": [
-        {"trigger": "advance", "source": "state_a", "dest": "state_b", "conditions": ["last_result_is_success"]},
-        {"trigger": "advance", "source": "state_b", "dest": "state_a", "conditions": ["last_result_is_success"]},
+        {"trigger": "advance", "source": "state_a", "dest": "state_b", "when": "SUCCESS"},
+        {"trigger": "advance", "source": "state_b", "dest": "state_a", "when": "SUCCESS"},
         {"trigger": "advance", "source": "state_a", "dest": "state_a"},
         {"trigger": "advance", "source": "state_b", "dest": "state_b"},
     ],
@@ -54,12 +54,17 @@ def test_state_optional_fields_have_defaults():
     assert state.position is None
 
 
-def test_transition_conditions_default_to_empty():
+def test_transition_when_defaults_to_none():
     data = {**VALID_DATA, "transitions": [
         {"trigger": "advance", "source": "state_a", "dest": "state_b"},
     ]}
     config = BotConfig.model_validate(data)
-    assert config.transitions[0].conditions == []
+    assert config.transitions[0].when is None
+
+
+def test_transition_when_is_preserved():
+    config = BotConfig.model_validate(VALID_DATA)
+    assert config.transitions[0].when == "SUCCESS"
 
 
 # ---------------------------------------------------------------------------
@@ -107,7 +112,25 @@ def test_to_machine_config_state_has_id_and_node_type():
     assert state["node_type"] == "go_to_zone"
 
 
-def test_to_machine_config_excludes_none_fields():
+def test_to_machine_config_when_generates_condition():
+    """when='SUCCESS' should produce conditions=['_result_is_SUCCESS'] without 'when' key."""
+    config = BotConfig.model_validate(VALID_DATA)
+    transitions = config.to_machine_config()["transitions"]
+    t = next(t for t in transitions if t["source"] == "state_a" and t["dest"] == "state_b")
+    assert t["conditions"] == ["_result_is_SUCCESS"]
+    assert "when" not in t  # 'when' is not a valid transitions library kwarg
+
+
+def test_to_machine_config_no_when_no_conditions():
+    """Transitions without when should have no conditions key."""
+    config = BotConfig.model_validate(VALID_DATA)
+    transitions = config.to_machine_config()["transitions"]
+    t = next(t for t in transitions if t["source"] == "state_a" and t["dest"] == "state_a")
+    assert "conditions" not in t
+    assert "when" not in t
+
+
+def test_to_machine_config_excludes_label_when_none():
     config = BotConfig.model_validate(VALID_DATA)
     for t in config.to_machine_config()["transitions"]:
         assert "label" not in t  # label is None and should be excluded

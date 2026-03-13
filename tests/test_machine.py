@@ -2,6 +2,10 @@
 
 Nodes are replaced with simple async mock functions so no Wizard101 client is needed.
 All tests use the same two-state config: state_a <-> state_b.
+
+Transitions use the ``conditions`` key with ``_result_is_<VALUE>`` names — this is
+exactly what ``BotConfig.to_machine_config()`` produces from a ``when`` field, so
+these tests exercise the same path real bots use at runtime.
 """
 
 import asyncio
@@ -22,8 +26,8 @@ TWO_STATE_CONFIG = {
     ],
     "transitions": [
         # On success: advance to the other state.
-        {"trigger": "advance", "source": "state_a", "dest": "state_b", "conditions": ["last_result_is_success"]},
-        {"trigger": "advance", "source": "state_b", "dest": "state_a", "conditions": ["last_result_is_success"]},
+        {"trigger": "advance", "source": "state_a", "dest": "state_b", "conditions": ["_result_is_SUCCESS"]},
+        {"trigger": "advance", "source": "state_b", "dest": "state_a", "conditions": ["_result_is_SUCCESS"]},
         # On failure: retry the same state.
         {"trigger": "advance", "source": "state_a", "dest": "state_a"},
         {"trigger": "advance", "source": "state_b", "dest": "state_b"},
@@ -43,25 +47,37 @@ def make_machine(node_fn, on_state_change=None, on_transition=None):
 
 
 # ---------------------------------------------------------------------------
-# Condition methods
+# Dynamic _result_is_* condition methods
 # ---------------------------------------------------------------------------
 
-def test_last_result_is_success_true():
+def test_result_is_success_true():
     machine = make_machine(lambda *_: None)
     machine.last_result = "SUCCESS"
-    assert machine.last_result_is_success() is True
+    assert machine._result_is_SUCCESS() is True
 
 
-def test_last_result_is_success_false_on_failure():
+def test_result_is_success_false_on_failure():
     machine = make_machine(lambda *_: None)
     machine.last_result = "FAILURE"
-    assert machine.last_result_is_success() is False
+    assert machine._result_is_SUCCESS() is False
 
 
-def test_last_result_is_success_false_on_none():
+def test_result_is_success_false_on_none():
     machine = make_machine(lambda *_: None)
     machine.last_result = None
-    assert machine.last_result_is_success() is False
+    assert machine._result_is_SUCCESS() is False
+
+
+def test_result_is_failure_true():
+    machine = make_machine(lambda *_: None)
+    machine.last_result = "FAILURE"
+    assert machine._result_is_FAILURE() is True
+
+
+def test_result_is_unknown_raises():
+    machine = make_machine(lambda *_: None)
+    with pytest.raises(AttributeError):
+        _ = machine.no_such_method
 
 
 # ---------------------------------------------------------------------------

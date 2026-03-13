@@ -2,6 +2,54 @@ import asyncio
 
 from wizwalker import XYZ
 
+from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+
+PARAM_SCHEMA: list[ParamField] = [
+    ParamField(
+        key="from_zone",
+        type="str",
+        label="From Zone",
+        help="Zone name the clients must currently be in when this node executes.",
+        default="",
+    ),
+    ParamField(
+        key="to_zone",
+        type="str",
+        label="To Zone",
+        help="Zone name clients must be in after this node completes.",
+        default="",
+    ),
+    ParamField(
+        key="xyz",
+        type="xyz",
+        label="Transition XYZ",
+        help=(
+            "A point inside the destination zone's transition bounding box.\n"
+            "Teleporting clients here triggers the automatic zone change."
+        ),
+        default={"x": 0.0, "y": 0.0, "z": 0.0},
+    ),
+]
+
+NODE_SPEC = NodeSpec(
+    description=(
+        "Transitions all clients from one zone to another by teleporting them "
+        "into the destination zone's transition bounding box."
+    ),
+    params=PARAM_SCHEMA,
+    returns=[
+        ReturnSpec(
+            "SUCCESS",
+            "All clients are now in to_zone.",
+        ),
+        ReturnSpec(
+            "FAILURE",
+            "Clients were not in from_zone at the start, timed out leaving "
+            "the zone, or not all clients reached to_zone after the transition.",
+        ),
+    ],
+)
+
 ZONE_CHANGE_TIMEOUT = 30.0
 POLL_INTERVAL = 0.25
 

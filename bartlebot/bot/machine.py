@@ -47,10 +47,19 @@ class BotMachine:
             ignore_invalid_triggers=False,
         )
 
-    # --- Transition conditions (referenced by name in config) ---
+    # --- Transition conditions ---
 
-    def last_result_is_success(self) -> bool:
-        return self.last_result == "SUCCESS"
+    def __getattr__(self, name: str):
+        """Dynamically provide _result_is_<VALUE> condition methods.
+
+        BotConfig.to_machine_config() converts when="SUCCESS" into the condition
+        name "_result_is_SUCCESS". This __getattr__ supplies the callable on
+        demand without requiring upfront registration for every return value.
+        """
+        if name.startswith("_result_is_"):
+            expected = name[len("_result_is_"):]
+            return lambda: self.last_result == expected
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
     # --- Public API ---
 
