@@ -1,14 +1,13 @@
 from PyQt6.QtWidgets import (
     QMainWindow, QLabel,
-    QVBoxLayout, QWidget,
-    QMenuBar, QTabWidget, QStackedWidget, QSplitter,
+    QMenu, QMenuBar, QTabWidget, QSplitter,
 )
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt
 
+from bartlebot.gui.bot_canvas import BotCanvas
 from bartlebot.gui.bot_info_panel import BotInfoPanel
 from bartlebot.gui.drop_panel import DropPanel
-from bartlebot.gui.running_tab import RunningTab
 from bartlebot.gui.sidebar import ClientSidebar
 
 
@@ -22,6 +21,7 @@ class MainWindow(QMainWindow):
         # Callbacks wired from bartlebot.py
         self.on_new_bot = lambda: None
         self.on_open_bot = lambda: None
+        self.on_open_recent = lambda _path: None
         self.on_save_bot = lambda: None
         self.on_save_bot_as = lambda: None
 
@@ -49,6 +49,10 @@ class MainWindow(QMainWindow):
         open_action.triggered.connect(lambda: self.on_open_bot())
         file_menu.addAction(open_action)
 
+        self._recent_menu = QMenu("Open Recent", self)
+        file_menu.addMenu(self._recent_menu)
+        self._update_recent_placeholder()
+
         file_menu.addSeparator()
 
         self._save_action = QAction("Save Bot", self)
@@ -64,34 +68,27 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._save_as_action)
 
     def _build_central(self) -> None:
-        # ── Tabs (center) ─────────────────────────────────────────────
-        self.running_tab = RunningTab()
-        self.edit_tab = _placeholder_tab("Edit — coming soon")
+        # ── Left sidebar ───────────────────────────────────────────────
+        self.bot_info_panel = BotInfoPanel()
 
-        self.tabs = QTabWidget()
-        self.tabs.addTab(self.edit_tab, "Edit")
-        self.tabs.addTab(self.running_tab, "Run")
-        self.tabs.currentChanged.connect(lambda _: self._on_tab_changed())
+        # ── Central canvas ─────────────────────────────────────────────
+        self.bot_canvas = BotCanvas()
 
-        # ── Right sidebar (swaps per tab) ──────────────────────────────
+        # ── Right sidebar (Clients + Drops always visible) ─────────────
         self.client_sidebar = ClientSidebar()
         self.drop_panel = DropPanel()
 
-        self._right_stack = QStackedWidget()
-        self._right_stack.addWidget(self.client_sidebar)  # index 0 — Edit
-        self._right_stack.addWidget(self.drop_panel)       # index 1 — Run
-        self._right_stack.setCurrentIndex(0)
+        self._right_tabs = QTabWidget()
+        self._right_tabs.addTab(self.client_sidebar, "Clients")
+        self._right_tabs.addTab(self.drop_panel, "Drops")
 
-        # ── Left sidebar (permanent) ───────────────────────────────────
-        self.bot_info_panel = BotInfoPanel()
-
-        # ── Outer splitter (left sidebar | tabs | right sidebar) ───────
+        # ── Outer splitter (left | canvas | right) ─────────────────────
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setChildrenCollapsible(False)
         splitter.addWidget(self.bot_info_panel)
-        splitter.addWidget(self.tabs)
-        splitter.addWidget(self._right_stack)
-        splitter.setStretchFactor(1, 1)  # tabs take all extra space
+        splitter.addWidget(self.bot_canvas)
+        splitter.addWidget(self._right_tabs)
+        splitter.setStretchFactor(1, 1)  # canvas takes all extra space
         splitter.setSizes([220, 800, 220])
 
         self.setCentralWidget(splitter)
@@ -108,7 +105,7 @@ class MainWindow(QMainWindow):
         self.zone_label.setText(zone if zone else "Unknown")
 
     def set_fsm_state(self, state_id: str) -> None:
-        self.running_tab.set_state(state_id)
+        self.bot_canvas.set_state(state_id)
 
     def set_bot_name(self, _name: str, filename: str | None) -> None:
         if filename:
@@ -119,35 +116,28 @@ class MainWindow(QMainWindow):
             self.bot_info_panel.set_file(None)
 
     def set_start_enabled(self, enabled: bool) -> None:
-        self.running_tab.set_run_enabled(enabled)
+        self.bot_canvas.set_run_enabled(enabled)
+
+    def update_recent_menu(self, paths: list) -> None:
+        """Rebuild the Open Recent submenu from a list of file paths."""
+        self._recent_menu.clear()
+        if not paths:
+            self._update_recent_placeholder()
+            return
+        for path in paths:
+            action = QAction(path, self)
+            action.triggered.connect(lambda _checked, p=path: self.on_open_recent(p))
+            self._recent_menu.addAction(action)
 
     def set_save_enabled(self, enabled: bool) -> None:
         self._save_action.setEnabled(enabled)
         self._save_as_action.setEnabled(enabled)
 
-    def switch_to_running_tab(self) -> None:
-        self.tabs.setCurrentWidget(self.running_tab)
-
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
 
-    def _on_tab_changed(self) -> None:
-        if self.tabs.currentWidget() is self.running_tab:
-            self._right_stack.setCurrentIndex(1)
-        else:
-            self._right_stack.setCurrentIndex(0)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _placeholder_tab(text: str) -> QWidget:
-    widget = QWidget()
-    layout = QVBoxLayout(widget)
-    label = QLabel(text)
-    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    layout.addWidget(label)
-    return widget
-
+    def _update_recent_placeholder(self) -> None:
+        action = QAction("(No recent files)", self)
+        action.setEnabled(False)
+        self._recent_menu.addAction(action)

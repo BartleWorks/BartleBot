@@ -11,17 +11,14 @@ class XYZModel(BaseModel):
     z: float
 
 
-class ConditionModel(BaseModel):
-    type: str
-    params: dict = Field(default_factory=dict)
-
-
 class TransitionModel(BaseModel):
     trigger: str
     source: str
     dest: str
-    # Strings referencing condition methods on BotMachine (e.g. "last_result_is_success")
-    conditions: list[str] = Field(default_factory=list)
+    # Expected return value from the source node (e.g. "SUCCESS", "FAILURE").
+    # BotMachine auto-generates a condition method from this at construction time.
+    # None means the transition fires unconditionally (no condition check).
+    when: str | None = None
     label: str | None = None
 
 
@@ -63,10 +60,18 @@ class BotConfig(BaseModel):
 
     def to_machine_config(self) -> dict:
         """Convert to the flat dict format BotMachine expects."""
+        trans_list = []
+        for t in self.transitions:
+            d: dict = {"trigger": t.trigger, "source": t.source, "dest": t.dest}
+            if t.when:
+                d["conditions"] = [f"_result_is_{t.when}"]
+            if t.label:
+                d["label"] = t.label
+            trans_list.append(d)
         return {
             "initial": self.initial,
             "states": [s.model_dump() for s in self.states],
-            "transitions": [t.model_dump(exclude_none=True) for t in self.transitions],
+            "transitions": trans_list,
         }
 
     @classmethod

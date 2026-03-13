@@ -1,0 +1,113 @@
+{
+  "name": "Unicorn Way Test",
+  "description": "Minimum viable product bot that moves the player between The Commons and Unicorn Way forever.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "start_location": "The Commons",
+  "drops": [
+    "None"
+  ],
+  "credits": "BartleBot",
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "go_to_zone",
+      "label": "Go to Unicorn Way from The Commons",
+      "position": {
+        "x": -244.19427436276237,
+        "y": -141.20180498934096
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Streets/WC_Unicorn",
+        "xyz": {
+          "x": 6275.58,
+          "y": 5489.92,
+          "z": -27.91
+        }
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to The Commons from Unicorn Way",
+      "position": {
+        "x": 51.60091910797436,
+        "y": -141.50296072721306
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Unicorn",
+        "to_zone": "WizardCity/WC_Hub",
+        "xyz": {
+          "x": -42.62,
+          "y": -1056.05,
+          "z": 0.03
+        }
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "go_to_zone",
+      "label": "Go to Ravenwood from The Commons",
+      "position": {
+        "x": 329.4131820783065,
+        "y": -143.09971123682806
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Ravenwood",
+        "xyz": {
+          "x": -85.94,
+          "y": 1775.91,
+          "z": -27.99
+        }
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "go_to_zone",
+      "label": "Go to The Commons from Ravenwood",
+      "position": {
+        "x": 597.3325690905657,
+        "y": -142.16266256474702
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Ravenwood",
+        "to_zone": "WizardCity/WC_Hub",
+        "xyz": {
+          "x": 51.08,
+          "y": -2199.34,
+          "z": -155.81
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "SUCCESS"
+    }
+  ]
+}

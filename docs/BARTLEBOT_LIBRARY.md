@@ -46,13 +46,13 @@ Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil
 - Flow:
   1. Verify all clients are in `from_zone`. If not, return `FAILURE`.
   2. Teleport all clients to `sigil_xyz`.
-  3. Wait for the dungeon entrance prompt to appear (check via `client.is_in_npc_range()` or window visibility). The entrance prompt is distinct from the dungeon warning — X should only be sent after the entrance prompt is showing.
+  3. Wait for the dungeon entrance prompt to appear (check via `client.is_in_npc_range()` or window visibility). The entrance prompt is distinct from the dungeon warning — X should only be sent after the entrance prompt is showing. If the prompt does not show after a short timeout, teleport all clients to `reset_xyz` and restart from step 2.
   4. Press X on all clients to interact with the sigil.
   5. Optionally wait a short timeout for a dungeon warning dialog and confirm it if it appears — do not wait indefinitely, as players can disable dungeon warnings in game settings.
   6. Wait for all clients' zone to change to `dungeon_zone` (with loading screen wait).
-  7. If any clients did not enter `dungeon_zone` (desync): teleport desynced clients to `reset_xyz` to dismiss the prompt, then retry from step 2.
+  7. If any clients did not enter `dungeon_zone` (desync) return `FAILURE`
   8. Return `SUCCESS` once all clients are in `dungeon_zone`; return `FAILURE` if retries are exhausted.
-- `FAILURE` cases: clients not in `from_zone`; persistent desync after retries.
+- `FAILURE` cases: clients not in `from_zone`; clients not in `dungeon_zone` after loading attempted.
 
 ### handle_combat
 
@@ -88,7 +88,7 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
 - APIs: `client.teleport(XYZ)`, `client.is_in_npc_range()`, `client.is_in_dialog()`, `client.send_key(Keycode.X)`, `client.send_key(Keycode.SPACE)`, window tree helpers for prompt detection
 - Flow:
   1. Teleport all clients to `interact_xyz`.
-  2. Wait for the interact prompt to appear (check via `client.is_in_npc_range()` or window visibility).
+  2. Wait for the interact prompt to appear (check via `client.is_in_npc_range()` or window visibility). If prompt does not appear after timeout, teleport all clients to `reset_xyz` and restart from step 1.
   3. Press X on all clients to begin interaction.
   4. While any client has a dialogue window visible (`client.is_in_dialog()`), repeatedly send SPACE to advance through dialogue. Continue until dialogue is dismissed on all clients.
   5. If the interact prompt never appeared: teleport clients to `reset_xyz` to clear state, then retry from step 1.
