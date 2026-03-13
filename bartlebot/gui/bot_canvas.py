@@ -12,7 +12,7 @@ import time
 from typing import Any, Callable
 
 from PyQt6.QtCore import Qt, QPointF, QTimer
-from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCursor
+from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
     QGraphicsItem, QGraphicsLineItem, QGraphicsScene, QHBoxLayout,
@@ -49,6 +49,12 @@ _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.INFO:    "[INF]",
     LogLevel.WARNING: "[WRN]",
     LogLevel.ERROR:   "[ERR]",
+}
+_LOG_COLORS: dict[LogLevel, str] = {
+    LogLevel.DEBUG:   "#5599ff",
+    LogLevel.INFO:    "#55cc55",
+    LogLevel.WARNING: "#ddcc00",
+    LogLevel.ERROR:   "#ff5555",
 }
 
 
@@ -1117,7 +1123,18 @@ class BotCanvas(QWidget):
         if level < threshold:
             return
         prefix = _LOG_PREFIXES.get(level, "[INF]")
-        self._append_log(f"[{self._elapsed_str()}] {prefix} {msg}")
+        color = _LOG_COLORS.get(level, "#55cc55")
+
+        fmt_plain = QTextCharFormat()
+        fmt_colored = QTextCharFormat()
+        fmt_colored.setForeground(QColor(color))
+
+        cursor = self._log.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(f"[{self._elapsed_str()}] ", fmt_plain)
+        cursor.insertText(prefix, fmt_colored)
+        cursor.insertText(f" {msg}\n", fmt_plain)
+        self._log.moveCursor(QTextCursor.MoveOperation.End)
 
     def _append_log(self, text: str) -> None:
         self._log.appendPlainText(text)

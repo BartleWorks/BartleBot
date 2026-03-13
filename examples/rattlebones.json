@@ -16,7 +16,7 @@
       "label": "Enter boss tower",
       "position": {
         "x": 0.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Unicorn",
@@ -34,7 +34,7 @@
       "label": "Fight boss",
       "position": {
         "x": 262.1671284965035,
-        "y": 41.47907293324042
+        "y": 68.95814586648083
       },
       "params": {
         "enemy": "Skeleton-Silver-WCBoss-L01",
