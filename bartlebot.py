@@ -191,6 +191,7 @@ async def start_bot(window: MainWindow) -> None:
         on_state_change=window.set_fsm_state,
         on_transition=window.bot_canvas.on_transition,
         on_drop=window.drop_panel.add_drop,
+        on_log=window.bot_canvas.append_log,
     )
     _current_machine = machine
 

@@ -3,6 +3,7 @@
 import asyncio
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.log_level import LogLevel
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -68,34 +69,76 @@ async def run(machine, clients: list, params: dict) -> str:
     enemy_name: str = params.get("enemy", "")
     use_bot_default: bool = params.get("use_bot_default", True)
 
-    combat_dsl = _resolve_combat_dsl(machine, params, use_bot_default)
+    combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_bot_default)
     if not combat_dsl:
+        machine.log(
+            "FAILURE: no combat DSL available "
+            "(use_bot_default is off and per-node combat_config is empty)",
+            LogLevel.WARNING,
+        )
         return "FAILURE"
+
+    enemy_display = repr(enemy_name) if enemy_name else "(closest)"
+    machine.log(f"handle_combat: enemy={enemy_display}, DSL source={dsl_source!r}")
+    machine.log(
+        f"Combat DSL: {combat_dsl[:80]}{'…' if len(combat_dsl) > 80 else ''}",
+        LogLevel.DEBUG,
+    )
 
     # 1. Resolve target entity for each client
     targets = await asyncio.gather(*[_find_target(c, enemy_name) for c in clients])
     if not all(targets):
+        none_idx = [i for i, t in enumerate(targets) if t is None]
+        machine.log(
+            f"FAILURE: target not found for client(s) {none_idx} "
+            f"(enemy={enemy_display})",
+            LogLevel.WARNING,
+        )
         return "FAILURE"
+
+    machine.log(f"Targets resolved for {len(clients)} client(s)", LogLevel.DEBUG)
 
     # 2. Snapshot chat before combat so we can diff for drops afterward
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
     # 3. Teleport all clients to their target
+    machine.log("Teleporting clients to target…", LogLevel.DEBUG)
     await asyncio.gather(*[c.tp_to(t) for c, t in zip(clients, targets)])
 
     # 4. Wait for all clients to enter combat
+    machine.log(
+        f"Waiting for all clients to enter combat (timeout={_ENTER_COMBAT_TIMEOUT}s)…",
+        LogLevel.DEBUG,
+    )
     if not await _wait_for_all_in_combat(clients, _ENTER_COMBAT_TIMEOUT):
+        machine.log(
+            f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
+            "clients to enter combat",
+            LogLevel.WARNING,
+        )
         return "FAILURE"
+
+    machine.log("All clients in combat — running SprintyCombat")
 
     # 5. Run SprintyCombat for all clients in parallel
     await asyncio.gather(*[_run_combat(c, combat_dsl) for c in clients])
 
+    machine.log("SprintyCombat finished for all clients", LogLevel.DEBUG)
+
     # 6. Detect drops by comparing chat before and after combat
+    drops_found: list[str] = []
     for i, (client, before) in enumerate(zip(clients, chat_before)):
         after = await snapshot_chat(client)
         for item_name in extract_new_drops(before, after):
             machine.on_drop(item_name, 1, i)
+            drops_found.append(item_name)
 
+    if drops_found:
+        machine.log(f"Detected {len(drops_found)} drop(s): {', '.join(drops_found)}")
+    else:
+        machine.log("No drops detected", LogLevel.DEBUG)
+
+    machine.log("SUCCESS: combat complete")
     return "SUCCESS"
 
 
@@ -103,14 +146,14 @@ async def run(machine, clients: list, params: dict) -> str:
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _resolve_combat_dsl(machine, params: dict, use_bot_default: bool) -> str:
-    """Return the DSL string to use, or empty string if none can be resolved."""
+def _resolve_combat_dsl(machine, params: dict, use_bot_default: bool) -> tuple[str, str]:
+    """Return (dsl_string, source_label). dsl_string is empty if none can be resolved."""
     if use_bot_default:
         bot_cfg = machine._bot_config
         if bot_cfg is not None and not bot_cfg.use_bartlebot_default_combat_config:
-            return bot_cfg.default_combat_config or ""
-        return BARTLEBOT_DEFAULT_COMBAT_CONFIG
-    return params.get("combat_config", "").strip()
+            return bot_cfg.default_combat_config or "", "bot-level custom config"
+        return BARTLEBOT_DEFAULT_COMBAT_CONFIG, "BartleBot built-in default"
+    return params.get("combat_config", "").strip(), "per-node config"
 
 
 async def _find_target(client, enemy_name: str):

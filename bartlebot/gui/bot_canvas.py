@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
+from bartlebot.log_level import LogLevel
 from bartlebot.gui.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
 )
@@ -42,6 +43,13 @@ _TAB_LOG   = 1  # bottom tab index for Log
 _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
+
+_LOG_PREFIXES: dict[LogLevel, str] = {
+    LogLevel.DEBUG:   "[DBG]",
+    LogLevel.INFO:    "[INF]",
+    LogLevel.WARNING: "[WRN]",
+    LogLevel.ERROR:   "[ERR]",
+}
 
 
 class BotMode(enum.Enum):
@@ -860,10 +868,28 @@ class BotCanvas(QWidget):
         self._log.setReadOnly(True)
         self._log.setFont(QFont("Consolas", 9))
 
+        log_header = QWidget()
+        log_header_row = QHBoxLayout(log_header)
+        log_header_row.setContentsMargins(4, 2, 4, 2)
+        log_header_row.addWidget(QLabel("Min level:"))
+        self._log_level_combo = QComboBox()
+        self._log_level_combo.addItems(["DEBUG", "INFO", "WARNING", "ERROR"])
+        self._log_level_combo.setCurrentText("INFO")
+        self._log_level_combo.setFixedWidth(90)
+        log_header_row.addWidget(self._log_level_combo)
+        log_header_row.addStretch()
+
+        log_container = QWidget()
+        log_vbox = QVBoxLayout(log_container)
+        log_vbox.setContentsMargins(0, 0, 0, 0)
+        log_vbox.setSpacing(0)
+        log_vbox.addWidget(log_header)
+        log_vbox.addWidget(self._log, 1)
+
         # ── Bottom tab widget ─────────────────────────────────────────
         self._bottom_tabs = QTabWidget()
         self._bottom_tabs.addTab(self._param_panel, "Properties")  # _TAB_PROPS = 0
-        self._bottom_tabs.addTab(self._log, "Log")                 # _TAB_LOG   = 1
+        self._bottom_tabs.addTab(log_container, "Log")             # _TAB_LOG   = 1
 
         # ── Canvas vertical splitter ──────────────────────────────────
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -916,13 +942,13 @@ class BotCanvas(QWidget):
         self._elapsed_label.setText("00:00:00")
         self._tick_timer.start()
         self._bottom_tabs.setCurrentIndex(_TAB_LOG)
-        self._append_log("=== Bot started ===")
+        self.append_log("=== Bot started ===")
 
     def set_paused(self) -> None:
         self._run_state = _PAUSED
         self._run_pause_btn.setText("▶  Resume")
         self._run_pause_btn.setEnabled(True)
-        self._append_log(f"[{self._elapsed_str()}] === Paused ===")
+        self.append_log("=== Paused ===")
 
     def set_idle(self) -> None:
         self._run_state = _IDLE
@@ -935,7 +961,7 @@ class BotCanvas(QWidget):
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = None
-        self._append_log("=== Bot stopped ===")
+        self.append_log("=== Bot stopped ===")
 
     def set_state(self, state_id: str) -> None:
         """Highlight the active FSM state node."""
@@ -945,13 +971,13 @@ class BotCanvas(QWidget):
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
         self._state_label.setText(f"State: {state_id}")
-        self._append_log(f"[{self._elapsed_str()}] Entered: {state_id}")
+        self.append_log(f"Entered: {state_id}")
 
     def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
         if prev_state == next_state:
-            self._append_log(f"[{self._elapsed_str()}] Result: {result} → (retry {next_state})")
+            self.append_log(f"Result: {result} → (retry {next_state})")
         else:
-            self._append_log(f"[{self._elapsed_str()}] Result: {result} → {next_state}")
+            self.append_log(f"Result: {result} → {next_state}")
 
     # ------------------------------------------------------------------
     # Toolbar button handlers
@@ -966,7 +992,7 @@ class BotCanvas(QWidget):
         elif self._run_state == _PAUSED:
             self._run_state = _RUNNING
             self._run_pause_btn.setText("⏸  Pause")
-            self._append_log(f"[{self._elapsed_str()}] === Resumed ===")
+            self.append_log("=== Resumed ===")
             self.on_resume()
 
     def _on_edit_clicked(self) -> None:
@@ -1084,6 +1110,14 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
     # Log helpers
     # ------------------------------------------------------------------
+
+    def append_log(self, msg: str, level: LogLevel = LogLevel.INFO) -> None:
+        """Public log entry point for node messages. Filtered by the level dropdown."""
+        threshold = LogLevel[self._log_level_combo.currentText()]
+        if level < threshold:
+            return
+        prefix = _LOG_PREFIXES.get(level, "[INF]")
+        self._append_log(f"[{self._elapsed_str()}] {prefix} {msg}")
 
     def _append_log(self, text: str) -> None:
         self._log.appendPlainText(text)

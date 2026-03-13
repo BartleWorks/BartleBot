@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING, Callable
 
 from transitions.extensions.asyncio import AsyncMachine
 
+from bartlebot.log_level import LogLevel
+
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
@@ -27,6 +29,7 @@ class BotMachine:
         on_state_change: Callable[[str], None] | None = None,
         on_transition: Callable[[str, str, str], None] | None = None,
         on_drop: Callable[[str, int, int], None] | None = None,
+        on_log: Callable[[str, LogLevel], None] | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -35,6 +38,7 @@ class BotMachine:
         self._on_state_change = on_state_change
         self._on_transition = on_transition
         self._on_drop = on_drop
+        self._on_log = on_log
         self._stop_flag = asyncio.Event()
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
@@ -86,6 +90,13 @@ class BotMachine:
             if opt.name == name:
                 return opt.default
         return default
+
+    # --- Logging ---
+
+    def log(self, msg: str, level: LogLevel = LogLevel.INFO) -> None:
+        """Emit a log message from a node."""
+        if self._on_log:
+            self._on_log(msg, level)
 
     # --- Drop reporting ---
 
