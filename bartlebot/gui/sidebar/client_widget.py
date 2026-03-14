@@ -60,19 +60,30 @@ class ClientWidget(QWidget):
         zone_row.addWidget(copy_zone_btn)
         layout.addLayout(zone_row)
 
-        # XYZ row
+        # XYZ row — three independent labels so each has its own layout height
         layout.addWidget(field_label("Current XYZ"))
-        self._xyz_label = QLabel("—")
-        self._xyz_label.setWordWrap(True)
-        self._xyz_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+
+        def _xyz_val_label(text: str) -> QLabel:
+            lbl = QLabel(text)
+            lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            return lbl
+
+        self._x_label = _xyz_val_label("X=—")
+        self._y_label = _xyz_val_label("Y=—")
+        self._z_label = _xyz_val_label("Z=—")
+
+        xyz_labels = QVBoxLayout()
+        xyz_labels.setSpacing(0)
+        xyz_labels.addWidget(self._x_label)
+        xyz_labels.addWidget(self._y_label)
+        xyz_labels.addWidget(self._z_label)
+
         copy_xyz_btn = QPushButton("Copy XYZ")
         copy_xyz_btn.setFixedWidth(80)
         copy_xyz_btn.clicked.connect(self._copy_xyz)
         xyz_row = QHBoxLayout()
-        xyz_row.addWidget(self._xyz_label, 1)
-        xyz_row.addWidget(copy_xyz_btn)
+        xyz_row.addLayout(xyz_labels, 1)
+        xyz_row.addWidget(copy_xyz_btn, 0, Qt.AlignmentFlag.AlignTop)
         layout.addLayout(xyz_row)
 
         # Freecam controls
@@ -187,12 +198,14 @@ class ClientWidget(QWidget):
                 pos = await self._client.body.position()
             xyz_dict = {"x": round(pos.x, 2), "y": round(pos.y, 2), "z": round(pos.z, 2)}
             self._last_xyz = json.dumps(xyz_dict)
-            self._xyz_label.setText(
-                f"X={pos.x:.1f}\nY={pos.y:.1f}\nZ={pos.z:.1f}"
-            )
+            self._x_label.setText(f"X={pos.x:.1f}")
+            self._y_label.setText(f"Y={pos.y:.1f}")
+            self._z_label.setText(f"Z={pos.z:.1f}")
         except Exception:
             self._last_xyz = "—"
-            self._xyz_label.setText("—")
+            self._x_label.setText("X=—")
+            self._y_label.setText("Y=—")
+            self._z_label.setText("Z=—")
 
         # Closest mob — updated every 20 ticks (~2 s)
         self._mob_tick += 1

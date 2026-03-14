@@ -14,14 +14,14 @@ Users build bots in BartleBot's visual editor and save them as JSON files. They 
 
 | Technology | Role |
 |------------|------|
-| Python 3.13+ | Language |
+| [Python 3.13+](https://www.python.org/downloads/) | Language |
 | [Poetry](https://python-poetry.org/) | Dependency management |
-| PyQt6 | GUI framework |
+| [PyQt6](https://pypi.org/project/PyQt6/) | GUI framework |
 | [qasync](https://github.com/CabbageDevelopment/qasync) | Bridges asyncio and the Qt event loop |
-| [transitions](https://github.com/pytransitions/transitions) (`asyncio` extra) | FSM engine (`AsyncMachine`) |
+| [transitions](https://github.com/pytransitions/transitions) | FSM engine (`AsyncMachine`) that builds upon `asyncio`|
 | [Pydantic](https://docs.pydantic.dev/) | Bot file validation and serialization |
 | [WizWalker](https://github.com/Deimos-Wizard101/wizwalker) | Low-level Wizard101 memory hooking and client API |
-| [WizSprinter](https://github.com/Deimos-Wizard101/wizsprinter) | Higher-level utilities on top of WizWalker (entity finding, SprintyCombat) |
+| [WizSprinter](https://github.com/Deimos-Wizard101/wizsprinter) | Higher-level utilities on top of WizWalker (entity finding, `SprintyCombat`) |
 
 ---
 
