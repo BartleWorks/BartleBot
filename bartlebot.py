@@ -6,11 +6,11 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 import qasync
 
-from wizwalker import ClientHandler
+from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui.bot_canvas import BotMode
+from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files
@@ -19,7 +19,7 @@ from bartlebot import recent_files
 # ---------------------------------------------------------------------------
 # Client management
 # ---------------------------------------------------------------------------
-_handler = ClientHandler()
+_handler = WizSprinter()
 _clients: list = []
 _current_machine: BotMachine | None = None
 
@@ -64,14 +64,14 @@ async def client_loop(window: MainWindow) -> None:
             if not clients:
                 window.set_zone("No client found")
                 _clients = []
-                window.client_sidebar.set_clients([])
+                window.right_sidebar.clients.set_clients([])
                 window.set_start_enabled(False)
                 await asyncio.sleep(3.0)
                 continue
 
             if clients != _clients:
                 _clients = clients
-                window.client_sidebar.set_clients(clients)
+                window.right_sidebar.clients.set_clients(clients)
                 window.set_start_enabled(_start_enabled())
 
             zone = await clients[0].zone_name()
@@ -80,7 +80,7 @@ async def client_loop(window: MainWindow) -> None:
 
         except Exception:
             _clients = []
-            window.client_sidebar.set_clients([])
+            window.right_sidebar.clients.set_clients([])
             window.set_start_enabled(False)
             window.set_zone("Error — retrying…")
             print(traceback.format_exc())
@@ -102,7 +102,7 @@ def new_bot(window: MainWindow) -> None:
     _loaded_config = config
     _last_save_path = None
     window.set_bot_name(config.name, "Untitled")
-    window.bot_info_panel.set_config(config)
+    window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
@@ -127,7 +127,7 @@ def open_bot(window: MainWindow, path: str | None = None) -> None:
     _loaded_config = config
     _last_save_path = path
     window.set_bot_name(config.name, Path(path).name)
-    window.bot_info_panel.set_config(config)
+    window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
@@ -187,14 +187,17 @@ async def start_bot(window: MainWindow) -> None:
         clients=_clients,
         config=_loaded_config.to_machine_config(),
         node_registry=NODE_REGISTRY,
+        bot_config=_loaded_config,
         on_state_change=window.set_fsm_state,
         on_transition=window.bot_canvas.on_transition,
+        on_drop=window.right_sidebar.drops.add_drop,
+        on_log=window.bot_canvas.append_log,
     )
     _current_machine = machine
 
     window.set_start_enabled(False)
-    window.drop_panel.setup_clients(len(_clients))
-    window.drop_panel.clear()
+    window.right_sidebar.drops.setup_clients(len(_clients))
+    window.right_sidebar.drops.clear_drops()
     window.bot_canvas.set_running()
 
     try:
@@ -235,11 +238,11 @@ async def main(app: QApplication) -> None:
     def _config_changed() -> None:
         window.set_save_enabled(True)
         if _loaded_config is not None:
-            window.bot_info_panel.refresh_states(_loaded_config.states)
+            window.left_sidebar.bot_info.refresh_states(_loaded_config.states)
             window.bot_canvas.refresh_initial(_loaded_config.initial)
 
     def _mode_changed(mode: BotMode) -> None:
-        window.bot_info_panel.set_editable(mode == BotMode.EDIT)
+        window.left_sidebar.set_editable(mode == BotMode.EDIT)
 
     def _save_and_done() -> None:
         save_bot(window)
@@ -252,7 +255,7 @@ async def main(app: QApplication) -> None:
     window.bot_canvas.on_resume = resume_bot
     window.bot_canvas.stop_button.clicked.connect(stop_bot)
 
-    window.bot_info_panel.on_config_changed = _config_changed
+    window.left_sidebar.on_config_changed = _config_changed
     window.on_open_recent = lambda path: open_bot(window, path)
     window.update_recent_menu(recent_files.load())
 

@@ -19,6 +19,10 @@ class TransitionModel(BaseModel):
     # BotMachine auto-generates a condition method from this at construction time.
     # None means the transition fires unconditionally (no condition check).
     when: str | None = None
+    # Bot option name that must be truthy for this transition to fire.
+    # BotMachine generates a _flag_<name> condition method for this.
+    # Used to implement bot-level behavioural flags (e.g. "repeat").
+    flag: str | None = None
     label: str | None = None
 
 
@@ -43,10 +47,13 @@ class BotConfig(BaseModel):
     version: str = "1.0"
     clients: str | list[int] = "all"
     initial: str
+    # Inline WizSprinter combat DSL string. None = use BartleBot built-in default.
+    # use_bartlebot_default_combat_config controls whether this field is active.
     default_combat_config: str | None = None
+    use_bartlebot_default_combat_config: bool = True
     start_location: str | None = None
     drops: list[str] = Field(default_factory=list)
-    credits: str | None = None
+    authors: str | None = None
     options: list[BotOptionModel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel]
@@ -65,6 +72,8 @@ class BotConfig(BaseModel):
             d: dict = {"trigger": t.trigger, "source": t.source, "dest": t.dest}
             if t.when:
                 d["conditions"] = [f"_result_is_{t.when}"]
+            if t.flag:
+                d.setdefault("conditions", []).append(f"_flag_{t.flag}")
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
@@ -72,6 +81,7 @@ class BotConfig(BaseModel):
             "initial": self.initial,
             "states": [s.model_dump() for s in self.states],
             "transitions": trans_list,
+            "default_combat_config": self.default_combat_config,
         }
 
     @classmethod

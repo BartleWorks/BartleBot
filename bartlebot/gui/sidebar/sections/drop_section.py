@@ -1,29 +1,24 @@
-"""Right sidebar panel for the Run view: per-client drop tables with CSV export."""
+"""Sidebar section: per-client drop tables with CSV export."""
 
 import csv
 
-from PyQt6.QtWidgets import (
-    QFileDialog, QHeaderView, QLabel, QPushButton,
-    QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
-)
-from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QFileDialog, QHeaderView, QPushButton,
+    QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout,
+)
+
+from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 
 
-class DropPanel(QWidget):
-    """Per-client tabbed drop-tracking table with CSV export."""
+class DropSection(SidebarSection):
+    """Collapsible 'Drops' section with per-client drop tables and CSV export."""
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(4)
+        super().__init__("Drops", parent)
 
-        header = QLabel("Drops")
-        font = QFont()
-        font.setBold(True)
-        header.setFont(font)
-        layout.addWidget(header)
+        layout = QVBoxLayout()
+        layout.setSpacing(4)
 
         self._tabs = QTabWidget()
         layout.addWidget(self._tabs, 1)
@@ -32,7 +27,7 @@ class DropPanel(QWidget):
         export_btn.clicked.connect(self._export_csv)
         layout.addWidget(export_btn)
 
-        self.setMinimumWidth(190)
+        self.set_content_layout(layout)
 
     # ------------------------------------------------------------------
     # Public API
@@ -63,7 +58,7 @@ class DropPanel(QWidget):
         qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         table.setItem(row, 1, qty_item)
 
-    def clear(self) -> None:
+    def clear_drops(self) -> None:
         for i in range(self._tabs.count()):
             table = self._tabs.widget(i)
             if isinstance(table, QTableWidget):

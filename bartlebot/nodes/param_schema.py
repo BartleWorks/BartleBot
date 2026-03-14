@@ -9,17 +9,21 @@ class ParamField:
     """Describes one parameter accepted by a node type.
 
     Attributes:
-        key:     JSON key used in the params dict.
-        type:    Widget type: "str" | "int" | "float" | "bool" | "xyz".
-        label:   Human-readable form label.
-        help:    Tooltip / documentation text shown on hover.
-        default: Value used when no existing param data is present.
+        key:         JSON key used in the params dict.
+        type:        Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz".
+                     "text" renders as a multi-line QPlainTextEdit.
+        label:       Human-readable form label.
+        help:        Tooltip / documentation text shown on hover.
+        default:     Value used when no existing param data is present.
+        disabled_by: Key of a bool field in the same schema; when that field is
+                     True this field's widget is disabled. Empty string = no link.
     """
     key: str
     type: str
     label: str
     help: str = ""
     default: Any = None
+    disabled_by: str = ""
 
 
 @dataclass

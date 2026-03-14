@@ -12,7 +12,7 @@ import time
 from typing import Any, Callable
 
 from PyQt6.QtCore import Qt, QPointF, QTimer
-from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCursor
+from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
     QGraphicsItem, QGraphicsLineItem, QGraphicsScene, QHBoxLayout,
@@ -21,7 +21,8 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
-from bartlebot.gui.graph_items import (
+from bartlebot.log_level import LogLevel
+from bartlebot.gui.canvas.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
@@ -42,6 +43,19 @@ _TAB_LOG   = 1  # bottom tab index for Log
 _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
+
+_LOG_PREFIXES: dict[LogLevel, str] = {
+    LogLevel.DEBUG:   "[DBG]",
+    LogLevel.INFO:    "[INF]",
+    LogLevel.WARNING: "[WRN]",
+    LogLevel.ERROR:   "[ERR]",
+}
+_LOG_COLORS: dict[LogLevel, str] = {
+    LogLevel.DEBUG:   "#5599ff",
+    LogLevel.INFO:    "#55cc55",
+    LogLevel.WARNING: "#ddcc00",
+    LogLevel.ERROR:   "#ff5555",
+}
 
 
 class BotMode(enum.Enum):
@@ -426,6 +440,19 @@ class _DynamicParamForm(QWidget):
             placeholder = QLabel("This node type has no parameters.")
             placeholder.setStyleSheet("color: #888;")
             self._form.addRow(placeholder)
+        # Wire disabled_by: when controller checkbox is checked, disable the target widget
+        for field in schema:
+            if field.disabled_by and field.disabled_by in self._widgets:
+                controller = self._widgets[field.disabled_by]
+                controlled = self._widgets[field.key]
+                display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                if isinstance(controller, QCheckBox):
+                    display_w.setEnabled(not controller.isChecked())
+                    controller.checkStateChanged.connect(
+                        lambda state, w=display_w: w.setEnabled(
+                            state != Qt.CheckState.Checked
+                        )
+                    )
         self._suppress = False
 
     def get_params(self) -> dict:
@@ -434,6 +461,8 @@ class _DynamicParamForm(QWidget):
             if isinstance(w, tuple):
                 x_s, y_s, z_s, _ = w
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
+            elif isinstance(w, QPlainTextEdit):
+                result[key] = w.toPlainText()
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):
@@ -445,6 +474,15 @@ class _DynamicParamForm(QWidget):
         return result
 
     def _make_widget(self, field_type: str, val: Any, help_text: str, key: str = "") -> Any:
+        if field_type == "text":
+            w = QPlainTextEdit()
+            w.setPlainText(str(val) if val is not None else "")
+            w.setFixedHeight(120)
+            w.setPlaceholderText("Enter combat DSL…")
+            if help_text:
+                w.setToolTip(help_text)
+            w.textChanged.connect(self._emit_changed)
+            return w
         if field_type == "str":
             w = QLineEdit()
             w.setText(str(val) if val is not None else "")
@@ -623,15 +661,24 @@ class _ParamPanel(QWidget):
         self._edge_src_lbl = QLabel()
         self._edge_dst_lbl = QLabel()
         self._edge_when_combo = QComboBox()
+        self._edge_flag_combo = QComboBox()
         ef.addRow("Source", self._edge_src_lbl)
         ef.addRow("Dest", self._edge_dst_lbl)
         ef.addRow("When", self._edge_when_combo)
+
+        flag_lbl = QLabel("Flag")
+        flag_lbl.setToolTip(
+            "Bot option that must be truthy for this transition to fire.\n"
+            "Both When and Flag conditions must be satisfied."
+        )
+        ef.addRow(flag_lbl, self._edge_flag_combo)
         self._stack.addWidget(edge_w)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_type_combo.currentTextChanged.connect(self._on_node_type_changed)
         self._param_form.on_changed = self._on_param_form_changed
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
+        self._edge_flag_combo.currentTextChanged.connect(self._on_edge_flag_changed)
 
     def show_idle(self) -> None:
         self._state = None
@@ -654,13 +701,18 @@ class _ParamPanel(QWidget):
         self._stack.setCurrentIndex(_PAGE_NODE)
 
     def show_transition(
-        self, transition: TransitionModel, src_returns: list[str] | None = None
+        self,
+        transition: TransitionModel,
+        src_returns: list[str] | None = None,
+        option_names: list[str] | None = None,
     ) -> None:
         self._transition = transition
         self._state = None
         self._suppress = True
         self._edge_src_lbl.setText(transition.source)
         self._edge_dst_lbl.setText(transition.dest)
+
+        # Populate "When" combo from source node's possible return values
         self._edge_when_combo.clear()
         self._edge_when_combo.addItem("(none)")
         for name in (src_returns or []):
@@ -673,6 +725,22 @@ class _ParamPanel(QWidget):
                 self._edge_when_combo.setCurrentIndex(idx)
         else:
             self._edge_when_combo.setCurrentIndex(0)
+
+        # Populate "Flag" combo from bot-wide options
+        self._edge_flag_combo.clear()
+        self._edge_flag_combo.addItem("(none)")
+        for name in (option_names or []):
+            self._edge_flag_combo.addItem(name)
+        if transition.flag and self._edge_flag_combo.findText(transition.flag) < 0:
+            # Flag references an option that no longer exists — show it anyway
+            self._edge_flag_combo.addItem(transition.flag)
+        if transition.flag:
+            idx = self._edge_flag_combo.findText(transition.flag)
+            if idx >= 0:
+                self._edge_flag_combo.setCurrentIndex(idx)
+        else:
+            self._edge_flag_combo.setCurrentIndex(0)
+
         self._suppress = False
         self._stack.setCurrentIndex(_PAGE_EDGE)
 
@@ -703,6 +771,12 @@ class _ParamPanel(QWidget):
         if self._suppress or self._transition is None:
             return
         self._transition.when = None if text == "(none)" else text
+        self.on_config_changed()
+
+    def _on_edge_flag_changed(self, text: str) -> None:
+        if self._suppress or self._transition is None:
+            return
+        self._transition.flag = None if text == "(none)" else text
         self.on_config_changed()
 
     def _rebuild_returns(self, node_type: str) -> None:
@@ -782,7 +856,7 @@ class BotCanvas(QWidget):
         self._elapsed_label.setFont(QFont("Consolas", 10))
         self._elapsed_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
-        self._edit_btn = QPushButton("✏  Edit")
+        self._edit_btn = QPushButton("Edit")
         self._edit_btn.setFixedWidth(80)
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_clicked)
@@ -804,15 +878,15 @@ class BotCanvas(QWidget):
         self._add_state_btn.setFixedWidth(110)
         self._add_state_btn.clicked.connect(self._on_add_state)
 
-        editing_lbl = QLabel("⚠  Editing — run disabled")
+        editing_lbl = QLabel("Editing — run disabled")
         editing_lbl.setStyleSheet("color: #996600;")
 
-        self._done_btn = QPushButton("✓  Done")
+        self._done_btn = QPushButton("Done")
         self._done_btn.setFixedWidth(90)
         self._done_btn.setToolTip("Apply changes and return to Run mode (does not save to disk)")
         self._done_btn.clicked.connect(self._on_done_clicked)
 
-        self._save_done_btn = QPushButton("💾  Save & Done")
+        self._save_done_btn = QPushButton("Save and Done")
         self._save_done_btn.setFixedWidth(130)
         self._save_done_btn.setToolTip("Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
@@ -836,10 +910,28 @@ class BotCanvas(QWidget):
         self._log.setReadOnly(True)
         self._log.setFont(QFont("Consolas", 9))
 
+        log_header = QWidget()
+        log_header_row = QHBoxLayout(log_header)
+        log_header_row.setContentsMargins(4, 2, 4, 2)
+        log_header_row.addWidget(QLabel("Min level:"))
+        self._log_level_combo = QComboBox()
+        self._log_level_combo.addItems(["DEBUG", "INFO", "WARNING", "ERROR"])
+        self._log_level_combo.setCurrentText("INFO")
+        self._log_level_combo.setFixedWidth(90)
+        log_header_row.addWidget(self._log_level_combo)
+        log_header_row.addStretch()
+
+        log_container = QWidget()
+        log_vbox = QVBoxLayout(log_container)
+        log_vbox.setContentsMargins(0, 0, 0, 0)
+        log_vbox.setSpacing(0)
+        log_vbox.addWidget(log_header)
+        log_vbox.addWidget(self._log, 1)
+
         # ── Bottom tab widget ─────────────────────────────────────────
         self._bottom_tabs = QTabWidget()
         self._bottom_tabs.addTab(self._param_panel, "Properties")  # _TAB_PROPS = 0
-        self._bottom_tabs.addTab(self._log, "Log")                 # _TAB_LOG   = 1
+        self._bottom_tabs.addTab(log_container, "Log")             # _TAB_LOG   = 1
 
         # ── Canvas vertical splitter ──────────────────────────────────
         splitter = QSplitter(Qt.Orientation.Vertical)
@@ -892,13 +984,13 @@ class BotCanvas(QWidget):
         self._elapsed_label.setText("00:00:00")
         self._tick_timer.start()
         self._bottom_tabs.setCurrentIndex(_TAB_LOG)
-        self._append_log("=== Bot started ===")
+        self.append_log("=== Bot started ===")
 
     def set_paused(self) -> None:
         self._run_state = _PAUSED
         self._run_pause_btn.setText("▶  Resume")
         self._run_pause_btn.setEnabled(True)
-        self._append_log(f"[{self._elapsed_str()}] === Paused ===")
+        self.append_log("=== Paused ===")
 
     def set_idle(self) -> None:
         self._run_state = _IDLE
@@ -911,7 +1003,7 @@ class BotCanvas(QWidget):
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = None
-        self._append_log("=== Bot stopped ===")
+        self.append_log("=== Bot stopped ===")
 
     def set_state(self, state_id: str) -> None:
         """Highlight the active FSM state node."""
@@ -921,13 +1013,13 @@ class BotCanvas(QWidget):
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
         self._state_label.setText(f"State: {state_id}")
-        self._append_log(f"[{self._elapsed_str()}] Entered: {state_id}")
+        self.append_log(f"Entered: {state_id}")
 
     def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
         if prev_state == next_state:
-            self._append_log(f"[{self._elapsed_str()}] Result: {result} → (retry {next_state})")
+            self.append_log(f"Result: {result} → (retry {next_state})")
         else:
-            self._append_log(f"[{self._elapsed_str()}] Result: {result} → {next_state}")
+            self.append_log(f"Result: {result} → {next_state}")
 
     # ------------------------------------------------------------------
     # Toolbar button handlers
@@ -942,7 +1034,7 @@ class BotCanvas(QWidget):
         elif self._run_state == _PAUSED:
             self._run_state = _RUNNING
             self._run_pause_btn.setText("⏸  Pause")
-            self._append_log(f"[{self._elapsed_str()}] === Resumed ===")
+            self.append_log("=== Resumed ===")
             self.on_resume()
 
     def _on_edit_clicked(self) -> None:
@@ -1052,7 +1144,10 @@ class BotCanvas(QWidget):
                             spec = NODE_SPECS.get(src_state.node_type)
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
-                        self._param_panel.show_transition(trans, src_returns)
+                        option_names = [
+                            opt.name for opt in self._scene._config.options
+                        ]
+                        self._param_panel.show_transition(trans, src_returns, option_names)
                     break
         else:
             self._param_panel.show_idle()
@@ -1060,6 +1155,25 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
     # Log helpers
     # ------------------------------------------------------------------
+
+    def append_log(self, msg: str, level: LogLevel = LogLevel.INFO) -> None:
+        """Public log entry point for node messages. Filtered by the level dropdown."""
+        threshold = LogLevel[self._log_level_combo.currentText()]
+        if level < threshold:
+            return
+        prefix = _LOG_PREFIXES.get(level, "[INF]")
+        color = _LOG_COLORS.get(level, "#55cc55")
+
+        fmt_plain = QTextCharFormat()
+        fmt_colored = QTextCharFormat()
+        fmt_colored.setForeground(QColor(color))
+
+        cursor = self._log.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(f"[{self._elapsed_str()}] ", fmt_plain)
+        cursor.insertText(prefix, fmt_colored)
+        cursor.insertText(f" {msg}\n", fmt_plain)
+        self._log.moveCursor(QTextCursor.MoveOperation.End)
 
     def _append_log(self, text: str) -> None:
         self._log.appendPlainText(text)

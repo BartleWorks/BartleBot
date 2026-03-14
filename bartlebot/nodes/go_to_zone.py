@@ -2,6 +2,7 @@ import asyncio
 
 from wizwalker import XYZ
 
+from bartlebot.log_level import LogLevel
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -70,26 +71,54 @@ async def run(machine, clients: list, params: dict) -> str:
     xyz_data: dict = params["xyz"]
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
+    machine.log(
+        f"go_to_zone: {from_zone!r} → {to_zone!r} "
+        f"via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
+    )
+
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
     if not all(z == from_zone for z in zones):
+        wrong = [z for z in zones if z != from_zone]
+        machine.log(
+            f"FAILURE: clients not in expected zone "
+            f"(expected={from_zone!r}, unexpected={wrong})",
+            LogLevel.WARNING,
+        )
         return "FAILURE"
 
     # 2. Teleport all clients into the transition bounding box.
+    machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", LogLevel.DEBUG)
     await asyncio.gather(*[c.teleport(target) for c in clients])
 
     # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
+    machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
     if not await _wait_until(lambda: _all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT):
+        machine.log(
+            f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
+            f"to leave {from_zone!r}",
+            LogLevel.WARNING,
+        )
         return "FAILURE"
 
     # 4. Wait for loading screens to finish.
+    machine.log("Zone transition triggered, waiting for loading screen to clear…", LogLevel.DEBUG)
     await _wait_until(lambda: _none_loading(clients), timeout=None)
 
     # 5. Verify all clients arrived in to_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    machine.log(f"Zones after transition: {list(zones)}", LogLevel.DEBUG)
     if not all(z == to_zone for z in zones):
+        actual = list(set(zones))
+        machine.log(
+            f"FAILURE: clients not in expected zone after transition "
+            f"(expected={to_zone!r}, got={actual})",
+            LogLevel.WARNING,
+        )
         return "FAILURE"
 
+    machine.log(f"SUCCESS: all clients in {to_zone!r}")
     return "SUCCESS"
 
 
