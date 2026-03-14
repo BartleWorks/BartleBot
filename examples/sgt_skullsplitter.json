@@ -1,0 +1,95 @@
+{
+  "name": "Sergeant Skullsplitter Farmer",
+  "description": "Continually defeats Sergeant Skullsplitter in Triton Avenue. Proof of concept for enter_dungeon node type.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Triton Avenue",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "enter_dungeon",
+      "label": "Enter Skull Fort",
+      "position": {
+        "x": 0.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Triton",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
+        "sigil_xyz": {
+          "x": 5400.78,
+          "y": -7760.24,
+          "z": 40.09
+        },
+        "reset_xyz": {
+          "x": 5274.68,
+          "y": -6968.93,
+          "z": 59.5
+        }
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "handle_combat",
+      "label": "Fight Sergeant Skullsplitter",
+      "position": {
+        "x": 272.9244009872885,
+        "y": 7.32209611602341
+      },
+      "params": {
+        "enemy": "Skeleton-Gold-WCBoss-L03",
+        "use_bot_default": true,
+        "combat_config": ""
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "go_to_zone",
+      "label": "Exit Skull Fort",
+      "position": {
+        "x": 544.8106031149191,
+        "y": 7.54809919830474
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
+        "to_zone": "WizardCity/WC_Streets/WC_Triton",
+        "xyz": {
+          "x": 6.21,
+          "y": -1219.09,
+          "z": 1.62
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "FAILURE"
+    }
+  ]
+}

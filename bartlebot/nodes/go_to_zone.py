@@ -3,6 +3,7 @@ import asyncio
 from wizwalker import XYZ
 
 from bartlebot.log_level import LogLevel
+from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -52,6 +53,7 @@ NODE_SPEC = NodeSpec(
 )
 
 ZONE_CHANGE_TIMEOUT = 30.0
+DIALOG_CHECK_DELAY = 0.5
 POLL_INTERVAL = 0.25
 
 
@@ -92,9 +94,15 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", LogLevel.DEBUG)
     await asyncio.gather(*[c.teleport(target) for c in clients])
 
+    # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
+    machine.log("Checking for dungeon exit warning…", LogLevel.DEBUG)
+    await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, DIALOG_CHECK_DELAY) for c in clients])
+
     # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
     machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
-    if not await _wait_until(lambda: _all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT):
+    if not await node_helpers.wait_until(
+        lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+    ):
         machine.log(
             f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
             f"to leave {from_zone!r}",
@@ -104,7 +112,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4. Wait for loading screens to finish.
     machine.log("Zone transition triggered, waiting for loading screen to clear…", LogLevel.DEBUG)
-    await _wait_until(lambda: _none_loading(clients), timeout=None)
+    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 5. Verify all clients arrived in to_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -121,25 +129,3 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"SUCCESS: all clients in {to_zone!r}")
     return "SUCCESS"
 
-
-async def _wait_until(condition_coro, timeout: float | None) -> bool:
-    """Poll condition_coro every POLL_INTERVAL until it returns True or timeout expires."""
-    async def _poll():
-        while not await condition_coro():
-            await asyncio.sleep(POLL_INTERVAL)
-
-    try:
-        await asyncio.wait_for(_poll(), timeout=timeout)
-        return True
-    except asyncio.TimeoutError:
-        return False
-
-
-async def _all_left_zone(clients: list, zone: str) -> bool:
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    return all(z != zone for z in zones)
-
-
-async def _none_loading(clients: list) -> bool:
-    loading = await asyncio.gather(*[c.is_loading() for c in clients])
-    return not any(loading)

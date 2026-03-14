@@ -16,11 +16,15 @@ class FakeClient:
         self.zone_name = AsyncMock(return_value="TestZone")
         self.teleport = AsyncMock()
         self.is_loading = AsyncMock(return_value=False)
+        self.is_in_npc_range = AsyncMock(return_value=False)
+        self.is_in_dialog = AsyncMock(return_value=False)
+        self.send_key = AsyncMock()
         self.find_closest_mob = AsyncMock(return_value=None)
         self.find_closest_by_vague_name = AsyncMock(return_value=None)
         self.tp_to = AsyncMock()
         self.in_battle = AsyncMock(return_value=False)
         self.root_window = MagicMock()
+        self.root_window.children = AsyncMock(return_value=[])
 
 
 class FakeEntity:
