@@ -661,15 +661,24 @@ class _ParamPanel(QWidget):
         self._edge_src_lbl = QLabel()
         self._edge_dst_lbl = QLabel()
         self._edge_when_combo = QComboBox()
+        self._edge_flag_combo = QComboBox()
         ef.addRow("Source", self._edge_src_lbl)
         ef.addRow("Dest", self._edge_dst_lbl)
         ef.addRow("When", self._edge_when_combo)
+
+        flag_lbl = QLabel("Flag")
+        flag_lbl.setToolTip(
+            "Bot option that must be truthy for this transition to fire.\n"
+            "Both When and Flag conditions must be satisfied."
+        )
+        ef.addRow(flag_lbl, self._edge_flag_combo)
         self._stack.addWidget(edge_w)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_type_combo.currentTextChanged.connect(self._on_node_type_changed)
         self._param_form.on_changed = self._on_param_form_changed
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
+        self._edge_flag_combo.currentTextChanged.connect(self._on_edge_flag_changed)
 
     def show_idle(self) -> None:
         self._state = None
@@ -692,13 +701,18 @@ class _ParamPanel(QWidget):
         self._stack.setCurrentIndex(_PAGE_NODE)
 
     def show_transition(
-        self, transition: TransitionModel, src_returns: list[str] | None = None
+        self,
+        transition: TransitionModel,
+        src_returns: list[str] | None = None,
+        option_names: list[str] | None = None,
     ) -> None:
         self._transition = transition
         self._state = None
         self._suppress = True
         self._edge_src_lbl.setText(transition.source)
         self._edge_dst_lbl.setText(transition.dest)
+
+        # Populate "When" combo from source node's possible return values
         self._edge_when_combo.clear()
         self._edge_when_combo.addItem("(none)")
         for name in (src_returns or []):
@@ -711,6 +725,22 @@ class _ParamPanel(QWidget):
                 self._edge_when_combo.setCurrentIndex(idx)
         else:
             self._edge_when_combo.setCurrentIndex(0)
+
+        # Populate "Flag" combo from bot-wide options
+        self._edge_flag_combo.clear()
+        self._edge_flag_combo.addItem("(none)")
+        for name in (option_names or []):
+            self._edge_flag_combo.addItem(name)
+        if transition.flag and self._edge_flag_combo.findText(transition.flag) < 0:
+            # Flag references an option that no longer exists — show it anyway
+            self._edge_flag_combo.addItem(transition.flag)
+        if transition.flag:
+            idx = self._edge_flag_combo.findText(transition.flag)
+            if idx >= 0:
+                self._edge_flag_combo.setCurrentIndex(idx)
+        else:
+            self._edge_flag_combo.setCurrentIndex(0)
+
         self._suppress = False
         self._stack.setCurrentIndex(_PAGE_EDGE)
 
@@ -741,6 +771,12 @@ class _ParamPanel(QWidget):
         if self._suppress or self._transition is None:
             return
         self._transition.when = None if text == "(none)" else text
+        self.on_config_changed()
+
+    def _on_edge_flag_changed(self, text: str) -> None:
+        if self._suppress or self._transition is None:
+            return
+        self._transition.flag = None if text == "(none)" else text
         self.on_config_changed()
 
     def _rebuild_returns(self, node_type: str) -> None:
@@ -820,7 +856,7 @@ class BotCanvas(QWidget):
         self._elapsed_label.setFont(QFont("Consolas", 10))
         self._elapsed_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
-        self._edit_btn = QPushButton("✏  Edit")
+        self._edit_btn = QPushButton("Edit")
         self._edit_btn.setFixedWidth(80)
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_clicked)
@@ -842,15 +878,15 @@ class BotCanvas(QWidget):
         self._add_state_btn.setFixedWidth(110)
         self._add_state_btn.clicked.connect(self._on_add_state)
 
-        editing_lbl = QLabel("⚠  Editing — run disabled")
+        editing_lbl = QLabel("Editing — run disabled")
         editing_lbl.setStyleSheet("color: #996600;")
 
-        self._done_btn = QPushButton("✓  Done")
+        self._done_btn = QPushButton("Done")
         self._done_btn.setFixedWidth(90)
         self._done_btn.setToolTip("Apply changes and return to Run mode (does not save to disk)")
         self._done_btn.clicked.connect(self._on_done_clicked)
 
-        self._save_done_btn = QPushButton("💾  Save & Done")
+        self._save_done_btn = QPushButton("Save and Done")
         self._save_done_btn.setFixedWidth(130)
         self._save_done_btn.setToolTip("Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
@@ -1108,7 +1144,10 @@ class BotCanvas(QWidget):
                             spec = NODE_SPECS.get(src_state.node_type)
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
-                        self._param_panel.show_transition(trans, src_returns)
+                        option_names = [
+                            opt.name for opt in self._scene._config.options
+                        ]
+                        self._param_panel.show_transition(trans, src_returns, option_names)
                     break
         else:
             self._param_panel.show_idle()

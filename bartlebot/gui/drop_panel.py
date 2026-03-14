@@ -3,11 +3,12 @@
 import csv
 
 from PyQt6.QtWidgets import (
-    QFileDialog, QHeaderView, QLabel, QPushButton,
+    QFileDialog, QHeaderView, QPushButton,
     QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
-from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt
+
+from bartlebot.gui.sidebar_section import SidebarSection
 
 
 class DropPanel(QWidget):
@@ -15,22 +16,24 @@ class DropPanel(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(4)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
-        header = QLabel("Drops")
-        font = QFont()
-        font.setBold(True)
-        header.setFont(font)
-        layout.addWidget(header)
+        section = SidebarSection("Drops")
+
+        body_layout = QVBoxLayout()
+        body_layout.setSpacing(4)
 
         self._tabs = QTabWidget()
-        layout.addWidget(self._tabs, 1)
+        body_layout.addWidget(self._tabs, 1)
 
         export_btn = QPushButton("Export CSV")
         export_btn.clicked.connect(self._export_csv)
-        layout.addWidget(export_btn)
+        body_layout.addWidget(export_btn)
+
+        section.set_content_layout(body_layout)
+        outer.addWidget(section)
 
         self.setMinimumWidth(190)
 

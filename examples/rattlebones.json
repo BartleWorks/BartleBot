@@ -8,7 +8,14 @@
   "start_location": "Unicorn Way",
   "drops": [],
   "authors": "BartleBot",
-  "options": [],
+  "options": [
+    {
+      "name": "Repeat",
+      "type": "bool",
+      "default": true,
+      "description": "If true, bot runs forever. If false, stops after the the last state."
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -16,7 +23,7 @@
       "label": "Enter boss tower",
       "position": {
         "x": 0.0,
-        "y": 28.0
+        "y": 35.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Unicorn",
@@ -33,13 +40,31 @@
       "node_type": "handle_combat",
       "label": "Fight boss",
       "position": {
-        "x": 262.1671284965035,
-        "y": 68.95814586648083
+        "x": 268.99348614091696,
+        "y": 34.146705294448324
       },
       "params": {
         "enemy": "Skeleton-Silver-WCBoss-L01",
         "use_bot_default": true,
         "combat_config": "any<damage>@enemy"
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "go_to_zone",
+      "label": "Leave boss tower",
+      "position": {
+        "x": 528.0051993869457,
+        "y": 35.14240910438036
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Unicorn_T2",
+        "to_zone": "WizardCity/WC_Streets/WC_Unicorn",
+        "xyz": {
+          "x": 0.52,
+          "y": -1237.24,
+          "z": 1.62
+        }
       }
     }
   ],
@@ -53,8 +78,15 @@
     {
       "trigger": "advance",
       "source": "state_2",
-      "dest": "state_1",
+      "dest": "state_3",
       "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flag": "Repeat"
     }
   ]
 }

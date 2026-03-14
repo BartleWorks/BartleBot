@@ -4,12 +4,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
-    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QScrollArea, QSizePolicy,
-    QSpinBox, QVBoxLayout, QWidget,
+    QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFormLayout,
+    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
+    QRadioButton, QScrollArea, QSizePolicy, QSpinBox, QStackedWidget,
+    QVBoxLayout, QWidget,
 )
+
+from bartlebot.bot.schema import BotOptionModel
+from bartlebot.gui.sidebar_section import SidebarSection
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -17,65 +21,167 @@ if TYPE_CHECKING:
 _PLACEHOLDER = "—"
 
 
-class SectionHeader(QWidget):
+class _AddOptionDialog(QDialog):
+    """Dialog for adding or editing a bot-wide option.
 
-    toggled = pyqtSignal(bool)
+    Pass ``existing_option`` to open in edit mode (pre-populated fields,
+    "Save" button, name uniqueness check excludes the original name).
+    """
 
-    def __init__(self, title: str, parent=None):
+    _TYPE_DEFAULTS = {"int": "0", "float": "0.0", "str": ""}
+
+    def __init__(
+        self,
+        existing_names: list[str],
+        parent=None,
+        existing_option: BotOptionModel | None = None,
+    ):
         super().__init__(parent)
+        edit_mode = existing_option is not None
+        self.setWindowTitle("Edit Option" if edit_mode else "Add Option")
+        self.setModal(True)
+        self.setMinimumWidth(320)
+        # In edit mode, the original name is allowed (it's the same option).
+        self._existing_names = (
+            [n for n in existing_names if n != existing_option.name]
+            if edit_mode else existing_names
+        )
+        self._result: BotOptionModel | None = None
 
-        self._expanded = True
+        form = QFormLayout()
+        form.setSpacing(6)
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
+        self._name_edit = QLineEdit()
+        self._name_edit.setPlaceholderText("e.g. repeat")
 
-        self.arrow = QLabel("▼")
-        self.arrow.setFixedWidth(12)
+        self._type_combo = QComboBox()
+        self._type_combo.addItems(["bool", "int", "float", "str"])
 
-        self.label = QLabel(title)
+        self._desc_edit = QLineEdit()
+        self._desc_edit.setPlaceholderText("Optional description")
 
-        font = self.label.font()
-        font.setBold(True)
-        self.label.setFont(font)
+        # Bool default: radio buttons
+        self._bool_widget = QWidget()
+        bool_layout = QHBoxLayout(self._bool_widget)
+        bool_layout.setContentsMargins(0, 0, 0, 0)
+        bool_layout.setSpacing(12)
+        self._bool_true = QRadioButton("True")
+        self._bool_false = QRadioButton("False")
+        self._bool_group = QButtonGroup(self)
+        self._bool_group.addButton(self._bool_true)
+        self._bool_group.addButton(self._bool_false)
+        bool_layout.addWidget(self._bool_true)
+        bool_layout.addWidget(self._bool_false)
+        bool_layout.addStretch()
 
-        layout.addWidget(self.arrow)
-        layout.addWidget(self.label)
-        layout.addStretch()
+        # Non-bool default: text edit
+        self._default_edit = QLineEdit()
 
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Stacked widget switches between the two
+        self._default_stack = QStackedWidget()
+        self._default_stack.addWidget(self._bool_widget)   # index 0
+        self._default_stack.addWidget(self._default_edit)  # index 1
 
-    def mousePressEvent(self, event):  # noqa: ARG002
-        self._expanded = not self._expanded
-        self.arrow.setText("▼" if self._expanded else "▶")
-        self.toggled.emit(self._expanded)
+        form.addRow("Name", self._name_edit)
+        form.addRow("Type", self._type_combo)
+        form.addRow("Description", self._desc_edit)
+        form.addRow("Default", self._default_stack)
 
+        self._err_lbl = QLabel()
+        self._err_lbl.setStyleSheet("color: #cc4444; font-size: 11px;")
+        self._err_lbl.setWordWrap(True)
+        self._err_lbl.setVisible(False)
 
-class CollapsibleSection(QWidget):
-    """A section with a clickable header that shows/hides its body."""
+        btn_row = QHBoxLayout()
+        ok_btn = QPushButton("Save" if edit_mode else "Add")
+        ok_btn.setDefault(True)
+        ok_btn.clicked.connect(self._on_ok)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(self.reject)
+        btn_row.addStretch()
+        btn_row.addWidget(cancel_btn)
+        btn_row.addWidget(ok_btn)
 
-    def __init__(self, title: str, parent=None):
-        super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        outer = QVBoxLayout(self)
+        outer.setSpacing(8)
+        outer.addLayout(form)
+        outer.addWidget(self._err_lbl)
+        outer.addLayout(btn_row)
 
-        vbox = QVBoxLayout(self)
-        vbox.setContentsMargins(0, 0, 0, 0)
-        vbox.setSpacing(2)
+        self._type_combo.currentTextChanged.connect(self._on_type_changed)
 
-        self._header = SectionHeader(title)
-        self._body = QWidget()
-        self._body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        # Pre-populate in edit mode, then apply _on_type_changed
+        if edit_mode:
+            self._name_edit.setText(existing_option.name)
+            idx = self._type_combo.findText(existing_option.type)
+            if idx >= 0:
+                self._type_combo.setCurrentIndex(idx)
+            self._desc_edit.setText(existing_option.description or "")
+            if existing_option.type == "bool":
+                if bool(existing_option.default):
+                    self._bool_true.setChecked(True)
+                else:
+                    self._bool_false.setChecked(True)
+            else:
+                self._default_edit.setText(str(existing_option.default))
+        else:
+            self._bool_false.setChecked(True)
 
-        vbox.addWidget(self._header)
-        vbox.addWidget(self._body)
+        self._on_type_changed(self._type_combo.currentText())
 
-        self._header.toggled.connect(self._body.setVisible)
+    def get_option(self) -> BotOptionModel:
+        assert self._result is not None
+        return self._result
 
-    def set_content_layout(self, layout) -> None:
-        self._body.setLayout(layout)
+    def _on_type_changed(self, type_str: str) -> None:
+        if type_str == "bool":
+            self._default_stack.setCurrentIndex(0)
+        else:
+            self._default_stack.setCurrentIndex(1)
+            self._default_edit.setPlaceholderText(self._TYPE_DEFAULTS.get(type_str, ""))
 
-    @property
-    def body(self) -> QWidget:
-        return self._body
+    def _on_ok(self) -> None:
+        name = self._name_edit.text().strip()
+        if not name:
+            self._show_error("Name is required.")
+            return
+        if name in self._existing_names:
+            self._show_error(f"An option named '{name}' already exists.")
+            return
+        type_str = self._type_combo.currentText()
+        try:
+            if type_str == "bool":
+                default = self._bool_true.isChecked()
+            else:
+                default = self._parse_default(type_str, self._default_edit.text().strip())
+        except ValueError as exc:
+            self._show_error(str(exc))
+            return
+        self._result = BotOptionModel(
+            name=name,
+            type=type_str,
+            default=default,
+            description=self._desc_edit.text().strip() or None,
+        )
+        self.accept()
+
+    @staticmethod
+    def _parse_default(type_str: str, text: str):
+        if type_str == "int":
+            try:
+                return int(text) if text else 0
+            except ValueError:
+                raise ValueError("Default must be an integer.")
+        if type_str == "float":
+            try:
+                return float(text) if text else 0.0
+            except ValueError:
+                raise ValueError("Default must be a number.")
+        return text  # str — any value is valid
+
+    def _show_error(self, msg: str) -> None:
+        self._err_lbl.setText(msg)
+        self._err_lbl.setVisible(True)
 
 
 class BotInfoPanel(QScrollArea):
@@ -85,8 +191,11 @@ class BotInfoPanel(QScrollArea):
         super().__init__(parent)
         self._config = None
         self._suppress: bool = False
+        self._editable: bool = False
         self._option_rows: list[QWidget] = []
         self._option_widgets: dict[str, QWidget] = {}
+        self._edit_btns: list[QPushButton] = []
+        self._delete_btns: list[QPushButton] = []
         self.on_config_changed: Callable[[], None] = lambda: None
 
         content = QWidget()
@@ -95,7 +204,7 @@ class BotInfoPanel(QScrollArea):
         self._outer.setSpacing(4)
 
         # ── Bot Info ──────────────────────────────────────────────────
-        info_section = CollapsibleSection("Bot Info")
+        info_section = SidebarSection("Bot Info")
 
         form = QFormLayout()
         form.setSpacing(2)
@@ -129,24 +238,32 @@ class BotInfoPanel(QScrollArea):
         self._outer.addWidget(info_section)
 
         # ── Options ───────────────────────────────────────────────────
-        self._options_section = CollapsibleSection("Options")
+        self._options_section = SidebarSection("Options")
+
+        options_outer = QVBoxLayout()
+        options_outer.setSpacing(4)
 
         self._options_layout = QVBoxLayout()
-        self._options_layout.setContentsMargins(0, 0, 0, 0)
         self._options_layout.setSpacing(4)
 
         self._no_options_lbl = _value_label()
         self._no_options_lbl.setText(_PLACEHOLDER)
         self._options_layout.addWidget(self._no_options_lbl)
 
-        self._options_section.set_content_layout(self._options_layout)
+        self._add_option_btn = QPushButton("+ Add Option")
+        self._add_option_btn.setVisible(False)
+        self._add_option_btn.clicked.connect(self._on_add_option)
+
+        options_outer.addLayout(self._options_layout)
+        options_outer.addWidget(self._add_option_btn)
+
+        self._options_section.set_content_layout(options_outer)
         self._outer.addWidget(self._options_section)
 
         # ── Combat Config ─────────────────────────────────────────────
-        self._combat_section = CollapsibleSection("Combat Config")
+        self._combat_section = SidebarSection("Combat Config")
 
         combat_layout = QVBoxLayout()
-        combat_layout.setContentsMargins(0, 0, 0, 4)
         combat_layout.setSpacing(4)
 
         self._use_bartlebot_default_chk = QCheckBox("Use BartleBot default combat config")
@@ -235,6 +352,7 @@ class BotInfoPanel(QScrollArea):
 
     def set_editable(self, editable: bool) -> None:
         """Toggle all metadata fields between editable and read-only."""
+        self._editable = editable
         if self._config is None:
             return
         line_edits = (
@@ -249,6 +367,12 @@ class BotInfoPanel(QScrollArea):
         # Combat DSL field is only editable when the checkbox is unchecked
         use_default = self._use_bartlebot_default_chk.isChecked()
         self._combat_config_edit.setReadOnly(not editable or use_default)
+        # Options add/edit/delete controls
+        self._add_option_btn.setVisible(editable)
+        for btn in self._edit_btns:
+            btn.setVisible(editable)
+        for btn in self._delete_btns:
+            btn.setVisible(editable)
 
     # ------------------------------------------------------------------
     # Change handlers
@@ -329,6 +453,8 @@ class BotInfoPanel(QScrollArea):
             row.deleteLater()
         self._option_rows.clear()
         self._option_widgets.clear()
+        self._edit_btns.clear()
+        self._delete_btns.clear()
 
         if not options:
             self._no_options_lbl.show()
@@ -336,11 +462,79 @@ class BotInfoPanel(QScrollArea):
 
         self._no_options_lbl.hide()
         for opt in options:
-            row, widget = _build_option_row(opt)
+            inner, widget = _build_option_row(opt)
             self._connect_option_widget(widget, opt)
-            self._options_layout.addWidget(row)
-            self._option_rows.append(row)
+
+            edit_btn = QPushButton("Edit")
+            edit_btn.setToolTip(f"Edit option '{opt.name}'")
+            edit_btn.setVisible(self._editable)
+            edit_btn.clicked.connect(
+                lambda _checked, name=opt.name: self._on_edit_option(name)
+            )
+
+            del_btn = QPushButton("Delete")
+            del_btn.setToolTip(f"Remove option '{opt.name}'")
+            del_btn.setVisible(self._editable)
+            del_btn.clicked.connect(
+                lambda _checked, name=opt.name: self._on_delete_option(name)
+            )
+
+            outer = QWidget()
+            outer_layout = QHBoxLayout(outer)
+            outer_layout.setContentsMargins(0, 0, 0, 0)
+            outer_layout.setSpacing(4)
+            outer_layout.addWidget(inner, 1)
+            outer_layout.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignTop)
+            outer_layout.addWidget(del_btn, 0, Qt.AlignmentFlag.AlignTop)
+
+            self._options_layout.addWidget(outer)
+            self._option_rows.append(outer)
             self._option_widgets[opt.name] = widget
+            self._edit_btns.append(edit_btn)
+            self._delete_btns.append(del_btn)
+
+    def _on_add_option(self) -> None:
+        if self._config is None:
+            return
+        existing = [o.name for o in self._config.options]
+        dlg = _AddOptionDialog(existing, parent=self)
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            self._config.options.append(dlg.get_option())
+            self._rebuild_options(self._config.options)
+            self.on_config_changed()
+
+    def _on_edit_option(self, name: str) -> None:
+        if self._config is None:
+            return
+        original = next((o for o in self._config.options if o.name == name), None)
+        if original is None:
+            return
+        existing = [o.name for o in self._config.options]
+        dlg = _AddOptionDialog(existing, parent=self, existing_option=original)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        updated = dlg.get_option()
+        # If name changed, update flag references in transitions
+        if updated.name != name:
+            for t in self._config.transitions:
+                if t.flag == name:
+                    t.flag = updated.name
+        # Replace in-place to preserve list order
+        idx = next(i for i, o in enumerate(self._config.options) if o.name == name)
+        self._config.options[idx] = updated
+        self._rebuild_options(self._config.options)
+        self.on_config_changed()
+
+    def _on_delete_option(self, name: str) -> None:
+        if self._config is None:
+            return
+        self._config.options = [o for o in self._config.options if o.name != name]
+        # Clear flag references in transitions that pointed to this option
+        for t in self._config.transitions:
+            if t.flag == name:
+                t.flag = None
+        self._rebuild_options(self._config.options)
+        self.on_config_changed()
 
     def _connect_option_widget(self, widget: QWidget, opt) -> None:
         """Connect a widget's change signal to update opt.default and emit on_config_changed."""
