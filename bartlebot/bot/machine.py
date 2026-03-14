@@ -132,9 +132,15 @@ class BotMachine:
 
             if not self._stop_flag.is_set():
                 prev_state = state_id
-                await self.advance()
-                if self._on_transition:
-                    self._on_transition(prev_state, self.last_result or "", self.state)
+                # A state with no outgoing transitions is a terminal state — stop cleanly.
+                has_exit = any(t["source"] == state_id for t in self._config["transitions"])
+                if not has_exit:
+                    self.log(f"Reached terminal state {state_id!r}; stopping.", LogLevel.INFO)
+                    self.stop()
+                else:
+                    await self.advance()
+                    if self._on_transition:
+                        self._on_transition(prev_state, self.last_result or "", self.state)
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""

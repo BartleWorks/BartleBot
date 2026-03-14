@@ -15,6 +15,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="From Zone",
         help="Zone name the clients must currently be in when this node executes.",
         default="",
+        required=True,
     ),
     ParamField(
         key="dungeon_zone",
@@ -22,6 +23,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Dungeon Zone",
         help="Zone name all clients must be in after successfully entering the dungeon.",
         default="",
+        required=True,
     ),
     ParamField(
         key="sigil_xyz",
@@ -32,6 +34,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Standing here should trigger the dungeon entrance prompt."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
+        required=True,
     ),
     ParamField(
         key="reset_xyz",
@@ -42,6 +45,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "The prompt must NOT appear when standing here."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
+        required=True,
     ),
 ]
 

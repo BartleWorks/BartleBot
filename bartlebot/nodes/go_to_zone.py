@@ -13,6 +13,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="From Zone",
         help="Zone name the clients must currently be in when this node executes.",
         default="",
+        required=True,
     ),
     ParamField(
         key="to_zone",
@@ -20,6 +21,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="To Zone",
         help="Zone name clients must be in after this node completes.",
         default="",
+        required=True,
     ),
     ParamField(
         key="xyz",
@@ -30,6 +32,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Teleporting clients here triggers the automatic zone change."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
+        required=True,
     ),
 ]
 

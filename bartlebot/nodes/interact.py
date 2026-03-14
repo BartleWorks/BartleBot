@@ -18,6 +18,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "The interact prompt should appear when standing here."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
+        required=True,
     ),
     ParamField(
         key="reset_xyz",
@@ -28,6 +29,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "The prompt must NOT appear when standing here."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
+        required=True,
     ),
 ]
 

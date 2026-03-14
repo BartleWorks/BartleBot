@@ -110,11 +110,16 @@ class EditScene(QGraphicsScene):
                 x = i * _AUTO_SPACING - total_w / 2 - NODE_W / 2
                 y = -NODE_H / 2
             returns = _node_returns(state.node_type)
+            sources = {t.source for t in transitions}
+            is_error, is_warning = _validate_node(state, config)
             node = NodeItem(
                 state.id, state.label,
                 interactive=self._interactive_mode,
                 returns=returns,
                 is_initial=(state.id == config.initial),
+                is_terminal=(state.id not in sources),
+                is_error=is_error,
+                is_warning=is_warning,
             )
             node.setPos(x, y)
             self.addItem(node)
@@ -149,9 +154,29 @@ class EditScene(QGraphicsScene):
         self.setSceneRect(bounds)
 
     def refresh_initial(self, initial_id: str) -> None:
-        """Update the initial-state blue-border indicator."""
+        """Update the initial-state purple-border indicator."""
         for node_id, node in self._node_items.items():
             node.set_initial(node_id == initial_id)
+
+    def refresh_terminal(self) -> None:
+        """Update the terminal-state badge based on current transitions."""
+        if self._config is None:
+            return
+        sources = {t.source for t in self._config.transitions}
+        for node_id, node in self._node_items.items():
+            node.set_terminal(node_id not in sources)
+
+    def refresh_errors(self) -> None:
+        """Recompute and apply error/warning indicators for all nodes."""
+        if self._config is None:
+            return
+        for state in self._config.states:
+            node = self._node_items.get(state.id)
+            if node is None:
+                continue
+            is_error, is_warning = _validate_node(state, self._config)
+            node.set_error(is_error)
+            node.set_warning(is_warning)
 
     def set_interactive(self, interactive: bool) -> None:
         """Toggle node and edge interactivity for mode switching."""
@@ -175,7 +200,7 @@ class EditScene(QGraphicsScene):
         )
         self._config.states.append(state)
         returns = _node_returns(default_type)
-        node = NodeItem(state_id, None, interactive=True, returns=returns)
+        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -315,6 +340,8 @@ class EditScene(QGraphicsScene):
             dst_node.add_edge(edge)
         self._edge_items.append((s, when, d, edge))
         self._update_scene_rect()
+        self.refresh_terminal()
+        self.refresh_errors()
         self.on_config_changed()
 
     def _delete_selected(self) -> None:
@@ -352,6 +379,8 @@ class EditScene(QGraphicsScene):
         self._config.states = [s for s in self._config.states if s.id != state_id]
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
+        self.refresh_terminal()
+        self.refresh_errors()
         self._update_scene_rect()
         self.on_config_changed()
 
@@ -375,6 +404,8 @@ class EditScene(QGraphicsScene):
             else:
                 remaining.append((s, w, d, ei))
         self._edge_items = remaining
+        self.refresh_terminal()
+        self.refresh_errors()
         self.on_config_changed()
 
     def _flush_positions(self) -> None:
@@ -1084,12 +1115,20 @@ class BotCanvas(QWidget):
         self._refresh_node_labels()
         self._refresh_node_returns()
         self._refresh_initial()
+        self._refresh_terminal()
+        self._refresh_errors()
         self.on_config_changed()
 
     def _refresh_initial(self) -> None:
         if self._scene._config is None:
             return
         self._scene.refresh_initial(self._scene._config.initial)
+
+    def _refresh_terminal(self) -> None:
+        self._scene.refresh_terminal()
+
+    def _refresh_errors(self) -> None:
+        self._scene.refresh_errors()
 
     def _refresh_node_labels(self) -> None:
         if self._scene._config is None:
@@ -1198,6 +1237,51 @@ class BotCanvas(QWidget):
 def _node_returns(node_type: str) -> list[str]:
     spec = NODE_SPECS.get(node_type)
     return [r.name for r in spec.returns] if spec else []
+
+
+def _validate_node(state, config) -> tuple[bool, bool]:
+    """Return (is_error, is_warning) for a state given the full config.
+
+    Error conditions:
+      - node_type not in NODE_REGISTRY (unknown type)
+      - any required param key absent from state.params
+      - any outgoing transition points to a non-existent destination state
+
+    Warning conditions:
+      - node has outgoing transitions but some return values are not covered
+        by any t.when (and no unconditional when=None transition exists)
+    """
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
+    is_error = False
+    is_warning = False
+
+    if state.node_type not in NODE_REGISTRY:
+        is_error = True
+
+    schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
+    for field in schema:
+        if field.required and field.key not in state.params:
+            is_error = True
+            break
+
+    state_ids = {s.id for s in config.states}
+    outgoing = [t for t in config.transitions if t.source == state.id]
+    for t in outgoing:
+        if t.dest not in state_ids:
+            is_error = True
+            break
+
+    if outgoing:
+        spec = NODE_SPECS.get(state.node_type)
+        if spec and spec.returns:
+            outgoing_whens = {t.when for t in outgoing}
+            if None not in outgoing_whens:
+                for ret in spec.returns:
+                    if ret.name not in outgoing_whens:
+                        is_warning = True
+                        break
+
+    return is_error, is_warning
 
 
 def _dist(a: QPointF, b: QPointF) -> float:

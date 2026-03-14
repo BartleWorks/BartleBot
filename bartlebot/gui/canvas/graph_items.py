@@ -35,9 +35,17 @@ _FILL_SELECTED = QColor("#b8cce4")
 _BORDER_NORMAL = QColor("#8a9ab8")
 _BORDER_ACTIVE = QColor("#2e7d32")
 _BORDER_SELECTED = QColor("#2255aa")
-_BORDER_INITIAL = QColor("#6D1ADA")
+_BORDER_ERROR = QColor("#CC2222")
+_BORDER_WARNING = QColor("#BB7700")
+_BADGE_INITIAL = QColor("#22AA44")
+_BADGE_TERMINAL = QColor("#CC2222")
 _EDGE_COLOR = QColor("#607090")
 _PORT_COLOR = QColor("#3366bb")
+
+_CORNER_R = 8           # rounded-corner radius on orthogonal paths (px)
+_BACK_H_STEP = 30       # how far backward edges extend horizontally beyond node edge
+_BACK_PADDING = 10      # minimum gap between backward-edge bridge and the node edges
+_STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 
 
 def node_height(n_returns: int) -> int:
@@ -136,6 +144,9 @@ class NodeItem(QGraphicsItem):
         interactive: bool = False,
         returns: list[str] | None = None,
         is_initial: bool = False,
+        is_terminal: bool = False,
+        is_error: bool = False,
+        is_warning: bool = False,
     ):
         super().__init__()
         self.state_id = state_id
@@ -143,6 +154,9 @@ class NodeItem(QGraphicsItem):
         self._active = False
         self._interactive = interactive
         self._is_initial = is_initial
+        self._is_terminal = is_terminal
+        self._is_error = is_error
+        self._is_warning = is_warning
         self._returns: list[str] = list(returns) if returns else []
         self._edges: list = []
         self.setZValue(1)
@@ -215,8 +229,23 @@ class NodeItem(QGraphicsItem):
         self.update()
 
     def set_initial(self, is_initial: bool) -> None:
-        """Mark this node as the FSM initial state (draws a blue border)."""
+        """Mark this node as the FSM initial state (draws a purple border)."""
         self._is_initial = is_initial
+        self.update()
+
+    def set_terminal(self, is_terminal: bool) -> None:
+        """Mark this node as a terminal state with no exit transitions (draws a ■ badge)."""
+        self._is_terminal = is_terminal
+        self.update()
+
+    def set_error(self, is_error: bool) -> None:
+        """Mark this node as having a configuration error (draws a red border)."""
+        self._is_error = is_error
+        self.update()
+
+    def set_warning(self, is_warning: bool) -> None:
+        """Mark this node as having a configuration warning (draws an amber border)."""
+        self._is_warning = is_warning
         self.update()
 
     def add_edge(self, edge) -> None:
@@ -249,8 +278,10 @@ class NodeItem(QGraphicsItem):
             fill, border, border_w = _FILL_ACTIVE, _BORDER_ACTIVE, 2.5
         elif selected:
             fill, border, border_w = _FILL_SELECTED, _BORDER_SELECTED, 2.5
-        elif self._is_initial:
-            fill, border, border_w = _FILL_NORMAL, _BORDER_INITIAL, 2.5
+        elif self._is_error:
+            fill, border, border_w = _FILL_NORMAL, _BORDER_ERROR, 2.5
+        elif self._is_warning:
+            fill, border, border_w = _FILL_NORMAL, _BORDER_WARNING, 2.5
         else:
             fill, border, border_w = _FILL_NORMAL, _BORDER_NORMAL, 1.5
 
@@ -258,6 +289,41 @@ class NodeItem(QGraphicsItem):
         painter.setPen(QPen(border, border_w))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
+
+        # Structural-role badges drawn at bottom center so they don't overlap labels.
+        # When both are present they sit side-by-side; when only one, it is centred.
+        _BADGE_SIZE = 14
+        _BADGE_MARGIN = 4
+        _BADGE_GAP = 4
+        _BADGE_FONT = QFont("Segoe UI", 6)
+        if self._is_initial or self._is_terminal:
+            both = self._is_initial and self._is_terminal
+            badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
+            if both:
+                init_x = NODE_W / 2 - _BADGE_SIZE - _BADGE_GAP / 2
+                term_x = NODE_W / 2 + _BADGE_GAP / 2
+            else:
+                init_x = term_x = NODE_W / 2 - _BADGE_SIZE / 2
+
+            painter.setFont(_BADGE_FONT)
+            if self._is_initial:
+                r = QRectF(init_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
+                painter.save()
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(_BADGE_INITIAL))
+                painter.drawRoundedRect(r, 3, 3)
+                painter.setPen(QColor("white"))
+                painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "▶")
+                painter.restore()
+            if self._is_terminal:
+                r = QRectF(term_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
+                painter.save()
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QBrush(_BADGE_TERMINAL))
+                painter.drawRoundedRect(r, 3, 3)
+                painter.setPen(QColor("white"))
+                painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "■")
+                painter.restore()
 
         painter.setPen(Qt.GlobalColor.black)
 
@@ -328,10 +394,11 @@ class NodeItem(QGraphicsItem):
 class EdgeItem(QGraphicsPathItem):
     """Directed edge between two NodeItems.
 
-    - Normal edge: straight line (offset=0) or quadratic bezier (offset≠0).
+    - Forward edge (dst to the right): Z-shaped orthogonal path with rounded corners.
+    - Backward edge (dst to the left): Z-shaped path mirrored horizontally, bridge
+      clamped to clear both node boxes vertically.
     - Self-loop (src_node is dst_node): cubic bezier arc above the node.
-    - when: the return value name the edge fires on (e.g. "SUCCESS"); drawn
-      as a label near the midpoint when selected or when the edge is long.
+    - when: the return value name the edge fires on (e.g. "SUCCESS").
     """
 
     def __init__(
@@ -377,40 +444,71 @@ class EdgeItem(QGraphicsPathItem):
     def _build_edge(self, path: QPainterPath) -> None:
         src_pt = self._src.port_out_for(self._when)
         dst_pt = self._dst.port_in()
-
-        dx = dst_pt.x() - src_pt.x()
-        dy = dst_pt.y() - src_pt.y()
-        length = math.hypot(dx, dy)
-        if length < 1:
+        if math.hypot(dst_pt.x() - src_pt.x(), dst_pt.y() - src_pt.y()) < 1:
             return
-
-        if dx < 0:
-            # Backward edge: destination is left of source. Route below both
-            # nodes with a cubic bezier to avoid passing through them.
-            node_h = max(self._src._height, self._dst._height)
-            arc = node_h * 0.8 + 60
-            cp1 = QPointF(src_pt.x(), src_pt.y() + arc)
-            cp2 = QPointF(dst_pt.x(), dst_pt.y() + arc)
-            path.moveTo(src_pt)
-            path.cubicTo(cp1, cp2, dst_pt)
-            angle = math.atan2(dst_pt.y() - cp2.y(), dst_pt.x() - cp2.x())
-        elif abs(self._offset) > 0:
-            # Perpendicular unit normal for the lateral offset (bidirectional pairs)
-            nx = -dy / length
-            ny = dx / length
-            mid = QPointF(
-                (src_pt.x() + dst_pt.x()) / 2 + nx * abs(self._offset) * 1.5,
-                (src_pt.y() + dst_pt.y()) / 2 + ny * abs(self._offset) * 1.5,
-            )
-            path.moveTo(src_pt)
-            path.quadTo(mid, dst_pt)
-            angle = math.atan2(dst_pt.y() - mid.y(), dst_pt.x() - mid.x())
+        if dst_pt.x() > src_pt.x():
+            self._build_forward_ortho(path, src_pt, dst_pt)
         else:
+            self._build_backward_ortho(path, src_pt, dst_pt)
+
+    def _build_forward_ortho(self, path: QPainterPath, src_pt: QPointF, dst_pt: QPointF) -> None:
+        """Z-shaped orthogonal path for forward (left-to-right) edges.
+
+        When the vertical difference is small (nearly horizontal), falls back
+        to a straight line so the Z elbow doesn't look broken.
+        """
+        if abs(dst_pt.y() - src_pt.y()) < _STRAIGHT_THRESHOLD:
             path.moveTo(src_pt)
             path.lineTo(dst_pt)
-            angle = math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x())
+            _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
+            return
+        # For bidirectional pairs the offset shifts the vertical segment laterally
+        # so the two mirrored paths are visually separated.
+        mid_x = (src_pt.x() + dst_pt.x()) / 2 + self._offset * 0.5
+        waypoints = [
+            src_pt,
+            QPointF(mid_x, src_pt.y()),
+            QPointF(mid_x, dst_pt.y()),
+            dst_pt,
+        ]
+        _draw_ortho_path(path, waypoints)
 
-        _add_arrowhead(path, dst_pt, angle)
+    def _build_backward_ortho(self, path: QPainterPath, src_pt: QPointF, dst_pt: QPointF) -> None:
+        """Backward (right-to-left) edge routed as a 6-point Z-shape.
+
+        The horizontal bridge sits at the midpoint of the two port y-values.
+        When the ports are close enough vertically that the bridge would clip a
+        node (within one node height of each other), mid_y is snapped to just
+        above or below both nodes instead.
+        """
+        mid_y = (src_pt.y() + dst_pt.y()) / 2 + self._offset * 0.5
+
+        src_h = self._src._height
+        dst_h = self._dst._height
+
+        # Only clamp when ports are close — when they are far apart the midpoint
+        # naturally lands between the nodes and no adjustment is needed.
+        if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
+            # Each port is at the vertical centre of its node, so
+            # node top = port_y - h/2 and node bottom = port_y + h/2.
+            above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
+            below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
+            # Snap to whichever boundary requires less vertical travel,
+            # defaulting to below when equidistant (same-height case).
+            if mid_y - above_limit > below_limit - mid_y:
+                mid_y = above_limit
+            else:
+                mid_y = below_limit
+
+        waypoints = [
+            src_pt,
+            QPointF(src_pt.x() + _BACK_H_STEP, src_pt.y()),
+            QPointF(src_pt.x() + _BACK_H_STEP, mid_y),
+            QPointF(dst_pt.x() - _BACK_H_STEP, mid_y),
+            QPointF(dst_pt.x() - _BACK_H_STEP, dst_pt.y()),
+            dst_pt,
+        ]
+        _draw_ortho_path(path, waypoints)
 
     def _build_self_loop(self, path: QPainterPath) -> None:
         """Small cubic bezier arc above the node."""
@@ -427,43 +525,54 @@ class EdgeItem(QGraphicsPathItem):
         # Arrowhead points downward (into the top of the node)
         _add_arrowhead(path, top, math.pi / 2)
 
-    # ------------------------------------------------------------------
-    # Label painting
-    # ------------------------------------------------------------------
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
-        super().paint(painter, option, widget)
-
-        if not self._when:
-            return
-
-        path = self.path()
-        p0 = path.pointAtPercent(0)
-        p1 = path.pointAtPercent(1)
-        length = math.hypot(p1.x() - p0.x(), p1.y() - p0.y())
-        if not self.isSelected() and length < 150:
-            return
-
-        mid = path.pointAtPercent(0.5)
-        text = self._when
-
-        painter.save()
-        painter.setFont(QFont("Segoe UI", 7))
-        fm = painter.fontMetrics()
-        tw = fm.horizontalAdvance(text) + 6
-        th = fm.height() + 2
-        rect = QRectF(mid.x() - tw / 2, mid.y() - th / 2, tw, th)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(QColor(255, 255, 255, 200)))
-        painter.drawRoundedRect(rect, 3, 3)
-        painter.setPen(QColor("#333333"))
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
-        painter.restore()
-
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _draw_ortho_path(path: QPainterPath, waypoints: list) -> None:
+    """Draw an orthogonal path through *waypoints* with rounded corners and an arrowhead.
+
+    Corners are rounded with a quadratic bezier of radius _CORNER_R so the
+    path looks like PowerPoint's elbow connectors rather than a sharp polygon.
+    The arrowhead is appended at the final waypoint pointing along the last segment.
+    """
+    r = _CORNER_R
+    path.moveTo(waypoints[0])
+
+    for i in range(1, len(waypoints) - 1):
+        prev = waypoints[i - 1]
+        curr = waypoints[i]
+        nxt  = waypoints[i + 1]
+
+        d1 = math.hypot(curr.x() - prev.x(), curr.y() - prev.y())
+        d2 = math.hypot(nxt.x()  - curr.x(), nxt.y()  - curr.y())
+        eff_r = min(r, d1 / 2.0, d2 / 2.0)
+
+        if d1 < 1 or d2 < 1 or eff_r < 0.5:
+            path.lineTo(curr)
+            continue
+
+        # Point eff_r before the corner (along incoming segment)
+        t1 = eff_r / d1
+        approach = QPointF(
+            curr.x() + (prev.x() - curr.x()) * t1,
+            curr.y() + (prev.y() - curr.y()) * t1,
+        )
+        # Point eff_r after the corner (along outgoing segment)
+        t2 = eff_r / d2
+        depart = QPointF(
+            curr.x() + (nxt.x() - curr.x()) * t2,
+            curr.y() + (nxt.y() - curr.y()) * t2,
+        )
+        path.lineTo(approach)
+        path.quadTo(curr, depart)
+
+    path.lineTo(waypoints[-1])
+
+    tip = waypoints[-1]
+    pre = waypoints[-2]
+    _add_arrowhead(path, tip, math.atan2(tip.y() - pre.y(), tip.x() - pre.x()))
+
 
 def _add_arrowhead(path: QPainterPath, tip: QPointF, angle: float) -> None:
     s = ARROW_SIZE

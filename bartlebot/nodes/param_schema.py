@@ -17,6 +17,9 @@ class ParamField:
         default:     Value used when no existing param data is present.
         disabled_by: Key of a bool field in the same schema; when that field is
                      True this field's widget is disabled. Empty string = no link.
+        required:    When True the param must be explicitly set in state.params
+                     (i.e. the user must open the properties panel and save).
+                     Used by the GUI to flag unconfigured nodes as errors.
     """
     key: str
     type: str
@@ -24,6 +27,7 @@ class ParamField:
     help: str = ""
     default: Any = None
     disabled_by: str = ""
+    required: bool = False
 
 
 @dataclass
