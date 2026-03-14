@@ -1,8 +1,8 @@
 """Right sidebar: assembles client info and drop table sections."""
 
-from bartlebot.gui.client_section import ClientSection
-from bartlebot.gui.drop_section import DropSection
-from bartlebot.gui.sidebar_section import Sidebar
+from bartlebot.gui.sidebar.sections.client_section import ClientSection
+from bartlebot.gui.sidebar.sections.drop_section import DropSection
+from bartlebot.gui.sidebar.sidebar_section import Sidebar
 
 
 class RightSidebar(Sidebar):

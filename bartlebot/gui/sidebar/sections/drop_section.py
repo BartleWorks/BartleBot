@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout,
 )
 
-from bartlebot.gui.sidebar_section import SidebarSection
+from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 
 
 class DropSection(SidebarSection):

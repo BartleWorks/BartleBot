@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
 from bartlebot.log_level import LogLevel
-from bartlebot.gui.graph_items import (
+from bartlebot.gui.canvas.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS

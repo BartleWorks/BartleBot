@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.gui.sidebar_section import SidebarSection, field_label
+from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -277,8 +277,8 @@ class OptionsSection(SidebarSection):
             outer_layout.setContentsMargins(0, 0, 0, 0)
             outer_layout.setSpacing(4)
             outer_layout.addWidget(inner, 1)
-            outer_layout.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignTop)
-            outer_layout.addWidget(del_btn, 0, Qt.AlignmentFlag.AlignTop)
+            outer_layout.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignBottom)
+            outer_layout.addWidget(del_btn, 0, Qt.AlignmentFlag.AlignBottom)
 
             self._options_layout.addWidget(outer)
             self._option_rows.append(outer)

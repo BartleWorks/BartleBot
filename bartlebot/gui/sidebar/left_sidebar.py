@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
-from bartlebot.gui.bot_info_section import BotInfoSection
-from bartlebot.gui.combat_config_section import CombatConfigSection
-from bartlebot.gui.options_section import OptionsSection
-from bartlebot.gui.sidebar_section import Sidebar
+from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
+from bartlebot.gui.sidebar.sections.combat_config_section import CombatConfigSection
+from bartlebot.gui.sidebar.sections.options_section import OptionsSection
+from bartlebot.gui.sidebar.sidebar_section import Sidebar
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

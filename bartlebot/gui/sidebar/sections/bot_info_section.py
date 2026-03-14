@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Callable
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QComboBox, QFormLayout, QSizePolicy, QVBoxLayout
 
-from bartlebot.gui.sidebar_section import SidebarSection, field_label, value_edit, value_edit_multi, value_label
+from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label, value_edit, value_edit_multi, value_label
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

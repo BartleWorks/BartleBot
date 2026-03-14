@@ -10,7 +10,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui.bot_canvas import BotMode
+from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files

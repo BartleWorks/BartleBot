@@ -12,6 +12,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
+from bartlebot.gui.sidebar.sidebar_section import field_label
+
 
 class ClientWidget(QWidget):
     """Displays live zone/XYZ info and freecam controls for a single client."""
@@ -22,6 +24,8 @@ class ClientWidget(QWidget):
         self._in_freecam = False
         self._last_zone = "—"
         self._last_xyz = "—"
+        self._last_mob = "—"
+        self._mob_tick = 0
         self._build_ui(index)
 
     # ------------------------------------------------------------------
@@ -42,6 +46,7 @@ class ClientWidget(QWidget):
         layout.addWidget(title)
 
         # Zone row
+        layout.addWidget(field_label("Current Zone"))
         self._zone_label = QLabel("—")
         self._zone_label.setWordWrap(True)
         self._zone_label.setTextInteractionFlags(
@@ -56,6 +61,7 @@ class ClientWidget(QWidget):
         layout.addLayout(zone_row)
 
         # XYZ row
+        layout.addWidget(field_label("Current XYZ"))
         self._xyz_label = QLabel("—")
         self._xyz_label.setWordWrap(True)
         self._xyz_label.setTextInteractionFlags(
@@ -69,20 +75,35 @@ class ClientWidget(QWidget):
         xyz_row.addWidget(copy_xyz_btn)
         layout.addLayout(xyz_row)
 
-        # Freecam toggle button
+        # Freecam controls
+        layout.addWidget(field_label("Freecam Controls"))
         self._freecam_btn = QPushButton("Enter Freecam")
         self._freecam_btn.clicked.connect(
             lambda: asyncio.ensure_future(self._toggle_freecam())
         )
         layout.addWidget(self._freecam_btn)
 
-        # TP to Freecam button
         self._tp_btn = QPushButton("TP to Freecam")
         self._tp_btn.setEnabled(False)
         self._tp_btn.clicked.connect(
             lambda: asyncio.ensure_future(self._tp_to_freecam())
         )
         layout.addWidget(self._tp_btn)
+
+        # Closest enemy row
+        layout.addWidget(field_label("Closest Enemy"))
+        self._mob_label = QLabel("—")
+        self._mob_label.setWordWrap(True)
+        self._mob_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        copy_mob_btn = QPushButton("Copy Mob")
+        copy_mob_btn.setFixedWidth(80)
+        copy_mob_btn.clicked.connect(self._copy_mob)
+        mob_row = QHBoxLayout()
+        mob_row.addWidget(self._mob_label, 1)
+        mob_row.addWidget(copy_mob_btn)
+        layout.addLayout(mob_row)
 
         # Separator
         line = QFrame()
@@ -99,6 +120,9 @@ class ClientWidget(QWidget):
 
     def _copy_xyz(self) -> None:
         pyperclip.copy(self._last_xyz)
+
+    def _copy_mob(self) -> None:
+        pyperclip.copy(self._last_mob)
 
     # ------------------------------------------------------------------
     # Async actions
@@ -164,8 +188,20 @@ class ClientWidget(QWidget):
             xyz_dict = {"x": round(pos.x, 2), "y": round(pos.y, 2), "z": round(pos.z, 2)}
             self._last_xyz = json.dumps(xyz_dict)
             self._xyz_label.setText(
-                f"x={pos.x:.1f}\ny={pos.y:.1f}\nz={pos.z:.1f}"
+                f"X={pos.x:.1f}\nY={pos.y:.1f}\nZ={pos.z:.1f}"
             )
         except Exception:
             self._last_xyz = "—"
             self._xyz_label.setText("—")
+
+        # Closest mob — updated every 20 ticks (~2 s)
+        self._mob_tick += 1
+        if self._mob_tick >= 20:
+            self._mob_tick = 0
+            try:
+                mob = await self._client.find_closest_mob()
+                name = await mob.object_name() if mob else "—"
+                self._last_mob = name or "—"
+            except Exception:
+                self._last_mob = "—"
+            self._mob_label.setText(self._last_mob)

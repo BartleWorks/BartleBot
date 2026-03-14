@@ -2,9 +2,9 @@ from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QSplitter
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt
 
-from bartlebot.gui.bot_canvas import BotCanvas
-from bartlebot.gui.left_sidebar import LeftSidebar
-from bartlebot.gui.right_sidebar import RightSidebar
+from bartlebot.gui.canvas.bot_canvas import BotCanvas
+from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
+from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 
 
 class MainWindow(QMainWindow):

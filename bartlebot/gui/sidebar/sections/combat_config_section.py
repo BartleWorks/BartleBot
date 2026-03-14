@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Callable
 
 from PyQt6.QtWidgets import QCheckBox, QVBoxLayout
 
-from bartlebot.gui.sidebar_section import SidebarSection, value_edit_multi
+from bartlebot.gui.sidebar.sidebar_section import SidebarSection, value_edit_multi
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig

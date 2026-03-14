@@ -5,8 +5,8 @@ import asyncio
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QVBoxLayout
 
-from bartlebot.gui.client_widget import ClientWidget
-from bartlebot.gui.sidebar_section import SidebarSection
+from bartlebot.gui.sidebar.client_widget import ClientWidget
+from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 
 
 class ClientSection(SidebarSection):
