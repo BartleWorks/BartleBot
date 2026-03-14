@@ -1,14 +1,10 @@
-from PyQt6.QtWidgets import (
-    QMainWindow, QLabel,
-    QMenu, QMenuBar, QTabWidget, QSplitter,
-)
+from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QSplitter
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt
 
 from bartlebot.gui.bot_canvas import BotCanvas
-from bartlebot.gui.bot_info_panel import BotInfoPanel
-from bartlebot.gui.drop_panel import DropPanel
-from bartlebot.gui.sidebar import ClientSidebar
+from bartlebot.gui.left_sidebar import LeftSidebar
+from bartlebot.gui.right_sidebar import RightSidebar
 
 
 class MainWindow(QMainWindow):
@@ -68,26 +64,15 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self._save_as_action)
 
     def _build_central(self) -> None:
-        # ── Left sidebar ───────────────────────────────────────────────
-        self.bot_info_panel = BotInfoPanel()
-
-        # ── Central canvas ─────────────────────────────────────────────
+        self.left_sidebar = LeftSidebar()
         self.bot_canvas = BotCanvas()
+        self.right_sidebar = RightSidebar()
 
-        # ── Right sidebar (Clients + Drops always visible) ─────────────
-        self.client_sidebar = ClientSidebar()
-        self.drop_panel = DropPanel()
-
-        self._right_tabs = QTabWidget()
-        self._right_tabs.addTab(self.client_sidebar, "Clients")
-        self._right_tabs.addTab(self.drop_panel, "Drops")
-
-        # ── Outer splitter (left | canvas | right) ─────────────────────
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setChildrenCollapsible(False)
-        splitter.addWidget(self.bot_info_panel)
+        splitter.addWidget(self.left_sidebar)
         splitter.addWidget(self.bot_canvas)
-        splitter.addWidget(self._right_tabs)
+        splitter.addWidget(self.right_sidebar)
         splitter.setStretchFactor(1, 1)  # canvas takes all extra space
         splitter.setSizes([220, 800, 220])
 
@@ -110,10 +95,10 @@ class MainWindow(QMainWindow):
     def set_bot_name(self, _name: str, filename: str | None) -> None:
         if filename:
             self.setWindowTitle(f"BartleBot — {filename}")
-            self.bot_info_panel.set_file(filename)
+            self.left_sidebar.bot_info.set_file(filename)
         else:
             self.setWindowTitle("BartleBot")
-            self.bot_info_panel.set_file(None)
+            self.left_sidebar.bot_info.set_file(None)
 
     def set_start_enabled(self, enabled: bool) -> None:
         self.bot_canvas.set_run_enabled(enabled)

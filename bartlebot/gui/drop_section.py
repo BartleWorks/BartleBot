@@ -1,41 +1,33 @@
-"""Right sidebar panel for the Run view: per-client drop tables with CSV export."""
+"""Sidebar section: per-client drop tables with CSV export."""
 
 import csv
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFileDialog, QHeaderView, QPushButton,
-    QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
+    QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout,
 )
-from PyQt6.QtCore import Qt
 
 from bartlebot.gui.sidebar_section import SidebarSection
 
 
-class DropPanel(QWidget):
-    """Per-client tabbed drop-tracking table with CSV export."""
+class DropSection(SidebarSection):
+    """Collapsible 'Drops' section with per-client drop tables and CSV export."""
 
     def __init__(self, parent=None):
-        super().__init__(parent)
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(0)
+        super().__init__("Drops", parent)
 
-        section = SidebarSection("Drops")
-
-        body_layout = QVBoxLayout()
-        body_layout.setSpacing(4)
+        layout = QVBoxLayout()
+        layout.setSpacing(4)
 
         self._tabs = QTabWidget()
-        body_layout.addWidget(self._tabs, 1)
+        layout.addWidget(self._tabs, 1)
 
         export_btn = QPushButton("Export CSV")
         export_btn.clicked.connect(self._export_csv)
-        body_layout.addWidget(export_btn)
+        layout.addWidget(export_btn)
 
-        section.set_content_layout(body_layout)
-        outer.addWidget(section)
-
-        self.setMinimumWidth(190)
+        self.set_content_layout(layout)
 
     # ------------------------------------------------------------------
     # Public API
@@ -66,7 +58,7 @@ class DropPanel(QWidget):
         qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
         table.setItem(row, 1, qty_item)
 
-    def clear(self) -> None:
+    def clear_drops(self) -> None:
         for i in range(self._tabs.count()):
             table = self._tabs.widget(i)
             if isinstance(table, QTableWidget):
