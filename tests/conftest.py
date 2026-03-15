@@ -2,6 +2,8 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
+from wizwalker import XYZ
+
 from bartlebot.log_level import LogLevel
 
 
@@ -23,6 +25,8 @@ class FakeClient:
         self.find_closest_by_vague_name = AsyncMock(return_value=None)
         self.tp_to = AsyncMock()
         self.in_battle = AsyncMock(return_value=False)
+        self.body = MagicMock()
+        self.body.position = AsyncMock(return_value=XYZ(0.0, 0.0, 0.0))
         self.root_window = MagicMock()
         self.root_window.children = AsyncMock(return_value=[])
         self.calc_health_ratio = AsyncMock(return_value=1.0)

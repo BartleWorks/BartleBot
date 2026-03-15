@@ -53,7 +53,7 @@ _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
 
-_RECORDABLE_NODES: set[str] = {"go_to_zone", "enter_dungeon", "interact", "interact_to_zone"}
+_RECORDABLE_NODES: set[str] = {"go_to_zone", "go_to_xyz", "enter_dungeon", "interact", "interact_to_zone"}
 
 _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.DEBUG:   "[DBG]",
@@ -1055,6 +1055,10 @@ class _ParamPanel(QWidget):
             self._record_task = asyncio.ensure_future(
                 self._record_go_to_zone(clients[0])
             )
+        elif self._state.node_type == "go_to_xyz":
+            self._record_task = asyncio.ensure_future(
+                self._record_go_to_xyz(clients[0])
+            )
         elif self._state.node_type == "enter_dungeon":
             self._record_btn.setText("Stop")
             self._record_status_lbl.setText("Starting…")
@@ -1115,6 +1119,24 @@ class _ParamPanel(QWidget):
             self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
             self._record_btn.setText("Record")
 
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
+
+    async def _record_go_to_xyz(self, client) -> None:
+        try:
+            zone = await client.zone_name()
+            pos = await client.body.position()
+            self._suppress = True
+            self._param_form.set_str("zone", zone)
+            self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
+            self._suppress = False
+            self.on_config_changed()
+            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
         except asyncio.CancelledError:
             self._record_status_lbl.setText("")
             self._record_btn.setText("Record")
