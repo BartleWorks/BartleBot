@@ -166,17 +166,11 @@ Teleports to the hub zone for the current world.
   4. Handle loading screen safely.
   5. Check that all clients are in `zone`. If not, return `FALSE`.
 
-## Decision Nodes
+## Condition Nodes
 
-Decision nodes allow users to implement branching behavior logic by evaluating conditions. Decision nodes don't have any associated in-game action. Rather, they are used to control which actions happen next.
+Condition nodes evaluate game state and return `TRUE` or `FALSE`. They have no in-game side effects — they exist purely to drive routing decisions in the bot graph. Like action nodes, they use named output ports; downstream edges connect from the `TRUE` or `FALSE` port as appropriate.
 
-### filter_clients
-
-Allows user to filter endpoints by client list. Implementation TBD.
-
-### split_on_flag
-
-Evalutes a bot-level conditional variable and gives endpoints depending on evaluation.
+For simple bot-option checks (e.g. "only follow this path if repeat mode is enabled"), use the `flag` field on a transition edge instead of a condition node. Condition nodes are for parameterized checks that evaluate live game data and need their own configuration panel.
 
 ### check_if_dropped
 
@@ -185,16 +179,17 @@ Stops the bot if a drop is received.
 | Parameter Name    | Parameter Type | Parameter Description |
 |-------------------|----------------|-----------------------|
 | `clients_to_check`| `List[int]`    | 0-based indices of clients to check for the drop.
-| `item_names`      | `List[str]`    | Names of items to watch for. Node returns `True` if any of the clients in `clients_to_check` have received any of the items in `item_names`.
-| `require_all`     | `bool`         | Optional, defaults to `False`. If `require_all == True`, node returns `True` only if all items in `item_names` have been dropped for all clients in `clients_to_check`.
+| `item_names`      | `List[str]`    | Names of items to watch for.
+| `require_all`     | `bool`         | Optional, defaults to `False`. If `True`, node returns `TRUE` only if all items in `item_names` have been dropped for all clients in `clients_to_check`. If `False`, returns `TRUE` as soon as any matching item is found.
+
+**Returns:** `TRUE` if the drop condition is met, `FALSE` otherwise.
 
 **Implementation:**
 - APIs: checks the drop table for the current run
 - Flow:
-  1. Set return value to `True` 
-  2. For each client in `clients_to_check`, scan `item_names`
-  3. If `require_all == False`, return `True` as soon as any items in `item_names` are found. If `require_all == True`, set return value to `False` as soon as an item check comes up empty for any client.
-  4. Return the set return value.
+  1. For each client in `clients_to_check`, scan `item_names`.
+  2. If `require_all == False`, return `TRUE` as soon as any item in `item_names` is found for any client. If `require_all == True`, return `FALSE` as soon as any item check comes up empty for any client.
+  3. Return `TRUE` if all checks passed, `FALSE` otherwise.
 - Intended use: placed as a node that runs after each combat or dungeon run, allowing the bot to loop back if the item hasn't dropped.
 
 ### check_level_scaling
@@ -203,12 +198,14 @@ Checks if a list of clients are all level scaled. Checks level scaling by checki
 
 | Parameter Name    | Parameter Type | Parameter Description |
 |-------------------|----------------|-----------------------|
-| `clients_to_check`| `bool`         | 0-based indices of clients to check for level scaling status.
+| `clients_to_check`| `List[int]`    | 0-based indices of clients to check for level scaling status.
+
+**Returns:** `TRUE` if all specified clients are level scaled, `FALSE` otherwise.
 
 **Implementation**
 - Flow:
   1. For each client in `clients_to_check`, check if the level scaling UI path element is visible.
-  2. Return `False` if any client is not level scaled, else return `True`.
+  2. Return `FALSE` if any client is not level scaled, else return `TRUE`.
 
 # Advanced Behavior Library
 
