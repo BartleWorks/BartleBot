@@ -1,5 +1,6 @@
 """Unit tests for the enter_dungeon node."""
 
+import asyncio
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.enter_dungeon as ed
@@ -181,3 +182,32 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
     assert Keycode.ENTER not in calls
+
+
+async def test_dungeon_warning_dialog_appears_late():
+    """ENTER is pressed even when the dungeon warning dialog appears near the end of the safety window."""
+    client = _happy_client()
+    call_count = 0
+
+    async def late_visible(*args):
+        nonlocal call_count
+        call_count += 1
+        # Each call takes real time so elapsed accumulates; dialog appears on 3rd poll.
+        await asyncio.sleep(0.007)
+        return call_count == 3
+
+    machine = FakeMachine()
+    machine.get_option = lambda name, default=None: 0.1 if name == "Safety Delay" else 0
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=late_visible)),
+    ):
+        result = await ed.run(machine, [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    from wizwalker import Keycode
+    calls = [call.args[0] for call in client.send_key.call_args_list]
+    assert Keycode.X in calls
+    assert Keycode.ENTER in calls

@@ -53,8 +53,8 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Seconds to wait after triggering an interaction or dialogue "
-                "before checking for a response window."
+                "Minimum seconds to watch for dialog windows after triggering an "
+                "interaction before concluding that none will open."
             ),
         ),
     ],
@@ -113,25 +113,27 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Pressing X to interact", LogLevel.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 3b. Wait for the dialogue window to appear before polling.
-    await asyncio.sleep(machine.get_option("Safety Delay", 3.0))
-
-    # 4. Advance through dialogue until all clients have dismissed it.
+    # 4. Advance through dialogue; start polling immediately after X.
+    #    Only exit once no dialog is open AND at least Safety Delay seconds have
+    #    passed, so late-opening dialog windows are not missed.
     machine.log("Advancing dialogue…", LogLevel.DEBUG)
+    safety_delay = machine.get_option("Safety Delay", 3.0)
     loop_start = asyncio.get_event_loop().time()
     while True:
         dialogs = await asyncio.gather(*[c.is_in_dialog() for c in clients])
-        if not any(dialogs):
+        elapsed = asyncio.get_event_loop().time() - loop_start
+        if not any(dialogs) and elapsed >= safety_delay:
             break
-        if asyncio.get_event_loop().time() - loop_start > DIALOG_TIMEOUT:
+        if elapsed > DIALOG_TIMEOUT:
             machine.log(
                 f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
                 LogLevel.WARNING,
             )
             return "FAILURE"
-        await asyncio.gather(*[
-            c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(clients, dialogs) if d
-        ])
+        if any(dialogs):
+            await asyncio.gather(*[
+                c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(clients, dialogs) if d
+            ])
         await asyncio.sleep(POLL_INTERVAL)
 
     machine.log("SUCCESS: interaction complete")

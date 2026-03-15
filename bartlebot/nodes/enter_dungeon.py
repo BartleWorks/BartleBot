@@ -70,8 +70,8 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3,
             description=(
-                "Seconds to wait after triggering an interaction or dialogue "
-                "before checking for a response window."
+                "Minimum seconds to watch for dialog windows after triggering an "
+                "interaction before concluding that none will open."
             ),
         ),
     ],

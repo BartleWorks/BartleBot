@@ -11,12 +11,24 @@ DUNGEON_WARNING_PATH = [
     "AdjustmentWindow", "Layout", "centerButton",
 ]
 
+POLL_INTERVAL = 0.25
+
 
 async def confirm_dialog_if_visible(client, delay: float = 3.0) -> None:
-    """Wait delay seconds, then press ENTER to confirm the dungeon warning if it appeared."""
-    await asyncio.sleep(delay)
-    if await is_visible_by_path(client, DUNGEON_WARNING_PATH):
-        await client.send_key(Keycode.ENTER, 0.1)
+    """Poll for the dungeon warning dialog; confirm it immediately when it appears.
+
+    Keeps polling for at least `delay` seconds before concluding the dialog will
+    not appear. If the dialog appears before `delay` has elapsed, ENTER is pressed
+    immediately and the function returns — no further waiting.
+    """
+    loop_start = asyncio.get_event_loop().time()
+    while True:
+        if await is_visible_by_path(client, DUNGEON_WARNING_PATH):
+            await client.send_key(Keycode.ENTER, 0.1)
+            return
+        if asyncio.get_event_loop().time() - loop_start >= delay:
+            return
+        await asyncio.sleep(POLL_INTERVAL)
 
 
 async def is_visible_by_path(client, path: list[str]) -> bool:

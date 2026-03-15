@@ -1,5 +1,6 @@
 """Unit tests for the interact node."""
 
+import asyncio
 from unittest.mock import patch
 
 import bartlebot.nodes.interact as ix
@@ -117,3 +118,29 @@ async def test_dialog_timeout_fails():
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
+
+
+async def test_late_dialog_caught_within_safety_window():
+    """Dialog appearing after several polls (but before safety_delay expires) is caught and advanced."""
+    client = _ready_client()
+    call_count = 0
+
+    async def late_dialog():
+        nonlocal call_count
+        call_count += 1
+        # Each call takes real time so elapsed accumulates; dialog appears on 3rd poll.
+        await asyncio.sleep(0.007)
+        return call_count == 3
+
+    client.is_in_dialog.side_effect = late_dialog
+
+    machine = FakeMachine()
+    machine.get_option = lambda name, default=None: 0.1 if name == "Safety Delay" else 0
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(machine, [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    from wizwalker import Keycode
+    calls = [call.args[0] for call in client.send_key.call_args_list]
+    assert Keycode.SPACEBAR in calls
