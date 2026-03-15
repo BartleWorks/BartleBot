@@ -9,7 +9,7 @@ class RightSidebar(Sidebar):
     """Right sidebar containing per-client info and drop tracking sections."""
 
     def __init__(self, parent=None):
-        super().__init__(min_width=220, parent=parent)
+        super().__init__(min_width=300, parent=parent)
 
         self.clients = ClientSection()
         self.drops = DropSection()
