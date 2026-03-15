@@ -10,6 +10,14 @@ from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, Re
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
+        key="zone",
+        type="str",
+        label="Zone",
+        help="Zone name the clients must currently be in when this node executes.",
+        default="",
+        required=True,
+    ),
+    ParamField(
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
@@ -74,14 +82,27 @@ async def run(machine, clients: list, params: dict) -> str:
         interact_xyz (dict): {"x", "y", "z"} — coordinates of the interactable.
         reset_xyz (dict):    {"x", "y", "z"} — coordinates used to dismiss the prompt.
     """
+    zone: str = params["zone"]
     interact = XYZ(**params["interact_xyz"])
     reset = XYZ(**params["reset_xyz"])
 
     machine.log(
-        f"interact: XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
+        f"interact: {zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
     )
 
-    # 1–2. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
+    # 1. Verify all clients are in zone.
+    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    if not all(z == zone for z in zones):
+        wrong = [z for z in zones if z != zone]
+        machine.log(
+            f"FAILURE: clients not in expected zone "
+            f"(expected={zone!r}, unexpected={wrong})",
+            LogLevel.WARNING,
+        )
+        return "FAILURE"
+
+    # 2–3. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
@@ -109,11 +130,11 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 3. Press X to begin interaction.
+    # 4. Press X to begin interaction.
     machine.log("Pressing X to interact", LogLevel.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 4. Advance through dialogue; start polling immediately after X.
+    # 5. Advance through dialogue; start polling immediately after X.
     #    Only exit once no dialog is open AND at least Safety Delay seconds have
     #    passed, so late-opening dialog windows are not missed.
     machine.log("Advancing dialogue…", LogLevel.DEBUG)

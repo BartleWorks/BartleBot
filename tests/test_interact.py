@@ -8,6 +8,7 @@ import bartlebot.nodes.interact as ix
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
+    "zone": "TestZone",
     "interact_xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
     "reset_xyz": {"x": 1.0, "y": 0.0, "z": 0.0},
 }
@@ -118,6 +119,30 @@ async def test_dialog_timeout_fails():
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
+
+
+async def test_wrong_zone_fails():
+    """Pre-condition failure: client is not in the expected zone."""
+    client = FakeClient()
+    client.zone_name.return_value = "WrongZone"
+
+    result = await ix.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    client.teleport.assert_not_called()
+
+
+async def test_one_client_wrong_zone_fails():
+    """Pre-condition failure: one of two clients is in the wrong zone."""
+    good = FakeClient()  # zone_name defaults to "TestZone"
+    bad = FakeClient()
+    bad.zone_name.return_value = "WrongZone"
+
+    result = await ix.run(FakeMachine(), [good, bad], _PARAMS)
+
+    assert result == "FAILURE"
+    good.teleport.assert_not_called()
+    bad.teleport.assert_not_called()
 
 
 async def test_late_dialog_caught_within_safety_window():

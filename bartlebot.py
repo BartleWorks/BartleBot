@@ -104,6 +104,7 @@ def new_bot(window: MainWindow) -> None:
     window.set_bot_name(config.name, "Untitled")
     window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
+    window.bot_canvas.enter_edit_mode()
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
 

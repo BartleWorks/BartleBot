@@ -53,7 +53,7 @@ _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
 
-_RECORDABLE_NODES: set[str] = {"go_to_zone", "enter_dungeon"}
+_RECORDABLE_NODES: set[str] = {"go_to_zone", "enter_dungeon", "interact"}
 
 _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.DEBUG:   "[DBG]",
@@ -1061,6 +1061,12 @@ class _ParamPanel(QWidget):
             self._record_task = asyncio.ensure_future(
                 self._record_enter_dungeon(clients[0])
             )
+        elif self._state.node_type == "interact":
+            self._record_btn.setText("Stop")
+            self._record_status_lbl.setText("Starting…")
+            self._record_task = asyncio.ensure_future(
+                self._record_interact(clients[0])
+            )
 
     async def _record_go_to_zone(self, client) -> None:
         POLL = 0.15
@@ -1151,6 +1157,49 @@ class _ParamPanel(QWidget):
                 self.on_config_changed()
 
             self._record_status_lbl.setText(f"Done — {dungeon_zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
+
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
+
+    async def _record_interact(self, client) -> None:
+        POLL = 0.15
+
+        try:
+            # Phase 1: zone and reset_xyz (starting position)
+            zone = await client.zone_name()
+            self._param_form.set_str("zone", zone)
+            start_pos = await client.body.position()
+            self._param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
+            self._record_status_lbl.setText("Walk to interactable…")
+
+            # Phase 2: wait for interact prompt to appear
+            while not await client.is_in_npc_range():
+                await asyncio.sleep(POLL)
+
+            # Phase 3: prompt visible — live-update interact_xyz until prompt disappears
+            self._record_status_lbl.setText("Interact to finish…")
+            while True:
+                pos = await client.body.position()
+                self._param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
+                await asyncio.sleep(POLL)
+                if not await client.is_in_npc_range():
+                    break
+
+            # Phase 4: auto-populate label if empty
+            if self._state is not None and not (self._state.label or "").strip():
+                label = _zone_display(zone)
+                self._state.label = label
+                self._suppress = True
+                self._node_label_edit.setText(label)
+                self._suppress = False
+                self.on_config_changed()
+
+            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
             self._record_btn.setText("Record")
 
         except asyncio.CancelledError:
@@ -1482,11 +1531,15 @@ class BotCanvas(QWidget):
             self.append_log("=== Resumed ===")
             self.on_resume()
 
-    def _on_edit_clicked(self) -> None:
+    def enter_edit_mode(self) -> None:
+        """Switch to Edit mode (no-op if the bot is currently running)."""
         if self._run_state != _IDLE:
             return
         self._apply_mode(BotMode.EDIT)
         self.on_mode_changed(BotMode.EDIT)
+
+    def _on_edit_clicked(self) -> None:
+        self.enter_edit_mode()
 
     def _on_done_clicked(self) -> None:
         self._apply_mode(BotMode.RUN)
