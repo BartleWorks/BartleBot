@@ -60,10 +60,17 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("SUCCESS: clients already in hub zone")
         return "SUCCESS"
 
+    # Only teleport clients that aren't already in the hub zone.
+    clients_to_move = [c for c, z in zip(clients, zones) if z != zone]
+    machine.log(
+        f"{len(clients_to_move)} of {len(clients)} client(s) need to teleport",
+        LogLevel.DEBUG,
+    )
+
     # 2. Wait for hub button to become enabled (30s cooldown after last use).
     machine.log("Waiting for hub teleport button to become enabled…", LogLevel.DEBUG)
     if not await node_helpers.wait_until(
-        lambda: _all_hub_button_enabled(clients), BUTTON_TIMEOUT, POLL_INTERVAL
+        lambda: _all_hub_button_enabled(clients_to_move), BUTTON_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
             f"FAILURE: hub teleport button did not become enabled within {BUTTON_TIMEOUT}s",
@@ -71,30 +78,40 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 3. Press END on all clients; re-press for any client that hasn't started loading.
+    # 3. Press END on clients that need to move; re-press for any that haven't started loading.
+    #    Track which clients have *ever* been seen loading rather than requiring all
+    #    to be loading simultaneously — a fast client can finish its loading screen
+    #    (is_loading() → False) before a slow client even starts, which would
+    #    otherwise prevent the all-loading condition from ever being met.
     machine.log("Pressing END to teleport to hub…", LogLevel.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.END, 0.1) for c in clients])
+    await asyncio.gather(*[c.send_key(Keycode.END, 0.1) for c in clients_to_move])
 
+    seen_loading: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
     while True:
-        loading = await asyncio.gather(*[c.is_loading() for c in clients])
-        if all(loading):
+        loading = await asyncio.gather(*[c.is_loading() for c in clients_to_move])
+        for i, is_now in enumerate(loading):
+            if is_now:
+                seen_loading.add(i)
+        if len(seen_loading) == len(clients_to_move):
             break
         if asyncio.get_event_loop().time() - loop_start > TRIGGER_TIMEOUT:
-            not_loading_idx = [i for i, l in enumerate(loading) if not l]
+            not_loading_idx = [i for i in range(len(clients_to_move)) if i not in seen_loading]
             machine.log(f"Clients not loading at timeout: {not_loading_idx}", LogLevel.DEBUG)
             machine.log(
                 f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
                 LogLevel.WARNING,
             )
             return "FAILURE"
-        not_loading_clients = [c for c, l in zip(clients, loading) if not l]
+        not_loading_clients = [
+            c for i, (c, l) in enumerate(zip(clients_to_move, loading)) if i not in seen_loading
+        ]
         await asyncio.gather(*[c.send_key(Keycode.END, 0.1) for c in not_loading_clients])
         await asyncio.sleep(POLL_INTERVAL)
 
     # 4. Wait for loading screens to finish.
     machine.log("Loading screen active, waiting for it to clear…", LogLevel.DEBUG)
-    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients_to_move), None, POLL_INTERVAL)
 
     # 5. Verify all clients arrived in the expected hub zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])

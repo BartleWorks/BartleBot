@@ -53,7 +53,7 @@ _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
 
-_RECORDABLE_NODES: set[str] = {"go_to_zone", "enter_dungeon", "interact"}
+_RECORDABLE_NODES: set[str] = {"go_to_zone", "enter_dungeon", "interact", "interact_to_zone"}
 
 _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.DEBUG:   "[DBG]",
@@ -1067,6 +1067,12 @@ class _ParamPanel(QWidget):
             self._record_task = asyncio.ensure_future(
                 self._record_interact(clients[0])
             )
+        elif self._state.node_type == "interact_to_zone":
+            self._record_btn.setText("Stop")
+            self._record_status_lbl.setText("Starting…")
+            self._record_task = asyncio.ensure_future(
+                self._record_interact_to_zone(clients[0])
+            )
 
     async def _record_go_to_zone(self, client) -> None:
         POLL = 0.15
@@ -1157,6 +1163,60 @@ class _ParamPanel(QWidget):
                 self.on_config_changed()
 
             self._record_status_lbl.setText(f"Done — {dungeon_zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
+
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
+
+    async def _record_interact_to_zone(self, client) -> None:
+        POLL = 0.15
+
+        try:
+            # Phase 1: from_zone and reset_xyz (starting position)
+            from_zone = await client.zone_name()
+            self._param_form.set_str("from_zone", from_zone)
+            start_pos = await client.body.position()
+            self._param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
+            self._record_status_lbl.setText("Walk to interactable…")
+
+            # Phase 2: wait for interact prompt to appear
+            while not await client.is_in_npc_range():
+                await asyncio.sleep(POLL)
+
+            # Phase 3: prompt visible — live-update interact_xyz until prompt disappears
+            self._record_status_lbl.setText("Interact to trigger zone change…")
+            while True:
+                pos = await client.body.position()
+                self._param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
+                await asyncio.sleep(POLL)
+                if not await client.is_in_npc_range():
+                    break
+
+            # Phase 4: wait for loading to start then finish
+            self._record_status_lbl.setText("Loading…")
+            while not await client.is_loading():
+                await asyncio.sleep(POLL)
+            while await client.is_loading():
+                await asyncio.sleep(POLL)
+
+            # Phase 5: to_zone
+            to_zone = await client.zone_name()
+            self._param_form.set_str("to_zone", to_zone)
+
+            # Phase 6: auto-populate label if empty
+            if self._state is not None and not (self._state.label or "").strip():
+                label = f"{_zone_display(from_zone)} → {_zone_display(to_zone)}"
+                self._state.label = label
+                self._suppress = True
+                self._node_label_edit.setText(label)
+                self._suppress = False
+                self.on_config_changed()
+
+            self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
             self._record_btn.setText("Record")
 
         except asyncio.CancelledError:

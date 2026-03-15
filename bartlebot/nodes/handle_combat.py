@@ -1,6 +1,7 @@
 """Node: enter and complete a combat encounter using WizSprinter."""
 
 import asyncio
+import re
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.log_level import LogLevel
@@ -159,8 +160,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log("All clients in combat — running SprintyCombat")
 
-    # 5. Run SprintyCombat for all clients in parallel
-    await asyncio.gather(*[_run_combat(c, combat_dsl) for c in clients])
+    # 5. Split multi-client DSL by ### pN section headers, then run SprintyCombat in parallel.
+    per_client_dsl = _split_combat_config(combat_dsl, len(clients))
+    await asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
 
     machine.log("SprintyCombat finished for all clients", LogLevel.DEBUG)
 
@@ -223,6 +225,40 @@ async def _run_combat(client, combat_dsl: str) -> None:
 
     provider = _StrCombatConfigProvider(combat_dsl)
     await SprintyCombat(client, provider).handle_combat()
+
+
+def _split_combat_config(dsl: str, num_clients: int) -> list[str]:
+    """Split a Deimos-style multi-client DSL into per-client config strings.
+
+    Section headers of the form '### p1', '### p2', etc. (1-based, matching
+    Deimos convention) delimit per-client configs. Content before the first
+    header and clients without a matching section fall back to client 1's
+    section, or the full string if no headers exist.
+    """
+    pattern = re.compile(r"###\sp\s*(\d+)")
+
+    lines = dsl.splitlines()
+    sections: dict[int, list[str]] = {}  # 0-indexed client → lines
+    current_idx = -1
+    current_lines: list[str] = []
+
+    for line in lines:
+        match = re.search(pattern, line)
+        if match:
+            if current_idx != -1:
+                sections[current_idx] = current_lines[:]
+            current_idx = int(match.group(1)) - 1  # 1-based → 0-based
+            current_lines = []
+        else:
+            current_lines.append(line)
+
+    if current_idx == -1:
+        # No section headers — all clients share the full config.
+        return [dsl] * num_clients
+
+    sections[current_idx] = current_lines
+    fallback = "\n".join(sections.get(0, lines))
+    return ["\n".join(sections.get(i, sections.get(0, lines))) for i in range(num_clients)]
 
 
 async def _wait_for_all_in_combat(clients: list, timeout: float) -> bool:

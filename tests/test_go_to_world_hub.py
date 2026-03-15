@@ -26,6 +26,13 @@ def _client_not_in_hub() -> FakeClient:
     return client
 
 
+def _client_already_in_hub() -> FakeClient:
+    """Client that is already in the hub zone and should not be teleported."""
+    client = FakeClient()
+    client.zone_name.return_value = _ZONE
+    return client
+
+
 async def test_already_in_zone_returns_success():
     """Clients already in the hub zone → SUCCESS immediately, END key never sent."""
     client = FakeClient()
@@ -135,12 +142,12 @@ async def test_end_resent_to_lagging_client():
     """One client starts loading immediately; the other needs a second END press."""
     c1 = FakeClient()
     c1.zone_name.side_effect = ["OtherZone", _ZONE]
-    # Trigger loop iter1: loading; trigger loop iter2: still loading; none_loading: done.
+    # Trigger loop iter1: loading; iter2: still loading; none_loading: done.
     c1.is_loading.side_effect = [True, True, False]
 
     c2 = FakeClient()
     c2.zone_name.side_effect = ["OtherZone", _ZONE]
-    # Trigger loop iter1: not loading yet; trigger loop iter2: loading; none_loading: done.
+    # Trigger loop iter1: not loading yet; iter2: loading; none_loading: done.
     c2.is_loading.side_effect = [False, True, False]
 
     with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
@@ -152,3 +159,73 @@ async def test_end_resent_to_lagging_client():
     c2_end_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.END]
     assert len(c1_end_presses) == 1
     assert len(c2_end_presses) >= 2
+
+
+async def test_fast_client_finishes_before_lagging_client_starts():
+    """Client 1 finishes loading before client 2 even starts.
+
+    The old all(loading) break condition could never be satisfied when client 1's
+    is_loading() flips back to False (done) while client 2 is still False (not
+    started). The seen_loading approach handles this correctly.
+    """
+    c1 = FakeClient()
+    c1.zone_name.side_effect = ["OtherZone", _ZONE]
+    # iter1: loading (seen); iter2: already done; iter3: done; none_loading: done
+    c1.is_loading.side_effect = [True, False, False, False]
+
+    c2 = FakeClient()
+    c2.zone_name.side_effect = ["OtherZone", _ZONE]
+    # iter1: not started; iter2: not started; iter3: loading (seen); none_loading: done
+    c2.is_loading.side_effect = [False, False, True, False]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [c1, c2], _PARAMS)
+
+    assert result == "SUCCESS"
+    c2_end_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.END]
+    assert len(c2_end_presses) >= 2
+
+
+async def test_partial_already_in_zone_skips_teleport():
+    """One client already in hub, one not — the hub client is skipped entirely → SUCCESS."""
+    c_hub = _client_already_in_hub()
+    c_other = _client_not_in_hub()
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [c_hub, c_other], _PARAMS)
+
+    assert result == "SUCCESS"
+    c_hub.send_key.assert_not_called()
+    assert any(call.args[0] == Keycode.END for call in c_other.send_key.call_args_list)
+
+
+async def test_partial_already_in_zone_wrong_arrival_returns_failure():
+    """One client already in hub, the other teleports but arrives in the wrong zone → FAILURE."""
+    c_hub = _client_already_in_hub()
+    c_wrong = FakeClient()
+    c_wrong.zone_name.side_effect = ["OtherZone", "WrongZone"]
+    c_wrong.is_loading.side_effect = [True, False]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [c_hub, c_wrong], _PARAMS)
+
+    assert result == "FAILURE"
+    c_hub.send_key.assert_not_called()
+
+
+async def test_partial_already_in_zone_with_lagging_client():
+    """One client already in hub; the other needs a re-press before loading → SUCCESS."""
+    c_hub = _client_already_in_hub()
+
+    c_lag = FakeClient()
+    c_lag.zone_name.side_effect = ["OtherZone", _ZONE]
+    # iter1: not loading yet (gets re-press); iter2: loading; none_loading: done.
+    c_lag.is_loading.side_effect = [False, True, False]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [c_hub, c_lag], _PARAMS)
+
+    assert result == "SUCCESS"
+    c_hub.send_key.assert_not_called()
+    c_lag_end_presses = [call for call in c_lag.send_key.call_args_list if call.args[0] == Keycode.END]
+    assert len(c_lag_end_presses) >= 2
