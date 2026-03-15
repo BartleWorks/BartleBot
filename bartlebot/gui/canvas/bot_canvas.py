@@ -37,6 +37,14 @@ class _IntListLineEdit(QLineEdit):
     """
 
 
+class _StrListLineEdit(QLineEdit):
+    """QLineEdit variant used for 'str_list' param fields.
+
+    Stores values as a comma-separated string (e.g. "IronBloom, GoldKey") and
+    is identified by get_params() to deserialise back to list[str].
+    """
+
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -577,6 +585,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = [
                     int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()
                 ]
+            elif isinstance(w, _StrListLineEdit):
+                result[key] = [x.strip() for x in w.text().split(",") if x.strip()]
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):
@@ -611,6 +621,17 @@ class _DynamicParamForm(QWidget):
             else:
                 w.setText(str(val) if val else "")
             w.setPlaceholderText("e.g. 1, 2, 3")
+            if help_text:
+                w.setToolTip(help_text)
+            w.textChanged.connect(self._emit_changed)
+            return w
+        if field_type == "str_list":
+            w = _StrListLineEdit()
+            if isinstance(val, list):
+                w.setText(", ".join(str(v) for v in val))
+            else:
+                w.setText(str(val) if val else "")
+            w.setPlaceholderText("e.g. ItemA, ItemB")
             if help_text:
                 w.setToolTip(help_text)
             w.textChanged.connect(self._emit_changed)
@@ -1797,7 +1818,7 @@ def _required_field_empty(field, params: dict) -> bool:
     val = params[field.key]
     if field.type in ("str", "text"):
         return not str(val).strip()
-    if field.type == "int_list":
+    if field.type in ("int_list", "str_list"):
         return not val  # empty list
     return False  # int, float, bool, xyz always have a value
 

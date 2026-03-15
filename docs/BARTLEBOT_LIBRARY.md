@@ -29,7 +29,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
 | Node | Description | Status |
 |------|-------------|--------|
-| [`check_if_dropped`](#check_if_dropped) | Check if a specific item has been dropped | `todo` |
+| [`check_if_dropped`](#check_if_dropped) | Check if a specific item has been dropped | `done` |
 | [`check_level_scaling`](#check_level_scaling) | Check if clients are level scaled | `todo` |
 
 ## Advanced Behaviors
@@ -339,7 +339,7 @@ For simple bot-option checks (e.g. "only follow this path if repeat mode is enab
 
 ### check_if_dropped
 
-**Status:** `todo`
+**Status:** `done`
 
 Stops the bot if a drop is received.
 

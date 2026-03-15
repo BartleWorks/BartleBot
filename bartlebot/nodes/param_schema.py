@@ -30,7 +30,7 @@ class ParamField:
 
     Attributes:
         key:          JSON key used in the params dict.
-        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list".
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list".
                       "text" renders as a multi-line QPlainTextEdit.
         label:        Human-readable form label.
         help:         Tooltip / documentation text shown on hover.

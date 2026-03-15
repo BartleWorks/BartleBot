@@ -6,6 +6,7 @@ from bartlebot.nodes.action.go_to_zone import run as go_to_zone_run, NODE_SPEC a
 from bartlebot.nodes.action.handle_combat import run as handle_combat_run, NODE_SPEC as _handle_combat_spec
 from bartlebot.nodes.action.interact import run as interact_run, NODE_SPEC as _interact_spec
 from bartlebot.nodes.action.interact_to_zone import run as interact_to_zone_run, NODE_SPEC as _interact_to_zone_spec
+from bartlebot.nodes.condition.check_if_dropped import run as check_if_dropped_run, NODE_SPEC as _check_if_dropped_spec
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 
 NODE_REGISTRY: dict = {
@@ -17,6 +18,7 @@ NODE_REGISTRY: dict = {
     "interact_to_zone": interact_to_zone_run,
     "handle_combat": handle_combat_run,
     "collect_wisps": collect_wisps_run,
+    "check_if_dropped": check_if_dropped_run,
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
@@ -28,6 +30,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "interact_to_zone": _interact_to_zone_spec,
     "handle_combat": _handle_combat_spec,
     "collect_wisps": _collect_wisps_spec,
+    "check_if_dropped": _check_if_dropped_spec,
 }
 
 # Convenience alias — param schemas derived from NODE_SPECS so there is one source of truth

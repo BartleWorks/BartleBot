@@ -40,6 +40,7 @@ class BotMachine:
         self._on_drop = on_drop
         self._on_log = on_log
         self._stop_flag = asyncio.Event()
+        self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
         self.last_result: str | None = None
@@ -110,7 +111,8 @@ class BotMachine:
     # --- Drop reporting ---
 
     def on_drop(self, item: str, quantity: int, client_index: int = 0) -> None:
-        """Report a detected drop. Calls the on_drop callback if one was provided."""
+        """Record a detected drop and notify the callback if one was provided."""
+        self.drops.append((item, quantity, client_index))
         if self._on_drop:
             self._on_drop(item, quantity, client_index)
 
