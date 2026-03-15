@@ -29,23 +29,27 @@ class ParamField:
     """Describes one parameter accepted by a node type.
 
     Attributes:
-        key:         JSON key used in the params dict.
-        type:        Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz".
-                     "text" renders as a multi-line QPlainTextEdit.
-        label:       Human-readable form label.
-        help:        Tooltip / documentation text shown on hover.
-        default:     Value used when no existing param data is present.
-        disabled_by: Key of a bool field in the same schema; when that field is
-                     True this field's widget is disabled. Empty string = no link.
-        required:    When True the param must be explicitly set in state.params
-                     (i.e. the user must open the properties panel and save).
-                     Used by the GUI to flag unconfigured nodes as errors.
+        key:          JSON key used in the params dict.
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list".
+                      "text" renders as a multi-line QPlainTextEdit.
+        label:        Human-readable form label.
+        help:         Tooltip / documentation text shown on hover.
+        default:      Value used when no existing param data is present.
+        default_hint: Short description of the default behaviour shown as a dimmed hint
+                      below the input widget when the field is optional. Leave blank for
+                      required fields or fields where the default needs no explanation.
+        disabled_by:  Key of a bool field in the same schema; when that field is
+                      True this field's widget is disabled. Empty string = no link.
+        required:     When True the param must be explicitly set in state.params
+                      (i.e. the user must open the properties panel and save).
+                      Used by the GUI to flag unconfigured nodes as errors.
     """
     key: str
     type: str
     label: str
     help: str = ""
     default: Any = None
+    default_hint: str = ""
     disabled_by: str = ""
     required: bool = False
 

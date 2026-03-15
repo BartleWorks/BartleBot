@@ -66,7 +66,7 @@ Performs combat with a specified enemy. If no enemy is specified, defaults to th
 |-----------------|----------------|-----------------------|
 | `enemy`         | `str`          | The entity name of the enemy to enter combat against. If omitted, uses the closest valid mob.
 | `combat_config` | `str` (optional) | WizSprinter combat DSL config for this encounter. If omitted, falls back to the bot-level `default_combat_config`.
-| `combat_order`  | `List[int]` (optional) | Order in which clients enter combat, as 0-based client indices. Example: `[0, 1, 2]` sends client 0 first, then 1, then 2. If omitted, all clients enter simultaneously.
+| `combat_order`  | `List[int]` (optional) | Order in which clients enter combat, as 1-based client numbers matching p1/p2/p3/p4 in the WizSprinter combat config. Example: `[2, 1]` sends client 2 first, then client 1. If omitted, all clients enter simultaneously.
 
 **Implementation:**
 - APIs: `SprintyClient.find_closest_by_name()`, `SprintyClient.tp_to()`, `client.in_battle()`, `SprintyCombat`, `StrCombatConfigProvider`
@@ -166,6 +166,27 @@ Teleports to the hub zone for the current world.
   4. Handle loading screen safely.
   5. Check that all clients are in `zone`. If not, return `FALSE`.
 
+### collect_wisps
+
+Collects health and mana wisps after a battle if clients are below a specified health or mana threshold. Returns `FAILURE` if any client is still below a configurable fail threshold after wisps are exhausted, allowing the bot graph to route to a potion fallback node.
+
+| Parameter Name        | Parameter Type | Parameter Description |
+|-----------------------|----------------|-----------------------|
+| `if_health_below`     | `float`        | Health threshold (0.0–1.0). Collect health wisps while the client's health ratio is below this value. Set to 0.0 to skip health wisp collection entirely. |
+| `if_mana_below`       | `float`        | Mana threshold (0.0–1.0). Collect mana wisps while the client's mana ratio is below this value. Set to 0.0 to skip mana wisp collection entirely. |
+| `fail_if_health_below`| `float`        | Health fail threshold (0.0–1.0). After collection, if any client's health ratio is still below this value, return `FAILURE`. Set to 0.0 to never fail on health. Default: `0.5`. |
+| `fail_if_mana_below`  | `float`        | Mana fail threshold (0.0–1.0). After collection, if any client's mana ratio is still below this value, return `FAILURE`. Set to 0.0 to never fail on mana. Default: `0.5`. |
+
+**Implementation:**
+- APIs: `SprintyClient.calc_health_ratio()`, `SprintyClient.calc_mana_ratio()`, `SprintyClient.tp_to_closest_health_wisp()`, `SprintyClient.tp_to_closest_mana_wisp()`
+- Flow:
+  1. For each client (in parallel), check health and mana ratios.
+  2. While health is below `if_health_below`, teleport the client to the closest health wisp (`tp_to_closest_health_wisp()` returns `False` when no wisps are in range — stop the loop). Wait briefly between teleports to allow the wisp to register.
+  3. While mana is below `if_mana_below`, teleport the client to the closest mana wisp. Stop when no more wisps are in range.
+  4. After all clients finish collecting, re-check ratios. If any client's health ratio is below `fail_if_health_below` or mana ratio is below `fail_if_mana_below`, return `FAILURE`.
+  5. Return `SUCCESS` if all clients are at or above both fail thresholds.
+- `FAILURE` cases: any client is still below a fail threshold after wisps are exhausted.
+
 ## Condition Nodes
 
 Condition nodes evaluate game state and return `TRUE` or `FALSE`. They have no in-game side effects — they exist purely to drive routing decisions in the bot graph. Like action nodes, they use named output ports; downstream edges connect from the `TRUE` or `FALSE` port as appropriate.
@@ -178,7 +199,7 @@ Stops the bot if a drop is received.
 
 | Parameter Name    | Parameter Type | Parameter Description |
 |-------------------|----------------|-----------------------|
-| `clients_to_check`| `List[int]`    | 0-based indices of clients to check for the drop.
+| `clients_to_check`| `List[int]`    | 1-based client numbers to check for the drop (e.g. `[1, 2]` checks clients 1 and 2).
 | `item_names`      | `List[str]`    | Names of items to watch for.
 | `require_all`     | `bool`         | Optional, defaults to `False`. If `True`, node returns `TRUE` only if all items in `item_names` have been dropped for all clients in `clients_to_check`. If `False`, returns `TRUE` as soon as any matching item is found.
 
@@ -198,7 +219,7 @@ Checks if a list of clients are all level scaled. Checks level scaling by checki
 
 | Parameter Name    | Parameter Type | Parameter Description |
 |-------------------|----------------|-----------------------|
-| `clients_to_check`| `List[int]`    | 0-based indices of clients to check for level scaling status.
+| `clients_to_check`| `List[int]`    | 1-based client numbers to check for level scaling status (e.g. `[1, 2]` checks clients 1 and 2).
 
 **Returns:** `TRUE` if all specified clients are level scaled, `FALSE` otherwise.
 
@@ -228,23 +249,6 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
   2. If either ratio is below the threshold and the client has a potion, use it.
   3. If `refill_potions` is true and a client has no potions, navigate to the potion vendor and refill (vendor location TBD as implementation detail).
   4. Return `SUCCESS` always (this is a maintenance node, not conditional).
-
-### collect_wisps
-
-Collects health and mana wisps after a battle if clients are below a specified health or mana threshold.
-
-| Parameter Name   | Parameter Type | Parameter Description |
-|------------------|----------------|-----------------------|
-| `if_health_below`| `float`        | Health threshold (0.0–1.0) below which the client should collect health wisps.
-| `if_mana_below`  | `float`        | Mana threshold (0.0–1.0) below which the client should collect mana wisps.
-
-**Implementation:**
-- APIs: `SprintyClient.calc_health_ratio()`, `SprintyClient.calc_mana_ratio()`, `SprintyClient.tp_to_closest_health_wisp()`, `SprintyClient.tp_to_closest_mana_wisp()`
-- Flow:
-  1. For each client, check health and mana ratios.
-  2. If health is below `if_health_below`, teleport the client to the closest health wisp. Repeat until health is above threshold or no more wisps are nearby.
-  3. If mana is below `if_mana_below`, teleport the client to the closest mana wisp. Repeat until mana is above threshold or no more wisps are nearby.
-  4. Return `SUCCESS` always (maintenance node).
 
 ### quicksell
 

@@ -92,6 +92,57 @@ async def test_success_no_drops():
     assert machine.drops == []
 
 
+async def test_combat_order_sequential():
+    """combat_order sends clients one at a time in the specified order."""
+    c1 = FakeClient()
+    c2 = FakeClient()
+    c1.find_closest_mob.return_value = FakeEntity()
+    c2.find_closest_mob.return_value = FakeEntity()
+    c1.in_battle.return_value = True
+    c2.in_battle.return_value = True
+
+    tp_order: list[int] = []
+
+    async def _record_tp_c1(target):
+        tp_order.append(1)
+
+    async def _record_tp_c2(target):
+        tp_order.append(2)
+
+    c1.tp_to.side_effect = _record_tp_c1
+    c2.tp_to.side_effect = _record_tp_c2
+
+    with _patch_run_combat(), \
+         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
+         patch.object(hc, "_POLL_INTERVAL", 0):
+        result = await hc.run(
+            FakeMachine(),
+            [c1, c2],
+            {**_DEFAULT_PARAMS, "combat_order": [2, 1]},
+        )
+
+    assert result == "SUCCESS"
+    assert tp_order == [2, 1]
+
+
+async def test_combat_order_invalid_client_number_fails():
+    """combat_order referencing a client that doesn't exist → FAILURE."""
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+
+    with _patch_run_combat(), \
+         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
+         patch.object(hc, "_POLL_INTERVAL", 0):
+        result = await hc.run(
+            FakeMachine(),
+            [client],
+            {**_DEFAULT_PARAMS, "combat_order": [5]},
+        )
+
+    assert result == "FAILURE"
+    client.tp_to.assert_not_called()
+
+
 async def test_success_with_drops():
     """Drop appears in chat after combat → on_drop called with the item name."""
     client = FakeClient()

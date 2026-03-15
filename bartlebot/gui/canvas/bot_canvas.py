@@ -28,6 +28,14 @@ from bartlebot.gui.canvas.graph_items import (
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
 
 
+class _IntListLineEdit(QLineEdit):
+    """QLineEdit variant used for 'int_list' param fields.
+
+    Stores values as a comma-separated string (e.g. "1, 2, 3") and is
+    identified by get_params() to deserialise back to list[int].
+    """
+
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -478,6 +486,7 @@ class _DynamicParamForm(QWidget):
         self._form.setContentsMargins(6, 6, 6, 6)
         self._form.setSpacing(6)
         self._widgets: dict[str, Any] = {}
+        self._required_widgets: dict[str, Any] = {}
         self._suppress = False
         self.on_changed: Callable[[], None] = lambda: None
 
@@ -486,14 +495,34 @@ class _DynamicParamForm(QWidget):
         while self._form.rowCount() > 0:
             self._form.removeRow(0)
         self._widgets.clear()
+        self._required_widgets.clear()
         for field in schema:
-            label_w = QLabel(field.label)
+            label_text = field.label
+            if field.required:
+                label_text += " <span style='color:#CC2222'>*</span>"
+            label_w = QLabel(label_text)
+            label_w.setTextFormat(Qt.TextFormat.RichText)
             if field.help:
                 label_w.setToolTip(field.help)
             val = params.get(field.key, field.default)
             widget = self._make_widget(field.type, val, field.help, field.key)
             self._widgets[field.key] = widget
-            self._form.addRow(label_w, widget if not isinstance(widget, tuple) else widget[3])
+            if field.required:
+                self._required_widgets[field.key] = widget
+            display_w = widget if not isinstance(widget, tuple) else widget[3]
+            if field.default_hint and not field.required:
+                wrapper = QWidget()
+                vbox = QVBoxLayout(wrapper)
+                vbox.setContentsMargins(0, 0, 0, 0)
+                vbox.setSpacing(2)
+                vbox.addWidget(display_w)
+                hint_lbl = QLabel(field.default_hint)
+                hint_lbl.setStyleSheet("color: #888;")
+                hint_lbl.setWordWrap(True)
+                vbox.addWidget(hint_lbl)
+                self._form.addRow(label_w, wrapper)
+            else:
+                self._form.addRow(label_w, display_w)
         if not schema:
             placeholder = QLabel("This node type has no parameters.")
             placeholder.setStyleSheet("color: #888;")
@@ -512,6 +541,26 @@ class _DynamicParamForm(QWidget):
                         )
                     )
         self._suppress = False
+        self._validate_required_fields()
+
+    def _validate_required_fields(self) -> None:
+        """Apply or clear a red border on required input widgets based on whether they are empty."""
+        for widget in self._required_widgets.values():
+            if isinstance(widget, tuple):
+                # xyz — cannot be meaningfully empty
+                display_w = widget[3]
+                empty = False
+            elif isinstance(widget, QPlainTextEdit):
+                display_w = widget
+                empty = not widget.toPlainText().strip()
+            elif isinstance(widget, QLineEdit):
+                display_w = widget
+                empty = not widget.text().strip()
+            else:
+                # QSpinBox, QDoubleSpinBox, QCheckBox — always have a value
+                display_w = widget
+                empty = False
+            display_w.setStyleSheet("border: 1px solid #CC2222;" if empty else "")
 
     def get_params(self) -> dict:
         result: dict[str, Any] = {}
@@ -521,6 +570,10 @@ class _DynamicParamForm(QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
+            elif isinstance(w, _IntListLineEdit):
+                result[key] = [
+                    int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()
+                ]
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):
@@ -544,6 +597,17 @@ class _DynamicParamForm(QWidget):
         if field_type == "str":
             w = QLineEdit()
             w.setText(str(val) if val is not None else "")
+            if help_text:
+                w.setToolTip(help_text)
+            w.textChanged.connect(self._emit_changed)
+            return w
+        if field_type == "int_list":
+            w = _IntListLineEdit()
+            if isinstance(val, list):
+                w.setText(", ".join(str(v) for v in val))
+            else:
+                w.setText(str(val) if val else "")
+            w.setPlaceholderText("e.g. 1, 2, 3")
             if help_text:
                 w.setToolTip(help_text)
             w.textChanged.connect(self._emit_changed)
@@ -615,6 +679,7 @@ class _DynamicParamForm(QWidget):
 
     def _emit_changed(self, *_) -> None:
         if not self._suppress:
+            self._validate_required_fields()
             self.on_changed()
 
     def _paste_xyz(self, key: str) -> None:
@@ -1406,6 +1471,18 @@ def _node_returns(node_type: str) -> list[str]:
     return [r.name for r in spec.returns] if spec else []
 
 
+def _required_field_empty(field, params: dict) -> bool:
+    """Return True if a required ParamField has no meaningful value in params."""
+    if field.key not in params:
+        return True
+    val = params[field.key]
+    if field.type in ("str", "text"):
+        return not str(val).strip()
+    if field.type == "int_list":
+        return not val  # empty list
+    return False  # int, float, bool, xyz always have a value
+
+
 def _validate_node(state, config) -> tuple[bool, bool]:
     """Return (is_error, is_warning) for a state given the full config.
 
@@ -1427,7 +1504,7 @@ def _validate_node(state, config) -> tuple[bool, bool]:
 
     schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
     for field in schema:
-        if field.required and field.key not in state.params:
+        if field.required and _required_field_empty(field, state.params):
             is_error = True
             break
 

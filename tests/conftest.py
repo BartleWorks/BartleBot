@@ -25,6 +25,10 @@ class FakeClient:
         self.in_battle = AsyncMock(return_value=False)
         self.root_window = MagicMock()
         self.root_window.children = AsyncMock(return_value=[])
+        self.calc_health_ratio = AsyncMock(return_value=1.0)
+        self.calc_mana_ratio = AsyncMock(return_value=1.0)
+        self.tp_to_closest_health_wisp = AsyncMock(return_value=False)
+        self.tp_to_closest_mana_wisp = AsyncMock(return_value=False)
 
 
 class FakeEntity:

@@ -16,6 +16,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Leave empty to use the closest available mob."
         ),
         default="",
+        default_hint="Default: targets the closest available mob",
     ),
     ParamField(
         key="use_bot_default",
@@ -37,7 +38,21 @@ PARAM_SCHEMA: list[ParamField] = [
             "Only active when 'Use bot-level default' is unchecked."
         ),
         default="",
+        default_hint="Default: uses the bot-level or BartleBot built-in combat config",
         disabled_by="use_bot_default",
+    ),
+    ParamField(
+        key="combat_order",
+        type="int_list",
+        label="Combat Order",
+        help=(
+            "Order in which clients enter combat. Use 1-based client numbers "
+            "matching p1/p2/p3/p4 in your combat config (e.g. '2, 1' sends "
+            "client 2 first). Each client waits to enter battle before the "
+            "next is sent. Leave empty to send all clients simultaneously."
+        ),
+        default=[],
+        default_hint="Default: all clients enter combat simultaneously",
     ),
 ]
 
@@ -101,22 +116,43 @@ async def run(machine, clients: list, params: dict) -> str:
     # 2. Snapshot chat before combat so we can diff for drops afterward
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
-    # 3. Teleport all clients to their target
-    machine.log("Teleporting clients to target…", LogLevel.DEBUG)
-    await asyncio.gather(*[c.tp_to(t) for c, t in zip(clients, targets)])
+    # 3. Teleport clients to their target (sequential or simultaneous)
+    combat_order: list[int] = params.get("combat_order") or []
+    if combat_order:
+        machine.log(f"Entering combat sequentially: order={combat_order}", LogLevel.DEBUG)
+        for client_num in combat_order:
+            idx = client_num - 1  # user-facing 1-based → 0-based list index
+            if idx < 0 or idx >= len(clients):
+                machine.log(
+                    f"FAILURE: combat_order contains invalid client number {client_num} "
+                    f"(have {len(clients)} client(s))",
+                    LogLevel.WARNING,
+                )
+                return "FAILURE"
+            await clients[idx].tp_to(targets[idx])
+            if not await _wait_for_all_in_combat([clients[idx]], _ENTER_COMBAT_TIMEOUT):
+                machine.log(
+                    f"FAILURE: client {client_num} did not enter combat within "
+                    f"{_ENTER_COMBAT_TIMEOUT}s",
+                    LogLevel.WARNING,
+                )
+                return "FAILURE"
+    else:
+        machine.log("Teleporting all clients to target simultaneously…", LogLevel.DEBUG)
+        await asyncio.gather(*[c.tp_to(t) for c, t in zip(clients, targets)])
 
-    # 4. Wait for all clients to enter combat
-    machine.log(
-        f"Waiting for all clients to enter combat (timeout={_ENTER_COMBAT_TIMEOUT}s)…",
-        LogLevel.DEBUG,
-    )
-    if not await _wait_for_all_in_combat(clients, _ENTER_COMBAT_TIMEOUT):
+        # 4. Wait for all clients to enter combat
         machine.log(
-            f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
-            "clients to enter combat",
-            LogLevel.WARNING,
+            f"Waiting for all clients to enter combat (timeout={_ENTER_COMBAT_TIMEOUT}s)…",
+            LogLevel.DEBUG,
         )
-        return "FAILURE"
+        if not await _wait_for_all_in_combat(clients, _ENTER_COMBAT_TIMEOUT):
+            machine.log(
+                f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
+                "clients to enter combat",
+                LogLevel.WARNING,
+            )
+            return "FAILURE"
 
     machine.log("All clients in combat — running SprintyCombat")
 
