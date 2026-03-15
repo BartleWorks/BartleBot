@@ -61,7 +61,7 @@ _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
 
-_RECORDABLE_NODES: set[str] = {"go_to_zone", "go_to_xyz", "enter_dungeon", "interact", "interact_to_zone"}
+_RECORDABLE_NODES: set[str] = {"go_to_zone", "go_to_xyz", "enter_dungeon", "interact", "interact_to_zone", "mark_location", "recall_to_marked_location"}
 
 _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.DEBUG:   "[DBG]",
@@ -1098,6 +1098,16 @@ class _ParamPanel(QWidget):
             self._record_task = asyncio.ensure_future(
                 self._record_interact_to_zone(clients[0])
             )
+        elif self._state.node_type == "mark_location":
+            self._record_task = asyncio.ensure_future(
+                self._record_mark_location(clients[0])
+            )
+        elif self._state.node_type == "recall_to_marked_location":
+            self._record_btn.setText("Stop")
+            self._record_status_lbl.setText("Press PAGE_UP to recall…")
+            self._record_task = asyncio.ensure_future(
+                self._record_recall_to_marked_location(clients[0])
+            )
 
     async def _record_go_to_zone(self, client) -> None:
         POLL = 0.15
@@ -1292,6 +1302,64 @@ class _ParamPanel(QWidget):
                 await asyncio.sleep(POLL)
                 if not await client.is_in_npc_range():
                     break
+
+            # Phase 4: auto-populate label if empty
+            if self._state is not None and not (self._state.label or "").strip():
+                label = _zone_display(zone)
+                self._state.label = label
+                self._suppress = True
+                self._node_label_edit.setText(label)
+                self._suppress = False
+                self.on_config_changed()
+
+            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
+
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
+
+    async def _record_mark_location(self, client) -> None:
+        try:
+            zone = await client.zone_name()
+            pos = await client.body.position()
+            self._suppress = True
+            self._param_form.set_str("zone", zone)
+            self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
+            self._suppress = False
+            self.on_config_changed()
+            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
+
+    async def _record_recall_to_marked_location(self, client) -> None:
+        POLL = 0.15
+
+        try:
+            # Phase 1: wait for loading screen to start (user presses PAGE_UP)
+            while not await client.is_loading():
+                await asyncio.sleep(POLL)
+
+            # Phase 2: wait for loading to finish
+            self._record_status_lbl.setText("Loading…")
+            while await client.is_loading():
+                await asyncio.sleep(POLL)
+
+            # Phase 3: capture destination zone and XYZ
+            zone = await client.zone_name()
+            pos = await client.body.position()
+            self._suppress = True
+            self._param_form.set_str("zone", zone)
+            self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
+            self._suppress = False
 
             # Phase 4: auto-populate label if empty
             if self._state is not None and not (self._state.label or "").strip():

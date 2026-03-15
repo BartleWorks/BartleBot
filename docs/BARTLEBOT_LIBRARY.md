@@ -22,7 +22,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `done` |
 | [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `done` |
-| [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone via END key | `done` |
+| [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
 
 ## Condition Nodes
@@ -30,7 +30,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | Node | Description | Status |
 |------|-------------|--------|
 | [`check_if_dropped`](#check_if_dropped) | Check if a specific item has been dropped | `done` |
-| [`check_level_scaling`](#check_level_scaling) | Check if clients are level scaled | `todo` |
+| [`check_level_scaling`](#check_level_scaling) | Check if clients are level scaled | `done` |
 
 ## Advanced Behaviors
 
@@ -367,7 +367,7 @@ Stops the bot if a drop is received.
 
 ### check_level_scaling
 
-**Status:** `todo`
+**Status:** `done`
 
 Checks if a list of clients are all level scaled. Checks level scaling by checking UI element path for level scaling potion.
 
