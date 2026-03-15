@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-import bartlebot.nodes.collect_wisps as cw
+import bartlebot.nodes.action.collect_wisps as cw
 
 from tests.conftest import FakeClient, FakeMachine
 

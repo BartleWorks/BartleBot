@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.go_to_zone as gtz
+import bartlebot.nodes.action.go_to_zone as gtz
 import bartlebot.nodes.node_helpers as nh
 
 from tests.conftest import FakeClient, FakeMachine

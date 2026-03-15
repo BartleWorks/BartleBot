@@ -5,7 +5,7 @@ from unittest.mock import call
 import pytest
 from wizwalker import XYZ
 
-import bartlebot.nodes.go_to_xyz as gxyz
+import bartlebot.nodes.action.go_to_xyz as gxyz
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "WizardCity/WC_Hub"

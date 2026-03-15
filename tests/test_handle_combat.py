@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.handle_combat as hc
+import bartlebot.nodes.action.handle_combat as hc
 
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 
@@ -14,7 +14,7 @@ _DEFAULT_PARAMS = {"enemy": "", "use_bot_default": True, "combat_config": ""}
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.handle_combat._run_combat", new_callable=AsyncMock
+    "bartlebot.nodes.action.handle_combat._run_combat", new_callable=AsyncMock
 )
 
 

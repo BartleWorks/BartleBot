@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import bartlebot.nodes.go_to_world_hub as gwh
+import bartlebot.nodes.action.go_to_world_hub as gwh
 import bartlebot.nodes.node_helpers as nh
 from wizwalker import Keycode
 

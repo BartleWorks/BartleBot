@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-import bartlebot.nodes.interact_to_zone as itz
+import bartlebot.nodes.action.interact_to_zone as itz
 from wizwalker import Keycode
 
 from tests.conftest import FakeClient, FakeMachine

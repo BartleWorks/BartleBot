@@ -1,11 +1,11 @@
-from bartlebot.nodes.collect_wisps import run as collect_wisps_run, NODE_SPEC as _collect_wisps_spec
-from bartlebot.nodes.enter_dungeon import run as enter_dungeon_run, NODE_SPEC as _enter_dungeon_spec
-from bartlebot.nodes.go_to_world_hub import run as go_to_world_hub_run, NODE_SPEC as _go_to_world_hub_spec
-from bartlebot.nodes.go_to_xyz import run as go_to_xyz_run, NODE_SPEC as _go_to_xyz_spec
-from bartlebot.nodes.go_to_zone import run as go_to_zone_run, NODE_SPEC as _go_to_zone_spec
-from bartlebot.nodes.handle_combat import run as handle_combat_run, NODE_SPEC as _handle_combat_spec
-from bartlebot.nodes.interact import run as interact_run, NODE_SPEC as _interact_spec
-from bartlebot.nodes.interact_to_zone import run as interact_to_zone_run, NODE_SPEC as _interact_to_zone_spec
+from bartlebot.nodes.action.collect_wisps import run as collect_wisps_run, NODE_SPEC as _collect_wisps_spec
+from bartlebot.nodes.action.enter_dungeon import run as enter_dungeon_run, NODE_SPEC as _enter_dungeon_spec
+from bartlebot.nodes.action.go_to_world_hub import run as go_to_world_hub_run, NODE_SPEC as _go_to_world_hub_spec
+from bartlebot.nodes.action.go_to_xyz import run as go_to_xyz_run, NODE_SPEC as _go_to_xyz_spec
+from bartlebot.nodes.action.go_to_zone import run as go_to_zone_run, NODE_SPEC as _go_to_zone_spec
+from bartlebot.nodes.action.handle_combat import run as handle_combat_run, NODE_SPEC as _handle_combat_spec
+from bartlebot.nodes.action.interact import run as interact_run, NODE_SPEC as _interact_spec
+from bartlebot.nodes.action.interact_to_zone import run as interact_to_zone_run, NODE_SPEC as _interact_to_zone_spec
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 
 NODE_REGISTRY: dict = {

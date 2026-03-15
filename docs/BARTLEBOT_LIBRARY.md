@@ -18,6 +18,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
 | [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
+| [`interact_to_zone`](#interact_to_zone) | Interact with an object that triggers a zone change | `done` |
 | [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `todo` |
 | [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `todo` |
@@ -168,6 +169,7 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
 
 | Parameter Name  | Parameter Type | Parameter Description |
 |-----------------|----------------|-----------------------|
+| `zone`          | `str`          | Zone name all clients must currently be in when this node executes.
 | `interact_xyz`  | `XYZ`          | The XYZ coordinates of the item to interact with. The interact prompt should show when standing in this location.
 | `reset_xyz`     | `XYZ`          | The XYZ coordinates of a location that can be used to reset the interact prompt. The interact prompt should **not** show when standing in this location.
 
@@ -183,6 +185,39 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
   5. If the interact prompt never appeared: teleport clients to `reset_xyz` to clear state, then retry from step 1.
   6. Return `SUCCESS` once all dialogue is dismissed and interaction is complete.
 - `FAILURE` cases: interact prompt never appeared after retries.
+
+</details>
+
+---
+
+### interact_to_zone
+
+**Status:** `done`
+
+Interacts with an NPC or world object that triggers a zone change (e.g., a snowglobe or portal). Unlike `enter_dungeon`, this node is for interactables that immediately begin loading without a sigil prompt or dungeon warning.
+
+| Parameter Name  | Parameter Type | Parameter Description |
+|-----------------|----------------|-----------------------|
+| `from_zone`     | `str`          | Zone name all clients must currently be in when this node executes.
+| `to_zone`       | `str`          | Zone name all clients must be in after this node completes.
+| `interact_xyz`  | `XYZ`          | Coordinates of the object to interact with. The interact prompt should appear when standing here.
+| `reset_xyz`     | `XYZ`          | Coordinates used to dismiss the interact prompt and reset state. The prompt must **not** appear when standing here.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_in_npc_range()`, `client.is_loading()`, `client.send_key(Keycode.X)`
+- Flow:
+  1. Verify all clients are in `from_zone`. If not, return `FAILURE`.
+  2. Clear any pre-existing interact prompt by teleporting to `reset_xyz` if any client already has the prompt showing.
+  3. Retry loop (up to 3 attempts): teleport all clients to `interact_xyz`, wait for the interact prompt to appear on all clients. If the prompt does not appear within the timeout, teleport to `reset_xyz` and retry.
+  4. If the prompt never appeared after all retries, return `FAILURE`.
+  5. Press X on all clients simultaneously.
+  6. Re-press X for any client that has not yet entered a loading screen. Track which clients have *ever* been seen loading — a fast client can finish its loading screen before a slow client starts. Continue until all clients have been seen loading, or a 10-second timeout expires.
+  7. Wait for all loading screens to finish.
+  8. Verify all clients are in `to_zone`. If not, return `FAILURE`.
+  9. Return `SUCCESS`.
+- `FAILURE` cases: clients not in `from_zone`; interact prompt never appeared after retries; clients did not enter a loading screen within timeout; not all clients arrived in `to_zone`.
 
 </details>
 
