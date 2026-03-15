@@ -6,15 +6,49 @@ Each node spec includes a parameter table followed by implementation notes cover
 APIs used and the async flow. See `DEIMOS_PATTERNS.md` in `wizard101_api/` for concrete code patterns.
 See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
-# Node Library
+---
 
-BartleBot includes several standard nodes to help users create bots more easily.
+# Node Index
+
+## Action Nodes
+
+| Node | Description | Status |
+|------|-------------|--------|
+| [`go_to_zone`](#go_to_zone) | Transition clients between zones via teleport | `done` |
+| [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
+| [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
+| [`interact`](#interact) | Interact with an NPC or world object | `done` |
+| [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `todo` |
+| [`mark_location`](#mark_location) | Mark current location with failsafe handling | `todo` |
+| [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `todo` |
+| [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone via END key | `done` |
+| [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
+
+## Condition Nodes
+
+| Node | Description | Status |
+|------|-------------|--------|
+| [`check_if_dropped`](#check_if_dropped) | Check if a specific item has been dropped | `todo` |
+| [`check_level_scaling`](#check_level_scaling) | Check if clients are level scaled | `todo` |
+
+## Advanced Behaviors
+
+| Node | Description | Status |
+|------|-------------|--------|
+| [`handle_potions`](#handle_potions) | Use and optionally refill potions based on health/mana thresholds | `todo` |
+| [`quicksell`](#quicksell) | Quicksell backpack items when full, respecting a keep list | `todo` |
+
+---
+
+# Node Library
 
 ## Action Nodes
 
 Action nodes are nodes that execute in-game actions. They make up the core behavior of a BartleBot FSM.
 
 ### go_to_zone
+
+**Status:** `done`
 
 Transitions clients from one zone to another with failsafes to handle client zone desynchronization and loading failures.
 
@@ -24,7 +58,9 @@ Transitions clients from one zone to another with failsafes to handle client zon
 | `to_zone`      | `str`          | The zone to transition to. If not all selected clients are in this zone when the node is done, it returns FAILURE.
 | `xyz`          | `XYZ`          | The XYZ coordinates within the zone transition bounding box. Teleporting clients to this location triggers the transition automatically — no key press needed.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_loading()`
 - Flow:
   1. Verify all clients are in `from_zone`. If not, return `FAILURE`.
@@ -34,7 +70,13 @@ Transitions clients from one zone to another with failsafes to handle client zon
   5. Return `SUCCESS`.
 - `FAILURE` cases: clients not in `from_zone` at start; not all clients reached `to_zone` after transition.
 
+</details>
+
+---
+
 ### enter_dungeon
+
+**Status:** `done`
 
 Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil detection, and loading failures.
 
@@ -45,7 +87,9 @@ Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil
 | `sigil_xyz`     | `XYZ`          | The XYZ coordinates of the dungeon sigil. The dungeon entrance prompt (not the dungeon warning) should appear when standing in this location.
 | `reset_xyz`     | `XYZ`          | The XYZ coordinates of a location within `from_zone` that can be used to dismiss the dungeon entrance prompt. The prompt should **not** appear when standing here.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_loading()`, `client.is_in_npc_range()`, `client.send_key(Keycode.X)`, window tree helpers for prompt detection
 - Flow:
   1. Verify all clients are in `from_zone`. If not, return `FAILURE`.
@@ -58,7 +102,13 @@ Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil
   8. Return `SUCCESS` once all clients are in `dungeon_zone`; return `FAILURE` if retries are exhausted.
 - `FAILURE` cases: clients not in `from_zone`; clients not in `dungeon_zone` after loading attempted.
 
+</details>
+
+---
+
 ### handle_combat
+
+**Status:** `done`
 
 Performs combat with a specified enemy. If no enemy is specified, defaults to the closest valid enemy when the node is called. Combat nodes accept combat configurations specified with the WizSprinter combat DSL, which will be applied for that specific combat instance.
 
@@ -68,7 +118,9 @@ Performs combat with a specified enemy. If no enemy is specified, defaults to th
 | `combat_config` | `str` (optional) | WizSprinter combat DSL config for this encounter. If omitted, falls back to the bot-level `default_combat_config`.
 | `combat_order`  | `List[int]` (optional) | Order in which clients enter combat, as 1-based client numbers matching p1/p2/p3/p4 in the WizSprinter combat config. Example: `[2, 1]` sends client 2 first, then client 1. If omitted, all clients enter simultaneously.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `SprintyClient.find_closest_by_name()`, `SprintyClient.tp_to()`, `client.in_battle()`, `SprintyCombat`, `StrCombatConfigProvider`
 - Flow:
   1. Resolve the target: if `enemy` is provided, use `sprinter.find_closest_by_name(enemy)`; otherwise `sprinter.find_closest_mob()`.
@@ -79,7 +131,13 @@ Performs combat with a specified enemy. If no enemy is specified, defaults to th
   6. Return `SUCCESS` once all clients exit combat.
 - `FAILURE` cases: target entity not found; combat did not begin within timeout.
 
+</details>
+
+---
+
 ### interact
+
+**Status:** `done`
 
 Interacts with an NPC or interactable world item such as a lever, collectable, etc.
 
@@ -88,7 +146,9 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
 | `interact_xyz`  | `XYZ`          | The XYZ coordinates of the item to interact with. The interact prompt should show when standing in this location.
 | `reset_xyz`     | `XYZ`          | The XYZ coordinates of a location that can be used to reset the interact prompt. The interact prompt should **not** show when standing in this location.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `client.teleport(XYZ)`, `client.is_in_npc_range()`, `client.is_in_dialog()`, `client.send_key(Keycode.X)`, `client.send_key(Keycode.SPACEBAR)`, window tree helpers for prompt detection
 - Flow:
   1. Teleport all clients to `interact_xyz`.
@@ -99,7 +159,13 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
   6. Return `SUCCESS` once all dialogue is dismissed and interaction is complete.
 - `FAILURE` cases: interact prompt never appeared after retries.
 
+</details>
+
+---
+
 ### go_to_xyz
+
+**Status:** `todo`
 
 Teleports clients to a given XYZ location within the same zone.
 
@@ -108,7 +174,9 @@ Teleports clients to a given XYZ location within the same zone.
 | `zone`         | `str`          | The zone to transition from. All selected clients must be in this zone when the node is called.
 | `xyz`          | `XYZ`          | The XYZ coordinates within `zone`.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `client.zone_name()`, `client.teleport(XYZ)`
 - Flow:
   1. Verify all clients are in `zone`. If not, return `FAILURE`.
@@ -116,7 +184,13 @@ Teleports clients to a given XYZ location within the same zone.
   3. Return `SUCCESS` if all clients are at the provided XYZ (or within a very small margin), else return `FAILURE`.
 - `FAILURE` cases: clients not in `zone` at start; not all clients reached `xyz` after teleporting.
 
+</details>
+
+---
+
 ### mark_location
+
+**Status:** `todo`
 
 Marks current location, including failsafes to handle edge cases such as a pre-existing mark or the mark cooldown timer.
 
@@ -125,7 +199,9 @@ Marks current location, including failsafes to handle edge cases such as a pre-e
 | `zone`         | `str`          | Optional. The zone to mark location within. All selected clients must be in this zone when the node is called.
 | `xyz`          | `XYZ`          | Optional. The XYZ coordinates within `zone` to mark.
 
-**Implementation**
+<details>
+<summary>Implementation</summary>
+
 - APIs: TODO
 - Flow:
   1. If `zone` or `xyz` were provided, check if clients meet criteria. If `zone` is correct but `xyz` isn't, teleport clients to `xyz`. If `zone` is incorrect, return `FAILURE`.
@@ -134,7 +210,13 @@ Marks current location, including failsafes to handle edge cases such as a pre-e
   4. Mark location.
   5. Check if recall to mark UI path element is disabled. If so, that means that client had already marked in this spot and just reset its mark by marking again. If so, wait for mark UI path element is enabled again (30s timer after marking, but better to wait for UI element to be enabled) and then mark spot.
 
+</details>
+
+---
+
 ### recall_to_marked_location
+
+**Status:** `todo`
 
 Recalls to existing marked location.
 
@@ -143,14 +225,22 @@ Recalls to existing marked location.
 | `zone`         | `str`          | Optional. The zone to return to.
 | `xyz`          | `XYZ`          | Optional. The XYZ coordinates within `zone` to return to.
 
-**Implementation**
-- Flow
+<details>
+<summary>Implementation</summary>
+
+- Flow:
   1. Check if clients have enough mana to return to marked location. If any clients don't have enough mana, return `FAILURE`.
   2. Wait until the UI path element to return to the marked location is enabled. If it isn't enabled within 30 seconds (maybe wait 35 just to be safe), that means that no mark has been set and the node returns `FAILURE`.
   3. Teleport to mark and handle loading screen safely.
   4. If `zone` or `xyz` was set, check that clients are in `zone` or at `xyz` (with small margin of error). Return `FAILURE` if false.
 
+</details>
+
+---
+
 ### go_to_world_hub
+
+**Status:** `done`
 
 Teleports to the hub zone for the current world.
 
@@ -158,19 +248,28 @@ Teleports to the hub zone for the current world.
 |----------------|----------------|-----------------------|
 | `zone`         | `str`          | The hub zone to teleport to. If all clients are already in this zone, the node returns `SUCCESS` immediately. |
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `client.zone_name()`, `client.send_key(Keycode.END)`, `client.is_loading()`, `window.is_control_grayed()`, window tree helpers for button detection
 - Hub teleport button path: `["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]`
 - Flow:
   1. Check if all clients are already in `zone`. If so, return `SUCCESS` immediately.
-  2. Wait for the hub teleport button to be enabled (not grayed) on all clients. The button has a 30-second cooldown after each use — wait up to 35 seconds before returning `FAILURE`.
-  3. Press `END` on all clients simultaneously. Poll `client.is_loading()` for each client; re-press `END` on any client that has not yet entered a loading screen. Continue until all clients are loading, or a 10-second timeout expires.
-  4. Wait for all loading screens to finish.
-  5. Check that all clients are in `zone`. If not, return `FAILURE`.
-  6. Return `SUCCESS`.
+  2. Filter to only clients not already in `zone`. All remaining steps operate on this subset.
+  3. Wait for the hub teleport button to be enabled (not grayed) on all clients to move. The button has a 30-second cooldown after each use — wait up to 35 seconds before returning `FAILURE`.
+  4. Press `END` on clients to move simultaneously. Poll `client.is_loading()` for each; re-press `END` on any client that has not yet entered a loading screen. Continue until all clients to move are loading, or a 10-second timeout expires.
+  5. Wait for all loading screens to finish.
+  6. Check that all clients (including those already in the hub) are in `zone`. If not, return `FAILURE`.
+  7. Return `SUCCESS`.
 - `FAILURE` cases: hub teleport button did not become enabled within 35 seconds; clients did not enter a loading screen within 10 seconds of pressing END; not all clients arrived in `zone` after loading.
 
+</details>
+
+---
+
 ### collect_wisps
+
+**Status:** `done`
 
 Collects health and mana wisps after a battle if clients are below a specified health or mana threshold. Returns `FAILURE` if any client is still below a configurable fail threshold after wisps are exhausted, allowing the bot graph to route to a potion fallback node.
 
@@ -181,7 +280,9 @@ Collects health and mana wisps after a battle if clients are below a specified h
 | `fail_if_health_below`| `float`        | Health fail threshold (0.0–1.0). After collection, if any client's health ratio is still below this value, return `FAILURE`. Set to 0.0 to never fail on health. Default: `0.5`. |
 | `fail_if_mana_below`  | `float`        | Mana fail threshold (0.0–1.0). After collection, if any client's mana ratio is still below this value, return `FAILURE`. Set to 0.0 to never fail on mana. Default: `0.5`. |
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `SprintyClient.calc_health_ratio()`, `SprintyClient.calc_mana_ratio()`, `SprintyClient.tp_to_closest_health_wisp()`, `SprintyClient.tp_to_closest_mana_wisp()`
 - Flow:
   1. For each client (in parallel), check health and mana ratios.
@@ -191,6 +292,10 @@ Collects health and mana wisps after a battle if clients are below a specified h
   5. Return `SUCCESS` if all clients are at or above both fail thresholds.
 - `FAILURE` cases: any client is still below a fail threshold after wisps are exhausted.
 
+</details>
+
+---
+
 ## Condition Nodes
 
 Condition nodes evaluate game state and return `TRUE` or `FALSE`. They have no in-game side effects — they exist purely to drive routing decisions in the bot graph. Like action nodes, they use named output ports; downstream edges connect from the `TRUE` or `FALSE` port as appropriate.
@@ -198,6 +303,8 @@ Condition nodes evaluate game state and return `TRUE` or `FALSE`. They have no i
 For simple bot-option checks (e.g. "only follow this path if repeat mode is enabled"), use the `flag` field on a transition edge instead of a condition node. Condition nodes are for parameterized checks that evaluate live game data and need their own configuration panel.
 
 ### check_if_dropped
+
+**Status:** `todo`
 
 Stops the bot if a drop is received.
 
@@ -209,7 +316,9 @@ Stops the bot if a drop is received.
 
 **Returns:** `TRUE` if the drop condition is met, `FALSE` otherwise.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: checks the drop table for the current run
 - Flow:
   1. For each client in `clients_to_check`, scan `item_names`.
@@ -217,7 +326,13 @@ Stops the bot if a drop is received.
   3. Return `TRUE` if all checks passed, `FALSE` otherwise.
 - Intended use: placed as a node that runs after each combat or dungeon run, allowing the bot to loop back if the item hasn't dropped.
 
+</details>
+
+---
+
 ### check_level_scaling
+
+**Status:** `todo`
 
 Checks if a list of clients are all level scaled. Checks level scaling by checking UI element path for level scaling potion.
 
@@ -227,16 +342,24 @@ Checks if a list of clients are all level scaled. Checks level scaling by checki
 
 **Returns:** `TRUE` if all specified clients are level scaled, `FALSE` otherwise.
 
-**Implementation**
+<details>
+<summary>Implementation</summary>
+
 - Flow:
   1. For each client in `clients_to_check`, check if the level scaling UI path element is visible.
   2. Return `FALSE` if any client is not level scaled, else return `TRUE`.
+
+</details>
+
+---
 
 # Advanced Behavior Library
 
 BartleBot includes a library of more advanced behaviors that combine multiple actions into sequences that are commonly used. Adding an advanced behavior to a bot will add a group of nodes with a specific configuration and endpoints.
 
 ### handle_potions
+
+**Status:** `todo`
 
 Uses potions if clients are below a specified health or mana threshold. Refills potions if needed.
 
@@ -246,7 +369,9 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
 | `if_mana_below`  | `float`        | Mana threshold (0.0–1.0) below which the client should use a potion.
 | `refill_potions` | `bool`         | If `true`, navigate to refill potions when any client runs out.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `SprintyClient.calc_health_ratio()`, `SprintyClient.calc_mana_ratio()`, `SprintyClient.needs_potion()`, `SprintyClient.use_potion_if_needed()`, `SprintyClient.has_potion()`
 - Flow:
   1. For each client, check health and mana ratios.
@@ -254,7 +379,13 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
   3. If `refill_potions` is true and a client has no potions, navigate to the potion vendor and refill (vendor location TBD as implementation detail).
   4. Return `SUCCESS` always (this is a maintenance node, not conditional).
 
+</details>
+
+---
+
 ### quicksell
+
+**Status:** `todo`
 
 Checks if backpack is full. If full, quicksells items except for those specified in `keep_list`.
 
@@ -262,10 +393,14 @@ Checks if backpack is full. If full, quicksells items except for those specified
 |------------------|----------------|-----------------------|
 | `keep_list`      | path           | A path to a `.txt` file containing names of items to keep when quickselling.
 
-**Implementation:**
+<details>
+<summary>Implementation</summary>
+
 - APIs: `client.backpack_space()`, window tree helpers for the quicksell UI
 - Flow:
   1. Check `client.backpack_space()` for each client. If not full, return `SUCCESS` immediately.
   2. For clients with a full backpack, open the backpack UI.
   3. Iterate items; for each item not in `keep_list`, sell it via the quicksell interface.
   4. Return `SUCCESS` once backpack is no longer full (or all sellable items have been sold).
+
+</details>
