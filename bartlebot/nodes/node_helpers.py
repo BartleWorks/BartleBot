@@ -39,6 +39,14 @@ async def is_visible_by_path(client, path: list[str]) -> bool:
     return await window.is_visible()
 
 
+async def is_enabled_by_path(client, path: list[str]) -> bool:
+    """Return True if the UI window at path exists and is not grayed out (i.e., enabled)."""
+    window = await _get_window_from_path(client.root_window, path)
+    if window is None:
+        return False
+    return not await window.is_control_grayed()
+
+
 async def _get_window_from_path(parent, path: list[str]):
     """Traverse the UI window tree by a sequence of child names.
 

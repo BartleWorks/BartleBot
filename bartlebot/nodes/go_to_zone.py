@@ -116,6 +116,8 @@ async def run(machine, clients: list, params: dict) -> str:
     if not await node_helpers.wait_until(
         lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
     ):
+        zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
+        machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", LogLevel.DEBUG)
         machine.log(
             f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
             f"to leave {from_zone!r}",

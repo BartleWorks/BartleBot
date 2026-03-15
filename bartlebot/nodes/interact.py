@@ -102,7 +102,23 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 2–3. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
+    # 2. Clear any pre-existing interact prompt before starting.
+    #    A stale prompt from a previous interaction can linger briefly after teleport,
+    #    causing the client to interact with the wrong object if X is pressed too soon.
+    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    if any(prompts):
+        stale = [i for i, p in enumerate(prompts) if p]
+        machine.log(
+            f"Pre-existing interact prompt on client(s) {stale}; "
+            f"teleporting to reset_xyz to clear it",
+            LogLevel.DEBUG,
+        )
+        await asyncio.gather(*[c.teleport(reset) for c in clients])
+        await node_helpers.wait_until(
+            lambda: _none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+        )
+
+    # 3–4. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
@@ -130,11 +146,11 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 4. Press X to begin interaction.
+    # 5. Press X to begin interaction.
     machine.log("Pressing X to interact", LogLevel.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 5. Advance through dialogue; start polling immediately after X.
+    # 6. Advance through dialogue; start polling immediately after X.
     #    Only exit once no dialog is open AND at least Safety Delay seconds have
     #    passed, so late-opening dialog windows are not missed.
     machine.log("Advancing dialogue…", LogLevel.DEBUG)
@@ -146,6 +162,8 @@ async def run(machine, clients: list, params: dict) -> str:
         if not any(dialogs) and elapsed >= safety_delay:
             break
         if elapsed > DIALOG_TIMEOUT:
+            stuck = [i for i, d in enumerate(dialogs) if d]
+            machine.log(f"Clients still in dialog at timeout: {stuck}", LogLevel.DEBUG)
             machine.log(
                 f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
                 LogLevel.WARNING,
@@ -165,3 +183,9 @@ async def _all_in_npc_range(clients: list) -> bool:
     """Return True when every client has the interact prompt showing."""
     results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
     return all(results)
+
+
+async def _none_in_npc_range(clients: list) -> bool:
+    """Return True when no client has an interact prompt showing."""
+    results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    return not any(results)

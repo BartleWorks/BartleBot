@@ -147,6 +147,9 @@ async def run(machine, clients: list, params: dict) -> str:
             LogLevel.DEBUG,
         )
         if not await _wait_for_all_in_combat(clients, _ENTER_COMBAT_TIMEOUT):
+            battle_states = await asyncio.gather(*[c.in_battle() for c in clients])
+            not_in_battle = [i for i, b in enumerate(battle_states) if not b]
+            machine.log(f"Clients not in battle at timeout: {not_in_battle}", LogLevel.DEBUG)
             machine.log(
                 f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
                 "clients to enter combat",

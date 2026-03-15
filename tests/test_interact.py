@@ -15,9 +15,11 @@ _PARAMS = {
 
 
 def _ready_client() -> FakeClient:
-    """Client with interact prompt showing immediately and no dialogue."""
+    """Client with no stale prompt and interact prompt showing immediately at interact_xyz."""
     c = FakeClient()
-    c.is_in_npc_range.return_value = True
+    # First call: stale-prompt check on node entry → no stale prompt.
+    # Second call onward: prompt is present at interact_xyz.
+    c.is_in_npc_range.side_effect = [False, True]
     return c
 
 
@@ -143,6 +145,33 @@ async def test_one_client_wrong_zone_fails():
     assert result == "FAILURE"
     good.teleport.assert_not_called()
     bad.teleport.assert_not_called()
+
+
+async def test_stale_prompt_cleared_before_interaction():
+    """A pre-existing interact prompt is dismissed via reset_xyz before the normal
+    interaction loop runs, preventing an accidental interaction with the wrong object."""
+    client = FakeClient()
+    call_count = 0
+
+    async def _npc_range():
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return True   # stale prompt visible on node entry
+        if call_count == 2:
+            return False  # cleared after teleporting to reset_xyz
+        return True       # correct prompt visible at interact_xyz
+
+    client.is_in_npc_range.side_effect = _npc_range
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
+    first_tp, second_tp = client.teleport.call_args_list[:2]
+    assert first_tp.args[0].x == 1.0   # reset_xyz
+    assert second_tp.args[0].x == 0.0  # interact_xyz
 
 
 async def test_late_dialog_caught_within_safety_window():

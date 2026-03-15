@@ -1,0 +1,154 @@
+"""Unit tests for the go_to_world_hub node."""
+
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
+import bartlebot.nodes.go_to_world_hub as gwh
+import bartlebot.nodes.node_helpers as nh
+from wizwalker import Keycode
+
+from tests.conftest import FakeClient, FakeMachine
+
+_ZONE = "WizardCity/WC_Hub"
+_PARAMS = {"zone": _ZONE}
+
+# Patch is_enabled_by_path → True by default so tests don't hang waiting for the button.
+_BUTTON_ENABLED = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+
+
+def _client_not_in_hub() -> FakeClient:
+    """Client starting outside the hub that successfully arrives after teleport."""
+    client = FakeClient()
+    client.zone_name.side_effect = ["OtherZone", _ZONE]
+    # Trigger loop: loading starts immediately; none_loading check: loading finished.
+    client.is_loading.side_effect = [True, False]
+    return client
+
+
+async def test_already_in_zone_returns_success():
+    """Clients already in the hub zone → SUCCESS immediately, END key never sent."""
+    client = FakeClient()
+    client.zone_name.return_value = _ZONE
+
+    result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    client.send_key.assert_not_called()
+
+
+async def test_already_in_zone_multiple_clients():
+    """All clients already in hub → SUCCESS without pressing END."""
+    clients = [FakeClient(), FakeClient()]
+    for c in clients:
+        c.zone_name.return_value = _ZONE
+
+    result = await gwh.run(FakeMachine(), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    for c in clients:
+        c.send_key.assert_not_called()
+
+
+async def test_button_timeout_returns_failure():
+    """Hub button never becomes enabled within the timeout → FAILURE."""
+    client = FakeClient()
+    client.zone_name.return_value = "OtherZone"
+
+    with (
+        patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False)),
+        patch.object(gwh, "BUTTON_TIMEOUT", 0.01),
+        patch.object(gwh, "POLL_INTERVAL", 0),
+    ):
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    client.send_key.assert_not_called()
+
+
+async def test_success_single_client():
+    """Happy path: one client, button enabled, loads and arrives in hub zone."""
+    client = _client_not_in_hub()
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert any(call.args[0] == Keycode.END for call in client.send_key.call_args_list)
+
+
+async def test_success_multiple_clients():
+    """Happy path: two clients both arrive in hub zone."""
+    clients = [_client_not_in_hub(), _client_not_in_hub()]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    for c in clients:
+        assert any(call.args[0] == Keycode.END for call in c.send_key.call_args_list)
+
+
+async def test_trigger_timeout_returns_failure():
+    """Clients never enter a loading screen after pressing END → FAILURE."""
+    client = FakeClient()
+    client.zone_name.return_value = "OtherZone"
+    client.is_loading.return_value = False  # never starts loading
+
+    with (
+        _BUTTON_ENABLED,
+        patch.object(gwh, "TRIGGER_TIMEOUT", 0.01),
+        patch.object(gwh, "POLL_INTERVAL", 0),
+    ):
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+
+
+async def test_wrong_zone_after_loading_returns_failure():
+    """Clients load but arrive in an unexpected zone → FAILURE."""
+    client = FakeClient()
+    client.zone_name.side_effect = ["OtherZone", "WrongZone"]
+    client.is_loading.side_effect = [True, False]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+
+
+async def test_loading_screen_awaited():
+    """Node waits for is_loading to clear before checking the final zone."""
+    client = FakeClient()
+    client.zone_name.side_effect = ["OtherZone", _ZONE]
+    # Loading takes two polls to finish.
+    client.is_loading.side_effect = [True, True, False]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert client.is_loading.call_count >= 3
+
+
+async def test_end_resent_to_lagging_client():
+    """One client starts loading immediately; the other needs a second END press."""
+    c1 = FakeClient()
+    c1.zone_name.side_effect = ["OtherZone", _ZONE]
+    # Trigger loop iter1: loading; trigger loop iter2: still loading; none_loading: done.
+    c1.is_loading.side_effect = [True, True, False]
+
+    c2 = FakeClient()
+    c2.zone_name.side_effect = ["OtherZone", _ZONE]
+    # Trigger loop iter1: not loading yet; trigger loop iter2: loading; none_loading: done.
+    c2.is_loading.side_effect = [False, True, False]
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+        result = await gwh.run(FakeMachine(), [c1, c2], _PARAMS)
+
+    assert result == "SUCCESS"
+    # c2 received at least two END presses (initial + re-press); c1 only the initial one.
+    c1_end_presses = [call for call in c1.send_key.call_args_list if call.args[0] == Keycode.END]
+    c2_end_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.END]
+    assert len(c1_end_presses) == 1
+    assert len(c2_end_presses) >= 2

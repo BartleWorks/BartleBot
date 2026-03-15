@@ -156,15 +156,19 @@ Teleports to the hub zone for the current world.
 
 | Parameter Name | Parameter Type | Parameter Description |
 |----------------|----------------|-----------------------|
-| `zone`         | `str`          | The zone to return to.
+| `zone`         | `str`          | The hub zone to teleport to. If all clients are already in this zone, the node returns `SUCCESS` immediately. |
 
-**Implementation**
-- Flow
-  1. Check if clients are already in `zone`. If true, skip the node and return `SUCCESS`.
-  2. Check if the teleport button path is enabled. If it isn't wait until it is.
-  3. Teleport clients to hub zone by sending the `END` keycode repeatedly until they enter a loading screen.
-  4. Handle loading screen safely.
-  5. Check that all clients are in `zone`. If not, return `FALSE`.
+**Implementation:**
+- APIs: `client.zone_name()`, `client.send_key(Keycode.END)`, `client.is_loading()`, `window.is_control_grayed()`, window tree helpers for button detection
+- Hub teleport button path: `["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]`
+- Flow:
+  1. Check if all clients are already in `zone`. If so, return `SUCCESS` immediately.
+  2. Wait for the hub teleport button to be enabled (not grayed) on all clients. The button has a 30-second cooldown after each use — wait up to 35 seconds before returning `FAILURE`.
+  3. Press `END` on all clients simultaneously. Poll `client.is_loading()` for each client; re-press `END` on any client that has not yet entered a loading screen. Continue until all clients are loading, or a 10-second timeout expires.
+  4. Wait for all loading screens to finish.
+  5. Check that all clients are in `zone`. If not, return `FAILURE`.
+  6. Return `SUCCESS`.
+- `FAILURE` cases: hub teleport button did not become enabled within 35 seconds; clients did not enter a loading screen within 10 seconds of pressing END; not all clients arrived in `zone` after loading.
 
 ### collect_wisps
 

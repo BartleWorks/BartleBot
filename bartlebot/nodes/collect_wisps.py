@@ -105,6 +105,12 @@ async def run(machine, clients: list, params: dict) -> str:
     health_failures = [i for i, h in enumerate(final_health) if h < fail_if_health_below]
     mana_failures = [i for i, m in enumerate(final_mana) if m < fail_if_mana_below]
 
+    machine.log(
+        f"Post-collection ratios — health: {[f'{h:.2f}' for h in final_health]}, "
+        f"mana: {[f'{m:.2f}' for m in final_mana]}",
+        LogLevel.DEBUG,
+    )
+
     if health_failures:
         machine.log(
             f"FAILURE: client(s) {health_failures} still below health threshold "
