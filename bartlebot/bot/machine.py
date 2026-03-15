@@ -81,9 +81,18 @@ class BotMachine:
     def get_option(self, name: str, default=None):
         """Return the current value of a bot option, or default if not found.
 
-        Reads live from the BotConfig object so GUI changes take effect
-        without restarting the machine.
+        Checks the current state's per-node option_overrides first, then falls
+        back to the bot-wide option value. Reads live from BotConfig so GUI
+        changes take effect without restarting the machine.
         """
+        # Per-node override takes priority
+        try:
+            state_def = self._state_map.get(self.state, {})
+            overrides = state_def.get("option_overrides") or {}
+            if name in overrides:
+                return overrides[name]
+        except AttributeError:
+            pass  # self.state not yet initialised
         if self._bot_config is None:
             return default
         for opt in self._bot_config.options:

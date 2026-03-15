@@ -47,3 +47,7 @@ class FakeMachine:
 
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:
         self.drops.append((item, qty, client_index))
+
+    def get_option(self, name: str, default=None):
+        """Return 0 for numeric options so nodes incur no real delay in tests."""
+        return 0

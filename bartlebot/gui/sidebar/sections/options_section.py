@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import BotOptionModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
+from bartlebot.nodes.registry import NODE_SPECS
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -253,21 +254,44 @@ class OptionsSection(SidebarSection):
             self._no_options_lbl.show()
             return
 
+        # Compute which option names are locked by at least one node in the bot.
+        required_names: set[str] = set()
+        if self._config is not None:
+            for state in self._config.states:
+                spec = NODE_SPECS.get(state.node_type)
+                if spec:
+                    for req in spec.required_bot_options:
+                        required_names.add(req.name)
+
+        _SYSTEM_TOOLTIP = (
+            "This option is required by one or more nodes and cannot be edited or deleted."
+        )
+
         self._no_options_lbl.hide()
         for opt in options:
             inner, widget = _build_option_row(opt)
             self._connect_option_widget(widget, opt)
 
+            is_system = opt.name in required_names
+
             edit_btn = QPushButton("Edit")
-            edit_btn.setToolTip(f"Edit option '{opt.name}'")
             edit_btn.setVisible(self._editable)
+            if is_system:
+                edit_btn.setEnabled(False)
+                edit_btn.setToolTip(_SYSTEM_TOOLTIP)
+            else:
+                edit_btn.setToolTip(f"Edit option '{opt.name}'")
             edit_btn.clicked.connect(
                 lambda _checked, name=opt.name: self._on_edit_option(name)
             )
 
             del_btn = QPushButton("Delete")
-            del_btn.setToolTip(f"Remove option '{opt.name}'")
             del_btn.setVisible(self._editable)
+            if is_system:
+                del_btn.setEnabled(False)
+                del_btn.setToolTip(_SYSTEM_TOOLTIP)
+            else:
+                del_btn.setToolTip(f"Remove option '{opt.name}'")
             del_btn.clicked.connect(
                 lambda _checked, name=opt.name: self._on_delete_option(name)
             )

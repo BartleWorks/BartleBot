@@ -4,7 +4,7 @@ from wizwalker import XYZ
 
 from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -53,10 +53,20 @@ NODE_SPEC = NodeSpec(
             "the zone, or not all clients reached to_zone after the transition.",
         ),
     ],
+    required_bot_options=[
+        BotOptionSpec(
+            name="Safety Delay",
+            type="float",
+            default=3.0,
+            description=(
+                "Seconds to wait after triggering an interaction or dialogue "
+                "before checking for a response window."
+            ),
+        ),
+    ],
 )
 
 ZONE_CHANGE_TIMEOUT = 30.0
-DIALOG_CHECK_DELAY = 0.5
 POLL_INTERVAL = 0.25
 
 
@@ -99,7 +109,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
     machine.log("Checking for dungeon exit warning…", LogLevel.DEBUG)
-    await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, DIALOG_CHECK_DELAY) for c in clients])
+    await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
 
     # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
     machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)

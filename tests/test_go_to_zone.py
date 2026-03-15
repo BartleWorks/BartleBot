@@ -30,7 +30,7 @@ async def test_success_single_client():
     # step 3 second poll → "Dst" (left Src); step 5 post-check → "Dst".
     client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
 
-    with patch.object(gtz, "POLL_INTERVAL", 0), patch.object(gtz, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(machine=FakeMachine(), clients=[client], params=_PARAMS)
 
     assert result == "SUCCESS"
@@ -46,7 +46,7 @@ async def test_success_multiple_clients():
 
     clients = [_make_client(), _make_client()]
 
-    with patch.object(gtz, "POLL_INTERVAL", 0), patch.object(gtz, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(FakeMachine(), clients, _PARAMS)
 
     assert result == "SUCCESS"
@@ -59,7 +59,7 @@ async def test_timeout_leaving_source_zone_fails():
     client = FakeClient()
     client.zone_name.return_value = "Src"  # never changes
 
-    with patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 0.01), patch.object(gtz, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 0.01):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -72,7 +72,7 @@ async def test_post_condition_wrong_zone_fails():
     # step 5 → "Detour" (not "Dst").
     client.zone_name.side_effect = ["Src", "Src", "Detour", "Detour"]
 
-    with patch.object(gtz, "POLL_INTERVAL", 0), patch.object(gtz, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -85,7 +85,7 @@ async def test_loading_screen_awaited():
     # First loading poll → still loading; second → clear.
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(gtz, "POLL_INTERVAL", 0), patch.object(gtz, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -99,7 +99,6 @@ async def test_exit_dungeon_dialog_dismissed():
 
     with (
         patch.object(gtz, "POLL_INTERVAL", 0),
-        patch.object(gtz, "DIALOG_CHECK_DELAY", 0),
         patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
     ):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)

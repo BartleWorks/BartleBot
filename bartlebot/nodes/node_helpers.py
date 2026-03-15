@@ -12,7 +12,7 @@ DUNGEON_WARNING_PATH = [
 ]
 
 
-async def confirm_dialog_if_visible(client, delay: float = 0.5) -> None:
+async def confirm_dialog_if_visible(client, delay: float = 3.0) -> None:
     """Wait delay seconds, then press ENTER to confirm the dungeon warning if it appeared."""
     await asyncio.sleep(delay)
     if await is_visible_by_path(client, DUNGEON_WARNING_PATH):

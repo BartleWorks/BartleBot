@@ -32,6 +32,9 @@ class StateModel(BaseModel):
     label: str | None = None
     position: dict | None = None  # {"x": float, "y": float} — GUI canvas layout only
     params: dict = Field(default_factory=dict)
+    # Per-node overrides for bot-wide options (e.g. "Safety Delay").
+    # Keys are option names; values override the bot-wide default for this node only.
+    option_overrides: dict = Field(default_factory=dict)
 
 
 class BotOptionModel(BaseModel):

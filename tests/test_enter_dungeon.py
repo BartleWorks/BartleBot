@@ -39,7 +39,7 @@ async def test_success_single_client():
     """Happy path: one client teleports to sigil, prompt appears, enters dungeon."""
     client = _happy_client()
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -51,7 +51,7 @@ async def test_success_multiple_clients():
     """All clients must go through the full flow — verified with two clients."""
     clients = [_happy_client(), _happy_client()]
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), clients, _PARAMS)
 
     assert result == "SUCCESS"
@@ -71,7 +71,7 @@ async def test_one_client_stuck_in_source_zone_fails():
     client_b.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Hub"]
     client_b.is_in_npc_range.return_value = True
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client_a, client_b], _PARAMS)
 
     assert result == "FAILURE"
@@ -114,7 +114,6 @@ async def test_prompt_retry_then_success():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(ed, "PROMPT_TIMEOUT", 0.01),
-        patch.object(ed, "DIALOG_CHECK_DELAY", 0),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
@@ -129,7 +128,7 @@ async def test_loading_screen_awaited():
     client = _happy_client()
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -143,7 +142,7 @@ async def test_wrong_dungeon_zone_fails():
     client.zone_name.side_effect = ["Hub", "Hub", "WrongZone", "WrongZone"]
     client.is_in_npc_range.return_value = True
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "DIALOG_CHECK_DELAY", 0):
+    with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -155,7 +154,6 @@ async def test_dungeon_warning_dialog_confirmed():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(ed, "DIALOG_CHECK_DELAY", 0),
         patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
@@ -174,7 +172,6 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(ed, "DIALOG_CHECK_DELAY", 0),
         patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False)),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)

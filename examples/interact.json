@@ -1,0 +1,35 @@
+{
+  "name": "Interact",
+  "description": "Interact with something",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "interact",
+      "position": {
+        "x": 2.871794871794876,
+        "y": 20.705128205128204
+      },
+      "params": {
+        "interact_xyz": {
+          "x": -11.58,
+          "y": -2344.42,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -716.91,
+          "y": -3251.78,
+          "z": 0.0
+        }
+      }
+    }
+  ],
+  "transitions": []
+}

@@ -6,9 +6,13 @@ Each node spec includes a parameter table followed by implementation notes cover
 APIs used and the async flow. See `DEIMOS_PATTERNS.md` in `wizard101_api/` for concrete code patterns.
 See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
-## Script Library
+# Node Library
 
-BartleBot includes several standard scripts to help users create bots more easily.
+BartleBot includes several standard nodes to help users create bots more easily.
+
+## Action Nodes
+
+Action nodes are nodes that execute in-game actions. They make up the core behavior of a BartleBot FSM.
 
 ### go_to_zone
 
@@ -95,27 +99,120 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
   6. Return `SUCCESS` once all dialogue is dismissed and interaction is complete.
 - `FAILURE` cases: interact prompt never appeared after retries.
 
-### stop_if_dropped
+### go_to_xyz
+
+Teleports clients to a given XYZ location within the same zone.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | The zone to transition from. All selected clients must be in this zone when the node is called.
+| `xyz`          | `XYZ`          | The XYZ coordinates within `zone`.
+
+**Implementation:**
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`
+- Flow:
+  1. Verify all clients are in `zone`. If not, return `FAILURE`.
+  2. `asyncio.gather` teleport all clients to `xyz`.
+  3. Return `SUCCESS` if all clients are at the provided XYZ (or within a very small margin), else return `FAILURE`.
+- `FAILURE` cases: clients not in `zone` at start; not all clients reached `xyz` after teleporting.
+
+### mark_location
+
+Marks current location, including failsafes to handle edge cases such as a pre-existing mark or the mark cooldown timer.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | Optional. The zone to mark location within. All selected clients must be in this zone when the node is called.
+| `xyz`          | `XYZ`          | Optional. The XYZ coordinates within `zone` to mark.
+
+**Implementation**
+- APIs: TODO
+- Flow:
+  1. If `zone` or `xyz` were provided, check if clients meet criteria. If `zone` is correct but `xyz` isn't, teleport clients to `xyz`. If `zone` is incorrect, return `FAILURE`.
+  2. Check if clients have enough mana to mark location. If any clients don't have enough mana, return `FAILURE`.
+  3. Wait until the UI path element to mark location is enabled.
+  4. Mark location.
+  5. Check if recall to mark UI path element is disabled. If so, that means that client had already marked in this spot and just reset its mark by marking again. If so, wait for mark UI path element is enabled again (30s timer after marking, but better to wait for UI element to be enabled) and then mark spot.
+
+### recall_to_marked_location
+
+Recalls to existing marked location.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | Optional. The zone to return to.
+| `xyz`          | `XYZ`          | Optional. The XYZ coordinates within `zone` to return to.
+
+**Implementation**
+- Flow
+  1. Check if clients have enough mana to return to marked location. If any clients don't have enough mana, return `FAILURE`.
+  2. Wait until the UI path element to return to the marked location is enabled. If it isn't enabled within 30 seconds (maybe wait 35 just to be safe), that means that no mark has been set and the node returns `FAILURE`.
+  3. Teleport to mark and handle loading screen safely.
+  4. If `zone` or `xyz` was set, check that clients are in `zone` or at `xyz` (with small margin of error). Return `FAILURE` if false.
+
+### go_to_world_hub
+
+Teleports to the hub zone for the current world.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | The zone to return to.
+
+**Implementation**
+- Flow
+  1. Check if clients are already in `zone`. If true, skip the node and return `SUCCESS`.
+  2. Check if the teleport button path is enabled. If it isn't wait until it is.
+  3. Teleport clients to hub zone by sending the `END` keycode repeatedly until they enter a loading screen.
+  4. Handle loading screen safely.
+  5. Check that all clients are in `zone`. If not, return `FALSE`.
+
+## Decision Nodes
+
+Decision nodes allow users to implement branching behavior logic by evaluating conditions. Decision nodes don't have any associated in-game action. Rather, they are used to control which actions happen next.
+
+### filter_clients
+
+Allows user to filter endpoints by client list. Implementation TBD.
+
+### split_on_flag
+
+Evalutes a bot-level conditional variable and gives endpoints depending on evaluation.
+
+### check_if_dropped
 
 Stops the bot if a drop is received.
 
 | Parameter Name    | Parameter Type | Parameter Description |
 |-------------------|----------------|-----------------------|
 | `clients_to_check`| `List[int]`    | 0-based indices of clients to check for the drop.
-| `item_names`      | `List[str]`    | Names of items to watch for. Bot stops if any of these are received by any of the specified clients.
+| `item_names`      | `List[str]`    | Names of items to watch for. Node returns `True` if any of the clients in `clients_to_check` have received any of the items in `item_names`.
+| `require_all`     | `bool`         | Optional, defaults to `False`. If `require_all == True`, node returns `True` only if all items in `item_names` have been dropped for all clients in `clients_to_check`.
 
 **Implementation:**
-- APIs: backpack inventory snapshot diff (see drop detection pattern in `DEIMOS_PATTERNS.md`)
+- APIs: checks the drop table for the current run
 - Flow:
-  1. Take a backpack snapshot for each client in `clients_to_check` at the start of the node.
-  2. Compare to the current backpack contents.
-  3. If any item in `item_names` appears in the diff for any checked client, signal the bot to stop and return `FAILURE` (or transition to a terminal stop state).
-  4. Otherwise return `SUCCESS` (drop not yet received; bot continues).
-- Intended use: placed as a node that runs after each combat or dungeon run, looping back if the item hasn't dropped.
+  1. Set return value to `True` 
+  2. For each client in `clients_to_check`, scan `item_names`
+  3. If `require_all == False`, return `True` as soon as any items in `item_names` are found. If `require_all == True`, set return value to `False` as soon as an item check comes up empty for any client.
+  4. Return the set return value.
+- Intended use: placed as a node that runs after each combat or dungeon run, allowing the bot to loop back if the item hasn't dropped.
 
-## Behavior Library
+### check_level_scaling
 
-BartleBot includes a library of more advanced behaviors that combine multiple actions into sequences that are commonly used.
+Checks if a list of clients are all level scaled. Checks level scaling by checking UI element path for level scaling potion.
+
+| Parameter Name    | Parameter Type | Parameter Description |
+|-------------------|----------------|-----------------------|
+| `clients_to_check`| `bool`         | 0-based indices of clients to check for level scaling status.
+
+**Implementation**
+- Flow:
+  1. For each client in `clients_to_check`, check if the level scaling UI path element is visible.
+  2. Return `False` if any client is not level scaled, else return `True`.
+
+# Advanced Behavior Library
+
+BartleBot includes a library of more advanced behaviors that combine multiple actions into sequences that are commonly used. Adding an advanced behavior to a bot will add a group of nodes with a specific configuration and endpoints.
 
 ### handle_potions
 
