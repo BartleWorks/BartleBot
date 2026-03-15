@@ -5,6 +5,7 @@ BotCanvas  — top-level widget; owns the scene, toolbars, properties panel,
 EditScene  — interactive QGraphicsScene (same logic as the old edit_tab.py).
 """
 
+import asyncio
 import enum
 import json
 import math
@@ -51,6 +52,8 @@ _TAB_LOG   = 1  # bottom tab index for Log
 _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
+
+_RECORDABLE_NODES: set[str] = {"go_to_zone", "enter_dungeon"}
 
 _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.DEBUG:   "[DBG]",
@@ -709,6 +712,29 @@ class _DynamicParamForm(QWidget):
         self._suppress = False
         self._emit_changed()
 
+    def set_str(self, key: str, value: str) -> None:
+        """Programmatically set a 'str' field by key."""
+        widget = self._widgets.get(key)
+        if not isinstance(widget, QLineEdit):
+            return
+        self._suppress = True
+        widget.setText(value)
+        self._suppress = False
+        self._emit_changed()
+
+    def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
+        """Programmatically set an 'xyz' field by key."""
+        widgets = self._widgets.get(key)
+        if not isinstance(widgets, tuple):
+            return
+        x_s, y_s, z_s, _ = widgets
+        self._suppress = True
+        x_s.setValue(x)
+        y_s.setValue(y)
+        z_s.setValue(z)
+        self._suppress = False
+        self._emit_changed()
+
 
 # ---------------------------------------------------------------------------
 # Per-node option-override helpers
@@ -785,6 +811,8 @@ class _ParamPanel(QWidget):
         self._transition: TransitionModel | None = None
         self._suppress: bool = False
         self.on_config_changed: Callable[[], None] = lambda: None
+        self._get_clients: Callable[[], list] = lambda: []
+        self._record_task: asyncio.Task | None = None
 
         self._stack = QStackedWidget()
         layout = QVBoxLayout(self)
@@ -842,11 +870,26 @@ class _ParamPanel(QWidget):
         self._override_rows: list[QWidget] = []
         self._override_widgets: dict[str, tuple[QCheckBox, QWidget]] = {}
 
+        # Record row — shown only for recordable node types
+        self._record_row = QWidget()
+        _rr_layout = QHBoxLayout(self._record_row)
+        _rr_layout.setContentsMargins(6, 0, 6, 4)
+        _rr_layout.setSpacing(6)
+        self._record_btn = QPushButton("Record")
+        self._record_btn.setFixedWidth(70)
+        self._record_status_lbl = QLabel("")
+        self._record_status_lbl.setStyleSheet("color: #888; font-size: 11px;")
+        _rr_layout.addWidget(self._record_btn)
+        _rr_layout.addWidget(self._record_status_lbl, 1)
+        self._record_row.setVisible(False)
+        self._record_btn.clicked.connect(self._on_record_clicked)
+
         node_outer = QWidget()
         node_vbox = QVBoxLayout(node_outer)
         node_vbox.setContentsMargins(0, 0, 0, 0)
         node_vbox.setSpacing(0)
         node_vbox.addWidget(node_w)
+        node_vbox.addWidget(self._record_row)
         node_vbox.addWidget(scroll, 1)
         node_vbox.addWidget(self._overrides_section)
         node_vbox.addWidget(self._returns_section)
@@ -879,11 +922,13 @@ class _ParamPanel(QWidget):
         self._edge_flag_combo.currentTextChanged.connect(self._on_edge_flag_changed)
 
     def show_idle(self) -> None:
+        self._cancel_record()
         self._state = None
         self._transition = None
         self._stack.setCurrentIndex(_PAGE_IDLE)
 
     def show_state(self, state: StateModel) -> None:
+        self._cancel_record()
         self._state = state
         self._transition = None
         self._suppress = True
@@ -897,6 +942,7 @@ class _ParamPanel(QWidget):
         self._rebuild_overrides(state)
         self._rebuild_returns(state.node_type)
         self._suppress = False
+        self._record_row.setVisible(state.node_type in _RECORDABLE_NODES)
         self._stack.setCurrentIndex(_PAGE_NODE)
 
     def show_transition(
@@ -952,6 +998,7 @@ class _ParamPanel(QWidget):
     def _on_node_type_changed(self, text: str) -> None:
         if self._suppress or self._state is None:
             return
+        self._cancel_record()
         self._state.node_type = text
         self._state.params = {}
         self._state.option_overrides = {}
@@ -960,6 +1007,7 @@ class _ParamPanel(QWidget):
         self._state.params = self._param_form.get_params()
         self._rebuild_overrides(self._state)
         self._rebuild_returns(text)
+        self._record_row.setVisible(text in _RECORDABLE_NODES)
         self.on_config_changed()
 
     def _on_param_form_changed(self) -> None:
@@ -979,6 +1027,138 @@ class _ParamPanel(QWidget):
             return
         self._transition.flag = None if text == "(none)" else text
         self.on_config_changed()
+
+    # ------------------------------------------------------------------
+    # Recording
+    # ------------------------------------------------------------------
+
+    def _cancel_record(self) -> None:
+        if self._record_task is not None and not self._record_task.done():
+            self._record_task.cancel()
+        self._record_task = None
+        self._record_btn.setText("Record")
+        self._record_status_lbl.setText("")
+
+    def _on_record_clicked(self) -> None:
+        if self._record_task is not None and not self._record_task.done():
+            self._cancel_record()
+            return
+        if self._state is None:
+            return
+        clients = self._get_clients()
+        if not clients:
+            self._record_status_lbl.setText("No client connected.")
+            return
+        if self._state.node_type == "go_to_zone":
+            self._record_btn.setText("Stop")
+            self._record_status_lbl.setText("Starting…")
+            self._record_task = asyncio.ensure_future(
+                self._record_go_to_zone(clients[0])
+            )
+        elif self._state.node_type == "enter_dungeon":
+            self._record_btn.setText("Stop")
+            self._record_status_lbl.setText("Starting…")
+            self._record_task = asyncio.ensure_future(
+                self._record_enter_dungeon(clients[0])
+            )
+
+    async def _record_go_to_zone(self, client) -> None:
+        POLL = 0.15
+
+        try:
+            # Phase 1: from_zone
+            from_zone = await client.zone_name()
+            self._param_form.set_str("from_zone", from_zone)
+            self._record_status_lbl.setText("Walk to transition…")
+
+            last_pos = await client.body.position()
+
+            # Phase 2: live-update xyz; stop when loading
+            while True:
+                await asyncio.sleep(POLL)
+                if await client.is_loading():
+                    self._param_form.set_xyz("xyz", last_pos.x, last_pos.y, last_pos.z)
+                    self._record_status_lbl.setText("Loading…")
+                    break
+                last_pos = await client.body.position()
+                self._param_form.set_xyz("xyz", last_pos.x, last_pos.y, last_pos.z)
+
+            # Phase 3: wait for load to finish
+            while await client.is_loading():
+                await asyncio.sleep(POLL)
+
+            # Phase 4: to_zone
+            to_zone = await client.zone_name()
+            self._param_form.set_str("to_zone", to_zone)
+
+            # Phase 5: auto-populate label if empty
+            if self._state is not None and not (self._state.label or "").strip():
+                label = f"{_zone_display(from_zone)} → {_zone_display(to_zone)}"
+                self._state.label = label
+                self._suppress = True
+                self._node_label_edit.setText(label)
+                self._suppress = False
+                self.on_config_changed()
+
+            self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
+
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
+
+    async def _record_enter_dungeon(self, client) -> None:
+        POLL = 0.15
+
+        try:
+            # Phase 1: from_zone and reset_xyz (starting position)
+            from_zone = await client.zone_name()
+            self._param_form.set_str("from_zone", from_zone)
+            start_pos = await client.body.position()
+            self._param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
+            self._record_status_lbl.setText("Walk to sigil…")
+
+            last_pos = start_pos
+
+            # Phase 2: live-update sigil_xyz; stop when loading
+            while True:
+                await asyncio.sleep(POLL)
+                if await client.is_loading():
+                    self._param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
+                    self._record_status_lbl.setText("Loading…")
+                    break
+                last_pos = await client.body.position()
+                self._param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
+
+            # Phase 3: wait for load to finish
+            while await client.is_loading():
+                await asyncio.sleep(POLL)
+
+            # Phase 4: dungeon_zone
+            dungeon_zone = await client.zone_name()
+            self._param_form.set_str("dungeon_zone", dungeon_zone)
+
+            # Phase 5: auto-populate label if empty
+            if self._state is not None and not (self._state.label or "").strip():
+                label = f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}"
+                self._state.label = label
+                self._suppress = True
+                self._node_label_edit.setText(label)
+                self._suppress = False
+                self.on_config_changed()
+
+            self._record_status_lbl.setText(f"Done — {dungeon_zone.split('/')[-1]}")
+            self._record_btn.setText("Record")
+
+        except asyncio.CancelledError:
+            self._record_status_lbl.setText("")
+            self._record_btn.setText("Record")
+        except Exception as e:
+            self._record_status_lbl.setText(f"Error: {e}")
+            self._record_btn.setText("Record")
 
     def _rebuild_overrides(self, state: StateModel) -> None:
         for row in self._override_rows:
@@ -1234,6 +1414,10 @@ class BotCanvas(QWidget):
         """Enable/disable the Run button (only when idle and in RUN mode)."""
         if self._run_state == _IDLE and self._mode == BotMode.RUN:
             self._run_pause_btn.setEnabled(enabled)
+
+    def set_clients_getter(self, fn: Callable[[], list]) -> None:
+        """Pass a callable that returns the current list of hooked clients."""
+        self._param_panel._get_clients = fn
 
     def set_running(self) -> None:
         self._run_state = _RUNNING
@@ -1526,6 +1710,15 @@ def _validate_node(state, config) -> tuple[bool, bool]:
                         break
 
     return is_error, is_warning
+
+
+def _zone_display(zone: str) -> str:
+    """Return a human-friendly display name for a zone path like 'WizardCity/WC_Hub'."""
+    try:
+        from wizsprinter import toZone, toZoneDisplayName  # noqa: PLC0415
+        return toZoneDisplayName(toZone(zone))
+    except Exception:
+        return zone.split("/")[-1] if "/" in zone else zone
 
 
 def _dist(a: QPointF, b: QPointF) -> float:

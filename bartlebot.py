@@ -254,6 +254,7 @@ async def main(app: QApplication) -> None:
     window.bot_canvas.on_pause = pause_bot
     window.bot_canvas.on_resume = resume_bot
     window.bot_canvas.stop_button.clicked.connect(stop_bot)
+    window.bot_canvas.set_clients_getter(lambda: _clients)
 
     window.left_sidebar.on_config_changed = _config_changed
     window.on_open_recent = lambda path: open_bot(window, path)
