@@ -20,8 +20,8 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
 | [`interact_to_zone`](#interact_to_zone) | Interact with an object that triggers a zone change | `done` |
 | [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
-| [`mark_location`](#mark_location) | Mark current location with failsafe handling | `todo` |
-| [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `todo` |
+| [`mark_location`](#mark_location) | Mark current location with failsafe handling | `done` |
+| [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `done` |
 | [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone via END key | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
 
@@ -225,25 +225,25 @@ Interacts with an NPC or world object that triggers a zone change (e.g., a snowg
 
 ### mark_location
 
-**Status:** `todo`
+**Status:** `done`
 
 Marks current location, including failsafes to handle edge cases such as a pre-existing mark or the mark cooldown timer.
 
 | Parameter Name | Parameter Type | Parameter Description |
 |----------------|----------------|-----------------------|
-| `zone`         | `str`          | Optional. The zone to mark location within. All selected clients must be in this zone when the node is called.
-| `xyz`          | `XYZ`          | Optional. The XYZ coordinates within `zone` to mark.
+| `zone`         | `str`          | The zone to mark location within. All selected clients must be in this zone when the node is called.
+| `xyz`          | `XYZ`          | The XYZ coordinates within `zone` to mark.
 
 <details>
 <summary>Implementation</summary>
 
 - APIs: TODO
 - Flow:
-  1. If `zone` or `xyz` were provided, check if clients meet criteria. If `zone` is correct but `xyz` isn't, teleport clients to `xyz`. If `zone` is incorrect, return `FAILURE`.
-  2. Check if clients have enough mana to mark location. If any clients don't have enough mana, return `FAILURE`.
+  1. Check if clients have enough mana to mark location. If any clients don't have enough mana, return `FAILURE`. 
+  2. Check `zone` and `xyz` against current client zone and xyz. If `zone` is correct but `xyz` isn't, teleport clients to `xyz`. If `zone` is incorrect, return `FAILURE`.
   3. Wait until the UI path element to mark location is enabled.
   4. Mark location.
-  5. Check if recall to mark UI path element is disabled. If so, that means that client had already marked in this spot and just reset its mark by marking again. If so, wait for mark UI path element is enabled again (30s timer after marking, but better to wait for UI element to be enabled) and then mark spot.
+  5. Check if recall to mark UI path element is disabled. If so, that means that client had already marked in this spot and just reset its mark by marking again. If so, wait until mark UI path element is enabled again (30s timer after marking, but better to wait for UI element to be enabled) and then mark spot.
 
 </details>
 
@@ -251,14 +251,14 @@ Marks current location, including failsafes to handle edge cases such as a pre-e
 
 ### recall_to_marked_location
 
-**Status:** `todo`
+**Status:** `done`
 
 Recalls to existing marked location.
 
 | Parameter Name | Parameter Type | Parameter Description |
 |----------------|----------------|-----------------------|
-| `zone`         | `str`          | Optional. The zone to return to.
-| `xyz`          | `XYZ`          | Optional. The XYZ coordinates within `zone` to return to.
+| `zone`         | `str`          | The zone to return to.
+| `xyz`          | `XYZ`          | The XYZ coordinates within `zone` to return to.
 
 <details>
 <summary>Implementation</summary>
@@ -267,7 +267,7 @@ Recalls to existing marked location.
   1. Check if clients have enough mana to return to marked location. If any clients don't have enough mana, return `FAILURE`.
   2. Wait until the UI path element to return to the marked location is enabled. If it isn't enabled within 30 seconds (maybe wait 35 just to be safe), that means that no mark has been set and the node returns `FAILURE`.
   3. Teleport to mark and handle loading screen safely.
-  4. If `zone` or `xyz` was set, check that clients are in `zone` or at `xyz` (with small margin of error). Return `FAILURE` if false.
+  4. Check that clients are in `zone` and at `xyz` (with small margin of error). Return `FAILURE` if false.
 
 </details>
 

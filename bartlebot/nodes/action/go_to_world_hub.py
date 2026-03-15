@@ -7,8 +7,7 @@ from wizwalker import Keycode
 from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-
-HUB_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]
+from bartlebot.nodes.paths import HUB_BUTTON_PATH
 
 BUTTON_TIMEOUT = 35.0   # 30s cooldown + 5s safety margin
 TRIGGER_TIMEOUT = 10.0  # seconds to wait for loading to start after pressing END

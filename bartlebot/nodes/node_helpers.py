@@ -4,12 +4,7 @@ import asyncio
 
 from wizwalker import Keycode
 
-# Window tree path to the dungeon entry/exit confirmation button.
-# This dialog appears both when entering a dungeon via sigil and when leaving one.
-DUNGEON_WARNING_PATH = [
-    "MessageBoxModalWindow", "messageBoxBG", "messageBoxLayout",
-    "AdjustmentWindow", "Layout", "centerButton",
-]
+from bartlebot.nodes.paths import DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
 
 POLL_INTERVAL = 0.25
 
@@ -85,3 +80,12 @@ async def none_loading(clients: list) -> bool:
     """Return True when no client is on a loading screen."""
     loading = await asyncio.gather(*[c.is_loading() for c in clients])
     return not any(loading)
+
+
+async def click_by_path(client, path: list[str]) -> bool:
+    """Click the UI window at path. Returns True if found and clicked, False otherwise."""
+    window = await _get_window_from_path(client.root_window, path)
+    if window is None:
+        return False
+    await window.click()
+    return True
