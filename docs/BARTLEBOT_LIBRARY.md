@@ -18,7 +18,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
 | [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
-| [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `todo` |
+| [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `todo` |
 | [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `todo` |
 | [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone via END key | `done` |
@@ -45,6 +45,31 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 ## Action Nodes
 
 Action nodes are nodes that execute in-game actions. They make up the core behavior of a BartleBot FSM.
+
+### go_to_xyz
+
+**Status:** `done`
+
+Teleports clients to a given XYZ location within the same zone.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | The zone to transition from. All selected clients must be in this zone when the node is called.
+| `xyz`          | `XYZ`          | The XYZ coordinates within `zone`.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`
+- Flow:
+  1. Verify all clients are in `zone`. If not, return `FAILURE`.
+  2. `asyncio.gather` teleport all clients to `xyz`.
+  3. Return `SUCCESS` if all clients are at the provided XYZ (or within a very small margin), else return `FAILURE`.
+- `FAILURE` cases: clients not in `zone` at start; not all clients reached `xyz` after teleporting.
+
+</details>
+
+---
 
 ### go_to_zone
 
@@ -158,31 +183,6 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
   5. If the interact prompt never appeared: teleport clients to `reset_xyz` to clear state, then retry from step 1.
   6. Return `SUCCESS` once all dialogue is dismissed and interaction is complete.
 - `FAILURE` cases: interact prompt never appeared after retries.
-
-</details>
-
----
-
-### go_to_xyz
-
-**Status:** `todo`
-
-Teleports clients to a given XYZ location within the same zone.
-
-| Parameter Name | Parameter Type | Parameter Description |
-|----------------|----------------|-----------------------|
-| `zone`         | `str`          | The zone to transition from. All selected clients must be in this zone when the node is called.
-| `xyz`          | `XYZ`          | The XYZ coordinates within `zone`.
-
-<details>
-<summary>Implementation</summary>
-
-- APIs: `client.zone_name()`, `client.teleport(XYZ)`
-- Flow:
-  1. Verify all clients are in `zone`. If not, return `FAILURE`.
-  2. `asyncio.gather` teleport all clients to `xyz`.
-  3. Return `SUCCESS` if all clients are at the provided XYZ (or within a very small margin), else return `FAILURE`.
-- `FAILURE` cases: clients not in `zone` at start; not all clients reached `xyz` after teleporting.
 
 </details>
 

@@ -1,0 +1,36 @@
+{
+  "name": "New Bot",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "drops": [],
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "go_to_xyz",
+      "position": {
+        "x": -13.055528733232435,
+        "y": 50.16997886110966
+      },
+      "params": {
+        "zone": "Polaris/PL_Z03_IcefallPassage",
+        "xyz": {
+          "x": 5057.98,
+          "y": -27197.21,
+          "z": 3979.0
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": []
+}
