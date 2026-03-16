@@ -27,6 +27,7 @@ from bartlebot.gui.canvas.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
+from bartlebot.gui.sidebar.sidebar_section import MUTED_LABEL_STYLE
 
 
 class _IntListLineEdit(QLineEdit):
@@ -513,9 +514,10 @@ class _EditView(GraphView):
 class _DynamicParamForm(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._form = QFormLayout(self)
+        self._form = QVBoxLayout(self)
         self._form.setContentsMargins(6, 6, 6, 6)
-        self._form.setSpacing(6)
+        self._form.setSpacing(4)
+        self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
         self._suppress = False
@@ -523,16 +525,22 @@ class _DynamicParamForm(QWidget):
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
-        while self._form.rowCount() > 0:
-            self._form.removeRow(0)
+        # Remove everything except the trailing stretch.
+        while self._form.count() > 1:
+            item = self._form.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
         self._widgets.clear()
         self._required_widgets.clear()
+        insert_idx = 0
         for field in schema:
             label_text = field.label
             if field.required:
                 label_text += " <span style='color:#CC2222'>*</span>"
             label_w = QLabel(label_text)
             label_w.setTextFormat(Qt.TextFormat.RichText)
+            style = MUTED_LABEL_STYLE + (" margin-top: 8px;" if insert_idx > 0 else "")
+            label_w.setStyleSheet(style)
             if field.help:
                 label_w.setToolTip(field.help)
             val = params.get(field.key, field.default)
@@ -541,23 +549,19 @@ class _DynamicParamForm(QWidget):
             if field.required:
                 self._required_widgets[field.key] = widget
             display_w = widget if not isinstance(widget, tuple) else widget[3]
+            self._form.insertWidget(insert_idx, label_w)
+            self._form.insertWidget(insert_idx + 1, display_w)
+            insert_idx += 2
             if field.default_hint and not field.required:
-                wrapper = QWidget()
-                vbox = QVBoxLayout(wrapper)
-                vbox.setContentsMargins(0, 0, 0, 0)
-                vbox.setSpacing(2)
-                vbox.addWidget(display_w)
                 hint_lbl = QLabel(field.default_hint)
                 hint_lbl.setStyleSheet("color: #888;")
                 hint_lbl.setWordWrap(True)
-                vbox.addWidget(hint_lbl)
-                self._form.addRow(label_w, wrapper)
-            else:
-                self._form.addRow(label_w, display_w)
+                self._form.insertWidget(insert_idx, hint_lbl)
+                insert_idx += 1
         if not schema:
             placeholder = QLabel("This node type has no parameters.")
             placeholder.setStyleSheet("color: #888;")
-            self._form.addRow(placeholder)
+            self._form.insertWidget(0, placeholder)
         # Wire disabled_by: when controller checkbox is checked, disable the target widget
         for field in schema:
             if field.disabled_by and field.disabled_by in self._widgets:
