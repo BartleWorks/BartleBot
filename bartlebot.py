@@ -15,7 +15,6 @@ from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files
-from bartlebot.settings_manager import SettingsManager
 
 
 # ---------------------------------------------------------------------------
