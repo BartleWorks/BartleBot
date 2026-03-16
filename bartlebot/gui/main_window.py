@@ -91,9 +91,8 @@ class MainWindow(QMainWindow):
         # Top row: left sidebar | game view | right sidebar
         _splitter_style = (
             "QSplitter::handle { background: #888; }"
-            "QSplitter::handle:horizontal { width: 4px; }"
-            "QSplitter::handle:vertical   { height: 4px; }"
-            "QSplitter::handle:hover { background: #4a90d9; }"
+            "QSplitter::handle:horizontal { width: 2px; }"
+            "QSplitter::handle:vertical   { height: 2px; }"
         )
 
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)

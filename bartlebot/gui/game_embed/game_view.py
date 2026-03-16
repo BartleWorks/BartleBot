@@ -60,6 +60,7 @@ class GameView(QWidget):
         tile.show()
         self._placeholder.setVisible(False)
         self._recompute_geometry()
+        self._update_minimum_size()
 
     def unembed_client(self, client_idx: int) -> None:
         """Unembed and remove the tile for *client_idx*."""
@@ -73,6 +74,7 @@ class GameView(QWidget):
         if not self._tiles:
             self._placeholder.setVisible(True)
         self._recompute_geometry()
+        self._update_minimum_size()
 
     def unembed_all(self) -> None:
         """Unembed every client."""
@@ -141,6 +143,21 @@ class GameView(QWidget):
             row = pos // cols
             col = pos  % cols
             tile.setGeometry(col * tile_w, row * tile_h, tile_w, tile_h)
+
+    def _update_minimum_size(self) -> None:
+        """Set GameView minimum size to fit the current client grid plus padding."""
+        n = len(self._tiles)
+        if n == 0:
+            self.setMinimumSize(0, 0)
+            return
+        rows, cols = _GRID.get(n, (2, 2))
+        tile = next(iter(self._tiles.values()))
+        dpr = self.devicePixelRatio() or 1.0
+        pad = 4
+        self.setMinimumSize(
+            int(cols * tile._game_w / dpr) + 2 * pad,
+            int(rows * tile._game_h / dpr) + 2 * pad,
+        )
 
     # ------------------------------------------------------------------
     # Focus polling

@@ -177,7 +177,9 @@ class ClientTile(QWidget):
             pen.setColor(QColor("#4a90d9"))
             pen.setWidth(3)
             painter.setPen(pen)
-            painter.drawRect(gx + 1, gy + 1, gw - 2, gh - 2)
+            # Offset outward so the stroke falls in the letterbox area and is
+            # not hidden behind the Win32 child window surface.
+            painter.drawRect(gx - 2, gy - 2, gw + 4, gh + 4)
 
         # Client label pill — painted on the Qt widget surface.
         # Note: this may be obscured by the embedded game window (which renders
