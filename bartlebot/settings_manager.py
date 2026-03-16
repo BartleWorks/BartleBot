@@ -21,15 +21,6 @@ _DEFAULTS: dict[str, Any] = {
     "game_embed": {
         "resolution": [800, 600],
     },
-    "keybindings": {
-        "toggle_embed":     "Ctrl+G",
-        "next_client":      "Ctrl+Tab",
-        "run_bot":          "F9",
-        "pause_bot":        "F10",
-        "stop_bot":         "F11",
-        "launch_profile_0": None,
-        "launch_profile_1": None,
-    },
     "accounts": [],
     "launch_profiles": [],
 }
@@ -148,13 +139,6 @@ class SettingsManager:
     @game_resolution.setter
     def game_resolution(self, value: tuple[int, int]) -> None:
         self.set("game_embed", "resolution", value=list(value))
-
-    @property
-    def keybindings(self) -> dict[str, str | None]:
-        return dict(self.get("keybindings", default={}))
-
-    def set_keybinding(self, action: str, shortcut: str | None) -> None:
-        self.set("keybindings", action, value=shortcut)
 
     def get_general(self, key: str, default: Any = None) -> Any:
         return self.get("general", key, default=default)

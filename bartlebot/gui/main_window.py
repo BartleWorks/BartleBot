@@ -261,9 +261,6 @@ class MainWindow(QMainWindow):
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
-            # Notify keybinding manager to reload if wired
-            if callable(getattr(self, "on_settings_saved", None)):
-                self.on_settings_saved()
 
     def _open_launcher(self) -> None:
         from bartlebot.gui.launcher_popup import LauncherPopup

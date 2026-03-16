@@ -14,8 +14,6 @@ from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files
-from bartlebot.keybindings import KeybindingManager
-from bartlebot.launcher.launch_profile import launch_profile
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -298,13 +296,6 @@ async def main(app: QApplication) -> None:
     window.left_sidebar.on_config_changed = _config_changed
     window.on_open_recent = lambda path: open_bot(window, path)
     window.update_recent_menu(recent_files.load())
-
-    # Keybindings
-    keybinding_mgr = KeybindingManager()
-    keybinding_mgr.install(window, window.game_view, window.bot_canvas, launch_profile)
-    window.on_settings_saved = lambda: keybinding_mgr.reload(
-        window, window.game_view, window.bot_canvas, launch_profile
-    )
 
     asyncio.create_task(client_loop(window))
 

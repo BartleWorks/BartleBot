@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.game_embed_tab import GameEmbedTab
 from bartlebot.gui.settings.general_tab import GeneralTab
-from bartlebot.gui.settings.keybindings_tab import KeybindingsTab
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -35,10 +34,6 @@ class SettingsDialog(QDialog):
         self._accounts_tab = AccountsTab()
         self._tabs.addTab(self._accounts_tab, "Accounts")
 
-        # Keybindings tab
-        self._keybindings_tab = KeybindingsTab()
-        self._tabs.addTab(self._keybindings_tab, "Keybindings")
-
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
@@ -52,6 +47,5 @@ class SettingsDialog(QDialog):
     def _on_accept(self) -> None:
         self._general_tab.apply()
         self._game_embed_tab.apply()
-        self._keybindings_tab.apply()
         SettingsManager.instance().save()
         self.accept()
