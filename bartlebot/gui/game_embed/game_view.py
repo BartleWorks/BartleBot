@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import ctypes
+import ctypes.wintypes
 
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from bartlebot.gui.game_embed.client_tile import ClientTile
 
-_user32 = ctypes.windll.user32
+_user32     = ctypes.windll.user32
+_VK_LBUTTON = 0x01
 
 # Grid layouts: number of clients → (rows, cols)
 _GRID: dict[int, tuple[int, int]] = {
@@ -145,8 +147,19 @@ class GameView(QWidget):
     # ------------------------------------------------------------------
 
     def _poll_focus(self) -> None:
-        fg = _user32.GetForegroundWindow()
+        # If LMB was clicked since the last poll, check whether it landed over a
+        # game window and give that window keyboard focus.  GetAsyncKeyState bit 0
+        # is set if the key was pressed since the last call, so we reliably catch
+        # short clicks even at a 250 ms polling interval.
+        if _user32.GetAsyncKeyState(_VK_LBUTTON) & 0x0001:
+            pt = ctypes.wintypes.POINT()
+            _user32.GetCursorPos(ctypes.byref(pt))
+            for tile in self._tiles.values():
+                rect = ctypes.wintypes.RECT()
+                _user32.GetWindowRect(tile._hwnd, ctypes.byref(rect))
+                if rect.left <= pt.x < rect.right and rect.top <= pt.y < rect.bottom:
+                    _user32.SetFocus(tile._hwnd)
+                    break
+
         for tile in self._tiles.values():
-            hwnd = tile._hwnd
-            focused = (hwnd == fg) or bool(_user32.IsChild(hwnd, fg))
-            tile.set_focused(focused)
+            tile.set_focused(tile.is_game_focused())
