@@ -125,11 +125,11 @@ async def run(machine, clients: list, params: dict) -> str:
             idx = client_num - 1  # user-facing 1-based → 0-based list index
             if idx < 0 or idx >= len(clients):
                 machine.log(
-                    f"FAILURE: combat_order contains invalid client number {client_num} "
+                    f"combat_order: skipping client {client_num} — not connected "
                     f"(have {len(clients)} client(s))",
-                    LogLevel.WARNING,
+                    LogLevel.DEBUG,
                 )
-                return "FAILURE"
+                continue
             await clients[idx].tp_to(targets[idx])
             if not await _wait_for_all_in_combat([clients[idx]], _ENTER_COMBAT_TIMEOUT):
                 machine.log(

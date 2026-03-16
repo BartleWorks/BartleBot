@@ -125,8 +125,8 @@ async def test_combat_order_sequential():
     assert tp_order == [2, 1]
 
 
-async def test_combat_order_invalid_client_number_fails():
-    """combat_order referencing a client that doesn't exist → FAILURE."""
+async def test_combat_order_invalid_client_number_skipped():
+    """combat_order referencing a client that doesn't exist is silently skipped."""
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
 
@@ -139,7 +139,8 @@ async def test_combat_order_invalid_client_number_fails():
             {**_DEFAULT_PARAMS, "combat_order": [5]},
         )
 
-    assert result == "FAILURE"
+    # Client 5 doesn't exist (only 1 client), so the combat_order entry is skipped.
+    assert result == "SUCCESS"
     client.tp_to.assert_not_called()
 
 

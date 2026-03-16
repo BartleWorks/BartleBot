@@ -11,7 +11,13 @@ RECALL_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "
 RECALL_TIMER_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton", "txtRecallTimer"]
 
 # Level-scaling elixir indicator (visible when the elixir is active)
-LEVEL_SCALING_PATH = ["WorldView", "windowHUD", "wndElixirContainer", "sprtElixir1"]
+LEVEL_SCALING_ELIXIR_PATH = ["WorldView", "windowHUD", "wndElixirContainer", "sprtElixir1"]
+
+# Level-scaling elixir service menu (appears after interacting with the scaling NPC)
+LEVEL_SCALING_OPTION_BUTTON_PATH = [
+    "WorldView", "NPCServicesWin", "ControlSprite",
+    "optionsLayout", "NPCServicesOptionWindow", "OptionButton",
+]
 
 # Dungeon entry/exit confirmation dialog
 DUNGEON_WARNING_PATH = [

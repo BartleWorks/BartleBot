@@ -14,16 +14,17 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
 | Node | Description | Status |
 |------|-------------|--------|
-| [`go_to_zone`](#go_to_zone) | Transition clients between zones via teleport | `done` |
+| [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
+| [`go_to_zone`](#go_to_zone) | Transition clients between zones via gateway coordinates | `done` |
 | [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
 | [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
 | [`interact_to_zone`](#interact_to_zone) | Interact with an object that triggers a zone change | `done` |
-| [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `done` |
 | [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `done` |
 | [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
+| [`apply_level_scaling`](#apply_level_scaling) | Apply the level-scaling elixir via NPC interaction | `done` |
 
 ## Condition Nodes
 
@@ -326,6 +327,41 @@ Collects health and mana wisps after a battle if clients are below a specified h
   4. After all clients finish collecting, re-check ratios. If any client's health ratio is below `fail_if_health_below` or mana ratio is below `fail_if_mana_below`, return `FAILURE`.
   5. Return `SUCCESS` if all clients are at or above both fail thresholds.
 - `FAILURE` cases: any client is still below a fail threshold after wisps are exhausted.
+
+</details>
+
+---
+
+### apply_level_scaling
+
+**Status:** `done`
+
+Interacts with the level-scaling NPC to apply the level-scaling elixir. Assumes clients are already in the correct dungeon zone. After pressing X to begin the interaction, clicks the option button in the NPCServicesWin menu that appears, then waits for the menu to close.
+
+| Parameter Name    | Parameter Type | Parameter Description |
+|-------------------|----------------|-----------------------|
+| `zone`            | `str`          | Zone name all clients must be in when this node executes (the level-scaling dungeon).
+| `interact_xyz`    | `XYZ`          | Coordinates of the level-scaling NPC. The interact prompt should appear when standing here.
+| `reset_xyz`       | `XYZ`          | Coordinates used to dismiss the interact prompt and reset state. The prompt must **not** appear when standing here.
+| `clients_to_scale`| `List[int]`    | 1-based client numbers to apply level scaling to (e.g. `[2, 3]`). Leave empty to scale all clients. Client numbers that exceed the number of connected clients are silently skipped.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_in_npc_range()`, `client.send_key(Keycode.X)`, `node_helpers.click_by_path()`, `node_helpers.is_visible_by_path()`
+- Path constants: `LEVEL_SCALING_OPTION_BUTTON_PATH` from `bartlebot.nodes.paths`
+- Flow:
+  1. Verify all clients are in `zone`. If not, return `FAILURE`.
+  2. Resolve `clients_to_scale`: convert each 1-based number to a 0-based index, silently skipping any that exceed the number of connected clients. If empty, use all clients. If the resolved set is empty, return `SUCCESS` immediately.
+  3. Clear any pre-existing interact prompt on the scaled clients: if any already has the prompt showing, teleport them to `reset_xyz` and wait for it to clear.
+  4. Retry loop (up to 3 attempts): teleport scaled clients to `interact_xyz`, wait for the interact prompt to appear on all of them (`client.is_in_npc_range()`). If the prompt does not appear within the timeout, teleport to `reset_xyz` and retry.
+  5. If the prompt never appeared after all retries, return `FAILURE`.
+  6. Press X on all scaled clients simultaneously.
+  7. Wait for `LEVEL_SCALING_OPTION_BUTTON_PATH` to become visible on all scaled clients (the NPCServicesWin menu has appeared). If it does not appear within the timeout, return `FAILURE`.
+  8. Click `LEVEL_SCALING_OPTION_BUTTON_PATH` on all scaled clients simultaneously (`node_helpers.click_by_path`).
+  9. Wait for `LEVEL_SCALING_OPTION_BUTTON_PATH` to disappear on all scaled clients (menu dismissed, elixir applied).
+  10. Return `SUCCESS`.
+- `FAILURE` cases: clients not in `zone`; interact prompt never appeared after retries; NPCServicesWin option button never became visible.
 
 </details>
 

@@ -4,7 +4,7 @@ import asyncio
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import LEVEL_SCALING_PATH
+from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -37,11 +37,15 @@ async def run(machine, clients: list, params: dict) -> str:
     """Return 'TRUE' if all specified clients are level scaled, 'FALSE' otherwise."""
     clients_to_check: list[int] = params.get("clients_to_check") or []
 
-    check_indices = [n - 1 for n in clients_to_check] if clients_to_check else list(range(len(clients)))
+    check_indices = (
+        [n - 1 for n in clients_to_check if 0 < n <= len(clients)]
+        if clients_to_check
+        else list(range(len(clients)))
+    )
     check_clients = [clients[i] for i in check_indices]
 
     results = await asyncio.gather(
-        *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_PATH) for c in check_clients]
+        *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_ELIXIR_PATH) for c in check_clients]
     )
 
     for idx, scaled in zip(check_indices, results):
