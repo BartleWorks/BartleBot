@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 import qasync
 
 from wizwalker.extensions.wizsprinter import WizSprinter
+from wizwalker.errors import MemoryReadError
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -110,6 +111,14 @@ async def client_loop(window: MainWindow) -> None:
             window.set_zone(zone)
             await asyncio.sleep(1.0)
 
+        except MemoryReadError:
+            # Client process exited mid-read; next iteration will confirm via remove_dead_clients.
+            _sync_embedded_clients(window, _clients, [])
+            _clients = []
+            window.right_sidebar.clients.set_clients([])
+            window.set_start_enabled(False)
+            window.set_zone("No client found")
+            await asyncio.sleep(1.0)
         except Exception:
             _sync_embedded_clients(window, _clients, [])
             _clients = []

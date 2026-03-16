@@ -181,6 +181,12 @@ class ClientWidget(QWidget):
 
     async def refresh(self) -> None:
         """Read zone and XYZ from the client and update labels."""
+        try:
+            await self._refresh()
+        except RuntimeError:
+            return  # Widget was deleted while awaiting
+
+    async def _refresh(self) -> None:
         # Zone
         try:
             zone = await self._client.zone_name() or "—"

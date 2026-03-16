@@ -125,6 +125,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self._outer_splitter)
 
         # Initially hide GameView (no clients yet); BotCanvas expands
+        self._game_view_visible: bool = False
         self.game_view.setVisible(False)
 
     def _build_statusbar(self) -> None:
@@ -183,11 +184,15 @@ class MainWindow(QMainWindow):
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""
+        if visible == self._game_view_visible:
+            return
+        self._game_view_visible = visible
         self.game_view.setVisible(visible)
+        bot_h = self._outer_splitter.sizes()[1]
         if visible:
-            self._outer_splitter.setSizes([600, 220])
+            self._outer_splitter.setSizes([600, bot_h])
         else:
-            self._outer_splitter.setSizes([0, 1])
+            self._outer_splitter.setSizes([0, bot_h])
 
     def refresh_minimum_size(self) -> None:
         """Re-apply minimum size after a settings change."""
