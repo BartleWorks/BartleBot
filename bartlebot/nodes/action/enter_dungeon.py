@@ -112,7 +112,21 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 2. Retry loop: teleport to sigil, wait for entrance prompt.
+    # 2. Clear any pre-existing interact prompt before starting.
+    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    if any(prompts):
+        stale = [i for i, p in enumerate(prompts) if p]
+        machine.log(
+            f"Pre-existing interact prompt on client(s) {stale}; "
+            f"teleporting to reset_xyz to clear it",
+            LogLevel.DEBUG,
+        )
+        await asyncio.gather(*[c.teleport(reset) for c in clients])
+        await node_helpers.wait_until(
+            lambda: node_helpers.none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+        )
+
+    # 3. Retry loop: teleport to sigil, wait for entrance prompt.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
@@ -122,7 +136,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for dungeon entrance prompt…", LogLevel.DEBUG)
         if await node_helpers.wait_until(
-            lambda: _all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -141,15 +155,15 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 3. Press X to interact with the sigil (entrance prompt is showing).
+    # 4. Press X to interact with the sigil (entrance prompt is showing).
     machine.log("Pressing X to enter dungeon sigil", LogLevel.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 4. Wait briefly, then confirm dungeon warning dialog if it appeared.
+    # 5. Wait briefly, then confirm dungeon warning dialog if it appeared.
     machine.log("Checking for dungeon warning dialog…", LogLevel.DEBUG)
     await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
 
-    # 5. Wait for all clients to leave from_zone.
+    # 6. Wait for all clients to leave from_zone.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
     if not await node_helpers.wait_until(
         lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
@@ -163,13 +177,13 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 6. Wait for loading screens to finish.
+    # 7. Wait for loading screens to finish.
     machine.log("Waiting for loading screen to clear…", LogLevel.DEBUG)
     await node_helpers.wait_until(
         lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
     )
 
-    # 7. Verify all clients arrived in dungeon_zone.
+    # 8. Verify all clients arrived in dungeon_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     machine.log(f"Zones after dungeon entry: {list(zones)}", LogLevel.DEBUG)
     if not all(z == dungeon_zone for z in zones):
@@ -185,7 +199,3 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
-async def _all_in_npc_range(clients: list) -> bool:
-    """Return True when every client has the NPC/sigil interact prompt."""
-    results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
-    return all(results)
