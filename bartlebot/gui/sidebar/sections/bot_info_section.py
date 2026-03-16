@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QVBoxLayout
 
 from bartlebot.gui.sidebar.sidebar_section import SidebarField, SidebarSection, value_edit, value_edit_multi, value_label
@@ -17,11 +18,12 @@ _PLACEHOLDER = "—"
 class BotInfoSection(SidebarSection):
     """Collapsible 'Bot Info' section: file, name, version, description, etc."""
 
+    config_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__("Bot Info", parent)
         self._config: BotConfig | None = None
         self._suppress: bool = False
-        self.on_config_changed: Callable[[], None] = lambda: None
 
         self._file_lbl = value_label(wrap=True)
         self._name_edit = value_edit()
@@ -115,43 +117,43 @@ class BotInfoSection(SidebarSection):
         if self._suppress or self._config is None:
             return
         self._config.name = text
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_version_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.version = text
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_desc_changed(self) -> None:
         if self._suppress or self._config is None:
             return
         self._config.description = self._desc_edit.toPlainText() or None
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_start_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.start_location = text or None
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_authors_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.authors = text or None
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_drops_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.drops = [x.strip() for x in text.split(",") if x.strip()]
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_initial_changed(self, text: str) -> None:
         if self._suppress or self._config is None or not text:
             return
         self._config.initial = text
-        self.on_config_changed()
+        self.config_changed.emit()
 
     # ------------------------------------------------------------------
     # Internal helpers

@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
@@ -24,6 +25,8 @@ class LeftSidebar(QTabWidget):
     The Properties and Log widgets are created externally (in BotCanvas) and
     passed in here so that BotCanvas retains ownership and can drive them.
     """
+
+    config_changed = pyqtSignal()
 
     def __init__(
         self,
@@ -56,6 +59,11 @@ class LeftSidebar(QTabWidget):
         self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 1
         self.addTab(log_widget,  "Log")         # _LOG_TAB        = 2
 
+        # Propagate config_changed from any sub-section upward
+        self.bot_info.config_changed.connect(self.config_changed)
+        self.options.config_changed.connect(self.config_changed)
+        self.combat_config.config_changed.connect(self.config_changed)
+
     # ------------------------------------------------------------------
     # Tab switching (called by BotCanvas.on_tab_switch)
     # ------------------------------------------------------------------
@@ -83,16 +91,3 @@ class LeftSidebar(QTabWidget):
         self.options.set_editable(editable)
         self.combat_config.set_editable(editable)
 
-    @property
-    def on_config_changed(self) -> Callable[[], None]:
-        return self._on_config_changed
-
-    @on_config_changed.setter
-    def on_config_changed(self, callback: Callable[[], None]) -> None:
-        self._on_config_changed = callback
-        self.bot_info.on_config_changed = callback
-        self.options.on_config_changed = callback
-        self.combat_config.on_config_changed = callback
-
-    # Initialise so the property getter never raises AttributeError
-    _on_config_changed: Callable[[], None] = lambda: None
