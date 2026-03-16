@@ -135,9 +135,17 @@ class ClientTile(QWidget):
         )
 
     def _reposition(self) -> None:
-        """Center the game window at its native resolution within the tile."""
-        x = max(0, (self.width()  - self._game_w) // 2)
-        y = max(0, (self.height() - self._game_h) // 2)
+        """Center the game window at its native resolution within the tile.
+
+        self.width()/height() are Qt logical pixels; MoveWindow uses Win32
+        physical pixels.  Multiplying by devicePixelRatio() converts them so
+        the centering offset is computed in the same coordinate space.
+        """
+        dpr = self.devicePixelRatio()
+        tile_w = int(self.width()  * dpr)
+        tile_h = int(self.height() * dpr)
+        x = max(0, (tile_w - self._game_w) // 2)
+        y = max(0, (tile_h - self._game_h) // 2)
         _user32.MoveWindow(self._hwnd, x, y, self._game_w, self._game_h, True)
 
     # ------------------------------------------------------------------
@@ -157,13 +165,19 @@ class ClientTile(QWidget):
         super().paintEvent(event)
         painter = QPainter(self)
 
-        # Focus border
+        # Focus border — drawn around the game window area, not the whole tile.
+        # Convert game dimensions to logical pixels (QPainter coordinate space).
         if self._focused:
+            dpr = self.devicePixelRatio()
+            gw = round(self._game_w / dpr)
+            gh = round(self._game_h / dpr)
+            gx = max(0, (self.width()  - gw) // 2)
+            gy = max(0, (self.height() - gh) // 2)
             pen = painter.pen()
             pen.setColor(QColor("#4a90d9"))
             pen.setWidth(3)
             painter.setPen(pen)
-            painter.drawRect(1, 1, self.width() - 2, self.height() - 2)
+            painter.drawRect(gx + 1, gy + 1, gw - 2, gh - 2)
 
         # Client label pill — painted on the Qt widget surface.
         # Note: this may be obscured by the embedded game window (which renders

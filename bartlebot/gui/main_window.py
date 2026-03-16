@@ -89,6 +89,13 @@ class MainWindow(QMainWindow):
         self.bot_canvas.on_tab_switch = self._on_canvas_tab_switch
 
         # Top row: left sidebar | game view | right sidebar
+        _splitter_style = (
+            "QSplitter::handle { background: #888; }"
+            "QSplitter::handle:horizontal { width: 4px; }"
+            "QSplitter::handle:vertical   { height: 4px; }"
+            "QSplitter::handle:hover { background: #4a90d9; }"
+        )
+
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._top_splitter.setChildrenCollapsible(False)
         self._top_splitter.addWidget(self.left_sidebar)
@@ -96,6 +103,7 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         self._top_splitter.setSizes([300, 800, 300])
+        self._top_splitter.setStyleSheet(_splitter_style)
 
         # Outer vertical splitter: top row (game + sidebars) | bot canvas
         self._outer_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -104,6 +112,7 @@ class MainWindow(QMainWindow):
         self._outer_splitter.addWidget(self.bot_canvas)
         self._outer_splitter.setStretchFactor(0, 1)
         self._outer_splitter.setSizes([600, 220])
+        self._outer_splitter.setStyleSheet(_splitter_style)
 
         self.setCentralWidget(self._outer_splitter)
 
