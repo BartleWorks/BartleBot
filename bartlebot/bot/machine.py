@@ -124,34 +124,59 @@ class BotMachine:
 
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
-        while not self._stop_flag.is_set():
-            await self._resume_event.wait()  # block here while paused
-            if self._stop_flag.is_set():
-                break
-            state_id = self.state
-            state_def = self._state_map[state_id]
+        watcher = asyncio.create_task(self._ambient_dialog_watcher())
+        try:
+            while not self._stop_flag.is_set():
+                await self._resume_event.wait()  # block here while paused
+                if self._stop_flag.is_set():
+                    break
+                state_id = self.state
+                state_def = self._state_map[state_id]
 
-            if self._on_state_change:
-                self._on_state_change(state_id)
+                if self._on_state_change:
+                    self._on_state_change(state_id)
 
-            node_fn = self._registry[state_def["node_type"]]
+                node_fn = self._registry[state_def["node_type"]]
+                try:
+                    self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
+                except Exception:
+                    print(traceback.format_exc())
+                    self.last_result = "FAILURE"
+
+                if not self._stop_flag.is_set():
+                    prev_state = state_id
+                    # A state with no outgoing transitions is a terminal state — stop cleanly.
+                    has_exit = any(t["source"] == state_id for t in self._config["transitions"])
+                    if not has_exit:
+                        self.log(f"Reached terminal state {state_id!r}; stopping.", LogLevel.INFO)
+                        self.stop()
+                    else:
+                        await self.advance()
+                        if self._on_transition:
+                            self._on_transition(prev_state, self.last_result or "", self.state)
+        finally:
+            watcher.cancel()
             try:
-                self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
-            except Exception:
-                print(traceback.format_exc())
-                self.last_result = "FAILURE"
+                await watcher
+            except asyncio.CancelledError:
+                pass
 
-            if not self._stop_flag.is_set():
-                prev_state = state_id
-                # A state with no outgoing transitions is a terminal state — stop cleanly.
-                has_exit = any(t["source"] == state_id for t in self._config["transitions"])
-                if not has_exit:
-                    self.log(f"Reached terminal state {state_id!r}; stopping.", LogLevel.INFO)
-                    self.stop()
-                else:
-                    await self.advance()
-                    if self._on_transition:
-                        self._on_transition(prev_state, self.last_result or "", self.state)
+    async def _ambient_dialog_watcher(self) -> None:
+        """Background task: dismiss any open dialog on all clients via SPACEBAR."""
+        from bartlebot.nodes import node_helpers
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            if not self.clients:
+                continue
+            results = await asyncio.gather(
+                *[node_helpers.dismiss_ambient_dialog_once(c) for c in self.clients],
+                return_exceptions=True,
+            )
+            for i, r in enumerate(results):
+                if r is True:
+                    self.log(f"Ambient dialog dismissed on client {i}", LogLevel.DEBUG)
+                elif isinstance(r, Exception):
+                    self.log(f"Ambient dialog watcher error on client {i}: {r}", LogLevel.DEBUG)
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""
