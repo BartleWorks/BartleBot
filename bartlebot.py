@@ -144,8 +144,8 @@ def new_bot(window: MainWindow) -> None:
     _loaded_config = config
     _last_save_path = None
     window.set_bot_name(config.name, "Untitled")
-    window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
+    window.left_sidebar.set_config(config)
     window.bot_canvas.enter_edit_mode()
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
@@ -170,8 +170,8 @@ def open_bot(window: MainWindow, path: str | None = None) -> None:
     _loaded_config = config
     _last_save_path = path
     window.set_bot_name(config.name, Path(path).name)
-    window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
+    window.left_sidebar.set_config(config)
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
     window.update_recent_menu(recent_files.add(path))

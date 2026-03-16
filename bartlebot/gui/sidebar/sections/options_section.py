@@ -367,7 +367,7 @@ class OptionsSection(SidebarSection):
         elif isinstance(widget, QDoubleSpinBox):
             widget.valueChanged.connect(_update)
         elif isinstance(widget, QLineEdit):
-            widget.textChanged.connect(_update)
+            widget.editingFinished.connect(lambda: _update(widget.text()))
 
 
 # ---------------------------------------------------------------------------
