@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
     QGraphicsItem, QGraphicsLineItem, QGraphicsScene, QHBoxLayout,
     QLabel, QLineEdit, QPlainTextEdit, QPushButton, QScrollArea,
-    QSpinBox, QSplitter, QStackedWidget, QTabWidget, QVBoxLayout, QWidget,
+    QSpinBox, QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
@@ -54,8 +54,6 @@ _AUTO_SPACING = 260
 
 _TB_RUN  = 0  # toolbar stack index for Run mode
 _TB_EDIT = 1  # toolbar stack index for Edit mode
-_TAB_PROPS = 0  # bottom tab index for Properties
-_TAB_LOG   = 1  # bottom tab index for Log
 
 _IDLE    = "idle"
 _RUNNING = "running"
@@ -87,12 +85,34 @@ class BotMode(enum.Enum):
 # ---------------------------------------------------------------------------
 
 def _inject_required_options(config: BotConfig) -> None:
-    """Ensure all bot options required by node specs are present in config.options.
+    """Sync bot options required by node specs with config.options.
 
-    Scans every state in the config, reads required_bot_options from the matching
-    NodeSpec, and appends any missing options. Existing options (by name) are never
-    overwritten so user-configured values are preserved.
+    - Adds options for any NodeSpec requirement not already present.
+    - Removes options that are system-managed (known to any NodeSpec) but are no
+      longer required by any state currently in the config.
+    - Existing user-set values are preserved when options are re-added.
     """
+    # Collect option names required by the current set of states.
+    required_now: set[str] = set()
+    for state in config.states:
+        spec = NODE_SPECS.get(state.node_type)
+        if spec:
+            for req in spec.required_bot_options:
+                required_now.add(req.name)
+
+    # Collect all option names that are system-managed (declared by any NodeSpec).
+    all_system_names: set[str] = set()
+    for spec in NODE_SPECS.values():
+        for req in spec.required_bot_options:
+            all_system_names.add(req.name)
+
+    # Prune system-managed options that are no longer required by any state.
+    config.options = [
+        o for o in config.options
+        if o.name not in all_system_names or o.name in required_now
+    ]
+
+    # Add missing required options (preserves user-customised values already present).
     existing = {o.name for o in config.options}
     for state in config.states:
         spec = NODE_SPECS.get(state.node_type)
@@ -1481,6 +1501,8 @@ class BotCanvas(QWidget):
         self.on_pause: Callable[[], None] = lambda: None
         self.on_resume: Callable[[], None] = lambda: None
         self.on_save_and_done: Callable[[], None] = lambda: None
+        # Called with "log", "properties", or "bot" to switch the sidebar tab
+        self.on_tab_switch: Callable[[str], None] = lambda _: None
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1565,7 +1587,7 @@ class BotCanvas(QWidget):
         self._toolbar_stack.addWidget(self._edit_bar)  # _TB_EDIT = 1
         self._toolbar_stack.setCurrentIndex(_TB_RUN)
 
-        # ── Log pane ──────────────────────────────────────────────────
+        # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
         self._log.setReadOnly(True)
         self._log.setFont(QFont("Consolas", 9))
@@ -1581,31 +1603,19 @@ class BotCanvas(QWidget):
         log_header_row.addWidget(self._log_level_combo)
         log_header_row.addStretch()
 
-        log_container = QWidget()
-        log_vbox = QVBoxLayout(log_container)
+        self._log_widget = QWidget()
+        log_vbox = QVBoxLayout(self._log_widget)
         log_vbox.setContentsMargins(0, 0, 0, 0)
         log_vbox.setSpacing(0)
         log_vbox.addWidget(log_header)
         log_vbox.addWidget(self._log, 1)
 
-        # ── Bottom tab widget ─────────────────────────────────────────
-        self._bottom_tabs = QTabWidget()
-        self._bottom_tabs.addTab(self._param_panel, "Properties")  # _TAB_PROPS = 0
-        self._bottom_tabs.addTab(log_container, "Log")             # _TAB_LOG   = 1
-
-        # ── Canvas vertical splitter ──────────────────────────────────
-        splitter = QSplitter(Qt.Orientation.Vertical)
-        splitter.addWidget(self._view)
-        splitter.addWidget(self._bottom_tabs)
-        splitter.setStretchFactor(0, 3)
-        splitter.setStretchFactor(1, 1)
-        splitter.setSizes([500, 160])
-
+        # ── Main layout: toolbar + graph view only ────────────────────
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
         outer.addWidget(self._toolbar_stack)
-        outer.addWidget(splitter, 1)
+        outer.addWidget(self._view, 1)
 
         # ── Wire internal callbacks ───────────────────────────────────
         self._scene.on_config_changed = self._on_scene_changed
@@ -1635,6 +1645,16 @@ class BotCanvas(QWidget):
         if self._run_state == _IDLE and self._mode == BotMode.RUN:
             self._run_pause_btn.setEnabled(enabled)
 
+    @property
+    def param_panel(self) -> QWidget:
+        """The _ParamPanel widget — placed in the left sidebar Properties tab."""
+        return self._param_panel
+
+    @property
+    def log_widget(self) -> QWidget:
+        """The log container widget — placed in the left sidebar Log tab."""
+        return self._log_widget
+
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable that returns the current list of hooked clients."""
         self._param_panel._get_clients = fn
@@ -1648,7 +1668,7 @@ class BotCanvas(QWidget):
         self._start_time = time.monotonic()
         self._elapsed_label.setText("00:00:00")
         self._tick_timer.start()
-        self._bottom_tabs.setCurrentIndex(_TAB_LOG)
+        self.on_tab_switch("log")
         self.append_log("=== Bot started ===")
 
     def set_paused(self) -> None:
@@ -1736,10 +1756,11 @@ class BotCanvas(QWidget):
             self._toolbar_stack.setCurrentIndex(_TB_RUN)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
+            self.on_tab_switch("bot")
         else:
             self._toolbar_stack.setCurrentIndex(_TB_EDIT)
             self._scene.set_interactive(True)
-            self._bottom_tabs.setCurrentIndex(_TAB_PROPS)
+            self.on_tab_switch("properties")
 
     # ------------------------------------------------------------------
     # Scene change callbacks
@@ -1806,6 +1827,7 @@ class BotCanvas(QWidget):
             )
             if state:
                 self._param_panel.show_state(state)
+                self.on_tab_switch("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:
             for (s, w, d, ei) in self._scene._edge_items:
                 if ei is item:
@@ -1827,6 +1849,7 @@ class BotCanvas(QWidget):
                             opt.name for opt in self._scene._config.options
                         ]
                         self._param_panel.show_transition(trans, src_returns, option_names)
+                        self.on_tab_switch("properties")
                     break
         else:
             self._param_panel.show_idle()

@@ -14,6 +14,9 @@ from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files
+from bartlebot.keybindings import KeybindingManager
+from bartlebot.launcher.launch_profile import launch_profile
+from bartlebot.settings_manager import SettingsManager
 
 
 # ---------------------------------------------------------------------------
@@ -33,6 +36,35 @@ _last_save_path: str | None = None
 def _start_enabled() -> bool:
     """Start is only enabled when both a client is hooked and a bot is loaded."""
     return bool(_clients) and _loaded_config is not None
+
+
+def _sync_embedded_clients(
+    window: MainWindow,
+    prev_clients: list,
+    new_clients: list,
+) -> None:
+    """Embed newly added clients and unembed removed ones in the GameView."""
+    prev_handles = {c.window_handle: i for i, c in enumerate(prev_clients)}
+    new_handles  = {c.window_handle: i for i, c in enumerate(new_clients)}
+
+    # Unembed removed clients
+    for hwnd, idx in prev_handles.items():
+        if hwnd not in new_handles:
+            try:
+                window.game_view.unembed_client(idx)
+            except Exception:
+                pass
+
+    # Embed new clients
+    for hwnd, idx in new_handles.items():
+        if hwnd not in prev_handles:
+            try:
+                window.game_view.embed_client(hwnd, idx)
+            except Exception:
+                pass
+
+    # Show/hide the game view row based on whether any clients are present
+    window.show_game_view(bool(new_clients))
 
 
 async def client_loop(window: MainWindow) -> None:
@@ -63,6 +95,7 @@ async def client_loop(window: MainWindow) -> None:
             clients = list(_handler.clients)
             if not clients:
                 window.set_zone("No client found")
+                _sync_embedded_clients(window, _clients, [])
                 _clients = []
                 window.right_sidebar.clients.set_clients([])
                 window.set_start_enabled(False)
@@ -70,6 +103,7 @@ async def client_loop(window: MainWindow) -> None:
                 continue
 
             if clients != _clients:
+                _sync_embedded_clients(window, _clients, clients)
                 _clients = clients
                 window.right_sidebar.clients.set_clients(clients)
                 window.set_start_enabled(_start_enabled())
@@ -79,6 +113,7 @@ async def client_loop(window: MainWindow) -> None:
             await asyncio.sleep(1.0)
 
         except Exception:
+            _sync_embedded_clients(window, _clients, [])
             _clients = []
             window.right_sidebar.clients.set_clients([])
             window.set_start_enabled(False)
@@ -241,9 +276,12 @@ async def main(app: QApplication) -> None:
         if _loaded_config is not None:
             window.left_sidebar.bot_info.refresh_states(_loaded_config.states)
             window.bot_canvas.refresh_initial(_loaded_config.initial)
+            window.left_sidebar.options.set_config(_loaded_config)
 
     def _mode_changed(mode: BotMode) -> None:
         window.left_sidebar.set_editable(mode == BotMode.EDIT)
+        if mode == BotMode.RUN:
+            window.set_start_enabled(_start_enabled())
 
     def _save_and_done() -> None:
         save_bot(window)
@@ -260,6 +298,13 @@ async def main(app: QApplication) -> None:
     window.left_sidebar.on_config_changed = _config_changed
     window.on_open_recent = lambda path: open_bot(window, path)
     window.update_recent_menu(recent_files.load())
+
+    # Keybindings
+    keybinding_mgr = KeybindingManager()
+    keybinding_mgr.install(window, window.game_view, window.bot_canvas, launch_profile)
+    window.on_settings_saved = lambda: keybinding_mgr.reload(
+        window, window.game_view, window.bot_canvas, launch_profile
+    )
 
     asyncio.create_task(client_loop(window))
 

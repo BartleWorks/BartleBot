@@ -1,34 +1,76 @@
-"""Left sidebar: assembles bot info, options, and combat config sections."""
+"""Left sidebar: tab-based panel with Bot, Properties, and Log tabs."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
+from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
+
 from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
 from bartlebot.gui.sidebar.sections.combat_config_section import CombatConfigSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
-from bartlebot.gui.sidebar.sidebar_section import Sidebar
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
+_BOT_TAB        = 0
+_PROPERTIES_TAB = 1
+_LOG_TAB        = 2
 
-class LeftSidebar(Sidebar):
-    """Left sidebar containing bot metadata, options, and combat config sections."""
 
-    def __init__(self, parent=None):
-        super().__init__(min_width=300, parent=parent)
+class LeftSidebar(QTabWidget):
+    """Left sidebar with three tabs: Bot, Properties, Log.
 
+    The Properties and Log widgets are created externally (in BotCanvas) and
+    passed in here so that BotCanvas retains ownership and can drive them.
+    """
+
+    def __init__(
+        self,
+        param_panel: QWidget,
+        log_widget: QWidget,
+        parent=None,
+    ):
+        super().__init__(parent)
+        self.setMinimumWidth(300)
+
+        # ── Bot tab ─────────────────────────────────────────────
         self.bot_info = BotInfoSection()
         self.options = OptionsSection()
         self.combat_config = CombatConfigSection()
 
-        self._add_section(self.bot_info)
-        self._add_section(self.options)
-        self._add_section(self.combat_config)
+        bot_content = QWidget()
+        bot_vbox = QVBoxLayout(bot_content)
+        bot_vbox.setContentsMargins(8, 8, 8, 8)
+        bot_vbox.setSpacing(4)
+        bot_vbox.addWidget(self.bot_info)
+        bot_vbox.addWidget(self.options)
+        bot_vbox.addWidget(self.combat_config)
+        bot_vbox.addStretch()
+
+        bot_scroll = QScrollArea()
+        bot_scroll.setWidget(bot_content)
+        bot_scroll.setWidgetResizable(True)
+
+        self.addTab(bot_scroll, "Bot")          # _BOT_TAB        = 0
+        self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 1
+        self.addTab(log_widget,  "Log")         # _LOG_TAB        = 2
 
     # ------------------------------------------------------------------
-    # Convenience forwarders (dispatch to all sections)
+    # Tab switching (called by BotCanvas.on_tab_switch)
+    # ------------------------------------------------------------------
+
+    def switch_to_bot(self) -> None:
+        self.setCurrentIndex(_BOT_TAB)
+
+    def switch_to_properties(self) -> None:
+        self.setCurrentIndex(_PROPERTIES_TAB)
+
+    def switch_to_log(self) -> None:
+        self.setCurrentIndex(_LOG_TAB)
+
+    # ------------------------------------------------------------------
+    # Convenience forwarders (dispatch to bot sections)
     # ------------------------------------------------------------------
 
     def set_config(self, config: BotConfig | None) -> None:

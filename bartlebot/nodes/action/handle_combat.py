@@ -5,7 +5,7 @@ import re
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.log_level import LogLevel
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -72,6 +72,18 @@ NODE_SPEC = NodeSpec(
             "failed to enter combat within the timeout.",
         ),
     ],
+    required_bot_options=[
+        BotOptionSpec(
+            name="Default Combat Order",
+            type="str",
+            default="",
+            description=(
+                "Default order clients enter combat (e.g. '2, 1' sends client 2 first). "
+                "Empty = all clients enter simultaneously. Overridden per node by the "
+                "Combat Order parameter."
+            ),
+        ),
+    ],
 )
 
 _ENTER_COMBAT_TIMEOUT = 30.0
@@ -117,8 +129,16 @@ async def run(machine, clients: list, params: dict) -> str:
     # 2. Snapshot chat before combat so we can diff for drops afterward
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
-    # 3. Teleport clients to their target (sequential or simultaneous)
+    # 3. Teleport clients to their target (sequential or simultaneous).
+    #    Node-level combat_order takes priority; fall back to bot-level default.
     combat_order: list[int] = params.get("combat_order") or []
+    if not combat_order:
+        bot_order_str: str = machine.get_option("Default Combat Order", "")
+        if bot_order_str:
+            combat_order = _parse_combat_order(bot_order_str)
+            machine.log(
+                f"Using bot-level Default Combat Order: {combat_order}", LogLevel.DEBUG
+            )
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", LogLevel.DEBUG)
         for client_num in combat_order:
@@ -259,6 +279,24 @@ def _split_combat_config(dsl: str, num_clients: int) -> list[str]:
     sections[current_idx] = current_lines
     fallback = "\n".join(sections.get(0, lines))
     return ["\n".join(sections.get(i, sections.get(0, lines))) for i in range(num_clients)]
+
+
+def _parse_combat_order(s: str) -> list[int]:
+    """Parse a comma-separated string of 1-based client numbers into a list.
+
+    Invalid tokens are silently skipped. Returns an empty list if nothing parses.
+    Example: "2, 1" → [2, 1]
+    """
+    result = []
+    for token in s.split(","):
+        token = token.strip()
+        try:
+            n = int(token)
+            if n > 0:
+                result.append(n)
+        except ValueError:
+            pass
+    return result
 
 
 async def _wait_for_all_in_combat(clients: list, timeout: float) -> bool:

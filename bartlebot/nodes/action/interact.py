@@ -115,7 +115,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.wait_until(
-            lambda: _none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         )
 
     # 3–4. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
@@ -128,7 +128,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for interact prompt…", LogLevel.DEBUG)
         if await node_helpers.wait_until(
-            lambda: _all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -179,13 +179,3 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
-async def _all_in_npc_range(clients: list) -> bool:
-    """Return True when every client has the interact prompt showing."""
-    results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
-    return all(results)
-
-
-async def _none_in_npc_range(clients: list) -> bool:
-    """Return True when no client has an interact prompt showing."""
-    results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
-    return not any(results)

@@ -9,6 +9,26 @@ from bartlebot.nodes.paths import DUNGEON_WARNING_PATH  # noqa: F401 — re-expo
 POLL_INTERVAL = 0.25
 
 
+async def all_in_npc_range(clients: list) -> bool:
+    """Return True when every client has the interact prompt showing."""
+    results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    return all(results)
+
+
+async def none_in_npc_range(clients: list) -> bool:
+    """Return True when no client has an interact prompt showing."""
+    results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    return not any(results)
+
+
+async def dismiss_ambient_dialog_once(client) -> bool:
+    """If client has an open dialog, press SPACEBAR to dismiss it. Returns True if dismissed."""
+    if await client.is_in_dialog():
+        await client.send_key(Keycode.SPACEBAR, 0.1)
+        return True
+    return False
+
+
 async def confirm_dialog_if_visible(client, delay: float = 3.0) -> None:
     """Poll for the dungeon warning dialog; confirm it immediately when it appears.
 
