@@ -241,9 +241,12 @@ async def main(app: QApplication) -> None:
         if _loaded_config is not None:
             window.left_sidebar.bot_info.refresh_states(_loaded_config.states)
             window.bot_canvas.refresh_initial(_loaded_config.initial)
+            window.left_sidebar.options.set_config(_loaded_config)
 
     def _mode_changed(mode: BotMode) -> None:
         window.left_sidebar.set_editable(mode == BotMode.EDIT)
+        if mode == BotMode.RUN:
+            window.set_start_enabled(_start_enabled())
 
     def _save_and_done() -> None:
         save_bot(window)
