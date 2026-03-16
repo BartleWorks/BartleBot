@@ -275,7 +275,6 @@ class OptionsSection(SidebarSection):
             is_system = opt.name in required_names
 
             edit_btn = QPushButton("Edit")
-            edit_btn.setVisible(self._editable)
             if is_system:
                 edit_btn.setEnabled(False)
                 edit_btn.setToolTip(_SYSTEM_TOOLTIP)
@@ -286,7 +285,6 @@ class OptionsSection(SidebarSection):
             )
 
             del_btn = QPushButton("Delete")
-            del_btn.setVisible(self._editable)
             if is_system:
                 del_btn.setEnabled(False)
                 del_btn.setToolTip(_SYSTEM_TOOLTIP)
@@ -303,6 +301,11 @@ class OptionsSection(SidebarSection):
             outer_layout.addWidget(inner, 1)
             outer_layout.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignBottom)
             outer_layout.addWidget(del_btn, 0, Qt.AlignmentFlag.AlignBottom)
+
+            # Set visibility AFTER parenting — calling setVisible on a parentless
+            # widget makes Qt show it as a top-level window (causes a visible flash).
+            edit_btn.setVisible(self._editable)
+            del_btn.setVisible(self._editable)
 
             self._options_layout.addWidget(outer)
             self._option_rows.append(outer)
@@ -364,7 +367,7 @@ class OptionsSection(SidebarSection):
         elif isinstance(widget, QDoubleSpinBox):
             widget.valueChanged.connect(_update)
         elif isinstance(widget, QLineEdit):
-            widget.textChanged.connect(_update)
+            widget.editingFinished.connect(lambda: _update(widget.text()))
 
 
 # ---------------------------------------------------------------------------

@@ -10,17 +10,16 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 _DEFAULTS: dict[str, Any] = {
+    "general": {
+        "maximize_on_open":      False,
+        "window_width":          1400,
+        "window_height":         800,
+        "left_sidebar_width":    300,
+        "right_sidebar_width":   300,
+        "bottom_section_height": 220,
+    },
     "game_embed": {
         "resolution": [800, 600],
-    },
-    "keybindings": {
-        "toggle_embed":     "Ctrl+G",
-        "next_client":      "Ctrl+Tab",
-        "run_bot":          "F9",
-        "pause_bot":        "F10",
-        "stop_bot":         "F11",
-        "launch_profile_0": None,
-        "launch_profile_1": None,
     },
     "accounts": [],
     "launch_profiles": [],
@@ -141,12 +140,11 @@ class SettingsManager:
     def game_resolution(self, value: tuple[int, int]) -> None:
         self.set("game_embed", "resolution", value=list(value))
 
-    @property
-    def keybindings(self) -> dict[str, str | None]:
-        return dict(self.get("keybindings", default={}))
+    def get_general(self, key: str, default: Any = None) -> Any:
+        return self.get("general", key, default=default)
 
-    def set_keybinding(self, action: str, shortcut: str | None) -> None:
-        self.set("keybindings", action, value=shortcut)
+    def set_general(self, key: str, value: Any) -> None:
+        self.set("general", key, value=value)
 
     @property
     def accounts(self) -> list[dict]:

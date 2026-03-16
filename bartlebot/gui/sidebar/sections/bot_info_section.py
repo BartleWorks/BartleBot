@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QComboBox, QFormLayout, QSizePolicy, QVBoxLayout
+from PyQt6.QtWidgets import QComboBox, QVBoxLayout
 
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label, value_edit, value_edit_multi, value_label
+from bartlebot.gui.sidebar.sidebar_section import SidebarField, SidebarSection, value_edit, value_edit_multi, value_label
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -24,13 +23,7 @@ class BotInfoSection(SidebarSection):
         self._suppress: bool = False
         self.on_config_changed: Callable[[], None] = lambda: None
 
-        form = QFormLayout()
-        form.setSpacing(2)
-        form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
-
         self._file_lbl = value_label(wrap=True)
-        self._file_lbl.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-
         self._name_edit = value_edit()
         self._version_edit = value_edit()
         self._desc_edit = value_edit_multi(lines=3)
@@ -42,16 +35,18 @@ class BotInfoSection(SidebarSection):
         self._initial_combo = QComboBox()
         self._initial_combo.setEnabled(False)
 
-        form.addRow(field_label("File"), self._file_lbl)
-        form.addRow(field_label("Name"), self._name_edit)
-        form.addRow(field_label("Version"), self._version_edit)
-        form.addRow(field_label("Description"), self._desc_edit)
-        form.addRow(field_label("Start"), self._start_edit)
-        form.addRow(field_label("Author(s)"), self._authors_edit)
-        form.addRow(field_label("Drops"), self._drops_edit)
-        form.addRow(field_label("Initial State"), self._initial_combo)
+        vbox = QVBoxLayout()
+        vbox.setSpacing(0)
+        vbox.addWidget(SidebarField("File", self._file_lbl))
+        vbox.addWidget(SidebarField("Name", self._name_edit))
+        vbox.addWidget(SidebarField("Version", self._version_edit))
+        vbox.addWidget(SidebarField("Description", self._desc_edit))
+        vbox.addWidget(SidebarField("Start", self._start_edit))
+        vbox.addWidget(SidebarField("Author(s)", self._authors_edit))
+        vbox.addWidget(SidebarField("Drops", self._drops_edit))
+        vbox.addWidget(SidebarField("Initial State", self._initial_combo))
 
-        self.set_content_layout(form)
+        self.set_content_layout(vbox)
 
         self._name_edit.textChanged.connect(self._on_name_changed)
         self._version_edit.textChanged.connect(self._on_version_changed)

@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 import qasync
 
 from wizwalker.extensions.wizsprinter import WizSprinter
+from wizwalker.errors import MemoryReadError
 
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -14,9 +15,6 @@ from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files
-from bartlebot.keybindings import KeybindingManager
-from bartlebot.launcher.launch_profile import launch_profile
-from bartlebot.settings_manager import SettingsManager
 
 
 # ---------------------------------------------------------------------------
@@ -112,6 +110,14 @@ async def client_loop(window: MainWindow) -> None:
             window.set_zone(zone)
             await asyncio.sleep(1.0)
 
+        except MemoryReadError:
+            # Client process exited mid-read; next iteration will confirm via remove_dead_clients.
+            _sync_embedded_clients(window, _clients, [])
+            _clients = []
+            window.right_sidebar.clients.set_clients([])
+            window.set_start_enabled(False)
+            window.set_zone("No client found")
+            await asyncio.sleep(1.0)
         except Exception:
             _sync_embedded_clients(window, _clients, [])
             _clients = []
@@ -137,8 +143,8 @@ def new_bot(window: MainWindow) -> None:
     _loaded_config = config
     _last_save_path = None
     window.set_bot_name(config.name, "Untitled")
-    window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
+    window.left_sidebar.set_config(config)
     window.bot_canvas.enter_edit_mode()
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
@@ -163,8 +169,8 @@ def open_bot(window: MainWindow, path: str | None = None) -> None:
     _loaded_config = config
     _last_save_path = path
     window.set_bot_name(config.name, Path(path).name)
-    window.left_sidebar.set_config(config)
     window.bot_canvas.setup(config)
+    window.left_sidebar.set_config(config)
     window.set_save_enabled(True)
     window.set_start_enabled(_start_enabled())
     window.update_recent_menu(recent_files.add(path))
@@ -298,13 +304,6 @@ async def main(app: QApplication) -> None:
     window.left_sidebar.on_config_changed = _config_changed
     window.on_open_recent = lambda path: open_bot(window, path)
     window.update_recent_menu(recent_files.load())
-
-    # Keybindings
-    keybinding_mgr = KeybindingManager()
-    keybinding_mgr.install(window, window.game_view, window.bot_canvas, launch_profile)
-    window.on_settings_saved = lambda: keybinding_mgr.reload(
-        window, window.game_view, window.bot_canvas, launch_profile
-    )
 
     asyncio.create_task(client_loop(window))
 

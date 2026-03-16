@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
-    QDialog, QDialogButtonBox, QTabWidget, QVBoxLayout, QWidget,
+    QDialog, QDialogButtonBox, QTabWidget, QVBoxLayout,
 )
 
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.game_embed_tab import GameEmbedTab
-from bartlebot.gui.settings.keybindings_tab import KeybindingsTab
+from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -22,9 +22,9 @@ class SettingsDialog(QDialog):
 
         self._tabs = QTabWidget()
 
-        # General tab (reserved for future use)
-        general = QWidget()
-        self._tabs.addTab(general, "General")
+        # General tab
+        self._general_tab = GeneralTab()
+        self._tabs.addTab(self._general_tab, "General")
 
         # Game Embed tab
         self._game_embed_tab = GameEmbedTab()
@@ -33,10 +33,6 @@ class SettingsDialog(QDialog):
         # Accounts tab
         self._accounts_tab = AccountsTab()
         self._tabs.addTab(self._accounts_tab, "Accounts")
-
-        # Keybindings tab
-        self._keybindings_tab = KeybindingsTab()
-        self._tabs.addTab(self._keybindings_tab, "Keybindings")
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -49,7 +45,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(buttons)
 
     def _on_accept(self) -> None:
+        self._general_tab.apply()
         self._game_embed_tab.apply()
-        self._keybindings_tab.apply()
         SettingsManager.instance().save()
         self.accept()

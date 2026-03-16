@@ -130,12 +130,27 @@ class Sidebar(QScrollArea):
 # Shared widget helpers (used by multiple section classes)
 # ---------------------------------------------------------------------------
 
+MUTED_LABEL_STYLE = "color: #999; font-size: 11px; font-weight: 600;"
+
+
 def field_label(text: str) -> QLabel:
-    """Small, right-aligned field label in muted colour."""
+    """Semi-bold field label in muted colour."""
     lbl = QLabel(text + ":")
-    lbl.setStyleSheet("color: #888; font-size: 10px;")
+    lbl.setStyleSheet(MUTED_LABEL_STYLE)
     lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
     return lbl
+
+
+class SidebarField(QWidget):
+    """Label stacked above an input widget — the standard sidebar field layout."""
+
+    def __init__(self, label_text: str, widget: QWidget, parent=None):
+        super().__init__(parent)
+        vbox = QVBoxLayout(self)
+        vbox.setContentsMargins(0, 0, 0, 8)
+        vbox.setSpacing(3)
+        vbox.addWidget(field_label(label_text))
+        vbox.addWidget(widget)
 
 
 def value_label(wrap: bool = False) -> QLabel:

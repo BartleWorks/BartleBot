@@ -51,4 +51,4 @@ class ClientSection(SidebarSection):
 
     async def _refresh_all(self) -> None:
         if self._widgets:
-            await asyncio.gather(*[w.refresh() for w in self._widgets])
+            await asyncio.gather(*[w.refresh() for w in self._widgets], return_exceptions=True)
