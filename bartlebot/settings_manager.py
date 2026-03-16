@@ -10,6 +10,14 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 _DEFAULTS: dict[str, Any] = {
+    "general": {
+        "maximize_on_open":      False,
+        "window_width":          1400,
+        "window_height":         800,
+        "left_sidebar_width":    300,
+        "right_sidebar_width":   300,
+        "bottom_section_height": 220,
+    },
     "game_embed": {
         "resolution": [800, 600],
     },
@@ -147,6 +155,12 @@ class SettingsManager:
 
     def set_keybinding(self, action: str, shortcut: str | None) -> None:
         self.set("keybindings", action, value=shortcut)
+
+    def get_general(self, key: str, default: Any = None) -> Any:
+        return self.get("general", key, default=default)
+
+    def set_general(self, key: str, value: Any) -> None:
+        self.set("general", key, value=value)
 
     @property
     def accounts(self) -> list[dict]:

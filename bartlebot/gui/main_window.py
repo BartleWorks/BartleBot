@@ -1,7 +1,11 @@
-from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QSplitter
+import asyncio
+import traceback
+
+from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QMessageBox, QSplitter
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt
 
+from bartlebot.credentials import CredentialStore
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view import GameView
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
@@ -25,6 +29,7 @@ class MainWindow(QMainWindow):
         self._build_central()
         self._build_statusbar()
         self._apply_minimum_size()
+        self._apply_startup_layout()
 
     # ------------------------------------------------------------------
     # Construction
@@ -101,7 +106,11 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.game_view)
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
-        self._top_splitter.setSizes([300, 800, 300])
+        sm = SettingsManager.instance()
+        left_w  = sm.get_general("left_sidebar_width",    default=300)
+        right_w = sm.get_general("right_sidebar_width",   default=300)
+        bot_h   = sm.get_general("bottom_section_height", default=220)
+        self._top_splitter.setSizes([left_w, 800, right_w])
         self._top_splitter.setStyleSheet(_splitter_style)
 
         # Outer vertical splitter: top row (game + sidebars) | bot canvas
@@ -110,7 +119,7 @@ class MainWindow(QMainWindow):
         self._outer_splitter.addWidget(self._top_splitter)
         self._outer_splitter.addWidget(self.bot_canvas)
         self._outer_splitter.setStretchFactor(0, 1)
-        self._outer_splitter.setSizes([600, 220])
+        self._outer_splitter.setSizes([600, bot_h])
         self._outer_splitter.setStyleSheet(_splitter_style)
 
         self.setCentralWidget(self._outer_splitter)
@@ -125,7 +134,16 @@ class MainWindow(QMainWindow):
     def _apply_minimum_size(self) -> None:
         min_w, min_h = SettingsManager.instance().minimum_window_size()
         self.setMinimumSize(min_w, min_h)
-        self.resize(max(1400, min_w), max(800, min_h))
+
+    def _apply_startup_layout(self) -> None:
+        sm = SettingsManager.instance()
+        min_w, min_h = sm.minimum_window_size()
+        if sm.get_general("maximize_on_open", default=False):
+            self.showMaximized()
+        else:
+            w = max(sm.get_general("window_width",  default=1400), min_w)
+            h = max(sm.get_general("window_height", default=800),  min_h)
+            self.resize(w, h)
 
     # ------------------------------------------------------------------
     # Public API (called from bartlebot.py — signatures must stay stable)
@@ -176,11 +194,54 @@ class MainWindow(QMainWindow):
         self._apply_minimum_size()
 
     def _rebuild_launch_menu(self) -> None:
-        """Rebuild Tools → Launch menu from current launch profiles."""
+        """Rebuild Tools → Launch submenu from current accounts and profiles."""
         self._tools_menu.clear()
-        launch_action = QAction("Launch…", self)
-        launch_action.triggered.connect(self._open_launcher)
-        self._tools_menu.addAction(launch_action)
+
+        launch_menu = QMenu("Launch", self)
+        self._tools_menu.addMenu(launch_menu)
+
+        # --- Profiles section ---
+        profiles_lbl = QAction("─ Profiles ─", self)
+        profiles_lbl.setEnabled(False)
+        launch_menu.addAction(profiles_lbl)
+
+        profiles = SettingsManager.instance().launch_profiles
+        if profiles:
+            for profile in profiles:
+                name = profile.get("name", "Unnamed")
+                action = QAction(name, self)
+                action.triggered.connect(
+                    lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n))
+                )
+                launch_menu.addAction(action)
+        else:
+            empty = QAction("(No profiles)", self)
+            empty.setEnabled(False)
+            launch_menu.addAction(empty)
+
+        launch_menu.addSeparator()
+
+        # --- Accounts section ---
+        accounts_lbl = QAction("─ Accounts ─", self)
+        accounts_lbl.setEnabled(False)
+        launch_menu.addAction(accounts_lbl)
+
+        accounts = SettingsManager.instance().accounts
+        if accounts:
+            for acct in accounts:
+                username = acct.get("username", "")
+                alias    = acct.get("alias") or None
+                display  = CredentialStore.display_name(username, alias)
+                action   = QAction(display, self)
+                action.triggered.connect(
+                    lambda _checked, u=username, d=display:
+                        asyncio.ensure_future(self._launch_single_account(u, d))
+                )
+                launch_menu.addAction(action)
+        else:
+            empty2 = QAction("(No accounts)", self)
+            empty2.setEnabled(False)
+            launch_menu.addAction(empty2)
 
     # ------------------------------------------------------------------
     # Internal
@@ -198,6 +259,7 @@ class MainWindow(QMainWindow):
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
         dlg = SettingsDialog(self)
         if dlg.exec():
+            self._rebuild_launch_menu()
             self.refresh_minimum_size()
             # Notify keybinding manager to reload if wired
             if callable(getattr(self, "on_settings_saved", None)):
@@ -207,6 +269,30 @@ class MainWindow(QMainWindow):
         from bartlebot.gui.launcher_popup import LauncherPopup
         popup = LauncherPopup(self)
         popup.show()
+
+    async def _launch_profile(self, profile_name: str) -> None:
+        try:
+            from bartlebot.launcher.launch_profile import launch_profile
+            await launch_profile(profile_name)
+        except Exception as e:
+            QMessageBox.critical(self, "Launch failed", str(e))
+            print(traceback.format_exc())
+
+    async def _launch_single_account(self, username: str, display_name: str) -> None:
+        try:
+            from bartlebot.launcher.launch_profile import launch_account
+            password = CredentialStore.retrieve(username)
+            if password is None:
+                QMessageBox.critical(
+                    self, "Launch failed",
+                    f"No stored password for '{username}'.\n"
+                    "Please add the account in Settings → Accounts.",
+                )
+                return
+            await launch_account(username, password, display_name)
+        except Exception as e:
+            QMessageBox.critical(self, "Launch failed", str(e))
+            print(traceback.format_exc())
 
     def _update_recent_placeholder(self) -> None:
         action = QAction("(No recent files)", self)

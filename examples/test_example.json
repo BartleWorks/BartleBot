@@ -1,0 +1,71 @@
+{
+  "name": "Example Script",
+  "description": "A basic example script for testing purposes.",
+  "version": "2.0",
+  "clients": "all",
+  "initial": "go_to_zone_a",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "The Commons",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+    }
+  ],
+  "states": [
+    {
+      "id": "go_to_zone_a",
+      "node_type": "go_to_zone",
+      "label": "Go to Ravenwood",
+      "position": {
+        "x": -130.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Ravenwood",
+        "xyz": {
+          "x": -77.96,
+          "y": 1701.99,
+          "z": -27.99
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "go_to_zone_b",
+      "node_type": "go_to_zone",
+      "label": "Go to The Commons",
+      "position": {
+        "x": 130.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Ravenwood",
+        "to_zone": "WizardCity/WC_Hub",
+        "xyz": {
+          "x": 12.1,
+          "y": -2037.77,
+          "z": -130.64
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "go_to_zone_a",
+      "dest": "go_to_zone_b"
+    },
+    {
+      "trigger": "advance",
+      "source": "go_to_zone_b",
+      "dest": "go_to_zone_a"
+    }
+  ]
+}
