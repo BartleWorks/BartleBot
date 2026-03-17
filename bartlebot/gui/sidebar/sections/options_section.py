@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox,
     QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -191,6 +191,8 @@ class _AddOptionDialog(QDialog):
 class OptionsSection(SidebarSection):
     """Collapsible 'Options' section: per-option value widgets + CRUD controls."""
 
+    config_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__("Options", parent)
         self._config: BotConfig | None = None
@@ -200,7 +202,6 @@ class OptionsSection(SidebarSection):
         self._option_widgets: dict[str, QWidget] = {}
         self._edit_btns: list[QPushButton] = []
         self._delete_btns: list[QPushButton] = []
-        self.on_config_changed: Callable[[], None] = lambda: None
 
         outer = QVBoxLayout()
         outer.setSpacing(4)
@@ -321,7 +322,7 @@ class OptionsSection(SidebarSection):
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self._config.options.append(dlg.get_option())
             self._rebuild_options(self._config.options)
-            self.on_config_changed()
+            self.config_changed.emit()
 
     def _on_edit_option(self, name: str) -> None:
         if self._config is None:
@@ -358,7 +359,7 @@ class OptionsSection(SidebarSection):
             if self._suppress or self._config is None:
                 return
             opt.default = value
-            self.on_config_changed()
+            self.config_changed.emit()
 
         if isinstance(widget, QCheckBox):
             widget.toggled.connect(_update)

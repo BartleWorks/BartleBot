@@ -3,7 +3,7 @@ import traceback
 
 from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QMessageBox, QSplitter
 from PyQt6.QtGui import QAction, QKeySequence
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
@@ -14,16 +14,12 @@ from bartlebot.settings_manager import SettingsManager
 
 
 class MainWindow(QMainWindow):
+    # Emitted when a recent-file menu entry is clicked (passes the file path)
+    open_recent_requested = pyqtSignal(str)
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("BartleBot")
-
-        # Callbacks wired from bartlebot.py
-        self.on_new_bot = lambda: None
-        self.on_open_bot = lambda: None
-        self.on_open_recent = lambda _path: None
-        self.on_save_bot = lambda: None
-        self.on_save_bot_as = lambda: None
 
         self._build_menu()
         self._build_central()
@@ -41,15 +37,13 @@ class MainWindow(QMainWindow):
 
         file_menu = menu_bar.addMenu("File")
 
-        new_action = QAction("New Bot", self)
-        new_action.setShortcut(QKeySequence("Ctrl+N"))
-        new_action.triggered.connect(lambda: self.on_new_bot())
-        file_menu.addAction(new_action)
+        self.action_new = QAction("New Bot", self)
+        self.action_new.setShortcut(QKeySequence("Ctrl+N"))
+        file_menu.addAction(self.action_new)
 
-        open_action = QAction("Open Bot…", self)
-        open_action.setShortcut(QKeySequence("Ctrl+O"))
-        open_action.triggered.connect(lambda: self.on_open_bot())
-        file_menu.addAction(open_action)
+        self.action_open = QAction("Open Bot…", self)
+        self.action_open.setShortcut(QKeySequence("Ctrl+O"))
+        file_menu.addAction(self.action_open)
 
         self._recent_menu = QMenu("Open Recent", self)
         file_menu.addMenu(self._recent_menu)
@@ -57,17 +51,15 @@ class MainWindow(QMainWindow):
 
         file_menu.addSeparator()
 
-        self._save_action = QAction("Save Bot", self)
-        self._save_action.setShortcut(QKeySequence("Ctrl+S"))
-        self._save_action.setEnabled(False)
-        self._save_action.triggered.connect(lambda: self.on_save_bot())
-        file_menu.addAction(self._save_action)
+        self.action_save = QAction("Save Bot", self)
+        self.action_save.setShortcut(QKeySequence("Ctrl+S"))
+        self.action_save.setEnabled(False)
+        file_menu.addAction(self.action_save)
 
-        self._save_as_action = QAction("Save Bot As…", self)
-        self._save_as_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
-        self._save_as_action.setEnabled(False)
-        self._save_as_action.triggered.connect(lambda: self.on_save_bot_as())
-        file_menu.addAction(self._save_as_action)
+        self.action_save_as = QAction("Save Bot As…", self)
+        self.action_save_as.setShortcut(QKeySequence("Ctrl+Shift+S"))
+        self.action_save_as.setEnabled(False)
+        file_menu.addAction(self.action_save_as)
 
         # Settings menu
         settings_menu = menu_bar.addMenu("Settings")
@@ -75,6 +67,12 @@ class MainWindow(QMainWindow):
         settings_action.setShortcut(QKeySequence("Ctrl+,"))
         settings_action.triggered.connect(self._open_settings)
         settings_menu.addAction(settings_action)
+
+        # View menu
+        view_menu = menu_bar.addMenu("View")
+        self.action_toggle_game_view = QAction("Toggle Game View", self)
+        self.action_toggle_game_view.setShortcut(QKeySequence("Ctrl+G"))
+        view_menu.addAction(self.action_toggle_game_view)
 
         # Tools menu (launcher)
         self._tools_menu = menu_bar.addMenu("Tools")
@@ -90,8 +88,13 @@ class MainWindow(QMainWindow):
         self.right_sidebar = RightSidebar()
         self.game_view = GameView()
 
+        # Wire View menu
+        self.action_toggle_game_view.triggered.connect(
+            lambda: self.show_game_view(not self._game_view_visible)
+        )
+
         # Wire sidebar tab switching from canvas
-        self.bot_canvas.on_tab_switch = self._on_canvas_tab_switch
+        self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
 
         # Top row: left sidebar | game view | right sidebar
         _splitter_style = (
@@ -147,7 +150,7 @@ class MainWindow(QMainWindow):
             self.resize(w, h)
 
     # ------------------------------------------------------------------
-    # Public API (called from bartlebot.py — signatures must stay stable)
+    # Public API
     # ------------------------------------------------------------------
 
     def set_zone(self, zone: str | None) -> None:
@@ -175,12 +178,12 @@ class MainWindow(QMainWindow):
             return
         for path in paths:
             action = QAction(path, self)
-            action.triggered.connect(lambda _checked, p=path: self.on_open_recent(p))
+            action.triggered.connect(lambda _checked, p=path: self.open_recent_requested.emit(p))
             self._recent_menu.addAction(action)
 
     def set_save_enabled(self, enabled: bool) -> None:
-        self._save_action.setEnabled(enabled)
-        self._save_as_action.setEnabled(enabled)
+        self.action_save.setEnabled(enabled)
+        self.action_save_as.setEnabled(enabled)
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""

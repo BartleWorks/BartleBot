@@ -10,14 +10,36 @@ import asyncio
 
 from wizwalker.utils import (
     get_all_wizard_handles,
+    get_window_title,
     instance_login,
+    patch_open_browser,
     set_window_title,
     start_instance,
 )
-from wizwalker.client import Client
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.settings_manager import SettingsManager
+
+
+async def _wait_for_login_screen(handle: int) -> None:
+    """Poll until the window title equals 'Wizard101' (login screen is ready)."""
+    while get_window_title(handle) != "Wizard101":
+        await asyncio.sleep(0.1)
+
+
+async def _start_and_claim_handle(known_handles: set[int]) -> int:
+    """Start one Wizard101 instance and return its window handle.
+
+    *known_handles* is the set of handles that already exist (including any
+    previously claimed by the current launch batch) so the poll loop can
+    unambiguously identify the newly created window.
+    """
+    start_instance()
+    while True:
+        new_handles = set(get_all_wizard_handles()).difference(known_handles)
+        if new_handles:
+            return new_handles.pop()
+        await asyncio.sleep(0.1)
 
 
 async def launch_account(
@@ -27,42 +49,28 @@ async def launch_account(
 ) -> None:
     """Start one Wizard101 instance and auto-login with *username*/*password*.
 
-    Sets the window title to *display_name* once the login window appears.
+    Sets the window title to *display_name* once the login screen is ready.
     """
-    start_handles = set(get_all_wizard_handles())
-    start_instance()
-
-    # Wait for the new window to appear
-    while True:
-        new_handles = set(get_all_wizard_handles()).difference(start_handles)
-        if new_handles:
-            break
-        await asyncio.sleep(0.1)
-
-    handle = new_handles.pop()
-    client = Client(handle)
-
-    await client.hook_handler.activate_root_window_hook()
-
-    # Wait for the login window
-    while await client.root_window.get_windows_with_name("LoginWindow") == []:
-        await asyncio.sleep(0.1)
-
+    patch_open_browser()
+    handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
+    await _wait_for_login_screen(handle)
     instance_login(handle, username, password)
     set_window_title(handle, f"[{display_name}] Wizard101")
 
-    await client.hook_handler.close()
-
 
 async def launch_profile(profile_name: str) -> None:
-    """Launch all accounts in the named profile concurrently.
+    """Launch all accounts in the named profile.
 
     Looks up the profile in SettingsManager and retrieves passwords from
     CredentialStore (Windows Credential Manager).
 
+    Starts instances sequentially so each handle can be unambiguously claimed,
+    then logs in all accounts after a single shared wait for the login screen.
+
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
     """
+    patch_open_browser()
     settings = SettingsManager.instance()
     profiles = settings.launch_profiles
     profile = next((p for p in profiles if p.get("name") == profile_name), None)
@@ -75,7 +83,7 @@ async def launch_profile(profile_name: str) -> None:
 
     # Build (username, password, display_name) tuples
     accounts_meta = {a["username"]: a for a in settings.accounts}
-    tasks = []
+    accounts = []
     for username in account_usernames:
         password = CredentialStore.retrieve(username)
         if password is None:
@@ -86,6 +94,18 @@ async def launch_profile(profile_name: str) -> None:
         meta = accounts_meta.get(username, {})
         alias = meta.get("alias") or None
         display_name = CredentialStore.display_name(username, alias)
-        tasks.append(launch_account(username, password, display_name))
+        accounts.append((username, password, display_name))
 
-    await asyncio.gather(*tasks)
+    # Start instances one at a time so each handle is unambiguously claimed
+    # before the next instance is spawned.
+    handles: list[int] = []
+    known = set(get_all_wizard_handles())
+    for _ in accounts:
+        handles.append(await _start_and_claim_handle(known | set(handles)))
+
+    # Single shared wait for all instances to reach the login screen
+    await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
+
+    for handle, (username, password, display_name) in zip(handles, accounts):
+        instance_login(handle, username, password)
+        set_window_title(handle, f"[{display_name}] Wizard101")

@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QFrame,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
 
 from bartlebot.gui.sidebar.sidebar_section import field_label
@@ -18,7 +18,10 @@ from bartlebot.gui.sidebar.sidebar_section import field_label
 class ClientWidget(QWidget):
     """Displays live zone/XYZ info and freecam controls for a single client."""
 
-    def __init__(self, client, index: int, parent=None):
+    move_up   = pyqtSignal(int)  # emits this widget's current index
+    move_down = pyqtSignal(int)
+
+    def __init__(self, client, index: int, total: int, parent=None):
         super().__init__(parent)
         self._client = client
         self._in_freecam = False
@@ -26,24 +29,41 @@ class ClientWidget(QWidget):
         self._last_xyz = "—"
         self._last_mob = "—"
         self._mob_tick = 0
-        self._build_ui(index)
+        self._build_ui(index, total)
 
     # ------------------------------------------------------------------
     # UI construction
     # ------------------------------------------------------------------
 
-    def _build_ui(self, index: int) -> None:
+    def _build_ui(self, index: int, total: int) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 4, 6, 4)
         layout.setSpacing(4)
 
-        # Title
+        # Title row with move up/down buttons
         title = QLabel(f"Client {index + 1}")
         font = QFont()
         font.setBold(True)
         title.setFont(font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(title)
+
+        btn_up = QPushButton("▲")
+        btn_up.setFixedSize(22, 22)
+        btn_up.setToolTip("Move client up")
+        btn_up.setEnabled(index > 0)
+        btn_up.clicked.connect(lambda: self.move_up.emit(index))
+
+        btn_down = QPushButton("▼")
+        btn_down.setFixedSize(22, 22)
+        btn_down.setToolTip("Move client down")
+        btn_down.setEnabled(index < total - 1)
+        btn_down.clicked.connect(lambda: self.move_down.emit(index))
+
+        title_row = QHBoxLayout()
+        title_row.addWidget(btn_up)
+        title_row.addWidget(title, 1)
+        title_row.addWidget(btn_down)
+        layout.addLayout(title_row)
 
         # Zone row
         layout.addWidget(field_label("Current Zone"))

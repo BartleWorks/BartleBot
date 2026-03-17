@@ -12,7 +12,7 @@ import math
 import time
 from typing import Any, Callable
 
-from PyQt6.QtCore import Qt, QPointF, QTimer
+from PyQt6.QtCore import Qt, QPointF, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
@@ -137,6 +137,8 @@ def _inject_required_options(config: BotConfig) -> None:
 class EditScene(QGraphicsScene):
     """Manages interactive nodes, edge dragging, deletion, and positions."""
 
+    config_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._config: BotConfig | None = None
@@ -146,9 +148,6 @@ class EditScene(QGraphicsScene):
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
         self._interactive_mode: bool = True
-        self.on_config_changed: Callable[[], None] = lambda: None
-        self.on_selection_changed_cb: Callable[[], None] = lambda: None
-        self.selectionChanged.connect(self.on_selection_changed_cb)
 
     # ------------------------------------------------------------------
     # Public API
@@ -272,7 +271,7 @@ class EditScene(QGraphicsScene):
         self.addItem(node)
         self._node_items[state_id] = node
         self._update_scene_rect()
-        self.on_config_changed()
+        self.config_changed.emit()
 
     # ------------------------------------------------------------------
     # Mouse events
@@ -409,7 +408,7 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _delete_selected(self) -> None:
         changed = False
@@ -421,7 +420,7 @@ class EditScene(QGraphicsScene):
                 self._delete_edge_item(item)
                 changed = True
         if changed:
-            self.on_config_changed()
+            self.config_changed.emit()
 
     def _delete_node(self, state_id: str) -> None:
         if self._config is None:
@@ -449,7 +448,7 @@ class EditScene(QGraphicsScene):
         self.refresh_terminal()
         self.refresh_errors()
         self._update_scene_rect()
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _delete_edge_item(self, edge_item: EdgeItem) -> None:
         if self._config is None:
@@ -473,7 +472,7 @@ class EditScene(QGraphicsScene):
         self._edge_items = remaining
         self.refresh_terminal()
         self.refresh_errors()
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _flush_positions(self) -> None:
         if self._config is None:
@@ -491,7 +490,7 @@ class EditScene(QGraphicsScene):
                 state.position = new_pos
                 changed = True
         if changed:
-            self.on_config_changed()
+            self.config_changed.emit()
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-80, -100, 80, 60)
@@ -512,6 +511,8 @@ class _EditView(GraphView):
 # ---------------------------------------------------------------------------
 
 class _DynamicParamForm(QWidget):
+    changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._form = QVBoxLayout(self)
@@ -521,7 +522,6 @@ class _DynamicParamForm(QWidget):
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
         self._suppress = False
-        self.on_changed: Callable[[], None] = lambda: None
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
@@ -728,7 +728,7 @@ class _DynamicParamForm(QWidget):
     def _emit_changed(self, *_) -> None:
         if not self._suppress:
             self._validate_required_fields()
-            self.on_changed()
+            self.changed.emit()
 
     def _paste_xyz(self, key: str) -> None:
         try:
@@ -850,12 +850,13 @@ _PAGE_EDGE = 2
 
 
 class _ParamPanel(QWidget):
+    config_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._state: StateModel | None = None
         self._transition: TransitionModel | None = None
         self._suppress: bool = False
-        self.on_config_changed: Callable[[], None] = lambda: None
         self._get_clients: Callable[[], list] = lambda: []
         self._record_task: asyncio.Task | None = None
 
@@ -962,7 +963,7 @@ class _ParamPanel(QWidget):
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_type_combo.currentTextChanged.connect(self._on_node_type_changed)
-        self._param_form.on_changed = self._on_param_form_changed
+        self._param_form.changed.connect(self._on_param_form_changed)
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
         self._edge_flag_combo.currentTextChanged.connect(self._on_edge_flag_changed)
 
@@ -1038,7 +1039,7 @@ class _ParamPanel(QWidget):
         if self._suppress or self._state is None:
             return
         self._state.label = text or None
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_node_type_changed(self, text: str) -> None:
         if self._suppress or self._state is None:
@@ -1053,25 +1054,25 @@ class _ParamPanel(QWidget):
         self._rebuild_overrides(self._state)
         self._rebuild_returns(text)
         self._record_row.setVisible(text in _RECORDABLE_NODES)
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_param_form_changed(self) -> None:
         if self._state is None:
             return
         self._state.params = self._param_form.get_params()
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_edge_when_changed(self, text: str) -> None:
         if self._suppress or self._transition is None:
             return
         self._transition.when = None if text == "(none)" else text
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_edge_flag_changed(self, text: str) -> None:
         if self._suppress or self._transition is None:
             return
         self._transition.flag = None if text == "(none)" else text
-        self.on_config_changed()
+        self.config_changed.emit()
 
     # ------------------------------------------------------------------
     # Recording
@@ -1169,7 +1170,7 @@ class _ParamPanel(QWidget):
                 self._suppress = True
                 self._node_label_edit.setText(label)
                 self._suppress = False
-                self.on_config_changed()
+                self.config_changed.emit()
 
             self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
             self._record_btn.setText("Record")
@@ -1189,7 +1190,7 @@ class _ParamPanel(QWidget):
             self._param_form.set_str("zone", zone)
             self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
             self._suppress = False
-            self.on_config_changed()
+            self.config_changed.emit()
             self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
             self._record_btn.setText("Record")
         except asyncio.CancelledError:
@@ -1237,7 +1238,7 @@ class _ParamPanel(QWidget):
                 self._suppress = True
                 self._node_label_edit.setText(label)
                 self._suppress = False
-                self.on_config_changed()
+                self.config_changed.emit()
 
             self._record_status_lbl.setText(f"Done — {dungeon_zone.split('/')[-1]}")
             self._record_btn.setText("Record")
@@ -1291,7 +1292,7 @@ class _ParamPanel(QWidget):
                 self._suppress = True
                 self._node_label_edit.setText(label)
                 self._suppress = False
-                self.on_config_changed()
+                self.config_changed.emit()
 
             self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
             self._record_btn.setText("Record")
@@ -1334,7 +1335,7 @@ class _ParamPanel(QWidget):
                 self._suppress = True
                 self._node_label_edit.setText(label)
                 self._suppress = False
-                self.on_config_changed()
+                self.config_changed.emit()
 
             self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
             self._record_btn.setText("Record")
@@ -1354,7 +1355,7 @@ class _ParamPanel(QWidget):
             self._param_form.set_str("zone", zone)
             self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
             self._suppress = False
-            self.on_config_changed()
+            self.config_changed.emit()
             self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
             self._record_btn.setText("Record")
         except asyncio.CancelledError:
@@ -1392,7 +1393,7 @@ class _ParamPanel(QWidget):
                 self._suppress = True
                 self._node_label_edit.setText(label)
                 self._suppress = False
-                self.on_config_changed()
+                self.config_changed.emit()
 
             self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
             self._record_btn.setText("Record")
@@ -1446,13 +1447,13 @@ class _ParamPanel(QWidget):
                     s.option_overrides[n] = _read_override_widget(w)
                 else:
                     s.option_overrides.pop(n, None)
-                self.on_config_changed()
+                self.config_changed.emit()
 
             def _on_val_changed(n=name, cb_ref=cb, w=val_widget, s=state) -> None:
                 if self._suppress or not cb_ref.isChecked():
                     return
                 s.option_overrides[n] = _read_override_widget(w)
-                self.on_config_changed()
+                self.config_changed.emit()
 
             cb.toggled.connect(_on_cb_toggled)
             _connect_override_widget(val_widget, _on_val_changed)
@@ -1490,6 +1491,15 @@ class _ParamPanel(QWidget):
 class BotCanvas(QWidget):
     """Single canvas widget covering both Run and Edit modes."""
 
+    config_changed = pyqtSignal()
+    mode_changed   = pyqtSignal(BotMode)
+    run_requested  = pyqtSignal()
+    pause_requested  = pyqtSignal()
+    resume_requested = pyqtSignal()
+    save_done = pyqtSignal()
+    # Emitted with "log", "properties", or "bot" to switch the sidebar tab
+    tab_switch = pyqtSignal(str)
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self._config: BotConfig | None = None
@@ -1497,16 +1507,6 @@ class BotCanvas(QWidget):
         self._run_state = _IDLE
         self._start_time: float | None = None
         self._active_state: str | None = None
-
-        # Callbacks wired from bartlebot.py
-        self.on_config_changed: Callable[[], None] = lambda: None
-        self.on_mode_changed: Callable[[BotMode], None] = lambda _m: None
-        self.on_run: Callable[[], None] = lambda: None
-        self.on_pause: Callable[[], None] = lambda: None
-        self.on_resume: Callable[[], None] = lambda: None
-        self.on_save_and_done: Callable[[], None] = lambda: None
-        # Called with "log", "properties", or "bot" to switch the sidebar tab
-        self.on_tab_switch: Callable[[str], None] = lambda _: None
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1621,9 +1621,9 @@ class BotCanvas(QWidget):
         outer.addWidget(self._toolbar_stack)
         outer.addWidget(self._view, 1)
 
-        # ── Wire internal callbacks ───────────────────────────────────
-        self._scene.on_config_changed = self._on_scene_changed
-        self._param_panel.on_config_changed = self._on_scene_changed
+        # ── Wire internal signals ─────────────────────────────────────
+        self._scene.config_changed.connect(self._on_scene_changed)
+        self._param_panel.config_changed.connect(self._on_scene_changed)
         self._scene.selectionChanged.connect(self._on_selection_changed)
 
     # ------------------------------------------------------------------
@@ -1639,6 +1639,7 @@ class BotCanvas(QWidget):
         self._view.fit_scene()
         self._apply_mode(BotMode.RUN)
         self._edit_btn.setEnabled(True)
+        self.mode_changed.emit(BotMode.RUN)
 
     # ------------------------------------------------------------------
     # Public API — run state management
@@ -1672,7 +1673,7 @@ class BotCanvas(QWidget):
         self._start_time = time.monotonic()
         self._elapsed_label.setText("00:00:00")
         self._tick_timer.start()
-        self.on_tab_switch("log")
+        self.tab_switch.emit("log")
         self.append_log("=== Bot started ===")
 
     def set_paused(self) -> None:
@@ -1716,35 +1717,35 @@ class BotCanvas(QWidget):
 
     def _on_run_pause_clicked(self) -> None:
         if self._run_state == _IDLE:
-            self.on_run()
+            self.run_requested.emit()
         elif self._run_state == _RUNNING:
             self.set_paused()
-            self.on_pause()
+            self.pause_requested.emit()
         elif self._run_state == _PAUSED:
             self._run_state = _RUNNING
             self._run_pause_btn.setText("⏸  Pause")
             self.append_log("=== Resumed ===")
-            self.on_resume()
+            self.resume_requested.emit()
 
     def enter_edit_mode(self) -> None:
         """Switch to Edit mode (no-op if the bot is currently running)."""
         if self._run_state != _IDLE:
             return
         self._apply_mode(BotMode.EDIT)
-        self.on_mode_changed(BotMode.EDIT)
+        self.mode_changed.emit(BotMode.EDIT)
 
     def _on_edit_clicked(self) -> None:
         self.enter_edit_mode()
 
     def _on_done_clicked(self) -> None:
         self._apply_mode(BotMode.RUN)
-        self.on_mode_changed(BotMode.RUN)
-        self.on_config_changed()
+        self.mode_changed.emit(BotMode.RUN)
+        self.config_changed.emit()
 
     def _on_save_done_clicked(self) -> None:
         self._apply_mode(BotMode.RUN)
-        self.on_mode_changed(BotMode.RUN)
-        self.on_save_and_done()
+        self.mode_changed.emit(BotMode.RUN)
+        self.save_done.emit()
 
     def _on_add_state(self) -> None:
         center = self._view.mapToScene(self._view.viewport().rect().center())
@@ -1760,11 +1761,11 @@ class BotCanvas(QWidget):
             self._toolbar_stack.setCurrentIndex(_TB_RUN)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
-            self.on_tab_switch("bot")
+            self.tab_switch.emit("bot")
         else:
             self._toolbar_stack.setCurrentIndex(_TB_EDIT)
             self._scene.set_interactive(True)
-            self.on_tab_switch("properties")
+            self.tab_switch.emit("properties")
 
     # ------------------------------------------------------------------
     # Scene change callbacks
@@ -1782,7 +1783,7 @@ class BotCanvas(QWidget):
         self._refresh_initial()
         self._refresh_terminal()
         self._refresh_errors()
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _refresh_initial(self) -> None:
         if self._scene._config is None:
@@ -1831,7 +1832,7 @@ class BotCanvas(QWidget):
             )
             if state:
                 self._param_panel.show_state(state)
-                self.on_tab_switch("properties")
+                self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:
             for (s, w, d, ei) in self._scene._edge_items:
                 if ei is item:
@@ -1853,7 +1854,7 @@ class BotCanvas(QWidget):
                             opt.name for opt in self._scene._config.options
                         ]
                         self._param_panel.show_transition(trans, src_returns, option_names)
-                        self.on_tab_switch("properties")
+                        self.tab_switch.emit("properties")
                     break
         else:
             self._param_panel.show_idle()

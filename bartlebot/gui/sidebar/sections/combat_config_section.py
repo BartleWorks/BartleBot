@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QCheckBox, QVBoxLayout
 
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, value_edit_multi
@@ -15,11 +16,12 @@ if TYPE_CHECKING:
 class CombatConfigSection(SidebarSection):
     """Collapsible 'Combat Config' section."""
 
+    config_changed = pyqtSignal()
+
     def __init__(self, parent=None):
         super().__init__("Combat Config", parent)
         self._config: BotConfig | None = None
         self._suppress: bool = False
-        self.on_config_changed: Callable[[], None] = lambda: None
 
         layout = QVBoxLayout()
         layout.setSpacing(4)
@@ -74,10 +76,10 @@ class CombatConfigSection(SidebarSection):
         if self._suppress or self._config is None:
             return
         self._config.use_bartlebot_default_combat_config = checked
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _on_dsl_changed(self) -> None:
         if self._suppress or self._config is None:
             return
         self._config.default_combat_config = self._dsl_edit.toPlainText() or None
-        self.on_config_changed()
+        self.config_changed.emit()

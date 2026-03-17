@@ -17,6 +17,9 @@ _WS_CHILD       = 0x40000000
 _WS_VISIBLE     = 0x10000000
 _WS_BORDER_MASK = 0x00CF0000  # WS_CAPTION | WS_BORDER | WS_DLGFRAME
 
+LABEL_RESERVE = 24   # logical pixels reserved at the top of each tile for the client label
+FOCUS_BORDER  = 6    # logical pixels of red fill around the game window when focused
+
 _SWP_NOMOVE       = 0x0002
 _SWP_NOSIZE       = 0x0001
 _SWP_NOZORDER     = 0x0004
@@ -140,12 +143,15 @@ class ClientTile(QWidget):
         self.width()/height() are Qt logical pixels; MoveWindow uses Win32
         physical pixels.  Multiplying by devicePixelRatio() converts them so
         the centering offset is computed in the same coordinate space.
+
+        LABEL_RESERVE logical pixels are kept clear at the top of the tile so
+        the client label pill is never obscured by the Win32 child window.
         """
         dpr = self.devicePixelRatio()
         tile_w = int(self.width()  * dpr)
-        tile_h = int(self.height() * dpr)
+        tile_h = int(self.height() * dpr) - int(LABEL_RESERVE * dpr)
         x = max(0, (tile_w - self._game_w) // 2)
-        y = max(0, (tile_h - self._game_h) // 2)
+        y = int(LABEL_RESERVE * dpr) + max(0, (tile_h - self._game_h) // 2)
         _user32.MoveWindow(self._hwnd, x, y, self._game_w, self._game_h, True)
 
     # ------------------------------------------------------------------
@@ -165,26 +171,26 @@ class ClientTile(QWidget):
         super().paintEvent(event)
         painter = QPainter(self)
 
-        # Focus border — drawn around the game window area, not the whole tile.
-        # Convert game dimensions to logical pixels (QPainter coordinate space).
-        if self._focused:
-            dpr = self.devicePixelRatio()
-            gw = round(self._game_w / dpr)
-            gh = round(self._game_h / dpr)
-            gx = max(0, (self.width()  - gw) // 2)
-            gy = max(0, (self.height() - gh) // 2)
-            pen = painter.pen()
-            pen.setColor(QColor("#4a90d9"))
-            pen.setWidth(3)
-            painter.setPen(pen)
-            # Offset outward so the stroke falls in the letterbox area and is
-            # not hidden behind the Win32 child window surface.
-            painter.drawRect(gx - 2, gy - 2, gw + 4, gh + 4)
+        # Compute game window position in logical pixels (QPainter coordinate space).
+        dpr = self.devicePixelRatio()
+        gw = round(self._game_w / dpr)
+        gh = round(self._game_h / dpr)
+        gx = max(0, (self.width() - gw) // 2)
+        gy = LABEL_RESERVE + max(0, (self.height() - LABEL_RESERVE - gh) // 2)
 
-        # Client label pill — painted on the Qt widget surface.
-        # Note: this may be obscured by the embedded game window (which renders
-        # on top as a Win32 child). A floating overlay widget can be added later
-        # if the label needs to be always-on-top.
+        # Focus highlight — filled red rectangle behind the game window.
+        # The Win32 child covers the game area, leaving only the surrounding
+        # _FOCUS_BORDER-wide strip visible as the red highlight.
+        if self._focused:
+            painter.setBrush(QColor("#cc2222"))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawRect(
+                gx - FOCUS_BORDER, gy - FOCUS_BORDER,
+                gw + 2 * FOCUS_BORDER, gh + 2 * FOCUS_BORDER,
+            )
+
+        # Client label pill — rendered in the LABEL_RESERVE strip above the game
+        # window, so it is never obscured by the Win32 child surface.
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         font = QFont()
         font.setPointSize(9)
@@ -192,11 +198,12 @@ class ClientTile(QWidget):
         painter.setFont(font)
         metrics = painter.fontMetrics()
         text = self._label
-        text_w  = metrics.horizontalAdvance(text)
-        text_h  = metrics.height()
-        pill_x, pill_y = 8, 8
+        text_w = metrics.horizontalAdvance(text)
+        text_h = metrics.height()
         pill_w = text_w + 16
         pill_h = text_h + 6
+        pill_x = (self.width() - pill_w) // 2
+        pill_y = (LABEL_RESERVE - pill_h) // 2
         painter.setBrush(QColor(0, 0, 0, 160))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)

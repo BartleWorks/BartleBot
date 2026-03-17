@@ -5,7 +5,7 @@ import csv
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QFileDialog, QHeaderView, QLineEdit, QPushButton,
-    QSizePolicy, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
+    QSizePolicy, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout,
 )
 
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
@@ -27,13 +27,19 @@ class DropSection(SidebarSection):
         self._header.toggled.connect(self._on_toggled)
 
         self._tables: list[QTableWidget] = []
-        self._searches: list[QLineEdit] = []
 
         layout = QVBoxLayout()
         layout.setSpacing(4)
 
+        self._search = QLineEdit()
+        self._search.setPlaceholderText("Search items…")
+        self._search.setClearButtonEnabled(True)
+        self._search.textChanged.connect(self._on_search_changed)
+        layout.addWidget(self._search)
+
         self._tabs = QTabWidget()
         self._tabs.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self._tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self._tabs, 1)
 
         export_btn = QPushButton("Export CSV")
@@ -50,18 +56,7 @@ class DropSection(SidebarSection):
         """Create one tab per client, replacing any existing tabs."""
         self._tabs.clear()
         self._tables.clear()
-        self._searches.clear()
         for i in range(count):
-            container = QWidget()
-            vbox = QVBoxLayout(container)
-            vbox.setContentsMargins(0, 0, 0, 0)
-            vbox.setSpacing(2)
-
-            search = QLineEdit()
-            search.setPlaceholderText("Search items…")
-            search.setClearButtonEnabled(True)
-            vbox.addWidget(search)
-
             table = QTableWidget(0, 2)
             table.setHorizontalHeaderLabels(["Item", "Qty"])
             header = table.horizontalHeader()
@@ -70,13 +65,8 @@ class DropSection(SidebarSection):
             table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
             table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             table.verticalHeader().setVisible(False)
-            vbox.addWidget(table, 1)
-
-            search.textChanged.connect(lambda text, t=table: self._filter_table(t, text))
-
             self._tables.append(table)
-            self._searches.append(search)
-            self._tabs.addTab(container, f"Client {i + 1}")
+            self._tabs.addTab(table, f"Client {i + 1}")
 
     def add_drop(self, item: str, quantity: int, client_index: int = 0) -> None:
         if client_index >= len(self._tables):
@@ -101,8 +91,7 @@ class DropSection(SidebarSection):
     def clear_drops(self) -> None:
         for table in self._tables:
             table.setRowCount(0)
-        for search in self._searches:
-            search.clear()
+        self._search.clear()
 
     # ------------------------------------------------------------------
     # Internal
@@ -111,6 +100,15 @@ class DropSection(SidebarSection):
     def _on_toggled(self, expanded: bool) -> None:
         policy = QSizePolicy.Policy.Expanding if expanded else QSizePolicy.Policy.Maximum
         self.setSizePolicy(QSizePolicy.Policy.Preferred, policy)
+
+    def _on_search_changed(self, text: str) -> None:
+        idx = self._tabs.currentIndex()
+        if 0 <= idx < len(self._tables):
+            self._filter_table(self._tables[idx], text)
+
+    def _on_tab_changed(self, idx: int) -> None:
+        if 0 <= idx < len(self._tables):
+            self._filter_table(self._tables[idx], self._search.text())
 
     def _filter_table(self, table: QTableWidget, text: str) -> None:
         text = text.lower()
