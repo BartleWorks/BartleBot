@@ -12,6 +12,7 @@ from typing import Callable
 
 from PyQt6.QtCore import Qt, QPointF, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
     QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
@@ -165,6 +166,7 @@ class EditScene(QGraphicsScene):
                 is_terminal=(state.id not in sources),
                 is_error=is_error,
                 is_warning=is_warning,
+                node_type=state.node_type,
             )
             node.setPos(x, y)
             self.addItem(node)
@@ -245,7 +247,8 @@ class EditScene(QGraphicsScene):
         )
         self._config.states.append(state)
         returns = _node_returns(default_type)
-        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True)
+        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True,
+                        node_type=default_type)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -548,11 +551,17 @@ class BotCanvas(QWidget):
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_clicked)
 
+        self._fit_btn_run = QPushButton("Fit to Canvas")
+        self._fit_btn_run.setFixedWidth(100)
+        self._fit_btn_run.clicked.connect(self._view.fit_scene)
+
         run_row.addWidget(self._run_pause_btn)
         run_row.addSpacing(4)
         run_row.addWidget(self.stop_button)
         run_row.addWidget(self._state_label, 1)
         run_row.addWidget(self._elapsed_label)
+        run_row.addSpacing(8)
+        run_row.addWidget(self._fit_btn_run)
         run_row.addSpacing(12)
         run_row.addWidget(self._edit_btn)
 
@@ -564,6 +573,10 @@ class BotCanvas(QWidget):
         self._add_state_btn = QPushButton("+ Add State")
         self._add_state_btn.setFixedWidth(110)
         self._add_state_btn.clicked.connect(self._on_add_state)
+
+        self._fit_btn_edit = QPushButton("Fit to Canvas")
+        self._fit_btn_edit.setFixedWidth(100)
+        self._fit_btn_edit.clicked.connect(self._view.fit_scene)
 
         editing_lbl = QLabel("Editing — run disabled")
         editing_lbl.setStyleSheet("color: #996600;")
@@ -579,6 +592,8 @@ class BotCanvas(QWidget):
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
         edit_row.addWidget(self._add_state_btn)
+        edit_row.addSpacing(4)
+        edit_row.addWidget(self._fit_btn_edit)
         edit_row.addStretch(1)
         edit_row.addWidget(editing_lbl)
         edit_row.addSpacing(12)
@@ -621,6 +636,10 @@ class BotCanvas(QWidget):
         outer.setSpacing(0)
         outer.addWidget(self._toolbar_stack)
         outer.addWidget(self._view, 1)
+
+        # ── Keyboard shortcuts ────────────────────────────────────────
+        fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
+        fit_shortcut.activated.connect(self._view.fit_scene)
 
         # ── Wire internal signals ─────────────────────────────────────
         self._scene.config_changed.connect(self._on_scene_changed)
@@ -804,6 +823,7 @@ class BotCanvas(QWidget):
             node = self._scene._node_items.get(state.id)
             if node:
                 node.set_label(state.label)
+                node.set_node_type(state.node_type)
 
     def _refresh_node_returns(self) -> None:
         if self._scene._config is None:

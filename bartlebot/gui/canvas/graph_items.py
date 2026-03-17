@@ -151,10 +151,12 @@ class NodeItem(QGraphicsItem):
         is_terminal: bool = False,
         is_error: bool = False,
         is_warning: bool = False,
+        node_type: str = "",
     ):
         super().__init__()
         self.state_id = state_id
         self._label = label or state_id
+        self._node_type = node_type
         self._active = False
         self._hovered = False
         self._interactive = interactive
@@ -218,6 +220,11 @@ class NodeItem(QGraphicsItem):
     def set_label(self, label: str | None) -> None:
         """Update the displayed label; falls back to state_id when None."""
         self._label = label or self.state_id
+        self.update()
+
+    def set_node_type(self, node_type: str) -> None:
+        """Update the displayed node type sub-label."""
+        self._node_type = node_type
         self.update()
 
     def set_returns(self, returns: list[str]) -> None:
@@ -339,7 +346,65 @@ class NodeItem(QGraphicsItem):
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
 
-        # Structural-role badges drawn at bottom center so they don't overlap labels.
+        if self._returns:
+            # ----------------------------------------------------------
+            # Header: label + "state_id · node_type" crammed into _HEADER_H pixels
+            # ----------------------------------------------------------
+            painter.setFont(QFont("Segoe UI", 7))
+            fm = painter.fontMetrics()
+            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.setPen(Qt.GlobalColor.black)
+            painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
+
+            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+            painter.setPen(QColor("#888888"))
+            painter.setFont(QFont("Segoe UI", 6))
+            fm2 = painter.fontMetrics()
+            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.drawText(QRectF(8, 15, NODE_W - 16, 12), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
+            # Divider line between header and port area
+            painter.setPen(QPen(border, 0.5))
+            painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
+
+            # Named output ports + labels
+            for i, name in enumerate(self._returns):
+                py = self._port_y(i)
+                painter.setPen(QColor("#444444"))
+                painter.setFont(QFont("Segoe UI", 6))
+                label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
+                painter.drawText(
+                    label_rect,
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                    name,
+                )
+                if self._interactive:
+                    painter.setPen(QPen(_PORT_COLOR, 1.5))
+                    painter.setBrush(QBrush(_PORT_COLOR))
+                    painter.drawEllipse(QPointF(NODE_W, py), PORT_R, PORT_R)
+        else:
+            # ----------------------------------------------------------
+            # 2-line layout: main label + "state_id · node_type" sub-label
+            # ----------------------------------------------------------
+            painter.setFont(QFont("Segoe UI", 9))
+            fm = painter.fontMetrics()
+            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.setPen(Qt.GlobalColor.black)
+            painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
+
+            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+            painter.setPen(QColor("#888888"))
+            painter.setFont(QFont("Segoe UI", 6))
+            fm2 = painter.fontMetrics()
+            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
+            if self._interactive:
+                painter.setPen(QPen(_PORT_COLOR, 1.5))
+                painter.setBrush(QBrush(_PORT_COLOR))
+                painter.drawEllipse(QPointF(NODE_W, h / 2), PORT_R, PORT_R)
+
+        # Structural-role badges drawn at bottom center.
         # When both are present they sit side-by-side; when only one, it is centred.
         _BADGE_SIZE = 14
         _BADGE_MARGIN = 4
@@ -373,61 +438,6 @@ class NodeItem(QGraphicsItem):
                 painter.setPen(QColor("white"))
                 painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "■")
                 painter.restore()
-
-        painter.setPen(Qt.GlobalColor.black)
-
-        if self._returns:
-            # Header: label text in top _HEADER_H pixels
-            painter.setFont(QFont("Segoe UI", 8))
-            fm = painter.fontMetrics()
-            text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.drawText(
-                QRectF(8, 0, NODE_W - 16, _HEADER_H),
-                Qt.AlignmentFlag.AlignCenter,
-                text,
-            )
-            # Divider line between header and port area
-            painter.setPen(QPen(border, 0.5))
-            painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
-            # Named output ports + labels
-            for i, name in enumerate(self._returns):
-                py = self._port_y(i)
-                # Port label text (right-aligned, inside node)
-                painter.setPen(QColor("#444444"))
-                painter.setFont(QFont("Segoe UI", 6))
-                label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
-                painter.drawText(
-                    label_rect,
-                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                    name,
-                )
-                # Port circle (interactive mode only)
-                if self._interactive:
-                    painter.setPen(QPen(_PORT_COLOR, 1.5))
-                    painter.setBrush(QBrush(_PORT_COLOR))
-                    painter.drawEllipse(QPointF(NODE_W, py), PORT_R, PORT_R)
-        else:
-            # No named ports — original centered-text layout
-            if self._label != self.state_id:
-                painter.setFont(QFont("Segoe UI", 9))
-                fm = painter.fontMetrics()
-                label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(8, 4, NODE_W - 16, 40), Qt.AlignmentFlag.AlignCenter, label_text)
-                painter.setPen(QColor("#666666"))
-                painter.setFont(QFont("Segoe UI", 7))
-                fm2 = painter.fontMetrics()
-                id_text = fm2.elidedText(self.state_id, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(8, 46, NODE_W - 16, 18), Qt.AlignmentFlag.AlignCenter, id_text)
-            else:
-                painter.setFont(QFont("Segoe UI", 9))
-                fm = painter.fontMetrics()
-                text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(0, 0, NODE_W, NODE_H), Qt.AlignmentFlag.AlignCenter, text)
-            # Single output port at right center (interactive only)
-            if self._interactive:
-                painter.setPen(QPen(_PORT_COLOR, 1.5))
-                painter.setBrush(QBrush(_PORT_COLOR))
-                painter.drawEllipse(QPointF(NODE_W, h / 2), PORT_R, PORT_R)
 
         # Input port always at left center
         if self._interactive:
@@ -568,12 +578,8 @@ class EdgeItem(QGraphicsPathItem):
         # Only clamp when ports are close — when they are far apart the midpoint
         # naturally lands between the nodes and no adjustment is needed.
         if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
-            # Each port is at the vertical centre of its node, so
-            # node top = port_y - h/2 and node bottom = port_y + h/2.
             above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
             below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
-            # Snap to whichever boundary requires less vertical travel,
-            # defaulting to below when equidistant (same-height case).
             if mid_y - above_limit > below_limit - mid_y:
                 mid_y = above_limit
             else:
