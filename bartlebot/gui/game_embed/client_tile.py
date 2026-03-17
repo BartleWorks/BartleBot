@@ -18,7 +18,7 @@ _WS_VISIBLE     = 0x10000000
 _WS_BORDER_MASK = 0x00CF0000  # WS_CAPTION | WS_BORDER | WS_DLGFRAME
 
 LABEL_RESERVE = 24   # logical pixels reserved at the top of each tile for the client label
-_FOCUS_BORDER = 6    # logical pixels of red fill around the game window when focused
+FOCUS_BORDER  = 6    # logical pixels of red fill around the game window when focused
 
 _SWP_NOMOVE       = 0x0002
 _SWP_NOSIZE       = 0x0001
@@ -185,8 +185,8 @@ class ClientTile(QWidget):
             painter.setBrush(QColor("#cc2222"))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(
-                gx - _FOCUS_BORDER, gy - _FOCUS_BORDER,
-                gw + 2 * _FOCUS_BORDER, gh + 2 * _FOCUS_BORDER,
+                gx - FOCUS_BORDER, gy - FOCUS_BORDER,
+                gw + 2 * FOCUS_BORDER, gh + 2 * FOCUS_BORDER,
             )
 
         # Client label pill — rendered in the LABEL_RESERVE strip above the game

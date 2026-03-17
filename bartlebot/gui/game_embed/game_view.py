@@ -8,7 +8,7 @@ import ctypes.wintypes
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QLabel, QWidget
 
-from bartlebot.gui.game_embed.client_tile import ClientTile, LABEL_RESERVE
+from bartlebot.gui.game_embed.client_tile import ClientTile, FOCUS_BORDER, LABEL_RESERVE
 
 _user32     = ctypes.windll.user32
 _VK_LBUTTON = 0x01
@@ -154,10 +154,9 @@ class GameView(QWidget):
         rows, cols = _GRID.get(n, (2, 2))
         tile = next(iter(self._tiles.values()))
         dpr = self.devicePixelRatio() or 1.0
-        pad = 4
         self.setMinimumSize(
-            int(cols * tile._game_w / dpr) + 2 * pad,
-            int(rows * tile._game_h / dpr) + rows * LABEL_RESERVE + 2 * pad,
+            int(cols * tile._game_w / dpr) + (cols * 2 * FOCUS_BORDER),
+            int(rows * tile._game_h / dpr) + (rows * LABEL_RESERVE) + (rows * 2 * FOCUS_BORDER),
         )
 
     # ------------------------------------------------------------------
