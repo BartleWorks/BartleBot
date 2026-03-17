@@ -68,6 +68,12 @@ class MainWindow(QMainWindow):
         settings_action.triggered.connect(self._open_settings)
         settings_menu.addAction(settings_action)
 
+        # View menu
+        view_menu = menu_bar.addMenu("View")
+        self.action_toggle_game_view = QAction("Toggle Game View", self)
+        self.action_toggle_game_view.setShortcut(QKeySequence("Ctrl+G"))
+        view_menu.addAction(self.action_toggle_game_view)
+
         # Tools menu (launcher)
         self._tools_menu = menu_bar.addMenu("Tools")
         self._rebuild_launch_menu()
@@ -81,6 +87,11 @@ class MainWindow(QMainWindow):
         )
         self.right_sidebar = RightSidebar()
         self.game_view = GameView()
+
+        # Wire View menu
+        self.action_toggle_game_view.triggered.connect(
+            lambda: self.show_game_view(not self._game_view_visible)
+        )
 
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)

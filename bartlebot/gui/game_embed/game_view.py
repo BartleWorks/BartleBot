@@ -8,7 +8,7 @@ import ctypes.wintypes
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QLabel, QWidget
 
-from bartlebot.gui.game_embed.client_tile import ClientTile
+from bartlebot.gui.game_embed.client_tile import ClientTile, LABEL_RESERVE
 
 _user32     = ctypes.windll.user32
 _VK_LBUTTON = 0x01
@@ -81,6 +81,25 @@ class GameView(QWidget):
         for idx in list(self._tiles.keys()):
             self.unembed_client(idx)
 
+    def renumber_tiles(self, clients: list) -> None:
+        """Re-key _tiles and update labels to match current list positions.
+
+        Called after any change to the client list (removal or reorder) so that
+        the game-view tile labels stay in sync with the sidebar and bot logic.
+        """
+        hwnd_to_old_idx = {tile._hwnd: old_idx for old_idx, tile in self._tiles.items()}
+        new_tiles: dict[int, ClientTile] = {}
+        for new_idx, client in enumerate(clients):
+            old_idx = hwnd_to_old_idx.get(client.window_handle)
+            if old_idx is not None and old_idx in self._tiles:
+                tile = self._tiles[old_idx]
+                tile._label = f"Client {new_idx + 1}"
+                tile.update()
+                new_tiles[new_idx] = tile
+        self._tiles = new_tiles
+        self._recompute_geometry()
+        self._update_minimum_size()
+
     def toggle(self) -> None:
         """Show or hide the GameView (used by the toggle_embed keybinding)."""
         visible = not self.isVisible()
@@ -92,24 +111,6 @@ class GameView(QWidget):
                 parent.show_game_view(visible)
                 return
             parent = parent.parent()
-
-    def cycle_focus(self) -> None:
-        """Move OS keyboard focus to the next embedded client tile."""
-        if not self._tiles:
-            return
-        indices = sorted(self._tiles)
-        fg = _user32.GetForegroundWindow()
-        current_idx: int | None = None
-        for idx, tile in self._tiles.items():
-            if tile._hwnd == fg or _user32.GetParent(fg) == tile._hwnd:
-                current_idx = idx
-                break
-        if current_idx is None:
-            next_idx = indices[0]
-        else:
-            pos = indices.index(current_idx)
-            next_idx = indices[(pos + 1) % len(indices)]
-        _user32.SetForegroundWindow(self._tiles[next_idx]._hwnd)
 
     # ------------------------------------------------------------------
     # Qt event overrides
@@ -156,7 +157,7 @@ class GameView(QWidget):
         pad = 4
         self.setMinimumSize(
             int(cols * tile._game_w / dpr) + 2 * pad,
-            int(rows * tile._game_h / dpr) + 2 * pad,
+            int(rows * tile._game_h / dpr) + rows * LABEL_RESERVE + 2 * pad,
         )
 
     # ------------------------------------------------------------------

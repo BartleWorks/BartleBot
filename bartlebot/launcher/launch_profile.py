@@ -10,13 +10,21 @@ import asyncio
 
 from wizwalker.utils import (
     get_all_wizard_handles,
+    get_window_title,
     instance_login,
+    patch_open_browser,
     set_window_title,
     start_instance,
 )
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.settings_manager import SettingsManager
+
+
+async def _wait_for_login_screen(handle: int) -> None:
+    """Poll until the window title equals 'Wizard101' (login screen is ready)."""
+    while get_window_title(handle) != "Wizard101":
+        await asyncio.sleep(0.1)
 
 
 async def _start_and_claim_handle(known_handles: set[int]) -> int:
@@ -43,8 +51,9 @@ async def launch_account(
 
     Sets the window title to *display_name* once the login screen is ready.
     """
+    patch_open_browser()
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
-    await asyncio.sleep(5)
+    await _wait_for_login_screen(handle)
     instance_login(handle, username, password)
     set_window_title(handle, f"[{display_name}] Wizard101")
 
@@ -61,6 +70,7 @@ async def launch_profile(profile_name: str) -> None:
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
     """
+    patch_open_browser()
     settings = SettingsManager.instance()
     profiles = settings.launch_profiles
     profile = next((p for p in profiles if p.get("name") == profile_name), None)
@@ -94,7 +104,7 @@ async def launch_profile(profile_name: str) -> None:
         handles.append(await _start_and_claim_handle(known | set(handles)))
 
     # Single shared wait for all instances to reach the login screen
-    await asyncio.sleep(5)
+    await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
 
     for handle, (username, password, display_name) in zip(handles, accounts):
         instance_login(handle, username, password)

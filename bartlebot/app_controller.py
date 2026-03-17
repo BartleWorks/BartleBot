@@ -2,7 +2,7 @@ import asyncio
 import traceback
 from pathlib import Path
 
-from PyQt6.QtCore import QObject
+from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from wizwalker.extensions.wizsprinter import WizSprinter
@@ -19,6 +19,10 @@ from bartlebot import recent_files
 
 class AppController(QObject):
     """Owns all application-level state and wires the GUI to the bot engine."""
+
+    # Emitted whenever the live client list changes (add, remove, or reorder).
+    # Connected to GameView.renumber_tiles and ClientSection.set_clients.
+    clients_changed = pyqtSignal(list)
 
     def __init__(self, app: QApplication) -> None:
         super().__init__()
@@ -61,6 +65,13 @@ class AppController(QObject):
 
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
+
+        # Client list changes → game view renumber + sidebar rebuild
+        self.clients_changed.connect(w.game_view.renumber_tiles)
+        self.clients_changed.connect(w.right_sidebar.clients.set_clients)
+
+        # Reorder buttons in sidebar → swap client positions
+        w.right_sidebar.clients.swap_requested.connect(self.swap_clients)
 
         w.update_recent_menu(recent_files.load())
 
@@ -244,32 +255,40 @@ class AppController(QObject):
                     self._window.set_zone("No client found")
                     self._sync_embedded_clients(self._clients, [])
                     self._clients = []
-                    self._window.right_sidebar.clients.set_clients([])
+                    self.clients_changed.emit([])
                     self._window.set_start_enabled(False)
                     await asyncio.sleep(3.0)
                     continue
 
-                if clients != self._clients:
-                    self._sync_embedded_clients(self._clients, clients)
-                    self._clients = clients
-                    self._window.right_sidebar.clients.set_clients(clients)
+                # Compare by HWND set, not order, so user-initiated reorders are
+                # not overwritten by the loop seeing a different list order.
+                new_hwnd_set = {c.window_handle for c in clients}
+                cur_hwnd_set = {c.window_handle for c in self._clients}
+                if new_hwnd_set != cur_hwnd_set:
+                    # Preserve our ordering for retained clients; append new ones.
+                    retained = [c for c in self._clients if c.window_handle in new_hwnd_set]
+                    added    = [c for c in clients if c.window_handle not in cur_hwnd_set]
+                    new_clients = retained + added
+                    self._sync_embedded_clients(self._clients, new_clients)
+                    self._clients = new_clients
+                    self.clients_changed.emit(self._clients)
                     self._window.set_start_enabled(self._start_enabled())
 
-                zone = await clients[0].zone_name()
+                zone = await self._clients[0].zone_name()
                 self._window.set_zone(zone)
                 await asyncio.sleep(1.0)
 
             except MemoryReadError:
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
-                self._window.right_sidebar.clients.set_clients([])
+                self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
                 self._window.set_zone("No client found")
                 await asyncio.sleep(1.0)
             except Exception:
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
-                self._window.right_sidebar.clients.set_clients([])
+                self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
                 self._window.set_zone("Error — retrying…")
                 print(traceback.format_exc())
@@ -291,6 +310,22 @@ class AppController(QObject):
                 except Exception:
                     pass
         self._window.show_game_view(bool(new_clients))
+
+    def swap_clients(self, idx_a: int, idx_b: int) -> None:
+        """Swap the positions of two clients in the live list.
+
+        This changes which client index bot logic routes to, updates game-view
+        tile labels, and rebuilds the sidebar — without unhooking or re-hooking
+        any WizWalker clients.
+        """
+        if idx_a == idx_b:
+            return
+        if idx_a >= len(self._clients) or idx_b >= len(self._clients):
+            return
+        self._clients[idx_a], self._clients[idx_b] = (
+            self._clients[idx_b], self._clients[idx_a]
+        )
+        self.clients_changed.emit(self._clients)
 
     def _start_enabled(self) -> bool:
         return bool(self._clients) and self._loaded_config is not None

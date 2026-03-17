@@ -2,7 +2,7 @@
 
 import asyncio
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import QVBoxLayout
 
 from bartlebot.gui.sidebar.client_widget import ClientWidget
@@ -11,6 +11,10 @@ from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 
 class ClientSection(SidebarSection):
     """Collapsible 'Clients' section showing one ClientWidget per hooked client."""
+
+    # Emitted when a move-up or move-down button is clicked.
+    # Arguments are (idx_a, idx_b) to pass directly to AppController.swap_clients.
+    swap_requested = pyqtSignal(int, int)
 
     def __init__(self, parent=None):
         super().__init__("Clients", parent)
@@ -36,8 +40,11 @@ class ClientSection(SidebarSection):
             w.deleteLater()
         self._widgets.clear()
 
+        total = len(clients)
         for i, client in enumerate(clients):
-            widget = ClientWidget(client, i, self.body)
+            widget = ClientWidget(client, i, total, self.body)
+            widget.move_up.connect(lambda idx: self.swap_requested.emit(idx, idx - 1))
+            widget.move_down.connect(lambda idx: self.swap_requested.emit(idx, idx + 1))
             self._clients_layout.addWidget(widget)
             self._widgets.append(widget)
 
