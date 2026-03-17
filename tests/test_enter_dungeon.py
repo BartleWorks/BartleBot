@@ -21,7 +21,9 @@ def _happy_client() -> FakeClient:
     c = FakeClient()
     # pre-check; zone-change poll1 (still in Hub); zone-change poll2 (left Hub); post-check
     c.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Dungeon"]
-    c.is_in_npc_range.return_value = True
+    # First call is the step-2 pre-check (no stale prompt); subsequent calls see the
+    # sigil prompt after teleporting.
+    c.is_in_npc_range.side_effect = [False, True]
     return c
 
 
@@ -65,12 +67,12 @@ async def test_one_client_stuck_in_source_zone_fails():
     # Client A: enters successfully
     client_a = FakeClient()
     client_a.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Dungeon"]
-    client_a.is_in_npc_range.return_value = True
+    client_a.is_in_npc_range.side_effect = [False, True]
 
     # Client B: both appear to leave Hub during zone-change wait, but post-check shows Hub
     client_b = FakeClient()
     client_b.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Hub"]
-    client_b.is_in_npc_range.return_value = True
+    client_b.is_in_npc_range.side_effect = [False, True]
 
     with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client_a, client_b], _PARAMS)
@@ -141,7 +143,7 @@ async def test_wrong_dungeon_zone_fails():
     client = FakeClient()
     # pre-check; zone-change poll1 (still Hub); zone-change poll2 (left Hub); post-check (wrong zone)
     client.zone_name.side_effect = ["Hub", "Hub", "WrongZone", "WrongZone"]
-    client.is_in_npc_range.return_value = True
+    client.is_in_npc_range.side_effect = [False, True]
 
     with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client], _PARAMS)

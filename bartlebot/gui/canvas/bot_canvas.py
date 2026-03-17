@@ -5,20 +5,18 @@ BotCanvas  — top-level widget; owns the scene, toolbars, properties panel,
 EditScene  — interactive QGraphicsScene (same logic as the old edit_tab.py).
 """
 
-import asyncio
 import enum
-import json
 import math
 import time
-from typing import Any, Callable
+from typing import Callable
 
 from PyQt6.QtCore import Qt, QPointF, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
-    QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
-    QGraphicsItem, QGraphicsLineItem, QGraphicsScene, QHBoxLayout,
-    QLabel, QLineEdit, QPlainTextEdit, QPushButton, QScrollArea,
-    QSpinBox, QStackedWidget, QVBoxLayout, QWidget,
+    QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
+    QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
+    QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
@@ -27,23 +25,7 @@ from bartlebot.gui.canvas.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
-from bartlebot.gui.sidebar.sidebar_section import MUTED_LABEL_STYLE
-
-
-class _IntListLineEdit(QLineEdit):
-    """QLineEdit variant used for 'int_list' param fields.
-
-    Stores values as a comma-separated string (e.g. "1, 2, 3") and is
-    identified by get_params() to deserialise back to list[int].
-    """
-
-
-class _StrListLineEdit(QLineEdit):
-    """QLineEdit variant used for 'str_list' param fields.
-
-    Stores values as a comma-separated string (e.g. "IronBloom, GoldKey") and
-    is identified by get_params() to deserialise back to list[str].
-    """
+from bartlebot.gui.canvas.param_panel import _ParamPanel
 
 
 # ---------------------------------------------------------------------------
@@ -59,8 +41,6 @@ _TB_EDIT = 1  # toolbar stack index for Edit mode
 _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
-
-_RECORDABLE_NODES: set[str] = {"go_to_zone", "go_to_xyz", "enter_dungeon", "interact", "interact_to_zone", "mark_location", "recall_to_marked_location"}
 
 _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.DEBUG:   "[DBG]",
@@ -177,7 +157,7 @@ class EditScene(QGraphicsScene):
                 y = -NODE_H / 2
             returns = _node_returns(state.node_type)
             sources = {t.source for t in transitions}
-            is_error, is_warning = _validate_node(state, config)
+            is_error, is_warning, reasons = _validate_node(state, config)
             node = NodeItem(
                 state.id, state.label,
                 interactive=self._interactive_mode,
@@ -186,7 +166,10 @@ class EditScene(QGraphicsScene):
                 is_terminal=(state.id not in sources),
                 is_error=is_error,
                 is_warning=is_warning,
+                node_type=state.node_type,
             )
+            node.set_error(is_error, reasons)
+            node.set_warning(is_warning, reasons)
             node.setPos(x, y)
             self.addItem(node)
             self._node_items[state.id] = node
@@ -240,9 +223,9 @@ class EditScene(QGraphicsScene):
             node = self._node_items.get(state.id)
             if node is None:
                 continue
-            is_error, is_warning = _validate_node(state, self._config)
-            node.set_error(is_error)
-            node.set_warning(is_warning)
+            is_error, is_warning, reasons = _validate_node(state, self._config)
+            node.set_error(is_error, reasons)
+            node.set_warning(is_warning, reasons)
 
     def set_interactive(self, interactive: bool) -> None:
         """Toggle node and edge interactivity for mode switching."""
@@ -266,7 +249,8 @@ class EditScene(QGraphicsScene):
         )
         self._config.states.append(state)
         returns = _node_returns(default_type)
-        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True)
+        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True,
+                        node_type=default_type)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -507,984 +491,6 @@ class _EditView(GraphView):
 
 
 # ---------------------------------------------------------------------------
-# _DynamicParamForm
-# ---------------------------------------------------------------------------
-
-class _DynamicParamForm(QWidget):
-    changed = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._form = QVBoxLayout(self)
-        self._form.setContentsMargins(6, 6, 6, 6)
-        self._form.setSpacing(4)
-        self._form.addStretch()
-        self._widgets: dict[str, Any] = {}
-        self._required_widgets: dict[str, Any] = {}
-        self._suppress = False
-
-    def load_schema(self, schema: list, params: dict) -> None:
-        self._suppress = True
-        # Remove everything except the trailing stretch.
-        while self._form.count() > 1:
-            item = self._form.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        self._widgets.clear()
-        self._required_widgets.clear()
-        insert_idx = 0
-        for field in schema:
-            label_text = field.label
-            if field.required:
-                label_text += " <span style='color:#CC2222'>*</span>"
-            label_w = QLabel(label_text)
-            label_w.setTextFormat(Qt.TextFormat.RichText)
-            style = MUTED_LABEL_STYLE + (" margin-top: 8px;" if insert_idx > 0 else "")
-            label_w.setStyleSheet(style)
-            if field.help:
-                label_w.setToolTip(field.help)
-            val = params.get(field.key, field.default)
-            widget = self._make_widget(field.type, val, field.help, field.key)
-            self._widgets[field.key] = widget
-            if field.required:
-                self._required_widgets[field.key] = widget
-            display_w = widget if not isinstance(widget, tuple) else widget[3]
-            self._form.insertWidget(insert_idx, label_w)
-            self._form.insertWidget(insert_idx + 1, display_w)
-            insert_idx += 2
-            if field.default_hint and not field.required:
-                hint_lbl = QLabel(field.default_hint)
-                hint_lbl.setStyleSheet("color: #888;")
-                hint_lbl.setWordWrap(True)
-                self._form.insertWidget(insert_idx, hint_lbl)
-                insert_idx += 1
-        if not schema:
-            placeholder = QLabel("This node type has no parameters.")
-            placeholder.setStyleSheet("color: #888;")
-            self._form.insertWidget(0, placeholder)
-        # Wire disabled_by: when controller checkbox is checked, disable the target widget
-        for field in schema:
-            if field.disabled_by and field.disabled_by in self._widgets:
-                controller = self._widgets[field.disabled_by]
-                controlled = self._widgets[field.key]
-                display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
-                if isinstance(controller, QCheckBox):
-                    display_w.setEnabled(not controller.isChecked())
-                    controller.checkStateChanged.connect(
-                        lambda state, w=display_w: w.setEnabled(
-                            state != Qt.CheckState.Checked
-                        )
-                    )
-        self._suppress = False
-        self._validate_required_fields()
-
-    def _validate_required_fields(self) -> None:
-        """Apply or clear a red border on required input widgets based on whether they are empty."""
-        for widget in self._required_widgets.values():
-            if isinstance(widget, tuple):
-                # xyz — cannot be meaningfully empty
-                display_w = widget[3]
-                empty = False
-            elif isinstance(widget, QPlainTextEdit):
-                display_w = widget
-                empty = not widget.toPlainText().strip()
-            elif isinstance(widget, QLineEdit):
-                display_w = widget
-                empty = not widget.text().strip()
-            else:
-                # QSpinBox, QDoubleSpinBox, QCheckBox — always have a value
-                display_w = widget
-                empty = False
-            display_w.setStyleSheet("border: 1px solid #CC2222;" if empty else "")
-
-    def get_params(self) -> dict:
-        result: dict[str, Any] = {}
-        for key, w in self._widgets.items():
-            if isinstance(w, tuple):
-                x_s, y_s, z_s, _ = w
-                result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
-            elif isinstance(w, QPlainTextEdit):
-                result[key] = w.toPlainText()
-            elif isinstance(w, _IntListLineEdit):
-                result[key] = [
-                    int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()
-                ]
-            elif isinstance(w, _StrListLineEdit):
-                result[key] = [x.strip() for x in w.text().split(",") if x.strip()]
-            elif isinstance(w, QLineEdit):
-                result[key] = w.text()
-            elif isinstance(w, QSpinBox):
-                result[key] = w.value()
-            elif isinstance(w, QDoubleSpinBox):
-                result[key] = w.value()
-            elif isinstance(w, QCheckBox):
-                result[key] = w.isChecked()
-        return result
-
-    def _make_widget(self, field_type: str, val: Any, help_text: str, key: str = "") -> Any:
-        if field_type == "text":
-            w = QPlainTextEdit()
-            w.setPlainText(str(val) if val is not None else "")
-            w.setFixedHeight(120)
-            w.setPlaceholderText("Enter combat DSL…")
-            if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
-        if field_type == "str":
-            w = QLineEdit()
-            w.setText(str(val) if val is not None else "")
-            if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
-        if field_type == "int_list":
-            w = _IntListLineEdit()
-            if isinstance(val, list):
-                w.setText(", ".join(str(v) for v in val))
-            else:
-                w.setText(str(val) if val else "")
-            w.setPlaceholderText("e.g. 1, 2, 3")
-            if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
-        if field_type == "str_list":
-            w = _StrListLineEdit()
-            if isinstance(val, list):
-                w.setText(", ".join(str(v) for v in val))
-            else:
-                w.setText(str(val) if val else "")
-            w.setPlaceholderText("e.g. ItemA, ItemB")
-            if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
-        if field_type == "int":
-            w = QSpinBox()
-            w.setRange(-999_999, 999_999)
-            try:
-                w.setValue(int(val) if val is not None else 0)
-            except (TypeError, ValueError):
-                w.setValue(0)
-            if help_text:
-                w.setToolTip(help_text)
-            w.valueChanged.connect(self._emit_changed)
-            return w
-        if field_type == "float":
-            w = QDoubleSpinBox()
-            w.setRange(-999_999.0, 999_999.0)
-            w.setDecimals(3)
-            w.setSingleStep(1.0)
-            try:
-                w.setValue(float(val) if val is not None else 0.0)
-            except (TypeError, ValueError):
-                w.setValue(0.0)
-            if help_text:
-                w.setToolTip(help_text)
-            w.valueChanged.connect(self._emit_changed)
-            return w
-        if field_type == "bool":
-            w = QCheckBox()
-            w.setChecked(bool(val) if val is not None else False)
-            if help_text:
-                w.setToolTip(help_text)
-            w.checkStateChanged.connect(self._emit_changed)
-            return w
-        if field_type == "xyz":
-            xyz = val if isinstance(val, dict) else {}
-            container = QWidget()
-            row = QHBoxLayout(container)
-            row.setContentsMargins(0, 0, 0, 0)
-            row.setSpacing(4)
-            spins = []
-            for axis, axis_key in [("X", "x"), ("Y", "y"), ("Z", "z")]:
-                lbl = QLabel(axis)
-                lbl.setFixedWidth(12)
-                spin = QDoubleSpinBox()
-                spin.setRange(-999_999.0, 999_999.0)
-                spin.setDecimals(2)
-                spin.setSingleStep(1.0)
-                try:
-                    spin.setValue(float(xyz.get(axis_key, 0.0)))
-                except (TypeError, ValueError):
-                    spin.setValue(0.0)
-                spin.valueChanged.connect(self._emit_changed)
-                row.addWidget(lbl)
-                row.addWidget(spin, 1)
-                spins.append(spin)
-            if help_text:
-                container.setToolTip(help_text)
-            paste_btn = QPushButton("Paste")
-            paste_btn.setFixedWidth(48)
-            paste_btn.setToolTip("Fill from clipboard (Copy XYZ format)")
-            paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
-            row.addWidget(paste_btn)
-            return (spins[0], spins[1], spins[2], container)
-        w = QLabel(f"(unsupported type: {field_type})")
-        w.setStyleSheet("color: #888;")
-        return w
-
-    def _emit_changed(self, *_) -> None:
-        if not self._suppress:
-            self._validate_required_fields()
-            self.changed.emit()
-
-    def _paste_xyz(self, key: str) -> None:
-        try:
-            data = json.loads(QApplication.clipboard().text().strip())
-        except (json.JSONDecodeError, AttributeError):
-            return
-        if not isinstance(data, dict):
-            return
-        widgets = self._widgets.get(key)
-        if not isinstance(widgets, tuple):
-            return
-        x_s, y_s, z_s, _ = widgets
-        self._suppress = True
-        try:
-            x_s.setValue(float(data["x"]))
-        except (KeyError, TypeError, ValueError):
-            pass
-        try:
-            y_s.setValue(float(data["y"]))
-        except (KeyError, TypeError, ValueError):
-            pass
-        try:
-            z_s.setValue(float(data["z"]))
-        except (KeyError, TypeError, ValueError):
-            pass
-        self._suppress = False
-        self._emit_changed()
-
-    def set_str(self, key: str, value: str) -> None:
-        """Programmatically set a 'str' field by key."""
-        widget = self._widgets.get(key)
-        if not isinstance(widget, QLineEdit):
-            return
-        self._suppress = True
-        widget.setText(value)
-        self._suppress = False
-        self._emit_changed()
-
-    def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
-        """Programmatically set an 'xyz' field by key."""
-        widgets = self._widgets.get(key)
-        if not isinstance(widgets, tuple):
-            return
-        x_s, y_s, z_s, _ = widgets
-        self._suppress = True
-        x_s.setValue(x)
-        y_s.setValue(y)
-        z_s.setValue(z)
-        self._suppress = False
-        self._emit_changed()
-
-
-# ---------------------------------------------------------------------------
-# Per-node option-override helpers
-# ---------------------------------------------------------------------------
-
-def _make_override_widget(type_str: str, val: Any, help_text: str = "") -> QWidget:
-    """Create a value input widget for a bot-option override row."""
-    w: QWidget
-    if type_str == "bool":
-        wb = QCheckBox()
-        wb.setChecked(bool(val) if val is not None else False)
-        w = wb
-    elif type_str == "int":
-        wi = QSpinBox()
-        wi.setRange(-999_999, 999_999)
-        try:
-            wi.setValue(int(val) if val is not None else 0)
-        except (TypeError, ValueError):
-            wi.setValue(0)
-        w = wi
-    elif type_str == "float":
-        wf = QDoubleSpinBox()
-        wf.setRange(-999_999.0, 999_999.0)
-        wf.setDecimals(3)
-        wf.setSingleStep(0.1)
-        try:
-            wf.setValue(float(val) if val is not None else 0.0)
-        except (TypeError, ValueError):
-            wf.setValue(0.0)
-        w = wf
-    else:  # str
-        ws = QLineEdit()
-        ws.setText(str(val) if val is not None else "")
-        w = ws
-    if help_text:
-        w.setToolTip(help_text)
-    return w
-
-
-def _read_override_widget(w: QWidget) -> Any:
-    if isinstance(w, QCheckBox):
-        return w.isChecked()
-    if isinstance(w, QSpinBox):
-        return w.value()
-    if isinstance(w, QDoubleSpinBox):
-        return w.value()
-    if isinstance(w, QLineEdit):
-        return w.text()
-    return None
-
-
-def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
-    if isinstance(w, QCheckBox):
-        w.checkStateChanged.connect(lambda _: callback())
-    elif isinstance(w, (QSpinBox, QDoubleSpinBox)):
-        w.valueChanged.connect(lambda _: callback())
-    elif isinstance(w, QLineEdit):
-        w.textChanged.connect(lambda _: callback())
-
-
-# ---------------------------------------------------------------------------
-# _ParamPanel
-# ---------------------------------------------------------------------------
-
-_PAGE_IDLE = 0
-_PAGE_NODE = 1
-_PAGE_EDGE = 2
-
-
-class _ParamPanel(QWidget):
-    config_changed = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._state: StateModel | None = None
-        self._transition: TransitionModel | None = None
-        self._suppress: bool = False
-        self._get_clients: Callable[[], list] = lambda: []
-        self._record_task: asyncio.Task | None = None
-
-        self._stack = QStackedWidget()
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.addWidget(self._stack)
-
-        # Page 0 — idle
-        idle = QLabel("Select a node or edge to edit its properties.")
-        idle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        idle.setStyleSheet("color: #888;")
-        self._stack.addWidget(idle)
-
-        # Page 1 — node
-        node_w = QWidget()
-        nf = QFormLayout(node_w)
-        nf.setContentsMargins(6, 6, 6, 6)
-        self._node_id_lbl = QLabel()
-        self._node_label_edit = QLineEdit()
-        self._node_type_combo = QComboBox()
-        self._node_type_combo.addItems(sorted(NODE_REGISTRY.keys()))
-        nf.addRow("ID", self._node_id_lbl)
-        nf.addRow("Label", self._node_label_edit)
-        nf.addRow("Node type", self._node_type_combo)
-
-        self._param_form = _DynamicParamForm()
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(scroll.Shape.NoFrame)
-        scroll.setWidget(self._param_form)
-
-        self._returns_section = QWidget()
-        returns_layout = QVBoxLayout(self._returns_section)
-        returns_layout.setContentsMargins(6, 4, 6, 4)
-        returns_layout.setSpacing(2)
-        returns_title = QLabel("Returns:")
-        returns_title.setStyleSheet("font-weight: bold; color: #555;")
-        returns_layout.addWidget(returns_title)
-        self._returns_body_layout = QVBoxLayout()
-        self._returns_body_layout.setSpacing(1)
-        returns_layout.addLayout(self._returns_body_layout)
-        self._returns_section.setVisible(False)
-
-        # Option overrides section (per-node override of bot-wide options)
-        self._overrides_section = QWidget()
-        _ov_vbox = QVBoxLayout(self._overrides_section)
-        _ov_vbox.setContentsMargins(6, 4, 6, 4)
-        _ov_vbox.setSpacing(4)
-        _ov_title = QLabel("Option Overrides:")
-        _ov_title.setStyleSheet("font-weight: bold; color: #555;")
-        _ov_vbox.addWidget(_ov_title)
-        self._overrides_body = QVBoxLayout()
-        self._overrides_body.setSpacing(4)
-        _ov_vbox.addLayout(self._overrides_body)
-        self._overrides_section.setVisible(False)
-        self._override_rows: list[QWidget] = []
-        self._override_widgets: dict[str, tuple[QCheckBox, QWidget]] = {}
-
-        # Record row — shown only for recordable node types
-        self._record_row = QWidget()
-        _rr_layout = QHBoxLayout(self._record_row)
-        _rr_layout.setContentsMargins(6, 0, 6, 4)
-        _rr_layout.setSpacing(6)
-        self._record_btn = QPushButton("Record")
-        self._record_btn.setFixedWidth(70)
-        self._record_status_lbl = QLabel("")
-        self._record_status_lbl.setStyleSheet("color: #888; font-size: 11px;")
-        _rr_layout.addWidget(self._record_btn)
-        _rr_layout.addWidget(self._record_status_lbl, 1)
-        self._record_row.setVisible(False)
-        self._record_btn.clicked.connect(self._on_record_clicked)
-
-        node_outer = QWidget()
-        node_vbox = QVBoxLayout(node_outer)
-        node_vbox.setContentsMargins(0, 0, 0, 0)
-        node_vbox.setSpacing(0)
-        node_vbox.addWidget(node_w)
-        node_vbox.addWidget(self._record_row)
-        node_vbox.addWidget(scroll, 1)
-        node_vbox.addWidget(self._overrides_section)
-        node_vbox.addWidget(self._returns_section)
-        self._stack.addWidget(node_outer)
-
-        # Page 2 — edge
-        edge_w = QWidget()
-        ef = QFormLayout(edge_w)
-        ef.setContentsMargins(6, 6, 6, 6)
-        self._edge_src_lbl = QLabel()
-        self._edge_dst_lbl = QLabel()
-        self._edge_when_combo = QComboBox()
-        self._edge_flag_combo = QComboBox()
-        ef.addRow("Source", self._edge_src_lbl)
-        ef.addRow("Dest", self._edge_dst_lbl)
-        ef.addRow("When", self._edge_when_combo)
-
-        flag_lbl = QLabel("Flag")
-        flag_lbl.setToolTip(
-            "Bot option that must be truthy for this transition to fire.\n"
-            "Both When and Flag conditions must be satisfied."
-        )
-        ef.addRow(flag_lbl, self._edge_flag_combo)
-        self._stack.addWidget(edge_w)
-
-        self._node_label_edit.textChanged.connect(self._on_node_label_changed)
-        self._node_type_combo.currentTextChanged.connect(self._on_node_type_changed)
-        self._param_form.changed.connect(self._on_param_form_changed)
-        self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
-        self._edge_flag_combo.currentTextChanged.connect(self._on_edge_flag_changed)
-
-    def show_idle(self) -> None:
-        self._cancel_record()
-        self._state = None
-        self._transition = None
-        self._stack.setCurrentIndex(_PAGE_IDLE)
-
-    def show_state(self, state: StateModel) -> None:
-        self._cancel_record()
-        self._state = state
-        self._transition = None
-        self._suppress = True
-        self._node_id_lbl.setText(state.id)
-        self._node_label_edit.setText(state.label or "")
-        idx = self._node_type_combo.findText(state.node_type)
-        if idx >= 0:
-            self._node_type_combo.setCurrentIndex(idx)
-        schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
-        self._param_form.load_schema(schema, state.params or {})
-        self._rebuild_overrides(state)
-        self._rebuild_returns(state.node_type)
-        self._suppress = False
-        self._record_row.setVisible(state.node_type in _RECORDABLE_NODES)
-        self._stack.setCurrentIndex(_PAGE_NODE)
-
-    def show_transition(
-        self,
-        transition: TransitionModel,
-        src_returns: list[str] | None = None,
-        option_names: list[str] | None = None,
-    ) -> None:
-        self._transition = transition
-        self._state = None
-        self._suppress = True
-        self._edge_src_lbl.setText(transition.source)
-        self._edge_dst_lbl.setText(transition.dest)
-
-        # Populate "When" combo from source node's possible return values
-        self._edge_when_combo.clear()
-        self._edge_when_combo.addItem("(none)")
-        for name in (src_returns or []):
-            self._edge_when_combo.addItem(name)
-        if transition.when and self._edge_when_combo.findText(transition.when) < 0:
-            self._edge_when_combo.addItem(transition.when)
-        if transition.when:
-            idx = self._edge_when_combo.findText(transition.when)
-            if idx >= 0:
-                self._edge_when_combo.setCurrentIndex(idx)
-        else:
-            self._edge_when_combo.setCurrentIndex(0)
-
-        # Populate "Flag" combo from bot-wide options
-        self._edge_flag_combo.clear()
-        self._edge_flag_combo.addItem("(none)")
-        for name in (option_names or []):
-            self._edge_flag_combo.addItem(name)
-        if transition.flag and self._edge_flag_combo.findText(transition.flag) < 0:
-            # Flag references an option that no longer exists — show it anyway
-            self._edge_flag_combo.addItem(transition.flag)
-        if transition.flag:
-            idx = self._edge_flag_combo.findText(transition.flag)
-            if idx >= 0:
-                self._edge_flag_combo.setCurrentIndex(idx)
-        else:
-            self._edge_flag_combo.setCurrentIndex(0)
-
-        self._suppress = False
-        self._stack.setCurrentIndex(_PAGE_EDGE)
-
-    def _on_node_label_changed(self, text: str) -> None:
-        if self._suppress or self._state is None:
-            return
-        self._state.label = text or None
-        self.config_changed.emit()
-
-    def _on_node_type_changed(self, text: str) -> None:
-        if self._suppress or self._state is None:
-            return
-        self._cancel_record()
-        self._state.node_type = text
-        self._state.params = {}
-        self._state.option_overrides = {}
-        schema = NODE_PARAM_SCHEMAS.get(text, [])
-        self._param_form.load_schema(schema, {})
-        self._state.params = self._param_form.get_params()
-        self._rebuild_overrides(self._state)
-        self._rebuild_returns(text)
-        self._record_row.setVisible(text in _RECORDABLE_NODES)
-        self.config_changed.emit()
-
-    def _on_param_form_changed(self) -> None:
-        if self._state is None:
-            return
-        self._state.params = self._param_form.get_params()
-        self.config_changed.emit()
-
-    def _on_edge_when_changed(self, text: str) -> None:
-        if self._suppress or self._transition is None:
-            return
-        self._transition.when = None if text == "(none)" else text
-        self.config_changed.emit()
-
-    def _on_edge_flag_changed(self, text: str) -> None:
-        if self._suppress or self._transition is None:
-            return
-        self._transition.flag = None if text == "(none)" else text
-        self.config_changed.emit()
-
-    # ------------------------------------------------------------------
-    # Recording
-    # ------------------------------------------------------------------
-
-    def _cancel_record(self) -> None:
-        if self._record_task is not None and not self._record_task.done():
-            self._record_task.cancel()
-        self._record_task = None
-        self._record_btn.setText("Record")
-        self._record_status_lbl.setText("")
-
-    def _on_record_clicked(self) -> None:
-        if self._record_task is not None and not self._record_task.done():
-            self._cancel_record()
-            return
-        if self._state is None:
-            return
-        clients = self._get_clients()
-        if not clients:
-            self._record_status_lbl.setText("No client connected.")
-            return
-        if self._state.node_type == "go_to_zone":
-            self._record_btn.setText("Stop")
-            self._record_status_lbl.setText("Starting…")
-            self._record_task = asyncio.ensure_future(
-                self._record_go_to_zone(clients[0])
-            )
-        elif self._state.node_type == "go_to_xyz":
-            self._record_task = asyncio.ensure_future(
-                self._record_go_to_xyz(clients[0])
-            )
-        elif self._state.node_type == "enter_dungeon":
-            self._record_btn.setText("Stop")
-            self._record_status_lbl.setText("Starting…")
-            self._record_task = asyncio.ensure_future(
-                self._record_enter_dungeon(clients[0])
-            )
-        elif self._state.node_type == "interact":
-            self._record_btn.setText("Stop")
-            self._record_status_lbl.setText("Starting…")
-            self._record_task = asyncio.ensure_future(
-                self._record_interact(clients[0])
-            )
-        elif self._state.node_type == "interact_to_zone":
-            self._record_btn.setText("Stop")
-            self._record_status_lbl.setText("Starting…")
-            self._record_task = asyncio.ensure_future(
-                self._record_interact_to_zone(clients[0])
-            )
-        elif self._state.node_type == "mark_location":
-            self._record_task = asyncio.ensure_future(
-                self._record_mark_location(clients[0])
-            )
-        elif self._state.node_type == "recall_to_marked_location":
-            self._record_btn.setText("Stop")
-            self._record_status_lbl.setText("Press PAGE_UP to recall…")
-            self._record_task = asyncio.ensure_future(
-                self._record_recall_to_marked_location(clients[0])
-            )
-
-    async def _record_go_to_zone(self, client) -> None:
-        POLL = 0.15
-
-        try:
-            # Phase 1: from_zone
-            from_zone = await client.zone_name()
-            self._param_form.set_str("from_zone", from_zone)
-            self._record_status_lbl.setText("Walk to transition…")
-
-            last_pos = await client.body.position()
-
-            # Phase 2: live-update xyz; stop when loading
-            while True:
-                await asyncio.sleep(POLL)
-                if await client.is_loading():
-                    self._param_form.set_xyz("xyz", last_pos.x, last_pos.y, last_pos.z)
-                    self._record_status_lbl.setText("Loading…")
-                    break
-                last_pos = await client.body.position()
-                self._param_form.set_xyz("xyz", last_pos.x, last_pos.y, last_pos.z)
-
-            # Phase 3: wait for load to finish
-            while await client.is_loading():
-                await asyncio.sleep(POLL)
-
-            # Phase 4: to_zone
-            to_zone = await client.zone_name()
-            self._param_form.set_str("to_zone", to_zone)
-
-            # Phase 5: auto-populate label if empty
-            if self._state is not None and not (self._state.label or "").strip():
-                label = f"{_zone_display(from_zone)} → {_zone_display(to_zone)}"
-                self._state.label = label
-                self._suppress = True
-                self._node_label_edit.setText(label)
-                self._suppress = False
-                self.config_changed.emit()
-
-            self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    async def _record_go_to_xyz(self, client) -> None:
-        try:
-            zone = await client.zone_name()
-            pos = await client.body.position()
-            self._suppress = True
-            self._param_form.set_str("zone", zone)
-            self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
-            self._suppress = False
-            self.config_changed.emit()
-            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    async def _record_enter_dungeon(self, client) -> None:
-        POLL = 0.15
-
-        try:
-            # Phase 1: from_zone and reset_xyz (starting position)
-            from_zone = await client.zone_name()
-            self._param_form.set_str("from_zone", from_zone)
-            start_pos = await client.body.position()
-            self._param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
-            self._record_status_lbl.setText("Walk to sigil…")
-
-            last_pos = start_pos
-
-            # Phase 2: live-update sigil_xyz; stop when loading
-            while True:
-                await asyncio.sleep(POLL)
-                if await client.is_loading():
-                    self._param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
-                    self._record_status_lbl.setText("Loading…")
-                    break
-                last_pos = await client.body.position()
-                self._param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
-
-            # Phase 3: wait for load to finish
-            while await client.is_loading():
-                await asyncio.sleep(POLL)
-
-            # Phase 4: dungeon_zone
-            dungeon_zone = await client.zone_name()
-            self._param_form.set_str("dungeon_zone", dungeon_zone)
-
-            # Phase 5: auto-populate label if empty
-            if self._state is not None and not (self._state.label or "").strip():
-                label = f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}"
-                self._state.label = label
-                self._suppress = True
-                self._node_label_edit.setText(label)
-                self._suppress = False
-                self.config_changed.emit()
-
-            self._record_status_lbl.setText(f"Done — {dungeon_zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    async def _record_interact_to_zone(self, client) -> None:
-        POLL = 0.15
-
-        try:
-            # Phase 1: from_zone and reset_xyz (starting position)
-            from_zone = await client.zone_name()
-            self._param_form.set_str("from_zone", from_zone)
-            start_pos = await client.body.position()
-            self._param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
-            self._record_status_lbl.setText("Walk to interactable…")
-
-            # Phase 2: wait for interact prompt to appear
-            while not await client.is_in_npc_range():
-                await asyncio.sleep(POLL)
-
-            # Phase 3: prompt visible — live-update interact_xyz until prompt disappears
-            self._record_status_lbl.setText("Interact to trigger zone change…")
-            while True:
-                pos = await client.body.position()
-                self._param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-                await asyncio.sleep(POLL)
-                if not await client.is_in_npc_range():
-                    break
-
-            # Phase 4: wait for loading to start then finish
-            self._record_status_lbl.setText("Loading…")
-            while not await client.is_loading():
-                await asyncio.sleep(POLL)
-            while await client.is_loading():
-                await asyncio.sleep(POLL)
-
-            # Phase 5: to_zone
-            to_zone = await client.zone_name()
-            self._param_form.set_str("to_zone", to_zone)
-
-            # Phase 6: auto-populate label if empty
-            if self._state is not None and not (self._state.label or "").strip():
-                label = f"{_zone_display(from_zone)} → {_zone_display(to_zone)}"
-                self._state.label = label
-                self._suppress = True
-                self._node_label_edit.setText(label)
-                self._suppress = False
-                self.config_changed.emit()
-
-            self._record_status_lbl.setText(f"Done — {to_zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    async def _record_interact(self, client) -> None:
-        POLL = 0.15
-
-        try:
-            # Phase 1: zone and reset_xyz (starting position)
-            zone = await client.zone_name()
-            self._param_form.set_str("zone", zone)
-            start_pos = await client.body.position()
-            self._param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
-            self._record_status_lbl.setText("Walk to interactable…")
-
-            # Phase 2: wait for interact prompt to appear
-            while not await client.is_in_npc_range():
-                await asyncio.sleep(POLL)
-
-            # Phase 3: prompt visible — live-update interact_xyz until prompt disappears
-            self._record_status_lbl.setText("Interact to finish…")
-            while True:
-                pos = await client.body.position()
-                self._param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-                await asyncio.sleep(POLL)
-                if not await client.is_in_npc_range():
-                    break
-
-            # Phase 4: auto-populate label if empty
-            if self._state is not None and not (self._state.label or "").strip():
-                label = _zone_display(zone)
-                self._state.label = label
-                self._suppress = True
-                self._node_label_edit.setText(label)
-                self._suppress = False
-                self.config_changed.emit()
-
-            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    async def _record_mark_location(self, client) -> None:
-        try:
-            zone = await client.zone_name()
-            pos = await client.body.position()
-            self._suppress = True
-            self._param_form.set_str("zone", zone)
-            self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
-            self._suppress = False
-            self.config_changed.emit()
-            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    async def _record_recall_to_marked_location(self, client) -> None:
-        POLL = 0.15
-
-        try:
-            # Phase 1: wait for loading screen to start (user presses PAGE_UP)
-            while not await client.is_loading():
-                await asyncio.sleep(POLL)
-
-            # Phase 2: wait for loading to finish
-            self._record_status_lbl.setText("Loading…")
-            while await client.is_loading():
-                await asyncio.sleep(POLL)
-
-            # Phase 3: capture destination zone and XYZ
-            zone = await client.zone_name()
-            pos = await client.body.position()
-            self._suppress = True
-            self._param_form.set_str("zone", zone)
-            self._param_form.set_xyz("xyz", pos.x, pos.y, pos.z)
-            self._suppress = False
-
-            # Phase 4: auto-populate label if empty
-            if self._state is not None and not (self._state.label or "").strip():
-                label = _zone_display(zone)
-                self._state.label = label
-                self._suppress = True
-                self._node_label_edit.setText(label)
-                self._suppress = False
-                self.config_changed.emit()
-
-            self._record_status_lbl.setText(f"Done — {zone.split('/')[-1]}")
-            self._record_btn.setText("Record")
-
-        except asyncio.CancelledError:
-            self._record_status_lbl.setText("")
-            self._record_btn.setText("Record")
-        except Exception as e:
-            self._record_status_lbl.setText(f"Error: {e}")
-            self._record_btn.setText("Record")
-
-    def _rebuild_overrides(self, state: StateModel) -> None:
-        for row in self._override_rows:
-            self._overrides_body.removeWidget(row)
-            row.deleteLater()
-        self._override_rows.clear()
-        self._override_widgets.clear()
-
-        spec = NODE_SPECS.get(state.node_type)
-        bot_options = spec.required_bot_options if spec else []
-        if not bot_options:
-            self._overrides_section.setVisible(False)
-            return
-
-        overrides = state.option_overrides
-        for bot_opt in bot_options:
-            name = bot_opt.name
-            is_overriding = name in overrides
-            current_val = overrides.get(name, bot_opt.default)
-
-            val_widget = _make_override_widget(bot_opt.type, current_val, bot_opt.description or "")
-            val_widget.setEnabled(is_overriding)
-
-            cb = QCheckBox(f"Override {name}:")
-            cb.setChecked(is_overriding)
-            if bot_opt.description:
-                cb.setToolTip(bot_opt.description)
-
-            row = QWidget()
-            row_layout = QHBoxLayout(row)
-            row_layout.setContentsMargins(0, 0, 0, 0)
-            row_layout.setSpacing(6)
-            row_layout.addWidget(cb)
-            row_layout.addWidget(val_widget, 1)
-
-            def _on_cb_toggled(checked: bool, n=name, w=val_widget, s=state) -> None:
-                if self._suppress:
-                    return
-                w.setEnabled(checked)
-                if checked:
-                    s.option_overrides[n] = _read_override_widget(w)
-                else:
-                    s.option_overrides.pop(n, None)
-                self.config_changed.emit()
-
-            def _on_val_changed(n=name, cb_ref=cb, w=val_widget, s=state) -> None:
-                if self._suppress or not cb_ref.isChecked():
-                    return
-                s.option_overrides[n] = _read_override_widget(w)
-                self.config_changed.emit()
-
-            cb.toggled.connect(_on_cb_toggled)
-            _connect_override_widget(val_widget, _on_val_changed)
-
-            self._overrides_body.addWidget(row)
-            self._override_rows.append(row)
-            self._override_widgets[name] = (cb, val_widget)
-
-        self._overrides_section.setVisible(True)
-
-    def _rebuild_returns(self, node_type: str) -> None:
-        while self._returns_body_layout.count():
-            item = self._returns_body_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        spec = NODE_SPECS.get(node_type)
-        if spec and spec.returns:
-            for ret in spec.returns:
-                if ret.description:
-                    lbl = QLabel(f"<b>{ret.name}</b> — {ret.description}")
-                else:
-                    lbl = QLabel(f"<b>{ret.name}</b>")
-                lbl.setWordWrap(True)
-                lbl.setStyleSheet("font-size: 11px;")
-                self._returns_body_layout.addWidget(lbl)
-            self._returns_section.setVisible(True)
-        else:
-            self._returns_section.setVisible(False)
-
-
-# ---------------------------------------------------------------------------
 # BotCanvas — unified widget
 # ---------------------------------------------------------------------------
 
@@ -1507,6 +513,9 @@ class BotCanvas(QWidget):
         self._run_state = _IDLE
         self._start_time: float | None = None
         self._active_state: str | None = None
+        self._tick_count: int = 0
+        self._run_externally_enabled: bool = False
+        self._n_validation_errors: int = 0
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1547,11 +556,23 @@ class BotCanvas(QWidget):
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_clicked)
 
+        self._fit_btn_run = QPushButton("Fit to Canvas")
+        self._fit_btn_run.setFixedWidth(100)
+        self._fit_btn_run.clicked.connect(self._view.fit_scene)
+
+        self._validation_badge = QLabel()
+        self._validation_badge.setTextFormat(Qt.TextFormat.RichText)
+        self._validation_badge.setVisible(False)
+
         run_row.addWidget(self._run_pause_btn)
         run_row.addSpacing(4)
         run_row.addWidget(self.stop_button)
+        run_row.addSpacing(6)
+        run_row.addWidget(self._validation_badge)
         run_row.addWidget(self._state_label, 1)
         run_row.addWidget(self._elapsed_label)
+        run_row.addSpacing(8)
+        run_row.addWidget(self._fit_btn_run)
         run_row.addSpacing(12)
         run_row.addWidget(self._edit_btn)
 
@@ -1563,6 +584,10 @@ class BotCanvas(QWidget):
         self._add_state_btn = QPushButton("+ Add State")
         self._add_state_btn.setFixedWidth(110)
         self._add_state_btn.clicked.connect(self._on_add_state)
+
+        self._fit_btn_edit = QPushButton("Fit to Canvas")
+        self._fit_btn_edit.setFixedWidth(100)
+        self._fit_btn_edit.clicked.connect(self._view.fit_scene)
 
         editing_lbl = QLabel("Editing — run disabled")
         editing_lbl.setStyleSheet("color: #996600;")
@@ -1578,6 +603,8 @@ class BotCanvas(QWidget):
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
         edit_row.addWidget(self._add_state_btn)
+        edit_row.addSpacing(4)
+        edit_row.addWidget(self._fit_btn_edit)
         edit_row.addStretch(1)
         edit_row.addWidget(editing_lbl)
         edit_row.addSpacing(12)
@@ -1621,6 +648,10 @@ class BotCanvas(QWidget):
         outer.addWidget(self._toolbar_stack)
         outer.addWidget(self._view, 1)
 
+        # ── Keyboard shortcuts ────────────────────────────────────────
+        fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
+        fit_shortcut.activated.connect(self._view.fit_scene)
+
         # ── Wire internal signals ─────────────────────────────────────
         self._scene.config_changed.connect(self._on_scene_changed)
         self._param_panel.config_changed.connect(self._on_scene_changed)
@@ -1639,6 +670,7 @@ class BotCanvas(QWidget):
         self._view.fit_scene()
         self._apply_mode(BotMode.RUN)
         self._edit_btn.setEnabled(True)
+        self._update_validation_badge()
         self.mode_changed.emit(BotMode.RUN)
 
     # ------------------------------------------------------------------
@@ -1647,8 +679,25 @@ class BotCanvas(QWidget):
 
     def set_run_enabled(self, enabled: bool) -> None:
         """Enable/disable the Run button (only when idle and in RUN mode)."""
-        if self._run_state == _IDLE and self._mode == BotMode.RUN:
-            self._run_pause_btn.setEnabled(enabled)
+        self._run_externally_enabled = enabled
+        self._apply_run_btn_state()
+
+    def _apply_run_btn_state(self) -> None:
+        """Sync Run button enabled/tooltip from external readiness + validation errors."""
+        if self._run_state != _IDLE or self._mode != BotMode.RUN:
+            return
+        if self._n_validation_errors > 0:
+            self._run_pause_btn.setEnabled(False)
+            noun = "error" if self._n_validation_errors == 1 else "errors"
+            self._run_pause_btn.setToolTip(
+                f"Cannot run: fix {self._n_validation_errors} {noun} first"
+            )
+        elif self._run_externally_enabled:
+            self._run_pause_btn.setEnabled(True)
+            self._run_pause_btn.setToolTip("Bot is valid — click to run")
+        else:
+            self._run_pause_btn.setEnabled(False)
+            self._run_pause_btn.setToolTip("")
 
     @property
     def param_panel(self) -> QWidget:
@@ -1666,6 +715,7 @@ class BotCanvas(QWidget):
 
     def set_running(self) -> None:
         self._run_state = _RUNNING
+        self._tick_count = 0
         self._run_pause_btn.setText("⏸  Pause")
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
@@ -1700,6 +750,7 @@ class BotCanvas(QWidget):
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = state_id
+        self._tick_count = 0  # restart pulse phase on state change
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
         self._state_label.setText(f"State: {state_id}")
@@ -1783,7 +834,36 @@ class BotCanvas(QWidget):
         self._refresh_initial()
         self._refresh_terminal()
         self._refresh_errors()
+        self._update_validation_badge()
         self.config_changed.emit()
+
+    def _update_validation_badge(self) -> None:
+        config = self._scene._config
+        if config is None:
+            self._validation_badge.setVisible(False)
+            return
+        n_errors = 0
+        n_warnings = 0
+        for state in config.states:
+            is_error, is_warning, _ = _validate_node(state, config)
+            if is_error:
+                n_errors += 1
+            if is_warning:
+                n_warnings += 1
+        parts = []
+        if n_errors:
+            noun = "error" if n_errors == 1 else "errors"
+            parts.append(f'<span style="color: #CC2222;">&#9679; {n_errors} {noun}</span>')
+        if n_warnings:
+            noun = "warning" if n_warnings == 1 else "warnings"
+            parts.append(f'<span style="color: #BB7700;">&#9650; {n_warnings} {noun}</span>')
+        if parts:
+            self._validation_badge.setText("&nbsp;&nbsp;".join(parts))
+            self._validation_badge.setVisible(True)
+        else:
+            self._validation_badge.setVisible(False)
+        self._n_validation_errors = n_errors
+        self._apply_run_btn_state()
 
     def _refresh_initial(self) -> None:
         if self._scene._config is None:
@@ -1803,6 +883,7 @@ class BotCanvas(QWidget):
             node = self._scene._node_items.get(state.id)
             if node:
                 node.set_label(state.label)
+                node.set_node_type(state.node_type)
 
     def _refresh_node_returns(self) -> None:
         if self._scene._config is None:
@@ -1888,6 +969,11 @@ class BotCanvas(QWidget):
 
     def _tick(self) -> None:
         self._elapsed_label.setText(self._elapsed_str())
+        self._tick_count += 1
+        if self._run_state == _RUNNING and self._active_state:
+            node = self._scene._node_items.get(self._active_state)
+            if node:
+                node.set_pulse(self._tick_count % 2 == 0)
 
     def _elapsed_str(self) -> str:
         if self._start_time is None:
@@ -1919,8 +1005,8 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool, xyz always have a value
 
 
-def _validate_node(state, config) -> tuple[bool, bool]:
-    """Return (is_error, is_warning) for a state given the full config.
+def _validate_node(state, config) -> tuple[bool, bool, list[str]]:
+    """Return (is_error, is_warning, reasons) for a state given the full config.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
@@ -1931,46 +1017,36 @@ def _validate_node(state, config) -> tuple[bool, bool]:
       - node has outgoing transitions but some return values are not covered
         by any t.when (and no unconditional when=None transition exists)
     """
-    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-    is_error = False
-    is_warning = False
+    error_reasons: list[str] = []
+    warning_reasons: list[str] = []
 
     if state.node_type not in NODE_REGISTRY:
-        is_error = True
+        error_reasons.append(f"Unknown node type: '{state.node_type}'")
 
     schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
     for field in schema:
         if field.required and _required_field_empty(field, state.params):
-            is_error = True
-            break
+            error_reasons.append(f"Required param '{field.key}' is empty")
 
     state_ids = {s.id for s in config.states}
     outgoing = [t for t in config.transitions if t.source == state.id]
     for t in outgoing:
         if t.dest not in state_ids:
-            is_error = True
-            break
+            error_reasons.append(f"Transition to unknown state '{t.dest}'")
 
     if outgoing:
         spec = NODE_SPECS.get(state.node_type)
         if spec and spec.returns:
             outgoing_whens = {t.when for t in outgoing}
             if None not in outgoing_whens:
-                for ret in spec.returns:
-                    if ret.name not in outgoing_whens:
-                        is_warning = True
-                        break
+                uncovered = [r.name for r in spec.returns if r.name not in outgoing_whens]
+                if uncovered:
+                    label = "return value" if len(uncovered) == 1 else "return values"
+                    warning_reasons.append(
+                        f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}"
+                    )
 
-    return is_error, is_warning
-
-
-def _zone_display(zone: str) -> str:
-    """Return a human-friendly display name for a zone path like 'WizardCity/WC_Hub'."""
-    try:
-        from wizsprinter import toZone, toZoneDisplayName  # noqa: PLC0415
-        return toZoneDisplayName(toZone(zone))
-    except Exception:
-        return zone.split("/")[-1] if "/" in zone else zone
+    return bool(error_reasons), bool(warning_reasons), error_reasons + warning_reasons
 
 
 def _dist(a: QPointF, b: QPointF) -> float:

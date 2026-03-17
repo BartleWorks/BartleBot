@@ -28,19 +28,26 @@ ARROW_SIZE = 13
 PORT_R = 6          # radius of connection-port circles
 PORT_SPACING = 28   # vertical spacing between named output ports
 _HEADER_H = 28      # height reserved for text label when returns are present
+_PORT_HIT_R = 16    # hit-test radius for port cursor feedback
 
-_FILL_NORMAL = QColor("#d5dce8")
-_FILL_ACTIVE = QColor("#5cb85c")
+_FILL_NORMAL   = QColor("#d5dce8")
+_FILL_HOVER    = QColor("#dce4f0")   # slightly lighter than normal on hover
+_FILL_ACTIVE     = QColor("#5cb85c")
+_FILL_ACTIVE_DIM = QColor("#4aa84a")   # darker shade for pulse alternation
 _FILL_SELECTED = QColor("#b8cce4")
-_BORDER_NORMAL = QColor("#8a9ab8")
-_BORDER_ACTIVE = QColor("#2e7d32")
+_FILL_ERROR    = QColor("#fce8e8")   # light red tint for error nodes
+_FILL_WARNING  = QColor("#fff8e0")   # light amber tint for warning nodes
+_BORDER_NORMAL   = QColor("#8a9ab8")
+_BORDER_ACTIVE   = QColor("#2e7d32")
 _BORDER_SELECTED = QColor("#2255aa")
-_BORDER_ERROR = QColor("#CC2222")
-_BORDER_WARNING = QColor("#BB7700")
-_BADGE_INITIAL = QColor("#22AA44")
+_BORDER_ERROR    = QColor("#CC2222")
+_BORDER_WARNING  = QColor("#BB7700")
+_BADGE_INITIAL  = QColor("#22AA44")
 _BADGE_TERMINAL = QColor("#CC2222")
-_EDGE_COLOR = QColor("#607090")
-_PORT_COLOR = QColor("#3366bb")
+_EDGE_COLOR       = QColor("#607090")
+_EDGE_HOVER_COLOR = QColor("#4488cc")
+_EDGE_SEL_COLOR   = QColor("#2255aa")
+_PORT_COLOR     = QColor("#3366bb")
 
 _CORNER_R = 8           # rounded-corner radius on orthogonal paths (px)
 _BACK_H_STEP = 30       # how far backward edges extend horizontally beyond node edge
@@ -147,11 +154,16 @@ class NodeItem(QGraphicsItem):
         is_terminal: bool = False,
         is_error: bool = False,
         is_warning: bool = False,
+        node_type: str = "",
     ):
         super().__init__()
         self.state_id = state_id
         self._label = label or state_id
+        self._node_type = node_type
         self._active = False
+        self._pulse_bright = True
+        self._hovered = False
+        self._reasons: list[str] = []
         self._interactive = interactive
         self._is_initial = is_initial
         self._is_terminal = is_terminal
@@ -164,6 +176,8 @@ class NodeItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
         if interactive:
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+            self.setAcceptHoverEvents(True)
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
 
     @property
     def _height(self) -> int:
@@ -176,6 +190,14 @@ class NodeItem(QGraphicsItem):
 
     def set_active(self, active: bool) -> None:
         self._active = active
+        self._pulse_bright = True
+        self.update()
+
+    def set_pulse(self, bright: bool) -> None:
+        """Alternate the active fill color — only visible while the node is active."""
+        if not self._active:
+            return
+        self._pulse_bright = bright
         self.update()
 
     def center(self) -> QPointF:
@@ -213,6 +235,11 @@ class NodeItem(QGraphicsItem):
         self._label = label or self.state_id
         self.update()
 
+    def set_node_type(self, node_type: str) -> None:
+        """Update the displayed node type sub-label."""
+        self._node_type = node_type
+        self.update()
+
     def set_returns(self, returns: list[str]) -> None:
         """Update named output ports and redraw."""
         self._returns = list(returns)
@@ -226,6 +253,12 @@ class NodeItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
         if interactive:
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+            self.setAcceptHoverEvents(True)
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
+        else:
+            self.setAcceptHoverEvents(False)
+            self._hovered = False
+            self.unsetCursor()
         self.update()
 
     def set_initial(self, is_initial: bool) -> None:
@@ -238,15 +271,27 @@ class NodeItem(QGraphicsItem):
         self._is_terminal = is_terminal
         self.update()
 
-    def set_error(self, is_error: bool) -> None:
-        """Mark this node as having a configuration error (draws a red border)."""
+    def set_error(self, is_error: bool, reasons: list[str] | None = None) -> None:
+        """Mark this node as having a configuration error (red tint + border + tooltip)."""
         self._is_error = is_error
+        if reasons is not None:
+            self._reasons = list(reasons)
+        self._update_tooltip()
         self.update()
 
-    def set_warning(self, is_warning: bool) -> None:
-        """Mark this node as having a configuration warning (draws an amber border)."""
+    def set_warning(self, is_warning: bool, reasons: list[str] | None = None) -> None:
+        """Mark this node as having a configuration warning (amber tint + border + tooltip)."""
         self._is_warning = is_warning
+        if reasons is not None:
+            self._reasons = list(reasons)
+        self._update_tooltip()
         self.update()
+
+    def _update_tooltip(self) -> None:
+        if (self._is_error or self._is_warning) and self._reasons:
+            self.setToolTip("\n".join(self._reasons))
+        else:
+            self.setToolTip("")
 
     def add_edge(self, edge) -> None:
         if edge not in self._edges:
@@ -265,6 +310,40 @@ class NodeItem(QGraphicsItem):
                     pass
         return super().itemChange(change, value)
 
+    # ------------------------------------------------------------------
+    # Hover events
+    # ------------------------------------------------------------------
+
+    def hoverEnterEvent(self, event) -> None:
+        self._hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event) -> None:
+        self._hovered = False
+        self.setCursor(Qt.CursorShape.SizeAllCursor)
+        self.update()
+        super().hoverLeaveEvent(event)
+
+    def hoverMoveEvent(self, event) -> None:
+        pos = event.pos()
+        h = self._height
+        near_port = False
+        if self._returns:
+            for i in range(len(self._returns)):
+                if math.hypot(pos.x() - NODE_W, pos.y() - self._port_y(i)) <= _PORT_HIT_R:
+                    near_port = True
+                    break
+        else:
+            if math.hypot(pos.x() - NODE_W, pos.y() - h / 2) <= _PORT_HIT_R:
+                near_port = True
+        self.setCursor(Qt.CursorShape.CrossCursor if near_port else Qt.CursorShape.SizeAllCursor)
+        super().hoverMoveEvent(event)
+
+    # ------------------------------------------------------------------
+    # Paint
+    # ------------------------------------------------------------------
+
     def paint(
         self,
         painter: QPainter,
@@ -275,22 +354,86 @@ class NodeItem(QGraphicsItem):
 
         selected = self._interactive and self.isSelected()
         if self._active:
-            fill, border, border_w = _FILL_ACTIVE, _BORDER_ACTIVE, 2.5
+            fill = _FILL_ACTIVE if self._pulse_bright else _FILL_ACTIVE_DIM
+            border, border_w = _BORDER_ACTIVE, 2.5
         elif selected:
             fill, border, border_w = _FILL_SELECTED, _BORDER_SELECTED, 2.5
         elif self._is_error:
-            fill, border, border_w = _FILL_NORMAL, _BORDER_ERROR, 2.5
+            fill, border, border_w = _FILL_ERROR, _BORDER_ERROR, 2.5
         elif self._is_warning:
-            fill, border, border_w = _FILL_NORMAL, _BORDER_WARNING, 2.5
+            fill, border, border_w = _FILL_WARNING, _BORDER_WARNING, 2.5
+        elif self._hovered:
+            fill, border, border_w = _FILL_HOVER, _BORDER_NORMAL, 2.0
         else:
             fill, border, border_w = _FILL_NORMAL, _BORDER_NORMAL, 1.5
 
         h = self._height
+        # Sub-label text (state_id / node_type) uses black on colored fills for readability
+        sub_label_color = Qt.GlobalColor.black if self._active else QColor("#888888")
+
         painter.setPen(QPen(border, border_w))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
 
-        # Structural-role badges drawn at bottom center so they don't overlap labels.
+        if self._returns:
+            # ----------------------------------------------------------
+            # Header: label + "state_id · node_type" crammed into _HEADER_H pixels
+            # ----------------------------------------------------------
+            painter.setFont(QFont("Segoe UI", 7))
+            fm = painter.fontMetrics()
+            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.setPen(Qt.GlobalColor.black)
+            painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
+
+            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+            painter.setPen(sub_label_color)
+            painter.setFont(QFont("Segoe UI", 6))
+            fm2 = painter.fontMetrics()
+            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.drawText(QRectF(8, 15, NODE_W - 16, 12), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
+            # Divider line between header and port area
+            painter.setPen(QPen(border, 0.5))
+            painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
+
+            # Named output ports + labels
+            for i, name in enumerate(self._returns):
+                py = self._port_y(i)
+                painter.setPen(QColor("#444444"))
+                painter.setFont(QFont("Segoe UI", 6))
+                label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
+                painter.drawText(
+                    label_rect,
+                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                    name,
+                )
+                if self._interactive:
+                    painter.setPen(QPen(_PORT_COLOR, 1.5))
+                    painter.setBrush(QBrush(_PORT_COLOR))
+                    painter.drawEllipse(QPointF(NODE_W, py), PORT_R, PORT_R)
+        else:
+            # ----------------------------------------------------------
+            # 2-line layout: main label + "state_id · node_type" sub-label
+            # ----------------------------------------------------------
+            painter.setFont(QFont("Segoe UI", 9))
+            fm = painter.fontMetrics()
+            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.setPen(Qt.GlobalColor.black)
+            painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
+
+            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+            painter.setPen(sub_label_color)
+            painter.setFont(QFont("Segoe UI", 6))
+            fm2 = painter.fontMetrics()
+            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
+            if self._interactive:
+                painter.setPen(QPen(_PORT_COLOR, 1.5))
+                painter.setBrush(QBrush(_PORT_COLOR))
+                painter.drawEllipse(QPointF(NODE_W, h / 2), PORT_R, PORT_R)
+
+        # Structural-role badges drawn at bottom center.
         # When both are present they sit side-by-side; when only one, it is centred.
         _BADGE_SIZE = 14
         _BADGE_MARGIN = 4
@@ -324,61 +467,6 @@ class NodeItem(QGraphicsItem):
                 painter.setPen(QColor("white"))
                 painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "■")
                 painter.restore()
-
-        painter.setPen(Qt.GlobalColor.black)
-
-        if self._returns:
-            # Header: label text in top _HEADER_H pixels
-            painter.setFont(QFont("Segoe UI", 8))
-            fm = painter.fontMetrics()
-            text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.drawText(
-                QRectF(8, 0, NODE_W - 16, _HEADER_H),
-                Qt.AlignmentFlag.AlignCenter,
-                text,
-            )
-            # Divider line between header and port area
-            painter.setPen(QPen(border, 0.5))
-            painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
-            # Named output ports + labels
-            for i, name in enumerate(self._returns):
-                py = self._port_y(i)
-                # Port label text (right-aligned, inside node)
-                painter.setPen(QColor("#444444"))
-                painter.setFont(QFont("Segoe UI", 6))
-                label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
-                painter.drawText(
-                    label_rect,
-                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                    name,
-                )
-                # Port circle (interactive mode only)
-                if self._interactive:
-                    painter.setPen(QPen(_PORT_COLOR, 1.5))
-                    painter.setBrush(QBrush(_PORT_COLOR))
-                    painter.drawEllipse(QPointF(NODE_W, py), PORT_R, PORT_R)
-        else:
-            # No named ports — original centered-text layout
-            if self._label != self.state_id:
-                painter.setFont(QFont("Segoe UI", 9))
-                fm = painter.fontMetrics()
-                label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(8, 4, NODE_W - 16, 40), Qt.AlignmentFlag.AlignCenter, label_text)
-                painter.setPen(QColor("#666666"))
-                painter.setFont(QFont("Segoe UI", 7))
-                fm2 = painter.fontMetrics()
-                id_text = fm2.elidedText(self.state_id, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(8, 46, NODE_W - 16, 18), Qt.AlignmentFlag.AlignCenter, id_text)
-            else:
-                painter.setFont(QFont("Segoe UI", 9))
-                fm = painter.fontMetrics()
-                text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(0, 0, NODE_W, NODE_H), Qt.AlignmentFlag.AlignCenter, text)
-            # Single output port at right center (interactive only)
-            if self._interactive:
-                painter.setPen(QPen(_PORT_COLOR, 1.5))
-                painter.setBrush(QBrush(_PORT_COLOR))
-                painter.drawEllipse(QPointF(NODE_W, h / 2), PORT_R, PORT_R)
 
         # Input port always at left center
         if self._interactive:
@@ -414,12 +502,11 @@ class EdgeItem(QGraphicsPathItem):
         self._offset = offset
         self._when = when
         self._is_self_loop = src_node is dst_node
+        self._hovered = False
 
-        pen = QPen(_EDGE_COLOR, 1.5)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self.setPen(pen)
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setAcceptHoverEvents(True)
         self._rebuild()
 
     def shape(self):
@@ -436,6 +523,37 @@ class EdgeItem(QGraphicsPathItem):
         else:
             self._build_edge(path)
         self.setPath(path)
+
+    # ------------------------------------------------------------------
+    # Hover events
+    # ------------------------------------------------------------------
+
+    def hoverEnterEvent(self, event) -> None:
+        self._hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event) -> None:
+        self._hovered = False
+        self.update()
+        super().hoverLeaveEvent(event)
+
+    # ------------------------------------------------------------------
+    # Paint
+    # ------------------------------------------------------------------
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self.isSelected():
+            pen = QPen(_EDGE_SEL_COLOR, 2.5, Qt.PenStyle.DashLine)
+        elif self._hovered:
+            pen = QPen(_EDGE_HOVER_COLOR, 2.5)
+        else:
+            pen = QPen(_EDGE_COLOR, 1.5)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(self.path())
 
     # ------------------------------------------------------------------
     # Path builders
@@ -489,12 +607,8 @@ class EdgeItem(QGraphicsPathItem):
         # Only clamp when ports are close — when they are far apart the midpoint
         # naturally lands between the nodes and no adjustment is needed.
         if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
-            # Each port is at the vertical centre of its node, so
-            # node top = port_y - h/2 and node bottom = port_y + h/2.
             above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
             below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
-            # Snap to whichever boundary requires less vertical travel,
-            # defaulting to below when equidistant (same-height case).
             if mid_y - above_limit > below_limit - mid_y:
                 mid_y = above_limit
             else:
