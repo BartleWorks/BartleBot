@@ -157,7 +157,7 @@ class EditScene(QGraphicsScene):
                 y = -NODE_H / 2
             returns = _node_returns(state.node_type)
             sources = {t.source for t in transitions}
-            is_error, is_warning = _validate_node(state, config)
+            is_error, is_warning, reasons = _validate_node(state, config)
             node = NodeItem(
                 state.id, state.label,
                 interactive=self._interactive_mode,
@@ -168,6 +168,8 @@ class EditScene(QGraphicsScene):
                 is_warning=is_warning,
                 node_type=state.node_type,
             )
+            node.set_error(is_error, reasons)
+            node.set_warning(is_warning, reasons)
             node.setPos(x, y)
             self.addItem(node)
             self._node_items[state.id] = node
@@ -221,9 +223,9 @@ class EditScene(QGraphicsScene):
             node = self._node_items.get(state.id)
             if node is None:
                 continue
-            is_error, is_warning = _validate_node(state, self._config)
-            node.set_error(is_error)
-            node.set_warning(is_warning)
+            is_error, is_warning, reasons = _validate_node(state, self._config)
+            node.set_error(is_error, reasons)
+            node.set_warning(is_warning, reasons)
 
     def set_interactive(self, interactive: bool) -> None:
         """Toggle node and edge interactivity for mode switching."""
@@ -511,6 +513,9 @@ class BotCanvas(QWidget):
         self._run_state = _IDLE
         self._start_time: float | None = None
         self._active_state: str | None = None
+        self._tick_count: int = 0
+        self._run_externally_enabled: bool = False
+        self._n_validation_errors: int = 0
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -555,9 +560,15 @@ class BotCanvas(QWidget):
         self._fit_btn_run.setFixedWidth(100)
         self._fit_btn_run.clicked.connect(self._view.fit_scene)
 
+        self._validation_badge = QLabel()
+        self._validation_badge.setTextFormat(Qt.TextFormat.RichText)
+        self._validation_badge.setVisible(False)
+
         run_row.addWidget(self._run_pause_btn)
         run_row.addSpacing(4)
         run_row.addWidget(self.stop_button)
+        run_row.addSpacing(6)
+        run_row.addWidget(self._validation_badge)
         run_row.addWidget(self._state_label, 1)
         run_row.addWidget(self._elapsed_label)
         run_row.addSpacing(8)
@@ -659,6 +670,7 @@ class BotCanvas(QWidget):
         self._view.fit_scene()
         self._apply_mode(BotMode.RUN)
         self._edit_btn.setEnabled(True)
+        self._update_validation_badge()
         self.mode_changed.emit(BotMode.RUN)
 
     # ------------------------------------------------------------------
@@ -667,8 +679,25 @@ class BotCanvas(QWidget):
 
     def set_run_enabled(self, enabled: bool) -> None:
         """Enable/disable the Run button (only when idle and in RUN mode)."""
-        if self._run_state == _IDLE and self._mode == BotMode.RUN:
-            self._run_pause_btn.setEnabled(enabled)
+        self._run_externally_enabled = enabled
+        self._apply_run_btn_state()
+
+    def _apply_run_btn_state(self) -> None:
+        """Sync Run button enabled/tooltip from external readiness + validation errors."""
+        if self._run_state != _IDLE or self._mode != BotMode.RUN:
+            return
+        if self._n_validation_errors > 0:
+            self._run_pause_btn.setEnabled(False)
+            noun = "error" if self._n_validation_errors == 1 else "errors"
+            self._run_pause_btn.setToolTip(
+                f"Cannot run: fix {self._n_validation_errors} {noun} first"
+            )
+        elif self._run_externally_enabled:
+            self._run_pause_btn.setEnabled(True)
+            self._run_pause_btn.setToolTip("Bot is valid — click to run")
+        else:
+            self._run_pause_btn.setEnabled(False)
+            self._run_pause_btn.setToolTip("")
 
     @property
     def param_panel(self) -> QWidget:
@@ -686,6 +715,7 @@ class BotCanvas(QWidget):
 
     def set_running(self) -> None:
         self._run_state = _RUNNING
+        self._tick_count = 0
         self._run_pause_btn.setText("⏸  Pause")
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
@@ -720,6 +750,7 @@ class BotCanvas(QWidget):
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = state_id
+        self._tick_count = 0  # restart pulse phase on state change
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
         self._state_label.setText(f"State: {state_id}")
@@ -803,7 +834,36 @@ class BotCanvas(QWidget):
         self._refresh_initial()
         self._refresh_terminal()
         self._refresh_errors()
+        self._update_validation_badge()
         self.config_changed.emit()
+
+    def _update_validation_badge(self) -> None:
+        config = self._scene._config
+        if config is None:
+            self._validation_badge.setVisible(False)
+            return
+        n_errors = 0
+        n_warnings = 0
+        for state in config.states:
+            is_error, is_warning, _ = _validate_node(state, config)
+            if is_error:
+                n_errors += 1
+            if is_warning:
+                n_warnings += 1
+        parts = []
+        if n_errors:
+            noun = "error" if n_errors == 1 else "errors"
+            parts.append(f'<span style="color: #CC2222;">&#9679; {n_errors} {noun}</span>')
+        if n_warnings:
+            noun = "warning" if n_warnings == 1 else "warnings"
+            parts.append(f'<span style="color: #BB7700;">&#9650; {n_warnings} {noun}</span>')
+        if parts:
+            self._validation_badge.setText("&nbsp;&nbsp;".join(parts))
+            self._validation_badge.setVisible(True)
+        else:
+            self._validation_badge.setVisible(False)
+        self._n_validation_errors = n_errors
+        self._apply_run_btn_state()
 
     def _refresh_initial(self) -> None:
         if self._scene._config is None:
@@ -909,6 +969,11 @@ class BotCanvas(QWidget):
 
     def _tick(self) -> None:
         self._elapsed_label.setText(self._elapsed_str())
+        self._tick_count += 1
+        if self._run_state == _RUNNING and self._active_state:
+            node = self._scene._node_items.get(self._active_state)
+            if node:
+                node.set_pulse(self._tick_count % 2 == 0)
 
     def _elapsed_str(self) -> str:
         if self._start_time is None:
@@ -940,8 +1005,8 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool, xyz always have a value
 
 
-def _validate_node(state, config) -> tuple[bool, bool]:
-    """Return (is_error, is_warning) for a state given the full config.
+def _validate_node(state, config) -> tuple[bool, bool, list[str]]:
+    """Return (is_error, is_warning, reasons) for a state given the full config.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
@@ -952,36 +1017,36 @@ def _validate_node(state, config) -> tuple[bool, bool]:
       - node has outgoing transitions but some return values are not covered
         by any t.when (and no unconditional when=None transition exists)
     """
-    is_error = False
-    is_warning = False
+    error_reasons: list[str] = []
+    warning_reasons: list[str] = []
 
     if state.node_type not in NODE_REGISTRY:
-        is_error = True
+        error_reasons.append(f"Unknown node type: '{state.node_type}'")
 
     schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
     for field in schema:
         if field.required and _required_field_empty(field, state.params):
-            is_error = True
-            break
+            error_reasons.append(f"Required param '{field.key}' is empty")
 
     state_ids = {s.id for s in config.states}
     outgoing = [t for t in config.transitions if t.source == state.id]
     for t in outgoing:
         if t.dest not in state_ids:
-            is_error = True
-            break
+            error_reasons.append(f"Transition to unknown state '{t.dest}'")
 
     if outgoing:
         spec = NODE_SPECS.get(state.node_type)
         if spec and spec.returns:
             outgoing_whens = {t.when for t in outgoing}
             if None not in outgoing_whens:
-                for ret in spec.returns:
-                    if ret.name not in outgoing_whens:
-                        is_warning = True
-                        break
+                uncovered = [r.name for r in spec.returns if r.name not in outgoing_whens]
+                if uncovered:
+                    label = "return value" if len(uncovered) == 1 else "return values"
+                    warning_reasons.append(
+                        f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}"
+                    )
 
-    return is_error, is_warning
+    return bool(error_reasons), bool(warning_reasons), error_reasons + warning_reasons
 
 
 def _dist(a: QPointF, b: QPointF) -> float:

@@ -32,8 +32,11 @@ _PORT_HIT_R = 16    # hit-test radius for port cursor feedback
 
 _FILL_NORMAL   = QColor("#d5dce8")
 _FILL_HOVER    = QColor("#dce4f0")   # slightly lighter than normal on hover
-_FILL_ACTIVE   = QColor("#5cb85c")
+_FILL_ACTIVE     = QColor("#5cb85c")
+_FILL_ACTIVE_DIM = QColor("#4aa84a")   # darker shade for pulse alternation
 _FILL_SELECTED = QColor("#b8cce4")
+_FILL_ERROR    = QColor("#fce8e8")   # light red tint for error nodes
+_FILL_WARNING  = QColor("#fff8e0")   # light amber tint for warning nodes
 _BORDER_NORMAL   = QColor("#8a9ab8")
 _BORDER_ACTIVE   = QColor("#2e7d32")
 _BORDER_SELECTED = QColor("#2255aa")
@@ -158,7 +161,9 @@ class NodeItem(QGraphicsItem):
         self._label = label or state_id
         self._node_type = node_type
         self._active = False
+        self._pulse_bright = True
         self._hovered = False
+        self._reasons: list[str] = []
         self._interactive = interactive
         self._is_initial = is_initial
         self._is_terminal = is_terminal
@@ -185,6 +190,14 @@ class NodeItem(QGraphicsItem):
 
     def set_active(self, active: bool) -> None:
         self._active = active
+        self._pulse_bright = True
+        self.update()
+
+    def set_pulse(self, bright: bool) -> None:
+        """Alternate the active fill color — only visible while the node is active."""
+        if not self._active:
+            return
+        self._pulse_bright = bright
         self.update()
 
     def center(self) -> QPointF:
@@ -258,15 +271,27 @@ class NodeItem(QGraphicsItem):
         self._is_terminal = is_terminal
         self.update()
 
-    def set_error(self, is_error: bool) -> None:
-        """Mark this node as having a configuration error (draws a red border)."""
+    def set_error(self, is_error: bool, reasons: list[str] | None = None) -> None:
+        """Mark this node as having a configuration error (red tint + border + tooltip)."""
         self._is_error = is_error
+        if reasons is not None:
+            self._reasons = list(reasons)
+        self._update_tooltip()
         self.update()
 
-    def set_warning(self, is_warning: bool) -> None:
-        """Mark this node as having a configuration warning (draws an amber border)."""
+    def set_warning(self, is_warning: bool, reasons: list[str] | None = None) -> None:
+        """Mark this node as having a configuration warning (amber tint + border + tooltip)."""
         self._is_warning = is_warning
+        if reasons is not None:
+            self._reasons = list(reasons)
+        self._update_tooltip()
         self.update()
+
+    def _update_tooltip(self) -> None:
+        if (self._is_error or self._is_warning) and self._reasons:
+            self.setToolTip("\n".join(self._reasons))
+        else:
+            self.setToolTip("")
 
     def add_edge(self, edge) -> None:
         if edge not in self._edges:
@@ -329,19 +354,23 @@ class NodeItem(QGraphicsItem):
 
         selected = self._interactive and self.isSelected()
         if self._active:
-            fill, border, border_w = _FILL_ACTIVE, _BORDER_ACTIVE, 2.5
+            fill = _FILL_ACTIVE if self._pulse_bright else _FILL_ACTIVE_DIM
+            border, border_w = _BORDER_ACTIVE, 2.5
         elif selected:
             fill, border, border_w = _FILL_SELECTED, _BORDER_SELECTED, 2.5
         elif self._is_error:
-            fill, border, border_w = _FILL_NORMAL, _BORDER_ERROR, 2.5
+            fill, border, border_w = _FILL_ERROR, _BORDER_ERROR, 2.5
         elif self._is_warning:
-            fill, border, border_w = _FILL_NORMAL, _BORDER_WARNING, 2.5
+            fill, border, border_w = _FILL_WARNING, _BORDER_WARNING, 2.5
         elif self._hovered:
             fill, border, border_w = _FILL_HOVER, _BORDER_NORMAL, 2.0
         else:
             fill, border, border_w = _FILL_NORMAL, _BORDER_NORMAL, 1.5
 
         h = self._height
+        # Sub-label text (state_id / node_type) uses black on colored fills for readability
+        sub_label_color = Qt.GlobalColor.black if self._active else QColor("#888888")
+
         painter.setPen(QPen(border, border_w))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
@@ -357,7 +386,7 @@ class NodeItem(QGraphicsItem):
             painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
 
             sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
-            painter.setPen(QColor("#888888"))
+            painter.setPen(sub_label_color)
             painter.setFont(QFont("Segoe UI", 6))
             fm2 = painter.fontMetrics()
             sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
@@ -393,7 +422,7 @@ class NodeItem(QGraphicsItem):
             painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
 
             sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
-            painter.setPen(QColor("#888888"))
+            painter.setPen(sub_label_color)
             painter.setFont(QFont("Segoe UI", 6))
             fm2 = painter.fontMetrics()
             sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
