@@ -28,19 +28,23 @@ ARROW_SIZE = 13
 PORT_R = 6          # radius of connection-port circles
 PORT_SPACING = 28   # vertical spacing between named output ports
 _HEADER_H = 28      # height reserved for text label when returns are present
+_PORT_HIT_R = 16    # hit-test radius for port cursor feedback
 
-_FILL_NORMAL = QColor("#d5dce8")
-_FILL_ACTIVE = QColor("#5cb85c")
+_FILL_NORMAL   = QColor("#d5dce8")
+_FILL_HOVER    = QColor("#dce4f0")   # slightly lighter than normal on hover
+_FILL_ACTIVE   = QColor("#5cb85c")
 _FILL_SELECTED = QColor("#b8cce4")
-_BORDER_NORMAL = QColor("#8a9ab8")
-_BORDER_ACTIVE = QColor("#2e7d32")
+_BORDER_NORMAL   = QColor("#8a9ab8")
+_BORDER_ACTIVE   = QColor("#2e7d32")
 _BORDER_SELECTED = QColor("#2255aa")
-_BORDER_ERROR = QColor("#CC2222")
-_BORDER_WARNING = QColor("#BB7700")
-_BADGE_INITIAL = QColor("#22AA44")
+_BORDER_ERROR    = QColor("#CC2222")
+_BORDER_WARNING  = QColor("#BB7700")
+_BADGE_INITIAL  = QColor("#22AA44")
 _BADGE_TERMINAL = QColor("#CC2222")
-_EDGE_COLOR = QColor("#607090")
-_PORT_COLOR = QColor("#3366bb")
+_EDGE_COLOR       = QColor("#607090")
+_EDGE_HOVER_COLOR = QColor("#4488cc")
+_EDGE_SEL_COLOR   = QColor("#2255aa")
+_PORT_COLOR     = QColor("#3366bb")
 
 _CORNER_R = 8           # rounded-corner radius on orthogonal paths (px)
 _BACK_H_STEP = 30       # how far backward edges extend horizontally beyond node edge
@@ -152,6 +156,7 @@ class NodeItem(QGraphicsItem):
         self.state_id = state_id
         self._label = label or state_id
         self._active = False
+        self._hovered = False
         self._interactive = interactive
         self._is_initial = is_initial
         self._is_terminal = is_terminal
@@ -164,6 +169,8 @@ class NodeItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
         if interactive:
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+            self.setAcceptHoverEvents(True)
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
 
     @property
     def _height(self) -> int:
@@ -226,6 +233,12 @@ class NodeItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
         if interactive:
             self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
+            self.setAcceptHoverEvents(True)
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
+        else:
+            self.setAcceptHoverEvents(False)
+            self._hovered = False
+            self.unsetCursor()
         self.update()
 
     def set_initial(self, is_initial: bool) -> None:
@@ -265,6 +278,40 @@ class NodeItem(QGraphicsItem):
                     pass
         return super().itemChange(change, value)
 
+    # ------------------------------------------------------------------
+    # Hover events
+    # ------------------------------------------------------------------
+
+    def hoverEnterEvent(self, event) -> None:
+        self._hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event) -> None:
+        self._hovered = False
+        self.setCursor(Qt.CursorShape.SizeAllCursor)
+        self.update()
+        super().hoverLeaveEvent(event)
+
+    def hoverMoveEvent(self, event) -> None:
+        pos = event.pos()
+        h = self._height
+        near_port = False
+        if self._returns:
+            for i in range(len(self._returns)):
+                if math.hypot(pos.x() - NODE_W, pos.y() - self._port_y(i)) <= _PORT_HIT_R:
+                    near_port = True
+                    break
+        else:
+            if math.hypot(pos.x() - NODE_W, pos.y() - h / 2) <= _PORT_HIT_R:
+                near_port = True
+        self.setCursor(Qt.CursorShape.CrossCursor if near_port else Qt.CursorShape.SizeAllCursor)
+        super().hoverMoveEvent(event)
+
+    # ------------------------------------------------------------------
+    # Paint
+    # ------------------------------------------------------------------
+
     def paint(
         self,
         painter: QPainter,
@@ -282,6 +329,8 @@ class NodeItem(QGraphicsItem):
             fill, border, border_w = _FILL_NORMAL, _BORDER_ERROR, 2.5
         elif self._is_warning:
             fill, border, border_w = _FILL_NORMAL, _BORDER_WARNING, 2.5
+        elif self._hovered:
+            fill, border, border_w = _FILL_HOVER, _BORDER_NORMAL, 2.0
         else:
             fill, border, border_w = _FILL_NORMAL, _BORDER_NORMAL, 1.5
 
@@ -414,12 +463,11 @@ class EdgeItem(QGraphicsPathItem):
         self._offset = offset
         self._when = when
         self._is_self_loop = src_node is dst_node
+        self._hovered = False
 
-        pen = QPen(_EDGE_COLOR, 1.5)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        self.setPen(pen)
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
+        self.setAcceptHoverEvents(True)
         self._rebuild()
 
     def shape(self):
@@ -436,6 +484,37 @@ class EdgeItem(QGraphicsPathItem):
         else:
             self._build_edge(path)
         self.setPath(path)
+
+    # ------------------------------------------------------------------
+    # Hover events
+    # ------------------------------------------------------------------
+
+    def hoverEnterEvent(self, event) -> None:
+        self._hovered = True
+        self.update()
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event) -> None:
+        self._hovered = False
+        self.update()
+        super().hoverLeaveEvent(event)
+
+    # ------------------------------------------------------------------
+    # Paint
+    # ------------------------------------------------------------------
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self.isSelected():
+            pen = QPen(_EDGE_SEL_COLOR, 2.5, Qt.PenStyle.DashLine)
+        elif self._hovered:
+            pen = QPen(_EDGE_HOVER_COLOR, 2.5)
+        else:
+            pen = QPen(_EDGE_COLOR, 1.5)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawPath(self.path())
 
     # ------------------------------------------------------------------
     # Path builders
