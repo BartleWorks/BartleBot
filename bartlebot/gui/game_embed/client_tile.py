@@ -6,8 +6,10 @@ import ctypes
 import ctypes.wintypes
 
 from PyQt6.QtCore import Qt, QRect
-from PyQt6.QtGui import QColor, QPainter, QFont
+from PyQt6.QtGui import QPainter, QFont
 from PyQt6.QtWidgets import QWidget
+
+from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Win32 constants
@@ -17,8 +19,10 @@ _WS_CHILD       = 0x40000000
 _WS_VISIBLE     = 0x10000000
 _WS_BORDER_MASK = 0x00CF0000  # WS_CAPTION | WS_BORDER | WS_DLGFRAME
 
-LABEL_RESERVE = 24   # logical pixels reserved at the top of each tile for the client label
 FOCUS_BORDER  = 6    # logical pixels of red fill around the game window when focused
+_LABEL_GAP    = 3    # logical pixels between the bottom of the pill and the top of the focus border
+_LABEL_PILL_H = 18   # conservative upper bound on pill height at 9pt bold (text_h + 6)
+LABEL_RESERVE = FOCUS_BORDER + _LABEL_GAP + _LABEL_PILL_H + 4  # = 31 px; keeps label clear of border at minimum tile size
 
 _SWP_NOMOVE       = 0x0002
 _SWP_NOSIZE       = 0x0001
@@ -182,7 +186,7 @@ class ClientTile(QWidget):
         # The Win32 child covers the game area, leaving only the surrounding
         # _FOCUS_BORDER-wide strip visible as the red highlight.
         if self._focused:
-            painter.setBrush(QColor("#cc2222"))
+            painter.setBrush(THEME.qcolor("client_tile_focus_border"))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(
                 gx - FOCUS_BORDER, gy - FOCUS_BORDER,
@@ -203,11 +207,11 @@ class ClientTile(QWidget):
         pill_w = text_w + 16
         pill_h = text_h + 6
         pill_x = (self.width() - pill_w) // 2
-        pill_y = (LABEL_RESERVE - pill_h) // 2
-        painter.setBrush(QColor(0, 0, 0, 160))
+        pill_y = gy - FOCUS_BORDER - _LABEL_GAP - pill_h
+        painter.setBrush(THEME.qcolor_client_pill_bg())
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)
-        painter.setPen(QColor(255, 255, 255, 230))
+        painter.setPen(THEME.qcolor_client_pill_text())
         painter.drawText(
             QRect(pill_x + 8, pill_y + 3, text_w, text_h),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,

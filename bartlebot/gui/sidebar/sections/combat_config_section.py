@@ -38,7 +38,7 @@ class CombatConfigSection(SidebarSection):
 
         self._use_default_chk.toggled.connect(self._on_use_default_changed)
         self._use_default_chk.toggled.connect(
-            lambda checked: self._dsl_edit.setReadOnly(checked)
+            lambda checked: self._dsl_edit.setEnabled(not checked)
         )
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
 
@@ -55,10 +55,12 @@ class CombatConfigSection(SidebarSection):
             self._use_default_chk.setChecked(True)
             self._use_default_chk.setEnabled(False)
             self._dsl_edit.setPlainText("")
-            self._dsl_edit.setReadOnly(True)
+            self._dsl_edit.setEnabled(False)
         else:
-            self._use_default_chk.setChecked(config.use_bartlebot_default_combat_config)
+            use_default = config.use_bartlebot_default_combat_config
+            self._use_default_chk.setChecked(use_default)
             self._dsl_edit.setPlainText(config.default_combat_config or "")
+            self._dsl_edit.setEnabled(not use_default)
         self._suppress = False
 
     def set_editable(self, editable: bool) -> None:
@@ -66,7 +68,7 @@ class CombatConfigSection(SidebarSection):
             return
         self._use_default_chk.setEnabled(editable)
         use_default = self._use_default_chk.isChecked()
-        self._dsl_edit.setReadOnly(not editable or use_default)
+        self._dsl_edit.setEnabled(editable and not use_default)
 
     # ------------------------------------------------------------------
     # Change handlers

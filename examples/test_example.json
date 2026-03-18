@@ -23,7 +23,7 @@
       "label": "Go to Ravenwood",
       "position": {
         "x": -129.452868852459,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -42,7 +42,7 @@
       "label": "Go to The Commons",
       "position": {
         "x": 130.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Ravenwood",
@@ -60,12 +60,14 @@
     {
       "trigger": "advance",
       "source": "go_to_zone_a",
-      "dest": "go_to_zone_b"
+      "dest": "go_to_zone_b",
+      "when": "SUCCESS"
     },
     {
       "trigger": "advance",
       "source": "go_to_zone_b",
-      "dest": "go_to_zone_a"
+      "dest": "go_to_zone_a",
+      "when": "SUCCESS"
     }
   ]
 }

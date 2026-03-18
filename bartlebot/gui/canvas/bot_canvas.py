@@ -10,14 +10,17 @@ import math
 import time
 from typing import Callable
 
-from PyQt6.QtCore import Qt, QPointF, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
+from PyQt6.QtCore import Qt, QEvent, QPointF, QSize, QTimer, pyqtSignal
+from PyQt6.QtGui import QAction, QColor, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
     QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
     QStackedWidget, QVBoxLayout, QWidget,
 )
+
+from bartlebot.gui.icon_utils import svg_icon
+from bartlebot.gui.theme import THEME
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
 from bartlebot.log_level import LogLevel
@@ -49,11 +52,31 @@ _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.ERROR:   "[ERR]",
 }
 _LOG_COLORS: dict[LogLevel, str] = {
-    LogLevel.DEBUG:   "#5599ff",
-    LogLevel.INFO:    "#55cc55",
-    LogLevel.WARNING: "#ddcc00",
-    LogLevel.ERROR:   "#ff5555",
+    LogLevel.DEBUG:   THEME.log_debug,
+    LogLevel.INFO:    THEME.log_info,
+    LogLevel.WARNING: THEME.log_warning,
+    LogLevel.ERROR:   THEME.log_error,
 }
+
+_STATUS_DOT_COLORS: dict[str, str] = {
+    _IDLE:    THEME.status_idle,
+    _RUNNING: THEME.status_running,
+    _PAUSED:  THEME.status_paused,
+}
+
+
+_ICON_SIZE = QSize(20, 20)
+_BTN_SIZE  = QSize(32, 32)
+
+
+def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
+    """Create a fixed-size icon-only toolbar button."""
+    btn = QPushButton()
+    btn.setIcon(svg_icon(icon_name))
+    btn.setIconSize(_ICON_SIZE)
+    btn.setFixedSize(_BTN_SIZE)
+    btn.setToolTip(tooltip)
+    return btn
 
 
 class BotMode(enum.Enum):
@@ -157,7 +180,8 @@ class EditScene(QGraphicsScene):
                 y = -NODE_H / 2
             returns = _node_returns(state.node_type)
             sources = {t.source for t in transitions}
-            is_error, is_warning, reasons = _validate_node(state, config)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, config)
+            reasons = err_reasons + warn_reasons
             node = NodeItem(
                 state.id, state.label,
                 interactive=self._interactive_mode,
@@ -223,7 +247,8 @@ class EditScene(QGraphicsScene):
             node = self._node_items.get(state.id)
             if node is None:
                 continue
-            is_error, is_warning, reasons = _validate_node(state, self._config)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config)
+            reasons = err_reasons + warn_reasons
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
 
@@ -271,7 +296,7 @@ class EditScene(QGraphicsScene):
                 self._drag_when = when
                 src_pt = src.port_out_for(when)
                 line = QGraphicsLineItem(src_pt.x(), src_pt.y(), src_pt.x(), src_pt.y())
-                line.setPen(QPen(QColor("#3366bb"), 2, Qt.PenStyle.DashLine))
+                line.setPen(QPen(THEME.qcolor("port_color"), 2, Qt.PenStyle.DashLine))
                 line.setZValue(10)
                 self._temp_edge = line
                 self.addItem(line)
@@ -505,6 +530,8 @@ class BotCanvas(QWidget):
     save_done = pyqtSignal()
     # Emitted with "log", "properties", or "bot" to switch the sidebar tab
     tab_switch = pyqtSignal(str)
+    # (css_color, status, state_label, elapsed_text) — consumed by MainWindow title bar
+    bot_status_changed = pyqtSignal(str, str, str, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -513,7 +540,6 @@ class BotCanvas(QWidget):
         self._run_state = _IDLE
         self._start_time: float | None = None
         self._active_state: str | None = None
-        self._tick_count: int = 0
         self._run_externally_enabled: bool = False
         self._n_validation_errors: int = 0
 
@@ -532,96 +558,118 @@ class BotCanvas(QWidget):
         self._view = _EditView(self._scene)
         self._param_panel = _ParamPanel()
 
-        # ── Run-mode toolbar ─────────────────────────────────────────
-        self._run_bar = QWidget()
-        run_row = QHBoxLayout(self._run_bar)
-        run_row.setContentsMargins(4, 4, 4, 4)
-
-        self._run_pause_btn = QPushButton("▶  Run")
-        self._run_pause_btn.setFixedWidth(110)
+        # ── Buttons ───────────────────────────────────────────────────
+        self._run_pause_btn = _icon_btn("play", "Run bot")
         self._run_pause_btn.setEnabled(False)
         self._run_pause_btn.clicked.connect(self._on_run_pause_clicked)
 
-        self.stop_button = QPushButton("■  Stop")
-        self.stop_button.setEnabled(False)
-        self.stop_button.setFixedWidth(90)
+        self.stop_button = _icon_btn("stop", "Stop bot")
+        self.stop_button.setEnabled(False)  # enabled only when running/paused
 
-        self._state_label = QLabel("State: Idle")
-        self._elapsed_label = QLabel("00:00:00")
-        self._elapsed_label.setFont(QFont("Consolas", 10))
-        self._elapsed_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-
-        self._edit_btn = QPushButton("Edit")
-        self._edit_btn.setFixedWidth(80)
+        self._edit_btn = _icon_btn("pencil", "Enter Edit Mode")
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._on_edit_clicked)
 
-        self._fit_btn_run = QPushButton("Fit to Canvas")
-        self._fit_btn_run.setFixedWidth(100)
-        self._fit_btn_run.clicked.connect(self._view.fit_scene)
+        self._fit_btn = _icon_btn("fit", "Fit to Canvas (Ctrl+0)")
+        self._fit_btn.clicked.connect(self._view.fit_scene)
 
-        self._validation_badge = QLabel()
-        self._validation_badge.setTextFormat(Qt.TextFormat.RichText)
-        self._validation_badge.setVisible(False)
-
-        run_row.addWidget(self._run_pause_btn)
-        run_row.addSpacing(4)
-        run_row.addWidget(self.stop_button)
-        run_row.addSpacing(6)
-        run_row.addWidget(self._validation_badge)
-        run_row.addWidget(self._state_label, 1)
-        run_row.addWidget(self._elapsed_label)
-        run_row.addSpacing(8)
-        run_row.addWidget(self._fit_btn_run)
-        run_row.addSpacing(12)
-        run_row.addWidget(self._edit_btn)
-
-        # ── Edit-mode toolbar ─────────────────────────────────────────
-        self._edit_bar = QWidget()
-        edit_row = QHBoxLayout(self._edit_bar)
-        edit_row.setContentsMargins(4, 4, 4, 4)
-
-        self._add_state_btn = QPushButton("+ Add State")
-        self._add_state_btn.setFixedWidth(110)
+        self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
 
-        self._fit_btn_edit = QPushButton("Fit to Canvas")
-        self._fit_btn_edit.setFixedWidth(100)
-        self._fit_btn_edit.clicked.connect(self._view.fit_scene)
-
-        editing_lbl = QLabel("Editing — run disabled")
-        editing_lbl.setStyleSheet("color: #996600;")
-
-        self._done_btn = QPushButton("Done")
-        self._done_btn.setFixedWidth(90)
-        self._done_btn.setToolTip("Apply changes and return to Run mode (does not save to disk)")
+        self._done_btn = _icon_btn("checkmark", "Apply changes and return to Run mode (does not save to disk)")
         self._done_btn.clicked.connect(self._on_done_clicked)
 
-        self._save_done_btn = QPushButton("Save and Done")
-        self._save_done_btn.setFixedWidth(130)
-        self._save_done_btn.setToolTip("Save to disk and return to Run mode")
+        self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
-        edit_row.addWidget(self._add_state_btn)
-        edit_row.addSpacing(4)
-        edit_row.addWidget(self._fit_btn_edit)
-        edit_row.addStretch(1)
-        edit_row.addWidget(editing_lbl)
-        edit_row.addSpacing(12)
-        edit_row.addWidget(self._done_btn)
-        edit_row.addSpacing(4)
-        edit_row.addWidget(self._save_done_btn)
+        # ── Swappable center zone ─────────────────────────────────────
+        run_center = QWidget()
+        run_center_row = QHBoxLayout(run_center)
+        run_center_row.setContentsMargins(0, 0, 0, 0)
+        run_center_row.addWidget(self._run_pause_btn)
+        run_center_row.addSpacing(4)
+        run_center_row.addWidget(self.stop_button)
 
-        # ── Toolbar stack ─────────────────────────────────────────────
-        self._toolbar_stack = QStackedWidget()
-        self._toolbar_stack.addWidget(self._run_bar)   # _TB_RUN  = 0
-        self._toolbar_stack.addWidget(self._edit_bar)  # _TB_EDIT = 1
-        self._toolbar_stack.setCurrentIndex(_TB_RUN)
+        edit_center = QWidget()
+        edit_center_row = QHBoxLayout(edit_center)
+        edit_center_row.setContentsMargins(0, 0, 0, 0)
+        edit_center_row.addWidget(self._add_state_btn)
+
+        self._center_stack = QStackedWidget()
+        self._center_stack.addWidget(run_center)   # _TB_RUN  = 0
+        self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
+
+        # ── Left section (68 px fixed — mirrors right section width) ─
+        left_section = QWidget()
+        left_section.setFixedWidth(68)
+        left_row = QHBoxLayout(left_section)
+        left_row.setContentsMargins(0, 0, 0, 0)
+        left_row.addWidget(self._fit_btn)
+        left_row.addStretch(1)
+
+        # ── Right mode-toggle zone (68 px fixed) ─────────────────────
+        # Run mode page: single icon right-aligned inside 68 px
+        run_right = QWidget()
+        run_right_row = QHBoxLayout(run_right)
+        run_right_row.setContentsMargins(0, 0, 0, 0)
+        run_right_row.addStretch(1)
+        run_right_row.addWidget(self._edit_btn)
+
+        # Edit mode page: two icons, fills 68 px naturally (32+4+32)
+        edit_right = QWidget()
+        edit_right_row = QHBoxLayout(edit_right)
+        edit_right_row.setContentsMargins(0, 0, 0, 0)
+        edit_right_row.addWidget(self._done_btn)
+        edit_right_row.addSpacing(4)
+        edit_right_row.addWidget(self._save_done_btn)
+
+        self._right_stack = QStackedWidget()
+        self._right_stack.setFixedWidth(68)
+        self._right_stack.addWidget(run_right)   # _TB_RUN  = 0
+        self._right_stack.addWidget(edit_right)  # _TB_EDIT = 1
+
+        # ── Validation badge — shown left of center when errors/warnings exist ──
+        # ── Persistent toolbar row ────────────────────────────────────
+        toolbar = QWidget()
+        toolbar_row = QHBoxLayout(toolbar)
+        toolbar_row.setContentsMargins(4, 4, 4, 4)
+        toolbar_row.addWidget(left_section)
+        toolbar_row.addStretch(1)
+        toolbar_row.addWidget(self._center_stack)
+        toolbar_row.addStretch(1)
+        toolbar_row.addWidget(self._right_stack)
+
+        # ── Validation banner — right-aligned below toolbar ───────────
+        # Hidden when valid (takes no space); appears under the edit/save
+        # button whose right_stack sits at the 4 px right margin of the toolbar.
+        _pill_base = "border-radius: 4px; padding: 1px 7px;"
+        self._error_pill = QLabel()
+        self._error_pill.setStyleSheet(
+            f"QLabel {{ background-color: {THEME.pill_error_bg}; color: {THEME.pill_text}; {_pill_base} }}"
+        )
+        self._error_pill.setVisible(False)
+
+        self._warning_pill = QPushButton()
+        self._warning_pill.setStyleSheet(
+            f"QPushButton {{ background-color: {THEME.pill_warning_bg}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
+            f"QPushButton:hover {{ background-color: {THEME.pill_warning_bg_hover}; }}"
+        )
+        self._warning_pill.setVisible(False)
+        self._warning_pill.clicked.connect(self._cleanup_orphans)
+
+        self._validation_banner = QWidget(self._view)
+        self._validation_banner.setStyleSheet("background: transparent;")
+        _banner_row = QHBoxLayout(self._validation_banner)
+        _banner_row.setContentsMargins(4, 4, 4, 4)
+        _banner_row.setSpacing(4)
+        _banner_row.addWidget(self._error_pill)
+        _banner_row.addWidget(self._warning_pill)
+        self._validation_banner.setVisible(False)
 
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
         self._log.setReadOnly(True)
-        self._log.setFont(QFont("Consolas", 9))
+        self._log.setFont(THEME.font_mono())
 
         log_header = QWidget()
         log_header_row = QHBoxLayout(log_header)
@@ -641,16 +689,19 @@ class BotCanvas(QWidget):
         log_vbox.addWidget(log_header)
         log_vbox.addWidget(self._log, 1)
 
-        # ── Main layout: toolbar + graph view only ────────────────────
+        # ── Main layout: toolbar + validation banner + graph view ─────
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
-        outer.addWidget(self._toolbar_stack)
+        outer.addWidget(toolbar)
         outer.addWidget(self._view, 1)
 
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
         fit_shortcut.activated.connect(self._view.fit_scene)
+
+        # ── Reposition banner overlay when the view resizes ───────────
+        self._view.installEventFilter(self)
 
         # ── Wire internal signals ─────────────────────────────────────
         self._scene.config_changed.connect(self._on_scene_changed)
@@ -699,6 +750,40 @@ class BotCanvas(QWidget):
             self._run_pause_btn.setEnabled(False)
             self._run_pause_btn.setToolTip("")
 
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._view and event.type() == QEvent.Type.Resize:
+            self._reposition_banner()
+        return super().eventFilter(obj, event)
+
+    def _reposition_banner(self) -> None:
+        """Pin the validation banner to the top-right corner of the canvas view."""
+        self._validation_banner.adjustSize()
+        x = self._view.width() - self._validation_banner.width() - 4
+        self._validation_banner.move(x, 4)
+
+    def _active_state_label(self) -> str:
+        """Return the display label for the current active state, falling back to its id."""
+        if not self._active_state:
+            return ""
+        if self._config:
+            state = next((s for s in self._config.states if s.id == self._active_state), None)
+            if state and state.label:
+                return state.label
+        return self._active_state
+
+    def _emit_bot_status(self) -> None:
+        """Emit bot_status_changed with current run/edit state."""
+        if self._mode == BotMode.EDIT:
+            self.bot_status_changed.emit("#888888", "Editing", "", "")
+            return
+        color = _STATUS_DOT_COLORS.get(self._run_state, "#888888")
+        if self._run_state == _IDLE:
+            self.bot_status_changed.emit(color, "Idle", "", "")
+        elif self._run_state == _RUNNING:
+            self.bot_status_changed.emit(color, "Running", self._active_state_label(), self._elapsed_str())
+        elif self._run_state == _PAUSED:
+            self.bot_status_changed.emit(color, "Paused", self._active_state_label(), self._elapsed_str())
+
     @property
     def param_panel(self) -> QWidget:
         """The _ParamPanel widget — placed in the left sidebar Properties tab."""
@@ -715,34 +800,34 @@ class BotCanvas(QWidget):
 
     def set_running(self) -> None:
         self._run_state = _RUNNING
-        self._tick_count = 0
-        self._run_pause_btn.setText("⏸  Pause")
+        self._run_pause_btn.setIcon(svg_icon("pause"))
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
         self._edit_btn.setEnabled(False)
         self._start_time = time.monotonic()
-        self._elapsed_label.setText("00:00:00")
         self._tick_timer.start()
+        self._emit_bot_status()
         self.tab_switch.emit("log")
         self.append_log("=== Bot started ===")
 
     def set_paused(self) -> None:
         self._run_state = _PAUSED
-        self._run_pause_btn.setText("▶  Resume")
+        self._run_pause_btn.setIcon(svg_icon("play"))
         self._run_pause_btn.setEnabled(True)
+        self._emit_bot_status()
         self.append_log("=== Paused ===")
 
     def set_idle(self) -> None:
         self._run_state = _IDLE
-        self._run_pause_btn.setText("▶  Run")
+        self._run_pause_btn.setIcon(svg_icon("play"))
         self._run_pause_btn.setEnabled(False)  # re-enabled by set_run_enabled
         self.stop_button.setEnabled(False)
         self._edit_btn.setEnabled(self._config is not None)
         self._tick_timer.stop()
-        self._state_label.setText("State: Idle")
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = None
+        self._emit_bot_status()
         self.append_log("=== Bot stopped ===")
 
     def set_state(self, state_id: str) -> None:
@@ -750,10 +835,9 @@ class BotCanvas(QWidget):
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = state_id
-        self._tick_count = 0  # restart pulse phase on state change
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
-        self._state_label.setText(f"State: {state_id}")
+        self._emit_bot_status()
         self.append_log(f"Entered: {state_id}")
 
     def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
@@ -774,7 +858,8 @@ class BotCanvas(QWidget):
             self.pause_requested.emit()
         elif self._run_state == _PAUSED:
             self._run_state = _RUNNING
-            self._run_pause_btn.setText("⏸  Pause")
+            self._run_pause_btn.setIcon(svg_icon("pause"))
+            self._emit_bot_status()
             self.append_log("=== Resumed ===")
             self.resume_requested.emit()
 
@@ -809,14 +894,16 @@ class BotCanvas(QWidget):
     def _apply_mode(self, mode: BotMode) -> None:
         self._mode = mode
         if mode == BotMode.RUN:
-            self._toolbar_stack.setCurrentIndex(_TB_RUN)
+            self._center_stack.setCurrentIndex(_TB_RUN)
+            self._right_stack.setCurrentIndex(_TB_RUN)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
-            self.tab_switch.emit("bot")
+            self._emit_bot_status()
         else:
-            self._toolbar_stack.setCurrentIndex(_TB_EDIT)
+            self._center_stack.setCurrentIndex(_TB_EDIT)
+            self._right_stack.setCurrentIndex(_TB_EDIT)
             self._scene.set_interactive(True)
-            self.tab_switch.emit("properties")
+            self._emit_bot_status()
 
     # ------------------------------------------------------------------
     # Scene change callbacks
@@ -840,28 +927,48 @@ class BotCanvas(QWidget):
     def _update_validation_badge(self) -> None:
         config = self._scene._config
         if config is None:
-            self._validation_badge.setVisible(False)
+            self._validation_banner.setVisible(False)
+            self._n_validation_errors = 0
+            self._apply_run_btn_state()
             return
-        n_errors = 0
-        n_warnings = 0
+
+        error_lines: list[str] = []
+        warning_lines: list[str] = []
         for state in config.states:
-            is_error, is_warning, _ = _validate_node(state, config)
-            if is_error:
-                n_errors += 1
-            if is_warning:
-                n_warnings += 1
-        parts = []
-        if n_errors:
+            name = state.label or state.id
+            _, _, err_reasons, warn_reasons = _validate_node(state, config)
+            for r in err_reasons:
+                error_lines.append(f"{name}: {r}")
+            for r in warn_reasons:
+                warning_lines.append(f"{name}: {r}")
+
+        n_errors   = len(error_lines)
+        n_warnings = len(warning_lines)
+
+        if error_lines:
             noun = "error" if n_errors == 1 else "errors"
-            parts.append(f'<span style="color: #CC2222;">&#9679; {n_errors} {noun}</span>')
-        if n_warnings:
-            noun = "warning" if n_warnings == 1 else "warnings"
-            parts.append(f'<span style="color: #BB7700;">&#9650; {n_warnings} {noun}</span>')
-        if parts:
-            self._validation_badge.setText("&nbsp;&nbsp;".join(parts))
-            self._validation_badge.setVisible(True)
+            self._error_pill.setText(f"\u25cf {n_errors} {noun}")
+            self._error_pill.setToolTip("\n".join(error_lines))
+            self._error_pill.setVisible(True)
         else:
-            self._validation_badge.setVisible(False)
+            self._error_pill.setVisible(False)
+
+        if warning_lines:
+            noun = "warning" if n_warnings == 1 else "warnings"
+            self._warning_pill.setText(f"\u25b2 {n_warnings} {noun}")
+            n_orphans = sum(1 for l in warning_lines if "Unreachable from initial state" in l)
+            tip = "\n".join(warning_lines)
+            if n_orphans:
+                noun_o = "state" if n_orphans == 1 else "states"
+                tip += f"\n\nClick to delete {n_orphans} orphaned {noun_o}"
+            self._warning_pill.setToolTip(tip)
+            self._warning_pill.setVisible(True)
+        else:
+            self._warning_pill.setVisible(False)
+
+        self._validation_banner.setVisible(bool(error_lines or warning_lines))
+        if error_lines or warning_lines:
+            self._reposition_banner()
         self._n_validation_errors = n_errors
         self._apply_run_btn_state()
 
@@ -897,6 +1004,15 @@ class BotCanvas(QWidget):
                     for (s, w, d, edge) in self._scene._edge_items:
                         if s == state.id:
                             edge._rebuild()
+
+    def _cleanup_orphans(self) -> None:
+        config = self._scene._config
+        if config is None:
+            return
+        reachable = _reachable_states(config)
+        orphan_ids = [s.id for s in config.states if s.id not in reachable]
+        for sid in orphan_ids:
+            self._scene._delete_node(sid)
 
     def _on_selection_changed(self) -> None:
         try:
@@ -968,12 +1084,7 @@ class BotCanvas(QWidget):
         self._log.moveCursor(QTextCursor.MoveOperation.End)
 
     def _tick(self) -> None:
-        self._elapsed_label.setText(self._elapsed_str())
-        self._tick_count += 1
-        if self._run_state == _RUNNING and self._active_state:
-            node = self._scene._node_items.get(self._active_state)
-            if node:
-                node.set_pulse(self._tick_count % 2 == 0)
+        self._emit_bot_status()
 
     def _elapsed_str(self) -> str:
         if self._start_time is None:
@@ -1005,8 +1116,8 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool, xyz always have a value
 
 
-def _validate_node(state, config) -> tuple[bool, bool, list[str]]:
-    """Return (is_error, is_warning, reasons) for a state given the full config.
+def _validate_node(state, config) -> tuple[bool, bool, list[str], list[str]]:
+    """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
@@ -1046,7 +1157,27 @@ def _validate_node(state, config) -> tuple[bool, bool, list[str]]:
                         f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}"
                     )
 
-    return bool(error_reasons), bool(warning_reasons), error_reasons + warning_reasons
+    if config.initial and state.id != config.initial:
+        if state.id not in _reachable_states(config):
+            warning_reasons.append("Unreachable from initial state")
+
+    return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
+
+
+def _reachable_states(config: BotConfig) -> set[str]:
+    if not config.initial:
+        return set()
+    reachable: set[str] = set()
+    queue = [config.initial]
+    while queue:
+        sid = queue.pop()
+        if sid in reachable:
+            continue
+        reachable.add(sid)
+        for t in config.transitions:
+            if t.source == sid:
+                queue.append(t.dest)
+    return reachable
 
 
 def _dist(a: QPointF, b: QPointF) -> float:

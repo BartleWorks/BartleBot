@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from bartlebot.gui.game_embed.client_tile import ClientTile, FOCUS_BORDER, LABEL_RESERVE
+from bartlebot.gui.theme import THEME
 
 _user32     = ctypes.windll.user32
 _VK_LBUTTON = 0x01
@@ -37,7 +38,7 @@ class GameView(QWidget):
         # Placeholder shown when no clients are embedded
         self._placeholder = QLabel("No game window", self)
         self._placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._placeholder.setStyleSheet("color: #888; font-size: 14px;")
+        self._placeholder.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 14px;")
         self._placeholder.show()
 
         # Poll focus every 250 ms to update tile borders
