@@ -959,7 +959,7 @@ class BotCanvas(QWidget):
             n_orphans = sum(1 for l in warning_lines if "Unreachable from initial state" in l)
             tip = "\n".join(warning_lines)
             if n_orphans:
-                noun_o = "node" if n_orphans == 1 else "nodes"
+                noun_o = "state" if n_orphans == 1 else "states"
                 tip += f"\n\nClick to delete {n_orphans} orphaned {noun_o}"
             self._warning_pill.setToolTip(tip)
             self._warning_pill.setVisible(True)
