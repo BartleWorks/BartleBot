@@ -2,12 +2,12 @@ import asyncio
 import traceback
 
 from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QMessageBox, QSplitter
-from PyQt6.QtGui import QAction, QFont, QKeySequence
+from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
-from bartlebot.gui.game_embed.game_view import GameView
+from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.settings_manager import SettingsManager
@@ -86,7 +86,8 @@ class MainWindow(QMainWindow):
             self.bot_canvas.log_widget,
         )
         self.right_sidebar = RightSidebar()
-        self.game_view = GameView()
+        self._game_view_panel = GameViewPanel()
+        self.game_view = self._game_view_panel.game_view
 
         # Wire View menu
         self.action_toggle_game_view.triggered.connect(
@@ -95,7 +96,7 @@ class MainWindow(QMainWindow):
 
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
-        # Wire bot status / validation to the status bar
+        # Wire bot status to game view panel title bar; validation stays in status bar
         self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
         self.bot_canvas.bot_validation_changed.connect(self._on_bot_validation_changed)
 
@@ -109,7 +110,7 @@ class MainWindow(QMainWindow):
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._top_splitter.setChildrenCollapsible(False)
         self._top_splitter.addWidget(self.left_sidebar)
-        self._top_splitter.addWidget(self.game_view)
+        self._top_splitter.addWidget(self._game_view_panel)
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         sm = SettingsManager.instance()
@@ -130,17 +131,11 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self._outer_splitter)
 
-        # Initially hide GameView (no clients yet); BotCanvas expands
+        # Initially hide GameViewPanel (no clients yet); BotCanvas expands
         self._game_view_visible: bool = False
-        self.game_view.setVisible(False)
+        self._game_view_panel.setVisible(False)
 
     def _build_statusbar(self) -> None:
-        self._bot_dot    = QLabel("●")
-        self._bot_dot.setStyleSheet("color: #888888;")
-        self._bot_status = QLabel("Idle")
-        self._bot_elapsed = QLabel()
-        self._bot_elapsed.setFont(QFont("Consolas", 9))
-        self._bot_elapsed.setVisible(False)
         self._bot_validation = QLabel()
         self._bot_validation.setTextFormat(Qt.TextFormat.RichText)
         self._bot_validation.setVisible(False)
@@ -148,9 +143,6 @@ class MainWindow(QMainWindow):
         self.zone_label = QLabel("Waiting for client…")
 
         sb = self.statusBar()
-        sb.addWidget(self._bot_dot)
-        sb.addWidget(self._bot_status)
-        sb.addWidget(self._bot_elapsed)
         sb.addWidget(self._bot_validation)
         sb.addPermanentWidget(self.zone_label)
 
@@ -178,13 +170,14 @@ class MainWindow(QMainWindow):
     def set_fsm_state(self, state_id: str) -> None:
         self.bot_canvas.set_state(state_id)
 
-    def set_bot_name(self, _name: str, filename: str | None) -> None:
+    def set_bot_name(self, name: str, filename: str | None) -> None:
         if filename:
             self.setWindowTitle(f"BartleBot — {filename}")
             self.left_sidebar.bot_info.set_file(filename)
         else:
             self.setWindowTitle("BartleBot")
             self.left_sidebar.bot_info.set_file(None)
+        self._game_view_panel.set_bot_name(name or None)
 
     def set_start_enabled(self, enabled: bool) -> None:
         self.bot_canvas.set_run_enabled(enabled)
@@ -209,7 +202,7 @@ class MainWindow(QMainWindow):
         if visible == self._game_view_visible:
             return
         self._game_view_visible = visible
-        self.game_view.setVisible(visible)
+        self._game_view_panel.setVisible(visible)
         bot_h = self._outer_splitter.sizes()[1]
         if visible:
             self._outer_splitter.setSizes([600, bot_h])
@@ -220,11 +213,8 @@ class MainWindow(QMainWindow):
         """Re-apply minimum size after a settings change."""
         self._apply_minimum_size()
 
-    def _on_bot_status_changed(self, color: str, text: str, elapsed: str) -> None:
-        self._bot_dot.setStyleSheet(f"color: {color};")
-        self._bot_status.setText(text)
-        self._bot_elapsed.setText(elapsed)
-        self._bot_elapsed.setVisible(bool(elapsed))
+    def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
+        self._game_view_panel.set_bot_status(color, status, state_label, elapsed)
 
     def _on_bot_validation_changed(self, badge_html: str) -> None:
         self._bot_validation.setText(badge_html)

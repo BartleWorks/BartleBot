@@ -17,8 +17,10 @@ _WS_CHILD       = 0x40000000
 _WS_VISIBLE     = 0x10000000
 _WS_BORDER_MASK = 0x00CF0000  # WS_CAPTION | WS_BORDER | WS_DLGFRAME
 
-LABEL_RESERVE = 24   # logical pixels reserved at the top of each tile for the client label
 FOCUS_BORDER  = 6    # logical pixels of red fill around the game window when focused
+_LABEL_GAP    = 3    # logical pixels between the bottom of the pill and the top of the focus border
+_LABEL_PILL_H = 18   # conservative upper bound on pill height at 9pt bold (text_h + 6)
+LABEL_RESERVE = FOCUS_BORDER + _LABEL_GAP + _LABEL_PILL_H + 4  # = 31 px; keeps label clear of border at minimum tile size
 
 _SWP_NOMOVE       = 0x0002
 _SWP_NOSIZE       = 0x0001
@@ -203,7 +205,7 @@ class ClientTile(QWidget):
         pill_w = text_w + 16
         pill_h = text_h + 6
         pill_x = (self.width() - pill_w) // 2
-        pill_y = (LABEL_RESERVE - pill_h) // 2
+        pill_y = gy - FOCUS_BORDER - _LABEL_GAP - pill_h
         painter.setBrush(QColor(0, 0, 0, 160))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)

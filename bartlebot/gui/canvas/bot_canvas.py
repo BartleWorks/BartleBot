@@ -527,8 +527,8 @@ class BotCanvas(QWidget):
     save_done = pyqtSignal()
     # Emitted with "log", "properties", or "bot" to switch the sidebar tab
     tab_switch = pyqtSignal(str)
-    # (css_color, status_text, elapsed_text) — consumed by MainWindow status bar
-    bot_status_changed     = pyqtSignal(str, str, str)
+    # (css_color, status, state_label, elapsed_text) — consumed by MainWindow title bar
+    bot_status_changed     = pyqtSignal(str, str, str, str)
     # RichText HTML badge (empty string = no errors/warnings)
     bot_validation_changed = pyqtSignal(str)
 
@@ -719,20 +719,28 @@ class BotCanvas(QWidget):
             self._run_pause_btn.setEnabled(False)
             self._run_pause_btn.setToolTip("")
 
+    def _active_state_label(self) -> str:
+        """Return the display label for the current active state, falling back to its id."""
+        if not self._active_state:
+            return ""
+        if self._config:
+            state = next((s for s in self._config.states if s.id == self._active_state), None)
+            if state and state.label:
+                return state.label
+        return self._active_state
+
     def _emit_bot_status(self) -> None:
-        """Emit bot_status_changed with current run/edit state for the status bar."""
+        """Emit bot_status_changed with current run/edit state."""
         if self._mode == BotMode.EDIT:
-            self.bot_status_changed.emit("#888888", "Editing", "")
+            self.bot_status_changed.emit("#888888", "Editing", "", "")
             return
         color = _STATUS_DOT_COLORS.get(self._run_state, "#888888")
         if self._run_state == _IDLE:
-            self.bot_status_changed.emit(color, "Idle", "")
+            self.bot_status_changed.emit(color, "Idle", "", "")
         elif self._run_state == _RUNNING:
-            state_part = f"  ·  {self._active_state}" if self._active_state else ""
-            self.bot_status_changed.emit(color, f"Running{state_part}", self._elapsed_str())
+            self.bot_status_changed.emit(color, "Running", self._active_state_label(), self._elapsed_str())
         elif self._run_state == _PAUSED:
-            state_part = f"  ·  {self._active_state}" if self._active_state else ""
-            self.bot_status_changed.emit(color, f"Paused{state_part}", self._elapsed_str())
+            self.bot_status_changed.emit(color, "Paused", self._active_state_label(), self._elapsed_str())
 
     @property
     def param_panel(self) -> QWidget:
