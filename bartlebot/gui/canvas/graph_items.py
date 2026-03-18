@@ -36,7 +36,9 @@ _FILL_ACTIVE     = QColor("#5cb85c")
 _FILL_ACTIVE_DIM = QColor("#4aa84a")   # darker shade for pulse alternation
 _FILL_SELECTED = QColor("#b8cce4")
 _FILL_ERROR    = QColor("#fce8e8")   # light red tint for error nodes
+_FILL_ERROR_HOVER   = QColor("#fdd4d4")   # slightly deeper red on hover
 _FILL_WARNING  = QColor("#fff8e0")   # light amber tint for warning nodes
+_FILL_WARNING_HOVER = QColor("#ffedb3")   # slightly deeper amber on hover
 _BORDER_NORMAL   = QColor("#8a9ab8")
 _BORDER_ACTIVE   = QColor("#2e7d32")
 _BORDER_SELECTED = QColor("#2255aa")
@@ -359,9 +361,11 @@ class NodeItem(QGraphicsItem):
         elif selected:
             fill, border, border_w = _FILL_SELECTED, _BORDER_SELECTED, 2.5
         elif self._is_error:
-            fill, border, border_w = _FILL_ERROR, _BORDER_ERROR, 2.5
+            fill = _FILL_ERROR_HOVER if self._hovered else _FILL_ERROR
+            border, border_w = _BORDER_ERROR, 2.5
         elif self._is_warning:
-            fill, border, border_w = _FILL_WARNING, _BORDER_WARNING, 2.5
+            fill = _FILL_WARNING_HOVER if self._hovered else _FILL_WARNING
+            border, border_w = _BORDER_WARNING, 2.5
         elif self._hovered:
             fill, border, border_w = _FILL_HOVER, _BORDER_NORMAL, 2.0
         else:

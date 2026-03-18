@@ -649,11 +649,13 @@ class BotCanvas(QWidget):
         )
         self._error_pill.setVisible(False)
 
-        self._warning_pill = QLabel()
+        self._warning_pill = QPushButton()
         self._warning_pill.setStyleSheet(
-            f"QLabel {{ background-color: #bb7700; color: white; {_pill_base} }}"
+            f"QPushButton {{ background-color: #bb7700; color: white; {_pill_base} border: none; }}"
+            f"QPushButton:hover {{ background-color: #cc8800; }}"
         )
         self._warning_pill.setVisible(False)
+        self._warning_pill.clicked.connect(self._cleanup_orphans)
 
         self._validation_banner = QWidget(self._view)
         self._validation_banner.setStyleSheet("background: transparent;")
@@ -958,7 +960,12 @@ class BotCanvas(QWidget):
         if warning_lines:
             noun = "warning" if n_warnings == 1 else "warnings"
             self._warning_pill.setText(f"\u25b2 {n_warnings} {noun}")
-            self._warning_pill.setToolTip("\n".join(warning_lines))
+            n_orphans = sum(1 for l in warning_lines if "Unreachable from initial state" in l)
+            tip = "\n".join(warning_lines)
+            if n_orphans:
+                noun_o = "node" if n_orphans == 1 else "nodes"
+                tip += f"\n\nClick to delete {n_orphans} orphaned {noun_o}"
+            self._warning_pill.setToolTip(tip)
             self._warning_pill.setVisible(True)
         else:
             self._warning_pill.setVisible(False)
@@ -1001,6 +1008,15 @@ class BotCanvas(QWidget):
                     for (s, w, d, edge) in self._scene._edge_items:
                         if s == state.id:
                             edge._rebuild()
+
+    def _cleanup_orphans(self) -> None:
+        config = self._scene._config
+        if config is None:
+            return
+        reachable = _reachable_states(config)
+        orphan_ids = [s.id for s in config.states if s.id not in reachable]
+        for sid in orphan_ids:
+            self._scene._delete_node(sid)
 
     def _on_selection_changed(self) -> None:
         try:
@@ -1150,7 +1166,27 @@ def _validate_node(state, config) -> tuple[bool, bool, list[str], list[str]]:
                         f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}"
                     )
 
+    if config.initial and state.id != config.initial:
+        if state.id not in _reachable_states(config):
+            warning_reasons.append("Unreachable from initial state")
+
     return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
+
+
+def _reachable_states(config: BotConfig) -> set[str]:
+    if not config.initial:
+        return set()
+    reachable: set[str] = set()
+    queue = [config.initial]
+    while queue:
+        sid = queue.pop()
+        if sid in reachable:
+            continue
+        reachable.add(sid)
+        for t in config.transitions:
+            if t.source == sid:
+                queue.append(t.dest)
+    return reachable
 
 
 def _dist(a: QPointF, b: QPointF) -> float:
