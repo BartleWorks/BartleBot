@@ -898,13 +898,11 @@ class BotCanvas(QWidget):
             self._right_stack.setCurrentIndex(_TB_RUN)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
-            self.tab_switch.emit("bot")
             self._emit_bot_status()
         else:
             self._center_stack.setCurrentIndex(_TB_EDIT)
             self._right_stack.setCurrentIndex(_TB_EDIT)
             self._scene.set_interactive(True)
-            self.tab_switch.emit("properties")
             self._emit_bot_status()
 
     # ------------------------------------------------------------------
