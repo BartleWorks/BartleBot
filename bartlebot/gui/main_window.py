@@ -60,12 +60,19 @@ class MainWindow(QMainWindow):
         self.action_save_as.setEnabled(False)
         file_menu.addAction(self.action_save_as)
 
-        # Settings menu
-        settings_menu = menu_bar.addMenu("Settings")
+        file_menu.addSeparator()
+
         settings_action = QAction("Settings…", self)
         settings_action.setShortcut(QKeySequence("Ctrl+,"))
         settings_action.triggered.connect(self._open_settings)
-        settings_menu.addAction(settings_action)
+        file_menu.addAction(settings_action)
+
+        file_menu.addSeparator()
+
+        quit_action = QAction("Quit", self)
+        quit_action.setShortcut(QKeySequence("Ctrl+Q"))
+        quit_action.triggered.connect(self.close)
+        file_menu.addAction(quit_action)
 
         # View menu
         view_menu = menu_bar.addMenu("View")
@@ -73,8 +80,40 @@ class MainWindow(QMainWindow):
         self.action_toggle_game_view.setShortcut(QKeySequence("Ctrl+G"))
         view_menu.addAction(self.action_toggle_game_view)
 
-        # Tools menu (launcher)
-        self._tools_menu = menu_bar.addMenu("Tools")
+        self.action_maximize_game_view = QAction("Maximize Game View", self)
+        self.action_maximize_game_view.setShortcut(QKeySequence("Ctrl+Alt+G"))
+        self.action_maximize_game_view.setCheckable(True)
+        view_menu.addAction(self.action_maximize_game_view)
+
+        view_menu.addSeparator()
+
+        self.action_toggle_left_sidebar = QAction("Toggle Left Sidebar", self)
+        view_menu.addAction(self.action_toggle_left_sidebar)
+
+        self.action_toggle_right_sidebar = QAction("Toggle Right Sidebar", self)
+        view_menu.addAction(self.action_toggle_right_sidebar)
+
+        # Run menu
+        run_menu = menu_bar.addMenu("Run")
+
+        self.action_run_pause = QAction("Run / Pause", self)
+        self.action_run_pause.setShortcut(QKeySequence("F5"))
+        self.action_run_pause.setEnabled(False)
+        run_menu.addAction(self.action_run_pause)
+
+        self.action_stop_bot = QAction("Stop Bot", self)
+        self.action_stop_bot.setShortcut(QKeySequence("Shift+F5"))
+        self.action_stop_bot.setEnabled(False)
+        run_menu.addAction(self.action_stop_bot)
+
+        run_menu.addSeparator()
+
+        self.action_validate_bot = QAction("Validate Bot", self)
+        self.action_validate_bot.setEnabled(False)
+        run_menu.addAction(self.action_validate_bot)
+
+        # Launch menu
+        self._launch_menu = menu_bar.addMenu("Launch")
         self._rebuild_launch_menu()
 
     def _build_central(self) -> None:
@@ -91,6 +130,13 @@ class MainWindow(QMainWindow):
         # Wire View menu
         self.action_toggle_game_view.triggered.connect(
             lambda: self.show_game_view(not self._game_view_visible)
+        )
+        self.action_maximize_game_view.triggered.connect(self._toggle_maximize_game_view)
+        self.action_toggle_left_sidebar.triggered.connect(
+            lambda: self.left_sidebar.setVisible(not self.left_sidebar.isVisible())
+        )
+        self.action_toggle_right_sidebar.triggered.connect(
+            lambda: self.right_sidebar.setVisible(not self.right_sidebar.isVisible())
         )
 
         # Wire sidebar tab switching from canvas
@@ -123,7 +169,17 @@ class MainWindow(QMainWindow):
 
         # Initially hide GameViewPanel (no clients yet); BotCanvas expands
         self._game_view_visible: bool = False
+        self._game_view_maximized: bool = False
+        self._pre_maximize_sizes: dict = {}
         self._game_view_panel.setVisible(False)
+
+        # Wire Run menu
+        self.action_run_pause.triggered.connect(
+            lambda: self.bot_canvas._run_pause_btn.click()
+        )
+        self.action_stop_bot.triggered.connect(
+            lambda: self.bot_canvas.stop_button.click()
+        )
 
     def _apply_minimum_size(self) -> None:
         min_w, min_h = SettingsManager.instance().minimum_window_size()
@@ -189,20 +245,55 @@ class MainWindow(QMainWindow):
         """Re-apply minimum size after a settings change."""
         self._apply_minimum_size()
 
+    def _toggle_maximize_game_view(self) -> None:
+        if not self._game_view_maximized:
+            # Save current state before maximizing
+            self._pre_maximize_sizes = {
+                "top": self._top_splitter.sizes(),
+                "outer": self._outer_splitter.sizes(),
+                "game_visible": self._game_view_visible,
+                "left_visible": self.left_sidebar.isVisible(),
+                "right_visible": self.right_sidebar.isVisible(),
+            }
+            self._game_view_maximized = True
+            self.action_maximize_game_view.setChecked(True)
+            # Show game view and hide everything else
+            if not self._game_view_visible:
+                self._game_view_visible = True
+                self._game_view_panel.setVisible(True)
+            self.left_sidebar.setVisible(False)
+            self.right_sidebar.setVisible(False)
+            self.bot_canvas.setVisible(False)
+        else:
+            self._game_view_maximized = False
+            self.action_maximize_game_view.setChecked(False)
+            # Restore pre-maximize state
+            self.left_sidebar.setVisible(self._pre_maximize_sizes.get("left_visible", True))
+            self.right_sidebar.setVisible(self._pre_maximize_sizes.get("right_visible", True))
+            self.bot_canvas.setVisible(True)
+            if not self._pre_maximize_sizes.get("game_visible", True):
+                self._game_view_visible = False
+                self._game_view_panel.setVisible(False)
+            self._top_splitter.setSizes(self._pre_maximize_sizes.get("top", [300, 800, 300]))
+            self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, 220]))
+
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
         self._game_view_panel.set_bot_status(color, status, state_label, elapsed)
+        idle = status == "Idle"
+        running_or_paused = status in ("Running", "Paused")
+        editing = status == "Editing"
+        self.action_run_pause.setEnabled(not editing)
+        self.action_stop_bot.setEnabled(running_or_paused)
+        self.action_validate_bot.setEnabled(idle)
 
     def _rebuild_launch_menu(self) -> None:
-        """Rebuild Tools → Launch submenu from current accounts and profiles."""
-        self._tools_menu.clear()
-
-        launch_menu = QMenu("Launch", self)
-        self._tools_menu.addMenu(launch_menu)
+        """Rebuild Launch menu from current accounts and profiles."""
+        self._launch_menu.clear()
 
         # --- Profiles section ---
         profiles_lbl = QAction("─ Profiles ─", self)
         profiles_lbl.setEnabled(False)
-        launch_menu.addAction(profiles_lbl)
+        self._launch_menu.addAction(profiles_lbl)
 
         profiles = SettingsManager.instance().launch_profiles
         if profiles:
@@ -212,18 +303,18 @@ class MainWindow(QMainWindow):
                 action.triggered.connect(
                     lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n))
                 )
-                launch_menu.addAction(action)
+                self._launch_menu.addAction(action)
         else:
             empty = QAction("(No profiles)", self)
             empty.setEnabled(False)
-            launch_menu.addAction(empty)
+            self._launch_menu.addAction(empty)
 
-        launch_menu.addSeparator()
+        self._launch_menu.addSeparator()
 
         # --- Accounts section ---
         accounts_lbl = QAction("─ Accounts ─", self)
         accounts_lbl.setEnabled(False)
-        launch_menu.addAction(accounts_lbl)
+        self._launch_menu.addAction(accounts_lbl)
 
         accounts = SettingsManager.instance().accounts
         if accounts:
@@ -236,11 +327,17 @@ class MainWindow(QMainWindow):
                     lambda _checked, u=username, d=display:
                         asyncio.ensure_future(self._launch_single_account(u, d))
                 )
-                launch_menu.addAction(action)
+                self._launch_menu.addAction(action)
         else:
             empty2 = QAction("(No accounts)", self)
             empty2.setEnabled(False)
-            launch_menu.addAction(empty2)
+            self._launch_menu.addAction(empty2)
+
+        self._launch_menu.addSeparator()
+
+        manage_action = QAction("Manage Accounts…", self)
+        manage_action.triggered.connect(lambda: self._open_settings(tab_index=2))
+        self._launch_menu.addAction(manage_action)
 
     # ------------------------------------------------------------------
     # Internal
@@ -254,9 +351,10 @@ class MainWindow(QMainWindow):
         elif tab == "bot":
             self.left_sidebar.switch_to_bot()
 
-    def _open_settings(self) -> None:
+    def _open_settings(self, tab_index: int = 0) -> None:
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
         dlg = SettingsDialog(self)
+        dlg._tabs.setCurrentIndex(tab_index)
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
