@@ -2,7 +2,7 @@ import asyncio
 import traceback
 
 from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QMessageBox, QSplitter
-from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtGui import QAction, QFont, QKeySequence
 from PyQt6.QtCore import Qt, pyqtSignal
 
 from bartlebot.credentials import CredentialStore
@@ -95,6 +95,9 @@ class MainWindow(QMainWindow):
 
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
+        # Wire bot status / validation to the status bar
+        self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
+        self.bot_canvas.bot_validation_changed.connect(self._on_bot_validation_changed)
 
         # Top row: left sidebar | game view | right sidebar
         _splitter_style = (
@@ -132,8 +135,24 @@ class MainWindow(QMainWindow):
         self.game_view.setVisible(False)
 
     def _build_statusbar(self) -> None:
+        self._bot_dot    = QLabel("●")
+        self._bot_dot.setStyleSheet("color: #888888;")
+        self._bot_status = QLabel("Idle")
+        self._bot_elapsed = QLabel()
+        self._bot_elapsed.setFont(QFont("Consolas", 9))
+        self._bot_elapsed.setVisible(False)
+        self._bot_validation = QLabel()
+        self._bot_validation.setTextFormat(Qt.TextFormat.RichText)
+        self._bot_validation.setVisible(False)
+
         self.zone_label = QLabel("Waiting for client…")
-        self.statusBar().addWidget(self.zone_label, 1)
+
+        sb = self.statusBar()
+        sb.addWidget(self._bot_dot)
+        sb.addWidget(self._bot_status)
+        sb.addWidget(self._bot_elapsed)
+        sb.addWidget(self._bot_validation)
+        sb.addPermanentWidget(self.zone_label)
 
     def _apply_minimum_size(self) -> None:
         min_w, min_h = SettingsManager.instance().minimum_window_size()
@@ -200,6 +219,16 @@ class MainWindow(QMainWindow):
     def refresh_minimum_size(self) -> None:
         """Re-apply minimum size after a settings change."""
         self._apply_minimum_size()
+
+    def _on_bot_status_changed(self, color: str, text: str, elapsed: str) -> None:
+        self._bot_dot.setStyleSheet(f"color: {color};")
+        self._bot_status.setText(text)
+        self._bot_elapsed.setText(elapsed)
+        self._bot_elapsed.setVisible(bool(elapsed))
+
+    def _on_bot_validation_changed(self, badge_html: str) -> None:
+        self._bot_validation.setText(badge_html)
+        self._bot_validation.setVisible(bool(badge_html))
 
     def _rebuild_launch_menu(self) -> None:
         """Rebuild Tools → Launch submenu from current accounts and profiles."""
