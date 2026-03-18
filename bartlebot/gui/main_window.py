@@ -99,12 +99,6 @@ class MainWindow(QMainWindow):
         self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
 
         # Top row: left sidebar | game view | right sidebar
-        _splitter_style = (
-            "QSplitter::handle { background: #888; }"
-            "QSplitter::handle:horizontal { width: 2px; }"
-            "QSplitter::handle:vertical   { height: 2px; }"
-        )
-
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._top_splitter.setChildrenCollapsible(False)
         self._top_splitter.addWidget(self.left_sidebar)
@@ -116,7 +110,6 @@ class MainWindow(QMainWindow):
         right_w = sm.get_general("right_sidebar_width",   default=300)
         bot_h   = sm.get_general("bottom_section_height", default=220)
         self._top_splitter.setSizes([left_w, 800, right_w])
-        self._top_splitter.setStyleSheet(_splitter_style)
 
         # Outer vertical splitter: top row (game + sidebars) | bot canvas
         self._outer_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -125,7 +118,6 @@ class MainWindow(QMainWindow):
         self._outer_splitter.addWidget(self.bot_canvas)
         self._outer_splitter.setStretchFactor(0, 1)
         self._outer_splitter.setSizes([600, bot_h])
-        self._outer_splitter.setStyleSheet(_splitter_style)
 
         self.setCentralWidget(self._outer_splitter)
 

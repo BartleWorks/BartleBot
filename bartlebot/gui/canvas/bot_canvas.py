@@ -11,7 +11,7 @@ import time
 from typing import Callable
 
 from PyQt6.QtCore import Qt, QEvent, QPointF, QSize, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
+from PyQt6.QtGui import QAction, QColor, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.icon_utils import svg_icon
+from bartlebot.gui.theme import THEME
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
 from bartlebot.log_level import LogLevel
@@ -51,16 +52,16 @@ _LOG_PREFIXES: dict[LogLevel, str] = {
     LogLevel.ERROR:   "[ERR]",
 }
 _LOG_COLORS: dict[LogLevel, str] = {
-    LogLevel.DEBUG:   "#5599ff",
-    LogLevel.INFO:    "#55cc55",
-    LogLevel.WARNING: "#ddcc00",
-    LogLevel.ERROR:   "#ff5555",
+    LogLevel.DEBUG:   THEME.log_debug,
+    LogLevel.INFO:    THEME.log_info,
+    LogLevel.WARNING: THEME.log_warning,
+    LogLevel.ERROR:   THEME.log_error,
 }
 
 _STATUS_DOT_COLORS: dict[str, str] = {
-    _IDLE:    "#888888",
-    _RUNNING: "#33bb55",
-    _PAUSED:  "#cc9900",
+    _IDLE:    THEME.status_idle,
+    _RUNNING: THEME.status_running,
+    _PAUSED:  THEME.status_paused,
 }
 
 
@@ -295,7 +296,7 @@ class EditScene(QGraphicsScene):
                 self._drag_when = when
                 src_pt = src.port_out_for(when)
                 line = QGraphicsLineItem(src_pt.x(), src_pt.y(), src_pt.x(), src_pt.y())
-                line.setPen(QPen(QColor("#3366bb"), 2, Qt.PenStyle.DashLine))
+                line.setPen(QPen(THEME.qcolor("port_color"), 2, Qt.PenStyle.DashLine))
                 line.setZValue(10)
                 self._temp_edge = line
                 self.addItem(line)
@@ -644,14 +645,14 @@ class BotCanvas(QWidget):
         _pill_base = "border-radius: 4px; padding: 1px 7px;"
         self._error_pill = QLabel()
         self._error_pill.setStyleSheet(
-            f"QLabel {{ background-color: #cc2222; color: white; {_pill_base} }}"
+            f"QLabel {{ background-color: {THEME.pill_error_bg}; color: {THEME.pill_text}; {_pill_base} }}"
         )
         self._error_pill.setVisible(False)
 
         self._warning_pill = QPushButton()
         self._warning_pill.setStyleSheet(
-            f"QPushButton {{ background-color: #bb7700; color: white; {_pill_base} border: none; }}"
-            f"QPushButton:hover {{ background-color: #cc8800; }}"
+            f"QPushButton {{ background-color: {THEME.pill_warning_bg}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
+            f"QPushButton:hover {{ background-color: {THEME.pill_warning_bg_hover}; }}"
         )
         self._warning_pill.setVisible(False)
         self._warning_pill.clicked.connect(self._cleanup_orphans)
@@ -668,7 +669,7 @@ class BotCanvas(QWidget):
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
         self._log.setReadOnly(True)
-        self._log.setFont(QFont("Consolas", 9))
+        self._log.setFont(THEME.font_mono())
 
         log_header = QWidget()
         log_header_row = QHBoxLayout(log_header)

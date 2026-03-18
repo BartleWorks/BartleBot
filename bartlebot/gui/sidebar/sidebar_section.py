@@ -8,6 +8,8 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QVBoxLayout, QWidget,
 )
 
+from bartlebot.gui.theme import THEME
+
 _PLACEHOLDER = "—"
 
 
@@ -130,13 +132,10 @@ class Sidebar(QScrollArea):
 # Shared widget helpers (used by multiple section classes)
 # ---------------------------------------------------------------------------
 
-MUTED_LABEL_STYLE = "color: #999; font-size: 11px; font-weight: 600;"
-
-
 def field_label(text: str) -> QLabel:
     """Semi-bold field label in muted colour."""
     lbl = QLabel(text + ":")
-    lbl.setStyleSheet(MUTED_LABEL_STYLE)
+    lbl.setStyleSheet(f"color: {THEME.muted_text}; font-size: 11px; font-weight: 600;")
     lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
     return lbl
 

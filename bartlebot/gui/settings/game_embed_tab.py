@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+from bartlebot.gui.theme import THEME
 
 
 class GameEmbedTab(QWidget):
@@ -37,7 +38,7 @@ class GameEmbedTab(QWidget):
             "Set Wizard101 to Windowed mode in\n"
             "Options → Graphics, with this resolution."
         )
-        hint.setStyleSheet("color: #888; font-size: 11px;")
+        hint.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
         layout.addWidget(hint)
         layout.addStretch()
 

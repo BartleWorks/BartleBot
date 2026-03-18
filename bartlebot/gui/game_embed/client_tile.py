@@ -6,8 +6,10 @@ import ctypes
 import ctypes.wintypes
 
 from PyQt6.QtCore import Qt, QRect
-from PyQt6.QtGui import QColor, QPainter, QFont
+from PyQt6.QtGui import QPainter, QFont
 from PyQt6.QtWidgets import QWidget
+
+from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Win32 constants
@@ -184,7 +186,7 @@ class ClientTile(QWidget):
         # The Win32 child covers the game area, leaving only the surrounding
         # _FOCUS_BORDER-wide strip visible as the red highlight.
         if self._focused:
-            painter.setBrush(QColor("#cc2222"))
+            painter.setBrush(THEME.qcolor("client_tile_focus_border"))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(
                 gx - FOCUS_BORDER, gy - FOCUS_BORDER,
@@ -206,10 +208,10 @@ class ClientTile(QWidget):
         pill_h = text_h + 6
         pill_x = (self.width() - pill_w) // 2
         pill_y = gy - FOCUS_BORDER - _LABEL_GAP - pill_h
-        painter.setBrush(QColor(0, 0, 0, 160))
+        painter.setBrush(THEME.qcolor_client_pill_bg())
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)
-        painter.setPen(QColor(255, 255, 255, 230))
+        painter.setPen(THEME.qcolor_client_pill_text())
         painter.drawText(
             QRect(pill_x + 8, pill_y + 3, text_w, text_h),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,

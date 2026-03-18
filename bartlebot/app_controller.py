@@ -27,6 +27,8 @@ class AppController(QObject):
     def __init__(self, app: QApplication) -> None:
         super().__init__()
         self._app = app
+        from bartlebot.gui.theme import THEME  # noqa: PLC0415
+        self._app.setStyleSheet(THEME.global_stylesheet())
         self._handler = WizSprinter()
         self._clients: list = []
         self._current_machine: BotMachine | None = None

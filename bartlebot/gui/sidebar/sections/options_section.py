@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import BotOptionModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
+from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
 
 if TYPE_CHECKING:
@@ -89,7 +90,7 @@ class _AddOptionDialog(QDialog):
         form.addRow("Default", self._default_stack)
 
         self._err_lbl = QLabel()
-        self._err_lbl.setStyleSheet("color: #cc4444; font-size: 11px;")
+        self._err_lbl.setStyleSheet(f"color: {THEME.error_text}; font-size: 11px;")
         self._err_lbl.setWordWrap(True)
         self._err_lbl.setVisible(False)
 

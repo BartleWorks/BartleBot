@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from bartlebot.gui.theme import THEME
 from PyQt6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget,
 )
@@ -44,7 +44,7 @@ class GameViewPanel(QWidget):
     def _make_header(self) -> QWidget:
         bar = QWidget()
 
-        mono = QFont("Consolas", 9)
+        mono = THEME.font_mono()
 
         # ── Left: status dot + text + elapsed ────────────────────────
         self._dot_lbl = QLabel("●")
