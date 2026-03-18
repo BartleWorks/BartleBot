@@ -252,7 +252,6 @@ class AppController(QObject):
 
                 clients = list(self._handler.clients)
                 if not clients:
-                    self._window.set_zone("No client found")
                     self._sync_embedded_clients(self._clients, [])
                     self._clients = []
                     self.clients_changed.emit([])
@@ -274,8 +273,6 @@ class AppController(QObject):
                     self.clients_changed.emit(self._clients)
                     self._window.set_start_enabled(self._start_enabled())
 
-                zone = await self._clients[0].zone_name()
-                self._window.set_zone(zone)
                 await asyncio.sleep(1.0)
 
             except MemoryReadError:
@@ -283,14 +280,12 @@ class AppController(QObject):
                 self._clients = []
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
-                self._window.set_zone("No client found")
                 await asyncio.sleep(1.0)
             except Exception:
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
-                self._window.set_zone("Error — retrying…")
                 print(traceback.format_exc())
                 await asyncio.sleep(3.0)
 

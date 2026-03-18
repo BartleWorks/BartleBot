@@ -10,7 +10,7 @@ import math
 import time
 from typing import Callable
 
-from PyQt6.QtCore import Qt, QPointF, QSize, QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QEvent, QPointF, QSize, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QColor, QFont, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
@@ -179,7 +179,8 @@ class EditScene(QGraphicsScene):
                 y = -NODE_H / 2
             returns = _node_returns(state.node_type)
             sources = {t.source for t in transitions}
-            is_error, is_warning, reasons = _validate_node(state, config)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, config)
+            reasons = err_reasons + warn_reasons
             node = NodeItem(
                 state.id, state.label,
                 interactive=self._interactive_mode,
@@ -245,7 +246,8 @@ class EditScene(QGraphicsScene):
             node = self._node_items.get(state.id)
             if node is None:
                 continue
-            is_error, is_warning, reasons = _validate_node(state, self._config)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config)
+            reasons = err_reasons + warn_reasons
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
 
@@ -528,9 +530,7 @@ class BotCanvas(QWidget):
     # Emitted with "log", "properties", or "bot" to switch the sidebar tab
     tab_switch = pyqtSignal(str)
     # (css_color, status, state_label, elapsed_text) — consumed by MainWindow title bar
-    bot_status_changed     = pyqtSignal(str, str, str, str)
-    # RichText HTML badge (empty string = no errors/warnings)
-    bot_validation_changed = pyqtSignal(str)
+    bot_status_changed = pyqtSignal(str, str, str, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -628,6 +628,7 @@ class BotCanvas(QWidget):
         self._right_stack.addWidget(run_right)   # _TB_RUN  = 0
         self._right_stack.addWidget(edit_right)  # _TB_EDIT = 1
 
+        # ── Validation badge — shown left of center when errors/warnings exist ──
         # ── Persistent toolbar row ────────────────────────────────────
         toolbar = QWidget()
         toolbar_row = QHBoxLayout(toolbar)
@@ -637,6 +638,31 @@ class BotCanvas(QWidget):
         toolbar_row.addWidget(self._center_stack)
         toolbar_row.addStretch(1)
         toolbar_row.addWidget(self._right_stack)
+
+        # ── Validation banner — right-aligned below toolbar ───────────
+        # Hidden when valid (takes no space); appears under the edit/save
+        # button whose right_stack sits at the 4 px right margin of the toolbar.
+        _pill_base = "border-radius: 4px; padding: 1px 7px;"
+        self._error_pill = QLabel()
+        self._error_pill.setStyleSheet(
+            f"QLabel {{ background-color: #cc2222; color: white; {_pill_base} }}"
+        )
+        self._error_pill.setVisible(False)
+
+        self._warning_pill = QLabel()
+        self._warning_pill.setStyleSheet(
+            f"QLabel {{ background-color: #bb7700; color: white; {_pill_base} }}"
+        )
+        self._warning_pill.setVisible(False)
+
+        self._validation_banner = QWidget(self._view)
+        self._validation_banner.setStyleSheet("background: transparent;")
+        _banner_row = QHBoxLayout(self._validation_banner)
+        _banner_row.setContentsMargins(4, 4, 4, 4)
+        _banner_row.setSpacing(4)
+        _banner_row.addWidget(self._error_pill)
+        _banner_row.addWidget(self._warning_pill)
+        self._validation_banner.setVisible(False)
 
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
@@ -661,7 +687,7 @@ class BotCanvas(QWidget):
         log_vbox.addWidget(log_header)
         log_vbox.addWidget(self._log, 1)
 
-        # ── Main layout: toolbar + graph view ────────────────────────
+        # ── Main layout: toolbar + validation banner + graph view ─────
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
@@ -671,6 +697,9 @@ class BotCanvas(QWidget):
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
         fit_shortcut.activated.connect(self._view.fit_scene)
+
+        # ── Reposition banner overlay when the view resizes ───────────
+        self._view.installEventFilter(self)
 
         # ── Wire internal signals ─────────────────────────────────────
         self._scene.config_changed.connect(self._on_scene_changed)
@@ -718,6 +747,17 @@ class BotCanvas(QWidget):
         else:
             self._run_pause_btn.setEnabled(False)
             self._run_pause_btn.setToolTip("")
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._view and event.type() == QEvent.Type.Resize:
+            self._reposition_banner()
+        return super().eventFilter(obj, event)
+
+    def _reposition_banner(self) -> None:
+        """Pin the validation banner to the top-right corner of the canvas view."""
+        self._validation_banner.adjustSize()
+        x = self._view.width() - self._validation_banner.width() - 4
+        self._validation_banner.move(x, 4)
 
     def _active_state_label(self) -> str:
         """Return the display label for the current active state, falling back to its id."""
@@ -889,24 +929,43 @@ class BotCanvas(QWidget):
     def _update_validation_badge(self) -> None:
         config = self._scene._config
         if config is None:
-            self.bot_validation_changed.emit("")
+            self._validation_banner.setVisible(False)
+            self._n_validation_errors = 0
+            self._apply_run_btn_state()
             return
-        n_errors = 0
-        n_warnings = 0
+
+        error_lines: list[str] = []
+        warning_lines: list[str] = []
         for state in config.states:
-            is_error, is_warning, _ = _validate_node(state, config)
-            if is_error:
-                n_errors += 1
-            if is_warning:
-                n_warnings += 1
-        parts = []
-        if n_errors:
+            name = state.label or state.id
+            _, _, err_reasons, warn_reasons = _validate_node(state, config)
+            for r in err_reasons:
+                error_lines.append(f"{name}: {r}")
+            for r in warn_reasons:
+                warning_lines.append(f"{name}: {r}")
+
+        n_errors   = len(error_lines)
+        n_warnings = len(warning_lines)
+
+        if error_lines:
             noun = "error" if n_errors == 1 else "errors"
-            parts.append(f'<span style="color: #CC2222;">&#9679; {n_errors} {noun}</span>')
-        if n_warnings:
+            self._error_pill.setText(f"\u25cf {n_errors} {noun}")
+            self._error_pill.setToolTip("\n".join(error_lines))
+            self._error_pill.setVisible(True)
+        else:
+            self._error_pill.setVisible(False)
+
+        if warning_lines:
             noun = "warning" if n_warnings == 1 else "warnings"
-            parts.append(f'<span style="color: #BB7700;">&#9650; {n_warnings} {noun}</span>')
-        self.bot_validation_changed.emit("&nbsp;&nbsp;".join(parts))
+            self._warning_pill.setText(f"\u25b2 {n_warnings} {noun}")
+            self._warning_pill.setToolTip("\n".join(warning_lines))
+            self._warning_pill.setVisible(True)
+        else:
+            self._warning_pill.setVisible(False)
+
+        self._validation_banner.setVisible(bool(error_lines or warning_lines))
+        if error_lines or warning_lines:
+            self._reposition_banner()
         self._n_validation_errors = n_errors
         self._apply_run_btn_state()
 
@@ -1050,8 +1109,8 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool, xyz always have a value
 
 
-def _validate_node(state, config) -> tuple[bool, bool, list[str]]:
-    """Return (is_error, is_warning, reasons) for a state given the full config.
+def _validate_node(state, config) -> tuple[bool, bool, list[str], list[str]]:
+    """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
@@ -1091,7 +1150,7 @@ def _validate_node(state, config) -> tuple[bool, bool, list[str]]:
                         f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}"
                     )
 
-    return bool(error_reasons), bool(warning_reasons), error_reasons + warning_reasons
+    return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
 
 
 def _dist(a: QPointF, b: QPointF) -> float:

@@ -1,7 +1,7 @@
 import asyncio
 import traceback
 
-from PyQt6.QtWidgets import QMainWindow, QLabel, QMenu, QMenuBar, QMessageBox, QSplitter
+from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt, pyqtSignal
 
@@ -23,7 +23,6 @@ class MainWindow(QMainWindow):
 
         self._build_menu()
         self._build_central()
-        self._build_statusbar()
         self._apply_minimum_size()
         self._apply_startup_layout()
 
@@ -96,9 +95,8 @@ class MainWindow(QMainWindow):
 
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
-        # Wire bot status to game view panel title bar; validation stays in status bar
+        # Wire bot status to game view panel title bar
         self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
-        self.bot_canvas.bot_validation_changed.connect(self._on_bot_validation_changed)
 
         # Top row: left sidebar | game view | right sidebar
         _splitter_style = (
@@ -135,17 +133,6 @@ class MainWindow(QMainWindow):
         self._game_view_visible: bool = False
         self._game_view_panel.setVisible(False)
 
-    def _build_statusbar(self) -> None:
-        self._bot_validation = QLabel()
-        self._bot_validation.setTextFormat(Qt.TextFormat.RichText)
-        self._bot_validation.setVisible(False)
-
-        self.zone_label = QLabel("Waiting for client…")
-
-        sb = self.statusBar()
-        sb.addWidget(self._bot_validation)
-        sb.addPermanentWidget(self.zone_label)
-
     def _apply_minimum_size(self) -> None:
         min_w, min_h = SettingsManager.instance().minimum_window_size()
         self.setMinimumSize(min_w, min_h)
@@ -163,9 +150,6 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
-
-    def set_zone(self, zone: str | None) -> None:
-        self.zone_label.setText(zone if zone else "Unknown")
 
     def set_fsm_state(self, state_id: str) -> None:
         self.bot_canvas.set_state(state_id)
@@ -215,10 +199,6 @@ class MainWindow(QMainWindow):
 
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
         self._game_view_panel.set_bot_status(color, status, state_label, elapsed)
-
-    def _on_bot_validation_changed(self, badge_html: str) -> None:
-        self._bot_validation.setText(badge_html)
-        self._bot_validation.setVisible(bool(badge_html))
 
     def _rebuild_launch_menu(self) -> None:
         """Rebuild Tools → Launch submenu from current accounts and profiles."""
