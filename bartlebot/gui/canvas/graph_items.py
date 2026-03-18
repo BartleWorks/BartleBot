@@ -8,7 +8,7 @@ EdgeItem   — directed edge between two NodeItems, including self-loops
 
 import math
 
-from PyQt6.QtCore import Qt, QRectF, QPointF
+from PyQt6.QtCore import Qt, QRectF, QPointF, QEasingCurve, QSequentialAnimationGroup, QVariantAnimation
 from PyQt6.QtGui import (
     QPainter, QPen, QBrush, QColor, QFont, QPainterPath, QWheelEvent,
 )
@@ -33,7 +33,7 @@ _PORT_HIT_R = 16    # hit-test radius for port cursor feedback
 _FILL_NORMAL   = QColor("#d5dce8")
 _FILL_HOVER    = QColor("#dce4f0")   # slightly lighter than normal on hover
 _FILL_ACTIVE     = QColor("#5cb85c")
-_FILL_ACTIVE_DIM = QColor("#4aa84a")   # darker shade for pulse alternation
+_FILL_ACTIVE_DIM = QColor("#4aa84a")   # darker shade for smooth pulse
 _FILL_SELECTED = QColor("#b8cce4")
 _FILL_ERROR    = QColor("#fce8e8")   # light red tint for error nodes
 _FILL_ERROR_HOVER   = QColor("#fdd4d4")   # slightly deeper red on hover
@@ -163,8 +163,27 @@ class NodeItem(QGraphicsItem):
         self._label = label or state_id
         self._node_type = node_type
         self._active = False
-        self._pulse_bright = True
+        self._active_fill: QColor = _FILL_ACTIVE
         self._hovered = False
+
+        _anim_fwd = QVariantAnimation()
+        _anim_fwd.setStartValue(_FILL_ACTIVE)
+        _anim_fwd.setEndValue(_FILL_ACTIVE_DIM)
+        _anim_fwd.setDuration(800)
+        _anim_fwd.setEasingCurve(QEasingCurve.Type.InOutSine)
+        _anim_fwd.valueChanged.connect(self._on_pulse_value)
+
+        _anim_rev = QVariantAnimation()
+        _anim_rev.setStartValue(_FILL_ACTIVE_DIM)
+        _anim_rev.setEndValue(_FILL_ACTIVE)
+        _anim_rev.setDuration(800)
+        _anim_rev.setEasingCurve(QEasingCurve.Type.InOutSine)
+        _anim_rev.valueChanged.connect(self._on_pulse_value)
+
+        self._pulse_group = QSequentialAnimationGroup()
+        self._pulse_group.addAnimation(_anim_fwd)
+        self._pulse_group.addAnimation(_anim_rev)
+        self._pulse_group.setLoopCount(-1)
         self._reasons: list[str] = []
         self._interactive = interactive
         self._is_initial = is_initial
@@ -192,14 +211,16 @@ class NodeItem(QGraphicsItem):
 
     def set_active(self, active: bool) -> None:
         self._active = active
-        self._pulse_bright = True
+        if active:
+            self._active_fill = _FILL_ACTIVE
+            self._pulse_group.start()
+        else:
+            self._pulse_group.stop()
+            self._active_fill = _FILL_ACTIVE
         self.update()
 
-    def set_pulse(self, bright: bool) -> None:
-        """Alternate the active fill color — only visible while the node is active."""
-        if not self._active:
-            return
-        self._pulse_bright = bright
+    def _on_pulse_value(self, color: QColor) -> None:
+        self._active_fill = color
         self.update()
 
     def center(self) -> QPointF:
@@ -356,7 +377,7 @@ class NodeItem(QGraphicsItem):
 
         selected = self._interactive and self.isSelected()
         if self._active:
-            fill = _FILL_ACTIVE if self._pulse_bright else _FILL_ACTIVE_DIM
+            fill = self._active_fill
             border, border_w = _BORDER_ACTIVE, 2.5
         elif selected:
             fill, border, border_w = _FILL_SELECTED, _BORDER_SELECTED, 2.5
@@ -456,7 +477,7 @@ class NodeItem(QGraphicsItem):
             if self._is_initial:
                 r = QRectF(init_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
                 painter.save()
-                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setPen(QPen(QColor("#000000"), 1.0))
                 painter.setBrush(QBrush(_BADGE_INITIAL))
                 painter.drawRoundedRect(r, 3, 3)
                 painter.setPen(QColor("white"))
@@ -465,7 +486,7 @@ class NodeItem(QGraphicsItem):
             if self._is_terminal:
                 r = QRectF(term_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
                 painter.save()
-                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setPen(QPen(QColor("#000000"), 1.0))
                 painter.setBrush(QBrush(_BADGE_TERMINAL))
                 painter.drawRoundedRect(r, 3, 3)
                 painter.setPen(QColor("white"))

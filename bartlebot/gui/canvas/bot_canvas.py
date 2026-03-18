@@ -539,7 +539,6 @@ class BotCanvas(QWidget):
         self._run_state = _IDLE
         self._start_time: float | None = None
         self._active_state: str | None = None
-        self._tick_count: int = 0
         self._run_externally_enabled: bool = False
         self._n_validation_errors: int = 0
 
@@ -800,7 +799,6 @@ class BotCanvas(QWidget):
 
     def set_running(self) -> None:
         self._run_state = _RUNNING
-        self._tick_count = 0
         self._run_pause_btn.setIcon(svg_icon("pause"))
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
@@ -836,7 +834,6 @@ class BotCanvas(QWidget):
         if self._active_state and self._active_state in self._scene._node_items:
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = state_id
-        self._tick_count = 0  # restart pulse phase on state change
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
         self._emit_bot_status()
@@ -1088,11 +1085,6 @@ class BotCanvas(QWidget):
         self._log.moveCursor(QTextCursor.MoveOperation.End)
 
     def _tick(self) -> None:
-        self._tick_count += 1
-        if self._run_state == _RUNNING and self._active_state:
-            node = self._scene._node_items.get(self._active_state)
-            if node:
-                node.set_pulse(self._tick_count % 2 == 0)
         self._emit_bot_status()
 
     def _elapsed_str(self) -> str:
