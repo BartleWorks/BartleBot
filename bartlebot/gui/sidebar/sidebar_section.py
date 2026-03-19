@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QVBoxLayout, QWidget,
 )
 
+from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 
 _PLACEHOLDER = "—"
@@ -25,12 +26,15 @@ class _SectionHeader(QWidget):
         super().__init__(parent)
 
         self._expanded = True
+        self._pixmap_down = svg_pixmap("arrow_down", 10, tint="#000000")
+        self._pixmap_right = svg_pixmap("arrow_right", 10, tint="#000000")
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.arrow = QLabel("▾")
-        self.arrow.setFixedWidth(12)
+        self.arrow = QLabel()
+        self.arrow.setFixedSize(10, 10)
+        self.arrow.setPixmap(self._pixmap_down)
 
         self.label = QLabel(title)
         font = self.label.font()
@@ -45,7 +49,7 @@ class _SectionHeader(QWidget):
 
     def mousePressEvent(self, event):  # noqa: ARG002
         self._expanded = not self._expanded
-        self.arrow.setText("▾" if self._expanded else "▸")
+        self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
         self.toggled.emit(self._expanded)
 
 
