@@ -31,7 +31,7 @@ class CombatConfigSection(SidebarSection):
         layout.addWidget(self._use_default_chk)
 
         self._dsl_edit = value_edit_multi(lines=8)
-        self._dsl_edit.setPlaceholderText("Enter WizSprinter combat DSL…")
+        self._dsl_edit.setPlaceholderText("Enter combat config…")
         layout.addWidget(self._dsl_edit)
 
         self.set_content_layout(layout)

@@ -35,7 +35,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="text",
         label="Combat Config",
         help=(
-            "WizSprinter combat DSL to use for this encounter. "
+            "Combat config to use for this encounter. "
             "Only active when 'Use bot-level default' is unchecked."
         ),
         default="",

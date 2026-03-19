@@ -23,6 +23,7 @@ _DEFAULTS: dict[str, Any] = {
     },
     "accounts": [],
     "launch_profiles": [],
+    "recent_launches": [],
 }
 
 # Valid Wizard101 windowed resolutions (width, height)
@@ -163,6 +164,19 @@ class SettingsManager:
     @launch_profiles.setter
     def launch_profiles(self, value: list[dict]) -> None:
         self.set("launch_profiles", value=value)
+
+    @property
+    def recent_launches(self) -> list[dict]:
+        """List of {type, id} dicts for recently launched accounts/profiles."""
+        return list(self.get("recent_launches", default=[]))
+
+    def add_recent_launch(self, entry_type: str, identifier: str) -> None:
+        """Prepend an entry to recent_launches, deduplicating and capping at 5."""
+        entry = {"type": entry_type, "id": identifier}
+        recent = [e for e in self.recent_launches if not (e.get("type") == entry_type and e.get("id") == identifier)]
+        recent.insert(0, entry)
+        self.set("recent_launches", value=recent[:5])
+        self.save()
 
     # ------------------------------------------------------------------
     # Window sizing helper

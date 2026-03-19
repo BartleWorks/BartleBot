@@ -35,8 +35,7 @@ class GameEmbedTab(QWidget):
         layout.addLayout(form)
 
         hint = QLabel(
-            "Set Wizard101 to Windowed mode in\n"
-            "Options → Graphics, with this resolution."
+            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution."
         )
         hint.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
         layout.addWidget(hint)

@@ -86,9 +86,20 @@ class _DynamicParamForm(QWidget):
             if field.required:
                 self._required_widgets[field.key] = widget
             display_w = widget if not isinstance(widget, tuple) else widget[3]
-            self._form.insertWidget(insert_idx, label_w)
-            self._form.insertWidget(insert_idx + 1, display_w)
-            insert_idx += 2
+            if field.type == "bool":
+                container = QWidget()
+                row = QHBoxLayout(container)
+                row.setContentsMargins(0, 0, 0, 0)
+                row.setSpacing(8)
+                row.addWidget(label_w)
+                row.addStretch()
+                row.addWidget(display_w)
+                self._form.insertWidget(insert_idx, container)
+                insert_idx += 1
+            else:
+                self._form.insertWidget(insert_idx, label_w)
+                self._form.insertWidget(insert_idx + 1, display_w)
+                insert_idx += 2
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(field.default_hint)
                 hint_lbl.setStyleSheet(f"color: {THEME.muted_text_alt};")
