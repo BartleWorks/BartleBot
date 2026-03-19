@@ -228,7 +228,7 @@ class _GamePlaceholder(QWidget):
             layout.addWidget(hint)
         else:
             for label, callback in items:
-                btn = QPushButton(f"▶  {label}")
+                btn = QPushButton(f"{label}")
                 btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                 btn.clicked.connect(callback)
                 layout.addWidget(btn)
