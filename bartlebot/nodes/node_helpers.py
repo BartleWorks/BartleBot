@@ -29,7 +29,7 @@ async def dismiss_ambient_dialog_once(client) -> bool:
     return False
 
 
-async def confirm_dialog_if_visible(client, delay: float = 3.0) -> None:
+async def confirm_dungeon_warning_dialog(client, delay: float = 3.0) -> None:
     """Poll for the dungeon warning dialog; confirm it immediately when it appears.
 
     Keeps polling for at least `delay` seconds before concluding the dialog will

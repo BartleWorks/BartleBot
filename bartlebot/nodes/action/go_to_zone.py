@@ -109,7 +109,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
     machine.log("Checking for dungeon exit warning…", LogLevel.DEBUG)
-    await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
+    await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
 
     # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
     machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
