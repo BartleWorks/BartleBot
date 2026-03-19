@@ -183,14 +183,12 @@ async def run(machine, clients: list, params: dict) -> str:
         lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
     )
 
-    # 8. Verify all clients arrived in dungeon_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Zones after dungeon entry: {list(zones)}", LogLevel.DEBUG)
-    if not all(z == dungeon_zone for z in zones):
-        actual = list(set(zones))
+    # 8. Wait for all clients to arrive in dungeon_zone.
+    if (actual := await node_helpers.wait_for_zone(clients, dungeon_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+        machine.log(f"Zones after dungeon entry: {actual}", LogLevel.DEBUG)
         machine.log(
             f"FAILURE: not all clients reached dungeon zone "
-            f"(expected={dungeon_zone!r}, got={actual})",
+            f"(expected={dungeon_zone!r}, got={list(set(actual))})",
             LogLevel.WARNING,
         )
         return "FAILURE"

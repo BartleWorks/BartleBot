@@ -9,8 +9,9 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
 
-BUTTON_TIMEOUT = 35.0   # 30s cooldown + 5s safety margin
-TRIGGER_TIMEOUT = 10.0  # seconds to wait for loading to start after pressing END
+BUTTON_TIMEOUT = 35.0    # 30s cooldown + 5s safety margin
+TRIGGER_TIMEOUT = 10.0   # seconds to wait for loading to start after pressing END
+ZONE_CHANGE_TIMEOUT = 30.0
 POLL_INTERVAL = 0.25
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -112,13 +113,11 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Loading screen active, waiting for it to clear…", LogLevel.DEBUG)
     await node_helpers.wait_until(lambda: node_helpers.none_loading(clients_to_move), None, POLL_INTERVAL)
 
-    # 5. Verify all clients arrived in the expected hub zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Zones after hub teleport: {list(zones)}", LogLevel.DEBUG)
-    if not all(z == zone for z in zones):
-        actual = list(set(zones))
+    # 5. Wait for all clients to arrive in the expected hub zone.
+    if (actual := await node_helpers.wait_for_zone(clients, zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+        machine.log(f"Zones after hub teleport: {actual}", LogLevel.DEBUG)
         machine.log(
-            f"FAILURE: not all clients in expected hub zone (expected={zone!r}, got={actual})",
+            f"FAILURE: not all clients in expected hub zone (expected={zone!r}, got={list(set(actual))})",
             LogLevel.WARNING,
         )
         return "FAILURE"

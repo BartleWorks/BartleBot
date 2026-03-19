@@ -31,6 +31,11 @@ class FakeClient:
         self.root_window.children = AsyncMock(return_value=[])
         self.calc_health_ratio = AsyncMock(return_value=1.0)
         self.calc_mana_ratio = AsyncMock(return_value=1.0)
+        self.has_potion = AsyncMock(return_value=True)
+        self.use_potion_if_needed = AsyncMock()
+        self.stats = MagicMock()
+        self.stats.potion_max = AsyncMock(return_value=10)
+        self.stats.potion_charge = AsyncMock(return_value=10)
         self.tp_to_closest_health_wisp = AsyncMock(return_value=False)
         self.tp_to_closest_mana_wisp = AsyncMock(return_value=False)
 
