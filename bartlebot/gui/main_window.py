@@ -144,6 +144,20 @@ class MainWindow(QMainWindow):
         # Wire bot status to game view panel title bar
         self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
 
+        # Wire placeholder quick-launch signals
+        self._game_view_panel.launch_account_requested.connect(
+            lambda u, d: asyncio.ensure_future(self._launch_single_account(u, d))
+        )
+        self._game_view_panel.launch_profile_requested.connect(
+            lambda n: asyncio.ensure_future(self._launch_profile(n))
+        )
+        self._game_view_panel.manage_accounts_requested.connect(
+            lambda: self._open_settings(tab_index=2)
+        )
+        self._game_view_panel.game_embed_settings_requested.connect(
+            lambda: self._open_settings(tab_index=1)
+        )
+
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
         self._top_splitter.setChildrenCollapsible(False)
@@ -167,11 +181,11 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self._outer_splitter)
 
-        # Initially hide GameViewPanel (no clients yet); BotCanvas expands
-        self._game_view_visible: bool = False
+        # Show GameViewPanel immediately (placeholder shown when no clients)
+        self._game_view_visible: bool = True
         self._game_view_maximized: bool = False
         self._pre_maximize_sizes: dict = {}
-        self._game_view_panel.setVisible(False)
+        self._game_view_panel.setVisible(True)
 
         # Wire Run menu
         self.action_run_pause.triggered.connect(
@@ -358,6 +372,7 @@ class MainWindow(QMainWindow):
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
+        self._game_view_panel.game_view._placeholder.refresh()
 
     def _open_launcher(self) -> None:
         from bartlebot.gui.launcher_popup import LauncherPopup
@@ -368,6 +383,7 @@ class MainWindow(QMainWindow):
         try:
             from bartlebot.launcher.launch_profile import launch_profile
             await launch_profile(profile_name)
+            self._record_recent_launch("profile", profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
             print(traceback.format_exc())
@@ -384,9 +400,14 @@ class MainWindow(QMainWindow):
                 )
                 return
             await launch_account(username, password, display_name)
+            self._record_recent_launch("account", username)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
             print(traceback.format_exc())
+
+    def _record_recent_launch(self, entry_type: str, identifier: str) -> None:
+        SettingsManager.instance().add_recent_launch(entry_type, identifier)
+        self._game_view_panel.game_view._placeholder.refresh()
 
     def _update_recent_placeholder(self) -> None:
         action = QAction("(No recent files)", self)

@@ -108,6 +108,7 @@ class _Theme:
     # Game-embed client tile
     # ------------------------------------------------------------------
     client_tile_focus_border: str = "#cc2222"
+    placeholder_box_border:   str = "#555555"   # border of the no-client placeholder box
 
     # ------------------------------------------------------------------
     # Font tokens

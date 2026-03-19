@@ -306,7 +306,7 @@ class AppController(QObject):
                     self._window.game_view.embed_client(hwnd, idx)
                 except Exception:
                     pass
-        self._window.show_game_view(bool(new_clients))
+        # Game view panel is always visible; no need to show/hide on client changes.
 
     def swap_clients(self, idx_a: int, idx_b: int) -> None:
         """Swap the positions of two clients in the live list.

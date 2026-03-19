@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
-from bartlebot.gui.theme import THEME
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget,
 )
 
 from bartlebot.gui.game_embed.game_view import GameView
+from bartlebot.gui.theme import THEME
 
 
 class GameViewPanel(QWidget):
@@ -18,10 +18,21 @@ class GameViewPanel(QWidget):
         [● Status  elapsed]    [Bot display name]    [Node title]
     """
 
+    launch_account_requested      = pyqtSignal(str, str)  # forwarded from GameView
+    launch_profile_requested      = pyqtSignal(str)        # forwarded from GameView
+    manage_accounts_requested     = pyqtSignal()           # forwarded from GameView
+    game_embed_settings_requested = pyqtSignal()           # forwarded from GameView
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.game_view = GameView()
         self._build_ui()
+
+        # Forward placeholder signals
+        self.game_view.launch_account_requested.connect(self.launch_account_requested)
+        self.game_view.launch_profile_requested.connect(self.launch_profile_requested)
+        self.game_view.manage_accounts_requested.connect(self.manage_accounts_requested)
+        self.game_view.game_embed_settings_requested.connect(self.game_embed_settings_requested)
 
     # ------------------------------------------------------------------
     # Construction

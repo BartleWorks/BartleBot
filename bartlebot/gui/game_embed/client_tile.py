@@ -5,10 +5,11 @@ from __future__ import annotations
 import ctypes
 import ctypes.wintypes
 
-from PyQt6.QtCore import Qt, QRect
+from PyQt6.QtCore import Qt, QRect, pyqtSignal
 from PyQt6.QtGui import QPainter, QFont
 from PyQt6.QtWidgets import QWidget
 
+from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
@@ -21,8 +22,8 @@ _WS_BORDER_MASK = 0x00CF0000  # WS_CAPTION | WS_BORDER | WS_DLGFRAME
 
 FOCUS_BORDER  = 6    # logical pixels of red fill around the game window when focused
 _LABEL_GAP    = 3    # logical pixels between the bottom of the pill and the top of the focus border
-_LABEL_PILL_H = 18   # conservative upper bound on pill height at 9pt bold (text_h + 6)
-LABEL_RESERVE = FOCUS_BORDER + _LABEL_GAP + _LABEL_PILL_H + 4  # = 31 px; keeps label clear of border at minimum tile size
+_LABEL_PILL_H = 26   # conservative upper bound on pill height (max(text_h, ICON_SIZE) + 6)
+LABEL_RESERVE = FOCUS_BORDER + _LABEL_GAP + _LABEL_PILL_H + 4  # = 39 px; keeps label clear of border at minimum tile size
 
 _SWP_NOMOVE       = 0x0002
 _SWP_NOSIZE       = 0x0001
@@ -31,6 +32,10 @@ _SWP_FRAMECHANGED = 0x0020  # Required after SetWindowLongW to flush style chang
 
 _user32   = ctypes.windll.user32
 _kernel32 = ctypes.windll.kernel32
+
+# Pill icon constants
+_ICON_SIZE = 18
+_ICON_GAP  = 6   # pixels between label text and detach icon
 
 
 class _GUITHREADINFO(ctypes.Structure):
@@ -65,15 +70,25 @@ class ClientTile(QWidget):
     game window (cross-thread SetFocus requires shared input queues).
     """
 
+    detach_requested = pyqtSignal()
+
     def __init__(self, hwnd: int, label: str, parent=None) -> None:
         super().__init__(parent)
         self._hwnd  = hwnd
         self._label = label
         self._focused = False
 
+        # Pill hit-testing rects (updated each paintEvent)
+        self._pill_rect: QRect = QRect()
+        self._icon_rect: QRect = QRect()
+
         # Save original state for unembed/restoration
         self._orig_parent: int = _user32.GetParent(hwnd)
         self._orig_style:  int = _user32.GetWindowLongW(hwnd, _GWL_STYLE)
+        _orig_rect = ctypes.wintypes.RECT()
+        _user32.GetWindowRect(hwnd, ctypes.byref(_orig_rect))
+        self._orig_w = _orig_rect.right  - _orig_rect.left
+        self._orig_h = _orig_rect.bottom - _orig_rect.top
 
         # Detect native resolution before embedding
         self._game_w, self._game_h = _get_client_size(hwnd)
@@ -120,8 +135,8 @@ class ClientTile(QWidget):
         _user32.SetParent(self._hwnd, self._orig_parent)
         _user32.SetWindowLongW(self._hwnd, _GWL_STYLE, self._orig_style)
         _user32.SetWindowPos(
-            self._hwnd, 0, 0, 0, 0, 0,
-            _SWP_NOMOVE | _SWP_NOSIZE | _SWP_NOZORDER | _SWP_FRAMECHANGED,
+            self._hwnd, 0, 0, self._orig_w, self._orig_h,
+            _SWP_NOMOVE | _SWP_NOZORDER | _SWP_FRAMECHANGED,
         )
         _user32.ShowWindow(self._hwnd, 5)  # SW_SHOW
 
@@ -171,6 +186,12 @@ class ClientTile(QWidget):
             self._focused = focused
             self.update()
 
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._icon_rect.contains(event.pos()):
+            self.detach_requested.emit()
+        else:
+            super().mousePressEvent(event)
+
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
@@ -195,6 +216,7 @@ class ClientTile(QWidget):
 
         # Client label pill — rendered in the LABEL_RESERVE strip above the game
         # window, so it is never obscured by the Win32 child surface.
+        # Layout: [8px pad] [label text] [_ICON_GAP] [detach icon] [8px pad]
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         font = QFont()
         font.setPointSize(9)
@@ -204,16 +226,109 @@ class ClientTile(QWidget):
         text = self._label
         text_w = metrics.horizontalAdvance(text)
         text_h = metrics.height()
-        pill_w = text_w + 16
-        pill_h = text_h + 6
+
+        pill_w = text_w + _ICON_GAP + _ICON_SIZE + 16  # 8px left + 8px right padding
+        pill_h = max(text_h, _ICON_SIZE) + 6
         pill_x = (self.width() - pill_w) // 2
         pill_y = gy - FOCUS_BORDER - _LABEL_GAP - pill_h
+
+        # Pill background
         painter.setBrush(THEME.qcolor_client_pill_bg())
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)
+
+        # Label text
         painter.setPen(THEME.qcolor_client_pill_text())
         painter.drawText(
             QRect(pill_x + 8, pill_y + 3, text_w, text_h),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             text,
         )
+
+        # Detach icon (white-tinted, right side of pill)
+        icon_pm = svg_pixmap("detach", _ICON_SIZE, tint="#ffffff")
+        ix = pill_x + 8 + text_w + _ICON_GAP
+        iy = pill_y + (pill_h - _ICON_SIZE) // 2
+        painter.drawPixmap(ix, iy, icon_pm)
+
+        # Store rects for hit-testing in mousePressEvent
+        self._pill_rect = QRect(pill_x, pill_y, pill_w, pill_h)
+        self._icon_rect = QRect(ix - 2, pill_y, _ICON_SIZE + 4, pill_h)  # 2px buffer
+
+
+class DetachedTile(QWidget):
+    """Placeholder shown in a grid slot when the game window is detached (floating free).
+
+    Renders the same pill label as ClientTile but with an attach icon.  Clicking
+    the icon emits ``reattach_requested`` so GameView can re-embed the window.
+    """
+
+    reattach_requested = pyqtSignal()
+
+    def __init__(self, label: str, parent=None) -> None:
+        super().__init__(parent)
+        self._label = label
+        self._pill_rect: QRect = QRect()
+        self._icon_rect: QRect = QRect()
+
+    # ------------------------------------------------------------------
+    # Qt event overrides
+    # ------------------------------------------------------------------
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._icon_rect.contains(event.pos()):
+            self.reattach_requested.emit()
+        else:
+            super().mousePressEvent(event)
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+
+        # Body text
+        body_top = LABEL_RESERVE
+        body_h = self.height() - body_top
+        painter.setPen(THEME.qcolor("muted_text"))
+        body_font = QFont()
+        body_font.setPointSize(9)
+        painter.setFont(body_font)
+        painter.drawText(
+            QRect(0, body_top, self.width(), body_h),
+            Qt.AlignmentFlag.AlignCenter,
+            "Client game window not currently embedded",
+        )
+
+        # Pill label (same layout as ClientTile, but with attach icon)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        pill_font = QFont()
+        pill_font.setPointSize(9)
+        pill_font.setBold(True)
+        painter.setFont(pill_font)
+        metrics = painter.fontMetrics()
+        text = self._label
+        text_w = metrics.horizontalAdvance(text)
+        text_h = metrics.height()
+
+        pill_w = text_w + _ICON_GAP + _ICON_SIZE + 16
+        pill_h = max(text_h, _ICON_SIZE) + 6
+        pill_x = (self.width() - pill_w) // 2
+        pill_y = FOCUS_BORDER + _LABEL_GAP
+
+        painter.setBrush(THEME.qcolor_client_pill_bg())
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)
+
+        painter.setPen(THEME.qcolor_client_pill_text())
+        painter.drawText(
+            QRect(pill_x + 8, pill_y + 3, text_w, text_h),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            text,
+        )
+
+        icon_pm = svg_pixmap("attach", _ICON_SIZE, tint="#ffffff")
+        ix = pill_x + 8 + text_w + _ICON_GAP
+        iy = pill_y + (pill_h - _ICON_SIZE) // 2
+        painter.drawPixmap(ix, iy, icon_pm)
+
+        self._pill_rect = QRect(pill_x, pill_y, pill_w, pill_h)
+        self._icon_rect = QRect(ix - 2, pill_y, _ICON_SIZE + 4, pill_h)
