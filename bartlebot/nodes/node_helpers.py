@@ -96,6 +96,24 @@ async def all_left_zone(clients: list, zone: str) -> bool:
     return all(z != zone for z in zones)
 
 
+async def all_in_zone(clients: list, zone: str) -> bool:
+    """Return True when every client's zone_name matches zone."""
+    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    return all(z == zone for z in zones)
+
+
+async def wait_for_zone(
+    clients: list, zone: str, timeout: float, poll_interval: float = POLL_INTERVAL
+) -> list[str] | None:
+    """Poll until all clients are in zone.
+
+    Returns None on success, or the list of actual zone names on timeout.
+    """
+    if await wait_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
+        return None
+    return list(await asyncio.gather(*[c.zone_name() for c in clients]))
+
+
 async def none_loading(clients: list) -> bool:
     """Return True when no client is on a loading screen."""
     loading = await asyncio.gather(*[c.is_loading() for c in clients])
@@ -107,5 +125,6 @@ async def click_by_path(client, path: list[str]) -> bool:
     window = await _get_window_from_path(client.root_window, path)
     if window is None:
         return False
-    await window.click()
+    async with client.mouse_handler:
+        await client.mouse_handler.click_window(window)
     return True

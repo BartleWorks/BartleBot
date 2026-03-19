@@ -37,7 +37,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
 | Node | Description | Status |
 |------|-------------|--------|
-| [`handle_potions`](#handle_potions) | Use and optionally refill potions based on health/mana thresholds | `todo` |
+| [`handle_potions`](#handle_potions) | Use and optionally refill potions based on health/mana thresholds | `done` |
 | [`quicksell`](#quicksell) | Quicksell backpack items when full, respecting a keep list | `todo` |
 
 ---
@@ -430,7 +430,7 @@ BartleBot includes a library of more advanced behaviors that combine multiple ac
 
 ### handle_potions
 
-**Status:** `todo`
+**Status:** `done`
 
 Uses potions if clients are below a specified health or mana threshold. Refills potions if needed.
 
@@ -447,8 +447,18 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
 - Flow:
   1. For each client, check health and mana ratios.
   2. If either ratio is below the threshold and the client has a potion, use it.
-  3. If `refill_potions` is true and a client has no potions, navigate to the potion vendor and refill (vendor location TBD as implementation detail).
-  4. Return `SUCCESS` always (this is a maintenance node, not conditional).
+  3. If `refill_potions` is true and a client has no potions, begin navigation sequence to refill potions.
+  4. Call mark_location node
+  5. Teleport home
+  6. After loading home, check zone. If zone is `WizardCity/Interiors/WC_Housing_Dorm_Interior` then we're set. If not, wait for the home teleport button to become available again and then teleport home.
+    -  Almost all houses have a spiral door available, but there are niche cases (specifically, the Apartment series houses) that need to be handled. Rather than branch on these cases, let's just be 100% sure that we end up in a dorm in a near-infallible manner.
+  7. Call go_to_zone logic to go from the dorm to Ravenwood (`WizardCity/WC_Ravenwood`)
+  8. Call go_to_zone logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{"x": 12.1, "y": -2037.77, "z": -130.64}`)
+  9. Teleport to Hilda Brewer via go_to_xyz, then talk to her via interact.
+  10. Navigate the potions menu following the buy_potions() logic in utils.py at C:/GitHub/Deimos
+  11. Return `SUCCESS` if potions were bought successfully, `FAILURE` otherwise.
+
+For Arcanum Apartment users, could potentially add a flag that lets them go to the Arcanum potion vendor instead.
 
 </details>
 

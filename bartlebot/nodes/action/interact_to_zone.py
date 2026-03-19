@@ -70,6 +70,7 @@ NODE_SPEC = NodeSpec(
 
 PROMPT_TIMEOUT = 5.0
 TRIGGER_TIMEOUT = 10.0
+ZONE_CHANGE_TIMEOUT = 30.0
 POLL_INTERVAL = 0.25
 MAX_RETRIES = 3
 
@@ -191,14 +192,12 @@ async def run(machine, clients: list, params: dict) -> str:
         lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
     )
 
-    # 7. Verify all clients arrived in to_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Zones after interaction: {list(zones)}", LogLevel.DEBUG)
-    if not all(z == to_zone for z in zones):
-        actual = list(set(zones))
+    # 7. Wait for all clients to arrive in to_zone.
+    if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+        machine.log(f"Zones after interaction: {actual}", LogLevel.DEBUG)
         machine.log(
             f"FAILURE: not all clients in expected zone after transition "
-            f"(expected={to_zone!r}, got={actual})",
+            f"(expected={to_zone!r}, got={list(set(actual))})",
             LogLevel.WARNING,
         )
         return "FAILURE"
