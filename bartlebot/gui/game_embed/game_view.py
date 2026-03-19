@@ -405,7 +405,7 @@ class GameView(QWidget):
 
         self._overlay_btn.move(
             self.width() - _OVERLAY_BTN_SIZE - _OVERLAY_BTN_MARGIN,
-            LABEL_RESERVE + _OVERLAY_BTN_MARGIN,
+            _OVERLAY_BTN_MARGIN,
         )
 
         all_slots = sorted(set(self._tiles) | set(self._detached_tiles))
