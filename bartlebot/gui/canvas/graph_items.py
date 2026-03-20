@@ -10,7 +10,7 @@ import math
 
 from PyQt6.QtCore import Qt, QRectF, QPointF, QEasingCurve, QSequentialAnimationGroup, QVariantAnimation
 from PyQt6.QtGui import (
-    QPainter, QPen, QBrush, QColor, QFont, QPainterPath, QWheelEvent,
+    QPainter, QPen, QBrush, QColor, QFont, QPainterPath, QKeyEvent, QWheelEvent,
 )
 
 from bartlebot.gui.theme import THEME
@@ -86,19 +86,25 @@ class GraphView(QGraphicsView):
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self._user_zoomed = False
         self._pan_origin: QPointF | None = None
+        self._space_held: bool = False
 
         if interactive:
             self.setInteractive(True)
             self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         else:
             self.setInteractive(False)
-            self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+            self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
     def fit_scene(self) -> None:
-        """Fit the full scene into the viewport. Resets user-zoom state."""
+        """Fit the full scene content into the viewport. Resets user-zoom state."""
         self._user_zoomed = False
-        if self.scene() and not self.scene().sceneRect().isEmpty():
-            self.fitInView(self.scene().sceneRect(), Qt.AspectRatioMode.KeepAspectRatio)
+        scene = self.scene()
+        if scene is None:
+            return
+        bounds = scene.itemsBoundingRect()
+        if bounds.isEmpty():
+            return
+        self.fitInView(bounds.adjusted(-80, -60, 80, 60), Qt.AspectRatioMode.KeepAspectRatio)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         self._user_zoomed = True
@@ -110,11 +116,29 @@ class GraphView(QGraphicsView):
         if not self._user_zoomed:
             self.fit_scene()
 
-    # Middle-mouse panning for the interactive view
+    # Space + left-drag panning
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_held = True
+            if self._pan_origin is None:
+                self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_held = False
+            if self._pan_origin is None:
+                self.viewport().unsetCursor()
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
+
     def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.MiddleButton:
+        if self._space_held and event.button() == Qt.MouseButton.LeftButton:
             self._pan_origin = event.position()
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
             return
         super().mousePressEvent(event)
@@ -134,9 +158,12 @@ class GraphView(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.MiddleButton and self._pan_origin is not None:
+        if event.button() == Qt.MouseButton.LeftButton and self._pan_origin is not None:
             self._pan_origin = None
-            self.unsetCursor()
+            if self._space_held:
+                self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
+            else:
+                self.viewport().unsetCursor()
             event.accept()
             return
         super().mouseReleaseEvent(event)

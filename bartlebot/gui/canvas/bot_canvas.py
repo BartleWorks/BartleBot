@@ -223,7 +223,7 @@ class EditScene(QGraphicsScene):
                 dn.add_edge(edge)
             self._edge_items.append((s, w, d, edge))
 
-        bounds = self.itemsBoundingRect().adjusted(-80, -100, 80, 60)
+        bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(bounds)
 
     def refresh_initial(self, initial_id: str) -> None:
@@ -502,8 +502,8 @@ class EditScene(QGraphicsScene):
             self.config_changed.emit()
 
     def _update_scene_rect(self) -> None:
-        bounds = self.itemsBoundingRect().adjusted(-80, -100, 80, 60)
-        self.setSceneRect(bounds)
+        bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
+        self.setSceneRect(self.sceneRect().united(bounds))
 
 
 # ---------------------------------------------------------------------------
