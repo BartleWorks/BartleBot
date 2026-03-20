@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode
 
-from bartlebot.nodes.paths import DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
+from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
 
 POLL_INTERVAL = 0.25
 
@@ -22,8 +22,8 @@ async def none_in_npc_range(clients: list) -> bool:
 
 
 async def dismiss_ambient_dialog_once(client) -> bool:
-    """If client has an open dialog, press SPACEBAR to dismiss it. Returns True if dismissed."""
-    if await client.is_in_dialog():
+    """If client has an advanceable dialog open, press SPACEBAR to dismiss it. Returns True if dismissed."""
+    if await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
         await client.send_key(Keycode.SPACEBAR, 0.1)
         return True
     return False
