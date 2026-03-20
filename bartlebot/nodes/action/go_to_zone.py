@@ -34,6 +34,20 @@ PARAM_SCHEMA: list[ParamField] = [
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
+    ParamField(
+        key="reset_xyz",
+        type="xyz",
+        label="Reset XYZ",
+        help=(
+            "Optional. A safe position to teleport clients back to when the zone "
+            "change does not fire (e.g. a trigger that requires a scripted event to "
+            "complete first). When set, the node retries up to 3 times before "
+            "returning FAILURE."
+        ),
+        default=None,
+        default_hint="If no Reset XYZ is provided, zone change is only attempted once.",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -49,8 +63,9 @@ NODE_SPEC = NodeSpec(
         ),
         ReturnSpec(
             "FAILURE",
-            "Clients were not in from_zone at the start, timed out leaving "
-            "the zone, or not all clients reached to_zone after the transition.",
+            "Clients were not in from_zone at the start, timed out leaving the zone "
+            "(all retry attempts exhausted when reset_xyz is set), or not all clients "
+            "reached to_zone after the transition.",
         ),
     ],
     required_bot_options=[
@@ -68,6 +83,7 @@ NODE_SPEC = NodeSpec(
 
 ZONE_CHANGE_TIMEOUT = 30.0
 POLL_INTERVAL = 0.25
+MAX_RETRIES = 3
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -75,16 +91,22 @@ async def run(machine, clients: list, params: dict) -> str:
     Transition all clients from one zone to another.
 
     Params:
-        from_zone (str): Zone clients must be in when this node is called.
-        to_zone (str):   Zone clients must be in when this node completes.
-        xyz (dict):      {"x": float, "y": float, "z": float} — a point inside
-                         the destination zone's transition bounding box.
-                         Teleporting clients here triggers the zone change automatically.
+        from_zone (str):  Zone clients must be in when this node is called.
+        to_zone (str):    Zone clients must be in when this node completes.
+        xyz (dict):       {"x": float, "y": float, "z": float} — a point inside
+                          the destination zone's transition bounding box.
+                          Teleporting clients here triggers the zone change automatically.
+        reset_xyz (dict): Optional. A safe position to teleport clients back to when the
+                          zone change does not fire within ZONE_CHANGE_TIMEOUT. When set,
+                          the node retries up to MAX_RETRIES times before returning FAILURE.
     """
     from_zone: str = params["from_zone"]
     to_zone: str = params["to_zone"]
     xyz_data: dict = params["xyz"]
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
+
+    reset_xyz_data: dict | None = params.get("reset_xyz")
+    reset = XYZ(reset_xyz_data["x"], reset_xyz_data["y"], reset_xyz_data["z"]) if reset_xyz_data else None
 
     machine.log(
         f"go_to_zone: {from_zone!r} → {to_zone!r} "
@@ -103,27 +125,43 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 2. Teleport all clients into the transition bounding box.
-    machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", LogLevel.DEBUG)
-    await asyncio.gather(*[c.teleport(target) for c in clients])
+    attempts = MAX_RETRIES if reset else 1
+    for attempt in range(1, attempts + 1):
+        if attempt > 1:
+            machine.log(f"Attempt {attempt}/{attempts}…", LogLevel.DEBUG)
 
-    # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
-    machine.log("Checking for dungeon exit warning…", LogLevel.DEBUG)
-    await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
+        # 2. Teleport all clients into the transition bounding box.
+        machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", LogLevel.DEBUG)
+        await asyncio.gather(*[c.teleport(target) for c in clients])
 
-    # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
-    machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
-    if not await node_helpers.wait_until(
-        lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
-    ):
-        zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
-        machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", LogLevel.DEBUG)
-        machine.log(
-            f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
-            f"to leave {from_zone!r}",
-            LogLevel.WARNING,
-        )
-        return "FAILURE"
+        # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
+        machine.log("Checking for dungeon exit warning…", LogLevel.DEBUG)
+        await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
+
+        # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
+        machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
+        if not await node_helpers.wait_until(
+            lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+        ):
+            zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
+            machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", LogLevel.DEBUG)
+            if reset and attempt < attempts:
+                machine.log(
+                    f"Timed out after {ZONE_CHANGE_TIMEOUT}s; resetting to "
+                    f"XYZ({reset.x:.1f}, {reset.y:.1f}, {reset.z:.1f}) and retrying…",
+                    LogLevel.WARNING,
+                )
+                await asyncio.gather(*[c.teleport(reset) for c in clients])
+                continue
+            machine.log(
+                f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
+                f"to leave {from_zone!r}",
+                LogLevel.WARNING,
+            )
+            return "FAILURE"
+
+        # Zone change triggered — no more retries needed.
+        break
 
     # 4. Wait for loading screens to finish.
     machine.log("Zone transition triggered, waiting for loading screen to clear…", LogLevel.DEBUG)

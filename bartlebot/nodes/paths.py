@@ -34,3 +34,6 @@ DUNGEON_WARNING_PATH = [
     "MessageBoxModalWindow", "messageBoxBG", "messageBoxLayout",
     "AdjustmentWindow", "Layout", "centerButton",
 ]
+
+# Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
+ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]

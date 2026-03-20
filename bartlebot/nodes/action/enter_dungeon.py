@@ -161,7 +161,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 5. Wait briefly, then confirm dungeon warning dialog if it appeared.
     machine.log("Checking for dungeon warning dialog…", LogLevel.DEBUG)
-    await asyncio.gather(*[node_helpers.confirm_dialog_if_visible(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
+    await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
 
     # 6. Wait for all clients to leave from_zone.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)

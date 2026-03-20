@@ -10,6 +10,7 @@ from bartlebot.nodes.action.interact import run as interact_run, NODE_SPEC as _i
 from bartlebot.nodes.action.interact_to_zone import run as interact_to_zone_run, NODE_SPEC as _interact_to_zone_spec
 from bartlebot.nodes.action.mark_location import run as mark_location_run, NODE_SPEC as _mark_location_spec
 from bartlebot.nodes.action.recall_to_marked_location import run as recall_to_marked_location_run, NODE_SPEC as _recall_to_marked_location_spec
+from bartlebot.nodes.action.sleep import run as sleep_run, NODE_SPEC as _sleep_spec
 from bartlebot.nodes.condition.check_if_dropped import run as check_if_dropped_run, NODE_SPEC as _check_if_dropped_spec
 from bartlebot.nodes.condition.check_level_scaling import run as check_level_scaling_run, NODE_SPEC as _check_level_scaling_spec
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
@@ -27,6 +28,7 @@ NODE_REGISTRY: dict = {
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
     "recall_to_marked_location": recall_to_marked_location_run,
+    "sleep": sleep_run,
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
 }
@@ -44,6 +46,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
     "recall_to_marked_location": _recall_to_marked_location_spec,
+    "sleep": _sleep_spec,
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
 }

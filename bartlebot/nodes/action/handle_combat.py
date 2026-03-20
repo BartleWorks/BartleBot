@@ -88,6 +88,7 @@ NODE_SPEC = NodeSpec(
 
 _ENTER_COMBAT_TIMEOUT = 30.0
 _POLL_INTERVAL = 0.25
+_TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -150,8 +151,7 @@ async def run(machine, clients: list, params: dict) -> str:
                     LogLevel.DEBUG,
                 )
                 continue
-            await clients[idx].tp_to(targets[idx])
-            if not await _wait_for_all_in_combat([clients[idx]], _ENTER_COMBAT_TIMEOUT):
+            if not await _tp_and_wait_for_combat(clients[idx], enemy_name, _ENTER_COMBAT_TIMEOUT):
                 machine.log(
                     f"FAILURE: client {client_num} did not enter combat within "
                     f"{_ENTER_COMBAT_TIMEOUT}s",
@@ -159,17 +159,15 @@ async def run(machine, clients: list, params: dict) -> str:
                 )
                 return "FAILURE"
     else:
-        machine.log("Teleporting all clients to target simultaneously…", LogLevel.DEBUG)
-        await asyncio.gather(*[c.tp_to(t) for c, t in zip(clients, targets)])
-
-        # 4. Wait for all clients to enter combat
+        # 4. Teleport all clients to their targets, retrying until in combat
         machine.log(
-            f"Waiting for all clients to enter combat (timeout={_ENTER_COMBAT_TIMEOUT}s)…",
-            LogLevel.DEBUG,
+            "Teleporting all clients to target (retrying until in combat)…", LogLevel.DEBUG
         )
-        if not await _wait_for_all_in_combat(clients, _ENTER_COMBAT_TIMEOUT):
-            battle_states = await asyncio.gather(*[c.in_battle() for c in clients])
-            not_in_battle = [i for i, b in enumerate(battle_states) if not b]
+        results = await asyncio.gather(
+            *[_tp_and_wait_for_combat(c, enemy_name, _ENTER_COMBAT_TIMEOUT) for c in clients]
+        )
+        if not all(results):
+            not_in_battle = [i for i, ok in enumerate(results) if not ok]
             machine.log(f"Clients not in battle at timeout: {not_in_battle}", LogLevel.DEBUG)
             machine.log(
                 f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
@@ -299,14 +297,23 @@ def _parse_combat_order(s: str) -> list[int]:
     return result
 
 
-async def _wait_for_all_in_combat(clients: list, timeout: float) -> bool:
-    """Poll until all clients report in_battle(), or timeout expires."""
-    async def _poll() -> None:
-        while not all(await asyncio.gather(*[c.in_battle() for c in clients])):
+async def _tp_and_wait_for_combat(client, enemy_name: str, timeout: float) -> bool:
+    """Teleport to target, retrying every _TP_RETRY_INTERVAL seconds until in combat."""
+    deadline = asyncio.get_event_loop().time() + timeout
+    while True:
+        target = await _find_target(client, enemy_name)
+        if target is None:
+            return False
+        await client.tp_to(target)
+
+        # Poll in_battle() for up to _TP_RETRY_INTERVAL (or remaining time)
+        retry_at = min(asyncio.get_event_loop().time() + _TP_RETRY_INTERVAL, deadline)
+        while asyncio.get_event_loop().time() < retry_at:
+            if await client.in_battle():
+                return True
             await asyncio.sleep(_POLL_INTERVAL)
 
-    try:
-        await asyncio.wait_for(_poll(), timeout=timeout)
-        return True
-    except asyncio.TimeoutError:
-        return False
+        if asyncio.get_event_loop().time() >= deadline:
+            break
+
+    return False
