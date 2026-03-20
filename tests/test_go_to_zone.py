@@ -68,11 +68,12 @@ async def test_timeout_leaving_source_zone_fails():
 async def test_post_condition_wrong_zone_fails():
     """Clients leave from_zone but land in an unexpected zone → FAILURE."""
     client = FakeClient()
-    # step 1 → "Src"; step 3 poll1 → "Src"; step 3 poll2 → "Detour" (left Src);
-    # step 5 → "Detour" (not "Dst").
-    client.zone_name.side_effect = ["Src", "Src", "Detour", "Detour"]
+    # step 1 → "Src"; step 3 poll1 → "Src"; step 3 poll2 → "Detour" (left Src).
+    # wait_for_zone (step 5) is mocked to return the wrong-zone list immediately.
+    client.zone_name.side_effect = ["Src", "Src", "Detour"]
 
-    with patch.object(gtz, "POLL_INTERVAL", 0):
+    with patch.object(gtz, "POLL_INTERVAL", 0), \
+         patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["Detour"])):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"

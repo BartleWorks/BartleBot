@@ -1,6 +1,6 @@
 """Unit tests for the handle_combat node."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, call, patch
 
 import bartlebot.nodes.action.handle_combat as hc
 
@@ -58,7 +58,13 @@ async def test_named_enemy_uses_vague_name():
         )
 
     assert result == "SUCCESS"
-    client.find_closest_by_vague_name.assert_called_once_with("Cyclops")
+    # _find_target is called in step 1 (target check) and again inside
+    # _tp_and_wait_for_combat; both calls must use the vague name.
+    assert client.find_closest_by_vague_name.call_count >= 1
+    assert all(
+        c == call("Cyclops")
+        for c in client.find_closest_by_vague_name.call_args_list
+    )
     client.find_closest_mob.assert_not_called()
 
 
@@ -112,14 +118,13 @@ async def test_combat_order_sequential():
     c1.tp_to.side_effect = _record_tp_c1
     c2.tp_to.side_effect = _record_tp_c2
 
+    machine = FakeMachine()
+    machine.get_option = lambda name, default=None: [2, 1] if name == "Default Combat Order" else default
+
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
          patch.object(hc, "_POLL_INTERVAL", 0):
-        result = await hc.run(
-            FakeMachine(),
-            [c1, c2],
-            {**_DEFAULT_PARAMS, "combat_order": [2, 1]},
-        )
+        result = await hc.run(machine, [c1, c2], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
     assert tp_order == [2, 1]
@@ -130,14 +135,13 @@ async def test_combat_order_invalid_client_number_skipped():
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
 
+    machine = FakeMachine()
+    machine.get_option = lambda name, default=None: [5] if name == "Default Combat Order" else default
+
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
          patch.object(hc, "_POLL_INTERVAL", 0):
-        result = await hc.run(
-            FakeMachine(),
-            [client],
-            {**_DEFAULT_PARAMS, "combat_order": [5]},
-        )
+        result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 
     # Client 5 doesn't exist (only 1 client), so the combat_order entry is skipped.
     assert result == "SUCCESS"

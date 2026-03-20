@@ -115,10 +115,12 @@ async def test_trigger_timeout_returns_failure():
 async def test_wrong_zone_after_loading_returns_failure():
     """Clients load but arrive in an unexpected zone → FAILURE."""
     client = FakeClient()
-    client.zone_name.side_effect = ["OtherZone", "WrongZone"]
+    # Pre-check only; wait_for_zone (post-load) is mocked to return wrong zone.
+    client.zone_name.side_effect = ["OtherZone"]
     client.is_loading.side_effect = [True, False]
 
-    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0), \
+         patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])):
         result = await gwh.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -203,10 +205,12 @@ async def test_partial_already_in_zone_wrong_arrival_returns_failure():
     """One client already in hub, the other teleports but arrives in the wrong zone → FAILURE."""
     c_hub = _client_already_in_hub()
     c_wrong = FakeClient()
-    c_wrong.zone_name.side_effect = ["OtherZone", "WrongZone"]
+    # Pre-check only; wait_for_zone (post-load) is mocked to return wrong zone.
+    c_wrong.zone_name.side_effect = ["OtherZone"]
     c_wrong.is_loading.side_effect = [True, False]
 
-    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0):
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0), \
+         patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=[_ZONE, "WrongZone"])):
         result = await gwh.run(FakeMachine(), [c_hub, c_wrong], _PARAMS)
 
     assert result == "FAILURE"

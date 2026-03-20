@@ -33,11 +33,15 @@ class FakeClient:
         self.calc_mana_ratio = AsyncMock(return_value=1.0)
         self.has_potion = AsyncMock(return_value=True)
         self.use_potion_if_needed = AsyncMock()
+        self.use_potion = AsyncMock(return_value=True)
         self.stats = MagicMock()
         self.stats.potion_max = AsyncMock(return_value=10)
         self.stats.potion_charge = AsyncMock(return_value=10)
         self.tp_to_closest_health_wisp = AsyncMock(return_value=False)
         self.tp_to_closest_mana_wisp = AsyncMock(return_value=False)
+        self.mouse_handler = MagicMock()
+        self.mouse_handler.__aenter__ = AsyncMock(return_value=None)
+        self.mouse_handler.__aexit__ = AsyncMock(return_value=False)
 
 
 class FakeEntity:

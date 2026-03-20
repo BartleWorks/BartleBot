@@ -1,6 +1,6 @@
 """Unit tests for the interact_to_zone node."""
 
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.action.interact_to_zone as itz
 from wizwalker import Keycode
@@ -171,10 +171,12 @@ async def test_wrong_to_zone_after_loading_fails():
     """FAILURE when clients load but arrive in an unexpected zone."""
     client = FakeClient()
     client.is_in_npc_range.side_effect = [False, True]
-    client.zone_name.side_effect = [_FROM_ZONE, "WrongZone"]
+    # Pre-check only; wait_for_zone (post-load) is mocked to return wrong zone.
+    client.zone_name.side_effect = [_FROM_ZONE]
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(itz, "POLL_INTERVAL", 0):
+    with patch.object(itz, "POLL_INTERVAL", 0), \
+         patch("bartlebot.nodes.node_helpers.wait_for_zone", new=AsyncMock(return_value=["WrongZone"])):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"

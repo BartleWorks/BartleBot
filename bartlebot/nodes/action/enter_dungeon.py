@@ -112,21 +112,21 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 2. Clear any pre-existing interact prompt before starting.
-    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    # 2. Clear any pre-existing dungeon entrance prompt before starting.
+    prompts = await asyncio.gather(*[node_helpers.is_visible_by_path(c, node_helpers.DUNGEON_ENTRANCE_PATH) for c in clients])
     if any(prompts):
         stale = [i for i, p in enumerate(prompts) if p]
         machine.log(
-            f"Pre-existing interact prompt on client(s) {stale}; "
+            f"Pre-existing dungeon entrance prompt on client(s) {stale}; "
             f"teleporting to reset_xyz to clear it",
             LogLevel.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.wait_until(
-            lambda: node_helpers.none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_at_dungeon_entrance(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         )
 
-    # 3. Retry loop: teleport to sigil, wait for entrance prompt.
+    # 3. Retry loop: teleport to sigil, wait for dungeon entrance prompt.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
@@ -136,7 +136,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for dungeon entrance prompt…", LogLevel.DEBUG)
         if await node_helpers.wait_until(
-            lambda: node_helpers.all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_at_dungeon_entrance(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break

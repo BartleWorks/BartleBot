@@ -35,5 +35,8 @@ DUNGEON_WARNING_PATH = [
     "AdjustmentWindow", "Layout", "centerButton",
 ]
 
+# Dungeon entrance prompt (TeamUpButton is present only for dungeon sigils, not generic NPCs)
+DUNGEON_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground", "TeamUpButton"]
+
 # Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
 ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]

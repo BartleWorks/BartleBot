@@ -7,7 +7,7 @@ from wizwalker import Keycode, XYZ
 from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import LEVEL_SCALING_OPTION_BUTTON_PATH
+from bartlebot.nodes.paths import LEVEL_SCALING_OPTION_BUTTON_PATH, LEVEL_SCALING_ELIXIR_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -65,7 +65,8 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             "Clients not in zone, interact prompt never appeared after retries, "
-            "or NPCServicesWin option button never became visible.",
+            "NPCServicesWin option button never became visible, "
+            "or elixir not active after interaction.",
         ),
     ],
 )
@@ -182,9 +183,21 @@ async def run(machine, clients: list, params: dict) -> str:
         lambda: _none_menu_visible(scale_clients), MENU_TIMEOUT, POLL_INTERVAL
     )
 
+    # 10. Verify elixir is active on all scaled clients.
+    machine.log("Verifying level-scaling elixir is active…", LogLevel.DEBUG)
+    elixir_results = await asyncio.gather(
+        *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_ELIXIR_PATH) for c in scale_clients]
+    )
+    missing = [scale_indices[i] + 1 for i, active in enumerate(elixir_results) if not active]
+    if missing:
+        machine.log(
+            f"FAILURE: level-scaling elixir not active on client(s) {missing}",
+            LogLevel.WARNING,
+        )
+        return "FAILURE"
+
     machine.log("SUCCESS: level scaling applied")
     return "SUCCESS"
-
 
 
 async def _all_menu_visible(clients: list) -> bool:

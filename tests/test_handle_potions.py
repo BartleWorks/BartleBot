@@ -72,35 +72,35 @@ def _depleted_client(zone: str = "WizardCity/WC_Olde_Town") -> FakeClient:
 # ══════════════════════════════════════════════════════════════════════════════
 
 async def test_all_above_threshold_no_potions_used():
-    """Clients above both thresholds → use_potion_if_needed never called."""
+    """Clients above both thresholds → use_potion never called."""
     client = _well_stocked_client()
 
     result = await hp.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.use_potion_if_needed.assert_not_called()
+    client.use_potion.assert_not_called()
 
 
 async def test_health_below_threshold_uses_potion():
-    """Client below health threshold → use_potion_if_needed called."""
+    """Client below health threshold → use_potion called."""
     client = _well_stocked_client()
     client.calc_health_ratio.return_value = 0.3  # below 0.5
 
     result = await hp.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.use_potion_if_needed.assert_called_once()
+    client.use_potion.assert_called_once()
 
 
 async def test_mana_below_threshold_uses_potion():
-    """Client below mana threshold → use_potion_if_needed called."""
+    """Client below mana threshold → use_potion called."""
     client = _well_stocked_client()
     client.calc_mana_ratio.return_value = 0.05  # below 0.15
 
     result = await hp.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    client.use_potion_if_needed.assert_called_once()
+    client.use_potion.assert_called_once()
 
 
 async def test_zero_thresholds_skip_potion_use():
@@ -113,7 +113,7 @@ async def test_zero_thresholds_skip_potion_use():
     result = await hp.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
-    client.use_potion_if_needed.assert_not_called()
+    client.use_potion.assert_not_called()
 
 
 async def test_only_low_clients_use_potions():
@@ -125,8 +125,8 @@ async def test_only_low_clients_use_potions():
     result = await hp.run(FakeMachine(), [c_ok, c_low], _PARAMS)
 
     assert result == "SUCCESS"
-    c_ok.use_potion_if_needed.assert_not_called()
-    c_low.use_potion_if_needed.assert_called_once()
+    c_ok.use_potion.assert_not_called()
+    c_low.use_potion.assert_called_once()
 
 
 # ══════════════════════════════════════════════════════════════════════════════

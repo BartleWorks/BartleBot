@@ -17,13 +17,10 @@ _PARAMS = {
 
 
 def _happy_client() -> FakeClient:
-    """Client that starts in Hub, enters Dungeon, with prompt showing immediately."""
+    """Client that starts in Hub and enters Dungeon."""
     c = FakeClient()
     # pre-check; zone-change poll1 (still in Hub); zone-change poll2 (left Hub); post-check
     c.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Dungeon"]
-    # First call is the step-2 pre-check (no stale prompt); subsequent calls see the
-    # sigil prompt after teleporting.
-    c.is_in_npc_range.side_effect = [False, True]
     return c
 
 
@@ -42,7 +39,10 @@ async def test_success_single_client():
     """Happy path: one client teleports to sigil, prompt appears, enters dungeon."""
     client = _happy_client()
 
-    with patch.object(ed, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -54,7 +54,10 @@ async def test_success_multiple_clients():
     """All clients must go through the full flow — verified with two clients."""
     clients = [_happy_client(), _happy_client()]
 
-    with patch.object(ed, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
         result = await ed.run(FakeMachine(), clients, _PARAMS)
 
     assert result == "SUCCESS"
@@ -66,15 +69,17 @@ async def test_one_client_stuck_in_source_zone_fails():
     """Post-condition failure: client A enters the dungeon, client B ends up back in Hub."""
     # Client A: enters successfully
     client_a = FakeClient()
-    client_a.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Dungeon"]
-    client_a.is_in_npc_range.side_effect = [False, True]
+    client_a.zone_name.side_effect = ["Hub", "Hub", "Dungeon"]
 
-    # Client B: both appear to leave Hub during zone-change wait, but post-check shows Hub
+    # Client B: appears to leave Hub during zone-change wait, but post-check shows Hub
     client_b = FakeClient()
-    client_b.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Hub"]
-    client_b.is_in_npc_range.side_effect = [False, True]
+    client_b.zone_name.side_effect = ["Hub", "Hub", "Dungeon"]
 
-    with patch.object(ed, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["Dungeon", "Hub"])),
+    ):
         result = await ed.run(FakeMachine(), [client_a, client_b], _PARAMS)
 
     assert result == "FAILURE"
@@ -84,7 +89,8 @@ async def test_prompt_never_appears_retries_exhausted_fails():
     """FAILURE when the entrance prompt never shows after MAX_RETRIES attempts."""
     client = FakeClient()
     client.zone_name.return_value = "Hub"
-    client.is_in_npc_range.return_value = False  # prompt never appears
+    # Entrance prompt never appears — FakeClient root_window has no children, so
+    # is_visible_by_path → False → all_at_dungeon_entrance → False.
 
     with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "PROMPT_TIMEOUT", 0.01):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
@@ -100,7 +106,7 @@ async def test_prompt_retry_then_success():
     client.zone_name.side_effect = ["Hub", "Hub", "Dungeon", "Dungeon"]
 
     # Track whether the reset teleport has happened yet.
-    # is_in_npc_range returns False until reset_xyz is visited, then True.
+    # Entrance prompt returns False until reset_xyz is visited, then True.
     reset_visited: list[bool] = []
 
     async def tracking_teleport(xyz):
@@ -109,14 +115,13 @@ async def test_prompt_retry_then_success():
 
     client.teleport.side_effect = tracking_teleport
 
-    async def npc_range():
+    async def entrance_prompt(clients_list):
         return bool(reset_visited)
-
-    client.is_in_npc_range.side_effect = npc_range
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(ed, "PROMPT_TIMEOUT", 0.01),
+        patch.object(nh, "all_at_dungeon_entrance", side_effect=entrance_prompt),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
@@ -131,7 +136,10 @@ async def test_loading_screen_awaited():
     client = _happy_client()
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(ed, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -141,11 +149,14 @@ async def test_loading_screen_awaited():
 async def test_wrong_dungeon_zone_fails():
     """Post-condition failure: zone changes but clients land in the wrong zone."""
     client = FakeClient()
-    # pre-check; zone-change poll1 (still Hub); zone-change poll2 (left Hub); post-check (wrong zone)
-    client.zone_name.side_effect = ["Hub", "Hub", "WrongZone", "WrongZone"]
-    client.is_in_npc_range.side_effect = [False, True]
+    # pre-check; zone-change poll1 (still Hub); zone-change poll2 (left Hub)
+    client.zone_name.side_effect = ["Hub", "Hub", "WrongZone"]
 
-    with patch.object(ed, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+    ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -155,8 +166,13 @@ async def test_dungeon_warning_dialog_confirmed():
     """ENTER is pressed when the dungeon warning dialog appears after pressing X."""
     client = _happy_client()
 
+    # is_visible_by_path returns True for all paths (including the entrance pre-check in
+    # step 2), so also patch none_at_dungeon_entrance to True so that the stale-prompt
+    # wait resolves immediately instead of spinning until PROMPT_TIMEOUT.
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "none_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
@@ -175,6 +191,7 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False)),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
@@ -195,6 +212,7 @@ async def test_dungeon_warning_dialog_appears_late():
         nonlocal call_count
         call_count += 1
         # Each call takes real time so elapsed accumulates; dialog appears on 3rd poll.
+        # Calls: 1 = step-2 entrance pre-check (False), 2-3 = warning dialog polls (True on 3).
         await asyncio.sleep(0.007)
         return call_count == 3
 
@@ -204,6 +222,7 @@ async def test_dungeon_warning_dialog_appears_late():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=late_visible)),
     ):
         result = await ed.run(machine, [client], _PARAMS)
