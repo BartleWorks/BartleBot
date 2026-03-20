@@ -358,6 +358,9 @@ class EditScene(QGraphicsScene):
             act = QAction("Delete Transition", menu)
             act.triggered.connect(lambda: self._delete_edge_item(item))
             menu.addAction(act)
+            act_ins = QAction("Insert State Here", menu)
+            act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
+            menu.addAction(act_ins)
         else:
             scene_pos = event.scenePos()
             act = QAction("Add State Here", menu)
@@ -365,7 +368,7 @@ class EditScene(QGraphicsScene):
                 lambda: self.add_state(QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2))
             )
             menu.addAction(act)
-        menu.exec(event.screenPos().toPoint())
+        menu.exec(event.screenPos())
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -484,6 +487,48 @@ class EditScene(QGraphicsScene):
         self.refresh_errors()
         self.config_changed.emit()
 
+    def _insert_state_on_edge(self, edge_item: EdgeItem) -> None:
+        """Split an existing edge by inserting a new state at its midpoint."""
+        if self._config is None:
+            return
+        # Locate the edge record
+        for (s, w, d, ei) in list(self._edge_items):
+            if ei is edge_item:
+                break
+        else:
+            return
+        src_node = self._node_items.get(s)
+        dst_node = self._node_items.get(d)
+        if src_node is None or dst_node is None:
+            return
+
+        # Midpoint of the edge path in scene coordinates
+        mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
+
+        # Create a new state at the midpoint
+        new_id = _unique_id([st.id for st in self._config.states])
+        default_type = next(iter(NODE_REGISTRY), "go_to_zone")
+        state = StateModel(
+            id=new_id,
+            node_type=default_type,
+            position={"x": mid.x() + NODE_W / 2, "y": mid.y() + NODE_H / 2},
+        )
+        self._config.states.append(state)
+        returns = _node_returns(default_type)
+        new_node = NodeItem(
+            new_id, None, interactive=True, returns=returns, is_terminal=True,
+            node_type=default_type,
+        )
+        new_node.setPos(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2))
+        self.addItem(new_node)
+        self._node_items[new_id] = new_node
+
+        # Remove original edge (src --w--> dst), then wire src --w--> new --∅--> dst
+        self._delete_edge_item(edge_item)
+        self._create_transition(src_node, new_node, w)
+        self._create_transition(new_node, dst_node, None)
+        self._update_scene_rect()
+
     def _flush_positions(self) -> None:
         if self._config is None:
             return
@@ -581,6 +626,9 @@ class BotCanvas(QWidget):
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
 
+        self._layout_btn = _icon_btn("layout", "Auto-Layout states")
+        self._layout_btn.clicked.connect(self._on_layout_clicked)
+
         self._done_btn = _icon_btn("checkmark", "Apply changes and return to Run mode (does not save to disk)")
         self._done_btn.clicked.connect(self._on_done_clicked)
 
@@ -599,6 +647,8 @@ class BotCanvas(QWidget):
         edit_center_row = QHBoxLayout(edit_center)
         edit_center_row.setContentsMargins(0, 0, 0, 0)
         edit_center_row.addWidget(self._add_state_btn)
+        edit_center_row.addSpacing(4)
+        edit_center_row.addWidget(self._layout_btn)
 
         self._center_stack = QStackedWidget()
         self._center_stack.addWidget(run_center)   # _TB_RUN  = 0
@@ -732,6 +782,14 @@ class BotCanvas(QWidget):
         """Load a BotConfig. Enters RUN mode with the graph ready."""
         _inject_required_options(config)
         self._config = config
+        # Auto-layout when no positions are saved and the setting is enabled
+        if (
+            config.states
+            and all(s.position is None for s in config.states)
+            and SettingsManager.instance().get("canvas", "auto_layout_on_load", default=True)
+        ):
+            from bartlebot.gui.canvas.layout import auto_layout
+            auto_layout(config)
         self._scene.setup(config)
         self._param_panel.show_idle()
         self._view.fit_scene()
@@ -913,6 +971,17 @@ class BotCanvas(QWidget):
     def _on_add_state(self) -> None:
         center = self._view.mapToScene(self._view.viewport().rect().center())
         self._scene.add_state(QPointF(center.x() - NODE_W / 2, center.y() - NODE_H / 2))
+
+    def _on_layout_clicked(self) -> None:
+        if self._config is None:
+            return
+        from bartlebot.gui.canvas.layout import auto_layout
+        self._scene._flush_positions()
+        auto_layout(self._config)
+        self._scene.setup(self._config)
+        self._view.fit_scene()
+        self._minimap.fit_to_scene()
+        self.config_changed.emit()
 
     # ------------------------------------------------------------------
     # Mode switching
