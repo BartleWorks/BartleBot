@@ -93,6 +93,20 @@ class DropSection(SidebarSection):
             table.setRowCount(0)
         self._search.clear()
 
+    def swap_clients(self, idx_a: int, idx_b: int) -> None:
+        """Swap the drop tables for two client positions."""
+        n = len(self._tables)
+        if idx_a == idx_b or not (0 <= idx_a < n) or not (0 <= idx_b < n):
+            return
+        if idx_a > idx_b:
+            idx_a, idx_b = idx_b, idx_a
+        # Move tabs: put idx_b's tab at idx_a, then idx_a's (now at idx_a+1) to idx_b
+        bar = self._tabs.tabBar()
+        bar.moveTab(idx_b, idx_a)
+        bar.moveTab(idx_a + 1, idx_b)
+        # Keep _tables in sync with the new tab order
+        self._tables[idx_a], self._tables[idx_b] = self._tables[idx_b], self._tables[idx_a]
+
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------

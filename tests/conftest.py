@@ -33,11 +33,15 @@ class FakeClient:
         self.calc_mana_ratio = AsyncMock(return_value=1.0)
         self.has_potion = AsyncMock(return_value=True)
         self.use_potion_if_needed = AsyncMock()
+        self.use_potion = AsyncMock(return_value=True)
         self.stats = MagicMock()
         self.stats.potion_max = AsyncMock(return_value=10)
         self.stats.potion_charge = AsyncMock(return_value=10)
         self.tp_to_closest_health_wisp = AsyncMock(return_value=False)
         self.tp_to_closest_mana_wisp = AsyncMock(return_value=False)
+        self.mouse_handler = MagicMock()
+        self.mouse_handler.__aenter__ = AsyncMock(return_value=None)
+        self.mouse_handler.__aexit__ = AsyncMock(return_value=False)
 
 
 class FakeEntity:
@@ -50,8 +54,9 @@ class FakeEntity:
 class FakeMachine:
     """Minimal stub for BotMachine that records logs and drops."""
 
-    def __init__(self, bot_config=None):
+    def __init__(self, bot_config=None, options: dict | None = None):
         self._bot_config = bot_config
+        self._options = options or {}
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
 
@@ -62,5 +67,7 @@ class FakeMachine:
         self.drops.append((item, qty, client_index))
 
     def get_option(self, name: str, default=None):
-        """Return 0 for numeric options so nodes incur no real delay in tests."""
+        """Return configured option value, or 0 for numeric fallback (avoids real delays)."""
+        if name in self._options:
+            return self._options[name]
         return 0

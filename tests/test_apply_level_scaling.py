@@ -10,7 +10,6 @@ _PARAMS = {
     "zone": "TestZone",
     "interact_xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
     "reset_xyz": {"x": 1.0, "y": 0.0, "z": 0.0},
-    "clients_to_scale": [],
 }
 
 # No-op patches for the NPCServicesWin menu (instantly visible, then instantly gone).
@@ -20,6 +19,11 @@ _patch_menu_visible = lambda: patch(  # noqa: E731
 )
 _patch_menu_gone = lambda: patch(  # noqa: E731
     "bartlebot.nodes.action.apply_level_scaling._none_menu_visible",
+    new=AsyncMock(return_value=True),
+)
+# Patch for step 10: elixir is active on all clients after interaction.
+_patch_elixir_active = lambda: patch(  # noqa: E731
+    "bartlebot.nodes.node_helpers.is_visible_by_path",
     new=AsyncMock(return_value=True),
 )
 
@@ -58,12 +62,11 @@ async def test_one_client_wrong_zone_fails():
 
 
 async def test_all_clients_filtered_out_succeeds():
-    """clients_to_scale=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
+    """Level Scaling Clients=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
     client = FakeClient()
+    machine = FakeMachine(options={"Level Scaling Clients": [5]})
 
-    result = await als.run(
-        FakeMachine(), [client], {**_PARAMS, "clients_to_scale": [5]}
-    )
+    result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     client.teleport.assert_not_called()
@@ -104,7 +107,7 @@ async def test_success():
     """Happy path: prompt appears, X pressed, menu appears and dismisses → SUCCESS."""
     client = _ready_client()
 
-    with _patch_menu_visible(), _patch_menu_gone(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -113,11 +116,11 @@ async def test_success():
 
 
 async def test_empty_clients_to_scale_scales_all():
-    """clients_to_scale=[] (default) scales every connected client."""
+    """Level Scaling Clients=[] (default) scales every connected client."""
     c1 = _ready_client()
     c2 = _ready_client()
 
-    with _patch_menu_visible(), _patch_menu_gone(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(FakeMachine(), [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
@@ -130,11 +133,10 @@ async def test_clients_to_scale_subset():
     """Only the specified client is scaled; the other is not touched."""
     c1 = FakeClient()  # should NOT be scaled
     c2 = _ready_client()  # should be scaled
+    machine = FakeMachine(options={"Level Scaling Clients": [2]})
 
-    params = {**_PARAMS, "clients_to_scale": [2]}
-
-    with _patch_menu_visible(), _patch_menu_gone(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [c1, c2], params)
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
+        result = await als.run(machine, [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
     c1.teleport.assert_not_called()
@@ -147,12 +149,11 @@ async def test_clients_to_scale_subset():
 async def test_out_of_range_client_numbers_skipped():
     """Client numbers beyond the connected count are silently skipped."""
     client = _ready_client()
+    machine = FakeMachine(options={"Level Scaling Clients": [1, 99]})
 
     # [1, 99]: client 99 doesn't exist, only client 1 is scaled.
-    params = {**_PARAMS, "clients_to_scale": [1, 99]}
-
-    with _patch_menu_visible(), _patch_menu_gone(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [client], params)
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
@@ -175,7 +176,7 @@ async def test_stale_prompt_cleared_before_interaction():
 
     client.is_in_npc_range.side_effect = _npc_range
 
-    with _patch_menu_visible(), _patch_menu_gone(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -204,6 +205,7 @@ async def test_prompt_retry_then_success():
     with (
         _patch_menu_visible(),
         _patch_menu_gone(),
+        _patch_elixir_active(),
         patch.object(als, "POLL_INTERVAL", 0),
         patch.object(als, "PROMPT_TIMEOUT", 0.01),
     ):

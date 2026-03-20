@@ -43,6 +43,7 @@ class BotMachine:
         self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
+        self._ambient_combat_lock = asyncio.Lock()
         self.last_result: str | None = None
 
         self._state_map = {s["id"]: s for s in config["states"]}
@@ -125,6 +126,7 @@ class BotMachine:
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
+        combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -156,10 +158,12 @@ class BotMachine:
                             self._on_transition(prev_state, self.last_result or "", self.state)
         finally:
             watcher.cancel()
-            try:
-                await watcher
-            except asyncio.CancelledError:
-                pass
+            combat_watcher.cancel()
+            for t in (watcher, combat_watcher):
+                try:
+                    await t
+                except asyncio.CancelledError:
+                    pass
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
@@ -177,6 +181,97 @@ class BotMachine:
                     self.log(f"Ambient dialog dismissed on client {i}", LogLevel.DEBUG)
                 elif isinstance(r, Exception):
                     self.log(f"Ambient dialog watcher error on client {i}: {r}", LogLevel.DEBUG)
+
+    async def _ambient_combat_watcher(self) -> None:
+        """Background task: detect and handle unexpected combat on any client.
+
+        Runs SprintyCombat using the bot's default combat config whenever a client
+        enters combat outside of an explicit handle_combat node. Guarded against
+        re-entry and against conflicting with intentional combat nodes.
+        """
+        from bartlebot.nodes import node_helpers
+        from bartlebot.nodes.action.handle_combat import (
+            _resolve_combat_dsl,
+            _run_combat,
+            _split_combat_config,
+        )
+        from bartlebot.utils.drop_detection import snapshot_chat, extract_new_drops
+
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            clients = list(self.clients)
+            if not clients:
+                continue
+
+            # Skip while the FSM itself is running a handle_combat node.
+            try:
+                state_def = self._state_map.get(self.state, {})
+            except AttributeError:
+                continue  # self.state not yet initialised
+            if state_def.get("node_type") == "handle_combat":
+                continue
+
+            # Skip if a prior ambient combat session is still running.
+            if self._ambient_combat_lock.locked():
+                continue
+
+            in_battle_flags = await asyncio.gather(
+                *[c.in_battle() for c in clients],
+                return_exceptions=True,
+            )
+            battling = [c for c, f in zip(clients, in_battle_flags) if f is True]
+            if not battling:
+                continue
+
+            async with self._ambient_combat_lock:
+                # Re-check state after acquiring lock — FSM may have entered handle_combat
+                # between the check above and here.
+                try:
+                    if self._state_map.get(self.state, {}).get("node_type") == "handle_combat":
+                        continue
+                except AttributeError:
+                    continue
+
+                self.log(
+                    f"Ambient combat detected on {len(battling)} client(s) — handling",
+                    LogLevel.WARNING,
+                )
+
+                combat_dsl, dsl_source = _resolve_combat_dsl(self, {}, use_bot_default=True)
+                if not combat_dsl:
+                    self.log("Ambient combat: no combat DSL available, skipping", LogLevel.WARNING)
+                    continue
+
+                self.log(f"Ambient combat: DSL source={dsl_source!r}", LogLevel.DEBUG)
+
+                chat_before_raw = await asyncio.gather(
+                    *[snapshot_chat(c) for c in battling],
+                    return_exceptions=True,
+                )
+                chat_before = [s if isinstance(s, str) else "" for s in chat_before_raw]
+
+                per_client_dsl = _split_combat_config(combat_dsl, len(battling))
+                results = await asyncio.gather(
+                    *[_run_combat(c, dsl) for c, dsl in zip(battling, per_client_dsl)],
+                    return_exceptions=True,
+                )
+                for i, r in enumerate(results):
+                    if isinstance(r, Exception):
+                        self.log(f"Ambient combat: error on client {i}: {r}", LogLevel.DEBUG)
+
+                self.log("Ambient combat: SprintyCombat finished", LogLevel.DEBUG)
+
+                for i, (client, before) in enumerate(zip(battling, chat_before)):
+                    try:
+                        after = await snapshot_chat(client)
+                        for item_name in extract_new_drops(before, after):
+                            self.on_drop(item_name, 1, self.clients.index(client))
+                            self.log(f"Ambient combat drop: {item_name}")
+                    except Exception as exc:
+                        self.log(
+                            f"Ambient combat: drop detection error on client {i}: {exc}",
+                            LogLevel.DEBUG,
+                        )
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""

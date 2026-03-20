@@ -39,8 +39,8 @@ class StateModel(BaseModel):
 
 class BotOptionModel(BaseModel):
     name: str
-    type: Literal["bool", "int", "float", "str"]
-    default: bool | int | float | str = False
+    type: Literal["bool", "int", "float", "str", "int_list"]
+    default: bool | int | float | str | list[int] = False
     description: str | None = None
 
 

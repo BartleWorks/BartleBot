@@ -369,7 +369,12 @@ class OptionsSection(SidebarSection):
         elif isinstance(widget, QDoubleSpinBox):
             widget.valueChanged.connect(_update)
         elif isinstance(widget, QLineEdit):
-            widget.editingFinished.connect(lambda: _update(widget.text()))
+            if opt.type == "int_list":
+                widget.editingFinished.connect(lambda: _update(
+                    [int(x.strip()) for x in widget.text().split(",") if x.strip().lstrip("-").isdigit()]
+                ))
+            else:
+                widget.editingFinished.connect(lambda: _update(widget.text()))
 
 
 # ---------------------------------------------------------------------------
@@ -405,6 +410,9 @@ def _build_option_row(opt) -> tuple[QWidget, QWidget]:
             widget.setDecimals(4)
             widget.setRange(-1e12, 1e12)
             widget.setValue(float(opt.default))
+        elif opt.type == "int_list":
+            val_str = ", ".join(str(v) for v in opt.default) if isinstance(opt.default, list) else str(opt.default or "")
+            widget = QLineEdit(val_str)
         else:  # str
             widget = QLineEdit(str(opt.default))
 

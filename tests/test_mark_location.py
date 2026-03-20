@@ -105,7 +105,13 @@ async def test_correct_zone_wrong_xyz_teleports_to_target():
     client = _ready_client()
     client.body.position = AsyncMock(return_value=XYZ(100.0, 0.0, 0.0))  # far from target
 
-    with _TIMER_CLEAR, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
+    with (
+        _TIMER_CLEAR,
+        _RECALL_ENABLED,
+        patch.object(ml, "POST_MARK_WAIT", 0),
+        patch.object(ml, "STABILIZE_TIMEOUT", 0),
+        patch.object(ml, "POLL_INTERVAL", 0),
+    ):
         result = await ml.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"

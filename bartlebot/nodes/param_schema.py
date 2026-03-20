@@ -14,13 +14,13 @@ class BotOptionSpec:
 
     Attributes:
         name:        Option name as used in machine.get_option().
-        type:        One of "bool", "int", "float", "str".
+        type:        One of "bool", "int", "float", "str", "int_list".
         default:     Default value shown in the sidebar.
         description: Tooltip shown next to the option widget.
     """
     name: str
     type: str
-    default: bool | int | float | str = 0.0
+    default: bool | int | float | str | list = 0.0
     description: str | None = None
 
 

@@ -42,19 +42,6 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="Default: uses the bot-level or BartleBot built-in combat config",
         disabled_by="use_bot_default",
     ),
-    ParamField(
-        key="combat_order",
-        type="int_list",
-        label="Combat Order",
-        help=(
-            "Order in which clients enter combat. Use 1-based client numbers "
-            "matching p1/p2/p3/p4 in your combat config (e.g. '2, 1' sends "
-            "client 2 first). Each client waits to enter battle before the "
-            "next is sent. Leave empty to send all clients simultaneously."
-        ),
-        default=[],
-        default_hint="Default: all clients enter combat simultaneously",
-    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -75,12 +62,12 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         BotOptionSpec(
             name="Default Combat Order",
-            type="str",
-            default="",
+            type="int_list",
+            default=[],
             description=(
                 "Default order clients enter combat (e.g. '2, 1' sends client 2 first). "
-                "Empty = all clients enter simultaneously. Overridden per node by the "
-                "Combat Order parameter."
+                "Empty = all clients enter simultaneously. Can be overridden per node "
+                "via Option Overrides."
             ),
         ),
     ],
@@ -131,15 +118,7 @@ async def run(machine, clients: list, params: dict) -> str:
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
     # 3. Teleport clients to their target (sequential or simultaneous).
-    #    Node-level combat_order takes priority; fall back to bot-level default.
-    combat_order: list[int] = params.get("combat_order") or []
-    if not combat_order:
-        bot_order_str: str = machine.get_option("Default Combat Order", "")
-        if bot_order_str:
-            combat_order = _parse_combat_order(bot_order_str)
-            machine.log(
-                f"Using bot-level Default Combat Order: {combat_order}", LogLevel.DEBUG
-            )
+    combat_order: list[int] = machine.get_option("Default Combat Order", []) or []
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", LogLevel.DEBUG)
         for client_num in combat_order:
@@ -277,24 +256,6 @@ def _split_combat_config(dsl: str, num_clients: int) -> list[str]:
     sections[current_idx] = current_lines
     fallback = "\n".join(sections.get(0, lines))
     return ["\n".join(sections.get(i, sections.get(0, lines))) for i in range(num_clients)]
-
-
-def _parse_combat_order(s: str) -> list[int]:
-    """Parse a comma-separated string of 1-based client numbers into a list.
-
-    Invalid tokens are silently skipped. Returns an empty list if nothing parses.
-    Example: "2, 1" → [2, 1]
-    """
-    result = []
-    for token in s.split(","):
-        token = token.strip()
-        try:
-            n = int(token)
-            if n > 0:
-                result.append(n)
-        except ValueError:
-            pass
-    return result
 
 
 async def _tp_and_wait_for_combat(client, enemy_name: str, timeout: float) -> bool:

@@ -358,6 +358,12 @@ def _make_override_widget(type_str: str, val: Any, help_text: str = "") -> QWidg
         except (TypeError, ValueError):
             wf.setValue(0.0)
         w = wf
+    elif type_str == "int_list":
+        w = _IntListLineEdit()
+        if isinstance(val, list):
+            w.setText(", ".join(str(v) for v in val))
+        else:
+            w.setText(str(val) if val else "")
     else:  # str
         ws = QLineEdit()
         ws.setText(str(val) if val is not None else "")
@@ -374,6 +380,8 @@ def _read_override_widget(w: QWidget) -> Any:
         return w.value()
     if isinstance(w, QDoubleSpinBox):
         return w.value()
+    if isinstance(w, _IntListLineEdit):
+        return [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
     if isinstance(w, QLineEdit):
         return w.text()
     return None

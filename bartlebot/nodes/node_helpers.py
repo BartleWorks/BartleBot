@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode
 
-from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
+from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DUNGEON_ENTRANCE_PATH, DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
 
 POLL_INTERVAL = 0.25
 
@@ -18,6 +18,18 @@ async def all_in_npc_range(clients: list) -> bool:
 async def none_in_npc_range(clients: list) -> bool:
     """Return True when no client has an interact prompt showing."""
     results = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    return not any(results)
+
+
+async def all_at_dungeon_entrance(clients: list) -> bool:
+    """Return True when every client has the dungeon entrance prompt (TeamUpButton) showing."""
+    results = await asyncio.gather(*[is_visible_by_path(c, DUNGEON_ENTRANCE_PATH) for c in clients])
+    return all(results)
+
+
+async def none_at_dungeon_entrance(clients: list) -> bool:
+    """Return True when no client has the dungeon entrance prompt (TeamUpButton) showing."""
+    results = await asyncio.gather(*[is_visible_by_path(c, DUNGEON_ENTRANCE_PATH) for c in clients])
     return not any(results)
 
 
