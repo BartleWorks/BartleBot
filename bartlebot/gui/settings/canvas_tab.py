@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
-    QDoubleSpinBox, QFormLayout, QLabel, QVBoxLayout, QWidget,
+    QCheckBox, QDoubleSpinBox, QFormLayout, QLabel, QVBoxLayout, QWidget,
 )
 
 from bartlebot.settings_manager import SettingsManager
@@ -20,6 +20,11 @@ class CanvasTab(QWidget):
         form.setSpacing(8)
 
         sm = SettingsManager.instance()
+
+        # Enable minimap
+        self._minimap_cb = QCheckBox()
+        self._minimap_cb.setChecked(sm.get("canvas", "minimap_visible", default=True))
+        form.addRow("Enable minimap:", self._minimap_cb)
 
         # LOD compact threshold
         self._lod_sb = QDoubleSpinBox()
@@ -42,7 +47,6 @@ class CanvasTab(QWidget):
         layout.addStretch()
 
     def apply(self) -> None:
-        SettingsManager.instance().set(
-            "canvas", "lod_compact_threshold",
-            value=round(self._lod_sb.value(), 2),
-        )
+        sm = SettingsManager.instance()
+        sm.set("canvas", "minimap_visible", value=self._minimap_cb.isChecked())
+        sm.set("canvas", "lod_compact_threshold", value=round(self._lod_sb.value(), 2))

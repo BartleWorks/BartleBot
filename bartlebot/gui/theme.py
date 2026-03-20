@@ -105,6 +105,23 @@ class _Theme:
     port_label_color: str = "#444444"
 
     # ------------------------------------------------------------------
+    # Floating overlay panels (search bar, minimap, etc.) — light theme
+    # ------------------------------------------------------------------
+    overlay_bg:     str = "#f0f2f5"           # near-white panel background
+    overlay_border: str = "#b0b8c8"           # medium grey border
+    overlay_text:   str = "#1a1e28"           # near-black primary text
+    overlay_muted:  str = "#666e84"           # muted secondary text
+
+    minimap_bg:     str = "rgba(240, 242, 245, 220)"   # semi-transparent light background
+    minimap_border: str = "rgba(160, 168, 192, 200)"   # semi-transparent border
+
+    # ------------------------------------------------------------------
+    # Search match highlight (node rings drawn behind nodes)
+    # ------------------------------------------------------------------
+    search_match_current: str = "#00ccee"   # bright cyan — the centered/active match
+    search_match_other:   str = "#0088aa"   # teal — other matches
+
+    # ------------------------------------------------------------------
     # Game-embed client tile
     # ------------------------------------------------------------------
     client_tile_focus_border: str = "#cc2222"

@@ -15,7 +15,7 @@ from PyQt6.QtGui import QAction, QColor, QPen, QKeyEvent, QMouseEvent, QTextChar
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
-    QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
+    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
     QStackedWidget, QVBoxLayout, QWidget,
 )
 
@@ -551,6 +551,31 @@ class EditScene(QGraphicsScene):
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(self.sceneRect().united(bounds))
 
+    def _get_tab_order(self) -> list[str]:
+        """State IDs in BFS order from initial state, orphans appended at the end."""
+        if self._config is None:
+            return list(self._node_items.keys())
+        adj: dict[str, list[str]] = {}
+        for t in self._config.transitions:
+            adj.setdefault(t.source, []).append(t.dest)
+        order: list[str] = []
+        seen: set[str] = set()
+        queue = [self._config.initial]
+        while queue:
+            sid = queue.pop(0)
+            if sid in seen:
+                continue
+            seen.add(sid)
+            if sid in self._node_items:
+                order.append(sid)
+            for dest in adj.get(sid, []):
+                if dest not in seen:
+                    queue.append(dest)
+        for sid in self._node_items:
+            if sid not in seen:
+                order.append(sid)
+        return order
+
 
 # ---------------------------------------------------------------------------
 # _EditView
@@ -559,6 +584,77 @@ class EditScene(QGraphicsScene):
 class _EditView(GraphView):
     def __init__(self, scene: QGraphicsScene, parent=None):
         super().__init__(scene, interactive=True, parent=parent)
+
+
+# ---------------------------------------------------------------------------
+# _SearchBar — floating quick-search overlay (Ctrl+F)
+# ---------------------------------------------------------------------------
+
+class _SearchBar(QWidget):
+    """Floating search bar overlaid on the graph view (Ctrl+F to open)."""
+
+    text_changed = pyqtSignal(str)
+    next_match   = pyqtSignal()
+    prev_match   = pyqtSignal()
+    closed       = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet(
+            f"QWidget {{ background-color: {THEME.overlay_bg}; border: 1px solid {THEME.overlay_border}; border-radius: 6px; }}"
+            f"QLineEdit {{ border: none; background: transparent; color: {THEME.overlay_text}; font-size: 13px; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.overlay_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.overlay_text}; }}"
+            f"QLabel {{ border: none; color: {THEME.overlay_muted}; font-size: 11px; }}"
+        )
+
+        self._input = QLineEdit()
+        self._input.setPlaceholderText("Search states…")
+        self._input.setFixedWidth(200)
+        self._input.installEventFilter(self)
+        self._input.textChanged.connect(self.text_changed)
+
+        self._count_lbl = QLabel()
+
+        close_btn = QPushButton("×")
+        close_btn.setFixedSize(22, 22)
+        close_btn.clicked.connect(self.closed)
+
+        row = QHBoxLayout(self)
+        row.setContentsMargins(8, 4, 6, 4)
+        row.setSpacing(6)
+        row.addWidget(self._input)
+        row.addWidget(self._count_lbl)
+        row.addWidget(close_btn)
+        self.adjustSize()
+        self.setVisible(False)
+
+    def set_count(self, current: int, total: int) -> None:
+        self._count_lbl.setText("" if total == 0 and not self._input.text() else
+                                "no matches" if total == 0 else f"{current}/{total}")
+        self.adjustSize()
+
+    def focus_input(self) -> None:
+        self._input.setFocus()
+        self._input.selectAll()
+
+    def current_text(self) -> str:
+        return self._input.text()
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._input and event.type() == QEvent.Type.KeyPress:
+            key = event.key()
+            if key == Qt.Key.Key_Escape:
+                self.closed.emit()
+                return True
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Down):
+                self.next_match.emit()
+                return True
+            if key == Qt.Key.Key_Up:
+                self.prev_match.emit()
+                return True
+        return super().eventFilter(obj, event)
 
 
 # ---------------------------------------------------------------------------
@@ -593,6 +689,10 @@ class BotCanvas(QWidget):
         self._tick_timer.setInterval(1000)
         self._tick_timer.timeout.connect(self._tick)
 
+        self._tab_idx: int = 0
+        self._search_matches: list[str] = []
+        self._search_match_idx: int = 0
+
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -618,10 +718,6 @@ class BotCanvas(QWidget):
 
         self._fit_btn = _icon_btn("fit", "Fit to Canvas (Ctrl+0)")
         self._fit_btn.clicked.connect(self._view.fit_scene)
-
-        self._minimap_btn = _icon_btn("minimap", "Toggle Minimap")
-        self._minimap_btn.setCheckable(True)
-        self._minimap_btn.clicked.connect(self._on_minimap_toggled)
 
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
@@ -654,15 +750,13 @@ class BotCanvas(QWidget):
         self._center_stack.addWidget(run_center)   # _TB_RUN  = 0
         self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
 
-        # ── Left section (104 px fixed: fit + minimap buttons + 4 px gap) ─
+        # ── Left section (68 px fixed: fit button) ─
         left_section = QWidget()
-        left_section.setFixedWidth(104)
+        left_section.setFixedWidth(68)
         left_row = QHBoxLayout(left_section)
         left_row.setContentsMargins(0, 0, 0, 0)
         left_row.setSpacing(0)
         left_row.addWidget(self._fit_btn)
-        left_row.addSpacing(4)
-        left_row.addWidget(self._minimap_btn)
         left_row.addStretch(1)
 
         # ── Right mode-toggle zone (68 px fixed) ─────────────────────
@@ -725,12 +819,10 @@ class BotCanvas(QWidget):
         self._validation_banner.setVisible(False)
 
         # ── Minimap overlay — bottom-right corner of the graph view ──────
-        _minimap_visible = SettingsManager.instance().get(
-            "canvas", "minimap_visible", default=True
-        )
         self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
-        self._minimap.setVisible(_minimap_visible)
-        self._minimap_btn.setChecked(_minimap_visible)
+        self._minimap.setVisible(
+            SettingsManager.instance().get("canvas", "minimap_visible", default=True)
+        )
 
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
@@ -762,9 +854,19 @@ class BotCanvas(QWidget):
         outer.addWidget(toolbar)
         outer.addWidget(self._view, 1)
 
+        # ── Search bar overlay — top-center of the graph view ────────
+        self._search_bar = _SearchBar(parent=self._view)
+        self._search_bar.text_changed.connect(self._on_search_text_changed)
+        self._search_bar.next_match.connect(self._on_search_next)
+        self._search_bar.prev_match.connect(self._on_search_prev)
+        self._search_bar.closed.connect(self._close_search)
+
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
         fit_shortcut.activated.connect(self._view.fit_scene)
+
+        search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        search_shortcut.activated.connect(self._show_search_bar)
 
         # ── Reposition banner overlay when the view resizes ───────────
         self._view.installEventFilter(self)
@@ -780,6 +882,8 @@ class BotCanvas(QWidget):
 
     def setup(self, config: BotConfig) -> None:
         """Load a BotConfig. Enters RUN mode with the graph ready."""
+        self._close_search()
+        self._tab_idx = 0
         _inject_required_options(config)
         self._config = config
         # Auto-layout when no positions are saved and the setting is enabled
@@ -827,12 +931,24 @@ class BotCanvas(QWidget):
             self._run_pause_btn.setToolTip("")
 
     def eventFilter(self, obj, event) -> bool:
-        if obj is self._view and event.type() == QEvent.Type.Resize:
-            self._reposition_banner()
+        if obj is self._view:
+            if event.type() == QEvent.Type.Resize:
+                self._reposition_banner()
+            elif event.type() == QEvent.Type.KeyPress:
+                key = event.key()
+                mods = event.modifiers()
+                if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
+                    self._tab_navigate(1)
+                    return True
+                if key in (Qt.Key.Key_Backtab,) or (
+                    key == Qt.Key.Key_Tab and mods & Qt.KeyboardModifier.ShiftModifier
+                ):
+                    self._tab_navigate(-1)
+                    return True
         return super().eventFilter(obj, event)
 
     def _reposition_banner(self) -> None:
-        """Pin the validation banner to the top-right and minimap to the bottom-right."""
+        """Pin overlays: validation banner top-right, minimap bottom-right, search bar top-center."""
         self._validation_banner.adjustSize()
         x = self._view.width() - self._validation_banner.width() - 4
         self._validation_banner.move(x, 4)
@@ -840,11 +956,17 @@ class BotCanvas(QWidget):
         mx = self._view.width() - self._minimap.width() - 8
         my = self._view.height() - self._minimap.height() - 8
         self._minimap.move(mx, my)
+        # Search bar: top-center
+        if hasattr(self, "_search_bar"):
+            self._search_bar.adjustSize()
+            sx = (self._view.width() - self._search_bar.width()) // 2
+            self._search_bar.move(sx, 8)
 
-    def _on_minimap_toggled(self, checked: bool) -> None:
-        self._minimap.setVisible(checked)
-        SettingsManager.instance().set("canvas", "minimap_visible", value=checked)
-        SettingsManager.instance().save()
+    def _apply_canvas_settings(self) -> None:
+        """Re-read canvas settings and update live widgets. Called after Settings dialog OK."""
+        sm = SettingsManager.instance()
+        self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
+        self._reposition_banner()
 
     def _active_state_label(self) -> str:
         """Return the display label for the current active state, falling back to its id."""
@@ -984,6 +1106,109 @@ class BotCanvas(QWidget):
         self.config_changed.emit()
 
     # ------------------------------------------------------------------
+    # Tab navigation
+    # ------------------------------------------------------------------
+
+    def _tab_navigate(self, direction: int) -> None:
+        """Cycle node selection by BFS order and center the view on the node."""
+        order = self._scene._get_tab_order()
+        if not order:
+            return
+        selected = [item for item in self._scene.selectedItems() if isinstance(item, NodeItem)]
+        if selected and selected[0].state_id in order:
+            cur_idx = order.index(selected[0].state_id)
+        else:
+            cur_idx = self._tab_idx - direction  # step will land on _tab_idx
+        next_idx = (cur_idx + direction) % len(order)
+        self._tab_idx = next_idx
+        node = self._scene._node_items.get(order[next_idx])
+        if node:
+            self._scene.clearSelection()
+            if self._mode == BotMode.EDIT:
+                node.setSelected(True)
+            self._view.centerOn(node)
+
+    # ------------------------------------------------------------------
+    # Quick search
+    # ------------------------------------------------------------------
+
+    def _show_search_bar(self) -> None:
+        self._search_bar.setVisible(True)
+        self._reposition_banner()
+        self._search_bar.focus_input()
+        self._on_search_text_changed(self._search_bar.current_text())
+
+    def _close_search(self) -> None:
+        if hasattr(self, "_search_bar"):
+            self._search_bar.setVisible(False)
+        self._search_matches.clear()
+        self._search_match_idx = 0
+        for node in self._scene._node_items.values():
+            node.set_search_match(False)
+
+    def _on_search_text_changed(self, text: str) -> None:
+        config = self._scene._config
+        if not config:
+            self._search_matches.clear()
+            self._search_bar.set_count(0, 0)
+            return
+        q = text.strip().lower()
+        matches: list[str] = []
+        if q:
+            for state in config.states:
+                if (
+                    q in (state.label or "").lower()
+                    or q in state.id.lower()
+                    or q in state.node_type.lower()
+                ):
+                    matches.append(state.id)
+        self._search_matches = matches
+        self._search_match_idx = 0
+        # Apply highlights
+        for sid, node in self._scene._node_items.items():
+            node.set_search_match(sid in matches, is_current=(bool(matches) and sid == matches[0]))
+        if matches:
+            first = self._scene._node_items.get(matches[0])
+            if first:
+                self._view.centerOn(first)
+        self._search_bar.set_count(1 if matches else 0, len(matches))
+        self._reposition_banner()
+
+    def _on_search_next(self) -> None:
+        if not self._search_matches:
+            return
+        old = self._search_matches[self._search_match_idx]
+        self._search_match_idx = (self._search_match_idx + 1) % len(self._search_matches)
+        new = self._search_matches[self._search_match_idx]
+        if old != new:
+            old_node = self._scene._node_items.get(old)
+            if old_node:
+                old_node.set_search_match(True, is_current=False)
+        new_node = self._scene._node_items.get(new)
+        if new_node:
+            new_node.set_search_match(True, is_current=True)
+            self._view.centerOn(new_node)
+        self._search_bar.set_count(self._search_match_idx + 1, len(self._search_matches))
+        self._reposition_banner()
+
+    def _on_search_prev(self) -> None:
+        if not self._search_matches:
+            return
+        old = self._search_matches[self._search_match_idx]
+        self._search_match_idx = (self._search_match_idx - 1) % len(self._search_matches)
+        new = self._search_matches[self._search_match_idx]
+        if old != new:
+            old_node = self._scene._node_items.get(old)
+            if old_node:
+                old_node.set_search_match(True, is_current=False)
+        new_node = self._scene._node_items.get(new)
+        if new_node:
+            new_node.set_search_match(True, is_current=True)
+            self._view.centerOn(new_node)
+        self._search_bar.set_count(self._search_match_idx + 1, len(self._search_matches))
+        self._reposition_banner()
+
+    # ------------------------------------------------------------------
     # Mode switching
     # ------------------------------------------------------------------
 
@@ -1019,6 +1244,8 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._update_validation_badge()
         self._minimap.fit_to_scene()
+        if self._search_bar.isVisible():
+            self._on_search_text_changed(self._search_bar.current_text())
         self.config_changed.emit()
 
     def _update_validation_badge(self) -> None:

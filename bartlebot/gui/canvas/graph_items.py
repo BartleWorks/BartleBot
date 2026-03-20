@@ -225,6 +225,8 @@ class NodeItem(QGraphicsItem):
         self._is_warning = is_warning
         self._returns: list[str] = list(returns) if returns else []
         self._edges: list = []
+        self._is_search_match: bool = False
+        self._is_search_current: bool = False
         self.setZValue(1)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
@@ -240,6 +242,8 @@ class NodeItem(QGraphicsItem):
     def boundingRect(self) -> QRectF:
         h = self._height
         margin = PORT_R + 1 if self._interactive else 0
+        if self._is_search_match:
+            margin = max(margin, 8)
         return QRectF(-margin, -margin, NODE_W + margin * 2, h + margin * 2)
 
     def set_active(self, active: bool) -> None:
@@ -343,6 +347,15 @@ class NodeItem(QGraphicsItem):
         self._update_tooltip()
         self.update()
 
+    def set_search_match(self, is_match: bool, is_current: bool = False) -> None:
+        """Highlight this node as a quick-search match (cyan ring overlay)."""
+        if self._is_search_match == is_match and self._is_search_current == is_current:
+            return
+        self.prepareGeometryChange()
+        self._is_search_match = is_match
+        self._is_search_current = is_current
+        self.update()
+
     def _update_tooltip(self) -> None:
         if (self._is_error or self._is_warning) and self._reasons:
             self.setToolTip("\n".join(self._reasons))
@@ -428,6 +441,18 @@ class NodeItem(QGraphicsItem):
         h = self._height
         lod = option.levelOfDetailFromTransform(painter.worldTransform())
 
+        # Search match ring — drawn first as a solid filled rect so it sits
+        # behind the node background with no gap.
+        if self._is_search_match:
+            ring_color = (
+                THEME.qcolor("search_match_current")
+                if self._is_search_current
+                else THEME.qcolor("search_match_other")
+            )
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(ring_color))
+            painter.drawRoundedRect(QRectF(-7, -7, NODE_W + 14, h + 14), NODE_RADIUS + 5, NODE_RADIUS + 5)
+
         painter.setPen(QPen(border, border_w))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
@@ -443,109 +468,109 @@ class NodeItem(QGraphicsItem):
             painter.setPen(Qt.GlobalColor.black)
             _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(Qt.TextFlag.TextWordWrap)
             painter.drawText(QRectF(6, 4, NODE_W - 12, h - 8), _wrap_flags, self._label)
-            return
+        else:
+            # --- Full LOD ---
+            # Sub-label text uses black on colored fills for readability
+            sub_label_color = Qt.GlobalColor.black if self._active else THEME.qcolor("node_sublabel_inactive")
 
-        # --- Full LOD ---
-        # Sub-label text (state_id / node_type) uses black on colored fills for readability
-        sub_label_color = Qt.GlobalColor.black if self._active else THEME.qcolor("node_sublabel_inactive")
+            if self._returns:
+                # ----------------------------------------------------------
+                # Header: label + "state_id · node_type" crammed into _HEADER_H pixels
+                # ----------------------------------------------------------
+                painter.setFont(THEME.font_node_hdr())
+                fm = painter.fontMetrics()
+                label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+                painter.setPen(Qt.GlobalColor.black)
+                painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
 
-        if self._returns:
-            # ----------------------------------------------------------
-            # Header: label + "state_id · node_type" crammed into _HEADER_H pixels
-            # ----------------------------------------------------------
-            painter.setFont(THEME.font_node_hdr())
-            fm = painter.fontMetrics()
-            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.setPen(Qt.GlobalColor.black)
-            painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
-
-            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
-            painter.setPen(sub_label_color)
-            painter.setFont(THEME.font_node_sub())
-            fm2 = painter.fontMetrics()
-            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.drawText(QRectF(8, 15, NODE_W - 16, 12), Qt.AlignmentFlag.AlignCenter, sub_elided)
-
-            # Divider line between header and port area
-            painter.setPen(QPen(border, 0.5))
-            painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
-
-            # Named output ports + labels
-            for i, name in enumerate(self._returns):
-                py = self._port_y(i)
-                painter.setPen(THEME.qcolor("port_label_color"))
+                sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+                painter.setPen(sub_label_color)
                 painter.setFont(THEME.font_node_sub())
-                label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
-                painter.drawText(
-                    label_rect,
-                    Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
-                    name,
-                )
+                fm2 = painter.fontMetrics()
+                sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+                painter.drawText(QRectF(8, 15, NODE_W - 16, 12), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
+                # Divider line between header and port area
+                painter.setPen(QPen(border, 0.5))
+                painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
+
+                # Named output ports + labels
+                for i, name in enumerate(self._returns):
+                    py = self._port_y(i)
+                    painter.setPen(THEME.qcolor("port_label_color"))
+                    painter.setFont(THEME.font_node_sub())
+                    label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
+                    painter.drawText(
+                        label_rect,
+                        Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                        name,
+                    )
+                    if self._interactive:
+                        painter.setPen(QPen(_PORT_COLOR, 1.5))
+                        painter.setBrush(QBrush(_PORT_COLOR))
+                        painter.drawEllipse(QPointF(NODE_W, py), PORT_R, PORT_R)
+            else:
+                # ----------------------------------------------------------
+                # 2-line layout: main label + "state_id · node_type" sub-label
+                # ----------------------------------------------------------
+                painter.setFont(THEME.font_node_main())
+                fm = painter.fontMetrics()
+                label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+                painter.setPen(Qt.GlobalColor.black)
+                painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
+
+                sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+                painter.setPen(sub_label_color)
+                painter.setFont(THEME.font_node_sub())
+                fm2 = painter.fontMetrics()
+                sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+                painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
                 if self._interactive:
                     painter.setPen(QPen(_PORT_COLOR, 1.5))
                     painter.setBrush(QBrush(_PORT_COLOR))
-                    painter.drawEllipse(QPointF(NODE_W, py), PORT_R, PORT_R)
-        else:
-            # ----------------------------------------------------------
-            # 2-line layout: main label + "state_id · node_type" sub-label
-            # ----------------------------------------------------------
-            painter.setFont(THEME.font_node_main())
-            fm = painter.fontMetrics()
-            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.setPen(Qt.GlobalColor.black)
-            painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
+                    painter.drawEllipse(QPointF(NODE_W, h / 2), PORT_R, PORT_R)
 
-            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
-            painter.setPen(sub_label_color)
-            painter.setFont(THEME.font_node_sub())
-            fm2 = painter.fontMetrics()
-            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
+            # Structural-role badges drawn at bottom center.
+            # When both are present they sit side-by-side; when only one, it is centred.
+            _BADGE_SIZE = 14
+            _BADGE_MARGIN = 4
+            _BADGE_GAP = 4
+            if self._is_initial or self._is_terminal:
+                both = self._is_initial and self._is_terminal
+                badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
+                if both:
+                    init_x = NODE_W / 2 - _BADGE_SIZE - _BADGE_GAP / 2
+                    term_x = NODE_W / 2 + _BADGE_GAP / 2
+                else:
+                    init_x = term_x = NODE_W / 2 - _BADGE_SIZE / 2
 
+                painter.setFont(_BADGE_FONT)
+                if self._is_initial:
+                    r = QRectF(init_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
+                    painter.save()
+                    painter.setPen(QPen(Qt.GlobalColor.black, 1.0))
+                    painter.setBrush(QBrush(_BADGE_INITIAL))
+                    painter.drawRoundedRect(r, 3, 3)
+                    painter.setPen(Qt.GlobalColor.white)
+                    painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "▶")
+                    painter.restore()
+                if self._is_terminal:
+                    r = QRectF(term_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
+                    painter.save()
+                    painter.setPen(QPen(Qt.GlobalColor.black, 1.0))
+                    painter.setBrush(QBrush(_BADGE_TERMINAL))
+                    painter.drawRoundedRect(r, 3, 3)
+                    painter.setPen(Qt.GlobalColor.white)
+                    painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "■")
+                    painter.restore()
+
+            # Input port always at left center
             if self._interactive:
                 painter.setPen(QPen(_PORT_COLOR, 1.5))
                 painter.setBrush(QBrush(_PORT_COLOR))
-                painter.drawEllipse(QPointF(NODE_W, h / 2), PORT_R, PORT_R)
+                painter.drawEllipse(QPointF(0, h / 2), PORT_R, PORT_R)
 
-        # Structural-role badges drawn at bottom center.
-        # When both are present they sit side-by-side; when only one, it is centred.
-        _BADGE_SIZE = 14
-        _BADGE_MARGIN = 4
-        _BADGE_GAP = 4
-        if self._is_initial or self._is_terminal:
-            both = self._is_initial and self._is_terminal
-            badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
-            if both:
-                init_x = NODE_W / 2 - _BADGE_SIZE - _BADGE_GAP / 2
-                term_x = NODE_W / 2 + _BADGE_GAP / 2
-            else:
-                init_x = term_x = NODE_W / 2 - _BADGE_SIZE / 2
-
-            painter.setFont(_BADGE_FONT)
-            if self._is_initial:
-                r = QRectF(init_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
-                painter.save()
-                painter.setPen(QPen(Qt.GlobalColor.black, 1.0))
-                painter.setBrush(QBrush(_BADGE_INITIAL))
-                painter.drawRoundedRect(r, 3, 3)
-                painter.setPen(Qt.GlobalColor.white)
-                painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "▶")
-                painter.restore()
-            if self._is_terminal:
-                r = QRectF(term_x, badge_y, _BADGE_SIZE, _BADGE_SIZE)
-                painter.save()
-                painter.setPen(QPen(Qt.GlobalColor.black, 1.0))
-                painter.setBrush(QBrush(_BADGE_TERMINAL))
-                painter.drawRoundedRect(r, 3, 3)
-                painter.setPen(Qt.GlobalColor.white)
-                painter.drawText(r, Qt.AlignmentFlag.AlignCenter, "■")
-                painter.restore()
-
-        # Input port always at left center
-        if self._interactive:
-            painter.setPen(QPen(_PORT_COLOR, 1.5))
-            painter.setBrush(QBrush(_PORT_COLOR))
-            painter.drawEllipse(QPointF(0, h / 2), PORT_R, PORT_R)
 
 
 # ---------------------------------------------------------------------------
@@ -799,11 +824,11 @@ class _MinimapView(QGraphicsView):
         self.setInteractive(False)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setStyleSheet(
-            "QGraphicsView {"
-            "  border: 1px solid rgba(180, 180, 210, 140);"
-            "  border-radius: 4px;"
-            "  background: rgba(18, 22, 32, 210);"
-            "}"
+            f"QGraphicsView {{"
+            f"  border: 1px solid {THEME.minimap_border};"
+            f"  border-radius: 4px;"
+            f"  background: {THEME.minimap_bg};"
+            f"}}"
         )
 
         # Repaint viewport rect whenever main view scrolls or zooms
@@ -829,8 +854,8 @@ class _MinimapView(QGraphicsView):
         mini_rect = self.mapFromScene(visible_scene).boundingRect()
 
         painter = QPainter(self.viewport())
-        painter.setPen(QPen(QColor(130, 175, 255, 210), 1.5))
-        painter.setBrush(QBrush(QColor(130, 175, 255, 45)))
+        painter.setPen(QPen(QColor(60, 120, 210, 200), 1.5))
+        painter.setBrush(QBrush(QColor(60, 120, 210, 40)))
         painter.drawRect(mini_rect)
         painter.end()
 
