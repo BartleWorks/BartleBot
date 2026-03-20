@@ -3,22 +3,20 @@
 import asyncio
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH
 
-PARAM_SCHEMA: list[ParamField] = [
-    ParamField(
-        key="clients_to_check",
-        type="int_list",
-        label="Clients to Check",
-        help=(
-            "1-based client numbers to check for level scaling (e.g. '2, 3'). "
-            "Leave empty to check all clients."
-        ),
-        default=[],
-        default_hint="Default: checks all clients",
+PARAM_SCHEMA: list[ParamField] = []
+
+_LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
+    name="Level Scaling Clients",
+    type="int_list",
+    default=[],
+    description=(
+        "1-based client numbers to check/apply level scaling (e.g. '2, 3'). "
+        "Empty = all clients. Shared by check_level_scaling and apply_level_scaling."
     ),
-]
+)
 
 NODE_SPEC = NodeSpec(
     description=(
@@ -30,12 +28,13 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("TRUE", "All specified clients have an active level-scaling elixir."),
         ReturnSpec("FALSE", "One or more specified clients are not level scaled."),
     ],
+    required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
 )
 
 
 async def run(machine, clients: list, params: dict) -> str:
     """Return 'TRUE' if all specified clients are level scaled, 'FALSE' otherwise."""
-    clients_to_check: list[int] = params.get("clients_to_check") or []
+    clients_to_check: list[int] = machine.get_option("Level Scaling Clients", []) or []
 
     check_indices = (
         [n - 1 for n in clients_to_check if 0 < n <= len(clients)]

@@ -10,7 +10,6 @@ _PARAMS = {
     "zone": "TestZone",
     "interact_xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
     "reset_xyz": {"x": 1.0, "y": 0.0, "z": 0.0},
-    "clients_to_scale": [],
 }
 
 # No-op patches for the NPCServicesWin menu (instantly visible, then instantly gone).
@@ -63,12 +62,11 @@ async def test_one_client_wrong_zone_fails():
 
 
 async def test_all_clients_filtered_out_succeeds():
-    """clients_to_scale=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
+    """Level Scaling Clients=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
     client = FakeClient()
+    machine = FakeMachine(options={"Level Scaling Clients": [5]})
 
-    result = await als.run(
-        FakeMachine(), [client], {**_PARAMS, "clients_to_scale": [5]}
-    )
+    result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     client.teleport.assert_not_called()
@@ -118,7 +116,7 @@ async def test_success():
 
 
 async def test_empty_clients_to_scale_scales_all():
-    """clients_to_scale=[] (default) scales every connected client."""
+    """Level Scaling Clients=[] (default) scales every connected client."""
     c1 = _ready_client()
     c2 = _ready_client()
 
@@ -135,11 +133,10 @@ async def test_clients_to_scale_subset():
     """Only the specified client is scaled; the other is not touched."""
     c1 = FakeClient()  # should NOT be scaled
     c2 = _ready_client()  # should be scaled
-
-    params = {**_PARAMS, "clients_to_scale": [2]}
+    machine = FakeMachine(options={"Level Scaling Clients": [2]})
 
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [c1, c2], params)
+        result = await als.run(machine, [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
     c1.teleport.assert_not_called()
@@ -152,12 +149,11 @@ async def test_clients_to_scale_subset():
 async def test_out_of_range_client_numbers_skipped():
     """Client numbers beyond the connected count are silently skipped."""
     client = _ready_client()
+    machine = FakeMachine(options={"Level Scaling Clients": [1, 99]})
 
     # [1, 99]: client 99 doesn't exist, only client 1 is scaled.
-    params = {**_PARAMS, "clients_to_scale": [1, 99]}
-
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [client], params)
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     from wizwalker import Keycode

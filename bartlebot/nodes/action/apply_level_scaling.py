@@ -6,7 +6,7 @@ from wizwalker import Keycode, XYZ
 
 from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import LEVEL_SCALING_OPTION_BUTTON_PATH, LEVEL_SCALING_ELIXIR_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -40,19 +40,17 @@ PARAM_SCHEMA: list[ParamField] = [
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
-    ParamField(
-        key="clients_to_scale",
-        type="int_list",
-        label="Clients to Scale",
-        help=(
-            "1-based client numbers to apply level scaling to (e.g. '2, 3'). "
-            "Leave empty to scale all clients. Client numbers exceeding the number "
-            "of connected clients are silently skipped."
-        ),
-        default=[],
-        default_hint="Default: scales all clients",
-    ),
 ]
+
+_LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
+    name="Level Scaling Clients",
+    type="int_list",
+    default=[],
+    description=(
+        "1-based client numbers to check/apply level scaling (e.g. '2, 3'). "
+        "Empty = all clients. Shared by check_level_scaling and apply_level_scaling."
+    ),
+)
 
 NODE_SPEC = NodeSpec(
     description=(
@@ -69,6 +67,7 @@ NODE_SPEC = NodeSpec(
             "or elixir not active after interaction.",
         ),
     ],
+    required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
 )
 
 PROMPT_TIMEOUT = 5.0
@@ -101,7 +100,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 2. Resolve clients_to_scale.
-    raw: list[int] = params.get("clients_to_scale") or []
+    raw: list[int] = machine.get_option("Level Scaling Clients", []) or []
     scale_indices = (
         [n - 1 for n in raw if 0 < n <= len(clients)]
         if raw

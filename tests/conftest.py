@@ -54,8 +54,9 @@ class FakeEntity:
 class FakeMachine:
     """Minimal stub for BotMachine that records logs and drops."""
 
-    def __init__(self, bot_config=None):
+    def __init__(self, bot_config=None, options: dict | None = None):
         self._bot_config = bot_config
+        self._options = options or {}
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
 
@@ -66,5 +67,7 @@ class FakeMachine:
         self.drops.append((item, qty, client_index))
 
     def get_option(self, name: str, default=None):
-        """Return 0 for numeric options so nodes incur no real delay in tests."""
+        """Return configured option value, or 0 for numeric fallback (avoids real delays)."""
+        if name in self._options:
+            return self._options[name]
         return 0
