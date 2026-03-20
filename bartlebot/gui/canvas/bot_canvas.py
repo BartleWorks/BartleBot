@@ -22,11 +22,12 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 
-from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
+from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
 from bartlebot.log_level import LogLevel
 from bartlebot.gui.canvas.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R, _MinimapView,
 )
+from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.settings_manager import SettingsManager
@@ -142,12 +143,14 @@ class EditScene(QGraphicsScene):
     """Manages interactive nodes, edge dragging, deletion, and positions."""
 
     config_changed = pyqtSignal()
+    focus_region_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._config: BotConfig | None = None
         self._node_items: dict[str, NodeItem] = {}
         self._edge_items: list[tuple[str, str | None, str, EdgeItem]] = []
+        self._region_items: dict[str, RegionItem] = {}
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
@@ -159,6 +162,12 @@ class EditScene(QGraphicsScene):
 
     def setup(self, config: BotConfig) -> None:
         """Rebuild the scene from a BotConfig."""
+        for ri in self._region_items.values():
+            try:
+                self.changed.disconnect(ri._recompute_rect)
+            except RuntimeError:
+                pass
+        self._region_items.clear()
         self.clear()
         self._node_items.clear()
         self._edge_items.clear()
@@ -224,6 +233,16 @@ class EditScene(QGraphicsScene):
                 dn.add_edge(edge)
             self._edge_items.append((s, w, d, edge))
 
+        # Add region items behind nodes (z=-1)
+        for region in config.regions:
+            ri = RegionItem(region, self._node_items)
+            ri.set_interactive(self._interactive_mode)
+            self.addItem(ri)
+            self._region_items[region.id] = ri
+        for ri in self._region_items.values():
+            self.changed.connect(ri._recompute_rect)
+            ri._recompute_rect()
+
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(bounds)
 
@@ -260,6 +279,8 @@ class EditScene(QGraphicsScene):
             node.set_interactive(interactive)
         for _s, _w, _d, edge in self._edge_items:
             edge.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
+        for region in self._region_items.values():
+            region.set_interactive(interactive)
         if not interactive:
             self.clearSelection()
 
@@ -336,6 +357,17 @@ class EditScene(QGraphicsScene):
             return
         super().keyPressEvent(event)
 
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        from PyQt6.QtGui import QTransform
+        item = self.itemAt(
+            event.scenePos(),
+            self.views()[0].transform() if self.views() else QTransform()
+        )
+        if isinstance(item, RegionItem):
+            self.focus_region_requested.emit(item.region_id)
+            return
+        super().mouseDoubleClickEvent(event)
+
     # ------------------------------------------------------------------
     # Context menu
     # ------------------------------------------------------------------
@@ -354,6 +386,42 @@ class EditScene(QGraphicsScene):
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
+            # Region membership actions
+            if self._config and self._config.regions:
+                menu.addSeparator()
+                sid = item.state_id
+                for region in self._config.regions:
+                    if sid not in region.members:
+                        rid = region.id
+                        rlabel = region.label
+                        act_add = QAction(f"Add to Region: {rlabel}", menu)
+                        act_add.triggered.connect(lambda _=None, s=sid, r=rid: self._add_to_region(s, r))
+                        menu.addAction(act_add)
+                    else:
+                        rid = region.id
+                        rlabel = region.label
+                        act_rem = QAction(f"Remove from Region: {rlabel}", menu)
+                        act_rem.triggered.connect(lambda _=None, s=sid, r=rid: self._remove_from_region(s, r))
+                        menu.addAction(act_rem)
+            # Create region from multi-selection
+            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+            if len(selected_nodes) >= 2:
+                menu.addSeparator()
+                n = len(selected_nodes)
+                act_cr = QAction(f"Create Region from {n} selected states", menu)
+                act_cr.triggered.connect(lambda: self._create_region([nd.state_id for nd in selected_nodes]))
+                menu.addAction(act_cr)
+        elif isinstance(item, RegionItem):
+            rid = item.region_id
+            act_rn = QAction("Rename Region", menu)
+            act_rn.triggered.connect(lambda: self._rename_region(rid))
+            menu.addAction(act_rn)
+            act_rc = QAction("Change Color", menu)
+            act_rc.triggered.connect(lambda: self._recolor_region(rid))
+            menu.addAction(act_rc)
+            act_del = QAction("Remove Region", menu)
+            act_del.triggered.connect(lambda: self._delete_region(rid))
+            menu.addAction(act_del)
         elif isinstance(item, EdgeItem):
             act = QAction("Delete Transition", menu)
             act.triggered.connect(lambda: self._delete_edge_item(item))
@@ -368,6 +436,13 @@ class EditScene(QGraphicsScene):
                 lambda: self.add_state(QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2))
             )
             menu.addAction(act)
+            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+            if len(selected_nodes) >= 2:
+                menu.addSeparator()
+                n = len(selected_nodes)
+                act_cr = QAction(f"Create Region from {n} selected states", menu)
+                act_cr.triggered.connect(lambda: self._create_region([nd.state_id for nd in selected_nodes]))
+                menu.addAction(act_cr)
         menu.exec(event.screenPos())
 
     # ------------------------------------------------------------------
@@ -460,6 +535,7 @@ class EditScene(QGraphicsScene):
             self.removeItem(self._node_items.pop(state_id))
         self.refresh_terminal()
         self.refresh_errors()
+        self._flush_regions()
         self._update_scene_rect()
         self.config_changed.emit()
 
@@ -546,6 +622,122 @@ class EditScene(QGraphicsScene):
                 changed = True
         if changed:
             self.config_changed.emit()
+
+    def _flush_regions(self) -> None:
+        """Remove stale member IDs from regions; auto-delete regions with < 2 members."""
+        if self._config is None:
+            return
+        state_ids = {s.id for s in self._config.states}
+        for region in list(self._config.regions):
+            cleaned = [m for m in region.members if m in state_ids]
+            if len(cleaned) < 2:
+                self._delete_region(region.id)
+            else:
+                region.members[:] = cleaned
+
+    def _create_region(self, state_ids: list[str]) -> None:
+        if self._config is None or len(state_ids) < 2:
+            return
+        import uuid
+        from PyQt6.QtWidgets import QInputDialog
+        label, ok = QInputDialog.getText(
+            self.views()[0] if self.views() else None,
+            "Create Region", "Region name:"
+        )
+        if not ok or not label.strip():
+            return
+        region = RegionModel(
+            id=uuid.uuid4().hex[:8],
+            label=label.strip(),
+            members=list(state_ids),
+            color="amber",
+        )
+        self._config.regions.append(region)
+        ri = RegionItem(region, self._node_items)
+        ri.set_interactive(self._interactive_mode)
+        self.addItem(ri)
+        self._region_items[region.id] = ri
+        self.changed.connect(ri._recompute_rect)
+        ri._recompute_rect()
+        self.config_changed.emit()
+
+    def _delete_region(self, region_id: str) -> None:
+        if self._config is None:
+            return
+        ri = self._region_items.pop(region_id, None)
+        if ri is not None:
+            try:
+                self.changed.disconnect(ri._recompute_rect)
+            except RuntimeError:
+                pass
+            self.removeItem(ri)
+        self._config.regions = [r for r in self._config.regions if r.id != region_id]
+        self.config_changed.emit()
+
+    def _rename_region(self, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None:
+            return
+        from PyQt6.QtWidgets import QInputDialog
+        label, ok = QInputDialog.getText(
+            self.views()[0] if self.views() else None,
+            "Rename Region", "Region name:", text=region.label
+        )
+        if not ok or not label.strip():
+            return
+        region.label = label.strip()
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            ri.set_label(region.label)
+        self.config_changed.emit()
+
+    def _recolor_region(self, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None:
+            return
+        from PyQt6.QtWidgets import QDialog
+        dlg = _ColorPickerDialog(current_key=region.color, parent=self.views()[0] if self.views() else None)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        region.color = dlg.selected_color()
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            ri.set_color(region.color)
+        self.config_changed.emit()
+
+    def _add_to_region(self, state_id: str, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None or state_id in region.members:
+            return
+        region.members.append(state_id)
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            ri._member_ids.append(state_id)
+            ri._recompute_rect()
+        self.config_changed.emit()
+
+    def _remove_from_region(self, state_id: str, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None or state_id not in region.members:
+            return
+        region.members.remove(state_id)
+        if len(region.members) < 2:
+            self._delete_region(region_id)
+            return
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            if state_id in ri._member_ids:
+                ri._member_ids.remove(state_id)
+            ri._recompute_rect()
+        self.config_changed.emit()
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
@@ -692,6 +884,7 @@ class BotCanvas(QWidget):
         self._tab_idx: int = 0
         self._search_matches: list[str] = []
         self._search_match_idx: int = 0
+        self._focus_region_id: str | None = None
 
         self._build_ui()
 
@@ -861,6 +1054,27 @@ class BotCanvas(QWidget):
         self._search_bar.prev_match.connect(self._on_search_prev)
         self._search_bar.closed.connect(self._close_search)
 
+        # ── Focus breadcrumb overlay — top-left of the graph view ────
+        self._focus_crumb = QWidget(self._view)
+        self._focus_crumb.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._focus_crumb.setStyleSheet(
+            f"QWidget {{ background-color: {THEME.overlay_bg}; border: 1px solid {THEME.overlay_border}; border-radius: 6px; }}"
+            f"QLabel {{ border: none; color: {THEME.overlay_text}; font-size: 12px; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.overlay_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.overlay_text}; }}"
+        )
+        self._focus_crumb_label = QLabel("Viewing: ")
+        _close_focus_btn = QPushButton("×")
+        _close_focus_btn.setFixedSize(22, 22)
+        _close_focus_btn.clicked.connect(self._exit_focus_mode)
+        _crumb_row = QHBoxLayout(self._focus_crumb)
+        _crumb_row.setContentsMargins(8, 4, 6, 4)
+        _crumb_row.setSpacing(4)
+        _crumb_row.addWidget(self._focus_crumb_label)
+        _crumb_row.addWidget(_close_focus_btn)
+        self._focus_crumb.adjustSize()
+        self._focus_crumb.setVisible(False)
+
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
         fit_shortcut.activated.connect(self._view.fit_scene)
@@ -875,6 +1089,7 @@ class BotCanvas(QWidget):
         self._scene.config_changed.connect(self._on_scene_changed)
         self._param_panel.config_changed.connect(self._on_scene_changed)
         self._scene.selectionChanged.connect(self._on_selection_changed)
+        self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
     # ------------------------------------------------------------------
     # Public API — bot loading
@@ -882,6 +1097,7 @@ class BotCanvas(QWidget):
 
     def setup(self, config: BotConfig) -> None:
         """Load a BotConfig. Enters RUN mode with the graph ready."""
+        self._exit_focus_mode()
         self._close_search()
         self._tab_idx = 0
         _inject_required_options(config)
@@ -937,6 +1153,9 @@ class BotCanvas(QWidget):
             elif event.type() == QEvent.Type.KeyPress:
                 key = event.key()
                 mods = event.modifiers()
+                if key == Qt.Key.Key_Escape and self._focus_region_id is not None:
+                    self._exit_focus_mode()
+                    return True
                 if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
                     self._tab_navigate(1)
                     return True
@@ -948,7 +1167,7 @@ class BotCanvas(QWidget):
         return super().eventFilter(obj, event)
 
     def _reposition_banner(self) -> None:
-        """Pin overlays: validation banner top-right, minimap bottom-right, search bar top-center."""
+        """Pin overlays: validation banner top-right, minimap bottom-right, search bar top-center, focus crumb top-left."""
         self._validation_banner.adjustSize()
         x = self._view.width() - self._validation_banner.width() - 4
         self._validation_banner.move(x, 4)
@@ -961,6 +1180,10 @@ class BotCanvas(QWidget):
             self._search_bar.adjustSize()
             sx = (self._view.width() - self._search_bar.width()) // 2
             self._search_bar.move(sx, 8)
+        # Focus breadcrumb: top-left
+        if hasattr(self, "_focus_crumb"):
+            self._focus_crumb.adjustSize()
+            self._focus_crumb.move(8, 8)
 
     def _apply_canvas_settings(self) -> None:
         """Re-read canvas settings and update live widgets. Called after Settings dialog OK."""
@@ -1095,7 +1318,7 @@ class BotCanvas(QWidget):
         self._scene.add_state(QPointF(center.x() - NODE_W / 2, center.y() - NODE_H / 2))
 
     def _on_layout_clicked(self) -> None:
-        if self._config is None:
+        if self._config is None or self._focus_region_id is not None:
             return
         from bartlebot.gui.canvas.layout import auto_layout
         self._scene._flush_positions()
@@ -1104,6 +1327,46 @@ class BotCanvas(QWidget):
         self._view.fit_scene()
         self._minimap.fit_to_scene()
         self.config_changed.emit()
+
+    # ------------------------------------------------------------------
+    # Focus Mode
+    # ------------------------------------------------------------------
+
+    def _enter_focus_mode(self, region_id: str) -> None:
+        """Isolate a region's nodes in the view; hide everything else."""
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None:
+            return
+        self._exit_focus_mode()   # clean up any existing focus first
+        self._focus_region_id = region_id
+        member_set = set(region.members)
+
+        for sid, node in self._scene._node_items.items():
+            node.setVisible(sid in member_set)
+        for s, _, d, edge in self._scene._edge_items:
+            edge.setVisible(s in member_set and d in member_set)
+        for rid, ri in self._scene._region_items.items():
+            ri.setVisible(rid == region_id)
+
+        self._focus_crumb_label.setText(f"Viewing: {region.label}")
+        self._focus_crumb.setVisible(True)
+        self._reposition_banner()
+
+    def _exit_focus_mode(self) -> None:
+        """Restore all nodes/edges/regions to visible; hide the breadcrumb."""
+        if self._focus_region_id is None:
+            return
+        self._focus_region_id = None
+        for node in self._scene._node_items.values():
+            node.setVisible(True)
+        for *_, edge in self._scene._edge_items:
+            edge.setVisible(True)
+        for ri in self._scene._region_items.values():
+            ri.setVisible(True)
+        if hasattr(self, "_focus_crumb"):
+            self._focus_crumb.setVisible(False)
 
     # ------------------------------------------------------------------
     # Tab navigation
@@ -1213,6 +1476,7 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
 
     def _apply_mode(self, mode: BotMode) -> None:
+        self._exit_focus_mode()
         self._mode = mode
         if mode == BotMode.RUN:
             self._center_stack.setCurrentIndex(_TB_RUN)
@@ -1513,3 +1777,64 @@ def _unique_id(existing: list[str]) -> str:
     while f"state_{i}" in existing:
         i += 1
     return f"state_{i}"
+
+
+# ---------------------------------------------------------------------------
+# _ColorPickerDialog — six-swatch region palette picker
+# ---------------------------------------------------------------------------
+
+class _ColorPickerDialog(QWidget):
+    """Minimal six-swatch palette dialog for region color selection."""
+
+    def __init__(self, current_key: str, parent=None) -> None:
+        from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QHBoxLayout, QVBoxLayout
+        # Re-parent as QDialog so exec() works
+        self._dialog = QDialog(parent)
+        self._dialog.setWindowTitle("Choose Color")
+        self._selected = current_key
+        self._swatch_btns: dict[str, QPushButton] = {}
+
+        swatch_row = QHBoxLayout()
+        swatch_row.setSpacing(8)
+        for key in THEME.REGION_PALETTE:
+            btn = QPushButton()
+            btn.setFixedSize(28, 28)
+            color_hex = THEME.region_color(key).name()
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {color_hex}; border: 2px solid transparent; border-radius: 14px; }}"
+                f"QPushButton:hover {{ border-color: white; }}"
+            )
+            btn.clicked.connect(lambda _=None, k=key: self._select(k))
+            self._swatch_btns[key] = btn
+            swatch_row.addWidget(btn)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self._dialog.accept)
+        buttons.rejected.connect(self._dialog.reject)
+
+        layout = QVBoxLayout(self._dialog)
+        layout.addLayout(swatch_row)
+        layout.addWidget(buttons)
+        self._dialog.setLayout(layout)
+        self._highlight(current_key)
+
+    def _select(self, key: str) -> None:
+        self._selected = key
+        self._highlight(key)
+
+    def _highlight(self, key: str) -> None:
+        for k, btn in self._swatch_btns.items():
+            color_hex = THEME.region_color(k).name()
+            border = "white" if k == key else "transparent"
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {color_hex}; border: 2px solid {border}; border-radius: 14px; }}"
+                f"QPushButton:hover {{ border-color: white; }}"
+            )
+
+    def exec(self):
+        return self._dialog.exec()
+
+    def selected_color(self) -> str:
+        return self._selected

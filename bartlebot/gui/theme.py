@@ -122,6 +122,18 @@ class _Theme:
     search_match_other:   str = "#0088aa"   # teal — other matches
 
     # ------------------------------------------------------------------
+    # Region palette colors (fill / border / handle for node regions)
+    # ------------------------------------------------------------------
+    region_amber:  str = "#F59E0B"
+    region_teal:   str = "#14B8A6"
+    region_purple: str = "#8B5CF6"
+    region_red:    str = "#EF4444"
+    region_blue:   str = "#3B82F6"
+    region_green:  str = "#22C55E"
+
+    REGION_PALETTE: tuple = ("amber", "teal", "purple", "red", "blue", "green")
+
+    # ------------------------------------------------------------------
     # Game-embed client tile
     # ------------------------------------------------------------------
     client_tile_focus_border: str = "#cc2222"
@@ -150,6 +162,10 @@ class _Theme:
             THEME.qcolor("node_fill_normal")
         """
         return QColor(getattr(self, token_name))
+
+    def region_color(self, key: str) -> QColor:
+        """Return a QColor for the named region palette key (e.g. "amber")."""
+        return QColor(getattr(self, f"region_{key}"))
 
     def qcolor_client_pill_bg(self) -> QColor:
         """Semi-transparent black for the client-tile label pill background."""

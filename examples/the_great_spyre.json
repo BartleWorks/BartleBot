@@ -14,8 +14,11 @@
     },
     {
       "name": "Default Combat Order",
-      "type": "str",
-      "default": "1, 2",
+      "type": "int_list",
+      "default": [
+        1,
+        2
+      ],
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Overridden per node by the Combat Order parameter."
     }
   ],
