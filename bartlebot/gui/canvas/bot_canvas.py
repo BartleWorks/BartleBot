@@ -25,10 +25,11 @@ from bartlebot.gui.theme import THEME
 from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
 from bartlebot.log_level import LogLevel
 from bartlebot.gui.canvas.graph_items import (
-    EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
+    EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R, _MinimapView,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.settings_manager import SettingsManager
 
 
 # ---------------------------------------------------------------------------
@@ -573,6 +574,10 @@ class BotCanvas(QWidget):
         self._fit_btn = _icon_btn("fit", "Fit to Canvas (Ctrl+0)")
         self._fit_btn.clicked.connect(self._view.fit_scene)
 
+        self._minimap_btn = _icon_btn("minimap", "Toggle Minimap")
+        self._minimap_btn.setCheckable(True)
+        self._minimap_btn.clicked.connect(self._on_minimap_toggled)
+
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
 
@@ -599,12 +604,15 @@ class BotCanvas(QWidget):
         self._center_stack.addWidget(run_center)   # _TB_RUN  = 0
         self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
 
-        # ── Left section (68 px fixed — mirrors right section width) ─
+        # ── Left section (104 px fixed: fit + minimap buttons + 4 px gap) ─
         left_section = QWidget()
-        left_section.setFixedWidth(68)
+        left_section.setFixedWidth(104)
         left_row = QHBoxLayout(left_section)
         left_row.setContentsMargins(0, 0, 0, 0)
+        left_row.setSpacing(0)
         left_row.addWidget(self._fit_btn)
+        left_row.addSpacing(4)
+        left_row.addWidget(self._minimap_btn)
         left_row.addStretch(1)
 
         # ── Right mode-toggle zone (68 px fixed) ─────────────────────
@@ -666,6 +674,14 @@ class BotCanvas(QWidget):
         _banner_row.addWidget(self._warning_pill)
         self._validation_banner.setVisible(False)
 
+        # ── Minimap overlay — bottom-right corner of the graph view ──────
+        _minimap_visible = SettingsManager.instance().get(
+            "canvas", "minimap_visible", default=True
+        )
+        self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
+        self._minimap.setVisible(_minimap_visible)
+        self._minimap_btn.setChecked(_minimap_visible)
+
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
         self._log.setReadOnly(True)
@@ -719,6 +735,8 @@ class BotCanvas(QWidget):
         self._scene.setup(config)
         self._param_panel.show_idle()
         self._view.fit_scene()
+        self._minimap.fit_to_scene()
+        self._reposition_banner()
         self._apply_mode(BotMode.RUN)
         self._edit_btn.setEnabled(True)
         self._update_validation_badge()
@@ -756,10 +774,19 @@ class BotCanvas(QWidget):
         return super().eventFilter(obj, event)
 
     def _reposition_banner(self) -> None:
-        """Pin the validation banner to the top-right corner of the canvas view."""
+        """Pin the validation banner to the top-right and minimap to the bottom-right."""
         self._validation_banner.adjustSize()
         x = self._view.width() - self._validation_banner.width() - 4
         self._validation_banner.move(x, 4)
+        # Minimap: bottom-right corner
+        mx = self._view.width() - self._minimap.width() - 8
+        my = self._view.height() - self._minimap.height() - 8
+        self._minimap.move(mx, my)
+
+    def _on_minimap_toggled(self, checked: bool) -> None:
+        self._minimap.setVisible(checked)
+        SettingsManager.instance().set("canvas", "minimap_visible", value=checked)
+        SettingsManager.instance().save()
 
     def _active_state_label(self) -> str:
         """Return the display label for the current active state, falling back to its id."""
@@ -922,6 +949,7 @@ class BotCanvas(QWidget):
         self._refresh_terminal()
         self._refresh_errors()
         self._update_validation_badge()
+        self._minimap.fit_to_scene()
         self.config_changed.emit()
 
     def _update_validation_badge(self) -> None:

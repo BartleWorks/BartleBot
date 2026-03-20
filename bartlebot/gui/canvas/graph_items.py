@@ -12,6 +12,7 @@ from PyQt6.QtCore import Qt, QRectF, QPointF, QEasingCurve, QSequentialAnimation
 from PyQt6.QtGui import (
     QPainter, QPen, QBrush, QColor, QFont, QPainterPath, QKeyEvent, QWheelEvent,
 )
+from PyQt6.QtCore import pyqtSignal
 
 from bartlebot.gui.theme import THEME
 from PyQt6.QtWidgets import (
@@ -77,6 +78,7 @@ class GraphView(QGraphicsView):
                       left-drag produces a rubber-band selection rect.
     """
 
+    view_changed = pyqtSignal()  # emitted after zoom so overlays can repaint
     _ZOOM_FACTOR = 1.15
 
     def __init__(self, scene: QGraphicsScene, interactive: bool = False, parent=None):
@@ -110,6 +112,7 @@ class GraphView(QGraphicsView):
         self._user_zoomed = True
         factor = self._ZOOM_FACTOR if event.angleDelta().y() > 0 else 1 / self._ZOOM_FACTOR
         self.scale(factor, factor)
+        self.view_changed.emit()
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -423,12 +426,28 @@ class NodeItem(QGraphicsItem):
             fill, border, border_w = _FILL_NORMAL, _BORDER_NORMAL, 1.5
 
         h = self._height
-        # Sub-label text (state_id / node_type) uses black on colored fills for readability
-        sub_label_color = Qt.GlobalColor.black if self._active else THEME.qcolor("node_sublabel_inactive")
+        lod = option.levelOfDetailFromTransform(painter.worldTransform())
 
         painter.setPen(QPen(border, border_w))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
+
+        # --- Compact LOD: label-only with word-wrap when zoomed out ---
+        from bartlebot.settings_manager import SettingsManager
+        _lod_threshold = SettingsManager.instance().get(
+            "canvas", "lod_compact_threshold", default=0.6
+        )
+        if lod < _lod_threshold:
+            compact_font = QFont(THEME.font_ui_family, 14)
+            painter.setFont(compact_font)
+            painter.setPen(Qt.GlobalColor.black)
+            _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(Qt.TextFlag.TextWordWrap)
+            painter.drawText(QRectF(6, 4, NODE_W - 12, h - 8), _wrap_flags, self._label)
+            return
+
+        # --- Full LOD ---
+        # Sub-label text (state_id / node_type) uses black on colored fills for readability
+        sub_label_color = Qt.GlobalColor.black if self._active else THEME.qcolor("node_sublabel_inactive")
 
         if self._returns:
             # ----------------------------------------------------------
@@ -751,3 +770,80 @@ def _add_arrowhead(path: QPainterPath, tip: QPointF, angle: float) -> None:
     path.moveTo(p1)
     path.lineTo(tip)
     path.lineTo(p2)
+
+
+# ---------------------------------------------------------------------------
+# _MinimapView — thumbnail overview of the full scene
+# ---------------------------------------------------------------------------
+
+class _MinimapView(QGraphicsView):
+    """Small read-only thumbnail of the EditScene, shown as an overlay.
+
+    Renders the same QGraphicsScene as the main view.  Clicking or dragging
+    inside the minimap pans the main view to that scene position.  A
+    translucent rectangle is drawn over the minimap to indicate the portion
+    of the scene currently visible in the main view.
+    """
+
+    _W = 160
+    _H = 110
+
+    def __init__(self, scene: QGraphicsScene, main_view: GraphView, parent=None):
+        super().__init__(scene, parent)
+        self._main_view = main_view
+
+        self.setFixedSize(self._W, self._H)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setDragMode(QGraphicsView.DragMode.NoDrag)
+        self.setInteractive(False)
+        self.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.setStyleSheet(
+            "QGraphicsView {"
+            "  border: 1px solid rgba(180, 180, 210, 140);"
+            "  border-radius: 4px;"
+            "  background: rgba(18, 22, 32, 210);"
+            "}"
+        )
+
+        # Repaint viewport rect whenever main view scrolls or zooms
+        main_view.horizontalScrollBar().valueChanged.connect(self.viewport().update)
+        main_view.verticalScrollBar().valueChanged.connect(self.viewport().update)
+        main_view.view_changed.connect(self.viewport().update)
+
+    def fit_to_scene(self) -> None:
+        """Fit the minimap to show the full scene bounds."""
+        bounds = self.scene().itemsBoundingRect()
+        if not bounds.isEmpty():
+            self.fitInView(
+                bounds.adjusted(-60, -60, 60, 60),
+                Qt.AspectRatioMode.KeepAspectRatio,
+            )
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        # Draw the main view's visible scene rect as a translucent overlay
+        visible_scene = self._main_view.mapToScene(
+            self._main_view.viewport().rect()
+        ).boundingRect()
+        mini_rect = self.mapFromScene(visible_scene).boundingRect()
+
+        painter = QPainter(self.viewport())
+        painter.setPen(QPen(QColor(130, 175, 255, 210), 1.5))
+        painter.setBrush(QBrush(QColor(130, 175, 255, 45)))
+        painter.drawRect(mini_rect)
+        painter.end()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._main_view.centerOn(self.mapToScene(event.pos()))
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        if event.buttons() & Qt.MouseButton.LeftButton:
+            self._main_view.centerOn(self.mapToScene(event.pos()))
+            event.accept()
+            return
+        super().mouseMoveEvent(event)

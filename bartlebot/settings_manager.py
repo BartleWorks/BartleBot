@@ -21,6 +21,11 @@ _DEFAULTS: dict[str, Any] = {
     "game_embed": {
         "resolution": [800, 600],
     },
+    "canvas": {
+        "minimap_visible":        True,
+        "auto_layout_on_load":    True,
+        "lod_compact_threshold":  0.6,
+    },
     "accounts": [],
     "launch_profiles": [],
     "recent_launches": [],
