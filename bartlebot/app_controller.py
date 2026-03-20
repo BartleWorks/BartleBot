@@ -322,6 +322,7 @@ class AppController(QObject):
         self._clients[idx_a], self._clients[idx_b] = (
             self._clients[idx_b], self._clients[idx_a]
         )
+        self._window.right_sidebar.drops.swap_clients(idx_a, idx_b)
         self.clients_changed.emit(self._clients)
 
     def _start_enabled(self) -> bool:
