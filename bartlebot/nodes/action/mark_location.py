@@ -11,6 +11,7 @@ from bartlebot.nodes.paths import RECALL_BUTTON_PATH, RECALL_TIMER_PATH
 
 MARK_COOLDOWN_TIMEOUT = 35.0  # 30s game cooldown + 5s safety margin
 POST_MARK_WAIT = 2.0          # seconds to wait for UI to reflect mark state after PAGE_DOWN
+STABILIZE_TIMEOUT = 5.0       # seconds to wait for server position to match teleport target
 POLL_INTERVAL = 0.25
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -92,6 +93,11 @@ async def run(machine, clients: list, params: dict) -> str:
             LogLevel.DEBUG,
         )
         await asyncio.gather(*[c.teleport(target) for c in clients])
+        # Wait for the server-reported position to stabilize before pressing PAGE_DOWN.
+        # Without this, a sigil's NPC range event can fire between the teleport write and
+        # the PAGE_DOWN, causing the mark to be set at the server's adjusted position.
+        machine.log("Waiting for client positions to stabilize after teleport…", LogLevel.DEBUG)
+        await asyncio.gather(*[_wait_stabilized(machine, c, target) for c in clients])
 
     # 3. Mark each client, handling the cooldown timer and same-spot edge case.
     results = await asyncio.gather(*[_mark_client(machine, c) for c in clients])
@@ -145,6 +151,23 @@ async def _mark_client(machine, client) -> bool:
 
     # Final check.
     return await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH)
+
+
+async def _wait_stabilized(machine, client, target: XYZ) -> None:
+    """Poll until the server-reported position is within 1.0 unit of target."""
+    if not await node_helpers.wait_until(
+        lambda: _position_near(client, target), STABILIZE_TIMEOUT, POLL_INTERVAL
+    ):
+        machine.log(
+            f"Position did not stabilize within {STABILIZE_TIMEOUT}s after teleport",
+            LogLevel.DEBUG,
+        )
+
+
+async def _position_near(client, target: XYZ) -> bool:
+    """Return True when the server-reported position is within 1.0 unit of target."""
+    pos = await client.body.position()
+    return _distance(pos, target) < 1.0
 
 
 async def _timer_is_clear(client) -> bool:
