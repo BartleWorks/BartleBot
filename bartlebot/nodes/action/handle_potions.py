@@ -154,7 +154,17 @@ async def run(machine, clients: list, params: dict) -> str:
             f"{len(low_clients)} client(s) below threshold — using potions if available",
             LogLevel.DEBUG,
         )
-        await asyncio.gather(*[c.use_potion_if_needed() for c in low_clients])
+        # Use use_potion() directly — we already decided these clients need a potion.
+        # use_potion_if_needed() re-checks with its own hardcoded defaults (20% health,
+        # 10% mana) and would skip clients that are below our threshold but above its own.
+        # Wrap each call in `async with c.mouse_handler` to activate the mouseless cursor
+        # hook — the installed WizSprinter use_potion() omits this activation itself.
+        results = await asyncio.gather(*[_use_potion(c) for c in low_clients])
+        for c, used in zip(low_clients, results):
+            machine.log(
+                f"use_potion() → {used!r} for client {getattr(c, 'title', repr(c))}",
+                LogLevel.DEBUG,
+            )
 
     # 2. Identify buying_clients: those with no potion charges remaining after use.
     has_potion_flags = await asyncio.gather(*[c.has_potion() for c in clients])
@@ -432,6 +442,12 @@ async def _buy_potions_for_client(machine, client) -> None:
                 _SHOP_OPEN_TIMEOUT,
                 _POLL_INTERVAL,
             )
+
+
+async def _use_potion(client) -> bool:
+    """Activate the mouseless cursor hook and use a potion for one client."""
+    async with client.mouse_handler:
+        return await client.use_potion()
 
 
 async def _all_dorm_button_enabled(clients: list) -> bool:
