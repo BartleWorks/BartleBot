@@ -1,7 +1,7 @@
 {
   "name": "The Great Spyre",
   "description": "Completes the Great Spyre dungeon in Dragonspyre. Defeats both Gurtok demons as well as Malistaire.",
-  "version": "2.0",
+  "version": "4.0",
   "clients": "all",
   "initial": "state_4",
   "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint@boss",

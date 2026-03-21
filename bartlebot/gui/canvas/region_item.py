@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-_PADDING = 20
+_PADDING = 40
 _HANDLE_SIZE = 16
 _REGION_RADIUS = 12
 _FILL_ALPHA = 40       # ~16% opacity for the region fill
