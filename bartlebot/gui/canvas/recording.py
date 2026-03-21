@@ -176,6 +176,40 @@ async def _record_interact(client, param_form, on_status, on_btn, try_set_label)
         on_btn("Record")
 
 
+async def _record_apply_level_scaling(client, param_form, on_status, on_btn, try_set_label) -> None:
+    POLL = 0.15
+    on_btn("Stop")
+    on_status("Starting…")
+    try:
+        zone = await client.zone_name()
+        param_form.set_str("zone", zone)
+        start_pos = await client.body.position()
+        param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
+        on_status("Walk to level-scaling NPC…")
+
+        while not await client.is_in_npc_range():
+            await asyncio.sleep(POLL)
+
+        on_status("Leave NPC range to finish…")
+        while True:
+            pos = await client.body.position()
+            param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
+            await asyncio.sleep(POLL)
+            if not await client.is_in_npc_range():
+                break
+
+        try_set_label(_zone_display(zone))
+        on_status(f"Done — {zone.split('/')[-1]}")
+        on_btn("Record")
+
+    except asyncio.CancelledError:
+        on_status("")
+        on_btn("Record")
+    except Exception as e:
+        on_status(f"Error: {e}")
+        on_btn("Record")
+
+
 async def _record_interact_to_zone(client, param_form, on_status, on_btn, try_set_label) -> None:
     POLL = 0.15
     on_btn("Stop")
@@ -271,6 +305,7 @@ _REGISTRY: dict[str, Any] = {
     "go_to_xyz":                 _record_go_to_xyz,
     "enter_dungeon":             _record_enter_dungeon,
     "interact":                  _record_interact,
+    "apply_level_scaling":       _record_apply_level_scaling,
     "interact_to_zone":          _record_interact_to_zone,
     "mark_location":             _record_mark_location,
     "recall_to_marked_location": _record_recall_to_marked_location,
