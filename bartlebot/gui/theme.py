@@ -34,6 +34,7 @@ class _Theme:
     # ------------------------------------------------------------------
     muted_text:   str = "#999999"   # sidebar field labels
     muted_text_alt: str = "#888888"  # placeholder / secondary muted text
+    option_desc_text: str = "#888888"  # description text shown under bot options
     subtle_text:  str = "#555555"   # section sub-headers (returns, overrides)
     error_text:   str = "#cc4444"   # inline validation error messages
     error_border: str = "#CC2222"   # required-field empty border / badges
