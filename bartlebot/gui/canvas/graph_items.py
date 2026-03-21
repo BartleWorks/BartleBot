@@ -723,19 +723,26 @@ class EdgeItem(QGraphicsPathItem):
         _draw_ortho_path(path, waypoints)
 
     def _build_self_loop(self, path: QPainterPath) -> None:
-        """Small cubic bezier arc above the node."""
-        c = self._src.center()
-        r = 30
-        top = QPointF(c.x(), c.y() - self._src._height / 2)
-
-        path.moveTo(top)
-        path.cubicTo(
-            QPointF(top.x() - r, top.y() - r * 2.2),
-            QPointF(top.x() + r, top.y() - r * 2.2),
-            top,
-        )
-        # Arrowhead points downward (into the top of the node)
-        _add_arrowhead(path, top, math.pi / 2)
+        """Orthogonal path departing from the output port, routing above or below
+        the node (based on port position), and arriving at the input port."""
+        src_pt = self._src.port_out_for(self._when)
+        dst_pt = self._src.port_in()
+        node_top = self._src.scenePos().y()
+        src_h = self._src._height
+        src_center_y = node_top + src_h / 2
+        if src_pt.y() <= src_center_y:
+            bridge_y = node_top - _BACK_PADDING - _BACK_H_STEP
+        else:
+            bridge_y = node_top + src_h + _BACK_PADDING + _BACK_H_STEP
+        waypoints = [
+            src_pt,
+            QPointF(src_pt.x() + _BACK_H_STEP, src_pt.y()),
+            QPointF(src_pt.x() + _BACK_H_STEP, bridge_y),
+            QPointF(dst_pt.x() - _BACK_H_STEP, bridge_y),
+            QPointF(dst_pt.x() - _BACK_H_STEP, dst_pt.y()),
+            dst_pt,
+        ]
+        _draw_ortho_path(path, waypoints)
 
 # ---------------------------------------------------------------------------
 # Helpers

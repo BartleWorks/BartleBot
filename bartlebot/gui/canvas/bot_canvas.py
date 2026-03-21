@@ -342,7 +342,7 @@ class EditScene(QGraphicsScene):
                 self._temp_edge = None
             if event.button() == Qt.MouseButton.LeftButton:
                 dst = self._node_near_port_in(event.scenePos())
-                if dst is not None and dst is not self._drag_src:
+                if dst is not None:
                     self._create_transition(self._drag_src, dst, self._drag_when)
             self._drag_src = None
             self._drag_when = None
