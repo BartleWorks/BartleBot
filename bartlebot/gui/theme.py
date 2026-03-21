@@ -94,6 +94,7 @@ class _Theme:
     # ------------------------------------------------------------------
     badge_initial:          str = "#22AA44"
     badge_terminal:         str = "#CC2222"
+    badge_flipped:          str = "#DDAA00"
     node_sublabel_inactive: str = "#888888"
 
     # ------------------------------------------------------------------

@@ -204,6 +204,7 @@ class EditScene(QGraphicsScene):
                 is_error=is_error,
                 is_warning=is_warning,
                 node_type=state.node_type,
+                flipped=getattr(state, "flipped", False),
             )
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
@@ -372,6 +373,9 @@ class EditScene(QGraphicsScene):
         if ctrl and event.key() == Qt.Key.Key_V:
             self._paste()
             return
+        if event.key() == Qt.Key.Key_F:
+            self._flip_selected_nodes()
+            return
         super().keyPressEvent(event)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -403,6 +407,11 @@ class EditScene(QGraphicsScene):
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
+            flip_label = "Unflip Node" if item._flipped else "Flip Node"
+            act_flip = QAction(flip_label, menu)
+            sid = item.state_id
+            act_flip.triggered.connect(lambda _=None, s=sid: self._flip_node(s))
+            menu.addAction(act_flip)
             # Region membership actions
             if self._config and self._config.regions:
                 menu.addSeparator()
@@ -557,7 +566,8 @@ class EditScene(QGraphicsScene):
             self._config.states.append(state)
             returns = _node_returns(state.node_type)
             node = NodeItem(state.id, state.label, interactive=True, returns=returns,
-                            is_terminal=True, node_type=state.node_type)
+                            is_terminal=True, node_type=state.node_type,
+                            flipped=state.flipped)
             if new_sd.get("position"):
                 node.setPos(QPointF(
                     new_sd["position"]["x"] - NODE_W / 2,
@@ -584,6 +594,34 @@ class EditScene(QGraphicsScene):
 
         self._update_scene_rect()
         self.config_changed.emit()
+
+    def _flip_node(self, state_id: str) -> None:
+        if self._config is None:
+            return
+        node = self._node_items.get(state_id)
+        if node is None:
+            return
+        new_flipped = not node._flipped
+        node.set_flipped(new_flipped)
+        state = next((s for s in self._config.states if s.id == state_id), None)
+        if state is not None:
+            state.flipped = new_flipped
+        self.config_changed.emit()
+
+    def _flip_selected_nodes(self) -> None:
+        if self._config is None:
+            return
+        changed = False
+        for item in self.selectedItems():
+            if isinstance(item, NodeItem):
+                new_flipped = not item._flipped
+                item.set_flipped(new_flipped)
+                state = next((s for s in self._config.states if s.id == item.state_id), None)
+                if state is not None:
+                    state.flipped = new_flipped
+                changed = True
+        if changed:
+            self.config_changed.emit()
 
     def _delete_selected(self) -> None:
         changed = False
