@@ -39,6 +39,7 @@ from bartlebot.settings_manager import SettingsManager
 
 _PORT_HIT_RADIUS = 16
 _AUTO_SPACING = 260
+_PASTE_OFFSET = 40   # px shift per successive paste of the same clipboard
 
 _TB_RUN  = 0  # toolbar stack index for Run mode
 _TB_EDIT = 1  # toolbar stack index for Edit mode
@@ -155,6 +156,8 @@ class EditScene(QGraphicsScene):
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
         self._interactive_mode: bool = True
+        self._clipboard: tuple[list[dict], list[dict]] | None = None
+        self._paste_count: int = 0
 
     # ------------------------------------------------------------------
     # Public API
@@ -352,8 +355,22 @@ class EditScene(QGraphicsScene):
         self._flush_positions()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Delete and self._interactive_mode:
+        if not self._interactive_mode:
+            super().keyPressEvent(event)
+            return
+        ctrl = event.modifiers() == Qt.KeyboardModifier.ControlModifier
+        if event.key() == Qt.Key.Key_Delete:
             self._delete_selected()
+            return
+        if ctrl and event.key() == Qt.Key.Key_C:
+            self._copy_selected()
+            return
+        if ctrl and event.key() == Qt.Key.Key_X:
+            self._copy_selected()
+            self._delete_selected()
+            return
+        if ctrl and event.key() == Qt.Key.Key_V:
+            self._paste()
             return
         super().keyPressEvent(event)
 
@@ -496,6 +513,76 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
+        self.config_changed.emit()
+
+    def _copy_selected(self) -> None:
+        if self._config is None:
+            return
+        selected_ids = {item.state_id for item in self.selectedItems() if isinstance(item, NodeItem)}
+        if not selected_ids:
+            return
+        states = [s.model_dump() for s in self._config.states if s.id in selected_ids]
+        transitions = [
+            t.model_dump() for t in self._config.transitions
+            if t.source in selected_ids and t.dest in selected_ids
+        ]
+        self._clipboard = (states, transitions)
+        self._paste_count = 0
+
+    def _paste(self) -> None:
+        if self._config is None or self._clipboard is None:
+            return
+        states_data, transitions_data = self._clipboard
+        self._paste_count += 1
+        offset = _PASTE_OFFSET * self._paste_count
+
+        # Build old_id → new_id mapping
+        id_map: dict[str, str] = {}
+        existing_ids = [s.id for s in self._config.states]
+        for sd in states_data:
+            new_id = _unique_id(existing_ids)
+            id_map[sd["id"]] = new_id
+            existing_ids.append(new_id)
+
+        # Create new StateModels and NodeItems
+        for sd in states_data:
+            new_sd = dict(sd)
+            new_sd["id"] = id_map[sd["id"]]
+            if new_sd.get("position"):
+                new_sd["position"] = {
+                    "x": new_sd["position"]["x"] + offset,
+                    "y": new_sd["position"]["y"] + offset,
+                }
+            state = StateModel.model_validate(new_sd)
+            self._config.states.append(state)
+            returns = _node_returns(state.node_type)
+            node = NodeItem(state.id, state.label, interactive=True, returns=returns,
+                            is_terminal=True, node_type=state.node_type)
+            if new_sd.get("position"):
+                node.setPos(QPointF(
+                    new_sd["position"]["x"] - NODE_W / 2,
+                    new_sd["position"]["y"] - NODE_H / 2,
+                ))
+            self.addItem(node)
+            self._node_items[state.id] = node
+
+        # Re-create internal transitions (_create_transition calls refresh_terminal/errors)
+        for td in transitions_data:
+            src_node = self._node_items[id_map[td["source"]]]
+            dst_node = self._node_items[id_map[td["dest"]]]
+            self._create_transition(src_node, dst_node, when=td.get("when"))
+
+        # Ensure terminal/error badges are correct even with no internal transitions
+        self.refresh_terminal()
+        self.refresh_errors()
+
+        # Select the pasted nodes
+        self.clearSelection()
+        for new_id in id_map.values():
+            if new_id in self._node_items:
+                self._node_items[new_id].setSelected(True)
+
+        self._update_scene_rect()
         self.config_changed.emit()
 
     def _delete_selected(self) -> None:
