@@ -39,6 +39,17 @@ PARAM_SCHEMA: list[ParamField] = [
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
+    ParamField(
+        key="interact_clients",
+        type="int_list",
+        label="Interact Clients",
+        help=(
+            "1-based client numbers that should perform this interaction (e.g. '1, 3'). "
+            "Leave empty to have all clients interact."
+        ),
+        default=[],
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -92,6 +103,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
+
     machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
@@ -102,33 +114,47 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 2. Clear any pre-existing interact prompt before starting.
+    # 2. Resolve which clients should perform the interaction.
+    raw: list[int] = params.get("interact_clients") or []
+    interact_indices = (
+        [n - 1 for n in raw if 0 < n <= len(clients)]
+        if raw
+        else list(range(len(clients)))
+    )
+    if not interact_indices:
+        machine.log("interact: no clients selected — SUCCESS")
+        return "SUCCESS"
+
+    active_clients = [clients[i] for i in interact_indices]
+    machine.log(f"Interacting client(s): {[i + 1 for i in interact_indices]}", LogLevel.DEBUG)
+
+    # 3. Clear any pre-existing interact prompt before starting.
     #    A stale prompt from a previous interaction can linger briefly after teleport,
     #    causing the client to interact with the wrong object if X is pressed too soon.
-    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in active_clients])
     if any(prompts):
-        stale = [i for i, p in enumerate(prompts) if p]
+        stale = [interact_indices[i] for i, p in enumerate(prompts) if p]
         machine.log(
-            f"Pre-existing interact prompt on client(s) {stale}; "
+            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; "
             f"teleporting to reset_xyz to clear it",
             LogLevel.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
+        await asyncio.gather(*[c.teleport(reset) for c in active_clients])
         await node_helpers.wait_until(
-            lambda: node_helpers.none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_in_npc_range(active_clients), PROMPT_TIMEOUT, POLL_INTERVAL
         )
 
-    # 3–4. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
+    # 4–5. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
             f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", LogLevel.DEBUG
         )
-        await asyncio.gather(*[c.teleport(interact) for c in clients])
+        await asyncio.gather(*[c.teleport(interact) for c in active_clients])
 
         machine.log("Waiting for interact prompt…", LogLevel.DEBUG)
         if await node_helpers.wait_until(
-            lambda: node_helpers.all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(active_clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -137,7 +163,7 @@ async def run(machine, clients: list, params: dict) -> str:
             f"Interact prompt did not appear (attempt {attempt}); resetting",
             LogLevel.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
+        await asyncio.gather(*[c.teleport(reset) for c in active_clients])
 
     if not prompt_appeared:
         machine.log(
@@ -146,18 +172,18 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 5. Press X to begin interaction.
+    # 6. Press X to begin interaction.
     machine.log("Pressing X to interact", LogLevel.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in active_clients])
 
-    # 6. Advance through dialogue; start polling immediately after X.
+    # 7. Advance through dialogue; start polling immediately after X.
     #    Only exit once no dialog is open AND at least Safety Delay seconds have
     #    passed, so late-opening dialog windows are not missed.
     machine.log("Advancing dialogue…", LogLevel.DEBUG)
     safety_delay = machine.get_option("Safety Delay", 3.0)
     loop_start = asyncio.get_event_loop().time()
     while True:
-        dialogs = await asyncio.gather(*[c.is_in_dialog() for c in clients])
+        dialogs = await asyncio.gather(*[c.is_in_dialog() for c in active_clients])
         elapsed = asyncio.get_event_loop().time() - loop_start
         if not any(dialogs) and elapsed >= safety_delay:
             break
@@ -171,7 +197,7 @@ async def run(machine, clients: list, params: dict) -> str:
             return "FAILURE"
         if any(dialogs):
             await asyncio.gather(*[
-                c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(clients, dialogs) if d
+                c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(active_clients, dialogs) if d
             ])
         await asyncio.sleep(POLL_INTERVAL)
 

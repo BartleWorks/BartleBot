@@ -174,6 +174,63 @@ async def test_stale_prompt_cleared_before_interaction():
     assert second_tp.args[0].x == 0.0  # interact_xyz
 
 
+async def test_all_clients_filtered_out_succeeds():
+    """interact_clients=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
+    client = FakeClient()
+    params = {**_PARAMS, "interact_clients": [5]}
+
+    result = await ix.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    client.teleport.assert_not_called()
+    client.send_key.assert_not_called()
+
+
+async def test_interact_clients_subset():
+    """Only the specified client interacts; the other is not touched."""
+    c1 = FakeClient()  # should NOT interact
+    c2 = _ready_client()  # should interact
+    params = {**_PARAMS, "interact_clients": [2]}
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [c1, c2], params)
+
+    assert result == "SUCCESS"
+    c1.teleport.assert_not_called()
+    c1.send_key.assert_not_called()
+    c2.teleport.assert_called()
+    from wizwalker import Keycode
+    assert any(call.args[0] == Keycode.X for call in c2.send_key.call_args_list)
+
+
+async def test_out_of_range_client_numbers_skipped():
+    """Client numbers beyond the connected count are silently skipped."""
+    client = _ready_client()
+    params = {**_PARAMS, "interact_clients": [1, 99]}
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    from wizwalker import Keycode
+    assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
+
+
+async def test_empty_interact_clients_interacts_all():
+    """interact_clients=[] (default) interacts with every connected client."""
+    c1 = _ready_client()
+    c2 = _ready_client()
+    params = {**_PARAMS, "interact_clients": []}
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [c1, c2], params)
+
+    assert result == "SUCCESS"
+    from wizwalker import Keycode
+    for c in (c1, c2):
+        assert any(call.args[0] == Keycode.X for call in c.send_key.call_args_list)
+
+
 async def test_late_dialog_caught_within_safety_window():
     """Dialog appearing after several polls (but before safety_delay expires) is caught and advanced."""
     client = _ready_client()
