@@ -372,6 +372,7 @@ class MainWindow(QMainWindow):
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
+            self.bot_canvas._apply_canvas_settings()
         self._game_view_panel.game_view._placeholder.refresh()
 
     def _open_launcher(self) -> None:

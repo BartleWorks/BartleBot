@@ -420,4 +420,12 @@ def _build_option_row(opt) -> tuple[QWidget, QWidget]:
             widget.setToolTip(tooltip)
         layout.addWidget(widget)
 
+    if opt.description:
+        desc_lbl = QLabel(opt.description)
+        desc_lbl.setStyleSheet(
+            f"color: {THEME.option_desc_text}; font-size: 9px;"
+        )
+        desc_lbl.setWordWrap(True)
+        layout.addWidget(desc_lbl)
+
     return row, widget

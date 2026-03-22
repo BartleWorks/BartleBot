@@ -34,6 +34,7 @@ class _Theme:
     # ------------------------------------------------------------------
     muted_text:   str = "#999999"   # sidebar field labels
     muted_text_alt: str = "#888888"  # placeholder / secondary muted text
+    option_desc_text: str = "#888888"  # description text shown under bot options
     subtle_text:  str = "#555555"   # section sub-headers (returns, overrides)
     error_text:   str = "#cc4444"   # inline validation error messages
     error_border: str = "#CC2222"   # required-field empty border / badges
@@ -93,6 +94,7 @@ class _Theme:
     # ------------------------------------------------------------------
     badge_initial:          str = "#22AA44"
     badge_terminal:         str = "#CC2222"
+    badge_flipped:          str = "#DDAA00"
     node_sublabel_inactive: str = "#888888"
 
     # ------------------------------------------------------------------
@@ -103,6 +105,35 @@ class _Theme:
     edge_sel_color:  str = "#2255aa"
     port_color:      str = "#3366bb"
     port_label_color: str = "#444444"
+
+    # ------------------------------------------------------------------
+    # Floating overlay panels (search bar, minimap, etc.) — light theme
+    # ------------------------------------------------------------------
+    overlay_bg:     str = "#f0f2f5"           # near-white panel background
+    overlay_border: str = "#b0b8c8"           # medium grey border
+    overlay_text:   str = "#1a1e28"           # near-black primary text
+    overlay_muted:  str = "#666e84"           # muted secondary text
+
+    minimap_bg:     str = "rgba(240, 242, 245, 220)"   # semi-transparent light background
+    minimap_border: str = "rgba(160, 168, 192, 200)"   # semi-transparent border
+
+    # ------------------------------------------------------------------
+    # Search match highlight (node rings drawn behind nodes)
+    # ------------------------------------------------------------------
+    search_match_current: str = "#00ccee"   # bright cyan — the centered/active match
+    search_match_other:   str = "#0088aa"   # teal — other matches
+
+    # ------------------------------------------------------------------
+    # Region palette colors (fill / border / handle for node regions)
+    # ------------------------------------------------------------------
+    region_amber:  str = "#F59E0B"
+    region_teal:   str = "#14B8A6"
+    region_purple: str = "#8B5CF6"
+    region_red:    str = "#EF4444"
+    region_blue:   str = "#3B82F6"
+    region_green:  str = "#22C55E"
+
+    REGION_PALETTE: tuple = ("amber", "teal", "purple", "red", "blue", "green")
 
     # ------------------------------------------------------------------
     # Game-embed client tile
@@ -133,6 +164,10 @@ class _Theme:
             THEME.qcolor("node_fill_normal")
         """
         return QColor(getattr(self, token_name))
+
+    def region_color(self, key: str) -> QColor:
+        """Return a QColor for the named region palette key (e.g. "amber")."""
+        return QColor(getattr(self, f"region_{key}"))
 
     def qcolor_client_pill_bg(self) -> QColor:
         """Semi-transparent black for the client-tile label pill background."""

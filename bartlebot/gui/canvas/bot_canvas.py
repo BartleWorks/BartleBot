@@ -15,20 +15,22 @@ from PyQt6.QtGui import QAction, QColor, QPen, QKeyEvent, QMouseEvent, QTextChar
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
-    QHBoxLayout, QLabel, QPlainTextEdit, QPushButton,
+    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
     QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 
-from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
+from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
 from bartlebot.log_level import LogLevel
 from bartlebot.gui.canvas.graph_items import (
-    EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R,
+    EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R, _MinimapView,
 )
+from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.settings_manager import SettingsManager
 
 
 # ---------------------------------------------------------------------------
@@ -37,6 +39,7 @@ from bartlebot.gui.canvas.param_panel import _ParamPanel
 
 _PORT_HIT_RADIUS = 16
 _AUTO_SPACING = 260
+_PASTE_OFFSET = 40   # px shift per successive paste of the same clipboard
 
 _TB_RUN  = 0  # toolbar stack index for Run mode
 _TB_EDIT = 1  # toolbar stack index for Edit mode
@@ -141,16 +144,20 @@ class EditScene(QGraphicsScene):
     """Manages interactive nodes, edge dragging, deletion, and positions."""
 
     config_changed = pyqtSignal()
+    focus_region_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._config: BotConfig | None = None
         self._node_items: dict[str, NodeItem] = {}
         self._edge_items: list[tuple[str, str | None, str, EdgeItem]] = []
+        self._region_items: dict[str, RegionItem] = {}
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
         self._interactive_mode: bool = True
+        self._clipboard: tuple[list[dict], list[dict]] | None = None
+        self._paste_count: int = 0
 
     # ------------------------------------------------------------------
     # Public API
@@ -158,6 +165,12 @@ class EditScene(QGraphicsScene):
 
     def setup(self, config: BotConfig) -> None:
         """Rebuild the scene from a BotConfig."""
+        for ri in self._region_items.values():
+            try:
+                self.changed.disconnect(ri._recompute_rect)
+            except RuntimeError:
+                pass
+        self._region_items.clear()
         self.clear()
         self._node_items.clear()
         self._edge_items.clear()
@@ -191,6 +204,7 @@ class EditScene(QGraphicsScene):
                 is_error=is_error,
                 is_warning=is_warning,
                 node_type=state.node_type,
+                flipped=getattr(state, "flipped", False),
             )
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
@@ -222,6 +236,16 @@ class EditScene(QGraphicsScene):
             if dn is not sn:
                 dn.add_edge(edge)
             self._edge_items.append((s, w, d, edge))
+
+        # Add region items behind nodes (z=-1)
+        for region in config.regions:
+            ri = RegionItem(region, self._node_items)
+            ri.set_interactive(self._interactive_mode)
+            self.addItem(ri)
+            self._region_items[region.id] = ri
+        for ri in self._region_items.values():
+            self.changed.connect(ri._recompute_rect)
+            ri._recompute_rect()
 
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(bounds)
@@ -259,6 +283,8 @@ class EditScene(QGraphicsScene):
             node.set_interactive(interactive)
         for _s, _w, _d, edge in self._edge_items:
             edge.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
+        for region in self._region_items.values():
+            region.set_interactive(interactive)
         if not interactive:
             self.clearSelection()
 
@@ -320,7 +346,7 @@ class EditScene(QGraphicsScene):
                 self._temp_edge = None
             if event.button() == Qt.MouseButton.LeftButton:
                 dst = self._node_near_port_in(event.scenePos())
-                if dst is not None and dst is not self._drag_src:
+                if dst is not None:
                     self._create_transition(self._drag_src, dst, self._drag_when)
             self._drag_src = None
             self._drag_when = None
@@ -330,10 +356,38 @@ class EditScene(QGraphicsScene):
         self._flush_positions()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Delete and self._interactive_mode:
+        if not self._interactive_mode:
+            super().keyPressEvent(event)
+            return
+        ctrl = event.modifiers() == Qt.KeyboardModifier.ControlModifier
+        if event.key() == Qt.Key.Key_Delete:
             self._delete_selected()
             return
+        if ctrl and event.key() == Qt.Key.Key_C:
+            self._copy_selected()
+            return
+        if ctrl and event.key() == Qt.Key.Key_X:
+            self._copy_selected()
+            self._delete_selected()
+            return
+        if ctrl and event.key() == Qt.Key.Key_V:
+            self._paste()
+            return
+        if event.key() == Qt.Key.Key_F:
+            self._flip_selected_nodes()
+            return
         super().keyPressEvent(event)
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        from PyQt6.QtGui import QTransform
+        item = self.itemAt(
+            event.scenePos(),
+            self.views()[0].transform() if self.views() else QTransform()
+        )
+        if isinstance(item, RegionItem):
+            self.focus_region_requested.emit(item.region_id)
+            return
+        super().mouseDoubleClickEvent(event)
 
     # ------------------------------------------------------------------
     # Context menu
@@ -353,10 +407,54 @@ class EditScene(QGraphicsScene):
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
+            flip_label = "Unflip Node" if item._flipped else "Flip Node"
+            act_flip = QAction(flip_label, menu)
+            sid = item.state_id
+            act_flip.triggered.connect(lambda _=None, s=sid: self._flip_node(s))
+            menu.addAction(act_flip)
+            # Region membership actions
+            if self._config and self._config.regions:
+                menu.addSeparator()
+                sid = item.state_id
+                for region in self._config.regions:
+                    if sid not in region.members:
+                        rid = region.id
+                        rlabel = region.label
+                        act_add = QAction(f"Add to Region: {rlabel}", menu)
+                        act_add.triggered.connect(lambda _=None, s=sid, r=rid: self._add_to_region(s, r))
+                        menu.addAction(act_add)
+                    else:
+                        rid = region.id
+                        rlabel = region.label
+                        act_rem = QAction(f"Remove from Region: {rlabel}", menu)
+                        act_rem.triggered.connect(lambda _=None, s=sid, r=rid: self._remove_from_region(s, r))
+                        menu.addAction(act_rem)
+            # Create region from multi-selection
+            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+            if len(selected_nodes) >= 2:
+                menu.addSeparator()
+                n = len(selected_nodes)
+                act_cr = QAction(f"Create Region from {n} selected states", menu)
+                act_cr.triggered.connect(lambda: self._create_region([nd.state_id for nd in selected_nodes]))
+                menu.addAction(act_cr)
+        elif isinstance(item, RegionItem):
+            rid = item.region_id
+            act_rn = QAction("Rename Region", menu)
+            act_rn.triggered.connect(lambda: self._rename_region(rid))
+            menu.addAction(act_rn)
+            act_rc = QAction("Change Color", menu)
+            act_rc.triggered.connect(lambda: self._recolor_region(rid))
+            menu.addAction(act_rc)
+            act_del = QAction("Remove Region", menu)
+            act_del.triggered.connect(lambda: self._delete_region(rid))
+            menu.addAction(act_del)
         elif isinstance(item, EdgeItem):
             act = QAction("Delete Transition", menu)
             act.triggered.connect(lambda: self._delete_edge_item(item))
             menu.addAction(act)
+            act_ins = QAction("Insert State Here", menu)
+            act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
+            menu.addAction(act_ins)
         else:
             scene_pos = event.scenePos()
             act = QAction("Add State Here", menu)
@@ -364,7 +462,14 @@ class EditScene(QGraphicsScene):
                 lambda: self.add_state(QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2))
             )
             menu.addAction(act)
-        menu.exec(event.screenPos().toPoint())
+            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+            if len(selected_nodes) >= 2:
+                menu.addSeparator()
+                n = len(selected_nodes)
+                act_cr = QAction(f"Create Region from {n} selected states", menu)
+                act_cr.triggered.connect(lambda: self._create_region([nd.state_id for nd in selected_nodes]))
+                menu.addAction(act_cr)
+        menu.exec(event.screenPos())
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -419,6 +524,105 @@ class EditScene(QGraphicsScene):
         self.refresh_errors()
         self.config_changed.emit()
 
+    def _copy_selected(self) -> None:
+        if self._config is None:
+            return
+        selected_ids = {item.state_id for item in self.selectedItems() if isinstance(item, NodeItem)}
+        if not selected_ids:
+            return
+        states = [s.model_dump() for s in self._config.states if s.id in selected_ids]
+        transitions = [
+            t.model_dump() for t in self._config.transitions
+            if t.source in selected_ids and t.dest in selected_ids
+        ]
+        self._clipboard = (states, transitions)
+        self._paste_count = 0
+
+    def _paste(self) -> None:
+        if self._config is None or self._clipboard is None:
+            return
+        states_data, transitions_data = self._clipboard
+        self._paste_count += 1
+        offset = _PASTE_OFFSET * self._paste_count
+
+        # Build old_id → new_id mapping
+        id_map: dict[str, str] = {}
+        existing_ids = [s.id for s in self._config.states]
+        for sd in states_data:
+            new_id = _unique_id(existing_ids)
+            id_map[sd["id"]] = new_id
+            existing_ids.append(new_id)
+
+        # Create new StateModels and NodeItems
+        for sd in states_data:
+            new_sd = dict(sd)
+            new_sd["id"] = id_map[sd["id"]]
+            if new_sd.get("position"):
+                new_sd["position"] = {
+                    "x": new_sd["position"]["x"] + offset,
+                    "y": new_sd["position"]["y"] + offset,
+                }
+            state = StateModel.model_validate(new_sd)
+            self._config.states.append(state)
+            returns = _node_returns(state.node_type)
+            node = NodeItem(state.id, state.label, interactive=True, returns=returns,
+                            is_terminal=True, node_type=state.node_type,
+                            flipped=state.flipped)
+            if new_sd.get("position"):
+                node.setPos(QPointF(
+                    new_sd["position"]["x"] - NODE_W / 2,
+                    new_sd["position"]["y"] - NODE_H / 2,
+                ))
+            self.addItem(node)
+            self._node_items[state.id] = node
+
+        # Re-create internal transitions (_create_transition calls refresh_terminal/errors)
+        for td in transitions_data:
+            src_node = self._node_items[id_map[td["source"]]]
+            dst_node = self._node_items[id_map[td["dest"]]]
+            self._create_transition(src_node, dst_node, when=td.get("when"))
+
+        # Ensure terminal/error badges are correct even with no internal transitions
+        self.refresh_terminal()
+        self.refresh_errors()
+
+        # Select the pasted nodes
+        self.clearSelection()
+        for new_id in id_map.values():
+            if new_id in self._node_items:
+                self._node_items[new_id].setSelected(True)
+
+        self._update_scene_rect()
+        self.config_changed.emit()
+
+    def _flip_node(self, state_id: str) -> None:
+        if self._config is None:
+            return
+        node = self._node_items.get(state_id)
+        if node is None:
+            return
+        new_flipped = not node._flipped
+        node.set_flipped(new_flipped)
+        state = next((s for s in self._config.states if s.id == state_id), None)
+        if state is not None:
+            state.flipped = new_flipped
+        self.config_changed.emit()
+
+    def _flip_selected_nodes(self) -> None:
+        if self._config is None:
+            return
+        changed = False
+        for item in self.selectedItems():
+            if isinstance(item, NodeItem):
+                new_flipped = not item._flipped
+                item.set_flipped(new_flipped)
+                state = next((s for s in self._config.states if s.id == item.state_id), None)
+                if state is not None:
+                    state.flipped = new_flipped
+                changed = True
+        if changed:
+            self.config_changed.emit()
+
     def _delete_selected(self) -> None:
         changed = False
         for item in list(self.selectedItems()):
@@ -456,6 +660,7 @@ class EditScene(QGraphicsScene):
             self.removeItem(self._node_items.pop(state_id))
         self.refresh_terminal()
         self.refresh_errors()
+        self._flush_regions()
         self._update_scene_rect()
         self.config_changed.emit()
 
@@ -483,6 +688,48 @@ class EditScene(QGraphicsScene):
         self.refresh_errors()
         self.config_changed.emit()
 
+    def _insert_state_on_edge(self, edge_item: EdgeItem) -> None:
+        """Split an existing edge by inserting a new state at its midpoint."""
+        if self._config is None:
+            return
+        # Locate the edge record
+        for (s, w, d, ei) in list(self._edge_items):
+            if ei is edge_item:
+                break
+        else:
+            return
+        src_node = self._node_items.get(s)
+        dst_node = self._node_items.get(d)
+        if src_node is None or dst_node is None:
+            return
+
+        # Midpoint of the edge path in scene coordinates
+        mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
+
+        # Create a new state at the midpoint
+        new_id = _unique_id([st.id for st in self._config.states])
+        default_type = next(iter(NODE_REGISTRY), "go_to_zone")
+        state = StateModel(
+            id=new_id,
+            node_type=default_type,
+            position={"x": mid.x() + NODE_W / 2, "y": mid.y() + NODE_H / 2},
+        )
+        self._config.states.append(state)
+        returns = _node_returns(default_type)
+        new_node = NodeItem(
+            new_id, None, interactive=True, returns=returns, is_terminal=True,
+            node_type=default_type,
+        )
+        new_node.setPos(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2))
+        self.addItem(new_node)
+        self._node_items[new_id] = new_node
+
+        # Remove original edge (src --w--> dst), then wire src --w--> new --∅--> dst
+        self._delete_edge_item(edge_item)
+        self._create_transition(src_node, new_node, w)
+        self._create_transition(new_node, dst_node, None)
+        self._update_scene_rect()
+
     def _flush_positions(self) -> None:
         if self._config is None:
             return
@@ -501,9 +748,150 @@ class EditScene(QGraphicsScene):
         if changed:
             self.config_changed.emit()
 
+    def _flush_regions(self) -> None:
+        """Remove stale member IDs from regions; auto-delete regions with < 2 members."""
+        if self._config is None:
+            return
+        state_ids = {s.id for s in self._config.states}
+        for region in list(self._config.regions):
+            cleaned = [m for m in region.members if m in state_ids]
+            if len(cleaned) < 2:
+                self._delete_region(region.id)
+            else:
+                region.members[:] = cleaned
+
+    def _create_region(self, state_ids: list[str]) -> None:
+        if self._config is None or len(state_ids) < 2:
+            return
+        import uuid
+        from PyQt6.QtWidgets import QInputDialog
+        label, ok = QInputDialog.getText(
+            self.views()[0] if self.views() else None,
+            "Create Region", "Region name:"
+        )
+        if not ok or not label.strip():
+            return
+        region = RegionModel(
+            id=uuid.uuid4().hex[:8],
+            label=label.strip(),
+            members=list(state_ids),
+            color="amber",
+        )
+        self._config.regions.append(region)
+        ri = RegionItem(region, self._node_items)
+        ri.set_interactive(self._interactive_mode)
+        self.addItem(ri)
+        self._region_items[region.id] = ri
+        self.changed.connect(ri._recompute_rect)
+        ri._recompute_rect()
+        self.config_changed.emit()
+
+    def _delete_region(self, region_id: str) -> None:
+        if self._config is None:
+            return
+        ri = self._region_items.pop(region_id, None)
+        if ri is not None:
+            try:
+                self.changed.disconnect(ri._recompute_rect)
+            except RuntimeError:
+                pass
+            self.removeItem(ri)
+        self._config.regions = [r for r in self._config.regions if r.id != region_id]
+        self.config_changed.emit()
+
+    def _rename_region(self, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None:
+            return
+        from PyQt6.QtWidgets import QInputDialog
+        label, ok = QInputDialog.getText(
+            self.views()[0] if self.views() else None,
+            "Rename Region", "Region name:", text=region.label
+        )
+        if not ok or not label.strip():
+            return
+        region.label = label.strip()
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            ri.set_label(region.label)
+        self.config_changed.emit()
+
+    def _recolor_region(self, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None:
+            return
+        from PyQt6.QtWidgets import QDialog
+        dlg = _ColorPickerDialog(current_key=region.color, parent=self.views()[0] if self.views() else None)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        region.color = dlg.selected_color()
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            ri.set_color(region.color)
+        self.config_changed.emit()
+
+    def _add_to_region(self, state_id: str, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None or state_id in region.members:
+            return
+        region.members.append(state_id)
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            ri._member_ids.append(state_id)
+            ri._recompute_rect()
+        self.config_changed.emit()
+
+    def _remove_from_region(self, state_id: str, region_id: str) -> None:
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None or state_id not in region.members:
+            return
+        region.members.remove(state_id)
+        if len(region.members) < 2:
+            self._delete_region(region_id)
+            return
+        ri = self._region_items.get(region_id)
+        if ri is not None:
+            if state_id in ri._member_ids:
+                ri._member_ids.remove(state_id)
+            ri._recompute_rect()
+        self.config_changed.emit()
+
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(self.sceneRect().united(bounds))
+
+    def _get_tab_order(self) -> list[str]:
+        """State IDs in BFS order from initial state, orphans appended at the end."""
+        if self._config is None:
+            return list(self._node_items.keys())
+        adj: dict[str, list[str]] = {}
+        for t in self._config.transitions:
+            adj.setdefault(t.source, []).append(t.dest)
+        order: list[str] = []
+        seen: set[str] = set()
+        queue = [self._config.initial]
+        while queue:
+            sid = queue.pop(0)
+            if sid in seen:
+                continue
+            seen.add(sid)
+            if sid in self._node_items:
+                order.append(sid)
+            for dest in adj.get(sid, []):
+                if dest not in seen:
+                    queue.append(dest)
+        for sid in self._node_items:
+            if sid not in seen:
+                order.append(sid)
+        return order
 
 
 # ---------------------------------------------------------------------------
@@ -513,6 +901,77 @@ class EditScene(QGraphicsScene):
 class _EditView(GraphView):
     def __init__(self, scene: QGraphicsScene, parent=None):
         super().__init__(scene, interactive=True, parent=parent)
+
+
+# ---------------------------------------------------------------------------
+# _SearchBar — floating quick-search overlay (Ctrl+F)
+# ---------------------------------------------------------------------------
+
+class _SearchBar(QWidget):
+    """Floating search bar overlaid on the graph view (Ctrl+F to open)."""
+
+    text_changed = pyqtSignal(str)
+    next_match   = pyqtSignal()
+    prev_match   = pyqtSignal()
+    closed       = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setStyleSheet(
+            f"QWidget {{ background-color: {THEME.overlay_bg}; border: 1px solid {THEME.overlay_border}; border-radius: 6px; }}"
+            f"QLineEdit {{ border: none; background: transparent; color: {THEME.overlay_text}; font-size: 13px; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.overlay_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.overlay_text}; }}"
+            f"QLabel {{ border: none; color: {THEME.overlay_muted}; font-size: 11px; }}"
+        )
+
+        self._input = QLineEdit()
+        self._input.setPlaceholderText("Search states…")
+        self._input.setFixedWidth(200)
+        self._input.installEventFilter(self)
+        self._input.textChanged.connect(self.text_changed)
+
+        self._count_lbl = QLabel()
+
+        close_btn = QPushButton("×")
+        close_btn.setFixedSize(22, 22)
+        close_btn.clicked.connect(self.closed)
+
+        row = QHBoxLayout(self)
+        row.setContentsMargins(8, 4, 6, 4)
+        row.setSpacing(6)
+        row.addWidget(self._input)
+        row.addWidget(self._count_lbl)
+        row.addWidget(close_btn)
+        self.adjustSize()
+        self.setVisible(False)
+
+    def set_count(self, current: int, total: int) -> None:
+        self._count_lbl.setText("" if total == 0 and not self._input.text() else
+                                "no matches" if total == 0 else f"{current}/{total}")
+        self.adjustSize()
+
+    def focus_input(self) -> None:
+        self._input.setFocus()
+        self._input.selectAll()
+
+    def current_text(self) -> str:
+        return self._input.text()
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._input and event.type() == QEvent.Type.KeyPress:
+            key = event.key()
+            if key == Qt.Key.Key_Escape:
+                self.closed.emit()
+                return True
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Down):
+                self.next_match.emit()
+                return True
+            if key == Qt.Key.Key_Up:
+                self.prev_match.emit()
+                return True
+        return super().eventFilter(obj, event)
 
 
 # ---------------------------------------------------------------------------
@@ -547,6 +1006,11 @@ class BotCanvas(QWidget):
         self._tick_timer.setInterval(1000)
         self._tick_timer.timeout.connect(self._tick)
 
+        self._tab_idx: int = 0
+        self._search_matches: list[str] = []
+        self._search_match_idx: int = 0
+        self._focus_region_id: str | None = None
+
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -576,6 +1040,9 @@ class BotCanvas(QWidget):
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
 
+        self._layout_btn = _icon_btn("layout", "Auto-Layout states")
+        self._layout_btn.clicked.connect(self._on_layout_clicked)
+
         self._done_btn = _icon_btn("checkmark", "Apply changes and return to Run mode (does not save to disk)")
         self._done_btn.clicked.connect(self._on_done_clicked)
 
@@ -594,16 +1061,19 @@ class BotCanvas(QWidget):
         edit_center_row = QHBoxLayout(edit_center)
         edit_center_row.setContentsMargins(0, 0, 0, 0)
         edit_center_row.addWidget(self._add_state_btn)
+        edit_center_row.addSpacing(4)
+        edit_center_row.addWidget(self._layout_btn)
 
         self._center_stack = QStackedWidget()
         self._center_stack.addWidget(run_center)   # _TB_RUN  = 0
         self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
 
-        # ── Left section (68 px fixed — mirrors right section width) ─
+        # ── Left section (68 px fixed: fit button) ─
         left_section = QWidget()
         left_section.setFixedWidth(68)
         left_row = QHBoxLayout(left_section)
         left_row.setContentsMargins(0, 0, 0, 0)
+        left_row.setSpacing(0)
         left_row.addWidget(self._fit_btn)
         left_row.addStretch(1)
 
@@ -666,6 +1136,12 @@ class BotCanvas(QWidget):
         _banner_row.addWidget(self._warning_pill)
         self._validation_banner.setVisible(False)
 
+        # ── Minimap overlay — bottom-right corner of the graph view ──────
+        self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
+        self._minimap.setVisible(
+            SettingsManager.instance().get("canvas", "minimap_visible", default=True)
+        )
+
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
         self._log.setReadOnly(True)
@@ -696,9 +1172,40 @@ class BotCanvas(QWidget):
         outer.addWidget(toolbar)
         outer.addWidget(self._view, 1)
 
+        # ── Search bar overlay — top-center of the graph view ────────
+        self._search_bar = _SearchBar(parent=self._view)
+        self._search_bar.text_changed.connect(self._on_search_text_changed)
+        self._search_bar.next_match.connect(self._on_search_next)
+        self._search_bar.prev_match.connect(self._on_search_prev)
+        self._search_bar.closed.connect(self._close_search)
+
+        # ── Focus breadcrumb overlay — top-left of the graph view ────
+        self._focus_crumb = QWidget(self._view)
+        self._focus_crumb.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._focus_crumb.setStyleSheet(
+            f"QWidget {{ background-color: {THEME.overlay_bg}; border: 1px solid {THEME.overlay_border}; border-radius: 6px; }}"
+            f"QLabel {{ border: none; color: {THEME.overlay_text}; font-size: 12px; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.overlay_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.overlay_text}; }}"
+        )
+        self._focus_crumb_label = QLabel("Viewing: ")
+        _close_focus_btn = QPushButton("×")
+        _close_focus_btn.setFixedSize(22, 22)
+        _close_focus_btn.clicked.connect(self._exit_focus_mode)
+        _crumb_row = QHBoxLayout(self._focus_crumb)
+        _crumb_row.setContentsMargins(8, 4, 6, 4)
+        _crumb_row.setSpacing(4)
+        _crumb_row.addWidget(self._focus_crumb_label)
+        _crumb_row.addWidget(_close_focus_btn)
+        self._focus_crumb.adjustSize()
+        self._focus_crumb.setVisible(False)
+
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
         fit_shortcut.activated.connect(self._view.fit_scene)
+
+        search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        search_shortcut.activated.connect(self._show_search_bar)
 
         # ── Reposition banner overlay when the view resizes ───────────
         self._view.installEventFilter(self)
@@ -707,6 +1214,7 @@ class BotCanvas(QWidget):
         self._scene.config_changed.connect(self._on_scene_changed)
         self._param_panel.config_changed.connect(self._on_scene_changed)
         self._scene.selectionChanged.connect(self._on_selection_changed)
+        self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
     # ------------------------------------------------------------------
     # Public API — bot loading
@@ -714,11 +1222,24 @@ class BotCanvas(QWidget):
 
     def setup(self, config: BotConfig) -> None:
         """Load a BotConfig. Enters RUN mode with the graph ready."""
+        self._exit_focus_mode()
+        self._close_search()
+        self._tab_idx = 0
         _inject_required_options(config)
         self._config = config
+        # Auto-layout when no positions are saved and the setting is enabled
+        if (
+            config.states
+            and all(s.position is None for s in config.states)
+            and SettingsManager.instance().get("canvas", "auto_layout_on_load", default=True)
+        ):
+            from bartlebot.gui.canvas.layout import auto_layout
+            auto_layout(config)
         self._scene.setup(config)
         self._param_panel.show_idle()
         self._view.fit_scene()
+        self._minimap.fit_to_scene()
+        self._reposition_banner()
         self._apply_mode(BotMode.RUN)
         self._edit_btn.setEnabled(True)
         self._update_validation_badge()
@@ -751,15 +1272,49 @@ class BotCanvas(QWidget):
             self._run_pause_btn.setToolTip("")
 
     def eventFilter(self, obj, event) -> bool:
-        if obj is self._view and event.type() == QEvent.Type.Resize:
-            self._reposition_banner()
+        if obj is self._view:
+            if event.type() == QEvent.Type.Resize:
+                self._reposition_banner()
+            elif event.type() == QEvent.Type.KeyPress:
+                key = event.key()
+                mods = event.modifiers()
+                if key == Qt.Key.Key_Escape and self._focus_region_id is not None:
+                    self._exit_focus_mode()
+                    return True
+                if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
+                    self._tab_navigate(1)
+                    return True
+                if key in (Qt.Key.Key_Backtab,) or (
+                    key == Qt.Key.Key_Tab and mods & Qt.KeyboardModifier.ShiftModifier
+                ):
+                    self._tab_navigate(-1)
+                    return True
         return super().eventFilter(obj, event)
 
     def _reposition_banner(self) -> None:
-        """Pin the validation banner to the top-right corner of the canvas view."""
+        """Pin overlays: validation banner top-right, minimap bottom-right, search bar top-center, focus crumb top-left."""
         self._validation_banner.adjustSize()
         x = self._view.width() - self._validation_banner.width() - 4
         self._validation_banner.move(x, 4)
+        # Minimap: bottom-right corner
+        mx = self._view.width() - self._minimap.width() - 8
+        my = self._view.height() - self._minimap.height() - 8
+        self._minimap.move(mx, my)
+        # Search bar: top-center
+        if hasattr(self, "_search_bar"):
+            self._search_bar.adjustSize()
+            sx = (self._view.width() - self._search_bar.width()) // 2
+            self._search_bar.move(sx, 8)
+        # Focus breadcrumb: top-left
+        if hasattr(self, "_focus_crumb"):
+            self._focus_crumb.adjustSize()
+            self._focus_crumb.move(8, 8)
+
+    def _apply_canvas_settings(self) -> None:
+        """Re-read canvas settings and update live widgets. Called after Settings dialog OK."""
+        sm = SettingsManager.instance()
+        self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
+        self._reposition_banner()
 
     def _active_state_label(self) -> str:
         """Return the display label for the current active state, falling back to its id."""
@@ -887,11 +1442,166 @@ class BotCanvas(QWidget):
         center = self._view.mapToScene(self._view.viewport().rect().center())
         self._scene.add_state(QPointF(center.x() - NODE_W / 2, center.y() - NODE_H / 2))
 
+    def _on_layout_clicked(self) -> None:
+        if self._config is None or self._focus_region_id is not None:
+            return
+        from bartlebot.gui.canvas.layout import auto_layout
+        self._scene._flush_positions()
+        auto_layout(self._config)
+        self._scene.setup(self._config)
+        self._view.fit_scene()
+        self._minimap.fit_to_scene()
+        self.config_changed.emit()
+
+    # ------------------------------------------------------------------
+    # Focus Mode
+    # ------------------------------------------------------------------
+
+    def _enter_focus_mode(self, region_id: str) -> None:
+        """Isolate a region's nodes in the view; hide everything else."""
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None:
+            return
+        self._exit_focus_mode()   # clean up any existing focus first
+        self._focus_region_id = region_id
+        member_set = set(region.members)
+
+        for sid, node in self._scene._node_items.items():
+            node.setVisible(sid in member_set)
+        for s, _, d, edge in self._scene._edge_items:
+            edge.setVisible(s in member_set and d in member_set)
+        for rid, ri in self._scene._region_items.items():
+            ri.setVisible(rid == region_id)
+
+        self._focus_crumb_label.setText(f"Viewing: {region.label}")
+        self._focus_crumb.setVisible(True)
+        self._reposition_banner()
+
+    def _exit_focus_mode(self) -> None:
+        """Restore all nodes/edges/regions to visible; hide the breadcrumb."""
+        if self._focus_region_id is None:
+            return
+        self._focus_region_id = None
+        for node in self._scene._node_items.values():
+            node.setVisible(True)
+        for *_, edge in self._scene._edge_items:
+            edge.setVisible(True)
+        for ri in self._scene._region_items.values():
+            ri.setVisible(True)
+        if hasattr(self, "_focus_crumb"):
+            self._focus_crumb.setVisible(False)
+
+    # ------------------------------------------------------------------
+    # Tab navigation
+    # ------------------------------------------------------------------
+
+    def _tab_navigate(self, direction: int) -> None:
+        """Cycle node selection by BFS order and center the view on the node."""
+        order = self._scene._get_tab_order()
+        if not order:
+            return
+        selected = [item for item in self._scene.selectedItems() if isinstance(item, NodeItem)]
+        if selected and selected[0].state_id in order:
+            cur_idx = order.index(selected[0].state_id)
+        else:
+            cur_idx = self._tab_idx - direction  # step will land on _tab_idx
+        next_idx = (cur_idx + direction) % len(order)
+        self._tab_idx = next_idx
+        node = self._scene._node_items.get(order[next_idx])
+        if node:
+            self._scene.clearSelection()
+            if self._mode == BotMode.EDIT:
+                node.setSelected(True)
+            self._view.centerOn(node)
+
+    # ------------------------------------------------------------------
+    # Quick search
+    # ------------------------------------------------------------------
+
+    def _show_search_bar(self) -> None:
+        self._search_bar.setVisible(True)
+        self._reposition_banner()
+        self._search_bar.focus_input()
+        self._on_search_text_changed(self._search_bar.current_text())
+
+    def _close_search(self) -> None:
+        if hasattr(self, "_search_bar"):
+            self._search_bar.setVisible(False)
+        self._search_matches.clear()
+        self._search_match_idx = 0
+        for node in self._scene._node_items.values():
+            node.set_search_match(False)
+
+    def _on_search_text_changed(self, text: str) -> None:
+        config = self._scene._config
+        if not config:
+            self._search_matches.clear()
+            self._search_bar.set_count(0, 0)
+            return
+        q = text.strip().lower()
+        matches: list[str] = []
+        if q:
+            for state in config.states:
+                if (
+                    q in (state.label or "").lower()
+                    or q in state.id.lower()
+                    or q in state.node_type.lower()
+                ):
+                    matches.append(state.id)
+        self._search_matches = matches
+        self._search_match_idx = 0
+        # Apply highlights
+        for sid, node in self._scene._node_items.items():
+            node.set_search_match(sid in matches, is_current=(bool(matches) and sid == matches[0]))
+        if matches:
+            first = self._scene._node_items.get(matches[0])
+            if first:
+                self._view.centerOn(first)
+        self._search_bar.set_count(1 if matches else 0, len(matches))
+        self._reposition_banner()
+
+    def _on_search_next(self) -> None:
+        if not self._search_matches:
+            return
+        old = self._search_matches[self._search_match_idx]
+        self._search_match_idx = (self._search_match_idx + 1) % len(self._search_matches)
+        new = self._search_matches[self._search_match_idx]
+        if old != new:
+            old_node = self._scene._node_items.get(old)
+            if old_node:
+                old_node.set_search_match(True, is_current=False)
+        new_node = self._scene._node_items.get(new)
+        if new_node:
+            new_node.set_search_match(True, is_current=True)
+            self._view.centerOn(new_node)
+        self._search_bar.set_count(self._search_match_idx + 1, len(self._search_matches))
+        self._reposition_banner()
+
+    def _on_search_prev(self) -> None:
+        if not self._search_matches:
+            return
+        old = self._search_matches[self._search_match_idx]
+        self._search_match_idx = (self._search_match_idx - 1) % len(self._search_matches)
+        new = self._search_matches[self._search_match_idx]
+        if old != new:
+            old_node = self._scene._node_items.get(old)
+            if old_node:
+                old_node.set_search_match(True, is_current=False)
+        new_node = self._scene._node_items.get(new)
+        if new_node:
+            new_node.set_search_match(True, is_current=True)
+            self._view.centerOn(new_node)
+        self._search_bar.set_count(self._search_match_idx + 1, len(self._search_matches))
+        self._reposition_banner()
+
     # ------------------------------------------------------------------
     # Mode switching
     # ------------------------------------------------------------------
 
     def _apply_mode(self, mode: BotMode) -> None:
+        self._exit_focus_mode()
         self._mode = mode
         if mode == BotMode.RUN:
             self._center_stack.setCurrentIndex(_TB_RUN)
@@ -922,6 +1632,9 @@ class BotCanvas(QWidget):
         self._refresh_terminal()
         self._refresh_errors()
         self._update_validation_badge()
+        self._minimap.fit_to_scene()
+        if self._search_bar.isVisible():
+            self._on_search_text_changed(self._search_bar.current_text())
         self.config_changed.emit()
 
     def _update_validation_badge(self) -> None:
@@ -1189,3 +1902,64 @@ def _unique_id(existing: list[str]) -> str:
     while f"state_{i}" in existing:
         i += 1
     return f"state_{i}"
+
+
+# ---------------------------------------------------------------------------
+# _ColorPickerDialog — six-swatch region palette picker
+# ---------------------------------------------------------------------------
+
+class _ColorPickerDialog(QWidget):
+    """Minimal six-swatch palette dialog for region color selection."""
+
+    def __init__(self, current_key: str, parent=None) -> None:
+        from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QHBoxLayout, QVBoxLayout
+        # Re-parent as QDialog so exec() works
+        self._dialog = QDialog(parent)
+        self._dialog.setWindowTitle("Choose Color")
+        self._selected = current_key
+        self._swatch_btns: dict[str, QPushButton] = {}
+
+        swatch_row = QHBoxLayout()
+        swatch_row.setSpacing(8)
+        for key in THEME.REGION_PALETTE:
+            btn = QPushButton()
+            btn.setFixedSize(28, 28)
+            color_hex = THEME.region_color(key).name()
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {color_hex}; border: 2px solid transparent; border-radius: 14px; }}"
+                f"QPushButton:hover {{ border-color: white; }}"
+            )
+            btn.clicked.connect(lambda _=None, k=key: self._select(k))
+            self._swatch_btns[key] = btn
+            swatch_row.addWidget(btn)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(self._dialog.accept)
+        buttons.rejected.connect(self._dialog.reject)
+
+        layout = QVBoxLayout(self._dialog)
+        layout.addLayout(swatch_row)
+        layout.addWidget(buttons)
+        self._dialog.setLayout(layout)
+        self._highlight(current_key)
+
+    def _select(self, key: str) -> None:
+        self._selected = key
+        self._highlight(key)
+
+    def _highlight(self, key: str) -> None:
+        for k, btn in self._swatch_btns.items():
+            color_hex = THEME.region_color(k).name()
+            border = "white" if k == key else "transparent"
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {color_hex}; border: 2px solid {border}; border-radius: 14px; }}"
+                f"QPushButton:hover {{ border-color: white; }}"
+            )
+
+    def exec(self):
+        return self._dialog.exec()
+
+    def selected_color(self) -> str:
+        return self._selected

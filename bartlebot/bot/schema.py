@@ -35,6 +35,7 @@ class StateModel(BaseModel):
     # Per-node overrides for bot-wide options (e.g. "Safety Delay").
     # Keys are option names; values override the bot-wide default for this node only.
     option_overrides: dict = Field(default_factory=dict)
+    flipped: bool = False  # When True, input port is on the right and outputs on the left
 
 
 class BotOptionModel(BaseModel):
@@ -42,6 +43,22 @@ class BotOptionModel(BaseModel):
     type: Literal["bool", "int", "float", "str", "int_list"]
     default: bool | int | float | str | list[int] = False
     description: str | None = None
+
+    @model_validator(mode="after")
+    def coerce_int_list_default(self) -> "BotOptionModel":
+        if self.type == "int_list" and isinstance(self.default, str):
+            self.default = [
+                int(x.strip()) for x in self.default.split(",")
+                if x.strip().lstrip("-").isdigit()
+            ]
+        return self
+
+
+class RegionModel(BaseModel):
+    id: str
+    label: str
+    members: list[str]   # state IDs
+    color: str           # palette key, e.g. "amber"
 
 
 class BotConfig(BaseModel):
@@ -60,6 +77,7 @@ class BotConfig(BaseModel):
     options: list[BotOptionModel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel]
+    regions: list[RegionModel] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def initial_state_exists(self) -> "BotConfig":

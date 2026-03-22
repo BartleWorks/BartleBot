@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.settings.accounts_tab import AccountsTab
+from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.game_embed_tab import GameEmbedTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.settings_manager import SettingsManager
@@ -30,6 +31,10 @@ class SettingsDialog(QDialog):
         self._game_embed_tab = GameEmbedTab()
         self._tabs.addTab(self._game_embed_tab, "Game Embed")
 
+        # Canvas tab
+        self._canvas_tab = CanvasTab()
+        self._tabs.addTab(self._canvas_tab, "Canvas")
+
         # Accounts tab
         self._accounts_tab = AccountsTab()
         self._tabs.addTab(self._accounts_tab, "Accounts")
@@ -47,5 +52,6 @@ class SettingsDialog(QDialog):
     def _on_accept(self) -> None:
         self._general_tab.apply()
         self._game_embed_tab.apply()
+        self._canvas_tab.apply()
         SettingsManager.instance().save()
         self.accept()

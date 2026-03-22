@@ -1,10 +1,18 @@
 {
-  "name": "Great Spire Farmer",
+  "name": "Great Spyre Farmer",
+  "description": "Completes the Great Spyre dungeon in Dragonspyre. Defeats both Gurtoks as well as Malistaire.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_21",
-  "use_bartlebot_default_combat_config": true,
-  "drops": [],
+  "default_combat_config": "### p1\ntempest[epic]\n\n### p2\nfeint@boss",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Dragonspyre",
+  "drops": [
+    "Level 50 hat",
+    "robe",
+    "and boots"
+  ],
+  "authors": "BartleBot",
   "options": [
     {
       "name": "Safety Delay",
@@ -14,9 +22,20 @@
     },
     {
       "name": "Default Combat Order",
-      "type": "str",
-      "default": "1, 2",
+      "type": "int_list",
+      "default": [
+        1,
+        2
+      ],
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Overridden per node by the Combat Order parameter."
+    },
+    {
+      "name": "Level Scaling Clients",
+      "type": "int_list",
+      "default": [
+        2
+      ],
+      "description": "1-based client numbers to check/apply level scaling (e.g. '2, 3'). Empty = all clients. Shared by check_level_scaling and apply_level_scaling."
     }
   ],
   "states": [
@@ -25,8 +44,8 @@
       "node_type": "interact_to_zone",
       "label": "Go from the Basilica to Dragonspyre Academy",
       "position": {
-        "x": -271.6121497201892,
-        "y": -115.79425236705771
+        "x": 750.0,
+        "y": -90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_Hub_Cathedral",
@@ -49,8 +68,8 @@
       "node_type": "interact_to_zone",
       "label": "Go from Dragonspyre Academy to Dragon's Roost",
       "position": {
-        "x": -16.6111879175902,
-        "y": -116.43716220941621
+        "x": 1050.0,
+        "y": -90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
@@ -73,8 +92,8 @@
       "node_type": "interact_to_zone",
       "label": "Skip dragon ride",
       "position": {
-        "x": 234.83381058656585,
-        "y": -115.83338798562801
+        "x": 1350.0,
+        "y": -90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
@@ -97,8 +116,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter the Great Spyre dungeon",
       "position": {
-        "x": 1005.6709631290697,
-        "y": 31.918483858644613
+        "x": 750.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
@@ -121,8 +140,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1256.9285514469414,
-        "y": 33.93234143790523
+        "x": 1050.0,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
@@ -149,8 +168,8 @@
       "node_type": "go_to_zone",
       "label": "Go to Path of Scales",
       "position": {
-        "x": 1524.8136734235343,
-        "y": 32.452313139692016
+        "x": 1350.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
@@ -168,8 +187,8 @@
       "node_type": "go_to_zone",
       "label": "Go to Lower Great Spyre",
       "position": {
-        "x": 1791.9587812510192,
-        "y": 30.97228484147879
+        "x": 1650.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
@@ -187,8 +206,8 @@
       "node_type": "interact_to_zone",
       "label": "Take elevator",
       "position": {
-        "x": 2054.0935148275803,
-        "y": 31.006597354302833
+        "x": 1950.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
@@ -211,8 +230,8 @@
       "node_type": "go_to_zone",
       "label": "Exit elevator",
       "position": {
-        "x": 2317.21378776841,
-        "y": 30.283739461608228
+        "x": 2250.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Elevator_Up",
@@ -235,8 +254,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Firebender",
       "position": {
-        "x": 2354.29889871054,
-        "y": 168.77755772238407
+        "x": 2550.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "Helephant-Fire-Boss-R9",
@@ -259,8 +278,8 @@
       "node_type": "go_to_xyz",
       "label": "Enter render radius for Gurtok Piercer",
       "position": {
-        "x": 2617.4191716513715,
-        "y": 168.77755772238407
+        "x": 2850.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -277,8 +296,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Piercer",
       "position": {
-        "x": 2877.318402246473,
-        "y": 167.30721303912537
+        "x": 3150.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "Helephant-Death-Boss-R9",
@@ -298,8 +317,8 @@
       "node_type": "interact",
       "label": "Use Crystal Stand",
       "position": {
-        "x": 3137.571052070687,
-        "y": 168.76113845713772
+        "x": 3450.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -321,8 +340,8 @@
       "node_type": "go_to_zone",
       "label": "Go to the Crown of Fire",
       "position": {
-        "x": 3390.554074804839,
-        "y": 168.76113845713772
+        "x": 3750.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -340,8 +359,8 @@
       "node_type": "handle_combat",
       "label": "Defeat first mob group",
       "position": {
-        "x": 3392.415296152675,
-        "y": 313.7956445301181
+        "x": 4350.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "Draconian-Zombie-R8-2",
@@ -356,8 +375,8 @@
       "node_type": "handle_combat",
       "label": "Defeat second mob group",
       "position": {
-        "x": 3934.249484870562,
-        "y": 310.88234806784646
+        "x": 4950.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "Draconian-Zombie-R8-2",
@@ -375,8 +394,8 @@
       "node_type": "go_to_xyz",
       "label": "Enter render radius for Soulless Servants",
       "position": {
-        "x": 4198.427733323408,
-        "y": 309.2103338371322
+        "x": 5250.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -393,8 +412,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Soulless Servants",
       "position": {
-        "x": 4457.589939084112,
-        "y": 305.86630537570375
+        "x": 5550.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "Undead-Caster-Blue-R8",
@@ -412,8 +431,8 @@
       "node_type": "go_to_xyz",
       "label": "Start Malistaire dialogue",
       "position": {
-        "x": 4706.720059460533,
-        "y": 305.86630537570375
+        "x": 5850.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -430,8 +449,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Malistaire",
       "position": {
-        "x": 4959.898648058605,
-        "y": 305.14487274136604
+        "x": 6150.0,
+        "y": -90.0
       },
       "params": {
         "enemy": "Malistaire-Boss-R10",
@@ -454,15 +473,15 @@
       "node_type": "mark_location",
       "label": "Mark dungeon entrance",
       "position": {
-        "x": 501.66395555857014,
-        "y": 35.673037066113636
+        "x": 150.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
         "xyz": {
-          "x": -216.38,
-          "y": 6265.21,
-          "z": 100.0
+          "x": -2.3,
+          "y": 5198.32,
+          "z": -0.0
         }
       },
       "option_overrides": {}
@@ -472,8 +491,8 @@
       "node_type": "recall_to_marked_location",
       "label": "Recall to dungeon entrance",
       "position": {
-        "x": 5216.323268157332,
-        "y": 304.33685081800405
+        "x": 6450.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
@@ -490,8 +509,8 @@
       "node_type": "go_to_xyz",
       "label": "Enter render radius for Decaying Blackguard",
       "position": {
-        "x": 3657.660937034623,
-        "y": 168.25728108804608
+        "x": 4050.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -508,8 +527,8 @@
       "node_type": "go_to_world_hub",
       "label": "Teleport to the Basilica",
       "position": {
-        "x": -269.94068991826975,
-        "y": 38.091240744608214
+        "x": 450.0,
+        "y": -90.0
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
@@ -521,8 +540,8 @@
       "node_type": "go_to_xyz",
       "label": "Reset Malistaire dialogue",
       "position": {
-        "x": 4707.330403119595,
-        "y": 451.3218621195582
+        "x": 6150.0,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -539,8 +558,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 752.8414672210124,
-        "y": 33.107651452309966
+        "x": 450.0,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -555,8 +574,8 @@
       "node_type": "go_to_xyz",
       "label": "Cancel invulnerability",
       "position": {
-        "x": 3659.8286807287504,
-        "y": 311.15623915170755
+        "x": 4650.0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -628,12 +647,6 @@
       "trigger": "advance",
       "source": "state_11",
       "dest": "state_12",
-      "when": "SUCCESS"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_13",
       "when": "SUCCESS"
     },
     {
@@ -773,6 +786,39 @@
       "source": "state_27",
       "dest": "state_16",
       "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS"
+    }
+  ],
+  "regions": [
+    {
+      "id": "391b6c04",
+      "label": "Defeat Gurtoks",
+      "members": [
+        "state_12",
+        "state_10",
+        "state_11",
+        "state_14",
+        "state_13"
+      ],
+      "color": "purple"
+    },
+    {
+      "id": "42239bb7",
+      "label": "Defeat pre-Malistaire mobs",
+      "members": [
+        "state_27",
+        "state_15",
+        "state_18",
+        "state_16",
+        "state_17",
+        "state_23"
+      ],
+      "color": "amber"
     }
   ]
 }
