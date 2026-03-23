@@ -1210,24 +1210,35 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 
 **Follow-up / deferred work:**
 - **`pre-commit` hook** — not added. Adding a `.pre-commit-config.yaml` with `ruff check --fix` and `ruff format` would enforce the rules on every commit without relying on editor integration.
-- **`B017` — broad `pytest.raises(Exception)`** in `tests/test_schema.py:172`. Deferred because the correct exception type (`json.JSONDecodeError` vs `pydantic.ValidationError`) depends on where `BotConfig.load()` fails; narrow this when the schema tests are next touched.
+- **`B017` — broad `pytest.raises(Exception)`** — ~~deferred~~ fixed: narrowed to `json.JSONDecodeError` in `tests/test_schema.py` (`BotConfig.load()` calls `json.load()` directly). `B017` removed from the ruff ignore list.
 - **`B905` — `zip()` without `strict=`** — ignored globally. These all pair same-length lists from `asyncio.gather()` results, so mismatched lengths indicate a deeper bug. Consider enabling this rule and auditing each call site once the node API stabilises.
-- **Ruff not in `poetry.lock`** — `poetry lock` fails due to the unresolvable `PyQt6-Qt6Svg = "*"` constraint. Ruff was installed directly into the virtualenv as a workaround. This should be resolved when point 7 (pin dependency versions) is addressed — pinning `PyQt6-Qt6Svg` to the installed version will unblock `poetry lock`.
+- **Ruff not in `poetry.lock`** — ~~blocked by unresolvable `PyQt6-Qt6Svg`~~ resolved by point 7: `PyQt6-Qt6Svg` removed, `poetry lock` succeeds, ruff 0.15.7 is now in the lock.
 
 ---
 
 ### 7. Pin dependency versions
-**Status:** `TODO`
+**Status:** `DONE`
 
 **Why:** All 8 runtime dependencies use `"*"` (any version). `wizwalker` and `WizSprinter` point to git branches that can change at any time. A breaking upstream change silently breaks BartleBot.
 
-**What to do:**
-- Run `poetry show` to see currently resolved versions. Pin each dependency to at least a major version range (e.g., `PyQt6 = "^6.7"`, `pydantic = "^2.0"`).
-- For `wizwalker` and `WizSprinter` git deps: pin to a specific commit hash instead of a branch name. Poetry supports `rev = "abc123"` for git dependencies.
-- Ensure `poetry.lock` is committed and kept up to date.
+**What was done:**
+- Removed `PyQt6-Qt6Svg = "*"` — unresolvable on Python 3.13 (no compatible wheel); SVG support is bundled in `PyQt6-Qt6` 6.10.2 which was already in the lock.
+- Pinned runtime deps to `^MAJOR.MINOR` ranges based on locked versions: `PyQt6 = "^6.7"`, `qasync = "^0.27"`, `pyperclip = "^1.8"`, `transitions = "^0.9"`, `pydantic = "^2.0"`, `keyring = "^25.0"`.
+- Pinned dev deps: `pytest = "^9.0"`, `pytest-asyncio = "^1.0"`, `ruff = "^0.15"`.
+- **WizSprinter** pinned to `rev = "222fc7a85d2a4b1578cc895bbf97af446c6dbce9"` (specific commit, not branch).
+- **wizwalker** kept as `branch = "development"` — WizSprinter's own `pyproject.toml` declares `wizwalker @ branch=development`, so a commit-hash pin on our side causes a Poetry solver conflict. The lock file records the exact resolved commit (`fc3381db...`), which is the actual pinning mechanism.
+- Ran `poetry lock` — succeeds cleanly. `keyring` and `ruff` now appear in `poetry.lock`.
 
-**Files to modify:**
-- `pyproject.toml` — update version specifiers
+**Updating after a game patch:**
+1. wizwalker/WizSprinter maintainers push a fix commit to their branches.
+2. BartleBot dev tests locally with the new commit.
+3. Update `WizSprinter`'s `rev` in `pyproject.toml` to the new hash (and/or update wizwalker if needed independently).
+4. Run `poetry lock` to update the lock file.
+5. Commit `pyproject.toml` + `poetry.lock` together.
+
+**Files modified:**
+- `pyproject.toml` — version specifiers updated, `PyQt6-Qt6Svg` removed
+- `poetry.lock` — regenerated; now includes keyring 25.7.0, ruff 0.15.7, and both git dep hashes
 
 ---
 

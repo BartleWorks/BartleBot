@@ -185,7 +185,7 @@ def test_load_nonexistent_file_raises(tmp_path):
 def test_load_invalid_json_raises(tmp_path):
     path = tmp_path / "bad.json"
     path.write_text("not valid json")
-    with pytest.raises(Exception):
+    with pytest.raises(json.JSONDecodeError):
         BotConfig.load(path)
 
 

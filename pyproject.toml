@@ -7,20 +7,19 @@ packages = [{include = "bartlebot"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
-PyQt6 = "*"
-PyQt6-Qt6Svg = "*"
-qasync = "*"
-pyperclip = "*"
-transitions = {extras = ["asyncio"], version = "*"}
-pydantic = "*"
-keyring = "*"
+PyQt6 = "^6.7"
+qasync = "^0.27"
+pyperclip = "^1.8"
+transitions = {extras = ["asyncio"], version = "^0.9"}
+pydantic = "^2.0"
+keyring = "^25.0"
 wizwalker = {git = "https://github.com/Deimos-Wizard101/wizwalker", branch = "development"}
-WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", branch = "lib-update"}
+WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", rev = "222fc7a85d2a4b1578cc895bbf97af446c6dbce9"}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "*"
-pytest-asyncio = "*"
-ruff = "*"
+pytest = "^9.0"
+pytest-asyncio = "^1.0"
+ruff = "^0.15"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -43,7 +42,6 @@ ignore = [
     "E402",  # module-level import not at top — intentional logger-before-imports pattern
     "B905",  # zip() without strict= — intentional; lists always same length in gather patterns
     "B008",  # function call in default — intentional Qt lambda captures
-    "B017",  # blind pytest.raises(Exception) — needs per-test refactor; deferred
 ]
 
 [tool.ruff.lint.per-file-ignores]
