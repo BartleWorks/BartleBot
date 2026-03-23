@@ -1243,7 +1243,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 8. Abstract the "ever seen" pattern
-**Status:** `TODO`
+**Status:** `DONE`
 
 **Why:** The same multi-client coordination loop (track which clients have triggered, re-press key for stragglers, poll until all triggered or timeout) is copy-pasted across 5+ node files. Abstracting it into a helper reduces ~50 lines per node and makes the pattern testable in isolation.
 
