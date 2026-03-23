@@ -4,7 +4,6 @@ import asyncio
 from unittest.mock import patch
 
 import bartlebot.nodes.action.interact as ix
-
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -33,6 +32,7 @@ async def test_success_no_dialog():
     assert result == "SUCCESS"
     client.teleport.assert_called_once()
     from wizwalker import Keycode
+
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
@@ -47,6 +47,7 @@ async def test_success_with_dialog():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
     assert Keycode.SPACEBAR in calls
@@ -54,6 +55,7 @@ async def test_success_with_dialog():
 
 async def test_success_multiple_clients():
     """Both clients must have their dialogue dismissed before SUCCESS."""
+
     def _make_client():
         c = _ready_client()
         c.is_in_dialog.side_effect = [True, False]
@@ -66,6 +68,7 @@ async def test_success_multiple_clients():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     for c in clients:
         calls = [call.args[0] for call in c.send_key.call_args_list]
         assert Keycode.X in calls
@@ -77,7 +80,7 @@ async def test_prompt_never_appears_fails():
     client = FakeClient()
     client.is_in_npc_range.return_value = False
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(ix, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(ix, "INTERACT_TIMEOUT", 0.01):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -103,7 +106,7 @@ async def test_prompt_retry_then_success():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(ix, "PROMPT_TIMEOUT", 0.01),
+        patch.object(ix, "INTERACT_TIMEOUT", 0.01),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -157,10 +160,10 @@ async def test_stale_prompt_cleared_before_interaction():
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return True   # stale prompt visible on node entry
+            return True  # stale prompt visible on node entry
         if call_count == 2:
             return False  # cleared after teleporting to reset_xyz
-        return True       # correct prompt visible at interact_xyz
+        return True  # correct prompt visible at interact_xyz
 
     client.is_in_npc_range.side_effect = _npc_range
 
@@ -170,8 +173,68 @@ async def test_stale_prompt_cleared_before_interaction():
     assert result == "SUCCESS"
     # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
     first_tp, second_tp = client.teleport.call_args_list[:2]
-    assert first_tp.args[0].x == 1.0   # reset_xyz
+    assert first_tp.args[0].x == 1.0  # reset_xyz
     assert second_tp.args[0].x == 0.0  # interact_xyz
+
+
+async def test_all_clients_filtered_out_succeeds():
+    """interact_clients=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
+    client = FakeClient()
+    params = {**_PARAMS, "interact_clients": [5]}
+
+    result = await ix.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    client.teleport.assert_not_called()
+    client.send_key.assert_not_called()
+
+
+async def test_interact_clients_subset():
+    """Only the specified client interacts; the other is not touched."""
+    c1 = FakeClient()  # should NOT interact
+    c2 = _ready_client()  # should interact
+    params = {**_PARAMS, "interact_clients": [2]}
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [c1, c2], params)
+
+    assert result == "SUCCESS"
+    c1.teleport.assert_not_called()
+    c1.send_key.assert_not_called()
+    c2.teleport.assert_called()
+    from wizwalker import Keycode
+
+    assert any(call.args[0] == Keycode.X for call in c2.send_key.call_args_list)
+
+
+async def test_out_of_range_client_numbers_skipped():
+    """Client numbers beyond the connected count are silently skipped."""
+    client = _ready_client()
+    params = {**_PARAMS, "interact_clients": [1, 99]}
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    from wizwalker import Keycode
+
+    assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
+
+
+async def test_empty_interact_clients_interacts_all():
+    """interact_clients=[] (default) interacts with every connected client."""
+    c1 = _ready_client()
+    c2 = _ready_client()
+    params = {**_PARAMS, "interact_clients": []}
+
+    with patch.object(ix, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(), [c1, c2], params)
+
+    assert result == "SUCCESS"
+    from wizwalker import Keycode
+
+    for c in (c1, c2):
+        assert any(call.args[0] == Keycode.X for call in c.send_key.call_args_list)
 
 
 async def test_late_dialog_caught_within_safety_window():
@@ -196,5 +259,6 @@ async def test_late_dialog_caught_within_safety_window():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.SPACEBAR in calls

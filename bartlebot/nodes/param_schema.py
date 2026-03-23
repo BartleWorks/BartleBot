@@ -18,6 +18,7 @@ class BotOptionSpec:
         default:     Default value shown in the sidebar.
         description: Tooltip shown next to the option widget.
     """
+
     name: str
     type: str
     default: bool | int | float | str | list = 0.0
@@ -44,6 +45,7 @@ class ParamField:
                       (i.e. the user must open the properties panel and save).
                       Used by the GUI to flag unconfigured nodes as errors.
     """
+
     key: str
     type: str
     label: str
@@ -62,6 +64,7 @@ class ReturnSpec:
         name:        The string the coroutine returns (e.g. "SUCCESS", "FAILURE").
         description: Human-readable explanation of when this value is returned.
     """
+
     name: str
     description: str = ""
 
@@ -80,6 +83,7 @@ class NodeSpec:
         required_bot_options: Bot-level options this node needs. The editor auto-injects
                               them and prevents deletion while the node is present.
     """
+
     description: str
     params: list[ParamField] = field(default_factory=list)
     returns: list[ReturnSpec] = field(default_factory=list)

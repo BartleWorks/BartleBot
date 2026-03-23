@@ -7,22 +7,49 @@ packages = [{include = "bartlebot"}]
 
 [tool.poetry.dependencies]
 python = "^3.13"
-PyQt6 = "*"
-PyQt6-Qt6Svg = "*"
-qasync = "*"
-pyperclip = "*"
-transitions = {extras = ["asyncio"], version = "*"}
-pydantic = "*"
-keyring = "*"
+PyQt6 = "^6.7"
+qasync = "^0.27"
+pyperclip = "^1.8"
+transitions = {extras = ["asyncio"], version = "^0.9"}
+pydantic = "^2.0"
+keyring = "^25.0"
 wizwalker = {git = "https://github.com/Deimos-Wizard101/wizwalker", branch = "development"}
-WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", branch = "lib-update"}
+WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", rev = "222fc7a85d2a4b1578cc895bbf97af446c6dbce9"}
 
 [tool.poetry.group.dev.dependencies]
-pytest = "*"
-pytest-asyncio = "*"
+pytest = "^9.0"
+pytest-asyncio = "^1.0"
+ruff = "^0.15"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade (modernize syntax)
+    "B",   # flake8-bugbear (common bugs)
+]
+ignore = [
+    "E501",  # line too long — handled by formatter, not linter
+    "E402",  # module-level import not at top — intentional logger-before-imports pattern
+    "B905",  # zip() without strict= — intentional; lists always same length in gather patterns
+    "B008",  # function call in default — intentional Qt lambda captures
+]
+
+[tool.ruff.lint.per-file-ignores]
+"bartlebot/nodes/node_helpers.py" = ["F401"]  # intentional re-exports
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [build-system]
 requires = ["poetry-core"]

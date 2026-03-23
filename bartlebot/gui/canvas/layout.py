@@ -65,6 +65,7 @@ def auto_layout(config: BotConfig, method: str = "dfs") -> None:
 # Layer / column assignment strategies
 # ---------------------------------------------------------------------------
 
+
 def _bfs_layers(
     state_ids: list[str],
     adj: dict[str, list[str]],
@@ -95,9 +96,11 @@ def _bfs_layers(
             for i, sid in enumerate(nodes_in_layer):
                 col[sid] = i
         else:
+
             def _bary(sid: str) -> float:
                 preds = [s for s in state_ids if sid in adj.get(s, []) and s in col]
                 return sum(col[p] for p in preds) / len(preds) if preds else float("inf")
+
             nodes_in_layer.sort(key=_bary)
             for i, sid in enumerate(nodes_in_layer):
                 col[sid] = i

@@ -1,11 +1,11 @@
 """Tests for BotConfig pydantic schema validation and serialization."""
 
 import json
+
 import pytest
 from pydantic import ValidationError
 
-from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
-
+from bartlebot.bot.schema import BotConfig
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
@@ -15,8 +15,16 @@ VALID_DATA = {
     "name": "Test Bot",
     "initial": "state_a",
     "states": [
-        {"id": "state_a", "node_type": "go_to_zone", "params": {"from_zone": "ZoneA", "to_zone": "ZoneB", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}},
-        {"id": "state_b", "node_type": "go_to_zone", "params": {"from_zone": "ZoneB", "to_zone": "ZoneA", "xyz": {"x": 1.0, "y": 2.0, "z": 3.0}}},
+        {
+            "id": "state_a",
+            "node_type": "go_to_zone",
+            "params": {"from_zone": "ZoneA", "to_zone": "ZoneB", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}},
+        },
+        {
+            "id": "state_b",
+            "node_type": "go_to_zone",
+            "params": {"from_zone": "ZoneB", "to_zone": "ZoneA", "xyz": {"x": 1.0, "y": 2.0, "z": 3.0}},
+        },
     ],
     "transitions": [
         {"trigger": "advance", "source": "state_a", "dest": "state_b", "when": "SUCCESS"},
@@ -30,6 +38,7 @@ VALID_DATA = {
 # ---------------------------------------------------------------------------
 # Valid config loading
 # ---------------------------------------------------------------------------
+
 
 def test_valid_config_loads():
     config = BotConfig.model_validate(VALID_DATA)
@@ -55,9 +64,12 @@ def test_state_optional_fields_have_defaults():
 
 
 def test_transition_when_defaults_to_none():
-    data = {**VALID_DATA, "transitions": [
-        {"trigger": "advance", "source": "state_a", "dest": "state_b"},
-    ]}
+    data = {
+        **VALID_DATA,
+        "transitions": [
+            {"trigger": "advance", "source": "state_a", "dest": "state_b"},
+        ],
+    }
     config = BotConfig.model_validate(data)
     assert config.transitions[0].when is None
 
@@ -71,6 +83,7 @@ def test_transition_when_is_preserved():
 # Required field validation
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.parametrize("missing_field", ["name", "initial", "states", "transitions"])
 def test_missing_required_field_raises(missing_field):
     data = {k: v for k, v in VALID_DATA.items() if k != missing_field}
@@ -81,6 +94,7 @@ def test_missing_required_field_raises(missing_field):
 # ---------------------------------------------------------------------------
 # initial state validation
 # ---------------------------------------------------------------------------
+
 
 def test_initial_must_reference_existing_state():
     data = {**VALID_DATA, "initial": "nonexistent_state"}
@@ -96,6 +110,7 @@ def test_initial_referencing_first_state_is_valid():
 # ---------------------------------------------------------------------------
 # to_machine_config()
 # ---------------------------------------------------------------------------
+
 
 def test_to_machine_config_structure():
     config = BotConfig.model_validate(VALID_DATA)
@@ -140,6 +155,7 @@ def test_to_machine_config_excludes_label_when_none():
 # Save / load roundtrip
 # ---------------------------------------------------------------------------
 
+
 def test_save_and_load_roundtrip(tmp_path):
     config = BotConfig.model_validate(VALID_DATA)
     path = tmp_path / "bot.json"
@@ -169,7 +185,7 @@ def test_load_nonexistent_file_raises(tmp_path):
 def test_load_invalid_json_raises(tmp_path):
     path = tmp_path / "bad.json"
     path.write_text("not valid json")
-    with pytest.raises(Exception):
+    with pytest.raises(json.JSONDecodeError):
         BotConfig.load(path)
 
 

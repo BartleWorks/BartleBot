@@ -8,14 +8,30 @@ import re
 
 # Window tree path to the chat log text element
 _CHAT_PATH = [
-    "WorldView", "WizardChatBox", "chatContainer",
-    "chatLogContainer", "chatLogInnerContainer", "chatLog",
+    "WorldView",
+    "WizardChatBox",
+    "chatContainer",
+    "chatLogContainer",
+    "chatLogInnerContainer",
+    "chatLog",
 ]
 
 # System-recognised drop categories (from Deimos drop_logger.py)
 _DROP_TYPES = {
-    "PetSnack", "Reagent", "Housing", "Pet", "Shoes", "Seed",
-    "Jewel", "Robe", "Hat", "Athame", "Weapon", "Deck", "Ring", "Amulet",
+    "PetSnack",
+    "Reagent",
+    "Housing",
+    "Pet",
+    "Shoes",
+    "Seed",
+    "Jewel",
+    "Robe",
+    "Hat",
+    "Athame",
+    "Weapon",
+    "Deck",
+    "Ring",
+    "Amulet",
 }
 
 
@@ -49,6 +65,7 @@ def extract_new_drops(before: str, after: str) -> list[str]:
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 async def _get_window_from_path(window, path: list[str]):
     """Traverse the UI window tree by a sequence of child names.
 
@@ -74,7 +91,7 @@ def _find_new_stuff(old: str, new: str) -> str:
     while old:
         idx = new.find(old)
         if idx >= 0:
-            return new[idx + len(old):]
+            return new[idx + len(old) :]
         old = old[1:]
     return new
 

@@ -2,9 +2,9 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.interact_to_zone as itz
 from wizwalker import Keycode
 
+import bartlebot.nodes.action.interact_to_zone as itz
 from tests.conftest import FakeClient, FakeMachine
 
 _FROM_ZONE = "TestZone"  # matches FakeClient zone_name default
@@ -91,10 +91,10 @@ async def test_stale_prompt_cleared_before_loop():
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return True   # stale prompt visible on node entry
+            return True  # stale prompt visible on node entry
         if call_count == 2:
             return False  # cleared after teleporting to reset_xyz
-        return True       # correct prompt visible at interact_xyz
+        return True  # correct prompt visible at interact_xyz
 
     client.is_in_npc_range.side_effect = _npc_range
     client.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE]
@@ -106,7 +106,7 @@ async def test_stale_prompt_cleared_before_loop():
     assert result == "SUCCESS"
     # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
     first_tp, second_tp = client.teleport.call_args_list[:2]
-    assert first_tp.args[0].x == 1.0   # reset_xyz
+    assert first_tp.args[0].x == 1.0  # reset_xyz
     assert second_tp.args[0].x == 0.0  # interact_xyz
 
 
@@ -116,7 +116,7 @@ async def test_prompt_never_appears_fails():
     client.zone_name.return_value = _FROM_ZONE
     client.is_in_npc_range.return_value = False  # prompt never shows
 
-    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "INTERACT_TIMEOUT", 0.01):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -143,7 +143,7 @@ async def test_prompt_retry_then_success():
     client.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE]
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "INTERACT_TIMEOUT", 0.01):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -175,8 +175,10 @@ async def test_wrong_to_zone_after_loading_fails():
     client.zone_name.side_effect = [_FROM_ZONE]
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(itz, "POLL_INTERVAL", 0), \
-         patch("bartlebot.nodes.node_helpers.wait_for_zone", new=AsyncMock(return_value=["WrongZone"])):
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+    ):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -198,8 +200,8 @@ async def test_x_resent_to_lagging_client():
     assert result == "SUCCESS"
     c1_x_presses = [call for call in c1.send_key.call_args_list if call.args[0] == Keycode.X]
     c2_x_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.X]
-    assert len(c1_x_presses) == 1   # only the initial press
-    assert len(c2_x_presses) >= 2   # initial press + at least one re-press
+    assert len(c1_x_presses) == 1  # only the initial press
+    assert len(c2_x_presses) >= 2  # initial press + at least one re-press
 
 
 async def test_fast_client_finishes_before_lagging_client_starts():
@@ -222,4 +224,4 @@ async def test_fast_client_finishes_before_lagging_client_starts():
 
     assert result == "SUCCESS"
     c2_x_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.X]
-    assert len(c2_x_presses) >= 2   # initial press + re-presses until loading
+    assert len(c2_x_presses) >= 2  # initial press + re-presses until loading

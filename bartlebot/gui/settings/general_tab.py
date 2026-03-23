@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
-    QCheckBox, QFormLayout, QHBoxLayout, QLabel, QSpinBox, QVBoxLayout, QWidget,
+    QCheckBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.settings_manager import BOTCANVAS_MIN_HEIGHT, SIDEBAR_MIN_WIDTH, SettingsManager
@@ -79,9 +85,9 @@ class GeneralTab(QWidget):
 
     def apply(self) -> None:
         sm = SettingsManager.instance()
-        sm.set_general("maximize_on_open",      self._maximize_cb.isChecked())
-        sm.set_general("window_width",          self._width_sb.value())
-        sm.set_general("window_height",         self._height_sb.value())
-        sm.set_general("left_sidebar_width",    self._left_sb.value())
-        sm.set_general("right_sidebar_width",   self._right_sb.value())
+        sm.set_general("maximize_on_open", self._maximize_cb.isChecked())
+        sm.set_general("window_width", self._width_sb.value())
+        sm.set_general("window_height", self._height_sb.value())
+        sm.set_general("left_sidebar_width", self._left_sb.value())
+        sm.set_general("right_sidebar_width", self._right_sb.value())
         sm.set_general("bottom_section_height", self._bottom_sb.value())

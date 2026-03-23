@@ -4,9 +4,12 @@ import asyncio
 
 from wizwalker import Keycode
 
-from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DUNGEON_ENTRANCE_PATH, DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
-
-POLL_INTERVAL = 0.25
+from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
+    ADVANCE_DIALOG_PATH,
+    DUNGEON_ENTRANCE_PATH,
+    DUNGEON_WARNING_PATH,
+)
+from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
 
 async def all_in_npc_range(clients: list) -> bool:
@@ -89,8 +92,9 @@ async def _get_window_from_path(parent, path: list[str]):
     return None
 
 
-async def wait_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
+async def poll_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
     """Poll condition_coro every poll_interval until it returns True or timeout expires."""
+
     async def _poll():
         while not await condition_coro():
             await asyncio.sleep(poll_interval)
@@ -98,8 +102,37 @@ async def wait_until(condition_coro, timeout: float | None, poll_interval: float
     try:
         await asyncio.wait_for(_poll(), timeout=timeout)
         return True
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return False
+
+
+async def poll_each_until_seen(
+    clients: list,
+    check_fn,
+    action_fn,
+    timeout: float,
+    poll_interval: float = POLL_INTERVAL,
+) -> set[int]:
+    """Poll until check_fn has returned True for every client at least once.
+
+    Re-calls action_fn for each client not yet seen on every poll cycle.
+    Returns the set of client indices that triggered. If all clients triggered,
+    len(result) == len(clients); on timeout, len(result) < len(clients).
+    """
+    seen: set[int] = set()
+    loop_start = asyncio.get_event_loop().time()
+    while True:
+        results = await asyncio.gather(*[check_fn(c) for c in clients])
+        for i, triggered in enumerate(results):
+            if triggered:
+                seen.add(i)
+        if len(seen) == len(clients):
+            return seen
+        if asyncio.get_event_loop().time() - loop_start > timeout:
+            return seen
+        stragglers = [c for i, c in enumerate(clients) if i not in seen]
+        await asyncio.gather(*[action_fn(c) for c in stragglers])
+        await asyncio.sleep(poll_interval)
 
 
 async def all_left_zone(clients: list, zone: str) -> bool:
@@ -121,7 +154,7 @@ async def wait_for_zone(
 
     Returns None on success, or the list of actual zone names on timeout.
     """
-    if await wait_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
+    if await poll_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
         return None
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
 

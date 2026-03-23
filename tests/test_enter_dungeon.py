@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.action.enter_dungeon as ed
 import bartlebot.nodes.node_helpers as nh
-
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -92,7 +91,7 @@ async def test_prompt_never_appears_retries_exhausted_fails():
     # Entrance prompt never appears — FakeClient root_window has no children, so
     # is_visible_by_path → False → all_at_dungeon_entrance → False.
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "INTERACT_TIMEOUT", 0.01):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -120,7 +119,7 @@ async def test_prompt_retry_then_success():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(ed, "PROMPT_TIMEOUT", 0.01),
+        patch.object(ed, "INTERACT_TIMEOUT", 0.01),
         patch.object(nh, "all_at_dungeon_entrance", side_effect=entrance_prompt),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
@@ -168,7 +167,7 @@ async def test_dungeon_warning_dialog_confirmed():
 
     # is_visible_by_path returns True for all paths (including the entrance pre-check in
     # step 2), so also patch none_at_dungeon_entrance to True so that the stale-prompt
-    # wait resolves immediately instead of spinning until PROMPT_TIMEOUT.
+    # wait resolves immediately instead of spinning until INTERACT_TIMEOUT.
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
@@ -179,6 +178,7 @@ async def test_dungeon_warning_dialog_confirmed():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     # X for sigil interaction, ENTER for the warning dialog
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
@@ -198,6 +198,7 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
     assert Keycode.ENTER not in calls
@@ -229,6 +230,7 @@ async def test_dungeon_warning_dialog_appears_late():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
     assert Keycode.ENTER in calls

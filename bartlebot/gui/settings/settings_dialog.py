@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
-    QDialog, QDialogButtonBox, QTabWidget, QVBoxLayout,
+    QDialog,
+    QDialogButtonBox,
+    QTabWidget,
+    QVBoxLayout,
 )
 
 from bartlebot.gui.settings.accounts_tab import AccountsTab
@@ -39,9 +42,7 @@ class SettingsDialog(QDialog):
         self._accounts_tab = AccountsTab()
         self._tabs.addTab(self._accounts_tab, "Accounts")
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
 

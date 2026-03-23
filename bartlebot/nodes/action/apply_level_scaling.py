@@ -1,13 +1,13 @@
 """Node: apply level-scaling elixir via NPC interaction."""
 
 import asyncio
+import logging
 
-from wizwalker import Keycode, XYZ
+from wizwalker import XYZ, Keycode
 
-from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import LEVEL_SCALING_OPTION_BUTTON_PATH, LEVEL_SCALING_ELIXIR_PATH
+from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -22,10 +22,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
-        help=(
-            "Coordinates of the level-scaling NPC. "
-            "The interact prompt should appear when standing here."
-        ),
+        help=("Coordinates of the level-scaling NPC. The interact prompt should appear when standing here."),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
@@ -70,10 +67,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
 )
 
-PROMPT_TIMEOUT = 5.0
-MENU_TIMEOUT = 10.0
-POLL_INTERVAL = 0.25
-MAX_RETRIES = 3
+from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -82,108 +76,91 @@ async def run(machine, clients: list, params: dict) -> str:
     interact = XYZ(**params["interact_xyz"])
     reset = XYZ(**params["reset_xyz"])
 
-    machine.log(
-        f"apply_level_scaling: {zone!r} "
-        f"XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
-    )
+    machine.log(f"apply_level_scaling: {zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})")
 
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
         machine.log(
-            f"FAILURE: clients not in expected zone "
-            f"(expected={zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 2. Resolve clients_to_scale.
     raw: list[int] = machine.get_option("Level Scaling Clients", []) or []
-    scale_indices = (
-        [n - 1 for n in raw if 0 < n <= len(clients)]
-        if raw
-        else list(range(len(clients)))
-    )
+    scale_indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else list(range(len(clients)))
     if not scale_indices:
         machine.log("apply_level_scaling: no clients to scale — SUCCESS")
         return "SUCCESS"
 
     scale_clients = [clients[i] for i in scale_indices]
-    machine.log(f"Scaling client(s): {[i + 1 for i in scale_indices]}", LogLevel.DEBUG)
+    machine.log(f"Scaling client(s): {[i + 1 for i in scale_indices]}", logging.DEBUG)
 
     # 3. Clear any pre-existing interact prompt on the scaled clients.
     prompts = await asyncio.gather(*[c.is_in_npc_range() for c in scale_clients])
     if any(prompts):
         stale = [scale_indices[i] for i, p in enumerate(prompts) if p]
         machine.log(
-            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; "
-            "teleporting to reset_xyz to clear it",
-            LogLevel.DEBUG,
+            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; teleporting to reset_xyz to clear it",
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
-        await node_helpers.wait_until(
-            lambda: node_helpers.none_in_npc_range(scale_clients), PROMPT_TIMEOUT, POLL_INTERVAL
+        await node_helpers.poll_until(
+            lambda: node_helpers.none_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
     # 4-5. Retry loop: teleport to interact_xyz, wait for prompt.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", LogLevel.DEBUG
-        )
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG)
         await asyncio.gather(*[c.teleport(interact) for c in scale_clients])
 
-        machine.log("Waiting for interact prompt…", LogLevel.DEBUG)
-        if await node_helpers.wait_until(
-            lambda: node_helpers.all_in_npc_range(scale_clients), PROMPT_TIMEOUT, POLL_INTERVAL
+        machine.log("Waiting for interact prompt…", logging.DEBUG)
+        if await node_helpers.poll_until(
+            lambda: node_helpers.all_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
 
         machine.log(
             f"Interact prompt did not appear (attempt {attempt}); resetting",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
 
     if not prompt_appeared:
         machine.log(
             f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 6. Press X on all scaled clients simultaneously.
-    machine.log("Pressing X to interact with level-scaling NPC", LogLevel.DEBUG)
+    machine.log("Pressing X to interact with level-scaling NPC", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in scale_clients])
 
     # 7. Wait for NPCServicesWin option button to appear.
-    machine.log("Waiting for NPCServicesWin menu…", LogLevel.DEBUG)
-    if not await node_helpers.wait_until(
-        lambda: _all_menu_visible(scale_clients), MENU_TIMEOUT, POLL_INTERVAL
-    ):
+    machine.log("Waiting for NPCServicesWin menu…", logging.DEBUG)
+    if not await node_helpers.poll_until(lambda: _all_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL):
         machine.log(
-            f"FAILURE: NPCServicesWin option button never appeared within {MENU_TIMEOUT}s",
-            LogLevel.WARNING,
+            f"FAILURE: NPCServicesWin option button never appeared within {INTERACT_TIMEOUT}s",
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 8. Click option button on all scaled clients simultaneously.
-    machine.log("Clicking level-scaling option button", LogLevel.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.click_by_path(c, LEVEL_SCALING_OPTION_BUTTON_PATH) for c in scale_clients]
-    )
+    machine.log("Clicking level-scaling option button", logging.DEBUG)
+    await asyncio.gather(*[node_helpers.click_by_path(c, LEVEL_SCALING_OPTION_BUTTON_PATH) for c in scale_clients])
 
     # 9. Wait for menu to dismiss.
-    machine.log("Waiting for NPCServicesWin menu to dismiss…", LogLevel.DEBUG)
-    await node_helpers.wait_until(
-        lambda: _none_menu_visible(scale_clients), MENU_TIMEOUT, POLL_INTERVAL
-    )
+    machine.log("Waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
+    await node_helpers.poll_until(lambda: _none_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL)
 
     # 10. Verify elixir is active on all scaled clients.
-    machine.log("Verifying level-scaling elixir is active…", LogLevel.DEBUG)
+    machine.log("Verifying level-scaling elixir is active…", logging.DEBUG)
     elixir_results = await asyncio.gather(
         *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_ELIXIR_PATH) for c in scale_clients]
     )
@@ -191,7 +168,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if missing:
         machine.log(
             f"FAILURE: level-scaling elixir not active on client(s) {missing}",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 

@@ -1,10 +1,12 @@
 import asyncio
-import traceback
-from typing import TYPE_CHECKING, Callable
+import logging
+import time
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
 
-from bartlebot.log_level import LogLevel
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -29,7 +31,7 @@ class BotMachine:
         on_state_change: Callable[[str], None] | None = None,
         on_transition: Callable[[str, str, str], None] | None = None,
         on_drop: Callable[[str, int, int], None] | None = None,
-        on_log: Callable[[str, LogLevel], None] | None = None,
+        on_log: Callable[[str, int], None] | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -45,6 +47,7 @@ class BotMachine:
         self._resume_event.set()  # not paused by default
         self._ambient_combat_lock = asyncio.Lock()
         self.last_result: str | None = None
+        self._no_match_count: int = 0
 
         self._state_map = {s["id"]: s for s in config["states"]}
 
@@ -71,10 +74,10 @@ class BotMachine:
                               bot-level behavioural flags (e.g. "repeat").
         """
         if name.startswith("_result_is_"):
-            expected = name[len("_result_is_"):]
+            expected = name[len("_result_is_") :]
             return lambda: self.last_result == expected
         if name.startswith("_flag_"):
-            option_name = name[len("_flag_"):]
+            option_name = name[len("_flag_") :]
             return lambda: bool(self.get_option(option_name, default=False))
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
@@ -104,10 +107,9 @@ class BotMachine:
 
     # --- Logging ---
 
-    def log(self, msg: str, level: LogLevel = LogLevel.INFO) -> None:
+    def log(self, msg: str, level: int = logging.INFO) -> None:
         """Emit a log message from a node."""
-        if self._on_log:
-            self._on_log(msg, level)
+        logger.log(level, msg)
 
     # --- Drop reporting ---
 
@@ -136,26 +138,64 @@ class BotMachine:
                 state_def = self._state_map[state_id]
 
                 if self._on_state_change:
-                    self._on_state_change(state_id)
+                    try:
+                        self._on_state_change(state_id)
+                    except Exception:
+                        logger.exception("on_state_change callback raised in state %r", state_id)
 
-                node_fn = self._registry[state_def["node_type"]]
+                node_type = state_def["node_type"]
+                self.log(f"Executing state {state_id!r} (node_type={node_type})", logging.DEBUG)
+                _tick_start = time.monotonic()
+                node_fn = self._registry[node_type]
                 try:
                     self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
                 except Exception:
-                    print(traceback.format_exc())
+                    logger.exception("Node execution failed in state %r", state_id)
                     self.last_result = "FAILURE"
+                _duration = time.monotonic() - _tick_start
+                self.log(
+                    f"State {state_id!r} returned {self.last_result!r} in {_duration:.1f}s",
+                    logging.DEBUG,
+                )
 
                 if not self._stop_flag.is_set():
                     prev_state = state_id
                     # A state with no outgoing transitions is a terminal state — stop cleanly.
                     has_exit = any(t["source"] == state_id for t in self._config["transitions"])
                     if not has_exit:
-                        self.log(f"Reached terminal state {state_id!r}; stopping.", LogLevel.INFO)
+                        self.log(f"Reached terminal state {state_id!r}; stopping.", logging.INFO)
                         self.stop()
                     else:
-                        await self.advance()
+                        fired = await self.advance()
+                        if not fired:
+                            self._no_match_count += 1
+                            self.log(
+                                f"No transition matched for result {self.last_result!r} in state"
+                                f" {state_id!r} (consecutive: {self._no_match_count})",
+                                logging.WARNING,
+                            )
+                            if self._no_match_count >= 10:
+                                self.log(
+                                    f"State {state_id!r} stuck after {self._no_match_count}"
+                                    " consecutive no-match advances; stopping.",
+                                    logging.ERROR,
+                                )
+                                self.stop()
+                        else:
+                            self._no_match_count = 0
+                            self.log(
+                                f"Transition: {prev_state!r} --{self.last_result}--> {self.state!r}",
+                                logging.INFO,
+                            )
                         if self._on_transition:
-                            self._on_transition(prev_state, self.last_result or "", self.state)
+                            try:
+                                self._on_transition(prev_state, self.last_result or "", self.state)
+                            except Exception:
+                                logger.exception(
+                                    "on_transition callback raised on transition %r → %r",
+                                    prev_state,
+                                    self.state,
+                                )
         finally:
             watcher.cancel()
             combat_watcher.cancel()
@@ -168,6 +208,7 @@ class BotMachine:
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
         from bartlebot.nodes import node_helpers
+
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
             if not self.clients:
@@ -178,9 +219,9 @@ class BotMachine:
             )
             for i, r in enumerate(results):
                 if r is True:
-                    self.log(f"Ambient dialog dismissed on client {i}", LogLevel.DEBUG)
+                    self.log(f"Ambient dialog dismissed on client {i}", logging.DEBUG)
                 elif isinstance(r, Exception):
-                    self.log(f"Ambient dialog watcher error on client {i}: {r}", LogLevel.DEBUG)
+                    self.log(f"Ambient dialog watcher error on client {i}: {r}", logging.DEBUG)
 
     async def _ambient_combat_watcher(self) -> None:
         """Background task: detect and handle unexpected combat on any client.
@@ -195,7 +236,7 @@ class BotMachine:
             _run_combat,
             _split_combat_config,
         )
-        from bartlebot.utils.drop_detection import snapshot_chat, extract_new_drops
+        from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
@@ -234,15 +275,15 @@ class BotMachine:
 
                 self.log(
                     f"Ambient combat detected on {len(battling)} client(s) — handling",
-                    LogLevel.WARNING,
+                    logging.WARNING,
                 )
 
                 combat_dsl, dsl_source = _resolve_combat_dsl(self, {}, use_bot_default=True)
                 if not combat_dsl:
-                    self.log("Ambient combat: no combat DSL available, skipping", LogLevel.WARNING)
+                    self.log("Ambient combat: no combat DSL available, skipping", logging.WARNING)
                     continue
 
-                self.log(f"Ambient combat: DSL source={dsl_source!r}", LogLevel.DEBUG)
+                self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
 
                 chat_before_raw = await asyncio.gather(
                     *[snapshot_chat(c) for c in battling],
@@ -257,9 +298,9 @@ class BotMachine:
                 )
                 for i, r in enumerate(results):
                     if isinstance(r, Exception):
-                        self.log(f"Ambient combat: error on client {i}: {r}", LogLevel.DEBUG)
+                        self.log(f"Ambient combat: error on client {i}: {r}", logging.DEBUG)
 
-                self.log("Ambient combat: SprintyCombat finished", LogLevel.DEBUG)
+                self.log("Ambient combat: SprintyCombat finished", logging.DEBUG)
 
                 for i, (client, before) in enumerate(zip(battling, chat_before)):
                     try:
@@ -270,11 +311,12 @@ class BotMachine:
                     except Exception as exc:
                         self.log(
                             f"Ambient combat: drop detection error on client {i}: {exc}",
-                            LogLevel.DEBUG,
+                            logging.DEBUG,
                         )
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""
+        self.log("Bot stopped.", logging.INFO)
         self._stop_flag.set()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
 

@@ -1,8 +1,8 @@
 import asyncio
+import logging
 
 from wizwalker import XYZ
 
-from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -74,16 +74,17 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Seconds to wait after triggering an interaction or dialogue "
-                "before checking for a response window."
+                "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
             ),
         ),
     ],
 )
 
-ZONE_CHANGE_TIMEOUT = 30.0
-POLL_INTERVAL = 0.25
-MAX_RETRIES = 3
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+
+
+async def _has_left_zone(client, zone: str) -> bool:
+    return await client.zone_name() != zone
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -108,55 +109,59 @@ async def run(machine, clients: list, params: dict) -> str:
     reset_xyz_data: dict | None = params.get("reset_xyz")
     reset = XYZ(reset_xyz_data["x"], reset_xyz_data["y"], reset_xyz_data["z"]) if reset_xyz_data else None
 
-    machine.log(
-        f"go_to_zone: {from_zone!r} → {to_zone!r} "
-        f"via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
-    )
+    machine.log(f"go_to_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == from_zone for z in zones):
         wrong = [z for z in zones if z != from_zone]
         machine.log(
-            f"FAILURE: clients not in expected zone "
-            f"(expected={from_zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
+            logging.WARNING,
         )
         return "FAILURE"
 
     attempts = MAX_RETRIES if reset else 1
     for attempt in range(1, attempts + 1):
         if attempt > 1:
-            machine.log(f"Attempt {attempt}/{attempts}…", LogLevel.DEBUG)
+            machine.log(f"Attempt {attempt}/{attempts}…", logging.DEBUG)
 
         # 2. Teleport all clients into the transition bounding box.
-        machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", LogLevel.DEBUG)
+        machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", logging.DEBUG)
         await asyncio.gather(*[c.teleport(target) for c in clients])
 
         # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
-        machine.log("Checking for dungeon exit warning…", LogLevel.DEBUG)
-        await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
+        machine.log("Checking for dungeon exit warning…", logging.DEBUG)
+        await asyncio.gather(
+            *[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients]
+        )
 
         # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
-        machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
-        if not await node_helpers.wait_until(
-            lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
-        ):
-            zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
-            machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", LogLevel.DEBUG)
+        #    Re-teleport only stuck clients to the trigger on each poll; clients that have
+        #    already transitioned are not disturbed.
+        machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
+        seen_left = await node_helpers.poll_each_until_seen(
+            clients,
+            check_fn=lambda c: _has_left_zone(c, from_zone),
+            action_fn=lambda c: c.teleport(target),
+            timeout=ZONE_CHANGE_TIMEOUT,
+        )
+        if len(seen_left) < len(clients):
+            stuck = [clients[i] for i in range(len(clients)) if i not in seen_left]
+            stuck_zones = await asyncio.gather(*[c.zone_name() for c in stuck])
+            machine.log(f"Client zones at timeout: {list(stuck_zones)}", logging.DEBUG)
             if reset and attempt < attempts:
                 machine.log(
-                    f"Timed out after {ZONE_CHANGE_TIMEOUT}s; resetting to "
+                    f"Timed out after {ZONE_CHANGE_TIMEOUT}s; resetting stuck clients to "
                     f"XYZ({reset.x:.1f}, {reset.y:.1f}, {reset.z:.1f}) and retrying…",
-                    LogLevel.WARNING,
+                    logging.WARNING,
                 )
-                await asyncio.gather(*[c.teleport(reset) for c in clients])
+                await asyncio.gather(*[c.teleport(reset) for c in stuck])
                 continue
             machine.log(
-                f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
-                f"to leave {from_zone!r}",
-                LogLevel.WARNING,
+                f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients to leave {from_zone!r}",
+                logging.WARNING,
             )
             return "FAILURE"
 
@@ -164,19 +169,17 @@ async def run(machine, clients: list, params: dict) -> str:
         break
 
     # 4. Wait for loading screens to finish.
-    machine.log("Zone transition triggered, waiting for loading screen to clear…", LogLevel.DEBUG)
-    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    machine.log("Zone transition triggered, waiting for loading screen to clear…", logging.DEBUG)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 5. Wait for all clients to arrive in to_zone.
     if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
-        machine.log(f"Zones after transition: {actual}", LogLevel.DEBUG)
+        machine.log(f"Zones after transition: {actual}", logging.DEBUG)
         machine.log(
-            f"FAILURE: clients not in expected zone after transition "
-            f"(expected={to_zone!r}, got={list(set(actual))})",
-            LogLevel.WARNING,
+            f"FAILURE: clients not in expected zone after transition (expected={to_zone!r}, got={list(set(actual))})",
+            logging.WARNING,
         )
         return "FAILURE"
 
     machine.log(f"SUCCESS: all clients in {to_zone!r}")
     return "SUCCESS"
-

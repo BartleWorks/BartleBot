@@ -2,11 +2,10 @@
 
 from unittest.mock import AsyncMock, patch
 
-from wizwalker import Keycode, XYZ
+from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.action.recall_to_marked_location as rtm
 import bartlebot.nodes.node_helpers as nh
-
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
@@ -34,6 +33,7 @@ def _ready_client() -> FakeClient:
 # ---------------------------------------------------------------------------
 # Mana checks
 # ---------------------------------------------------------------------------
+
 
 async def test_no_mana_returns_failure():
     """FAILURE when a client has no mana; PAGE_UP never pressed."""
@@ -63,6 +63,7 @@ async def test_one_client_no_mana_fails():
 # No mark set
 # ---------------------------------------------------------------------------
 
+
 async def test_no_mark_set_returns_failure():
     """FAILURE when RecallButton never becomes enabled (no mark set)."""
     client = FakeClient()
@@ -70,7 +71,7 @@ async def test_no_mark_set_returns_failure():
 
     with (
         no_mark,
-        patch.object(rtm, "RECALL_BUTTON_TIMEOUT", 0.01),
+        patch.object(rtm, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(rtm, "POLL_INTERVAL", 0),
     ):
         result = await rtm.run(FakeMachine(), [client], _PARAMS)
@@ -82,6 +83,7 @@ async def test_no_mark_set_returns_failure():
 # ---------------------------------------------------------------------------
 # Happy paths
 # ---------------------------------------------------------------------------
+
 
 async def test_success_single_client():
     """Happy path: mark set, client loads and arrives at expected zone and XYZ → SUCCESS."""
@@ -112,6 +114,7 @@ async def test_success_multiple_clients():
 # Loading screen
 # ---------------------------------------------------------------------------
 
+
 async def test_trigger_timeout_returns_failure():
     """FAILURE when clients neither load nor move after PAGE_UP is pressed."""
     client = FakeClient()
@@ -133,9 +136,7 @@ async def test_same_zone_recall_success():
     client = FakeClient()
     client.is_loading.return_value = False  # never loads (same-zone recall)
     # start_positions snapshot → far from target; trigger poll → at target; final verify → at target.
-    client.body.position = AsyncMock(
-        side_effect=[XYZ(100.0, 100.0, 0.0), XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0)]
-    )
+    client.body.position = AsyncMock(side_effect=[XYZ(100.0, 100.0, 0.0), XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0)])
 
     with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
         result = await rtm.run(FakeMachine(), [client], _PARAMS)
@@ -159,6 +160,7 @@ async def test_loading_screen_awaited():
 # ---------------------------------------------------------------------------
 # Post-recall verification
 # ---------------------------------------------------------------------------
+
 
 async def test_wrong_zone_after_loading_returns_failure():
     """FAILURE when clients load but arrive in an unexpected zone."""
@@ -186,6 +188,7 @@ async def test_wrong_xyz_after_loading_returns_failure():
 # PAGE_UP re-press (lagging clients)
 # ---------------------------------------------------------------------------
 
+
 async def test_page_up_resent_to_lagging_client():
     """One client loads immediately; the other needs PAGE_UP re-pressed."""
     c1 = _ready_client()
@@ -202,8 +205,8 @@ async def test_page_up_resent_to_lagging_client():
     assert result == "SUCCESS"
     c1_presses = [c for c in c1.send_key.call_args_list if c.args[0] == Keycode.PAGE_UP]
     c2_presses = [c for c in c2.send_key.call_args_list if c.args[0] == Keycode.PAGE_UP]
-    assert len(c1_presses) == 1       # only the initial press
-    assert len(c2_presses) >= 2       # initial press + at least one re-press
+    assert len(c1_presses) == 1  # only the initial press
+    assert len(c2_presses) >= 2  # initial press + at least one re-press
 
 
 async def test_fast_client_finishes_before_lagging_client_starts():

@@ -4,8 +4,15 @@ import csv
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QFileDialog, QHeaderView, QLineEdit, QPushButton,
-    QSizePolicy, QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout,
+    QFileDialog,
+    QHeaderView,
+    QLineEdit,
+    QPushButton,
+    QSizePolicy,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
 )
 
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
@@ -137,9 +144,7 @@ class DropSection(SidebarSection):
             return
         table = self._tables[idx]
         tab_name = self._tabs.tabText(idx)
-        path, _ = QFileDialog.getSaveFileName(
-            self, f"Export {tab_name} Drops", "", "CSV Files (*.csv)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self, f"Export {tab_name} Drops", "", "CSV Files (*.csv)")
         if not path:
             return
         if not path.endswith(".csv"):
@@ -148,7 +153,4 @@ class DropSection(SidebarSection):
             writer = csv.writer(f)
             writer.writerow(["Item", "Qty"])
             for row in range(table.rowCount()):
-                writer.writerow([
-                    table.item(row, col).text()
-                    for col in range(2)
-                ])
+                writer.writerow([table.item(row, col).text() for col in range(2)])

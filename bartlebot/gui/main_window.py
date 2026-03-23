@@ -1,9 +1,11 @@
 import asyncio
-import traceback
+import logging
 
-from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
-from PyQt6.QtGui import QAction, QKeySequence
+logger = logging.getLogger(__name__)
+
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
@@ -128,9 +130,7 @@ class MainWindow(QMainWindow):
         self.game_view = self._game_view_panel.game_view
 
         # Wire View menu
-        self.action_toggle_game_view.triggered.connect(
-            lambda: self.show_game_view(not self._game_view_visible)
-        )
+        self.action_toggle_game_view.triggered.connect(lambda: self.show_game_view(not self._game_view_visible))
         self.action_maximize_game_view.triggered.connect(self._toggle_maximize_game_view)
         self.action_toggle_left_sidebar.triggered.connect(
             lambda: self.left_sidebar.setVisible(not self.left_sidebar.isVisible())
@@ -148,15 +148,9 @@ class MainWindow(QMainWindow):
         self._game_view_panel.launch_account_requested.connect(
             lambda u, d: asyncio.ensure_future(self._launch_single_account(u, d))
         )
-        self._game_view_panel.launch_profile_requested.connect(
-            lambda n: asyncio.ensure_future(self._launch_profile(n))
-        )
-        self._game_view_panel.manage_accounts_requested.connect(
-            lambda: self._open_settings(tab_index=2)
-        )
-        self._game_view_panel.game_embed_settings_requested.connect(
-            lambda: self._open_settings(tab_index=1)
-        )
+        self._game_view_panel.launch_profile_requested.connect(lambda n: asyncio.ensure_future(self._launch_profile(n)))
+        self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_index=2))
+        self._game_view_panel.game_embed_settings_requested.connect(lambda: self._open_settings(tab_index=1))
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -166,9 +160,9 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         sm = SettingsManager.instance()
-        left_w  = sm.get_general("left_sidebar_width",    default=300)
-        right_w = sm.get_general("right_sidebar_width",   default=300)
-        bot_h   = sm.get_general("bottom_section_height", default=220)
+        left_w = sm.get_general("left_sidebar_width", default=300)
+        right_w = sm.get_general("right_sidebar_width", default=300)
+        bot_h = sm.get_general("bottom_section_height", default=220)
         self._top_splitter.setSizes([left_w, 800, right_w])
 
         # Outer vertical splitter: top row (game + sidebars) | bot canvas
@@ -188,12 +182,8 @@ class MainWindow(QMainWindow):
         self._game_view_panel.setVisible(True)
 
         # Wire Run menu
-        self.action_run_pause.triggered.connect(
-            lambda: self.bot_canvas._run_pause_btn.click()
-        )
-        self.action_stop_bot.triggered.connect(
-            lambda: self.bot_canvas.stop_button.click()
-        )
+        self.action_run_pause.triggered.connect(lambda: self.bot_canvas._run_pause_btn.click())
+        self.action_stop_bot.triggered.connect(lambda: self.bot_canvas.stop_button.click())
 
     def _apply_minimum_size(self) -> None:
         min_w, min_h = SettingsManager.instance().minimum_window_size()
@@ -205,8 +195,8 @@ class MainWindow(QMainWindow):
         if sm.get_general("maximize_on_open", default=False):
             self.showMaximized()
         else:
-            w = max(sm.get_general("window_width",  default=1400), min_w)
-            h = max(sm.get_general("window_height", default=800),  min_h)
+            w = max(sm.get_general("window_width", default=1400), min_w)
+            h = max(sm.get_general("window_height", default=800), min_h)
             self.resize(w, h)
 
     # ------------------------------------------------------------------
@@ -314,9 +304,7 @@ class MainWindow(QMainWindow):
             for profile in profiles:
                 name = profile.get("name", "Unnamed")
                 action = QAction(name, self)
-                action.triggered.connect(
-                    lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n))
-                )
+                action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n)))
                 self._launch_menu.addAction(action)
         else:
             empty = QAction("(No profiles)", self)
@@ -334,12 +322,11 @@ class MainWindow(QMainWindow):
         if accounts:
             for acct in accounts:
                 username = acct.get("username", "")
-                alias    = acct.get("alias") or None
-                display  = CredentialStore.display_name(username, alias)
-                action   = QAction(display, self)
+                alias = acct.get("alias") or None
+                display = CredentialStore.display_name(username, alias)
+                action = QAction(display, self)
                 action.triggered.connect(
-                    lambda _checked, u=username, d=display:
-                        asyncio.ensure_future(self._launch_single_account(u, d))
+                    lambda _checked, u=username, d=display: asyncio.ensure_future(self._launch_single_account(u, d))
                 )
                 self._launch_menu.addAction(action)
         else:
@@ -367,6 +354,7 @@ class MainWindow(QMainWindow):
 
     def _open_settings(self, tab_index: int = 0) -> None:
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
+
         dlg = SettingsDialog(self)
         dlg._tabs.setCurrentIndex(tab_index)
         if dlg.exec():
@@ -377,34 +365,37 @@ class MainWindow(QMainWindow):
 
     def _open_launcher(self) -> None:
         from bartlebot.gui.launcher_popup import LauncherPopup
+
         popup = LauncherPopup(self)
         popup.show()
 
     async def _launch_profile(self, profile_name: str) -> None:
         try:
             from bartlebot.launcher.launch_profile import launch_profile
+
             await launch_profile(profile_name)
             self._record_recent_launch("profile", profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
-            print(traceback.format_exc())
+            logger.exception("Profile launch failed")
 
     async def _launch_single_account(self, username: str, display_name: str) -> None:
         try:
             from bartlebot.launcher.launch_profile import launch_account
+
             password = CredentialStore.retrieve(username)
             if password is None:
                 QMessageBox.critical(
-                    self, "Launch failed",
-                    f"No stored password for '{username}'.\n"
-                    "Please add the account in Settings → Accounts.",
+                    self,
+                    "Launch failed",
+                    f"No stored password for '{username}'.\nPlease add the account in Settings → Accounts.",
                 )
                 return
             await launch_account(username, password, display_name)
             self._record_recent_launch("account", username)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
-            print(traceback.format_exc())
+            logger.exception("Account launch failed")
 
     def _record_recent_launch(self, entry_type: str, identifier: str) -> None:
         SettingsManager.instance().add_recent_launch(entry_type, identifier)

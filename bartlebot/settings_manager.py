@@ -11,29 +11,30 @@ from typing import Any
 
 _DEFAULTS: dict[str, Any] = {
     "general": {
-        "maximize_on_open":      False,
-        "window_width":          1400,
-        "window_height":         800,
-        "left_sidebar_width":    300,
-        "right_sidebar_width":   300,
+        "maximize_on_open": False,
+        "window_width": 1400,
+        "window_height": 800,
+        "left_sidebar_width": 300,
+        "right_sidebar_width": 300,
         "bottom_section_height": 220,
     },
     "game_embed": {
         "resolution": [800, 600],
     },
     "canvas": {
-        "minimap_visible":        True,
-        "auto_layout_on_load":    True,
-        "lod_compact_threshold":  0.6,
+        "minimap_visible": True,
+        "auto_layout_on_load": True,
+        "lod_compact_threshold": 0.6,
     },
     "accounts": [],
     "launch_profiles": [],
     "recent_launches": [],
+    "recent_bot_files": [],
 }
 
 # Valid Wizard101 windowed resolutions (width, height)
 VALID_RESOLUTIONS: list[tuple[int, int]] = [
-    (800,  600),
+    (800, 600),
     (1024, 768),
     (1280, 720),
     (1280, 800),
@@ -86,7 +87,7 @@ class SettingsManager:
     # ------------------------------------------------------------------
 
     @classmethod
-    def instance(cls) -> "SettingsManager":
+    def instance(cls) -> SettingsManager:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
@@ -182,6 +183,24 @@ class SettingsManager:
         recent.insert(0, entry)
         self.set("recent_launches", value=recent[:5])
         self.save()
+
+    @property
+    def recent_bot_files(self) -> list[str]:
+        """List of recently opened bot file paths, newest first. Non-existent paths are pruned."""
+        raw: list[str] = list(self.get("recent_bot_files", default=[]))
+        pruned = [p for p in raw if Path(p).exists()]
+        if len(pruned) != len(raw):
+            self.set("recent_bot_files", value=pruned)
+            self.save()
+        return pruned
+
+    def add_recent_bot_file(self, path: str) -> list[str]:
+        """Prepend path to recent_bot_files, deduplicating and capping at 8. Returns updated list."""
+        recent = [p for p in self.recent_bot_files if p != path]
+        recent.insert(0, path)
+        self.set("recent_bot_files", value=recent[:8])
+        self.save()
+        return list(self.get("recent_bot_files", default=[]))
 
     # ------------------------------------------------------------------
     # Window sizing helper

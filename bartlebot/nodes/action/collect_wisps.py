@@ -1,8 +1,8 @@
 """Node: collect health and mana wisps after combat."""
 
 import asyncio
+import logging
 
-from bartlebot.log_level import LogLevel
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -93,14 +93,10 @@ async def run(machine, clients: list, params: dict) -> str:
         f"fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}"
     )
 
-    await asyncio.gather(
-        *[_collect_for_client(c, if_health_below, if_mana_below) for c in clients]
-    )
+    await asyncio.gather(*[_collect_for_client(c, if_health_below, if_mana_below) for c in clients])
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
-    final_health, final_mana = zip(
-        *await asyncio.gather(*[_get_ratios(c) for c in clients])
-    )
+    final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
 
     health_failures = [i for i, h in enumerate(final_health) if h < fail_if_health_below]
     mana_failures = [i for i, m in enumerate(final_mana) if m < fail_if_mana_below]
@@ -108,22 +104,21 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(
         f"Post-collection ratios — health: {[f'{h:.2f}' for h in final_health]}, "
         f"mana: {[f'{m:.2f}' for m in final_mana]}",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
 
     if health_failures:
         machine.log(
             f"FAILURE: client(s) {health_failures} still below health threshold "
             f"{fail_if_health_below} after wisp collection",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
     if mana_failures:
         machine.log(
-            f"FAILURE: client(s) {mana_failures} still below mana threshold "
-            f"{fail_if_mana_below} after wisp collection",
-            LogLevel.WARNING,
+            f"FAILURE: client(s) {mana_failures} still below mana threshold {fail_if_mana_below} after wisp collection",
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -134,6 +129,7 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 async def _collect_for_client(client, if_health_below: float, if_mana_below: float) -> None:
     """Collect health and mana wisps for a single client until thresholds are met."""

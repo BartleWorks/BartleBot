@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
-    QComboBox, QFormLayout, QLabel, QVBoxLayout, QWidget,
+    QComboBox,
+    QFormLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
 
-from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 from bartlebot.gui.theme import THEME
+from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
 
 class GameEmbedTab(QWidget):
@@ -34,9 +38,7 @@ class GameEmbedTab(QWidget):
         form.addRow("Game resolution:", self._res_combo)
         layout.addLayout(form)
 
-        hint = QLabel(
-            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution."
-        )
+        hint = QLabel("Set Wizard101 to Windowed mode in Options → Graphics, with this resolution.")
         hint.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
         layout.addWidget(hint)
         layout.addStretch()

@@ -7,24 +7,37 @@ _ParamPanel        — stacked panel showing node, edge, or idle views; owns the
 
 import asyncio
 import json
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout,
-    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
-    QScrollArea, QSpinBox, QStackedWidget, QVBoxLayout, QWidget,
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QPushButton,
+    QScrollArea,
+    QSpinBox,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
-from bartlebot.bot.schema import BotOptionModel, StateModel, TransitionModel
-from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
-from bartlebot.gui.theme import THEME
+from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
-
+from bartlebot.gui.theme import THEME
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 
 # ---------------------------------------------------------------------------
 # Sentinel QLineEdit subclasses  (identified by get_params())
 # ---------------------------------------------------------------------------
+
 
 class _IntListLineEdit(QLineEdit):
     """QLineEdit variant used for 'int_list' param fields.
@@ -45,6 +58,7 @@ class _StrListLineEdit(QLineEdit):
 # ---------------------------------------------------------------------------
 # _DynamicParamForm
 # ---------------------------------------------------------------------------
+
 
 class _DynamicParamForm(QWidget):
     changed = pyqtSignal()
@@ -119,9 +133,7 @@ class _DynamicParamForm(QWidget):
                 if isinstance(controller, QCheckBox):
                     display_w.setEnabled(not controller.isChecked())
                     controller.checkStateChanged.connect(
-                        lambda state, w=display_w: w.setEnabled(
-                            state != Qt.CheckState.Checked
-                        )
+                        lambda state, w=display_w: w.setEnabled(state != Qt.CheckState.Checked)
                     )
         self._suppress = False
         self._validate_required_fields()
@@ -154,9 +166,7 @@ class _DynamicParamForm(QWidget):
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
             elif isinstance(w, _IntListLineEdit):
-                result[key] = [
-                    int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()
-                ]
+                result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
                 result[key] = [x.strip() for x in w.text().split(",") if x.strip()]
             elif isinstance(w, QLineEdit):
@@ -332,6 +342,7 @@ class _DynamicParamForm(QWidget):
 # ---------------------------------------------------------------------------
 # Per-node option-override helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_override_widget(type_str: str, val: Any, help_text: str = "") -> QWidget:
     """Create a value input widget for a bot-option override row."""
@@ -562,7 +573,7 @@ class _ParamPanel(QWidget):
         # Populate "When" combo from source node's possible return values
         self._edge_when_combo.clear()
         self._edge_when_combo.addItem("(none)")
-        for name in (src_returns or []):
+        for name in src_returns or []:
             self._edge_when_combo.addItem(name)
         if transition.when and self._edge_when_combo.findText(transition.when) < 0:
             self._edge_when_combo.addItem(transition.when)
@@ -576,7 +587,7 @@ class _ParamPanel(QWidget):
         # Populate "Flag" combo from bot-wide options
         self._edge_flag_combo.clear()
         self._edge_flag_combo.addItem("(none)")
-        for name in (option_names or []):
+        for name in option_names or []:
             self._edge_flag_combo.addItem(name)
         if transition.flag and self._edge_flag_combo.findText(transition.flag) < 0:
             # Flag references an option that no longer exists — show it anyway

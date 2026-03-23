@@ -38,9 +38,7 @@ class CombatConfigSection(SidebarSection):
         self.set_content_layout(layout)
 
         self._use_default_chk.toggled.connect(self._on_use_default_changed)
-        self._use_default_chk.toggled.connect(
-            lambda checked: self._dsl_edit.setEnabled(not checked)
-        )
+        self._use_default_chk.toggled.connect(lambda checked: self._dsl_edit.setEnabled(not checked))
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
 
         self.set_config(None)

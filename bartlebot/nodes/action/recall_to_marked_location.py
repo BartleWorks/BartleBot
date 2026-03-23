@@ -1,20 +1,18 @@
 """recall_to_marked_location node — recall to an existing marked location."""
 
 import asyncio
+import logging
 import math
 
-from wizwalker import Keycode, XYZ
+from wizwalker import XYZ, Keycode
 
-from bartlebot.log_level import LogLevel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH  # used only to check button state
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT
 
-RECALL_BUTTON_TIMEOUT = 35.0  # wait for RecallButton to become enabled (mark must be set)
-TRIGGER_TIMEOUT = 10.0        # seconds to wait for recall to trigger (loading screen or XYZ move)
-TRIGGER_MARGIN = 5.0          # minimum XYZ movement that counts as a same-zone recall trigger
-POSITION_MARGIN = 10.0        # acceptable distance from target XYZ after recall
-POLL_INTERVAL = 0.25
+TRIGGER_MARGIN = 5.0  # minimum XYZ movement that counts as a same-zone recall trigger
+POSITION_MARGIN = 10.0  # acceptable distance from target XYZ after recall
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -67,25 +65,22 @@ async def run(machine, clients: list, params: dict) -> str:
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
     machine.log(
-        f"recall_to_marked_location: expected zone={zone!r} "
-        f"XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
+        f"recall_to_marked_location: expected zone={zone!r} XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
     )
 
     # 1. Verify all clients have mana to cast recall.
     mana_ratios = await asyncio.gather(*[c.calc_mana_ratio() for c in clients])
-    machine.log(f"Mana ratios: {[round(r, 2) for r in mana_ratios]}", LogLevel.DEBUG)
+    machine.log(f"Mana ratios: {[round(r, 2) for r in mana_ratios]}", logging.DEBUG)
     if any(r <= 0.0 for r in mana_ratios):
-        machine.log("FAILURE: one or more clients have no mana to recall", LogLevel.WARNING)
+        machine.log("FAILURE: one or more clients have no mana to recall", logging.WARNING)
         return "FAILURE"
 
     # 2. Wait for the RecallButton to be enabled on all clients (mark must be set).
-    machine.log("Waiting for RecallButton to become enabled…", LogLevel.DEBUG)
-    if not await node_helpers.wait_until(
-        lambda: _all_recall_enabled(clients), RECALL_BUTTON_TIMEOUT, POLL_INTERVAL
-    ):
+    machine.log("Waiting for RecallButton to become enabled…", logging.DEBUG)
+    if not await node_helpers.poll_until(lambda: _all_recall_enabled(clients), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
-            f"FAILURE: RecallButton not enabled within {RECALL_BUTTON_TIMEOUT}s — no mark set",
-            LogLevel.WARNING,
+            f"FAILURE: RecallButton not enabled within {COMPASS_TELEPORT_TIMEOUT}s — no mark set",
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -94,7 +89,7 @@ async def run(machine, clients: list, params: dict) -> str:
     start_positions = await asyncio.gather(*[c.body.position() for c in clients])
 
     # 4. Press PAGE_UP on all clients to recall to the marked location.
-    machine.log("Pressing PAGE_UP to recall on all clients…", LogLevel.DEBUG)
+    machine.log("Pressing PAGE_UP to recall on all clients…", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.PAGE_UP, 0.1) for c in clients])
 
     # 5. Wait for all clients to trigger ("ever seen" pattern).
@@ -113,34 +108,28 @@ async def run(machine, clients: list, params: dict) -> str:
             break
         if asyncio.get_event_loop().time() - loop_start > TRIGGER_TIMEOUT:
             not_triggered_idx = [i for i in range(len(clients)) if i not in seen_triggered]
-            machine.log(f"Clients not triggered at timeout: {not_triggered_idx}", LogLevel.DEBUG)
+            machine.log(f"Clients not triggered at timeout: {not_triggered_idx}", logging.DEBUG)
             machine.log(
                 f"FAILURE: clients did not recall within {TRIGGER_TIMEOUT}s",
-                LogLevel.WARNING,
+                logging.WARNING,
             )
             return "FAILURE"
-        not_triggered_clients = [
-            c for i, c in enumerate(clients) if i not in seen_triggered
-        ]
-        await asyncio.gather(
-            *[c.send_key(Keycode.PAGE_UP, 0.1) for c in not_triggered_clients]
-        )
+        not_triggered_clients = [c for i, c in enumerate(clients) if i not in seen_triggered]
+        await asyncio.gather(*[c.send_key(Keycode.PAGE_UP, 0.1) for c in not_triggered_clients])
         await asyncio.sleep(POLL_INTERVAL)
 
     # 6. Wait for any loading screens to finish (no-op for same-zone recalls).
-    machine.log("Waiting for any loading screens to clear…", LogLevel.DEBUG)
-    await node_helpers.wait_until(
-        lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
-    )
+    machine.log("Waiting for any loading screens to clear…", logging.DEBUG)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 7. Verify all clients are in the expected zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Zones after recall: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Zones after recall: {list(zones)}", logging.DEBUG)
     if not all(z == zone for z in zones):
         actual = list(set(zones))
         machine.log(
             f"FAILURE: not all clients in expected zone (expected={zone!r}, got={actual})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -148,14 +137,13 @@ async def run(machine, clients: list, params: dict) -> str:
     positions = await asyncio.gather(*[c.body.position() for c in clients])
     machine.log(
         f"Positions after recall: {[(round(p.x, 1), round(p.y, 1), round(p.z, 1)) for p in positions]}",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
     off_target = [i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN]
     if off_target:
         machine.log(
-            f"FAILURE: client(s) {off_target} not at expected XYZ after recall "
-            f"(margin={POSITION_MARGIN})",
-            LogLevel.WARNING,
+            f"FAILURE: client(s) {off_target} not at expected XYZ after recall (margin={POSITION_MARGIN})",
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -165,9 +153,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
 async def _all_recall_enabled(clients: list) -> bool:
     """Return True when the RecallButton is enabled (not grayed) for every client."""
-    results = await asyncio.gather(
-        *[node_helpers.is_enabled_by_path(c, RECALL_BUTTON_PATH) for c in clients]
-    )
+    results = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, RECALL_BUTTON_PATH) for c in clients])
     return all(results)
 
 

@@ -12,12 +12,13 @@ Adding a new recordable node type:
 """
 
 import asyncio
-from typing import Any, Callable
-
+from collections.abc import Callable
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 async def run_recording(
     node_type: str,
@@ -37,10 +38,12 @@ async def run_recording(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _zone_display(zone: str) -> str:
     """Return a human-friendly display name for a zone path like 'WizardCity/WC_Hub'."""
     try:
         from wizsprinter import toZone, toZoneDisplayName  # noqa: PLC0415
+
         return toZoneDisplayName(toZone(zone))
     except Exception:
         return zone.split("/")[-1] if "/" in zone else zone
@@ -49,6 +52,7 @@ def _zone_display(zone: str) -> str:
 # ---------------------------------------------------------------------------
 # Recording coroutines
 # ---------------------------------------------------------------------------
+
 
 async def _record_go_to_zone(client, param_form, on_status, on_btn, try_set_label) -> None:
     POLL = 0.15
@@ -301,13 +305,13 @@ async def _record_recall_to_marked_location(client, param_form, on_status, on_bt
 # ---------------------------------------------------------------------------
 
 _REGISTRY: dict[str, Any] = {
-    "go_to_zone":                _record_go_to_zone,
-    "go_to_xyz":                 _record_go_to_xyz,
-    "enter_dungeon":             _record_enter_dungeon,
-    "interact":                  _record_interact,
-    "apply_level_scaling":       _record_apply_level_scaling,
-    "interact_to_zone":          _record_interact_to_zone,
-    "mark_location":             _record_mark_location,
+    "go_to_zone": _record_go_to_zone,
+    "go_to_xyz": _record_go_to_xyz,
+    "enter_dungeon": _record_enter_dungeon,
+    "interact": _record_interact,
+    "apply_level_scaling": _record_apply_level_scaling,
+    "interact_to_zone": _record_interact_to_zone,
+    "mark_location": _record_mark_location,
     "recall_to_marked_location": _record_recall_to_marked_location,
 }
 
