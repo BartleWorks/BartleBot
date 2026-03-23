@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
@@ -55,7 +55,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 1. Skip if already in hub zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if all(z == zone for z in zones):
         machine.log("SUCCESS: clients already in hub zone")
         return "SUCCESS"
@@ -64,17 +64,17 @@ async def run(machine, clients: list, params: dict) -> str:
     clients_to_move = [c for c, z in zip(clients, zones) if z != zone]
     machine.log(
         f"{len(clients_to_move)} of {len(clients)} client(s) need to teleport",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
 
     # 2. Wait for hub button to become enabled (30s cooldown after last use).
-    machine.log("Waiting for hub teleport button to become enabled…", LogLevel.DEBUG)
+    machine.log("Waiting for hub teleport button to become enabled…", logging.DEBUG)
     if not await node_helpers.wait_until(
         lambda: _all_hub_button_enabled(clients_to_move), BUTTON_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
             f"FAILURE: hub teleport button did not become enabled within {BUTTON_TIMEOUT}s",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -83,7 +83,7 @@ async def run(machine, clients: list, params: dict) -> str:
     #    to be loading simultaneously — a fast client can finish its loading screen
     #    (is_loading() → False) before a slow client even starts, which would
     #    otherwise prevent the all-loading condition from ever being met.
-    machine.log("Pressing END to teleport to hub…", LogLevel.DEBUG)
+    machine.log("Pressing END to teleport to hub…", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.END, 0.1) for c in clients_to_move])
 
     seen_loading: set[int] = set()
@@ -97,10 +97,10 @@ async def run(machine, clients: list, params: dict) -> str:
             break
         if asyncio.get_event_loop().time() - loop_start > TRIGGER_TIMEOUT:
             not_loading_idx = [i for i in range(len(clients_to_move)) if i not in seen_loading]
-            machine.log(f"Clients not loading at timeout: {not_loading_idx}", LogLevel.DEBUG)
+            machine.log(f"Clients not loading at timeout: {not_loading_idx}", logging.DEBUG)
             machine.log(
                 f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
-                LogLevel.WARNING,
+                logging.WARNING,
             )
             return "FAILURE"
         not_loading_clients = [
@@ -110,15 +110,15 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.sleep(POLL_INTERVAL)
 
     # 4. Wait for loading screens to finish.
-    machine.log("Loading screen active, waiting for it to clear…", LogLevel.DEBUG)
+    machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
     await node_helpers.wait_until(lambda: node_helpers.none_loading(clients_to_move), None, POLL_INTERVAL)
 
     # 5. Wait for all clients to arrive in the expected hub zone.
     if (actual := await node_helpers.wait_for_zone(clients, zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
-        machine.log(f"Zones after hub teleport: {actual}", LogLevel.DEBUG)
+        machine.log(f"Zones after hub teleport: {actual}", logging.DEBUG)
         machine.log(
             f"FAILURE: not all clients in expected hub zone (expected={zone!r}, got={list(set(actual))})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 

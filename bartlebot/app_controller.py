@@ -1,6 +1,8 @@
 import asyncio
-import traceback
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
@@ -12,7 +14,7 @@ from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
-from bartlebot.log_level import LogLevel
+from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY
 from bartlebot import recent_files
 
@@ -179,9 +181,11 @@ class AppController(QObject):
         self._window.right_sidebar.drops.setup_clients(len(self._clients))
         self._window.right_sidebar.drops.clear_drops()
         self._window.bot_canvas.set_running()
+        add_gui_callback(self._window.bot_canvas.append_log_formatted)
         try:
             await machine.run()
         finally:
+            remove_gui_callback(self._window.bot_canvas.append_log_formatted)
             self._current_machine = None
             self._window.bot_canvas.set_idle()
             self._window.set_start_enabled(self._start_enabled())
@@ -211,7 +215,7 @@ class AppController(QObject):
     def _on_machine_drop(self, item: str, qty: int, client_idx: int) -> None:
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)
 
-    def _on_machine_log(self, msg: str, level: LogLevel) -> None:
+    def _on_machine_log(self, msg: str, level: int) -> None:
         self._window.bot_canvas.append_log(msg, level)
 
     # ------------------------------------------------------------------
@@ -248,7 +252,7 @@ class AppController(QObject):
                                 self._handler.clients.remove(c)
                             if c.window_handle in self._handler._managed_handles:
                                 self._handler._managed_handles.remove(c.window_handle)
-                        print(traceback.format_exc())
+                        logger.exception("Client activation failed")
                         await asyncio.sleep(3.0)
                         continue
 
@@ -288,7 +292,7 @@ class AppController(QObject):
                 self._clients = []
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
-                print(traceback.format_exc())
+                logger.exception("Client loop error")
                 await asyncio.sleep(3.0)
 
     def _sync_embedded_clients(self, prev_clients: list, new_clients: list) -> None:

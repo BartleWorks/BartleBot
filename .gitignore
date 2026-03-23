@@ -27,6 +27,8 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
+!logs/.gitkeep
 
 # Claude
 .claude/

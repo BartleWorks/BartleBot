@@ -2,7 +2,7 @@
 
 import asyncio
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -108,14 +108,14 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(
         f"Post-collection ratios — health: {[f'{h:.2f}' for h in final_health]}, "
         f"mana: {[f'{m:.2f}' for m in final_mana]}",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
 
     if health_failures:
         machine.log(
             f"FAILURE: client(s) {health_failures} still below health threshold "
             f"{fail_if_health_below} after wisp collection",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -123,7 +123,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"FAILURE: client(s) {mana_failures} still below mana threshold "
             f"{fail_if_mana_below} after wisp collection",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 

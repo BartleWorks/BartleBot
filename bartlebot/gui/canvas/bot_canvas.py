@@ -22,8 +22,9 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 
+import logging
+
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
-from bartlebot.log_level import LogLevel
 from bartlebot.gui.canvas.graph_items import (
     EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R, _MinimapView,
 )
@@ -48,17 +49,17 @@ _IDLE    = "idle"
 _RUNNING = "running"
 _PAUSED  = "paused"
 
-_LOG_PREFIXES: dict[LogLevel, str] = {
-    LogLevel.DEBUG:   "[DBG]",
-    LogLevel.INFO:    "[INF]",
-    LogLevel.WARNING: "[WRN]",
-    LogLevel.ERROR:   "[ERR]",
+_NAME_TO_LEVEL: dict[str, int] = {
+    "DEBUG":   logging.DEBUG,
+    "INFO":    logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR":   logging.ERROR,
 }
-_LOG_COLORS: dict[LogLevel, str] = {
-    LogLevel.DEBUG:   THEME.log_debug,
-    LogLevel.INFO:    THEME.log_info,
-    LogLevel.WARNING: THEME.log_warning,
-    LogLevel.ERROR:   THEME.log_error,
+_LOG_COLORS: dict[int, str] = {
+    logging.DEBUG:   THEME.log_debug,
+    logging.INFO:    THEME.log_info,
+    logging.WARNING: THEME.log_warning,
+    logging.ERROR:   THEME.log_error,
 }
 
 _STATUS_DOT_COLORS: dict[str, str] = {
@@ -1773,12 +1774,11 @@ class BotCanvas(QWidget):
     # Log helpers
     # ------------------------------------------------------------------
 
-    def append_log(self, msg: str, level: LogLevel = LogLevel.INFO) -> None:
+    def append_log(self, msg: str, level: int = logging.INFO) -> None:
         """Public log entry point for node messages. Filtered by the level dropdown."""
-        threshold = LogLevel[self._log_level_combo.currentText()]
+        threshold = _NAME_TO_LEVEL.get(self._log_level_combo.currentText(), logging.DEBUG)
         if level < threshold:
             return
-        prefix = _LOG_PREFIXES.get(level, "[INF]")
         color = _LOG_COLORS.get(level, "#55cc55")
 
         fmt_plain = QTextCharFormat()
@@ -1788,8 +1788,20 @@ class BotCanvas(QWidget):
         cursor = self._log.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
         cursor.insertText(f"[{self._elapsed_str()}] ", fmt_plain)
-        cursor.insertText(prefix, fmt_colored)
-        cursor.insertText(f" {msg}\n", fmt_plain)
+        cursor.insertText(f" {msg}\n", fmt_colored)
+        self._log.moveCursor(QTextCursor.MoveOperation.End)
+
+    def append_log_formatted(self, formatted_text: str, level: int) -> None:
+        """Append a pre-formatted log line from the Python logging bridge."""
+        threshold = _NAME_TO_LEVEL.get(self._log_level_combo.currentText(), logging.DEBUG)
+        if level < threshold:
+            return
+        color = _LOG_COLORS.get(level, "#55cc55")
+        fmt = QTextCharFormat()
+        fmt.setForeground(QColor(color))
+        cursor = self._log.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(formatted_text + "\n", fmt)
         self._log.moveCursor(QTextCursor.MoveOperation.End)
 
     def _append_log(self, text: str) -> None:

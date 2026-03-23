@@ -4,7 +4,7 @@ import asyncio
 import re
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -90,7 +90,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             "FAILURE: no combat DSL available "
             "(use_bot_default is off and per-node combat_config is empty)",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -98,7 +98,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"handle_combat: enemy={enemy_display}, DSL source={dsl_source!r}")
     machine.log(
         f"Combat DSL: {combat_dsl[:80]}{'…' if len(combat_dsl) > 80 else ''}",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
 
     # 1. Resolve target entity for each client
@@ -108,11 +108,11 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"FAILURE: target not found for client(s) {none_idx} "
             f"(enemy={enemy_display})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
-    machine.log(f"Targets resolved for {len(clients)} client(s)", LogLevel.DEBUG)
+    machine.log(f"Targets resolved for {len(clients)} client(s)", logging.DEBUG)
 
     # 2. Snapshot chat before combat so we can diff for drops afterward
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
@@ -120,38 +120,38 @@ async def run(machine, clients: list, params: dict) -> str:
     # 3. Teleport clients to their target (sequential or simultaneous).
     combat_order: list[int] = machine.get_option("Default Combat Order", []) or []
     if combat_order:
-        machine.log(f"Entering combat sequentially: order={combat_order}", LogLevel.DEBUG)
+        machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:
             idx = client_num - 1  # user-facing 1-based → 0-based list index
             if idx < 0 or idx >= len(clients):
                 machine.log(
                     f"combat_order: skipping client {client_num} — not connected "
                     f"(have {len(clients)} client(s))",
-                    LogLevel.DEBUG,
+                    logging.DEBUG,
                 )
                 continue
             if not await _tp_and_wait_for_combat(clients[idx], enemy_name, _ENTER_COMBAT_TIMEOUT):
                 machine.log(
                     f"FAILURE: client {client_num} did not enter combat within "
                     f"{_ENTER_COMBAT_TIMEOUT}s",
-                    LogLevel.WARNING,
+                    logging.WARNING,
                 )
                 return "FAILURE"
     else:
         # 4. Teleport all clients to their targets, retrying until in combat
         machine.log(
-            "Teleporting all clients to target (retrying until in combat)…", LogLevel.DEBUG
+            "Teleporting all clients to target (retrying until in combat)…", logging.DEBUG
         )
         results = await asyncio.gather(
             *[_tp_and_wait_for_combat(c, enemy_name, _ENTER_COMBAT_TIMEOUT) for c in clients]
         )
         if not all(results):
             not_in_battle = [i for i, ok in enumerate(results) if not ok]
-            machine.log(f"Clients not in battle at timeout: {not_in_battle}", LogLevel.DEBUG)
+            machine.log(f"Clients not in battle at timeout: {not_in_battle}", logging.DEBUG)
             machine.log(
                 f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
                 "clients to enter combat",
-                LogLevel.WARNING,
+                logging.WARNING,
             )
             return "FAILURE"
 
@@ -161,7 +161,7 @@ async def run(machine, clients: list, params: dict) -> str:
     per_client_dsl = _split_combat_config(combat_dsl, len(clients))
     await asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
 
-    machine.log("SprintyCombat finished for all clients", LogLevel.DEBUG)
+    machine.log("SprintyCombat finished for all clients", logging.DEBUG)
 
     # 6. Detect drops by comparing chat before and after combat
     drops_found: list[str] = []
@@ -174,7 +174,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if drops_found:
         machine.log(f"Detected {len(drops_found)} drop(s): {', '.join(drops_found)}")
     else:
-        machine.log("No drops detected", LogLevel.DEBUG)
+        machine.log("No drops detected", logging.DEBUG)
 
     machine.log("SUCCESS: combat complete")
     return "SUCCESS"

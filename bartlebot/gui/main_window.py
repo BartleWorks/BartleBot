@@ -1,5 +1,7 @@
 import asyncio
-import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 from PyQt6.QtGui import QAction, QKeySequence
@@ -387,7 +389,7 @@ class MainWindow(QMainWindow):
             self._record_recent_launch("profile", profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
-            print(traceback.format_exc())
+            logger.exception("Profile launch failed")
 
     async def _launch_single_account(self, username: str, display_name: str) -> None:
         try:
@@ -404,7 +406,7 @@ class MainWindow(QMainWindow):
             self._record_recent_launch("account", username)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
-            print(traceback.format_exc())
+            logger.exception("Account launch failed")
 
     def _record_recent_launch(self, entry_type: str, identifier: str) -> None:
         SettingsManager.instance().add_recent_launch(entry_type, identifier)

@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode, XYZ
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -102,13 +102,13 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == from_zone for z in zones):
         wrong = [z for z in zones if z != from_zone]
         machine.log(
             f"FAILURE: clients not in expected zone "
             f"(expected={from_zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -119,7 +119,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"Pre-existing dungeon entrance prompt on client(s) {stale}; "
             f"teleporting to reset_xyz to clear it",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.wait_until(
@@ -130,11 +130,11 @@ async def run(machine, clients: list, params: dict) -> str:
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: teleporting clients to sigil", LogLevel.DEBUG
+            f"Attempt {attempt}/{MAX_RETRIES}: teleporting clients to sigil", logging.DEBUG
         )
         await asyncio.gather(*[c.teleport(sigil) for c in clients])
 
-        machine.log("Waiting for dungeon entrance prompt…", LogLevel.DEBUG)
+        machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
         if await node_helpers.wait_until(
             lambda: node_helpers.all_at_dungeon_entrance(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
@@ -144,52 +144,52 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"Entrance prompt did not appear (attempt {attempt}); "
             f"resetting to reset_xyz",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
 
     if not prompt_appeared:
         machine.log(
             f"FAILURE: entrance prompt never appeared after {MAX_RETRIES} attempts",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 4. Press X to interact with the sigil (entrance prompt is showing).
-    machine.log("Pressing X to enter dungeon sigil", LogLevel.DEBUG)
+    machine.log("Pressing X to enter dungeon sigil", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
     # 5. Wait briefly, then confirm dungeon warning dialog if it appeared.
-    machine.log("Checking for dungeon warning dialog…", LogLevel.DEBUG)
+    machine.log("Checking for dungeon warning dialog…", logging.DEBUG)
     await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
 
     # 6. Wait for all clients to leave from_zone.
-    machine.log(f"Waiting for clients to leave {from_zone!r}…", LogLevel.DEBUG)
+    machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
     if not await node_helpers.wait_until(
         lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
     ):
         zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
-        machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", LogLevel.DEBUG)
+        machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", logging.DEBUG)
         machine.log(
             f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
             f"to leave {from_zone!r}",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 7. Wait for loading screens to finish.
-    machine.log("Waiting for loading screen to clear…", LogLevel.DEBUG)
+    machine.log("Waiting for loading screen to clear…", logging.DEBUG)
     await node_helpers.wait_until(
         lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
     )
 
     # 8. Wait for all clients to arrive in dungeon_zone.
     if (actual := await node_helpers.wait_for_zone(clients, dungeon_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
-        machine.log(f"Zones after dungeon entry: {actual}", LogLevel.DEBUG)
+        machine.log(f"Zones after dungeon entry: {actual}", logging.DEBUG)
         machine.log(
             f"FAILURE: not all clients reached dungeon zone "
             f"(expected={dungeon_zone!r}, got={list(set(actual))})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 

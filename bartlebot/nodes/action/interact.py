@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode, XYZ
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -104,13 +104,13 @@ async def run(machine, clients: list, params: dict) -> str:
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
 
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
         machine.log(
             f"FAILURE: clients not in expected zone "
             f"(expected={zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -126,7 +126,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "SUCCESS"
 
     active_clients = [clients[i] for i in interact_indices]
-    machine.log(f"Interacting client(s): {[i + 1 for i in interact_indices]}", LogLevel.DEBUG)
+    machine.log(f"Interacting client(s): {[i + 1 for i in interact_indices]}", logging.DEBUG)
 
     # 3. Clear any pre-existing interact prompt before starting.
     #    A stale prompt from a previous interaction can linger briefly after teleport,
@@ -137,7 +137,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; "
             f"teleporting to reset_xyz to clear it",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in active_clients])
         await node_helpers.wait_until(
@@ -148,11 +148,11 @@ async def run(machine, clients: list, params: dict) -> str:
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", LogLevel.DEBUG
+            f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG
         )
         await asyncio.gather(*[c.teleport(interact) for c in active_clients])
 
-        machine.log("Waiting for interact prompt…", LogLevel.DEBUG)
+        machine.log("Waiting for interact prompt…", logging.DEBUG)
         if await node_helpers.wait_until(
             lambda: node_helpers.all_in_npc_range(active_clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
@@ -161,25 +161,25 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log(
             f"Interact prompt did not appear (attempt {attempt}); resetting",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in active_clients])
 
     if not prompt_appeared:
         machine.log(
             f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 6. Press X to begin interaction.
-    machine.log("Pressing X to interact", LogLevel.DEBUG)
+    machine.log("Pressing X to interact", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in active_clients])
 
     # 7. Advance through dialogue; start polling immediately after X.
     #    Only exit once no dialog is open AND at least Safety Delay seconds have
     #    passed, so late-opening dialog windows are not missed.
-    machine.log("Advancing dialogue…", LogLevel.DEBUG)
+    machine.log("Advancing dialogue…", logging.DEBUG)
     safety_delay = machine.get_option("Safety Delay", 3.0)
     loop_start = asyncio.get_event_loop().time()
     while True:
@@ -189,10 +189,10 @@ async def run(machine, clients: list, params: dict) -> str:
             break
         if elapsed > DIALOG_TIMEOUT:
             stuck = [i for i, d in enumerate(dialogs) if d]
-            machine.log(f"Clients still in dialog at timeout: {stuck}", LogLevel.DEBUG)
+            machine.log(f"Clients still in dialog at timeout: {stuck}", logging.DEBUG)
             machine.log(
                 f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
-                LogLevel.WARNING,
+                logging.WARNING,
             )
             return "FAILURE"
         if any(dialogs):

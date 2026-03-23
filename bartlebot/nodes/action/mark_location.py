@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode, XYZ
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH, RECALL_TIMER_PATH
@@ -70,19 +70,19 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 1. Verify all clients have mana to cast mark location.
     mana_ratios = await asyncio.gather(*[c.calc_mana_ratio() for c in clients])
-    machine.log(f"Mana ratios: {[round(r, 2) for r in mana_ratios]}", LogLevel.DEBUG)
+    machine.log(f"Mana ratios: {[round(r, 2) for r in mana_ratios]}", logging.DEBUG)
     if any(r <= 0.0 for r in mana_ratios):
-        machine.log("FAILURE: one or more clients have no mana to mark location", LogLevel.WARNING)
+        machine.log("FAILURE: one or more clients have no mana to mark location", logging.WARNING)
         return "FAILURE"
 
     # 2. Verify zone; teleport to xyz if needed.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
         machine.log(
             f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -90,19 +90,19 @@ async def run(machine, clients: list, params: dict) -> str:
     if any(_distance(p, target) > 1.0 for p in positions):
         machine.log(
             f"Teleporting clients to mark XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(target) for c in clients])
         # Wait for the server-reported position to stabilize before pressing PAGE_DOWN.
         # Without this, a sigil's NPC range event can fire between the teleport write and
         # the PAGE_DOWN, causing the mark to be set at the server's adjusted position.
-        machine.log("Waiting for client positions to stabilize after teleport…", LogLevel.DEBUG)
+        machine.log("Waiting for client positions to stabilize after teleport…", logging.DEBUG)
         await asyncio.gather(*[_wait_stabilized(machine, c, target) for c in clients])
 
     # 3. Mark each client, handling the cooldown timer and same-spot edge case.
     results = await asyncio.gather(*[_mark_client(machine, c) for c in clients])
     if not all(results):
-        machine.log("FAILURE: one or more clients failed to set a mark", LogLevel.WARNING)
+        machine.log("FAILURE: one or more clients failed to set a mark", logging.WARNING)
         return "FAILURE"
 
     machine.log("SUCCESS: all clients have marked their location")
@@ -112,13 +112,13 @@ async def run(machine, clients: list, params: dict) -> str:
 async def _mark_client(machine, client) -> bool:
     """Mark location for a single client. Returns True if mark was confirmed set."""
     # Wait for any existing mark cooldown to expire.
-    machine.log("Waiting for mark cooldown to clear…", LogLevel.DEBUG)
+    machine.log("Waiting for mark cooldown to clear…", logging.DEBUG)
     if not await node_helpers.wait_until(
         lambda: _timer_is_clear(client), MARK_COOLDOWN_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
             f"FAILURE: mark cooldown did not clear within {MARK_COOLDOWN_TIMEOUT}s",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return False
 
@@ -135,14 +135,14 @@ async def _mark_client(machine, client) -> bool:
     # cleared it instead of resetting it. Wait for the cooldown again and re-mark.
     machine.log(
         "RecallButton grayed after marking — same-spot mark cleared; waiting to re-mark…",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
     if not await node_helpers.wait_until(
         lambda: _timer_is_clear(client), MARK_COOLDOWN_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
             f"FAILURE: re-mark cooldown did not clear within {MARK_COOLDOWN_TIMEOUT}s",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return False
 
@@ -160,7 +160,7 @@ async def _wait_stabilized(machine, client, target: XYZ) -> None:
     ):
         machine.log(
             f"Position did not stabilize within {STABILIZE_TIMEOUT}s after teleport",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
 
 

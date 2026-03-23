@@ -4,7 +4,7 @@ import asyncio
 
 from wizwalker import Keycode, XYZ
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
@@ -97,13 +97,13 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == from_zone for z in zones):
         wrong = [z for z in zones if z != from_zone]
         machine.log(
             f"FAILURE: clients not in expected zone "
             f"(expected={from_zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -114,7 +114,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"Pre-existing interact prompt on client(s) {stale}; "
             f"teleporting to reset_xyz to clear it",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.wait_until(
@@ -126,11 +126,11 @@ async def run(machine, clients: list, params: dict) -> str:
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
             f"Attempt {attempt}/{MAX_RETRIES}: teleporting clients to interact_xyz",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(interact) for c in clients])
 
-        machine.log("Waiting for interact prompt on all clients…", LogLevel.DEBUG)
+        machine.log("Waiting for interact prompt on all clients…", logging.DEBUG)
         if await node_helpers.wait_until(
             lambda: node_helpers.all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
         ):
@@ -139,19 +139,19 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log(
             f"Interact prompt did not appear for all clients (attempt {attempt}); resetting",
-            LogLevel.DEBUG,
+            logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
 
     if not prompt_appeared:
         machine.log(
             f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
     # 4. Press X for all clients simultaneously.
-    machine.log("Pressing X to interact", LogLevel.DEBUG)
+    machine.log("Pressing X to interact", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
     # 5. Re-press X for any client that hasn't entered a loading screen yet.
@@ -161,7 +161,7 @@ async def run(machine, clients: list, params: dict) -> str:
     #    would otherwise prevent the all-loading condition from ever being met.
     machine.log(
         f"Waiting for all clients to enter loading screen (timeout={TRIGGER_TIMEOUT}s)…",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
     seen_loading: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
@@ -174,10 +174,10 @@ async def run(machine, clients: list, params: dict) -> str:
             break
         if asyncio.get_event_loop().time() - loop_start > TRIGGER_TIMEOUT:
             not_triggered = [i for i in range(len(clients)) if i not in seen_loading]
-            machine.log(f"Clients not loading at timeout: {not_triggered}", LogLevel.DEBUG)
+            machine.log(f"Clients not loading at timeout: {not_triggered}", logging.DEBUG)
             machine.log(
                 f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
-                LogLevel.WARNING,
+                logging.WARNING,
             )
             return "FAILURE"
         not_loading_clients = [
@@ -187,18 +187,18 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.sleep(POLL_INTERVAL)
 
     # 6. Wait for loading screens to finish.
-    machine.log("Loading screen active, waiting for it to clear…", LogLevel.DEBUG)
+    machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
     await node_helpers.wait_until(
         lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
     )
 
     # 7. Wait for all clients to arrive in to_zone.
     if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
-        machine.log(f"Zones after interaction: {actual}", LogLevel.DEBUG)
+        machine.log(f"Zones after interaction: {actual}", logging.DEBUG)
         machine.log(
             f"FAILURE: not all clients in expected zone after transition "
             f"(expected={to_zone!r}, got={list(set(actual))})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 

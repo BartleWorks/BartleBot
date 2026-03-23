@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from wizwalker import XYZ
 
-from bartlebot.log_level import LogLevel
+import logging
 
 
 class FakeClient:
@@ -60,7 +60,7 @@ class FakeMachine:
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
 
-    def log(self, msg: str, level: LogLevel = LogLevel.INFO) -> None:
+    def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))
 
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:

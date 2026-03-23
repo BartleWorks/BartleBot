@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-import traceback
+import logging
+
+logger = logging.getLogger(__name__)
 
 from PyQt6.QtWidgets import (
     QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget,
@@ -52,4 +54,4 @@ class LauncherPopup(QWidget):
             await launch_profile(profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
-            print(traceback.format_exc())
+            logger.exception("Profile launch failed")

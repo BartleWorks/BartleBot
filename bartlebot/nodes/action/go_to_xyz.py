@@ -5,7 +5,7 @@ import math
 
 from wizwalker import XYZ
 
-from bartlebot.log_level import LogLevel
+import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
@@ -62,13 +62,13 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", LogLevel.DEBUG)
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
         machine.log(
             f"FAILURE: clients not in expected zone "
             f"(expected={zone!r}, unexpected={wrong})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
@@ -76,7 +76,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(
         f"Teleporting {len(clients)} client(s) to "
         f"XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
     await asyncio.gather(*[c.teleport(target) for c in clients])
 
@@ -84,7 +84,7 @@ async def run(machine, clients: list, params: dict) -> str:
     positions = await asyncio.gather(*[c.body.position() for c in clients])
     machine.log(
         f"Positions after teleport: {[(round(p.x, 1), round(p.y, 1), round(p.z, 1)) for p in positions]}",
-        LogLevel.DEBUG,
+        logging.DEBUG,
     )
     off_target = [
         i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN
@@ -93,7 +93,7 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"FAILURE: client(s) {off_target} did not reach target XYZ "
             f"(margin={POSITION_MARGIN})",
-            LogLevel.WARNING,
+            logging.WARNING,
         )
         return "FAILURE"
 
