@@ -709,7 +709,14 @@ class EdgeItem(QGraphicsPathItem):
             # dst is approached from right (+1) when flipped, left (-1) when normal.
             src_sign = -1 if src_flipped else 1
             dst_sign = 1 if dst_flipped else -1
-            self._build_directed_ortho(path, src_pt, dst_pt, src_sign, dst_sign)
+            if src_flipped and dst_flipped and dst_pt.x() <= src_pt.x():
+                # Both ports face each other (src exits left, dst accepts from right)
+                # and dst is to the left — the natural forward direction for flipped
+                # nodes. Route as a simple Z-path through the horizontal midpoint;
+                # no node-clearing bridge needed.
+                self._build_forward_ortho(path, src_pt, dst_pt)
+            else:
+                self._build_directed_ortho(path, src_pt, dst_pt, src_sign, dst_sign)
         elif dst_pt.x() > src_pt.x():
             self._build_forward_ortho(path, src_pt, dst_pt)
         else:
