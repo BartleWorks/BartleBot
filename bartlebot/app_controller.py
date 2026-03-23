@@ -9,8 +9,8 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.errors import MemoryReadError
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import recent_files
 from bartlebot.bot.machine import BotMachine
+from bartlebot.settings_manager import SettingsManager
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
@@ -75,7 +75,7 @@ class AppController(QObject):
         # Reorder buttons in sidebar → swap client positions
         w.right_sidebar.clients.swap_requested.connect(self.swap_clients)
 
-        w.update_recent_menu(recent_files.load())
+        w.update_recent_menu(SettingsManager.instance().recent_bot_files)
 
     # ------------------------------------------------------------------
     # Entry point
@@ -124,7 +124,7 @@ class AppController(QObject):
         self._window.left_sidebar.set_config(config)
         self._window.set_save_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
-        self._window.update_recent_menu(recent_files.add(path))
+        self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
 
     def _save_bot(self) -> None:
         if self._loaded_config is None:
@@ -149,7 +149,7 @@ class AppController(QObject):
             self._loaded_config.save(path)
             self._last_save_path = path
             self._window.set_bot_name(self._loaded_config.name, Path(path).name)
-            self._window.update_recent_menu(recent_files.add(path))
+            self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
 

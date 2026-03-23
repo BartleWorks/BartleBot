@@ -1265,7 +1265,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 9. Consolidate recent files into SettingsManager
-**Status:** `TODO`
+**Status:** `DONE`
 
 **Why:** Quick win for consistency. `recent_files.py` is a 31-line module that writes to `~/.bartlebot_recent.json` (Unix dotfile convention on Windows) separately from `SettingsManager` which writes to `%APPDATA%/BartleBot/settings.json`. Same pattern, different locations.
 
