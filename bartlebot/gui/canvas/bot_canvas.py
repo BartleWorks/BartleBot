@@ -6,6 +6,7 @@ EditScene  — interactive QGraphicsScene (same logic as the old edit_tab.py).
 """
 
 import enum
+import logging
 import math
 import time
 from typing import Callable
@@ -22,7 +23,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 
-import logging
+logger = logging.getLogger(__name__)
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas.graph_items import (
@@ -1364,14 +1365,14 @@ class BotCanvas(QWidget):
         self._tick_timer.start()
         self._emit_bot_status()
         self.tab_switch.emit("log")
-        self.append_log("=== Bot started ===")
+        logger.info("=== Bot started ===")
 
     def set_paused(self) -> None:
         self._run_state = _PAUSED
         self._run_pause_btn.setIcon(svg_icon("play"))
         self._run_pause_btn.setEnabled(True)
         self._emit_bot_status()
-        self.append_log("=== Paused ===")
+        logger.info("=== Paused ===")
 
     def set_idle(self) -> None:
         self._run_state = _IDLE
@@ -1384,7 +1385,7 @@ class BotCanvas(QWidget):
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = None
         self._emit_bot_status()
-        self.append_log("=== Bot stopped ===")
+        logger.info("=== Bot stopped ===")
 
     def set_state(self, state_id: str) -> None:
         """Highlight the active FSM state node."""
@@ -1394,13 +1395,13 @@ class BotCanvas(QWidget):
         if state_id in self._scene._node_items:
             self._scene._node_items[state_id].set_active(True)
         self._emit_bot_status()
-        self.append_log(f"Entered: {state_id}")
+        logger.info("Entered: %s", state_id)
 
     def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
         if prev_state == next_state:
-            self.append_log(f"Result: {result} → (retry {next_state})")
+            logger.info("Result: %s → (retry %s)", result, next_state)
         else:
-            self.append_log(f"Result: {result} → {next_state}")
+            logger.info("Result: %s → %s", result, next_state)
 
     # ------------------------------------------------------------------
     # Toolbar button handlers
@@ -1416,7 +1417,7 @@ class BotCanvas(QWidget):
             self._run_state = _RUNNING
             self._run_pause_btn.setIcon(svg_icon("pause"))
             self._emit_bot_status()
-            self.append_log("=== Resumed ===")
+            logger.info("=== Resumed ===")
             self.resume_requested.emit()
 
     def enter_edit_mode(self) -> None:

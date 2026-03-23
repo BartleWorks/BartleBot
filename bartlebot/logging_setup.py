@@ -55,6 +55,11 @@ def configure_logging() -> None:
     root.addHandler(file_handler)
     root.addHandler(_gui_bridge)
 
+    # Suppress chatty third-party debug output
+    logging.getLogger("qasync").setLevel(logging.WARNING)
+    logging.getLogger("transitions").setLevel(logging.WARNING)
+    logging.getLogger("wizwalker").setLevel(logging.INFO)
+
     logger = logging.getLogger(__name__)
     logger.info("=== BartleBot startup ===")
     logger.info("Python %s", sys.version.split()[0])
