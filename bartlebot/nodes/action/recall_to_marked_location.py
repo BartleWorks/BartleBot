@@ -77,7 +77,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Wait for the RecallButton to be enabled on all clients (mark must be set).
     machine.log("Waiting for RecallButton to become enabled…", logging.DEBUG)
-    if not await node_helpers.wait_until(lambda: _all_recall_enabled(clients), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(lambda: _all_recall_enabled(clients), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: RecallButton not enabled within {COMPASS_TELEPORT_TIMEOUT}s — no mark set",
             logging.WARNING,
@@ -120,7 +120,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 6. Wait for any loading screens to finish (no-op for same-zone recalls).
     machine.log("Waiting for any loading screens to clear…", logging.DEBUG)
-    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 7. Verify all clients are in the expected zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])

@@ -108,7 +108,7 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
-        await node_helpers.wait_until(
+        await node_helpers.poll_until(
             lambda: node_helpers.none_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
@@ -119,7 +119,7 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.gather(*[c.teleport(interact) for c in scale_clients])
 
         machine.log("Waiting for interact prompt…", logging.DEBUG)
-        if await node_helpers.wait_until(
+        if await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
@@ -144,7 +144,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 7. Wait for NPCServicesWin option button to appear.
     machine.log("Waiting for NPCServicesWin menu…", logging.DEBUG)
-    if not await node_helpers.wait_until(lambda: _all_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(lambda: _all_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: NPCServicesWin option button never appeared within {INTERACT_TIMEOUT}s",
             logging.WARNING,
@@ -157,7 +157,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 9. Wait for menu to dismiss.
     machine.log("Waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
-    await node_helpers.wait_until(lambda: _none_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: _none_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL)
 
     # 10. Verify elixir is active on all scaled clients.
     machine.log("Verifying level-scaling elixir is active…", logging.DEBUG)

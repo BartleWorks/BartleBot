@@ -25,15 +25,17 @@ async def test_wrong_source_zone_fails():
 async def test_success_single_client():
     """Happy path: one client teleports from Src and arrives in Dst."""
     client = FakeClient()
-    # step 1 pre-check → "Src"; step 3 first poll → "Src" (still leaving);
-    # step 3 second poll → "Dst" (left Src); step 5 post-check → "Dst".
+    # step 1 pre-check → "Src"; step 3 first poll → "Src" (still leaving,
+    # so poll_each_until_seen re-teleports); step 3 second poll → "Dst" (left Src);
+    # step 5 post-check → "Dst".
     client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
 
     with patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(machine=FakeMachine(), clients=[client], params=_PARAMS)
 
     assert result == "SUCCESS"
-    client.teleport.assert_called_once()
+    # teleport(target) called once in step 2, once by poll_each_until_seen for the straggler.
+    assert client.teleport.call_count == 2
 
 
 async def test_success_multiple_clients():
@@ -51,7 +53,7 @@ async def test_success_multiple_clients():
 
     assert result == "SUCCESS"
     for c in clients:
-        c.teleport.assert_called_once()
+        assert c.teleport.call_count == 2
 
 
 async def test_timeout_leaving_source_zone_fails():

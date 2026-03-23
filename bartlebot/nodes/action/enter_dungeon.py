@@ -116,7 +116,7 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await node_helpers.wait_until(
+        await node_helpers.poll_until(
             lambda: node_helpers.none_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
@@ -127,7 +127,7 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.gather(*[c.teleport(sigil) for c in clients])
 
         machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
-        if await node_helpers.wait_until(
+        if await node_helpers.poll_until(
             lambda: node_helpers.all_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
@@ -158,7 +158,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 6. Wait for all clients to leave from_zone.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
-    if not await node_helpers.wait_until(
+    if not await node_helpers.poll_until(
         lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
     ):
         zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -171,7 +171,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 7. Wait for loading screens to finish.
     machine.log("Waiting for loading screen to clear…", logging.DEBUG)
-    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 8. Wait for all clients to arrive in dungeon_zone.
     if (

@@ -126,7 +126,7 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in active_clients])
-        await node_helpers.wait_until(
+        await node_helpers.poll_until(
             lambda: node_helpers.none_in_npc_range(active_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
@@ -137,7 +137,7 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.gather(*[c.teleport(interact) for c in active_clients])
 
         machine.log("Waiting for interact prompt…", logging.DEBUG)
-        if await node_helpers.wait_until(
+        if await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range(active_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True

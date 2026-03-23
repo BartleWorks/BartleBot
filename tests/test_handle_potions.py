@@ -470,13 +470,13 @@ async def test_shop_opens_first_attempt():
 async def test_shop_npc_timeout_resets_and_retries():
     """NPC prompt times out once → reset teleport → next attempt succeeds → True."""
     client = FakeClient()
-    # Patch wait_until directly so we control exactly which calls succeed:
+    # Patch poll_until directly so we control exactly which calls succeed:
     #   call 1: npc range on attempt 1 → False (timeout)
     #   call 2: npc range on attempt 2 → True
     #   call 3: shop visible on attempt 2 → True
     wait_mock = AsyncMock(side_effect=[False, True, True])
 
-    with patch.object(nh, "wait_until", new=wait_mock):
+    with patch.object(nh, "poll_until", new=wait_mock):
         result = await hp._open_potion_shop(FakeMachine(), [client])
 
     assert result is True

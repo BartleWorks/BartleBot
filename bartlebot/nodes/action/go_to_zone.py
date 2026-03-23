@@ -83,6 +83,10 @@ NODE_SPEC = NodeSpec(
 from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
+async def _has_left_zone(client, zone: str) -> bool:
+    return await client.zone_name() != zone
+
+
 async def run(machine, clients: list, params: dict) -> str:
     """
     Transition all clients from one zone to another.
@@ -134,19 +138,26 @@ async def run(machine, clients: list, params: dict) -> str:
         )
 
         # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
+        #    Re-teleport only stuck clients to the trigger on each poll; clients that have
+        #    already transitioned are not disturbed.
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
-        if not await node_helpers.wait_until(
-            lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
-        ):
-            zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
-            machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", logging.DEBUG)
+        seen_left = await node_helpers.poll_each_until_seen(
+            clients,
+            check_fn=lambda c: _has_left_zone(c, from_zone),
+            action_fn=lambda c: c.teleport(target),
+            timeout=ZONE_CHANGE_TIMEOUT,
+        )
+        if len(seen_left) < len(clients):
+            stuck = [clients[i] for i in range(len(clients)) if i not in seen_left]
+            stuck_zones = await asyncio.gather(*[c.zone_name() for c in stuck])
+            machine.log(f"Client zones at timeout: {list(stuck_zones)}", logging.DEBUG)
             if reset and attempt < attempts:
                 machine.log(
-                    f"Timed out after {ZONE_CHANGE_TIMEOUT}s; resetting to "
+                    f"Timed out after {ZONE_CHANGE_TIMEOUT}s; resetting stuck clients to "
                     f"XYZ({reset.x:.1f}, {reset.y:.1f}, {reset.z:.1f}) and retrying…",
                     logging.WARNING,
                 )
-                await asyncio.gather(*[c.teleport(reset) for c in clients])
+                await asyncio.gather(*[c.teleport(reset) for c in stuck])
                 continue
             machine.log(
                 f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients to leave {from_zone!r}",
@@ -159,7 +170,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4. Wait for loading screens to finish.
     machine.log("Zone transition triggered, waiting for loading screen to clear…", logging.DEBUG)
-    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 5. Wait for all clients to arrive in to_zone.
     if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:

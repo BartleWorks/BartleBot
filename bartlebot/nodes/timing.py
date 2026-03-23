@@ -7,7 +7,7 @@ defining its own copy.
 """
 
 POLL_INTERVAL = 0.25
-# General polling interval used by all wait loops (wait_until, manual sleep loops).
+# General polling interval used by all wait loops (poll_until, poll_each_until_seen, manual sleep loops).
 
 INTERACT_TIMEOUT = 5.0
 # Seconds to wait for an NPC interaction prompt to appear, or for menu elements

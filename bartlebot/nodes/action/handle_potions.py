@@ -318,7 +318,7 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
             await asyncio.gather(*[c.send_key(Keycode.HOME, 0.1) for c in not_loading])
             await asyncio.sleep(POLL_INTERVAL)
 
-        await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+        await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
         machine.log(f"Zones after HOME press {attempt}: {list(zones)}", logging.DEBUG)
@@ -330,7 +330,7 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
                 f"Not in dorm zone after HOME (got {list(set(zones))}); waiting for GotoDormButton to become enabled…",
                 logging.DEBUG,
             )
-            if not await node_helpers.wait_until(
+            if not await node_helpers.poll_until(
                 lambda: _all_dorm_button_enabled(clients),
                 COMPASS_TELEPORT_TIMEOUT,
                 POLL_INTERVAL,
@@ -355,7 +355,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
         machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG)
         await asyncio.gather(*[c.teleport(_HILDA_XYZ) for c in clients])
 
-        if not await node_helpers.wait_until(
+        if not await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             machine.log(f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG)
@@ -365,7 +365,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
         machine.log("Pressing X to open potion shop…", logging.DEBUG)
         await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-        if await node_helpers.wait_until(lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, POLL_INTERVAL):
+        if await node_helpers.poll_until(lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, POLL_INTERVAL):
             return True
 
         machine.log(f"Potion shop did not open (attempt {attempt}); resetting…", logging.DEBUG)
@@ -396,7 +396,7 @@ async def _buy_potions_for_client(machine, client) -> None:
         if not await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
             machine.log("Shop closed unexpectedly; re-opening…", logging.DEBUG)
             await client.send_key(Keycode.X, 0.1)
-            await node_helpers.wait_until(
+            await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
                 _SHOP_OPEN_TIMEOUT,
                 POLL_INTERVAL,
@@ -425,7 +425,7 @@ async def _buy_potions_for_client(machine, client) -> None:
         # Re-open the shop for the next purchase iteration.
         if charge_after < max_potions:
             await client.send_key(Keycode.X, 0.1)
-            await node_helpers.wait_until(
+            await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
                 _SHOP_OPEN_TIMEOUT,
                 POLL_INTERVAL,

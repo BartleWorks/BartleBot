@@ -110,7 +110,7 @@ async def _mark_client(machine, client) -> bool:
     """Mark location for a single client. Returns True if mark was confirmed set."""
     # Wait for any existing mark cooldown to expire.
     machine.log("Waiting for mark cooldown to clear…", logging.DEBUG)
-    if not await node_helpers.wait_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: mark cooldown did not clear within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
@@ -132,7 +132,7 @@ async def _mark_client(machine, client) -> bool:
         "RecallButton grayed after marking — same-spot mark cleared; waiting to re-mark…",
         logging.DEBUG,
     )
-    if not await node_helpers.wait_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: re-mark cooldown did not clear within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
@@ -148,7 +148,7 @@ async def _mark_client(machine, client) -> bool:
 
 async def _wait_stabilized(machine, client, target: XYZ) -> None:
     """Poll until the server-reported position is within 1.0 unit of target."""
-    if not await node_helpers.wait_until(lambda: _position_near(client, target), STABILIZE_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(lambda: _position_near(client, target), STABILIZE_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"Position did not stabilize within {STABILIZE_TIMEOUT}s after teleport",
             logging.DEBUG,

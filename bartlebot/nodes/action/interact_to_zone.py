@@ -107,7 +107,7 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await node_helpers.wait_until(lambda: node_helpers.none_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL)
+        await node_helpers.poll_until(lambda: node_helpers.none_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL)
 
     # 3. Retry loop: teleport to interact_xyz, wait for prompt on all clients.
     prompt_appeared = False
@@ -119,7 +119,7 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.gather(*[c.teleport(interact) for c in clients])
 
         machine.log("Waiting for interact prompt on all clients…", logging.DEBUG)
-        if await node_helpers.wait_until(
+        if await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
@@ -151,30 +151,24 @@ async def run(machine, clients: list, params: dict) -> str:
         f"Waiting for all clients to enter loading screen (timeout={TRIGGER_TIMEOUT}s)…",
         logging.DEBUG,
     )
-    seen_loading: set[int] = set()
-    loop_start = asyncio.get_event_loop().time()
-    while True:
-        loading = await asyncio.gather(*[c.is_loading() for c in clients])
-        for i, is_now in enumerate(loading):
-            if is_now:
-                seen_loading.add(i)
-        if len(seen_loading) == len(clients):
-            break
-        if asyncio.get_event_loop().time() - loop_start > TRIGGER_TIMEOUT:
-            not_triggered = [i for i in range(len(clients)) if i not in seen_loading]
-            machine.log(f"Clients not loading at timeout: {not_triggered}", logging.DEBUG)
-            machine.log(
-                f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
-                logging.WARNING,
-            )
-            return "FAILURE"
-        not_loading_clients = [c for i, (c, _l) in enumerate(zip(clients, loading)) if i not in seen_loading]
-        await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in not_loading_clients])
-        await asyncio.sleep(POLL_INTERVAL)
+    seen_loading = await node_helpers.poll_each_until_seen(
+        clients,
+        check_fn=lambda c: c.is_loading(),
+        action_fn=lambda c: c.send_key(Keycode.X, 0.1),
+        timeout=TRIGGER_TIMEOUT,
+    )
+    if len(seen_loading) < len(clients):
+        not_triggered = [i for i in range(len(clients)) if i not in seen_loading]
+        machine.log(f"Clients not loading at timeout: {not_triggered}", logging.DEBUG)
+        machine.log(
+            f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     # 6. Wait for loading screens to finish.
     machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
-    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 7. Wait for all clients to arrive in to_zone.
     if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
