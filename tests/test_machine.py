@@ -9,6 +9,7 @@ these tests exercise the same path real bots use at runtime.
 """
 
 import asyncio
+import logging
 import pytest
 
 from bartlebot.bot.machine import BotMachine
@@ -335,6 +336,45 @@ async def test_on_transition_receives_failure_after_node_exception():
 
 
 # ---------------------------------------------------------------------------
+# Callback exception resilience
+# ---------------------------------------------------------------------------
+
+
+async def test_on_state_change_exception_does_not_crash_fsm():
+    """A raising on_state_change must not kill the FSM loop."""
+    calls = [0]
+
+    async def node(machine, clients, params):
+        calls[0] += 1
+        if calls[0] >= 2:
+            machine.stop()
+        return "SUCCESS"
+
+    def bad_callback(state_id):
+        raise RuntimeError("GUI crash")
+
+    await make_machine(node, on_state_change=bad_callback).run()
+    assert calls[0] >= 2
+
+
+async def test_on_transition_exception_does_not_crash_fsm():
+    """A raising on_transition must not kill the FSM loop."""
+    calls = [0]
+
+    async def node(machine, clients, params):
+        calls[0] += 1
+        if calls[0] >= 2:
+            machine.stop()
+        return "SUCCESS"
+
+    def bad_callback(prev, result, next_):
+        raise RuntimeError("GUI crash")
+
+    await make_machine(node, on_transition=bad_callback).run()
+    assert calls[0] >= 2
+
+
+# ---------------------------------------------------------------------------
 # Node exception handling
 # ---------------------------------------------------------------------------
 
@@ -354,3 +394,63 @@ async def test_node_exception_results_in_failure():
     # First call raised → FAILURE → self-loop back to state_a
     # Second call returned SUCCESS → would advance, but stop was set first
     assert calls[0] == 2
+
+
+# ---------------------------------------------------------------------------
+# Silent fall-through / no-match detection
+# ---------------------------------------------------------------------------
+
+# Config with only conditional transitions — no unconditional fallback.
+# If a node returns "PARTIAL", no transition condition matches and advance()
+# returns False, triggering the no-match detection logic.
+CONDITIONAL_ONLY_CONFIG = {
+    "initial": "state_a",
+    "states": [
+        {"id": "state_a", "node_type": "mock", "params": {}},
+        {"id": "state_b", "node_type": "mock", "params": {}},
+    ],
+    "transitions": [
+        {"trigger": "advance", "source": "state_a", "dest": "state_b", "conditions": ["_result_is_SUCCESS"]},
+        {"trigger": "advance", "source": "state_a", "dest": "state_a", "conditions": ["_result_is_FAILURE"]},
+        {"trigger": "advance", "source": "state_b", "dest": "state_a", "conditions": ["_result_is_SUCCESS"]},
+        {"trigger": "advance", "source": "state_b", "dest": "state_b", "conditions": ["_result_is_FAILURE"]},
+    ],
+}
+
+
+def make_machine_conditional(node_fn):
+    registry = {"mock": node_fn}
+    return BotMachine(clients=[], config=CONDITIONAL_ONLY_CONFIG, node_registry=registry)
+
+
+async def test_no_match_logs_warning_and_increments_counter(caplog):
+    """A node returning an unmapped value logs a warning and increments the counter."""
+    calls = [0]
+
+    async def node(machine, clients, params):
+        calls[0] += 1
+        if calls[0] >= 3:
+            machine.stop()
+        return "PARTIAL"  # not mapped to any transition condition
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.bot.machine"):
+        machine = make_machine_conditional(node)
+        await machine.run()
+
+    assert machine._no_match_count == 2  # stopped before 3rd advance fires
+    assert any("No transition matched" in r.message for r in caplog.records)
+    assert any("PARTIAL" in r.message for r in caplog.records)
+
+
+async def test_no_match_stops_after_threshold(caplog):
+    """After 10 consecutive no-matches the machine logs an ERROR and stops."""
+    async def node(machine, clients, params):
+        return "PARTIAL"
+
+    with caplog.at_level(logging.ERROR, logger="bartlebot.bot.machine"):
+        machine = make_machine_conditional(node)
+        await machine.run()
+
+    assert machine._stop_flag.is_set()
+    assert machine._no_match_count == 10
+    assert any("stuck after" in r.message for r in caplog.records)

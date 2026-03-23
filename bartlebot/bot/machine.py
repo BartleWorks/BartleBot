@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from typing import TYPE_CHECKING, Callable
 
 from transitions.extensions.asyncio import AsyncMachine
@@ -45,6 +46,7 @@ class BotMachine:
         self._resume_event.set()  # not paused by default
         self._ambient_combat_lock = asyncio.Lock()
         self.last_result: str | None = None
+        self._no_match_count: int = 0
 
         self._state_map = {s["id"]: s for s in config["states"]}
 
@@ -135,14 +137,25 @@ class BotMachine:
                 state_def = self._state_map[state_id]
 
                 if self._on_state_change:
-                    self._on_state_change(state_id)
+                    try:
+                        self._on_state_change(state_id)
+                    except Exception:
+                        logger.exception("on_state_change callback raised in state %r", state_id)
 
-                node_fn = self._registry[state_def["node_type"]]
+                node_type = state_def["node_type"]
+                self.log(f"Executing state {state_id!r} (node_type={node_type})", logging.DEBUG)
+                _tick_start = time.monotonic()
+                node_fn = self._registry[node_type]
                 try:
                     self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
                 except Exception:
                     logger.exception("Node execution failed in state %r", state_id)
                     self.last_result = "FAILURE"
+                _duration = time.monotonic() - _tick_start
+                self.log(
+                    f"State {state_id!r} returned {self.last_result!r} in {_duration:.1f}s",
+                    logging.DEBUG,
+                )
 
                 if not self._stop_flag.is_set():
                     prev_state = state_id
@@ -152,9 +165,35 @@ class BotMachine:
                         self.log(f"Reached terminal state {state_id!r}; stopping.", logging.INFO)
                         self.stop()
                     else:
-                        await self.advance()
+                        fired = await self.advance()
+                        if not fired:
+                            self._no_match_count += 1
+                            self.log(
+                                f"No transition matched for result {self.last_result!r} in state"
+                                f" {state_id!r} (consecutive: {self._no_match_count})",
+                                logging.WARNING,
+                            )
+                            if self._no_match_count >= 10:
+                                self.log(
+                                    f"State {state_id!r} stuck after {self._no_match_count}"
+                                    " consecutive no-match advances; stopping.",
+                                    logging.ERROR,
+                                )
+                                self.stop()
+                        else:
+                            self._no_match_count = 0
+                            self.log(
+                                f"Transition: {prev_state!r} --{self.last_result}--> {self.state!r}",
+                                logging.INFO,
+                            )
                         if self._on_transition:
-                            self._on_transition(prev_state, self.last_result or "", self.state)
+                            try:
+                                self._on_transition(prev_state, self.last_result or "", self.state)
+                            except Exception:
+                                logger.exception(
+                                    "on_transition callback raised on transition %r → %r",
+                                    prev_state, self.state,
+                                )
         finally:
             watcher.cancel()
             combat_watcher.cancel()
@@ -274,6 +313,7 @@ class BotMachine:
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""
+        self.log("Bot stopped.", logging.INFO)
         self._stop_flag.set()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
 

@@ -1085,6 +1085,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 1. Adopt Python `logging` and eliminate all `print(traceback)`
+**Status:** `DONE`
 
 **Why this is #1:** This is the single most cross-cutting fix. It resolves issues from Stage 2 (print vs self.log), Stage 3 (no timestamps in GUI log), and Stage 4 (no file output, no startup logging, 6× print(traceback)). Every other observability improvement builds on having a real logging system in place.
 
@@ -1111,6 +1112,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 2. Fix the silent fall-through bug in the FSM
+**Status:** `DONE`
 
 **Why this is high priority:** This is the most dangerous bug in the codebase. When a node returns a value that no transition condition matches, the FSM silently re-executes the same node forever with no warning. Users will report "bot is stuck" with no diagnostic information. It's also a quick fix.
 
@@ -1128,6 +1130,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 3. Guard callback invocations in the FSM loop
+**Status:** `DONE`
 
 **Why:** A single unhandled exception in any GUI callback (`on_state_change`, `on_transition`, `on_drop`, `on_log`) kills the entire FSM loop. Since callbacks ultimately execute PyQt6 code, any signal/slot error becomes a bot crash.
 
@@ -1143,6 +1146,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 4. Add FSM-level logging (transitions, timing, results)
+**Status:** `DONE`
 
 **Why:** Currently the machine itself never calls `self.log()` during normal operation. If a node doesn't log its own result, that tick is completely invisible. Combined with action #1, this gives full observability.
 
@@ -1161,6 +1165,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 5. Centralize timing constants
+**Status:** `TODO`
 
 **Why:** 6 timeout values are duplicated across 11+ node files under different names (e.g., `BUTTON_TIMEOUT` / `_DORM_BUTTON_TIMEOUT` / `MARK_COOLDOWN_TIMEOUT` all = 35.0s). This makes tuning tedious and the inconsistent naming is confusing.
 
@@ -1187,6 +1192,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 6. Add ruff linting + formatting
+**Status:** `TODO`
 
 **Why:** No code quality tooling exists. Ruff is a single tool that handles both linting (replaces flake8, pylint, isort) and formatting (replaces black) with near-zero configuration. It's fast enough to run on every save.
 
@@ -1205,6 +1211,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 7. Pin dependency versions
+**Status:** `TODO`
 
 **Why:** All 8 runtime dependencies use `"*"` (any version). `wizwalker` and `WizSprinter` point to git branches that can change at any time. A breaking upstream change silently breaks BartleBot.
 
@@ -1219,6 +1226,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 8. Abstract the "ever seen" pattern
+**Status:** `TODO`
 
 **Why:** The same multi-client coordination loop (track which clients have triggered, re-press key for stragglers, poll until all triggered or timeout) is copy-pasted across 5+ node files. Abstracting it into a helper reduces ~50 lines per node and makes the pattern testable in isolation.
 
@@ -1240,6 +1248,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 9. Consolidate recent files into SettingsManager
+**Status:** `TODO`
 
 **Why:** Quick win for consistency. `recent_files.py` is a 31-line module that writes to `~/.bartlebot_recent.json` (Unix dotfile convention on Windows) separately from `SettingsManager` which writes to `%APPDATA%/BartleBot/settings.json`. Same pattern, different locations.
 
