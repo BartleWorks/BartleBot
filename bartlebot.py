@@ -1,12 +1,11 @@
-import sys
 import asyncio
+import sys
 
-from PyQt6.QtWidgets import QApplication
 import qasync
+from PyQt6.QtWidgets import QApplication
 
-from bartlebot.logging_setup import configure_logging
 from bartlebot.app_controller import AppController
-
+from bartlebot.logging_setup import configure_logging
 
 if __name__ == "__main__":
     configure_logging()

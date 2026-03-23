@@ -10,10 +10,10 @@ these tests exercise the same path real bots use at runtime.
 
 import asyncio
 import logging
+
 import pytest
 
 from bartlebot.bot.machine import BotMachine
-
 
 # ---------------------------------------------------------------------------
 # Shared config and helpers
@@ -51,6 +51,7 @@ def make_machine(node_fn, on_state_change=None, on_transition=None):
 # Dynamic _result_is_* condition methods
 # ---------------------------------------------------------------------------
 
+
 def test_result_is_success_true():
     machine = make_machine(lambda *_: None)
     machine.last_result = "SUCCESS"
@@ -84,6 +85,7 @@ def test_result_is_unknown_raises():
 # ---------------------------------------------------------------------------
 # FSM transitions
 # ---------------------------------------------------------------------------
+
 
 async def test_machine_advances_on_success():
     """SUCCESS result transitions state_a → state_b → state_a → ..."""
@@ -135,6 +137,7 @@ async def test_machine_transitions_after_failure_then_success():
 # ---------------------------------------------------------------------------
 # Pause / resume behaviour
 # ---------------------------------------------------------------------------
+
 
 async def test_is_paused_reflects_state():
     """is_paused returns True after pause() and False after resume()."""
@@ -190,6 +193,7 @@ async def test_pause_halts_after_current_node():
 
 async def test_stop_while_paused_exits_cleanly():
     """stop() while paused causes run() to return without hanging."""
+
     async def node(machine, clients, params):
         return "SUCCESS"
 
@@ -206,8 +210,10 @@ async def test_stop_while_paused_exits_cleanly():
 # Stop behaviour
 # ---------------------------------------------------------------------------
 
+
 async def test_stop_halts_after_current_node():
     """stop() set during a node prevents the next advance."""
+
     async def node(machine, clients, params):
         machine.stop()
         return "SUCCESS"
@@ -253,6 +259,7 @@ async def test_run_can_be_stopped_externally():
 # on_state_change callback
 # ---------------------------------------------------------------------------
 
+
 async def test_on_state_change_called_for_each_state():
     changes = []
 
@@ -268,6 +275,7 @@ async def test_on_state_change_called_for_each_state():
 # ---------------------------------------------------------------------------
 # on_transition callback
 # ---------------------------------------------------------------------------
+
 
 async def test_on_transition_args_on_success():
     """on_transition receives (prev, 'SUCCESS', next) for each successful advance."""
@@ -378,6 +386,7 @@ async def test_on_transition_exception_does_not_crash_fsm():
 # Node exception handling
 # ---------------------------------------------------------------------------
 
+
 async def test_node_exception_results_in_failure():
     """An unhandled exception in a node should be treated as FAILURE."""
     calls = [0]
@@ -444,6 +453,7 @@ async def test_no_match_logs_warning_and_increments_counter(caplog):
 
 async def test_no_match_stops_after_threshold(caplog):
     """After 10 consecutive no-matches the machine logs an ERROR and stops."""
+
     async def node(machine, clients, params):
         return "PARTIAL"
 

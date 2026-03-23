@@ -4,9 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.condition.check_level_scaling as cls
 import bartlebot.nodes.node_helpers as nh
-
 from tests.conftest import FakeClient, FakeMachine
-
 
 # Patch is_visible_by_path so the level-scaling indicator is visible (scaled) by default.
 _ALL_SCALED = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
@@ -16,6 +14,7 @@ _NONE_SCALED = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value
 # ---------------------------------------------------------------------------
 # Single client
 # ---------------------------------------------------------------------------
+
 
 async def test_single_client_scaled_returns_true():
     """TRUE when the only client is level scaled."""
@@ -35,6 +34,7 @@ async def test_single_client_not_scaled_returns_false():
 # Multiple clients — all checked by default
 # ---------------------------------------------------------------------------
 
+
 async def test_all_clients_scaled_returns_true():
     """TRUE when all clients are level scaled."""
     with _ALL_SCALED:
@@ -45,9 +45,7 @@ async def test_all_clients_scaled_returns_true():
 async def test_one_client_not_scaled_returns_false():
     """FALSE when at least one client is not scaled."""
     # Client 1 scaled, client 2 not scaled.
-    scaled_states = patch.object(
-        nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, False])
-    )
+    scaled_states = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, False]))
     with scaled_states:
         result = await cls.run(FakeMachine(), [FakeClient(), FakeClient()], {})
     assert result == "FALSE"
@@ -56,6 +54,7 @@ async def test_one_client_not_scaled_returns_false():
 # ---------------------------------------------------------------------------
 # Level Scaling Clients option filtering
 # ---------------------------------------------------------------------------
+
 
 async def test_clients_to_check_subset_all_scaled_returns_true():
     """TRUE when only specified clients are checked and all are scaled."""
@@ -70,9 +69,7 @@ async def test_clients_to_check_subset_all_scaled_returns_true():
 async def test_clients_to_check_unchecked_client_ignored():
     """Client 1 is not scaled but Level Scaling Clients=[2] — only client 2 is checked → TRUE."""
     machine = FakeMachine(options={"Level Scaling Clients": [2]})
-    scaled_states = patch.object(
-        nh, "is_visible_by_path", new=AsyncMock(return_value=True)
-    )
+    scaled_states = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
     with scaled_states:
         result = await cls.run(machine, [FakeClient(), FakeClient()], {})
     assert result == "TRUE"

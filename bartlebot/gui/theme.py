@@ -32,12 +32,12 @@ class _Theme:
     # ------------------------------------------------------------------
     # Text colours
     # ------------------------------------------------------------------
-    muted_text:   str = "#999999"   # sidebar field labels
+    muted_text: str = "#999999"  # sidebar field labels
     muted_text_alt: str = "#888888"  # placeholder / secondary muted text
     option_desc_text: str = "#888888"  # description text shown under bot options
-    subtle_text:  str = "#555555"   # section sub-headers (returns, overrides)
-    error_text:   str = "#cc4444"   # inline validation error messages
-    error_border: str = "#CC2222"   # required-field empty border / badges
+    subtle_text: str = "#555555"  # section sub-headers (returns, overrides)
+    error_text: str = "#cc4444"  # inline validation error messages
+    error_border: str = "#CC2222"  # required-field empty border / badges
 
     # ------------------------------------------------------------------
     # Chrome
@@ -47,91 +47,91 @@ class _Theme:
     # ------------------------------------------------------------------
     # Bot run-state status dots
     # ------------------------------------------------------------------
-    status_idle:    str = "#888888"
+    status_idle: str = "#888888"
     status_running: str = "#33bb55"
-    status_paused:  str = "#cc9900"
+    status_paused: str = "#cc9900"
 
     # ------------------------------------------------------------------
     # Log level colours
     # ------------------------------------------------------------------
-    log_debug:   str = "#5599ff"
-    log_info:    str = "#55cc55"
+    log_debug: str = "#5599ff"
+    log_info: str = "#55cc55"
     log_warning: str = "#ddcc00"
-    log_error:   str = "#ff5555"
+    log_error: str = "#ff5555"
 
     # ------------------------------------------------------------------
     # Validation pills (error / warning banners on the canvas toolbar)
     # ------------------------------------------------------------------
-    pill_error_bg:         str = "#cc2222"
-    pill_warning_bg:       str = "#bb7700"
+    pill_error_bg: str = "#cc2222"
+    pill_warning_bg: str = "#bb7700"
     pill_warning_bg_hover: str = "#cc8800"
-    pill_text:             str = "#ffffff"
+    pill_text: str = "#ffffff"
 
     # ------------------------------------------------------------------
     # Node canvas — fills
     # ------------------------------------------------------------------
-    node_fill_normal:        str = "#d5dce8"
-    node_fill_hover:         str = "#dce4f0"
-    node_fill_active:        str = "#5cb85c"
-    node_fill_active_dim:    str = "#4aa84a"
-    node_fill_selected:      str = "#b8cce4"
-    node_fill_error:         str = "#fce8e8"
-    node_fill_error_hover:   str = "#fdd4d4"
-    node_fill_warning:       str = "#fff8e0"
+    node_fill_normal: str = "#d5dce8"
+    node_fill_hover: str = "#dce4f0"
+    node_fill_active: str = "#5cb85c"
+    node_fill_active_dim: str = "#4aa84a"
+    node_fill_selected: str = "#b8cce4"
+    node_fill_error: str = "#fce8e8"
+    node_fill_error_hover: str = "#fdd4d4"
+    node_fill_warning: str = "#fff8e0"
     node_fill_warning_hover: str = "#ffedb3"
 
     # ------------------------------------------------------------------
     # Node canvas — borders
     # ------------------------------------------------------------------
-    node_border_normal:   str = "#8a9ab8"
-    node_border_active:   str = "#2e7d32"
+    node_border_normal: str = "#8a9ab8"
+    node_border_active: str = "#2e7d32"
     node_border_selected: str = "#2255aa"
-    node_border_error:    str = "#CC2222"
-    node_border_warning:  str = "#BB7700"
+    node_border_error: str = "#CC2222"
+    node_border_warning: str = "#BB7700"
 
     # ------------------------------------------------------------------
     # Node canvas — badges & labels
     # ------------------------------------------------------------------
-    badge_initial:          str = "#22AA44"
-    badge_terminal:         str = "#CC2222"
-    badge_flipped:          str = "#DDAA00"
+    badge_initial: str = "#22AA44"
+    badge_terminal: str = "#CC2222"
+    badge_flipped: str = "#DDAA00"
     node_sublabel_inactive: str = "#888888"
 
     # ------------------------------------------------------------------
     # Edges and ports
     # ------------------------------------------------------------------
-    edge_color:      str = "#607090"
+    edge_color: str = "#607090"
     edge_hover_color: str = "#4488cc"
-    edge_sel_color:  str = "#2255aa"
-    port_color:      str = "#3366bb"
+    edge_sel_color: str = "#2255aa"
+    port_color: str = "#3366bb"
     port_label_color: str = "#444444"
 
     # ------------------------------------------------------------------
     # Floating overlay panels (search bar, minimap, etc.) — light theme
     # ------------------------------------------------------------------
-    overlay_bg:     str = "#f0f2f5"           # near-white panel background
-    overlay_border: str = "#b0b8c8"           # medium grey border
-    overlay_text:   str = "#1a1e28"           # near-black primary text
-    overlay_muted:  str = "#666e84"           # muted secondary text
+    overlay_bg: str = "#f0f2f5"  # near-white panel background
+    overlay_border: str = "#b0b8c8"  # medium grey border
+    overlay_text: str = "#1a1e28"  # near-black primary text
+    overlay_muted: str = "#666e84"  # muted secondary text
 
-    minimap_bg:     str = "rgba(240, 242, 245, 220)"   # semi-transparent light background
-    minimap_border: str = "rgba(160, 168, 192, 200)"   # semi-transparent border
+    minimap_bg: str = "rgba(240, 242, 245, 220)"  # semi-transparent light background
+    minimap_border: str = "rgba(160, 168, 192, 200)"  # semi-transparent border
 
     # ------------------------------------------------------------------
     # Search match highlight (node rings drawn behind nodes)
     # ------------------------------------------------------------------
-    search_match_current: str = "#00ccee"   # bright cyan — the centered/active match
-    search_match_other:   str = "#0088aa"   # teal — other matches
+    search_match_current: str = "#00ccee"  # bright cyan — the centered/active match
+    search_match_other: str = "#0088aa"  # teal — other matches
 
     # ------------------------------------------------------------------
     # Region palette colors (fill / border / handle for node regions)
     # ------------------------------------------------------------------
-    region_amber:  str = "#F59E0B"
-    region_teal:   str = "#14B8A6"
+    region_amber: str = "#F59E0B"
+    region_teal: str = "#14B8A6"
     region_purple: str = "#8B5CF6"
-    region_red:    str = "#EF4444"
-    region_blue:   str = "#3B82F6"
-    region_green:  str = "#22C55E"
+    region_red: str = "#EF4444"
+    region_blue: str = "#3B82F6"
+    region_green: str = "#22C55E"
 
     REGION_PALETTE: tuple = ("amber", "teal", "purple", "red", "blue", "green")
 
@@ -139,18 +139,18 @@ class _Theme:
     # Game-embed client tile
     # ------------------------------------------------------------------
     client_tile_focus_border: str = "#cc2222"
-    placeholder_box_border:   str = "#555555"   # border of the no-client placeholder box
+    placeholder_box_border: str = "#555555"  # border of the no-client placeholder box
 
     # ------------------------------------------------------------------
     # Font tokens
     # ------------------------------------------------------------------
-    font_ui_family:   str = "Segoe UI"
+    font_ui_family: str = "Segoe UI"
     font_mono_family: str = "Consolas"
 
-    font_mono_size:       int = 9
-    font_node_main_size:  int = 9
-    font_node_sub_size:   int = 6
-    font_node_hdr_size:   int = 7
+    font_mono_size: int = 9
+    font_node_main_size: int = 9
+    font_node_sub_size: int = 6
+    font_node_hdr_size: int = 7
 
     # ------------------------------------------------------------------
     # QColor helpers

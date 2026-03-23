@@ -6,9 +6,21 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox,
-    QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QRadioButton, QSpinBox, QStackedWidget, QVBoxLayout, QWidget,
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDoubleSpinBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPushButton,
+    QRadioButton,
+    QSpinBox,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.bot.schema import BotOptionModel
@@ -25,6 +37,7 @@ _PLACEHOLDER = "—"
 # ---------------------------------------------------------------------------
 # Add / Edit dialog
 # ---------------------------------------------------------------------------
+
 
 class _AddOptionDialog(QDialog):
     """Dialog for adding or editing a bot-wide option.
@@ -46,10 +59,7 @@ class _AddOptionDialog(QDialog):
         self.setWindowTitle("Edit Option" if edit_mode else "Add Option")
         self.setModal(True)
         self.setMinimumWidth(320)
-        self._existing_names = (
-            [n for n in existing_names if n != existing_option.name]
-            if edit_mode else existing_names
-        )
+        self._existing_names = [n for n in existing_names if n != existing_option.name] if edit_mode else existing_names
         self._result: BotOptionModel | None = None
 
         form = QFormLayout()
@@ -81,7 +91,7 @@ class _AddOptionDialog(QDialog):
         self._default_edit = QLineEdit()
 
         self._default_stack = QStackedWidget()
-        self._default_stack.addWidget(self._bool_widget)   # index 0
+        self._default_stack.addWidget(self._bool_widget)  # index 0
         self._default_stack.addWidget(self._default_edit)  # index 1
 
         form.addRow("Name", self._name_edit)
@@ -171,13 +181,13 @@ class _AddOptionDialog(QDialog):
         if type_str == "int":
             try:
                 return int(text) if text else 0
-            except ValueError:
-                raise ValueError("Default must be an integer.")
+            except ValueError as err:
+                raise ValueError("Default must be an integer.") from err
         if type_str == "float":
             try:
                 return float(text) if text else 0.0
-            except ValueError:
-                raise ValueError("Default must be a number.")
+            except ValueError as err:
+                raise ValueError("Default must be a number.") from err
         return text
 
     def _show_error(self, msg: str) -> None:
@@ -188,6 +198,7 @@ class _AddOptionDialog(QDialog):
 # ---------------------------------------------------------------------------
 # Options section
 # ---------------------------------------------------------------------------
+
 
 class OptionsSection(SidebarSection):
     """Collapsible 'Options' section: per-option value widgets + CRUD controls."""
@@ -265,9 +276,7 @@ class OptionsSection(SidebarSection):
                     for req in spec.required_bot_options:
                         required_names.add(req.name)
 
-        _SYSTEM_TOOLTIP = (
-            "This option is required by one or more nodes and cannot be edited or deleted."
-        )
+        _SYSTEM_TOOLTIP = "This option is required by one or more nodes and cannot be edited or deleted."
 
         self._no_options_lbl.hide()
         for opt in options:
@@ -282,9 +291,7 @@ class OptionsSection(SidebarSection):
                 edit_btn.setToolTip(_SYSTEM_TOOLTIP)
             else:
                 edit_btn.setToolTip(f"Edit option '{opt.name}'")
-            edit_btn.clicked.connect(
-                lambda _checked, name=opt.name: self._on_edit_option(name)
-            )
+            edit_btn.clicked.connect(lambda _checked, name=opt.name: self._on_edit_option(name))
 
             del_btn = QPushButton("Delete")
             if is_system:
@@ -292,9 +299,7 @@ class OptionsSection(SidebarSection):
                 del_btn.setToolTip(_SYSTEM_TOOLTIP)
             else:
                 del_btn.setToolTip(f"Remove option '{opt.name}'")
-            del_btn.clicked.connect(
-                lambda _checked, name=opt.name: self._on_delete_option(name)
-            )
+            del_btn.clicked.connect(lambda _checked, name=opt.name: self._on_delete_option(name))
 
             outer = QWidget()
             outer_layout = QHBoxLayout(outer)
@@ -370,9 +375,11 @@ class OptionsSection(SidebarSection):
             widget.valueChanged.connect(_update)
         elif isinstance(widget, QLineEdit):
             if opt.type == "int_list":
-                widget.editingFinished.connect(lambda: _update(
-                    [int(x.strip()) for x in widget.text().split(",") if x.strip().lstrip("-").isdigit()]
-                ))
+                widget.editingFinished.connect(
+                    lambda: _update(
+                        [int(x.strip()) for x in widget.text().split(",") if x.strip().lstrip("-").isdigit()]
+                    )
+                )
             else:
                 widget.editingFinished.connect(lambda: _update(widget.text()))
 
@@ -380,6 +387,7 @@ class OptionsSection(SidebarSection):
 # ---------------------------------------------------------------------------
 # Option row builder
 # ---------------------------------------------------------------------------
+
 
 def _build_option_row(opt) -> tuple[QWidget, QWidget]:
     """Return (container_widget, input_widget) for a single BotOptionModel."""
@@ -411,7 +419,9 @@ def _build_option_row(opt) -> tuple[QWidget, QWidget]:
             widget.setRange(-1e12, 1e12)
             widget.setValue(float(opt.default))
         elif opt.type == "int_list":
-            val_str = ", ".join(str(v) for v in opt.default) if isinstance(opt.default, list) else str(opt.default or "")
+            val_str = (
+                ", ".join(str(v) for v in opt.default) if isinstance(opt.default, list) else str(opt.default or "")
+            )
             widget = QLineEdit(val_str)
         else:  # str
             widget = QLineEdit(str(opt.default))
@@ -422,9 +432,7 @@ def _build_option_row(opt) -> tuple[QWidget, QWidget]:
 
     if opt.description:
         desc_lbl = QLabel(opt.description)
-        desc_lbl.setStyleSheet(
-            f"color: {THEME.option_desc_text}; font-size: 9px;"
-        )
+        desc_lbl.setStyleSheet(f"color: {THEME.option_desc_text}; font-size: 9px;")
         desc_lbl.setWordWrap(True)
         layout.addWidget(desc_lbl)
 

@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, call, patch
 
 import bartlebot.nodes.action.handle_combat as hc
-
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 
 # A chat line that drop_detection.extract_new_drops recognises as a Reagent drop.
@@ -48,9 +47,11 @@ async def test_named_enemy_uses_vague_name():
     client.find_closest_by_vague_name.return_value = FakeEntity("Cyclops/CyclopsMinion")
     client.in_battle.return_value = True
 
-    with _patch_run_combat(), \
-         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "POLL_INTERVAL", 0):
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
         result = await hc.run(
             FakeMachine(),
             [client],
@@ -61,10 +62,7 @@ async def test_named_enemy_uses_vague_name():
     # _find_target is called in step 1 (target check) and again inside
     # _tp_and_wait_for_combat; both calls must use the vague name.
     assert client.find_closest_by_vague_name.call_count >= 1
-    assert all(
-        c == call("Cyclops")
-        for c in client.find_closest_by_vague_name.call_args_list
-    )
+    assert all(c == call("Cyclops") for c in client.find_closest_by_vague_name.call_args_list)
     client.find_closest_mob.assert_not_called()
 
 
@@ -74,9 +72,11 @@ async def test_timeout_entering_combat_fails():
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = False  # never enters combat
 
-    with patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.01), \
-         patch.object(hc, "POLL_INTERVAL", 0):
+    with (
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.01),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
@@ -88,9 +88,11 @@ async def test_success_no_drops():
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
 
-    with _patch_run_combat(), \
-         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "POLL_INTERVAL", 0):
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 
@@ -121,9 +123,11 @@ async def test_combat_order_sequential():
     machine = FakeMachine()
     machine.get_option = lambda name, default=None: [2, 1] if name == "Default Combat Order" else default
 
-    with _patch_run_combat(), \
-         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "POLL_INTERVAL", 0):
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
         result = await hc.run(machine, [c1, c2], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
@@ -138,9 +142,11 @@ async def test_combat_order_invalid_client_number_skipped():
     machine = FakeMachine()
     machine.get_option = lambda name, default=None: [5] if name == "Default Combat Order" else default
 
-    with _patch_run_combat(), \
-         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "POLL_INTERVAL", 0):
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 
     # Client 5 doesn't exist (only 1 client), so the combat_order entry is skipped.
@@ -157,9 +163,11 @@ async def test_success_with_drops():
     # First snapshot (before combat) is empty; second (after) contains a drop line.
     mock_snap = AsyncMock(side_effect=["", _DROP_LINE])
 
-    with _patch_run_combat(), \
-         patch("bartlebot.utils.drop_detection.snapshot_chat", new=mock_snap), \
-         patch.object(hc, "POLL_INTERVAL", 0):
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=mock_snap),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 

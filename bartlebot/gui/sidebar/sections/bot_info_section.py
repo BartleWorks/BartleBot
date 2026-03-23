@@ -7,7 +7,13 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QVBoxLayout, QWidget
 
-from bartlebot.gui.sidebar.sidebar_section import SidebarField, SidebarSection, value_edit, value_edit_multi, value_label
+from bartlebot.gui.sidebar.sidebar_section import (
+    SidebarField,
+    SidebarSection,
+    value_edit,
+    value_edit_multi,
+    value_label,
+)
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -47,54 +53,54 @@ class BotInfoSection(SidebarSection):
         # Switchable fields: each has a display label and an edit widget.
         # Labels are shown in Run mode (or when no config is loaded).
         # Edit widgets are shown in Edit mode.
-        self._name_lbl    = value_label()
-        self._name_edit   = value_edit()
+        self._name_lbl = value_label()
+        self._name_edit = value_edit()
         self._name_edit.setReadOnly(False)
 
-        self._version_lbl  = value_label()
+        self._version_lbl = value_label()
         self._version_edit = value_edit()
         self._version_edit.setReadOnly(False)
 
-        self._desc_lbl  = value_label(wrap=True)
+        self._desc_lbl = value_label(wrap=True)
         self._desc_edit = value_edit_multi(lines=3)
         self._desc_edit.setReadOnly(False)
 
-        self._start_lbl  = value_label()
+        self._start_lbl = value_label()
         self._start_edit = value_edit()
         self._start_edit.setReadOnly(False)
 
-        self._authors_lbl  = value_label()
+        self._authors_lbl = value_label()
         self._authors_edit = value_edit()
         self._authors_edit.setReadOnly(False)
 
-        self._drops_lbl  = value_label()
+        self._drops_lbl = value_label()
         self._drops_edit = value_edit()
         self._drops_edit.setReadOnly(False)
         self._drops_edit.setToolTip("Comma-separated list of expected drop items")
 
-        self._initial_lbl   = value_label()
+        self._initial_lbl = value_label()
         self._initial_combo = QComboBox()
 
         # Ordered list of (label, edit) pairs for bulk visibility switching
         self._switchable_pairs: list[tuple[QWidget, QWidget]] = [
-            (self._name_lbl,    self._name_edit),
+            (self._name_lbl, self._name_edit),
             (self._version_lbl, self._version_edit),
-            (self._desc_lbl,    self._desc_edit),
-            (self._start_lbl,   self._start_edit),
+            (self._desc_lbl, self._desc_edit),
+            (self._start_lbl, self._start_edit),
             (self._authors_lbl, self._authors_edit),
-            (self._drops_lbl,   self._drops_edit),
+            (self._drops_lbl, self._drops_edit),
             (self._initial_lbl, self._initial_combo),
         ]
 
         vbox = QVBoxLayout()
         vbox.setSpacing(0)
-        vbox.addWidget(SidebarField("File",          self._file_lbl))
-        vbox.addWidget(SidebarField("Name",          _swappable(self._name_lbl,    self._name_edit)))
-        vbox.addWidget(SidebarField("Version",       _swappable(self._version_lbl, self._version_edit)))
-        vbox.addWidget(SidebarField("Description",   _swappable(self._desc_lbl,    self._desc_edit)))
-        vbox.addWidget(SidebarField("Start",         _swappable(self._start_lbl,   self._start_edit)))
-        vbox.addWidget(SidebarField("Author(s)",     _swappable(self._authors_lbl, self._authors_edit)))
-        vbox.addWidget(SidebarField("Drops",         _swappable(self._drops_lbl,   self._drops_edit)))
+        vbox.addWidget(SidebarField("File", self._file_lbl))
+        vbox.addWidget(SidebarField("Name", _swappable(self._name_lbl, self._name_edit)))
+        vbox.addWidget(SidebarField("Version", _swappable(self._version_lbl, self._version_edit)))
+        vbox.addWidget(SidebarField("Description", _swappable(self._desc_lbl, self._desc_edit)))
+        vbox.addWidget(SidebarField("Start", _swappable(self._start_lbl, self._start_edit)))
+        vbox.addWidget(SidebarField("Author(s)", _swappable(self._authors_lbl, self._authors_edit)))
+        vbox.addWidget(SidebarField("Drops", _swappable(self._drops_lbl, self._drops_edit)))
         vbox.addWidget(SidebarField("Initial State", _swappable(self._initial_lbl, self._initial_combo)))
 
         self.set_content_layout(vbox)
@@ -121,14 +127,21 @@ class BotInfoSection(SidebarSection):
         self._suppress = True
         if config is None:
             for lbl in (
-                self._name_lbl, self._version_lbl, self._desc_lbl,
-                self._start_lbl, self._authors_lbl, self._drops_lbl,
+                self._name_lbl,
+                self._version_lbl,
+                self._desc_lbl,
+                self._start_lbl,
+                self._authors_lbl,
+                self._drops_lbl,
                 self._initial_lbl,
             ):
                 lbl.setText(_PLACEHOLDER)
             for w in (
-                self._name_edit, self._version_edit,
-                self._start_edit, self._authors_edit, self._drops_edit,
+                self._name_edit,
+                self._version_edit,
+                self._start_edit,
+                self._authors_edit,
+                self._drops_edit,
             ):
                 w.setText("")
             self._desc_edit.setPlainText("")

@@ -8,8 +8,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, QRectF, QPointF
-from PyQt6.QtGui import QPainter, QPen, QBrush, QColor, QFont, QPainterPath
+from PyQt6.QtCore import QPointF, QRectF, Qt
+from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem
 
 from bartlebot.gui.theme import THEME
@@ -25,13 +25,13 @@ if TYPE_CHECKING:
 _PADDING = 40
 _HANDLE_SIZE = 16
 _REGION_RADIUS = 12
-_FILL_ALPHA = 40       # ~16% opacity for the region fill
+_FILL_ALPHA = 40  # ~16% opacity for the region fill
 _LABEL_FONT_SIZE = 9
-_LABEL_DARKER = 130    # QColor.darker() factor for label text / pill border
-_PILL_H = 20           # pill height in px
-_PILL_PAD_X = 10       # horizontal padding inside pill
-_PILL_GAP = 4          # gap between pill bottom and region top
-_PILL_ALPHA = 80       # fill alpha for pill (~31% opacity)
+_LABEL_DARKER = 130  # QColor.darker() factor for label text / pill border
+_PILL_H = 20  # pill height in px
+_PILL_PAD_X = 10  # horizontal padding inside pill
+_PILL_GAP = 4  # gap between pill bottom and region top
+_PILL_ALPHA = 80  # fill alpha for pill (~31% opacity)
 
 
 class _RegionHandle(QGraphicsItem):
@@ -46,8 +46,8 @@ class _RegionHandle(QGraphicsItem):
     def __init__(self, color_key: str, node_items_ref: dict, member_ids_ref: list, parent: QGraphicsItem) -> None:
         super().__init__(parent)
         self._color_key = color_key
-        self._node_items = node_items_ref   # live dict reference from RegionItem
-        self._member_ids = member_ids_ref   # live list reference from RegionItem
+        self._node_items = node_items_ref  # live dict reference from RegionItem
+        self._member_ids = member_ids_ref  # live list reference from RegionItem
         self._fixed_offset = QPointF(0.0, 0.0)
         self._last_pos = QPointF(0.0, 0.0)
 
@@ -212,9 +212,7 @@ class RegionItem(QGraphicsItem):
         if new_rect != self._rect:
             self.prepareGeometryChange()
             self._rect = new_rect
-            self._handle.update_offset(
-                QPointF(self._rect.left(), self._rect.top())
-            )
+            self._handle.update_offset(QPointF(self._rect.left(), self._rect.top()))
             self.update()
 
     # ------------------------------------------------------------------

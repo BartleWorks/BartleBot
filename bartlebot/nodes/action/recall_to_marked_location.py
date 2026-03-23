@@ -1,18 +1,18 @@
 """recall_to_marked_location node — recall to an existing marked location."""
 
 import asyncio
+import logging
 import math
 
-from wizwalker import Keycode, XYZ
+from wizwalker import XYZ, Keycode
 
-import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH  # used only to check button state
-
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT
-TRIGGER_MARGIN = 5.0          # minimum XYZ movement that counts as a same-zone recall trigger
-POSITION_MARGIN = 10.0        # acceptable distance from target XYZ after recall
+
+TRIGGER_MARGIN = 5.0  # minimum XYZ movement that counts as a same-zone recall trigger
+POSITION_MARGIN = 10.0  # acceptable distance from target XYZ after recall
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -65,8 +65,7 @@ async def run(machine, clients: list, params: dict) -> str:
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
     machine.log(
-        f"recall_to_marked_location: expected zone={zone!r} "
-        f"XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
+        f"recall_to_marked_location: expected zone={zone!r} XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
     )
 
     # 1. Verify all clients have mana to cast recall.
@@ -78,9 +77,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Wait for the RecallButton to be enabled on all clients (mark must be set).
     machine.log("Waiting for RecallButton to become enabled…", logging.DEBUG)
-    if not await node_helpers.wait_until(
-        lambda: _all_recall_enabled(clients), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
-    ):
+    if not await node_helpers.wait_until(lambda: _all_recall_enabled(clients), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: RecallButton not enabled within {COMPASS_TELEPORT_TIMEOUT}s — no mark set",
             logging.WARNING,
@@ -117,19 +114,13 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
-        not_triggered_clients = [
-            c for i, c in enumerate(clients) if i not in seen_triggered
-        ]
-        await asyncio.gather(
-            *[c.send_key(Keycode.PAGE_UP, 0.1) for c in not_triggered_clients]
-        )
+        not_triggered_clients = [c for i, c in enumerate(clients) if i not in seen_triggered]
+        await asyncio.gather(*[c.send_key(Keycode.PAGE_UP, 0.1) for c in not_triggered_clients])
         await asyncio.sleep(POLL_INTERVAL)
 
     # 6. Wait for any loading screens to finish (no-op for same-zone recalls).
     machine.log("Waiting for any loading screens to clear…", logging.DEBUG)
-    await node_helpers.wait_until(
-        lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
-    )
+    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 7. Verify all clients are in the expected zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -151,8 +142,7 @@ async def run(machine, clients: list, params: dict) -> str:
     off_target = [i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN]
     if off_target:
         machine.log(
-            f"FAILURE: client(s) {off_target} not at expected XYZ after recall "
-            f"(margin={POSITION_MARGIN})",
+            f"FAILURE: client(s) {off_target} not at expected XYZ after recall (margin={POSITION_MARGIN})",
             logging.WARNING,
         )
         return "FAILURE"
@@ -163,9 +153,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
 async def _all_recall_enabled(clients: list) -> bool:
     """Return True when the RecallButton is enabled (not grayed) for every client."""
-    results = await asyncio.gather(
-        *[node_helpers.is_enabled_by_path(c, RECALL_BUTTON_PATH) for c in clients]
-    )
+    results = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, RECALL_BUTTON_PATH) for c in clients])
     return all(results)
 
 

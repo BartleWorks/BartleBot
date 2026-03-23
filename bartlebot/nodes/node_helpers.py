@@ -4,7 +4,11 @@ import asyncio
 
 from wizwalker import Keycode
 
-from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DUNGEON_ENTRANCE_PATH, DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
+from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
+    ADVANCE_DIALOG_PATH,
+    DUNGEON_ENTRANCE_PATH,
+    DUNGEON_WARNING_PATH,
+)
 from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
 
@@ -90,6 +94,7 @@ async def _get_window_from_path(parent, path: list[str]):
 
 async def wait_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
     """Poll condition_coro every poll_interval until it returns True or timeout expires."""
+
     async def _poll():
         while not await condition_coro():
             await asyncio.sleep(poll_interval)
@@ -97,7 +102,7 @@ async def wait_until(condition_coro, timeout: float | None, poll_interval: float
     try:
         await asyncio.wait_for(_poll(), timeout=timeout)
         return True
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return False
 
 

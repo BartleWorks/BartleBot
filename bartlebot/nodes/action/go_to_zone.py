@@ -1,8 +1,8 @@
 import asyncio
+import logging
 
 from wizwalker import XYZ
 
-import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -74,8 +74,7 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Seconds to wait after triggering an interaction or dialogue "
-                "before checking for a response window."
+                "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
             ),
         ),
     ],
@@ -106,10 +105,7 @@ async def run(machine, clients: list, params: dict) -> str:
     reset_xyz_data: dict | None = params.get("reset_xyz")
     reset = XYZ(reset_xyz_data["x"], reset_xyz_data["y"], reset_xyz_data["z"]) if reset_xyz_data else None
 
-    machine.log(
-        f"go_to_zone: {from_zone!r} → {to_zone!r} "
-        f"via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
-    )
+    machine.log(f"go_to_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -117,8 +113,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if not all(z == from_zone for z in zones):
         wrong = [z for z in zones if z != from_zone]
         machine.log(
-            f"FAILURE: clients not in expected zone "
-            f"(expected={from_zone!r}, unexpected={wrong})",
+            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
             logging.WARNING,
         )
         return "FAILURE"
@@ -134,7 +129,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
         # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
         machine.log("Checking for dungeon exit warning…", logging.DEBUG)
-        await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients])
+        await asyncio.gather(
+            *[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients]
+        )
 
         # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
@@ -152,8 +149,7 @@ async def run(machine, clients: list, params: dict) -> str:
                 await asyncio.gather(*[c.teleport(reset) for c in clients])
                 continue
             machine.log(
-                f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients "
-                f"to leave {from_zone!r}",
+                f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients to leave {from_zone!r}",
                 logging.WARNING,
             )
             return "FAILURE"
@@ -169,12 +165,10 @@ async def run(machine, clients: list, params: dict) -> str:
     if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
         machine.log(f"Zones after transition: {actual}", logging.DEBUG)
         machine.log(
-            f"FAILURE: clients not in expected zone after transition "
-            f"(expected={to_zone!r}, got={list(set(actual))})",
+            f"FAILURE: clients not in expected zone after transition (expected={to_zone!r}, got={list(set(actual))})",
             logging.WARNING,
         )
         return "FAILURE"
 
     machine.log(f"SUCCESS: all clients in {to_zone!r}")
     return "SUCCESS"
-

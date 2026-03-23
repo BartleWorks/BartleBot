@@ -14,9 +14,9 @@ from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
-_BOT_TAB        = 0
+_BOT_TAB = 0
 _PROPERTIES_TAB = 1
-_LOG_TAB        = 2
+_LOG_TAB = 2
 
 
 class LeftSidebar(QTabWidget):
@@ -55,9 +55,9 @@ class LeftSidebar(QTabWidget):
         bot_scroll.setWidget(bot_content)
         bot_scroll.setWidgetResizable(True)
 
-        self.addTab(bot_scroll, "Bot")          # _BOT_TAB        = 0
+        self.addTab(bot_scroll, "Bot")  # _BOT_TAB        = 0
         self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 1
-        self.addTab(log_widget,  "Log")         # _LOG_TAB        = 2
+        self.addTab(log_widget, "Log")  # _LOG_TAB        = 2
 
         # Propagate config_changed from any sub-section upward
         self.bot_info.config_changed.connect(self.config_changed)
@@ -90,4 +90,3 @@ class LeftSidebar(QTabWidget):
         self.bot_info.set_editable(editable)
         self.options.set_editable(editable)
         self.combat_config.set_editable(editable)
-

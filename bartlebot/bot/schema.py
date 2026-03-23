@@ -47,18 +47,15 @@ class BotOptionModel(BaseModel):
     @model_validator(mode="after")
     def coerce_int_list_default(self) -> "BotOptionModel":
         if self.type == "int_list" and isinstance(self.default, str):
-            self.default = [
-                int(x.strip()) for x in self.default.split(",")
-                if x.strip().lstrip("-").isdigit()
-            ]
+            self.default = [int(x.strip()) for x in self.default.split(",") if x.strip().lstrip("-").isdigit()]
         return self
 
 
 class RegionModel(BaseModel):
     id: str
     label: str
-    members: list[str]   # state IDs
-    color: str           # palette key, e.g. "amber"
+    members: list[str]  # state IDs
+    color: str  # palette key, e.g. "amber"
 
 
 class BotConfig(BaseModel):

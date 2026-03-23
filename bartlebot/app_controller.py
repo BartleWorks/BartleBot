@@ -6,17 +6,16 @@ logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
-
-from wizwalker.extensions.wizsprinter import WizSprinter
 from wizwalker.errors import MemoryReadError
+from wizwalker.extensions.wizsprinter import WizSprinter
 
+from bartlebot import recent_files
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY
-from bartlebot import recent_files
 
 
 class AppController(QObject):
@@ -30,6 +29,7 @@ class AppController(QObject):
         super().__init__()
         self._app = app
         from bartlebot.gui.theme import THEME  # noqa: PLC0415
+
         self._app.setStyleSheet(THEME.global_stylesheet())
         self._handler = WizSprinter()
         self._clients: list = []
@@ -58,9 +58,7 @@ class AppController(QObject):
         # Canvas signals
         w.bot_canvas.config_changed.connect(self._on_config_changed)
         w.bot_canvas.mode_changed.connect(self._on_mode_changed)
-        w.bot_canvas.run_requested.connect(
-            lambda: asyncio.create_task(self._start_bot())
-        )
+        w.bot_canvas.run_requested.connect(lambda: asyncio.create_task(self._start_bot()))
         w.bot_canvas.pause_requested.connect(self._pause_bot)
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
@@ -111,9 +109,7 @@ class AppController(QObject):
 
     def _open_bot(self, path: str | None = None) -> None:
         if path is None:
-            path, _ = QFileDialog.getOpenFileName(
-                self._window, "Open Bot", "", "Bot Files (*.json)"
-            )
+            path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot", "", "Bot Files (*.json)")
         if not path:
             return
         try:
@@ -144,9 +140,7 @@ class AppController(QObject):
     def _save_bot_as(self) -> None:
         if self._loaded_config is None:
             return
-        path, _ = QFileDialog.getSaveFileName(
-            self._window, "Save Bot As", "", "Bot Files (*.json)"
-        )
+        path, _ = QFileDialog.getSaveFileName(self._window, "Save Bot As", "", "Bot Files (*.json)")
         if not path:
             return
         if not path.endswith(".json"):
@@ -272,7 +266,7 @@ class AppController(QObject):
                 if new_hwnd_set != cur_hwnd_set:
                     # Preserve our ordering for retained clients; append new ones.
                     retained = [c for c in self._clients if c.window_handle in new_hwnd_set]
-                    added    = [c for c in clients if c.window_handle not in cur_hwnd_set]
+                    added = [c for c in clients if c.window_handle not in cur_hwnd_set]
                     new_clients = retained + added
                     self._sync_embedded_clients(self._clients, new_clients)
                     self._clients = new_clients
@@ -297,7 +291,7 @@ class AppController(QObject):
 
     def _sync_embedded_clients(self, prev_clients: list, new_clients: list) -> None:
         prev_handles = {c.window_handle: i for i, c in enumerate(prev_clients)}
-        new_handles  = {c.window_handle: i for i, c in enumerate(new_clients)}
+        new_handles = {c.window_handle: i for i, c in enumerate(new_clients)}
         for hwnd, idx in prev_handles.items():
             if hwnd not in new_handles:
                 try:
@@ -323,9 +317,7 @@ class AppController(QObject):
             return
         if idx_a >= len(self._clients) or idx_b >= len(self._clients):
             return
-        self._clients[idx_a], self._clients[idx_b] = (
-            self._clients[idx_b], self._clients[idx_a]
-        )
+        self._clients[idx_a], self._clients[idx_b] = (self._clients[idx_b], self._clients[idx_a])
         self._window.right_sidebar.drops.swap_clients(idx_a, idx_b)
         self.clients_changed.emit(self._clients)
 

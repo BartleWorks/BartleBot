@@ -7,17 +7,25 @@ import ctypes.wintypes
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
-    QFrame, QHBoxLayout, QLabel, QLayout, QPushButton, QScrollArea,
-    QSizePolicy, QToolButton, QVBoxLayout, QWidget,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLayout,
+    QPushButton,
+    QScrollArea,
+    QSizePolicy,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
 )
 
-from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, FOCUS_BORDER, LABEL_RESERVE
-from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
+from bartlebot.credentials import CredentialStore
+from bartlebot.gui.game_embed.client_tile import FOCUS_BORDER, LABEL_RESERVE, ClientTile, DetachedTile
+from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.credentials import CredentialStore
 
-_user32     = ctypes.windll.user32
+_user32 = ctypes.windll.user32
 _VK_LBUTTON = 0x01
 
 # Grid layouts: number of clients → (rows, cols)
@@ -41,9 +49,9 @@ class _GamePlaceholder(QWidget):
         [Accounts list] | [Logo + settings links] | [Launch Profiles list]
     """
 
-    launch_account_requested  = pyqtSignal(str, str)  # (username, display_name)
-    launch_profile_requested  = pyqtSignal(str)        # (profile_name)
-    manage_accounts_requested     = pyqtSignal()
+    launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
+    launch_profile_requested = pyqtSignal(str)  # (profile_name)
+    manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
@@ -104,8 +112,7 @@ class _GamePlaceholder(QWidget):
         logo = QFrame()
         logo.setFixedSize(_LOGO_SIZE, _LOGO_SIZE)
         logo.setStyleSheet(
-            f"QFrame {{ border: 2px solid {THEME.placeholder_box_border};"
-            f" border-radius: {_LOGO_SIZE // 2}px; }}"
+            f"QFrame {{ border: 2px solid {THEME.placeholder_box_border}; border-radius: {_LOGO_SIZE // 2}px; }}"
         )
         logo_wrapper = QHBoxLayout()
         logo_wrapper.setContentsMargins(0, 0, 0, 0)
@@ -119,8 +126,7 @@ class _GamePlaceholder(QWidget):
         self._manage_btn = QPushButton("Manage accounts")
         self._manage_btn.setFlat(True)
         self._manage_btn.setStyleSheet(
-            f"color: {THEME.muted_text}; text-decoration: underline;"
-            " border: none; padding: 2px;"
+            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
         )
         self._manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._manage_btn.clicked.connect(self.manage_accounts_requested)
@@ -129,8 +135,7 @@ class _GamePlaceholder(QWidget):
         self._embed_settings_btn = QPushButton("Game embed settings")
         self._embed_settings_btn.setFlat(True)
         self._embed_settings_btn.setStyleSheet(
-            f"color: {THEME.muted_text}; text-decoration: underline;"
-            " border: none; padding: 2px;"
+            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
         )
         self._embed_settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._embed_settings_btn.clicked.connect(self.game_embed_settings_requested)
@@ -181,11 +186,12 @@ class _GamePlaceholder(QWidget):
         self._rebuild_list(
             self._accounts_area,
             items=[
-                (CredentialStore.display_name(a["username"], a.get("alias") or None),
-                 lambda *_, u=a["username"], alias=a.get("alias") or None:
-                     self.launch_account_requested.emit(
-                         u, CredentialStore.display_name(u, alias)
-                     ))
+                (
+                    CredentialStore.display_name(a["username"], a.get("alias") or None),
+                    lambda *_, u=a["username"], alias=a.get("alias") or None: self.launch_account_requested.emit(
+                        u, CredentialStore.display_name(u, alias)
+                    ),
+                )
                 for a in sm.accounts
             ],
             empty_hint="(No accounts)",
@@ -194,9 +200,7 @@ class _GamePlaceholder(QWidget):
         self._rebuild_list(
             self._profiles_area,
             items=[
-                (p["name"],
-                 lambda *_, n=p["name"]: self.launch_profile_requested.emit(n))
-                for p in sm.launch_profiles
+                (p["name"], lambda *_, n=p["name"]: self.launch_profile_requested.emit(n)) for p in sm.launch_profiles
             ],
             empty_hint="(No profiles)",
         )
@@ -244,10 +248,10 @@ class GameView(QWidget):
     child windows.
     """
 
-    embed_state_changed           = pyqtSignal(bool)   # True = ≥1 client embedded
-    launch_account_requested      = pyqtSignal(str, str)
-    launch_profile_requested      = pyqtSignal(str)
-    manage_accounts_requested     = pyqtSignal()
+    embed_state_changed = pyqtSignal(bool)  # True = ≥1 client embedded
+    launch_account_requested = pyqtSignal(str, str)
+    launch_profile_requested = pyqtSignal(str)
+    manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
@@ -414,12 +418,12 @@ class GameView(QWidget):
             return
 
         rows, cols = _GRID.get(n, (2, 2))
-        tile_w = self.width()  // cols
+        tile_w = self.width() // cols
         tile_h = self.height() // rows
 
         for pos, idx in enumerate(all_slots):
             row = pos // cols
-            col = pos  % cols
+            col = pos % cols
             geo = (col * tile_w, row * tile_h, tile_w, tile_h)
             if idx in self._tiles:
                 self._tiles[idx].setGeometry(*geo)

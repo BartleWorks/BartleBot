@@ -1,7 +1,6 @@
 """Unit tests for the check_if_dropped condition node."""
 
 import bartlebot.nodes.condition.check_if_dropped as cid
-
 from tests.conftest import FakeClient, FakeMachine
 
 
@@ -15,6 +14,7 @@ def _machine_with_drops(*drops: tuple) -> FakeMachine:
 # ---------------------------------------------------------------------------
 # No-drop / no-item edge cases
 # ---------------------------------------------------------------------------
+
 
 async def test_empty_item_names_returns_false():
     """item_names is empty → FALSE regardless of drop history."""
@@ -32,6 +32,7 @@ async def test_no_drops_returns_false():
 # ---------------------------------------------------------------------------
 # Basic any-match (require_all=False, default)
 # ---------------------------------------------------------------------------
+
 
 async def test_matching_drop_any_client_returns_true():
     """Drop present for the only client → TRUE."""
@@ -57,9 +58,7 @@ async def test_irrelevant_drop_returns_false():
 async def test_any_item_in_list_triggers_true():
     """Second item in item_names matches → TRUE (any-match mode)."""
     machine = _machine_with_drops(("GoldKey", 1, 0))
-    result = await cid.run(
-        machine, [FakeClient()], {"item_names": ["IronBloom", "GoldKey"]}
-    )
+    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom", "GoldKey"]})
     assert result == "TRUE"
 
 
@@ -67,13 +66,12 @@ async def test_any_item_in_list_triggers_true():
 # clients_to_check filtering
 # ---------------------------------------------------------------------------
 
+
 async def test_drop_on_wrong_client_returns_false():
     """Drop found for client 2 but only client 1 is in clients_to_check → FALSE."""
     clients = [FakeClient(), FakeClient()]
     machine = _machine_with_drops(("IronBloom", 1, 1))  # client index 1 = client 2
-    result = await cid.run(
-        machine, clients, {"item_names": ["IronBloom"], "clients_to_check": [1]}
-    )
+    result = await cid.run(machine, clients, {"item_names": ["IronBloom"], "clients_to_check": [1]})
     assert result == "FALSE"
 
 
@@ -81,9 +79,7 @@ async def test_drop_on_correct_client_returns_true():
     """Drop found for client 2, and clients_to_check=[2] → TRUE."""
     clients = [FakeClient(), FakeClient()]
     machine = _machine_with_drops(("IronBloom", 1, 1))  # client index 1 = client 2
-    result = await cid.run(
-        machine, clients, {"item_names": ["IronBloom"], "clients_to_check": [2]}
-    )
+    result = await cid.run(machine, clients, {"item_names": ["IronBloom"], "clients_to_check": [2]})
     assert result == "TRUE"
 
 
@@ -91,15 +87,14 @@ async def test_empty_clients_to_check_defaults_to_all_clients():
     """clients_to_check=[] → all clients are checked."""
     clients = [FakeClient(), FakeClient()]
     machine = _machine_with_drops(("IronBloom", 1, 1))  # only client 2 has the drop
-    result = await cid.run(
-        machine, clients, {"item_names": ["IronBloom"], "clients_to_check": []}
-    )
+    result = await cid.run(machine, clients, {"item_names": ["IronBloom"], "clients_to_check": []})
     assert result == "TRUE"
 
 
 # ---------------------------------------------------------------------------
 # require_all=True
 # ---------------------------------------------------------------------------
+
 
 async def test_require_all_all_present_returns_true():
     """require_all=True, all items present for all checked clients → TRUE."""

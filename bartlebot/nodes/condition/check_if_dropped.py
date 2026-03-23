@@ -18,10 +18,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="clients_to_check",
         type="int_list",
         label="Clients to Check",
-        help=(
-            "1-based client numbers to check (e.g. '1, 2'). "
-            "Leave empty to check all clients."
-        ),
+        help=("1-based client numbers to check (e.g. '1, 2'). Leave empty to check all clients."),
         default=[],
         default_hint="Default: checks all clients",
     ),
@@ -70,19 +67,14 @@ async def run(machine, clients: list, params: dict) -> str:
         check_indices = list(range(len(clients)))
 
     # Build a set of (client_index, item_name_lower) that have been seen.
-    seen: set[tuple[int, str]] = {
-        (client_idx, name.strip().lower())
-        for name, _qty, client_idx in machine.drops
-    }
+    seen: set[tuple[int, str]] = {(client_idx, name.strip().lower()) for name, _qty, client_idx in machine.drops}
 
     if require_all:
         # Every item must be present for every checked client.
         for idx in check_indices:
             for item in items:
                 if (idx, item) not in seen:
-                    machine.log(
-                        f"check_if_dropped: FALSE — {item!r} not found for client {idx + 1}"
-                    )
+                    machine.log(f"check_if_dropped: FALSE — {item!r} not found for client {idx + 1}")
                     return "FALSE"
         machine.log("check_if_dropped: TRUE — all items present for all checked clients")
         return "TRUE"
@@ -91,9 +83,7 @@ async def run(machine, clients: list, params: dict) -> str:
         for idx in check_indices:
             for item in items:
                 if (idx, item) in seen:
-                    machine.log(
-                        f"check_if_dropped: TRUE — {item!r} found for client {idx + 1}"
-                    )
+                    machine.log(f"check_if_dropped: TRUE — {item!r} found for client {idx + 1}")
                     return "TRUE"
         machine.log("check_if_dropped: FALSE — no matching items found")
         return "FALSE"

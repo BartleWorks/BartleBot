@@ -1,14 +1,13 @@
 """go_to_world_hub node — teleport all clients to the current world's hub zone."""
 
 import asyncio
+import logging
 
 from wizwalker import Keycode
 
-import logging
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
-
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -17,7 +16,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Hub Zone",
         help="The hub zone name clients must be in when this node completes. "
-             "If all clients are already in this zone, the node returns SUCCESS immediately.",
+        "If all clients are already in this zone, the node returns SUCCESS immediately.",
         default="",
         required=True,
     ),
@@ -100,9 +99,7 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
-        not_loading_clients = [
-            c for i, (c, l) in enumerate(zip(clients_to_move, loading)) if i not in seen_loading
-        ]
+        not_loading_clients = [c for i, (c, _l) in enumerate(zip(clients_to_move, loading)) if i not in seen_loading]
         await asyncio.gather(*[c.send_key(Keycode.END, 0.1) for c in not_loading_clients])
         await asyncio.sleep(POLL_INTERVAL)
 
@@ -125,7 +122,5 @@ async def run(machine, clients: list, params: dict) -> str:
 
 async def _all_hub_button_enabled(clients: list) -> bool:
     """Return True when the hub teleport button is enabled for every client."""
-    results = await asyncio.gather(
-        *[node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH) for c in clients]
-    )
+    results = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH) for c in clients])
     return all(results)

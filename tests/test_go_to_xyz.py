@@ -1,8 +1,5 @@
 """Unit tests for the go_to_xyz node."""
 
-from unittest.mock import call
-
-import pytest
 from wizwalker import XYZ
 
 import bartlebot.nodes.action.go_to_xyz as gxyz

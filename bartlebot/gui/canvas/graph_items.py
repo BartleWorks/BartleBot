@@ -8,17 +8,26 @@ EdgeItem   — directed edge between two NodeItems, including self-loops
 
 import math
 
-from PyQt6.QtCore import Qt, QRectF, QPointF, QEasingCurve, QSequentialAnimationGroup, QVariantAnimation
+from PyQt6.QtCore import QEasingCurve, QPointF, QRectF, QSequentialAnimationGroup, Qt, QVariantAnimation, pyqtSignal
 from PyQt6.QtGui import (
-    QPainter, QPen, QBrush, QColor, QFont, QPainterPath, QKeyEvent, QWheelEvent,
+    QBrush,
+    QColor,
+    QFont,
+    QKeyEvent,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QWheelEvent,
 )
-from PyQt6.QtCore import pyqtSignal
-
-from bartlebot.gui.theme import THEME
 from PyQt6.QtWidgets import (
-    QGraphicsItem, QGraphicsPathItem, QGraphicsScene, QGraphicsView,
+    QGraphicsItem,
+    QGraphicsPathItem,
+    QGraphicsScene,
+    QGraphicsView,
     QStyleOptionGraphicsItem,
 )
+
+from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -28,37 +37,37 @@ NODE_W = 220
 NODE_H = 70
 NODE_RADIUS = 12
 ARROW_SIZE = 13
-PORT_R = 6          # radius of connection-port circles
-PORT_SPACING = 28   # vertical spacing between named output ports
-_HEADER_H = 28      # height reserved for text label when returns are present
-_PORT_HIT_R = 16    # hit-test radius for port cursor feedback
+PORT_R = 6  # radius of connection-port circles
+PORT_SPACING = 28  # vertical spacing between named output ports
+_HEADER_H = 28  # height reserved for text label when returns are present
+_PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 
-_FILL_NORMAL        = THEME.qcolor("node_fill_normal")
-_FILL_HOVER         = THEME.qcolor("node_fill_hover")
-_FILL_ACTIVE        = THEME.qcolor("node_fill_active")
-_FILL_ACTIVE_DIM    = THEME.qcolor("node_fill_active_dim")
-_FILL_SELECTED      = THEME.qcolor("node_fill_selected")
-_FILL_ERROR         = THEME.qcolor("node_fill_error")
-_FILL_ERROR_HOVER   = THEME.qcolor("node_fill_error_hover")
-_FILL_WARNING       = THEME.qcolor("node_fill_warning")
+_FILL_NORMAL = THEME.qcolor("node_fill_normal")
+_FILL_HOVER = THEME.qcolor("node_fill_hover")
+_FILL_ACTIVE = THEME.qcolor("node_fill_active")
+_FILL_ACTIVE_DIM = THEME.qcolor("node_fill_active_dim")
+_FILL_SELECTED = THEME.qcolor("node_fill_selected")
+_FILL_ERROR = THEME.qcolor("node_fill_error")
+_FILL_ERROR_HOVER = THEME.qcolor("node_fill_error_hover")
+_FILL_WARNING = THEME.qcolor("node_fill_warning")
 _FILL_WARNING_HOVER = THEME.qcolor("node_fill_warning_hover")
-_BORDER_NORMAL      = THEME.qcolor("node_border_normal")
-_BORDER_ACTIVE      = THEME.qcolor("node_border_active")
-_BORDER_SELECTED    = THEME.qcolor("node_border_selected")
-_BORDER_ERROR       = THEME.qcolor("node_border_error")
-_BORDER_WARNING     = THEME.qcolor("node_border_warning")
-_BADGE_INITIAL      = THEME.qcolor("badge_initial")
-_BADGE_TERMINAL     = THEME.qcolor("badge_terminal")
-_BADGE_FLIPPED      = THEME.qcolor("badge_flipped")
-_EDGE_COLOR         = THEME.qcolor("edge_color")
-_EDGE_HOVER_COLOR   = THEME.qcolor("edge_hover_color")
-_EDGE_SEL_COLOR     = THEME.qcolor("edge_sel_color")
-_PORT_COLOR         = THEME.qcolor("port_color")
-_BADGE_FONT         = THEME.font_node_sub()
+_BORDER_NORMAL = THEME.qcolor("node_border_normal")
+_BORDER_ACTIVE = THEME.qcolor("node_border_active")
+_BORDER_SELECTED = THEME.qcolor("node_border_selected")
+_BORDER_ERROR = THEME.qcolor("node_border_error")
+_BORDER_WARNING = THEME.qcolor("node_border_warning")
+_BADGE_INITIAL = THEME.qcolor("badge_initial")
+_BADGE_TERMINAL = THEME.qcolor("badge_terminal")
+_BADGE_FLIPPED = THEME.qcolor("badge_flipped")
+_EDGE_COLOR = THEME.qcolor("edge_color")
+_EDGE_HOVER_COLOR = THEME.qcolor("edge_hover_color")
+_EDGE_SEL_COLOR = THEME.qcolor("edge_sel_color")
+_PORT_COLOR = THEME.qcolor("port_color")
+_BADGE_FONT = THEME.font_node_sub()
 
-_CORNER_R = 8           # rounded-corner radius on orthogonal paths (px)
-_BACK_H_STEP = 30       # how far backward edges extend horizontally beyond node edge
-_BACK_PADDING = 10      # minimum gap between backward-edge bridge and the node edges
+_CORNER_R = 8  # rounded-corner radius on orthogonal paths (px)
+_BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
+_BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 
 
@@ -70,6 +79,7 @@ def node_height(n_returns: int) -> int:
 # ---------------------------------------------------------------------------
 # GraphView — reusable zoomable/pannable view
 # ---------------------------------------------------------------------------
+
 
 class GraphView(QGraphicsView):
     """Zoomable, pannable QGraphicsView.
@@ -151,12 +161,8 @@ class GraphView(QGraphicsView):
         if self._pan_origin is not None:
             delta = event.position() - self._pan_origin
             self._pan_origin = event.position()
-            self.horizontalScrollBar().setValue(
-                self.horizontalScrollBar().value() - int(delta.x())
-            )
-            self.verticalScrollBar().setValue(
-                self.verticalScrollBar().value() - int(delta.y())
-            )
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - int(delta.x()))
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - int(delta.y()))
             event.accept()
             return
         super().mouseMoveEvent(event)
@@ -176,6 +182,7 @@ class GraphView(QGraphicsView):
 # ---------------------------------------------------------------------------
 # NodeItem
 # ---------------------------------------------------------------------------
+
 
 class NodeItem(QGraphicsItem):
     """Rounded-rect node showing a state's label."""
@@ -459,9 +466,7 @@ class NodeItem(QGraphicsItem):
         # behind the node background with no gap.
         if self._is_search_match:
             ring_color = (
-                THEME.qcolor("search_match_current")
-                if self._is_search_current
-                else THEME.qcolor("search_match_other")
+                THEME.qcolor("search_match_current") if self._is_search_current else THEME.qcolor("search_match_other")
             )
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(ring_color))
@@ -473,14 +478,15 @@ class NodeItem(QGraphicsItem):
 
         # --- Compact LOD: label-only with word-wrap when zoomed out ---
         from bartlebot.settings_manager import SettingsManager
-        _lod_threshold = SettingsManager.instance().get(
-            "canvas", "lod_compact_threshold", default=0.6
-        )
+
+        _lod_threshold = SettingsManager.instance().get("canvas", "lod_compact_threshold", default=0.6)
         if lod < _lod_threshold:
             compact_font = QFont(THEME.font_ui_family, 14)
             painter.setFont(compact_font)
             painter.setPen(Qt.GlobalColor.black)
-            _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(Qt.TextFlag.TextWordWrap)
+            _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(
+                Qt.TextFlag.TextWordWrap
+            )
             painter.drawText(QRectF(6, 4, NODE_W - 12, h - 8), _wrap_flags, self._label)
             _BADGE_SIZE = 14
             _BADGE_MARGIN = 4
@@ -610,10 +616,10 @@ class NodeItem(QGraphicsItem):
                 painter.drawEllipse(QPointF(in_x, h / 2), PORT_R, PORT_R)
 
 
-
 # ---------------------------------------------------------------------------
 # EdgeItem
 # ---------------------------------------------------------------------------
+
 
 class EdgeItem(QGraphicsPathItem):
     """Directed edge between two NodeItems.
@@ -648,6 +654,7 @@ class EdgeItem(QGraphicsPathItem):
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
         from PyQt6.QtGui import QPainterPathStroker
+
         ps = QPainterPathStroker()
         ps.setWidth(12)
         return ps.createStroke(self.path())
@@ -834,9 +841,11 @@ class EdgeItem(QGraphicsPathItem):
         ]
         _draw_ortho_path(path, waypoints)
 
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _draw_ortho_path(path: QPainterPath, waypoints: list) -> None:
     """Draw an orthogonal path through *waypoints* with rounded corners and an arrowhead.
@@ -851,10 +860,10 @@ def _draw_ortho_path(path: QPainterPath, waypoints: list) -> None:
     for i in range(1, len(waypoints) - 1):
         prev = waypoints[i - 1]
         curr = waypoints[i]
-        nxt  = waypoints[i + 1]
+        nxt = waypoints[i + 1]
 
         d1 = math.hypot(curr.x() - prev.x(), curr.y() - prev.y())
-        d2 = math.hypot(nxt.x()  - curr.x(), nxt.y()  - curr.y())
+        d2 = math.hypot(nxt.x() - curr.x(), nxt.y() - curr.y())
         eff_r = min(r, d1 / 2.0, d2 / 2.0)
 
         if d1 < 1 or d2 < 1 or eff_r < 0.5:
@@ -897,6 +906,7 @@ def _add_arrowhead(path: QPainterPath, tip: QPointF, angle: float) -> None:
 # ---------------------------------------------------------------------------
 # _MinimapView — thumbnail overview of the full scene
 # ---------------------------------------------------------------------------
+
 
 class _MinimapView(QGraphicsView):
     """Small read-only thumbnail of the EditScene, shown as an overlay.
@@ -945,9 +955,7 @@ class _MinimapView(QGraphicsView):
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
         # Draw the main view's visible scene rect as a translucent overlay
-        visible_scene = self._main_view.mapToScene(
-            self._main_view.viewport().rect()
-        ).boundingRect()
+        visible_scene = self._main_view.mapToScene(self._main_view.viewport().rect()).boundingRect()
         mini_rect = self.mapFromScene(visible_scene).boundingRect()
 
         painter = QPainter(self.viewport())

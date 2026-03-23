@@ -1,12 +1,11 @@
 """go_to_xyz node — teleport all clients to an XYZ coordinate within the current zone."""
 
 import asyncio
+import logging
 import math
 
 from wizwalker import XYZ
 
-import logging
-from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 POSITION_MARGIN = 10.0  # units; teleport is direct so any deviation indicates an issue
@@ -56,9 +55,7 @@ async def run(machine, clients: list, params: dict) -> str:
     xyz_data: dict = params["xyz"]
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
-    machine.log(
-        f"go_to_xyz: {zone!r} → XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
-    )
+    machine.log(f"go_to_xyz: {zone!r} → XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -66,16 +63,14 @@ async def run(machine, clients: list, params: dict) -> str:
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
         machine.log(
-            f"FAILURE: clients not in expected zone "
-            f"(expected={zone!r}, unexpected={wrong})",
+            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
             logging.WARNING,
         )
         return "FAILURE"
 
     # 2. Teleport all clients to the target XYZ.
     machine.log(
-        f"Teleporting {len(clients)} client(s) to "
-        f"XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
+        f"Teleporting {len(clients)} client(s) to XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
         logging.DEBUG,
     )
     await asyncio.gather(*[c.teleport(target) for c in clients])
@@ -86,13 +81,10 @@ async def run(machine, clients: list, params: dict) -> str:
         f"Positions after teleport: {[(round(p.x, 1), round(p.y, 1), round(p.z, 1)) for p in positions]}",
         logging.DEBUG,
     )
-    off_target = [
-        i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN
-    ]
+    off_target = [i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN]
     if off_target:
         machine.log(
-            f"FAILURE: client(s) {off_target} did not reach target XYZ "
-            f"(margin={POSITION_MARGIN})",
+            f"FAILURE: client(s) {off_target} did not reach target XYZ (margin={POSITION_MARGIN})",
             logging.WARNING,
         )
         return "FAILURE"

@@ -87,10 +87,7 @@ async def launch_profile(profile_name: str) -> None:
     for username in account_usernames:
         password = CredentialStore.retrieve(username)
         if password is None:
-            raise RuntimeError(
-                f"No stored password for '{username}'. "
-                "Please add the account in Settings → Accounts."
-            )
+            raise RuntimeError(f"No stored password for '{username}'. Please add the account in Settings → Accounts.")
         meta = accounts_meta.get(username, {})
         alias = meta.get("alias") or None
         display_name = CredentialStore.display_name(username, alias)

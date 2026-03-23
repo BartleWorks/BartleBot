@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.action.go_to_zone as gtz
 import bartlebot.nodes.node_helpers as nh
-
 from tests.conftest import FakeClient, FakeMachine
 
 # Minimal params used across all tests.
@@ -39,6 +38,7 @@ async def test_success_single_client():
 
 async def test_success_multiple_clients():
     """All clients must teleport and arrive — verified with two clients."""
+
     def _make_client():
         c = FakeClient()
         c.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
@@ -72,8 +72,10 @@ async def test_post_condition_wrong_zone_fails():
     # wait_for_zone (step 5) is mocked to return the wrong-zone list immediately.
     client.zone_name.side_effect = ["Src", "Src", "Detour"]
 
-    with patch.object(gtz, "POLL_INTERVAL", 0), \
-         patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["Detour"])):
+    with (
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["Detour"])),
+    ):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -107,4 +109,5 @@ async def test_exit_dungeon_dialog_dismissed():
     assert result == "SUCCESS"
     # ENTER sent once (to dismiss the dungeon exit dialog)
     from wizwalker import Keycode
+
     client.send_key.assert_called_once_with(Keycode.ENTER, 0.1)

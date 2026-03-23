@@ -20,9 +20,38 @@ WizSprinter = {git = "https://github.com/Deimos-Wizard101/wizsprinter.git", bran
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-asyncio = "*"
+ruff = "*"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, undefined names)
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade (modernize syntax)
+    "B",   # flake8-bugbear (common bugs)
+]
+ignore = [
+    "E501",  # line too long — handled by formatter, not linter
+    "E402",  # module-level import not at top — intentional logger-before-imports pattern
+    "B905",  # zip() without strict= — intentional; lists always same length in gather patterns
+    "B008",  # function call in default — intentional Qt lambda captures
+    "B017",  # blind pytest.raises(Exception) — needs per-test refactor; deferred
+]
+
+[tool.ruff.lint.per-file-ignores]
+"bartlebot/nodes/node_helpers.py" = ["F401"]  # intentional re-exports
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [build-system]
 requires = ["poetry-core"]

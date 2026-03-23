@@ -1,10 +1,10 @@
 """Node: interact with an NPC or object that triggers a zone change."""
 
 import asyncio
-
-from wizwalker import Keycode, XYZ
-
 import logging
+
+from wizwalker import XYZ, Keycode
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
@@ -29,10 +29,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
-        help=(
-            "Coordinates of the object to interact with. "
-            "The interact prompt should appear when standing here."
-        ),
+        help=("Coordinates of the object to interact with. The interact prompt should appear when standing here."),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
@@ -87,8 +84,7 @@ async def run(machine, clients: list, params: dict) -> str:
     reset = XYZ(**params["reset_xyz"])
 
     machine.log(
-        f"interact_to_zone: {from_zone!r} → {to_zone!r} "
-        f"via XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
+        f"interact_to_zone: {from_zone!r} → {to_zone!r} via XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
     )
 
     # 1. Verify all clients are in from_zone.
@@ -97,8 +93,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if not all(z == from_zone for z in zones):
         wrong = [z for z in zones if z != from_zone]
         machine.log(
-            f"FAILURE: clients not in expected zone "
-            f"(expected={from_zone!r}, unexpected={wrong})",
+            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
             logging.WARNING,
         )
         return "FAILURE"
@@ -108,14 +103,11 @@ async def run(machine, clients: list, params: dict) -> str:
     if any(prompts):
         stale = [i for i, p in enumerate(prompts) if p]
         machine.log(
-            f"Pre-existing interact prompt on client(s) {stale}; "
-            f"teleporting to reset_xyz to clear it",
+            f"Pre-existing interact prompt on client(s) {stale}; teleporting to reset_xyz to clear it",
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await node_helpers.wait_until(
-            lambda: node_helpers.none_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
-        )
+        await node_helpers.wait_until(lambda: node_helpers.none_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL)
 
     # 3. Retry loop: teleport to interact_xyz, wait for prompt on all clients.
     prompt_appeared = False
@@ -176,17 +168,13 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
-        not_loading_clients = [
-            c for i, (c, l) in enumerate(zip(clients, loading)) if i not in seen_loading
-        ]
+        not_loading_clients = [c for i, (c, _l) in enumerate(zip(clients, loading)) if i not in seen_loading]
         await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in not_loading_clients])
         await asyncio.sleep(POLL_INTERVAL)
 
     # 6. Wait for loading screens to finish.
     machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
-    await node_helpers.wait_until(
-        lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
-    )
+    await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
     # 7. Wait for all clients to arrive in to_zone.
     if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
@@ -200,5 +188,3 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log(f"SUCCESS: all clients in {to_zone!r}")
     return "SUCCESS"
-
-

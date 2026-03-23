@@ -2,12 +2,10 @@
 
 from unittest.mock import AsyncMock, patch
 
-import pytest
+from wizwalker import Keycode
 
 import bartlebot.nodes.action.go_to_world_hub as gwh
 import bartlebot.nodes.node_helpers as nh
-from wizwalker import Keycode
-
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "WizardCity/WC_Hub"
@@ -119,8 +117,11 @@ async def test_wrong_zone_after_loading_returns_failure():
     client.zone_name.side_effect = ["OtherZone"]
     client.is_loading.side_effect = [True, False]
 
-    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0), \
-         patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])):
+    with (
+        _BUTTON_ENABLED,
+        patch.object(gwh, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+    ):
         result = await gwh.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -209,8 +210,11 @@ async def test_partial_already_in_zone_wrong_arrival_returns_failure():
     c_wrong.zone_name.side_effect = ["OtherZone"]
     c_wrong.is_loading.side_effect = [True, False]
 
-    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0), \
-         patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=[_ZONE, "WrongZone"])):
+    with (
+        _BUTTON_ENABLED,
+        patch.object(gwh, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=[_ZONE, "WrongZone"])),
+    ):
         result = await gwh.run(FakeMachine(), [c_hub, c_wrong], _PARAMS)
 
     assert result == "FAILURE"

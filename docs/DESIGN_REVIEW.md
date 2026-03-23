@@ -1165,7 +1165,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 5. Centralize timing constants
-**Status:** `TODO`
+**Status:** `DONE`
 
 **Why:** 6 timeout values are duplicated across 11+ node files under different names (e.g., `BUTTON_TIMEOUT` / `_DORM_BUTTON_TIMEOUT` / `MARK_COOLDOWN_TIMEOUT` all = 35.0s). This makes tuning tedious and the inconsistent naming is confusing.
 
@@ -1192,7 +1192,7 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 ---
 
 ### 6. Add ruff linting + formatting
-**Status:** `TODO`
+**Status:** `DONE`
 
 **Why:** No code quality tooling exists. Ruff is a single tool that handles both linting (replaces flake8, pylint, isort) and formatting (replaces black) with near-zero configuration. It's fast enough to run on every save.
 
@@ -1207,6 +1207,12 @@ Prioritized by bang-for-buck — fixes that are relatively low-effort but addres
 - All `.py` files — auto-format pass (this will be a large diff but mechanical)
 
 **Context for agent:** The codebase is already fairly clean stylistically — this is mostly about establishing the tooling baseline. The main things ruff will catch: unused imports, bare excepts, inconsistent quote styles, import ordering. No major refactoring expected.
+
+**Follow-up / deferred work:**
+- **`pre-commit` hook** — not added. Adding a `.pre-commit-config.yaml` with `ruff check --fix` and `ruff format` would enforce the rules on every commit without relying on editor integration.
+- **`B017` — broad `pytest.raises(Exception)`** in `tests/test_schema.py:172`. Deferred because the correct exception type (`json.JSONDecodeError` vs `pydantic.ValidationError`) depends on where `BotConfig.load()` fails; narrow this when the schema tests are next touched.
+- **`B905` — `zip()` without `strict=`** — ignored globally. These all pair same-length lists from `asyncio.gather()` results, so mismatched lengths indicate a deeper bug. Consider enabling this rule and auditing each call site once the node API stabilises.
+- **Ruff not in `poetry.lock`** — `poetry lock` fails due to the unresolvable `PyQt6-Qt6Svg = "*"` constraint. Ruff was installed directly into the virtualenv as a workaround. This should be resolved when point 7 (pin dependency versions) is addressed — pinning `PyQt6-Qt6Svg` to the installed version will unblock `poetry lock`.
 
 ---
 

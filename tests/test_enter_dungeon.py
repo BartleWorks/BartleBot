@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.action.enter_dungeon as ed
 import bartlebot.nodes.node_helpers as nh
-
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -179,6 +178,7 @@ async def test_dungeon_warning_dialog_confirmed():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     # X for sigil interaction, ENTER for the warning dialog
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
@@ -198,6 +198,7 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
     assert Keycode.ENTER not in calls
@@ -229,6 +230,7 @@ async def test_dungeon_warning_dialog_appears_late():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
     assert Keycode.ENTER in calls

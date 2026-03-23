@@ -11,20 +11,20 @@ from typing import Any
 
 _DEFAULTS: dict[str, Any] = {
     "general": {
-        "maximize_on_open":      False,
-        "window_width":          1400,
-        "window_height":         800,
-        "left_sidebar_width":    300,
-        "right_sidebar_width":   300,
+        "maximize_on_open": False,
+        "window_width": 1400,
+        "window_height": 800,
+        "left_sidebar_width": 300,
+        "right_sidebar_width": 300,
         "bottom_section_height": 220,
     },
     "game_embed": {
         "resolution": [800, 600],
     },
     "canvas": {
-        "minimap_visible":        True,
-        "auto_layout_on_load":    True,
-        "lod_compact_threshold":  0.6,
+        "minimap_visible": True,
+        "auto_layout_on_load": True,
+        "lod_compact_threshold": 0.6,
     },
     "accounts": [],
     "launch_profiles": [],
@@ -33,7 +33,7 @@ _DEFAULTS: dict[str, Any] = {
 
 # Valid Wizard101 windowed resolutions (width, height)
 VALID_RESOLUTIONS: list[tuple[int, int]] = [
-    (800,  600),
+    (800, 600),
     (1024, 768),
     (1280, 720),
     (1280, 800),
@@ -86,7 +86,7 @@ class SettingsManager:
     # ------------------------------------------------------------------
 
     @classmethod
-    def instance(cls) -> "SettingsManager":
+    def instance(cls) -> SettingsManager:
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance

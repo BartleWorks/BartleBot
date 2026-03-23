@@ -2,8 +2,8 @@ import logging
 import logging.handlers
 import platform
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
 
 _FORMATTER = logging.Formatter(
     "[%(asctime)s] [%(levelname)-7s] %(name)s: %(message)s",
@@ -67,6 +67,7 @@ def configure_logging() -> None:
     for lib in ("PyQt6", "qasync", "transitions", "wizwalker"):
         try:
             import importlib.metadata
+
             logger.info("%s==%s", lib, importlib.metadata.version(lib))
         except Exception:
             pass

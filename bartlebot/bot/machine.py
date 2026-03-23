@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import time
-from typing import TYPE_CHECKING, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
 
@@ -73,10 +74,10 @@ class BotMachine:
                               bot-level behavioural flags (e.g. "repeat").
         """
         if name.startswith("_result_is_"):
-            expected = name[len("_result_is_"):]
+            expected = name[len("_result_is_") :]
             return lambda: self.last_result == expected
         if name.startswith("_flag_"):
-            option_name = name[len("_flag_"):]
+            option_name = name[len("_flag_") :]
             return lambda: bool(self.get_option(option_name, default=False))
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
@@ -192,7 +193,8 @@ class BotMachine:
                             except Exception:
                                 logger.exception(
                                     "on_transition callback raised on transition %r → %r",
-                                    prev_state, self.state,
+                                    prev_state,
+                                    self.state,
                                 )
         finally:
             watcher.cancel()
@@ -206,6 +208,7 @@ class BotMachine:
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
         from bartlebot.nodes import node_helpers
+
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
             if not self.clients:
@@ -233,7 +236,7 @@ class BotMachine:
             _run_combat,
             _split_combat_config,
         )
-        from bartlebot.utils.drop_detection import snapshot_chat, extract_new_drops
+        from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)

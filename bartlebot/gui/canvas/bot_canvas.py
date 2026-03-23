@@ -9,15 +9,33 @@ import enum
 import logging
 import math
 import time
-from typing import Callable
+from collections.abc import Callable
 
-from PyQt6.QtCore import Qt, QEvent, QPointF, QSize, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QColor, QPen, QKeyEvent, QMouseEvent, QTextCharFormat, QTextCursor
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import (
+    QAction,
+    QColor,
+    QKeyEvent,
+    QKeySequence,
+    QMouseEvent,
+    QPen,
+    QShortcut,
+    QTextCharFormat,
+    QTextCursor,
+)
 from PyQt6.QtWidgets import (
-    QComboBox, QGraphicsItem, QGraphicsLineItem, QGraphicsScene,
-    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QComboBox,
+    QGraphicsItem,
+    QGraphicsLineItem,
+    QGraphicsScene,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QPushButton,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.gui.icon_utils import svg_icon
@@ -27,13 +45,17 @@ logger = logging.getLogger(__name__)
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas.graph_items import (
-    EdgeItem, GraphView, NodeItem, NODE_H, NODE_W, PORT_R, _MinimapView,
+    NODE_H,
+    NODE_W,
+    EdgeItem,
+    GraphView,
+    NodeItem,
+    _MinimapView,
 )
-from bartlebot.gui.canvas.region_item import RegionItem
-from bartlebot.nodes.registry import NODE_REGISTRY, NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.region_item import RegionItem
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -41,37 +63,37 @@ from bartlebot.settings_manager import SettingsManager
 
 _PORT_HIT_RADIUS = 16
 _AUTO_SPACING = 260
-_PASTE_OFFSET = 40   # px shift per successive paste of the same clipboard
+_PASTE_OFFSET = 40  # px shift per successive paste of the same clipboard
 
-_TB_RUN  = 0  # toolbar stack index for Run mode
+_TB_RUN = 0  # toolbar stack index for Run mode
 _TB_EDIT = 1  # toolbar stack index for Edit mode
 
-_IDLE    = "idle"
+_IDLE = "idle"
 _RUNNING = "running"
-_PAUSED  = "paused"
+_PAUSED = "paused"
 
 _NAME_TO_LEVEL: dict[str, int] = {
-    "DEBUG":   logging.DEBUG,
-    "INFO":    logging.INFO,
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
     "WARNING": logging.WARNING,
-    "ERROR":   logging.ERROR,
+    "ERROR": logging.ERROR,
 }
 _LOG_COLORS: dict[int, str] = {
-    logging.DEBUG:   THEME.log_debug,
-    logging.INFO:    THEME.log_info,
+    logging.DEBUG: THEME.log_debug,
+    logging.INFO: THEME.log_info,
     logging.WARNING: THEME.log_warning,
-    logging.ERROR:   THEME.log_error,
+    logging.ERROR: THEME.log_error,
 }
 
 _STATUS_DOT_COLORS: dict[str, str] = {
-    _IDLE:    THEME.status_idle,
+    _IDLE: THEME.status_idle,
     _RUNNING: THEME.status_running,
-    _PAUSED:  THEME.status_paused,
+    _PAUSED: THEME.status_paused,
 }
 
 
 _ICON_SIZE = QSize(20, 20)
-_BTN_SIZE  = QSize(32, 32)
+_BTN_SIZE = QSize(32, 32)
 
 
 def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
@@ -85,13 +107,14 @@ def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
 
 
 class BotMode(enum.Enum):
-    RUN  = "run"
+    RUN = "run"
     EDIT = "edit"
 
 
 # ---------------------------------------------------------------------------
 # Bot-option injection
 # ---------------------------------------------------------------------------
+
 
 def _inject_required_options(config: BotConfig) -> None:
     """Sync bot options required by node specs with config.options.
@@ -116,10 +139,7 @@ def _inject_required_options(config: BotConfig) -> None:
             all_system_names.add(req.name)
 
     # Prune system-managed options that are no longer required by any state.
-    config.options = [
-        o for o in config.options
-        if o.name not in all_system_names or o.name in required_now
-    ]
+    config.options = [o for o in config.options if o.name not in all_system_names or o.name in required_now]
 
     # Add missing required options (preserves user-customised values already present).
     existing = {o.name for o in config.options}
@@ -129,18 +149,21 @@ def _inject_required_options(config: BotConfig) -> None:
             continue
         for req in spec.required_bot_options:
             if req.name not in existing:
-                config.options.append(BotOptionModel(
-                    name=req.name,
-                    type=req.type,
-                    default=req.default,
-                    description=req.description,
-                ))
+                config.options.append(
+                    BotOptionModel(
+                        name=req.name,
+                        type=req.type,
+                        default=req.default,
+                        description=req.description,
+                    )
+                )
                 existing.add(req.name)
 
 
 # ---------------------------------------------------------------------------
 # EditScene — interactive QGraphicsScene
 # ---------------------------------------------------------------------------
+
 
 class EditScene(QGraphicsScene):
     """Manages interactive nodes, edge dragging, deletion, and positions."""
@@ -198,7 +221,8 @@ class EditScene(QGraphicsScene):
             is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, config)
             reasons = err_reasons + warn_reasons
             node = NodeItem(
-                state.id, state.label,
+                state.id,
+                state.label,
                 interactive=self._interactive_mode,
                 returns=returns,
                 is_initial=(state.id == config.initial),
@@ -302,8 +326,7 @@ class EditScene(QGraphicsScene):
         )
         self._config.states.append(state)
         returns = _node_returns(default_type)
-        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True,
-                        node_type=default_type)
+        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True, node_type=default_type)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -382,10 +405,8 @@ class EditScene(QGraphicsScene):
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         from PyQt6.QtGui import QTransform
-        item = self.itemAt(
-            event.scenePos(),
-            self.views()[0].transform() if self.views() else QTransform()
-        )
+
+        item = self.itemAt(event.scenePos(), self.views()[0].transform() if self.views() else QTransform())
         if isinstance(item, RegionItem):
             self.focus_region_requested.emit(item.region_id)
             return
@@ -399,10 +420,12 @@ class EditScene(QGraphicsScene):
         if not self._interactive_mode:
             return
         from PyQt6.QtWidgets import QMenu
+
         item = self.itemAt(
             event.scenePos(),
-            self.views()[0].transform() if self.views()
-            else __import__("PyQt6.QtGui", fromlist=["QTransform"]).QTransform()
+            self.views()[0].transform()
+            if self.views()
+            else __import__("PyQt6.QtGui", fromlist=["QTransform"]).QTransform(),
         )
         menu = QMenu()
         if isinstance(item, NodeItem):
@@ -494,9 +517,7 @@ class EditScene(QGraphicsScene):
                 return node
         return None
 
-    def _create_transition(
-        self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None
-    ) -> None:
+    def _create_transition(self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None) -> None:
         if self._config is None:
             return
         s, d = src_node.state_id, dst_node.state_id
@@ -507,7 +528,7 @@ class EditScene(QGraphicsScene):
 
         reverse_exists = any(es == d and ed == s for (es, _ew, ed, _ei) in self._edge_items)
         if reverse_exists:
-            for (es, ew, ed, existing) in self._edge_items:
+            for es, _ew, ed, existing in self._edge_items:
                 if es == d and ed == s:
                     existing._offset = -22.0
                     existing._rebuild()
@@ -534,8 +555,7 @@ class EditScene(QGraphicsScene):
             return
         states = [s.model_dump() for s in self._config.states if s.id in selected_ids]
         transitions = [
-            t.model_dump() for t in self._config.transitions
-            if t.source in selected_ids and t.dest in selected_ids
+            t.model_dump() for t in self._config.transitions if t.source in selected_ids and t.dest in selected_ids
         ]
         self._clipboard = (states, transitions)
         self._paste_count = 0
@@ -567,14 +587,22 @@ class EditScene(QGraphicsScene):
             state = StateModel.model_validate(new_sd)
             self._config.states.append(state)
             returns = _node_returns(state.node_type)
-            node = NodeItem(state.id, state.label, interactive=True, returns=returns,
-                            is_terminal=True, node_type=state.node_type,
-                            flipped=state.flipped)
+            node = NodeItem(
+                state.id,
+                state.label,
+                interactive=True,
+                returns=returns,
+                is_terminal=True,
+                node_type=state.node_type,
+                flipped=state.flipped,
+            )
             if new_sd.get("position"):
-                node.setPos(QPointF(
-                    new_sd["position"]["x"] - NODE_W / 2,
-                    new_sd["position"]["y"] - NODE_H / 2,
-                ))
+                node.setPos(
+                    QPointF(
+                        new_sd["position"]["x"] - NODE_W / 2,
+                        new_sd["position"]["y"] - NODE_H / 2,
+                    )
+                )
             self.addItem(node)
             self._node_items[state.id] = node
 
@@ -640,12 +668,9 @@ class EditScene(QGraphicsScene):
     def _delete_node(self, state_id: str) -> None:
         if self._config is None:
             return
-        self._config.transitions = [
-            t for t in self._config.transitions
-            if t.source != state_id and t.dest != state_id
-        ]
+        self._config.transitions = [t for t in self._config.transitions if t.source != state_id and t.dest != state_id]
         remaining = []
-        for (s, w, d, edge_item) in self._edge_items:
+        for s, w, d, edge_item in self._edge_items:
             if s == state_id or d == state_id:
                 s_node = self._node_items.get(s)
                 d_node = self._node_items.get(d)
@@ -670,7 +695,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         remaining = []
-        for (s, w, d, ei) in self._edge_items:
+        for s, w, d, ei in self._edge_items:
             if ei is edge_item:
                 s_node = self._node_items.get(s)
                 d_node = self._node_items.get(d)
@@ -679,8 +704,7 @@ class EditScene(QGraphicsScene):
                 if d_node and d_node is not s_node:
                     d_node.remove_edge(ei)
                 self._config.transitions = [
-                    t for t in self._config.transitions
-                    if not (t.source == s and t.dest == d and t.when == w)
+                    t for t in self._config.transitions if not (t.source == s and t.dest == d and t.when == w)
                 ]
                 self.removeItem(ei)
             else:
@@ -695,7 +719,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         # Locate the edge record
-        for (s, w, d, ei) in list(self._edge_items):
+        for s, w, d, ei in list(self._edge_items):  # noqa: B007 — s, w, d used after loop via for-else leak
             if ei is edge_item:
                 break
         else:
@@ -719,7 +743,11 @@ class EditScene(QGraphicsScene):
         self._config.states.append(state)
         returns = _node_returns(default_type)
         new_node = NodeItem(
-            new_id, None, interactive=True, returns=returns, is_terminal=True,
+            new_id,
+            None,
+            interactive=True,
+            returns=returns,
+            is_terminal=True,
             node_type=default_type,
         )
         new_node.setPos(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2))
@@ -766,11 +794,10 @@ class EditScene(QGraphicsScene):
         if self._config is None or len(state_ids) < 2:
             return
         import uuid
+
         from PyQt6.QtWidgets import QInputDialog
-        label, ok = QInputDialog.getText(
-            self.views()[0] if self.views() else None,
-            "Create Region", "Region name:"
-        )
+
+        label, ok = QInputDialog.getText(self.views()[0] if self.views() else None, "Create Region", "Region name:")
         if not ok or not label.strip():
             return
         region = RegionModel(
@@ -808,9 +835,9 @@ class EditScene(QGraphicsScene):
         if region is None:
             return
         from PyQt6.QtWidgets import QInputDialog
+
         label, ok = QInputDialog.getText(
-            self.views()[0] if self.views() else None,
-            "Rename Region", "Region name:", text=region.label
+            self.views()[0] if self.views() else None, "Rename Region", "Region name:", text=region.label
         )
         if not ok or not label.strip():
             return
@@ -827,6 +854,7 @@ class EditScene(QGraphicsScene):
         if region is None:
             return
         from PyQt6.QtWidgets import QDialog
+
         dlg = _ColorPickerDialog(current_key=region.color, parent=self.views()[0] if self.views() else None)
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
@@ -900,6 +928,7 @@ class EditScene(QGraphicsScene):
 # _EditView
 # ---------------------------------------------------------------------------
 
+
 class _EditView(GraphView):
     def __init__(self, scene: QGraphicsScene, parent=None):
         super().__init__(scene, interactive=True, parent=parent)
@@ -909,13 +938,14 @@ class _EditView(GraphView):
 # _SearchBar — floating quick-search overlay (Ctrl+F)
 # ---------------------------------------------------------------------------
 
+
 class _SearchBar(QWidget):
     """Floating search bar overlaid on the graph view (Ctrl+F to open)."""
 
     text_changed = pyqtSignal(str)
-    next_match   = pyqtSignal()
-    prev_match   = pyqtSignal()
-    closed       = pyqtSignal()
+    next_match = pyqtSignal()
+    prev_match = pyqtSignal()
+    closed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -950,8 +980,9 @@ class _SearchBar(QWidget):
         self.setVisible(False)
 
     def set_count(self, current: int, total: int) -> None:
-        self._count_lbl.setText("" if total == 0 and not self._input.text() else
-                                "no matches" if total == 0 else f"{current}/{total}")
+        self._count_lbl.setText(
+            "" if total == 0 and not self._input.text() else "no matches" if total == 0 else f"{current}/{total}"
+        )
         self.adjustSize()
 
     def focus_input(self) -> None:
@@ -980,13 +1011,14 @@ class _SearchBar(QWidget):
 # BotCanvas — unified widget
 # ---------------------------------------------------------------------------
 
+
 class BotCanvas(QWidget):
     """Single canvas widget covering both Run and Edit modes."""
 
     config_changed = pyqtSignal()
-    mode_changed   = pyqtSignal(BotMode)
-    run_requested  = pyqtSignal()
-    pause_requested  = pyqtSignal()
+    mode_changed = pyqtSignal(BotMode)
+    run_requested = pyqtSignal()
+    pause_requested = pyqtSignal()
     resume_requested = pyqtSignal()
     save_done = pyqtSignal()
     # Emitted with "log", "properties", or "bot" to switch the sidebar tab
@@ -1067,7 +1099,7 @@ class BotCanvas(QWidget):
         edit_center_row.addWidget(self._layout_btn)
 
         self._center_stack = QStackedWidget()
-        self._center_stack.addWidget(run_center)   # _TB_RUN  = 0
+        self._center_stack.addWidget(run_center)  # _TB_RUN  = 0
         self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
 
         # ── Left section (68 px fixed: fit button) ─
@@ -1097,7 +1129,7 @@ class BotCanvas(QWidget):
 
         self._right_stack = QStackedWidget()
         self._right_stack.setFixedWidth(68)
-        self._right_stack.addWidget(run_right)   # _TB_RUN  = 0
+        self._right_stack.addWidget(run_right)  # _TB_RUN  = 0
         self._right_stack.addWidget(edit_right)  # _TB_EDIT = 1
 
         # ── Validation badge — shown left of center when errors/warnings exist ──
@@ -1140,9 +1172,7 @@ class BotCanvas(QWidget):
 
         # ── Minimap overlay — bottom-right corner of the graph view ──────
         self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
-        self._minimap.setVisible(
-            SettingsManager.instance().get("canvas", "minimap_visible", default=True)
-        )
+        self._minimap.setVisible(SettingsManager.instance().get("canvas", "minimap_visible", default=True))
 
         # ── Log pane (owned here, displayed in left sidebar Log tab) ──
         self._log = QPlainTextEdit()
@@ -1236,6 +1266,7 @@ class BotCanvas(QWidget):
             and SettingsManager.instance().get("canvas", "auto_layout_on_load", default=True)
         ):
             from bartlebot.gui.canvas.layout import auto_layout
+
             auto_layout(config)
         self._scene.setup(config)
         self._param_panel.show_idle()
@@ -1263,9 +1294,7 @@ class BotCanvas(QWidget):
         if self._n_validation_errors > 0:
             self._run_pause_btn.setEnabled(False)
             noun = "error" if self._n_validation_errors == 1 else "errors"
-            self._run_pause_btn.setToolTip(
-                f"Cannot run: fix {self._n_validation_errors} {noun} first"
-            )
+            self._run_pause_btn.setToolTip(f"Cannot run: fix {self._n_validation_errors} {noun} first")
         elif self._run_externally_enabled:
             self._run_pause_btn.setEnabled(True)
             self._run_pause_btn.setToolTip("Bot is valid — click to run")
@@ -1286,9 +1315,7 @@ class BotCanvas(QWidget):
                 if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
                     self._tab_navigate(1)
                     return True
-                if key in (Qt.Key.Key_Backtab,) or (
-                    key == Qt.Key.Key_Tab and mods & Qt.KeyboardModifier.ShiftModifier
-                ):
+                if key in (Qt.Key.Key_Backtab,) or (key == Qt.Key.Key_Tab and mods & Qt.KeyboardModifier.ShiftModifier):
                     self._tab_navigate(-1)
                     return True
         return super().eventFilter(obj, event)
@@ -1448,6 +1475,7 @@ class BotCanvas(QWidget):
         if self._config is None or self._focus_region_id is not None:
             return
         from bartlebot.gui.canvas.layout import auto_layout
+
         self._scene._flush_positions()
         auto_layout(self._config)
         self._scene.setup(self._config)
@@ -1466,7 +1494,7 @@ class BotCanvas(QWidget):
         region = next((r for r in self._config.regions if r.id == region_id), None)
         if region is None:
             return
-        self._exit_focus_mode()   # clean up any existing focus first
+        self._exit_focus_mode()  # clean up any existing focus first
         self._focus_region_id = region_id
         member_set = set(region.members)
 
@@ -1546,11 +1574,7 @@ class BotCanvas(QWidget):
         matches: list[str] = []
         if q:
             for state in config.states:
-                if (
-                    q in (state.label or "").lower()
-                    or q in state.id.lower()
-                    or q in state.node_type.lower()
-                ):
+                if q in (state.label or "").lower() or q in state.id.lower() or q in state.node_type.lower():
                     matches.append(state.id)
         self._search_matches = matches
         self._search_match_idx = 0
@@ -1657,7 +1681,7 @@ class BotCanvas(QWidget):
             for r in warn_reasons:
                 warning_lines.append(f"{name}: {r}")
 
-        n_errors   = len(error_lines)
+        n_errors = len(error_lines)
         n_warnings = len(warning_lines)
 
         if error_lines:
@@ -1671,7 +1695,7 @@ class BotCanvas(QWidget):
         if warning_lines:
             noun = "warning" if n_warnings == 1 else "warnings"
             self._warning_pill.setText(f"\u25b2 {n_warnings} {noun}")
-            n_orphans = sum(1 for l in warning_lines if "Unreachable from initial state" in l)
+            n_orphans = sum(1 for line in warning_lines if "Unreachable from initial state" in line)
             tip = "\n".join(warning_lines)
             if n_orphans:
                 noun_o = "state" if n_orphans == 1 else "states"
@@ -1716,7 +1740,7 @@ class BotCanvas(QWidget):
                 returns = _node_returns(state.node_type)
                 if node._returns != returns:
                     node.set_returns(returns)
-                    for (s, w, d, edge) in self._scene._edge_items:
+                    for s, _w, _d, edge in self._scene._edge_items:
                         if s == state.id:
                             edge._rebuild()
 
@@ -1739,32 +1763,25 @@ class BotCanvas(QWidget):
             return
         item = selected[0]
         if isinstance(item, NodeItem) and self._scene._config:
-            state = next(
-                (s for s in self._scene._config.states if s.id == item.state_id), None
-            )
+            state = next((s for s in self._scene._config.states if s.id == item.state_id), None)
             if state:
                 self._param_panel.show_state(state)
                 self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:
-            for (s, w, d, ei) in self._scene._edge_items:
+            for s, w, d, ei in self._scene._edge_items:
                 if ei is item:
                     trans = next(
-                        (t for t in self._scene._config.transitions
-                         if t.source == s and t.dest == d and t.when == w),
+                        (t for t in self._scene._config.transitions if t.source == s and t.dest == d and t.when == w),
                         None,
                     )
                     if trans:
-                        src_state = next(
-                            (st for st in self._scene._config.states if st.id == s), None
-                        )
+                        src_state = next((st for st in self._scene._config.states if st.id == s), None)
                         src_returns: list[str] = []
                         if src_state:
                             spec = NODE_SPECS.get(src_state.node_type)
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
-                        option_names = [
-                            opt.name for opt in self._scene._config.options
-                        ]
+                        option_names = [opt.name for opt in self._scene._config.options]
                         self._param_panel.show_transition(trans, src_returns, option_names)
                         self.tab_switch.emit("properties")
                     break
@@ -1825,6 +1842,7 @@ class BotCanvas(QWidget):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _node_returns(node_type: str) -> list[str]:
     spec = NODE_SPECS.get(node_type)
     return [r.name for r in spec.returns] if spec else []
@@ -1879,9 +1897,7 @@ def _validate_node(state, config) -> tuple[bool, bool, list[str], list[str]]:
                 uncovered = [r.name for r in spec.returns if r.name not in outgoing_whens]
                 if uncovered:
                     label = "return value" if len(uncovered) == 1 else "return values"
-                    warning_reasons.append(
-                        f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}"
-                    )
+                    warning_reasons.append(f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}")
 
     if config.initial and state.id != config.initial:
         if state.id not in _reachable_states(config):
@@ -1921,11 +1937,13 @@ def _unique_id(existing: list[str]) -> str:
 # _ColorPickerDialog — six-swatch region palette picker
 # ---------------------------------------------------------------------------
 
+
 class _ColorPickerDialog(QWidget):
     """Minimal six-swatch palette dialog for region color selection."""
 
     def __init__(self, current_key: str, parent=None) -> None:
         from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QHBoxLayout, QVBoxLayout
+
         # Re-parent as QDialog so exec() works
         self._dialog = QDialog(parent)
         self._dialog.setWindowTitle("Choose Color")
@@ -1946,9 +1964,7 @@ class _ColorPickerDialog(QWidget):
             self._swatch_btns[key] = btn
             swatch_row.addWidget(btn)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self._dialog.accept)
         buttons.rejected.connect(self._dialog.reject)
 

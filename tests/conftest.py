@@ -1,10 +1,9 @@
 """Shared test doubles for node unit tests."""
 
+import logging
 from unittest.mock import AsyncMock, MagicMock
 
 from wizwalker import XYZ
-
-import logging
 
 
 class FakeClient:

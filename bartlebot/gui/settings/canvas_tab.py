@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
-    QCheckBox, QDoubleSpinBox, QFormLayout, QLabel, QVBoxLayout, QWidget,
+    QCheckBox,
+    QDoubleSpinBox,
+    QFormLayout,
+    QLabel,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.settings_manager import SettingsManager

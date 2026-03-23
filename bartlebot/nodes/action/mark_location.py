@@ -1,17 +1,17 @@
 """mark_location node — mark the current in-game location with failsafe handling."""
 
 import asyncio
-
-from wizwalker import Keycode, XYZ
-
 import logging
+
+from wizwalker import XYZ, Keycode
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH, RECALL_TIMER_PATH
-
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
-POST_MARK_WAIT = 2.0          # seconds to wait for UI to reflect mark state after PAGE_DOWN
-STABILIZE_TIMEOUT = 5.0       # seconds to wait for server position to match teleport target
+
+POST_MARK_WAIT = 2.0  # seconds to wait for UI to reflect mark state after PAGE_DOWN
+STABILIZE_TIMEOUT = 5.0  # seconds to wait for server position to match teleport target
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -19,7 +19,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Zone",
         help="Zone name all clients must be in when this node executes. "
-             "If clients are in the correct zone but at the wrong XYZ, they will be teleported.",
+        "If clients are in the correct zone but at the wrong XYZ, they will be teleported.",
         default="",
         required=True,
     ),
@@ -63,9 +63,7 @@ async def run(machine, clients: list, params: dict) -> str:
     xyz_data: dict = params["xyz"]
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
-    machine.log(
-        f"mark_location: zone={zone!r} XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
-    )
+    machine.log(f"mark_location: zone={zone!r} XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients have mana to cast mark location.
     mana_ratios = await asyncio.gather(*[c.calc_mana_ratio() for c in clients])
@@ -112,9 +110,7 @@ async def _mark_client(machine, client) -> bool:
     """Mark location for a single client. Returns True if mark was confirmed set."""
     # Wait for any existing mark cooldown to expire.
     machine.log("Waiting for mark cooldown to clear…", logging.DEBUG)
-    if not await node_helpers.wait_until(
-        lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
-    ):
+    if not await node_helpers.wait_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: mark cooldown did not clear within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
@@ -136,9 +132,7 @@ async def _mark_client(machine, client) -> bool:
         "RecallButton grayed after marking — same-spot mark cleared; waiting to re-mark…",
         logging.DEBUG,
     )
-    if not await node_helpers.wait_until(
-        lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
-    ):
+    if not await node_helpers.wait_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"FAILURE: re-mark cooldown did not clear within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
@@ -154,9 +148,7 @@ async def _mark_client(machine, client) -> bool:
 
 async def _wait_stabilized(machine, client, target: XYZ) -> None:
     """Poll until the server-reported position is within 1.0 unit of target."""
-    if not await node_helpers.wait_until(
-        lambda: _position_near(client, target), STABILIZE_TIMEOUT, POLL_INTERVAL
-    ):
+    if not await node_helpers.wait_until(lambda: _position_near(client, target), STABILIZE_TIMEOUT, POLL_INTERVAL):
         machine.log(
             f"Position did not stabilize within {STABILIZE_TIMEOUT}s after teleport",
             logging.DEBUG,

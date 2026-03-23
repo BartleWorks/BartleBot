@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QFrame, QHBoxLayout, QLabel, QSizePolicy, QVBoxLayout, QWidget,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.gui.game_embed.game_view import GameView
@@ -18,10 +23,10 @@ class GameViewPanel(QWidget):
         [● Status  elapsed]    [Bot display name]    [Node title]
     """
 
-    launch_account_requested      = pyqtSignal(str, str)  # forwarded from GameView
-    launch_profile_requested      = pyqtSignal(str)        # forwarded from GameView
-    manage_accounts_requested     = pyqtSignal()           # forwarded from GameView
-    game_embed_settings_requested = pyqtSignal()           # forwarded from GameView
+    launch_account_requested = pyqtSignal(str, str)  # forwarded from GameView
+    launch_profile_requested = pyqtSignal(str)  # forwarded from GameView
+    manage_accounts_requested = pyqtSignal()  # forwarded from GameView
+    game_embed_settings_requested = pyqtSignal()  # forwarded from GameView
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)

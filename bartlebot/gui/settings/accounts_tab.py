@@ -4,9 +4,18 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
-    QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel,
-    QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPushButton,
-    QVBoxLayout, QWidget,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.credentials import CredentialStore
@@ -23,7 +32,7 @@ class _AccountDialog(QDialog):
 
         form = QFormLayout()
         self._username_edit = QLineEdit(username)
-        self._alias_edit    = QLineEdit(alias)
+        self._alias_edit = QLineEdit(alias)
         self._alias_edit.setPlaceholderText("Optional — shown instead of username")
         self._password_edit = QLineEdit()
         self._password_edit.setEchoMode(QLineEdit.EchoMode.Password)
@@ -34,9 +43,7 @@ class _AccountDialog(QDialog):
         form.addRow("Alias:", self._alias_edit)
         form.addRow("Password:", self._password_edit)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
@@ -77,20 +84,16 @@ class _ProfileDialog(QDialog):
         self._account_list = QListWidget()
         for acct in SettingsManager.instance().accounts:
             username = acct.get("username", "")
-            alias    = acct.get("alias") or None
+            alias = acct.get("alias") or None
             item = QListWidgetItem(CredentialStore.display_name(username, alias))
             item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
             item.setData(Qt.ItemDataRole.UserRole, username)
             item.setCheckState(
-                Qt.CheckState.Checked
-                if username in (selected_usernames or [])
-                else Qt.CheckState.Unchecked
+                Qt.CheckState.Checked if username in (selected_usernames or []) else Qt.CheckState.Unchecked
             )
             self._account_list.addItem(item)
 
-        buttons = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
@@ -127,8 +130,8 @@ class AccountsTab(QWidget):
         layout.addWidget(self._list, 1)
 
         btn_row = QHBoxLayout()
-        self._add_btn    = QPushButton("Add")
-        self._edit_btn   = QPushButton("Edit")
+        self._add_btn = QPushButton("Add")
+        self._edit_btn = QPushButton("Edit")
         self._delete_btn = QPushButton("Delete")
         self._edit_btn.setEnabled(False)
         self._delete_btn.setEnabled(False)
@@ -154,8 +157,8 @@ class AccountsTab(QWidget):
         layout.addWidget(self._profile_list, 1)
 
         profile_btn_row = QHBoxLayout()
-        self._profile_add_btn    = QPushButton("Add")
-        self._profile_edit_btn   = QPushButton("Edit")
+        self._profile_add_btn = QPushButton("Add")
+        self._profile_edit_btn = QPushButton("Edit")
         self._profile_delete_btn = QPushButton("Delete")
         self._profile_edit_btn.setEnabled(False)
         self._profile_delete_btn.setEnabled(False)
@@ -178,8 +181,8 @@ class AccountsTab(QWidget):
         self._list.clear()
         for acct in SettingsManager.instance().accounts:
             username = acct.get("username", "")
-            alias    = acct.get("alias") or None
-            display  = CredentialStore.display_name(username, alias)
+            alias = acct.get("alias") or None
+            display = CredentialStore.display_name(username, alias)
             item = QListWidgetItem(display)
             item.setData(Qt.ItemDataRole.UserRole, acct)
             self._list.addItem(item)
@@ -216,7 +219,7 @@ class AccountsTab(QWidget):
             return
         acct = self._list.item(row).data(Qt.ItemDataRole.UserRole)
         username = acct.get("username", "")
-        alias    = acct.get("alias", "")
+        alias = acct.get("alias", "")
         dlg = _AccountDialog(username=username, alias=alias, parent=self)
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
@@ -238,7 +241,8 @@ class AccountsTab(QWidget):
         acct = self._list.item(row).data(Qt.ItemDataRole.UserRole)
         username = acct.get("username", "")
         reply = QMessageBox.question(
-            self, "Delete account",
+            self,
+            "Delete account",
             f"Remove '{username}' and its stored password?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
@@ -292,7 +296,7 @@ class AccountsTab(QWidget):
         row = self._profile_list.currentRow()
         if row < 0:
             return
-        profile  = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
+        profile = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
         old_name = profile.get("name", "")
         dlg = _ProfileDialog(
             name=old_name,
@@ -311,7 +315,7 @@ class AccountsTab(QWidget):
             return
         for p in profiles:
             if p["name"] == old_name:
-                p["name"]     = new_name
+                p["name"] = new_name
                 p["accounts"] = dlg.selected_usernames
                 break
         SettingsManager.instance().launch_profiles = profiles
@@ -322,9 +326,10 @@ class AccountsTab(QWidget):
         if row < 0:
             return
         profile = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
-        name    = profile.get("name", "")
-        reply   = QMessageBox.question(
-            self, "Delete profile",
+        name = profile.get("name", "")
+        reply = QMessageBox.question(
+            self,
+            "Delete profile",
             f"Remove launch profile '{name}'?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )

@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.action.apply_level_scaling as als
-
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -91,8 +90,7 @@ async def test_menu_never_appears_fails():
     client = _ready_client()
 
     with (
-        patch("bartlebot.nodes.action.apply_level_scaling._all_menu_visible",
-              new=AsyncMock(return_value=False)),
+        patch("bartlebot.nodes.action.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
         patch.object(als, "POLL_INTERVAL", 0),
         patch.object(als, "INTERACT_TIMEOUT", 0.01),
     ):
@@ -100,6 +98,7 @@ async def test_menu_never_appears_fails():
 
     assert result == "FAILURE"
     from wizwalker import Keycode
+
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
@@ -112,6 +111,7 @@ async def test_success():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
@@ -125,6 +125,7 @@ async def test_empty_clients_to_scale_scales_all():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     for c in (c1, c2):
         assert any(call.args[0] == Keycode.X for call in c.send_key.call_args_list)
 
@@ -143,6 +144,7 @@ async def test_clients_to_scale_subset():
     c1.send_key.assert_not_called()
     c2.teleport.assert_called()
     from wizwalker import Keycode
+
     assert any(call.args[0] == Keycode.X for call in c2.send_key.call_args_list)
 
 
@@ -157,6 +159,7 @@ async def test_out_of_range_client_numbers_skipped():
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
+
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
@@ -169,10 +172,10 @@ async def test_stale_prompt_cleared_before_interaction():
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return True   # stale prompt visible on node entry
+            return True  # stale prompt visible on node entry
         if call_count == 2:
             return False  # cleared after teleporting to reset_xyz
-        return True       # correct prompt visible at interact_xyz
+        return True  # correct prompt visible at interact_xyz
 
     client.is_in_npc_range.side_effect = _npc_range
 
@@ -182,7 +185,7 @@ async def test_stale_prompt_cleared_before_interaction():
     assert result == "SUCCESS"
     # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
     first_tp, second_tp = client.teleport.call_args_list[:2]
-    assert first_tp.args[0].x == 1.0   # reset_xyz
+    assert first_tp.args[0].x == 1.0  # reset_xyz
     assert second_tp.args[0].x == 0.0  # interact_xyz
 
 

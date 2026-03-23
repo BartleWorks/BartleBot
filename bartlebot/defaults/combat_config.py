@@ -21,7 +21,7 @@ _COMBAT_PRIORITY = [
     "any<aura & out_damage>",
     "any<shadow>",
     "any<damage & aoe>[any<mod_damage>]",
-    "any<damage>[any<mod_damage>] @ enemy"
+    "any<damage>[any<mod_damage>] @ enemy",
 ]
 
 # Build the combat config by creating a string from the _COMBAT_PRIORITY list with _SEPARATOR between each entry

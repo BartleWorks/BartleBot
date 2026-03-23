@@ -1,12 +1,12 @@
 """handle_potions node — use potions and refill from Hilda Brewer in the Commons if needed."""
 
 import asyncio
-
-from wizwalker import Keycode, XYZ
-
 import logging
+
+from wizwalker import XYZ, Keycode
+
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.action import go_to_xyz, go_to_zone, mark_location, recall_to_marked_location
+from bartlebot.nodes.action import go_to_zone, mark_location, recall_to_marked_location
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
@@ -17,13 +17,13 @@ from bartlebot.nodes.paths import (
 )
 
 # ── Zone names ─────────────────────────────────────────────────────────────────
-DORM_ZONE      = "WizardCity/Interiors/WC_Housing_Dorm_Interior"
+DORM_ZONE = "WizardCity/Interiors/WC_Housing_Dorm_Interior"
 RAVENWOOD_ZONE = "WizardCity/WC_Ravenwood"
-COMMONS_ZONE   = "WizardCity/WC_Hub"
+COMMONS_ZONE = "WizardCity/WC_Hub"
 
 # ── Navigation coordinates ─────────────────────────────────────────────────────
 # Dorm exit teleport bounding box — triggers Dorm → Ravenwood transition.
-_DORM_EXIT_XYZ      = {"x": -197.23, "y": 1.41, "z": 0.0}
+_DORM_EXIT_XYZ = {"x": -197.23, "y": 1.41, "z": 0.0}
 
 # Ravenwood exit bounding box — triggers Ravenwood → Commons transition.
 _RAVENWOOD_EXIT_XYZ = {"x": -0.7323388457298279, "y": -2200.223388671875, "z": -155.97055053710938}
@@ -36,8 +36,9 @@ _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
 
 # ── Timing constants ───────────────────────────────────────────────────────────
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
-_HOME_LOADING_TIMEOUT = 15.0   # max seconds to wait for a loading screen after HOME.
-_SHOP_OPEN_TIMEOUT    = 5.0    # max seconds to wait for the potion shop window.
+
+_HOME_LOADING_TIMEOUT = 15.0  # max seconds to wait for a loading screen after HOME.
+_SHOP_OPEN_TIMEOUT = 5.0  # max seconds to wait for the potion shop window.
 
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -57,8 +58,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="float",
         label="Use Potion If Mana Below",
         help=(
-            "Mana ratio (0.0–1.0) below which a client should use a potion. "
-            "Set to 0.0 to skip mana-based potion use."
+            "Mana ratio (0.0–1.0) below which a client should use a potion. Set to 0.0 to skip mana-based potion use."
         ),
         default=0.15,
         required=True,
@@ -120,9 +120,9 @@ async def run(machine, clients: list, params: dict) -> str:
         mark_zone       (str):   Optional zone precondition for clients that need to buy.
     """
     health_threshold: float = params["if_health_below"]
-    mana_threshold:   float = params["if_mana_below"]
-    refill:           bool  = params["refill_potions"]
-    mark_zone:        str   = params.get("mark_zone", "") or ""
+    mana_threshold: float = params["if_mana_below"]
+    refill: bool = params["refill_potions"]
+    mark_zone: str = params.get("mark_zone", "") or ""
 
     machine.log(
         f"handle_potions: health_threshold={health_threshold:.2f} "
@@ -136,15 +136,14 @@ async def run(machine, clients: list, params: dict) -> str:
         asyncio.gather(*[c.calc_mana_ratio() for c in clients]),
     )
     machine.log(
-        f"Health: {[round(r, 2) for r in health_ratios]}  "
-        f"Mana: {[round(r, 2) for r in mana_ratios]}",
+        f"Health: {[round(r, 2) for r in health_ratios]}  Mana: {[round(r, 2) for r in mana_ratios]}",
         logging.DEBUG,
     )
 
     low_clients = [
-        c for c, h, m in zip(clients, health_ratios, mana_ratios)
-        if (health_threshold > 0.0 and h < health_threshold)
-        or (mana_threshold > 0.0 and m < mana_threshold)
+        c
+        for c, h, m in zip(clients, health_ratios, mana_ratios)
+        if (health_threshold > 0.0 and h < health_threshold) or (mana_threshold > 0.0 and m < mana_threshold)
     ]
     if low_clients:
         machine.log(
@@ -188,8 +187,7 @@ async def run(machine, clients: list, params: dict) -> str:
         if not all(z == mark_zone for z in zones):
             wrong = [z for z in zones if z != mark_zone]
             machine.log(
-                f"FAILURE: buying clients not in mark_zone "
-                f"(expected={mark_zone!r}, found={wrong})",
+                f"FAILURE: buying clients not in mark_zone (expected={mark_zone!r}, found={wrong})",
                 logging.WARNING,
             )
             return "FAILURE"
@@ -207,14 +205,13 @@ async def run(machine, clients: list, params: dict) -> str:
     # 5. Snapshot the current zone and position (will be the mark and recall target).
     ref = buying_clients[0]
     current_zone = await ref.zone_name()
-    current_pos  = await ref.body.position()
+    current_pos = await ref.body.position()
     recall_params = {
         "zone": current_zone,
-        "xyz":  {"x": current_pos.x, "y": current_pos.y, "z": current_pos.z},
+        "xyz": {"x": current_pos.x, "y": current_pos.y, "z": current_pos.z},
     }
     machine.log(
-        f"Mark/recall point: {current_zone!r} "
-        f"XYZ({current_pos.x:.1f}, {current_pos.y:.1f}, {current_pos.z:.1f})",
+        f"Mark/recall point: {current_zone!r} XYZ({current_pos.x:.1f}, {current_pos.y:.1f}, {current_pos.z:.1f})",
         logging.DEBUG,
     )
 
@@ -232,29 +229,35 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 8. Navigate Dorm → Ravenwood.
     machine.log("Navigating Dorm → Ravenwood…")
-    if await go_to_zone.run(
-        machine,
-        buying_clients,
-        {
-            "from_zone": DORM_ZONE,
-            "to_zone":   RAVENWOOD_ZONE,
-            "xyz":       _DORM_EXIT_XYZ,
-        },
-    ) != "SUCCESS":
+    if (
+        await go_to_zone.run(
+            machine,
+            buying_clients,
+            {
+                "from_zone": DORM_ZONE,
+                "to_zone": RAVENWOOD_ZONE,
+                "xyz": _DORM_EXIT_XYZ,
+            },
+        )
+        != "SUCCESS"
+    ):
         machine.log("FAILURE: Dorm → Ravenwood failed", logging.WARNING)
         return "FAILURE"
 
     # 9. Navigate Ravenwood → Commons.
     machine.log("Navigating Ravenwood → Commons…")
-    if await go_to_zone.run(
-        machine,
-        buying_clients,
-        {
-            "from_zone": RAVENWOOD_ZONE,
-            "to_zone":   COMMONS_ZONE,
-            "xyz":       _RAVENWOOD_EXIT_XYZ,
-        },
-    ) != "SUCCESS":
+    if (
+        await go_to_zone.run(
+            machine,
+            buying_clients,
+            {
+                "from_zone": RAVENWOOD_ZONE,
+                "to_zone": COMMONS_ZONE,
+                "xyz": _RAVENWOOD_EXIT_XYZ,
+            },
+        )
+        != "SUCCESS"
+    ):
         machine.log("FAILURE: Ravenwood → Commons failed", logging.WARNING)
         return "FAILURE"
 
@@ -274,13 +277,12 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("FAILURE: recall_to_marked_location failed", logging.WARNING)
         return "FAILURE"
 
-    machine.log(
-        f"SUCCESS: potions refilled, {len(buying_clients)} client(s) recalled to {current_zone!r}"
-    )
+    machine.log(f"SUCCESS: potions refilled, {len(buying_clients)} client(s) recalled to {current_zone!r}")
     return "SUCCESS"
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     """
@@ -316,9 +318,7 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
             await asyncio.gather(*[c.send_key(Keycode.HOME, 0.1) for c in not_loading])
             await asyncio.sleep(POLL_INTERVAL)
 
-        await node_helpers.wait_until(
-            lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
-        )
+        await node_helpers.wait_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
         machine.log(f"Zones after HOME press {attempt}: {list(zones)}", logging.DEBUG)
@@ -327,8 +327,7 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
 
         if attempt == 1:
             machine.log(
-                f"Not in dorm zone after HOME (got {list(set(zones))}); "
-                f"waiting for GotoDormButton to become enabled…",
+                f"Not in dorm zone after HOME (got {list(set(zones))}); waiting for GotoDormButton to become enabled…",
                 logging.DEBUG,
             )
             if not await node_helpers.wait_until(
@@ -353,31 +352,23 @@ async def _open_potion_shop(machine, clients: list) -> bool:
     Returns True if the shop opened successfully, False after all retries are exhausted.
     """
     for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG
-        )
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG)
         await asyncio.gather(*[c.teleport(_HILDA_XYZ) for c in clients])
 
         if not await node_helpers.wait_until(
             lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
-            machine.log(
-                f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG
-            )
+            machine.log(f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG)
             await asyncio.gather(*[c.teleport(_HILDA_RESET_XYZ) for c in clients])
             continue
 
         machine.log("Pressing X to open potion shop…", logging.DEBUG)
         await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-        if await node_helpers.wait_until(
-            lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, POLL_INTERVAL
-        ):
+        if await node_helpers.wait_until(lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, POLL_INTERVAL):
             return True
 
-        machine.log(
-            f"Potion shop did not open (attempt {attempt}); resetting…", logging.DEBUG
-        )
+        machine.log(f"Potion shop did not open (attempt {attempt}); resetting…", logging.DEBUG)
         await asyncio.gather(*[c.teleport(_HILDA_RESET_XYZ) for c in clients])
 
     machine.log(
@@ -449,15 +440,11 @@ async def _use_potion(client) -> bool:
 
 async def _all_dorm_button_enabled(clients: list) -> bool:
     """Return True when the GotoDormButton is enabled (not grayed) on all clients."""
-    results = await asyncio.gather(
-        *[node_helpers.is_enabled_by_path(c, GOTO_DORM_BUTTON_PATH) for c in clients]
-    )
+    results = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, GOTO_DORM_BUTTON_PATH) for c in clients])
     return all(results)
 
 
 async def _all_shop_open(clients: list) -> bool:
     """Return True when the potion shop window is visible for all clients."""
-    results = await asyncio.gather(
-        *[node_helpers.is_visible_by_path(c, POTION_SHOP_BASE_PATH) for c in clients]
-    )
+    results = await asyncio.gather(*[node_helpers.is_visible_by_path(c, POTION_SHOP_BASE_PATH) for c in clients])
     return all(results)

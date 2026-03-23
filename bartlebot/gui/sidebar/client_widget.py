@@ -4,13 +4,17 @@ import asyncio
 import json
 
 import pyperclip
-from wizwalker import XYZ
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout,
-    QLabel, QPushButton, QFrame,
-)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+from wizwalker import XYZ
 
 from bartlebot.gui.sidebar.sidebar_section import field_label
 
@@ -18,7 +22,7 @@ from bartlebot.gui.sidebar.sidebar_section import field_label
 class ClientWidget(QWidget):
     """Displays live zone/XYZ info and freecam controls for a single client."""
 
-    move_up   = pyqtSignal(int)  # emits this widget's current index
+    move_up = pyqtSignal(int)  # emits this widget's current index
     move_down = pyqtSignal(int)
 
     def __init__(self, client, index: int, total: int, parent=None):
@@ -69,9 +73,7 @@ class ClientWidget(QWidget):
         layout.addWidget(field_label("Current Zone"))
         self._zone_label = QLabel("—")
         self._zone_label.setWordWrap(True)
-        self._zone_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self._zone_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         copy_zone_btn = QPushButton("Copy Zone")
         copy_zone_btn.setFixedWidth(80)
         copy_zone_btn.clicked.connect(self._copy_zone)
@@ -109,25 +111,19 @@ class ClientWidget(QWidget):
         # Freecam controls
         layout.addWidget(field_label("Freecam Controls"))
         self._freecam_btn = QPushButton("Enter Freecam")
-        self._freecam_btn.clicked.connect(
-            lambda: asyncio.ensure_future(self._toggle_freecam())
-        )
+        self._freecam_btn.clicked.connect(lambda: asyncio.ensure_future(self._toggle_freecam()))
         layout.addWidget(self._freecam_btn)
 
         self._tp_btn = QPushButton("TP to Freecam")
         self._tp_btn.setEnabled(False)
-        self._tp_btn.clicked.connect(
-            lambda: asyncio.ensure_future(self._tp_to_freecam())
-        )
+        self._tp_btn.clicked.connect(lambda: asyncio.ensure_future(self._tp_to_freecam()))
         layout.addWidget(self._tp_btn)
 
         # Closest enemy row
         layout.addWidget(field_label("Closest Enemy"))
         self._mob_label = QLabel("—")
         self._mob_label.setWordWrap(True)
-        self._mob_label.setTextInteractionFlags(
-            Qt.TextInteractionFlag.TextSelectableByMouse
-        )
+        self._mob_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         copy_mob_btn = QPushButton("Copy Mob")
         copy_mob_btn.setFixedWidth(80)
         copy_mob_btn.clicked.connect(self._copy_mob)

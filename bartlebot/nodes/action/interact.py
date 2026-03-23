@@ -1,10 +1,10 @@
 """Node: interact with an NPC or world object via the X key."""
 
 import asyncio
-
-from wizwalker import Keycode, XYZ
-
 import logging
+
+from wizwalker import XYZ, Keycode
+
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -21,10 +21,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="interact_xyz",
         type="xyz",
         label="Interact XYZ",
-        help=(
-            "Coordinates of the item to interact with. "
-            "The interact prompt should appear when standing here."
-        ),
+        help=("Coordinates of the item to interact with. The interact prompt should appear when standing here."),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
@@ -54,16 +51,14 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Interacts with an NPC or world object (lever, collectable, etc.) "
-        "and advances through any resulting dialogue."
+        "Interacts with an NPC or world object (lever, collectable, etc.) and advances through any resulting dialogue."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "Interaction complete and all dialogue dismissed."),
         ReturnSpec(
             "FAILURE",
-            "The interact prompt never appeared after retries, "
-            "or dialogue did not clear within the timeout.",
+            "The interact prompt never appeared after retries, or dialogue did not clear within the timeout.",
         ),
     ],
     required_bot_options=[
@@ -80,6 +75,7 @@ NODE_SPEC = NodeSpec(
 )
 
 from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
+
 DIALOG_TIMEOUT = 60.0
 
 
@@ -95,9 +91,7 @@ async def run(machine, clients: list, params: dict) -> str:
     interact = XYZ(**params["interact_xyz"])
     reset = XYZ(**params["reset_xyz"])
 
-    machine.log(
-        f"interact: {zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
-    )
+    machine.log(f"interact: {zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})")
 
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -106,19 +100,14 @@ async def run(machine, clients: list, params: dict) -> str:
     if not all(z == zone for z in zones):
         wrong = [z for z in zones if z != zone]
         machine.log(
-            f"FAILURE: clients not in expected zone "
-            f"(expected={zone!r}, unexpected={wrong})",
+            f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
             logging.WARNING,
         )
         return "FAILURE"
 
     # 2. Resolve which clients should perform the interaction.
     raw: list[int] = params.get("interact_clients") or []
-    interact_indices = (
-        [n - 1 for n in raw if 0 < n <= len(clients)]
-        if raw
-        else list(range(len(clients)))
-    )
+    interact_indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else list(range(len(clients)))
     if not interact_indices:
         machine.log("interact: no clients selected — SUCCESS")
         return "SUCCESS"
@@ -133,8 +122,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if any(prompts):
         stale = [interact_indices[i] for i, p in enumerate(prompts) if p]
         machine.log(
-            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; "
-            f"teleporting to reset_xyz to clear it",
+            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; teleporting to reset_xyz to clear it",
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in active_clients])
@@ -145,9 +133,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 4–5. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
     prompt_appeared = False
     for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG
-        )
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG)
         await asyncio.gather(*[c.teleport(interact) for c in active_clients])
 
         machine.log("Waiting for interact prompt…", logging.DEBUG)
@@ -194,12 +180,8 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
         if any(dialogs):
-            await asyncio.gather(*[
-                c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(active_clients, dialogs) if d
-            ])
+            await asyncio.gather(*[c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(active_clients, dialogs) if d])
         await asyncio.sleep(POLL_INTERVAL)
 
     machine.log("SUCCESS: interaction complete")
     return "SUCCESS"
-
-

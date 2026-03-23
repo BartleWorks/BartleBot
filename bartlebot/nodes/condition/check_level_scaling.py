@@ -37,9 +37,7 @@ async def run(machine, clients: list, params: dict) -> str:
     clients_to_check: list[int] = machine.get_option("Level Scaling Clients", []) or []
 
     check_indices = (
-        [n - 1 for n in clients_to_check if 0 < n <= len(clients)]
-        if clients_to_check
-        else list(range(len(clients)))
+        [n - 1 for n in clients_to_check if 0 < n <= len(clients)] if clients_to_check else list(range(len(clients)))
     )
     check_clients = [clients[i] for i in check_indices]
 

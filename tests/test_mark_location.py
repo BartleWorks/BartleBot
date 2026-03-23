@@ -3,11 +3,10 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from wizwalker import Keycode, XYZ
+from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.action.mark_location as ml
 import bartlebot.nodes.node_helpers as nh
-
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
@@ -25,9 +24,7 @@ def _timer_window(text: str = ""):
 
 
 # Patch _get_window_from_path so the timer is always reported as clear (empty text).
-_TIMER_CLEAR = patch.object(
-    nh, "_get_window_from_path", new=AsyncMock(return_value=_timer_window(""))
-)
+_TIMER_CLEAR = patch.object(nh, "_get_window_from_path", new=AsyncMock(return_value=_timer_window("")))
 # Patch is_enabled_by_path so the RecallButton appears enabled (mark successfully set).
 _RECALL_ENABLED = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
 
@@ -43,6 +40,7 @@ def _ready_client() -> FakeClient:
 # ---------------------------------------------------------------------------
 # Mana checks
 # ---------------------------------------------------------------------------
+
 
 async def test_no_mana_returns_failure():
     """FAILURE when a client has no mana; PAGE_DOWN never pressed."""
@@ -72,6 +70,7 @@ async def test_one_client_no_mana_fails():
 # Zone checks
 # ---------------------------------------------------------------------------
 
+
 async def test_wrong_zone_returns_failure():
     """FAILURE when client is not in the expected zone."""
     client = FakeClient()
@@ -99,6 +98,7 @@ async def test_one_client_wrong_zone_fails():
 # ---------------------------------------------------------------------------
 # XYZ pre-positioning
 # ---------------------------------------------------------------------------
+
 
 async def test_correct_zone_wrong_xyz_teleports_to_target():
     """If in the correct zone but away from the mark XYZ, the client is teleported first."""
@@ -136,6 +136,7 @@ async def test_correct_zone_correct_xyz_no_teleport():
 # Happy paths
 # ---------------------------------------------------------------------------
 
+
 async def test_success_single_client():
     """Happy path: timer clear, RecallButton enabled after marking → SUCCESS, PAGE_DOWN pressed."""
     client = _ready_client()
@@ -165,12 +166,11 @@ async def test_success_multiple_clients():
 # Cooldown timer
 # ---------------------------------------------------------------------------
 
+
 async def test_cooldown_timer_timeout_returns_failure():
     """FAILURE when the mark cooldown timer never clears."""
     client = _ready_client()
-    active_timer = patch.object(
-        nh, "_get_window_from_path", new=AsyncMock(return_value=_timer_window("30"))
-    )
+    active_timer = patch.object(nh, "_get_window_from_path", new=AsyncMock(return_value=_timer_window("30")))
 
     with (
         active_timer,
@@ -186,6 +186,7 @@ async def test_cooldown_timer_timeout_returns_failure():
 # ---------------------------------------------------------------------------
 # Same-spot edge case
 # ---------------------------------------------------------------------------
+
 
 async def test_same_spot_presses_page_down_twice():
     """Same-spot mark scenario: RecallButton grayed after first mark → wait and re-mark.
@@ -212,9 +213,7 @@ async def test_same_spot_remark_cooldown_timeout_returns_failure():
     Both wait_until calls time out, so the node cannot re-mark.
     """
     client = _ready_client()
-    active_timer = patch.object(
-        nh, "_get_window_from_path", new=AsyncMock(return_value=_timer_window("30"))
-    )
+    active_timer = patch.object(nh, "_get_window_from_path", new=AsyncMock(return_value=_timer_window("30")))
     # Button grayed after first (instant) mark attempt.
     recall_disabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
 

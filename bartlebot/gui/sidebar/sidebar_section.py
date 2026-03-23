@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QScrollArea,
-    QSizePolicy, QVBoxLayout, QWidget,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QPlainTextEdit,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
 )
 
 from bartlebot.gui.icon_utils import svg_pixmap
@@ -18,8 +24,8 @@ _PLACEHOLDER = "—"
 # Section header
 # ---------------------------------------------------------------------------
 
-class _SectionHeader(QWidget):
 
+class _SectionHeader(QWidget):
     toggled = pyqtSignal(bool)
 
     def __init__(self, title: str, parent=None):
@@ -56,6 +62,7 @@ class _SectionHeader(QWidget):
 # ---------------------------------------------------------------------------
 # Collapsible section
 # ---------------------------------------------------------------------------
+
 
 class SidebarSection(QWidget):
     """A collapsible section with a bold header and a padded content body.
@@ -107,6 +114,7 @@ class SidebarSection(QWidget):
 # Sidebar base class
 # ---------------------------------------------------------------------------
 
+
 class Sidebar(QScrollArea):
     """Base class for left and right sidebars.
 
@@ -135,6 +143,7 @@ class Sidebar(QScrollArea):
 # ---------------------------------------------------------------------------
 # Shared widget helpers (used by multiple section classes)
 # ---------------------------------------------------------------------------
+
 
 def field_label(text: str) -> QLabel:
     """Semi-bold field label in muted colour."""
