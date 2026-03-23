@@ -10,11 +10,9 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH  # used only to check button state
 
-RECALL_BUTTON_TIMEOUT = 35.0  # wait for RecallButton to become enabled (mark must be set)
-TRIGGER_TIMEOUT = 10.0        # seconds to wait for recall to trigger (loading screen or XYZ move)
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT
 TRIGGER_MARGIN = 5.0          # minimum XYZ movement that counts as a same-zone recall trigger
 POSITION_MARGIN = 10.0        # acceptable distance from target XYZ after recall
-POLL_INTERVAL = 0.25
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -81,10 +79,10 @@ async def run(machine, clients: list, params: dict) -> str:
     # 2. Wait for the RecallButton to be enabled on all clients (mark must be set).
     machine.log("Waiting for RecallButton to become enabled…", logging.DEBUG)
     if not await node_helpers.wait_until(
-        lambda: _all_recall_enabled(clients), RECALL_BUTTON_TIMEOUT, POLL_INTERVAL
+        lambda: _all_recall_enabled(clients), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
-            f"FAILURE: RecallButton not enabled within {RECALL_BUTTON_TIMEOUT}s — no mark set",
+            f"FAILURE: RecallButton not enabled within {COMPASS_TELEPORT_TIMEOUT}s — no mark set",
             logging.WARNING,
         )
         return "FAILURE"

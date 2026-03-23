@@ -81,9 +81,7 @@ NODE_SPEC = NodeSpec(
     ],
 )
 
-ZONE_CHANGE_TIMEOUT = 30.0
-POLL_INTERVAL = 0.25
-MAX_RETRIES = 3
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:

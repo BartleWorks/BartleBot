@@ -68,11 +68,7 @@ NODE_SPEC = NodeSpec(
     ],
 )
 
-PROMPT_TIMEOUT = 5.0
-TRIGGER_TIMEOUT = 10.0
-ZONE_CHANGE_TIMEOUT = 30.0
-POLL_INTERVAL = 0.25
-MAX_RETRIES = 3
+from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -118,7 +114,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.wait_until(
-            lambda: node_helpers.none_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
     # 3. Retry loop: teleport to interact_xyz, wait for prompt on all clients.
@@ -132,7 +128,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for interact prompt on all clients…", logging.DEBUG)
         if await node_helpers.wait_until(
-            lambda: node_helpers.all_in_npc_range(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break

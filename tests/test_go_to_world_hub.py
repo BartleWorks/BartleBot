@@ -64,7 +64,7 @@ async def test_button_timeout_returns_failure():
 
     with (
         patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False)),
-        patch.object(gwh, "BUTTON_TIMEOUT", 0.01),
+        patch.object(gwh, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(gwh, "POLL_INTERVAL", 0),
     ):
         result = await gwh.run(FakeMachine(), [client], _PARAMS)

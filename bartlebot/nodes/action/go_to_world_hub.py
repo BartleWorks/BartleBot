@@ -9,10 +9,7 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
 
-BUTTON_TIMEOUT = 35.0    # 30s cooldown + 5s safety margin
-TRIGGER_TIMEOUT = 10.0   # seconds to wait for loading to start after pressing END
-ZONE_CHANGE_TIMEOUT = 30.0
-POLL_INTERVAL = 0.25
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -70,10 +67,10 @@ async def run(machine, clients: list, params: dict) -> str:
     # 2. Wait for hub button to become enabled (30s cooldown after last use).
     machine.log("Waiting for hub teleport button to become enabled…", logging.DEBUG)
     if not await node_helpers.wait_until(
-        lambda: _all_hub_button_enabled(clients_to_move), BUTTON_TIMEOUT, POLL_INTERVAL
+        lambda: _all_hub_button_enabled(clients_to_move), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
-            f"FAILURE: hub teleport button did not become enabled within {BUTTON_TIMEOUT}s",
+            f"FAILURE: hub teleport button did not become enabled within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
         )
         return "FAILURE"

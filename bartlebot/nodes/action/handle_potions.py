@@ -35,12 +35,9 @@ _HILDA_XYZ = XYZ(-4398.70654296875, 1016.1954345703125, 229.00079345703125)
 _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
 
 # ── Timing constants ───────────────────────────────────────────────────────────
-_DORM_BUTTON_TIMEOUT  = 35.0   # max seconds to wait for GotoDormButton to become enabled.
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
 _HOME_LOADING_TIMEOUT = 15.0   # max seconds to wait for a loading screen after HOME.
-_PROMPT_TIMEOUT       = 5.0    # max seconds to wait for Hilda's interact prompt.
 _SHOP_OPEN_TIMEOUT    = 5.0    # max seconds to wait for the potion shop window.
-_POLL_INTERVAL        = 0.25
-_MAX_HILDA_RETRIES    = 3
 
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -317,10 +314,10 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
                 break
             not_loading = [c for i, c in enumerate(clients) if i not in seen_loading]
             await asyncio.gather(*[c.send_key(Keycode.HOME, 0.1) for c in not_loading])
-            await asyncio.sleep(_POLL_INTERVAL)
+            await asyncio.sleep(POLL_INTERVAL)
 
         await node_helpers.wait_until(
-            lambda: node_helpers.none_loading(clients), None, _POLL_INTERVAL
+            lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL
         )
 
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -336,11 +333,11 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
             )
             if not await node_helpers.wait_until(
                 lambda: _all_dorm_button_enabled(clients),
-                _DORM_BUTTON_TIMEOUT,
-                _POLL_INTERVAL,
+                COMPASS_TELEPORT_TIMEOUT,
+                POLL_INTERVAL,
             ):
                 machine.log(
-                    f"FAILURE: GotoDormButton not enabled within {_DORM_BUTTON_TIMEOUT}s",
+                    f"FAILURE: GotoDormButton not enabled within {COMPASS_TELEPORT_TIMEOUT}s",
                     logging.WARNING,
                 )
                 return False
@@ -355,14 +352,14 @@ async def _open_potion_shop(machine, clients: list) -> bool:
 
     Returns True if the shop opened successfully, False after all retries are exhausted.
     """
-    for attempt in range(1, _MAX_HILDA_RETRIES + 1):
+    for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
-            f"Attempt {attempt}/{_MAX_HILDA_RETRIES}: teleporting to Hilda…", logging.DEBUG
+            f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG
         )
         await asyncio.gather(*[c.teleport(_HILDA_XYZ) for c in clients])
 
         if not await node_helpers.wait_until(
-            lambda: node_helpers.all_in_npc_range(clients), _PROMPT_TIMEOUT, _POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             machine.log(
                 f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG
@@ -374,7 +371,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
         await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
         if await node_helpers.wait_until(
-            lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, _POLL_INTERVAL
+            lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, POLL_INTERVAL
         ):
             return True
 
@@ -384,7 +381,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
         await asyncio.gather(*[c.teleport(_HILDA_RESET_XYZ) for c in clients])
 
     machine.log(
-        f"FAILURE: potion shop never opened after {_MAX_HILDA_RETRIES} attempts",
+        f"FAILURE: potion shop never opened after {MAX_RETRIES} attempts",
         logging.WARNING,
     )
     return False
@@ -411,7 +408,7 @@ async def _buy_potions_for_client(machine, client) -> None:
             await node_helpers.wait_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
                 _SHOP_OPEN_TIMEOUT,
-                _POLL_INTERVAL,
+                POLL_INTERVAL,
             )
 
         await node_helpers.click_by_path(client, POTION_FILL_ALL_PATH)
@@ -440,7 +437,7 @@ async def _buy_potions_for_client(machine, client) -> None:
             await node_helpers.wait_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
                 _SHOP_OPEN_TIMEOUT,
-                _POLL_INTERVAL,
+                POLL_INTERVAL,
             )
 
 

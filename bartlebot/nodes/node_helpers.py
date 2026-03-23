@@ -5,8 +5,7 @@ import asyncio
 from wizwalker import Keycode
 
 from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH, DUNGEON_ENTRANCE_PATH, DUNGEON_WARNING_PATH  # noqa: F401 — re-exported for callers
-
-POLL_INTERVAL = 0.25
+from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
 
 async def all_in_npc_range(clients: list) -> bool:

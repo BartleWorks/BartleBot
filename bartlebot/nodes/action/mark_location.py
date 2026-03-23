@@ -9,10 +9,9 @@ from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH, RECALL_TIMER_PATH
 
-MARK_COOLDOWN_TIMEOUT = 35.0  # 30s game cooldown + 5s safety margin
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
 POST_MARK_WAIT = 2.0          # seconds to wait for UI to reflect mark state after PAGE_DOWN
 STABILIZE_TIMEOUT = 5.0       # seconds to wait for server position to match teleport target
-POLL_INTERVAL = 0.25
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -114,10 +113,10 @@ async def _mark_client(machine, client) -> bool:
     # Wait for any existing mark cooldown to expire.
     machine.log("Waiting for mark cooldown to clear…", logging.DEBUG)
     if not await node_helpers.wait_until(
-        lambda: _timer_is_clear(client), MARK_COOLDOWN_TIMEOUT, POLL_INTERVAL
+        lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
-            f"FAILURE: mark cooldown did not clear within {MARK_COOLDOWN_TIMEOUT}s",
+            f"FAILURE: mark cooldown did not clear within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
         )
         return False
@@ -138,10 +137,10 @@ async def _mark_client(machine, client) -> bool:
         logging.DEBUG,
     )
     if not await node_helpers.wait_until(
-        lambda: _timer_is_clear(client), MARK_COOLDOWN_TIMEOUT, POLL_INTERVAL
+        lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
-            f"FAILURE: re-mark cooldown did not clear within {MARK_COOLDOWN_TIMEOUT}s",
+            f"FAILURE: re-mark cooldown did not clear within {COMPASS_TELEPORT_TIMEOUT}s",
             logging.WARNING,
         )
         return False

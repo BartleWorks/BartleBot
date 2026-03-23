@@ -50,7 +50,7 @@ async def test_named_enemy_uses_vague_name():
 
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "_POLL_INTERVAL", 0):
+         patch.object(hc, "POLL_INTERVAL", 0):
         result = await hc.run(
             FakeMachine(),
             [client],
@@ -75,8 +75,8 @@ async def test_timeout_entering_combat_fails():
     client.in_battle.return_value = False  # never enters combat
 
     with patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "_ENTER_COMBAT_TIMEOUT", 0.01), \
-         patch.object(hc, "_POLL_INTERVAL", 0):
+         patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.01), \
+         patch.object(hc, "POLL_INTERVAL", 0):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
@@ -90,7 +90,7 @@ async def test_success_no_drops():
 
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "_POLL_INTERVAL", 0):
+         patch.object(hc, "POLL_INTERVAL", 0):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 
@@ -123,7 +123,7 @@ async def test_combat_order_sequential():
 
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "_POLL_INTERVAL", 0):
+         patch.object(hc, "POLL_INTERVAL", 0):
         result = await hc.run(machine, [c1, c2], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
@@ -140,7 +140,7 @@ async def test_combat_order_invalid_client_number_skipped():
 
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")), \
-         patch.object(hc, "_POLL_INTERVAL", 0):
+         patch.object(hc, "POLL_INTERVAL", 0):
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 
     # Client 5 doesn't exist (only 1 client), so the combat_order entry is skipped.
@@ -159,7 +159,7 @@ async def test_success_with_drops():
 
     with _patch_run_combat(), \
          patch("bartlebot.utils.drop_detection.snapshot_chat", new=mock_snap), \
-         patch.object(hc, "_POLL_INTERVAL", 0):
+         patch.object(hc, "POLL_INTERVAL", 0):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
 

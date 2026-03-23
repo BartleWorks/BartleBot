@@ -77,7 +77,7 @@ async def test_prompt_never_appears_fails():
     client = FakeClient()
     client.is_in_npc_range.return_value = False
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(ix, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(ix, "INTERACT_TIMEOUT", 0.01):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -103,7 +103,7 @@ async def test_prompt_retry_then_success():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(ix, "PROMPT_TIMEOUT", 0.01),
+        patch.object(ix, "INTERACT_TIMEOUT", 0.01),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 

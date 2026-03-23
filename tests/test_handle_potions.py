@@ -351,7 +351,7 @@ async def test_home_lands_in_dorm_first_try():
     client    = _dorm_client()
     none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
 
-    with none_load, patch.object(hp, "_POLL_INTERVAL", 0):
+    with none_load, patch.object(hp, "POLL_INTERVAL", 0):
         result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     assert result is True
@@ -367,7 +367,7 @@ async def test_home_wrong_zone_dorm_button_wait_second_press_succeeds():
     none_load   = patch.object(nh, "none_loading",       new=AsyncMock(return_value=True))
     btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
 
-    with none_load, btn_enabled, patch.object(hp, "_POLL_INTERVAL", 0):
+    with none_load, btn_enabled, patch.object(hp, "POLL_INTERVAL", 0):
         result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     assert result is True
@@ -384,8 +384,8 @@ async def test_home_dorm_button_timeout_returns_false():
     with (
         none_load,
         btn_disabled,
-        patch.object(hp, "_DORM_BUTTON_TIMEOUT", 0.01),
-        patch.object(hp, "_POLL_INTERVAL", 0),
+        patch.object(hp, "COMPASS_TELEPORT_TIMEOUT", 0.01),
+        patch.object(hp, "POLL_INTERVAL", 0),
     ):
         result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
 
@@ -400,7 +400,7 @@ async def test_home_both_attempts_wrong_zone_returns_false():
     none_load   = patch.object(nh, "none_loading",       new=AsyncMock(return_value=True))
     btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
 
-    with none_load, btn_enabled, patch.object(hp, "_POLL_INTERVAL", 0):
+    with none_load, btn_enabled, patch.object(hp, "POLL_INTERVAL", 0):
         result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     assert result is False
@@ -416,7 +416,7 @@ async def test_home_loading_timeout_still_checks_zone():
     with (
         none_load,
         patch.object(hp, "_HOME_LOADING_TIMEOUT", 0.01),
-        patch.object(hp, "_POLL_INTERVAL", 0),
+        patch.object(hp, "POLL_INTERVAL", 0),
     ):
         result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
 
@@ -436,7 +436,7 @@ async def test_home_repressed_for_lagging_client():
 
     none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
 
-    with none_load, patch.object(hp, "_POLL_INTERVAL", 0):
+    with none_load, patch.object(hp, "POLL_INTERVAL", 0):
         result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [c1, c2])
 
     assert result is True
@@ -454,7 +454,7 @@ async def test_shop_opens_first_attempt():
     npc_patch   = patch.object(nh, "all_in_npc_range",   new=AsyncMock(return_value=True))
     shop_patch  = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
 
-    with npc_patch, shop_patch, patch.object(hp, "_POLL_INTERVAL", 0):
+    with npc_patch, shop_patch, patch.object(hp, "POLL_INTERVAL", 0):
         result = await hp._open_potion_shop(FakeMachine(), [client])
 
     assert result is True
@@ -490,7 +490,7 @@ async def test_shop_window_never_opens_returns_false():
         npc_patch,
         shop_patch,
         patch.object(hp, "_SHOP_OPEN_TIMEOUT", 0.01),
-        patch.object(hp, "_POLL_INTERVAL", 0),
+        patch.object(hp, "POLL_INTERVAL", 0),
     ):
         result = await hp._open_potion_shop(FakeMachine(), [client])
 
@@ -508,7 +508,7 @@ async def test_shop_opens_on_second_attempt():
         npc_patch,
         shop_patch,
         patch.object(hp, "_SHOP_OPEN_TIMEOUT", 0.01),
-        patch.object(hp, "_POLL_INTERVAL", 0),
+        patch.object(hp, "POLL_INTERVAL", 0),
     ):
         result = await hp._open_potion_shop(FakeMachine(), [client])
 
@@ -597,7 +597,7 @@ async def test_buy_reopens_shop_if_closed_at_start_of_iteration():
         vis_patch,
         _SLEEP,
         patch.object(hp, "_SHOP_OPEN_TIMEOUT", 0.01),
-        patch.object(hp, "_POLL_INTERVAL", 0),
+        patch.object(hp, "POLL_INTERVAL", 0),
     ):
         await hp._buy_potions_for_client(FakeMachine(), client)
 

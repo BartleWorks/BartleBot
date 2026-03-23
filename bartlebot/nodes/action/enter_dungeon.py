@@ -77,10 +77,7 @@ NODE_SPEC = NodeSpec(
     ],
 )
 
-PROMPT_TIMEOUT = 5.0
-ZONE_CHANGE_TIMEOUT = 30.0
-POLL_INTERVAL = 0.25
-MAX_RETRIES = 3
+from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -123,7 +120,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.wait_until(
-            lambda: node_helpers.none_at_dungeon_entrance(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
     # 3. Retry loop: teleport to sigil, wait for dungeon entrance prompt.
@@ -136,7 +133,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
         if await node_helpers.wait_until(
-            lambda: node_helpers.all_at_dungeon_entrance(clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break

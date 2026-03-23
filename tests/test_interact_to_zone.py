@@ -116,7 +116,7 @@ async def test_prompt_never_appears_fails():
     client.zone_name.return_value = _FROM_ZONE
     client.is_in_npc_range.return_value = False  # prompt never shows
 
-    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "INTERACT_TIMEOUT", 0.01):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -143,7 +143,7 @@ async def test_prompt_retry_then_success():
     client.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE]
     client.is_loading.side_effect = [True, False]
 
-    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "PROMPT_TIMEOUT", 0.01):
+    with patch.object(itz, "POLL_INTERVAL", 0), patch.object(itz, "INTERACT_TIMEOUT", 0.01):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"

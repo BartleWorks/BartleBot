@@ -70,7 +70,7 @@ async def test_no_mark_set_returns_failure():
 
     with (
         no_mark,
-        patch.object(rtm, "RECALL_BUTTON_TIMEOUT", 0.01),
+        patch.object(rtm, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(rtm, "POLL_INTERVAL", 0),
     ):
         result = await rtm.run(FakeMachine(), [client], _PARAMS)

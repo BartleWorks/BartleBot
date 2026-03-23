@@ -73,8 +73,7 @@ NODE_SPEC = NodeSpec(
     ],
 )
 
-_ENTER_COMBAT_TIMEOUT = 30.0
-_POLL_INTERVAL = 0.25
+from bartlebot.nodes.timing import ENTER_COMBAT_TIMEOUT, POLL_INTERVAL
 _TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 
 
@@ -130,10 +129,10 @@ async def run(machine, clients: list, params: dict) -> str:
                     logging.DEBUG,
                 )
                 continue
-            if not await _tp_and_wait_for_combat(clients[idx], enemy_name, _ENTER_COMBAT_TIMEOUT):
+            if not await _tp_and_wait_for_combat(clients[idx], enemy_name, ENTER_COMBAT_TIMEOUT):
                 machine.log(
                     f"FAILURE: client {client_num} did not enter combat within "
-                    f"{_ENTER_COMBAT_TIMEOUT}s",
+                    f"{ENTER_COMBAT_TIMEOUT}s",
                     logging.WARNING,
                 )
                 return "FAILURE"
@@ -143,13 +142,13 @@ async def run(machine, clients: list, params: dict) -> str:
             "Teleporting all clients to target (retrying until in combat)…", logging.DEBUG
         )
         results = await asyncio.gather(
-            *[_tp_and_wait_for_combat(c, enemy_name, _ENTER_COMBAT_TIMEOUT) for c in clients]
+            *[_tp_and_wait_for_combat(c, enemy_name, ENTER_COMBAT_TIMEOUT) for c in clients]
         )
         if not all(results):
             not_in_battle = [i for i, ok in enumerate(results) if not ok]
             machine.log(f"Clients not in battle at timeout: {not_in_battle}", logging.DEBUG)
             machine.log(
-                f"FAILURE: timed out after {_ENTER_COMBAT_TIMEOUT}s waiting for "
+                f"FAILURE: timed out after {ENTER_COMBAT_TIMEOUT}s waiting for "
                 "clients to enter combat",
                 logging.WARNING,
             )
@@ -272,7 +271,7 @@ async def _tp_and_wait_for_combat(client, enemy_name: str, timeout: float) -> bo
         while asyncio.get_event_loop().time() < retry_at:
             if await client.in_battle():
                 return True
-            await asyncio.sleep(_POLL_INTERVAL)
+            await asyncio.sleep(POLL_INTERVAL)
 
         if asyncio.get_event_loop().time() >= deadline:
             break

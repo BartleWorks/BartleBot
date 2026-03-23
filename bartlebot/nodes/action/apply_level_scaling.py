@@ -70,10 +70,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
 )
 
-PROMPT_TIMEOUT = 5.0
-MENU_TIMEOUT = 10.0
-POLL_INTERVAL = 0.25
-MAX_RETRIES = 3
+from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -124,7 +121,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
         await node_helpers.wait_until(
-            lambda: node_helpers.none_in_npc_range(scale_clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
     # 4-5. Retry loop: teleport to interact_xyz, wait for prompt.
@@ -137,7 +134,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for interact prompt…", logging.DEBUG)
         if await node_helpers.wait_until(
-            lambda: node_helpers.all_in_npc_range(scale_clients), PROMPT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -162,10 +159,10 @@ async def run(machine, clients: list, params: dict) -> str:
     # 7. Wait for NPCServicesWin option button to appear.
     machine.log("Waiting for NPCServicesWin menu…", logging.DEBUG)
     if not await node_helpers.wait_until(
-        lambda: _all_menu_visible(scale_clients), MENU_TIMEOUT, POLL_INTERVAL
+        lambda: _all_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
     ):
         machine.log(
-            f"FAILURE: NPCServicesWin option button never appeared within {MENU_TIMEOUT}s",
+            f"FAILURE: NPCServicesWin option button never appeared within {INTERACT_TIMEOUT}s",
             logging.WARNING,
         )
         return "FAILURE"
@@ -179,7 +176,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 9. Wait for menu to dismiss.
     machine.log("Waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
     await node_helpers.wait_until(
-        lambda: _none_menu_visible(scale_clients), MENU_TIMEOUT, POLL_INTERVAL
+        lambda: _none_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
     )
 
     # 10. Verify elixir is active on all scaled clients.

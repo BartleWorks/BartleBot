@@ -174,7 +174,7 @@ async def test_cooldown_timer_timeout_returns_failure():
 
     with (
         active_timer,
-        patch.object(ml, "MARK_COOLDOWN_TIMEOUT", 0.01),
+        patch.object(ml, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(ml, "POLL_INTERVAL", 0),
     ):
         result = await ml.run(FakeMachine(), [client], _PARAMS)
@@ -221,7 +221,7 @@ async def test_same_spot_remark_cooldown_timeout_returns_failure():
     with (
         active_timer,
         recall_disabled,
-        patch.object(ml, "MARK_COOLDOWN_TIMEOUT", 0.01),
+        patch.object(ml, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(ml, "POLL_INTERVAL", 0),
         patch.object(ml, "POST_MARK_WAIT", 0),
     ):
