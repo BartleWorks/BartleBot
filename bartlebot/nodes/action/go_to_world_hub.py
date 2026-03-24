@@ -34,6 +34,7 @@ NODE_SPEC = NodeSpec(
             "or not all clients arrived in the expected hub zone.",
         ),
     ],
+    max_consecutive_retries=10,
 )
 
 

@@ -64,9 +64,10 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
+    max_consecutive_retries=5,
 )
 
-from bartlebot.nodes.timing import ENTER_COMBAT_TIMEOUT, POLL_INTERVAL
+from bartlebot.nodes.timing import ENTER_COMBAT_TIMEOUT, POLL_INTERVAL, TARGET_ACQUIRE_DELAY, TARGET_ACQUIRE_RETRIES
 
 _TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 
@@ -93,12 +94,27 @@ async def run(machine, clients: list, params: dict) -> str:
         logging.DEBUG,
     )
 
-    # 1. Resolve target entity for each client
-    targets = await asyncio.gather(*[_find_target(c, enemy_name) for c in clients])
-    if not all(targets):
-        none_idx = [i for i, t in enumerate(targets) if t is None]
+    # 1. Resolve target entity for each client, retrying to allow enemies time to load.
+    targets = None
+    results: list = []
+    for attempt in range(TARGET_ACQUIRE_RETRIES):
+        results = list(await asyncio.gather(*[_find_target(c, enemy_name) for c in clients]))
+        if all(results):
+            targets = results
+            break
+        if attempt < TARGET_ACQUIRE_RETRIES - 1:
+            machine.log(
+                f"Target not found on attempt {attempt + 1}/{TARGET_ACQUIRE_RETRIES},"
+                f" waiting {TARGET_ACQUIRE_DELAY}s for enemy to load\u2026",
+                logging.DEBUG,
+            )
+            await asyncio.sleep(TARGET_ACQUIRE_DELAY)
+
+    if not targets:
+        none_idx = [i for i, t in enumerate(results) if t is None]
         machine.log(
-            f"FAILURE: target not found for client(s) {none_idx} (enemy={enemy_display})",
+            f"FAILURE: target not found for client(s) {none_idx} after"
+            f" {TARGET_ACQUIRE_RETRIES} attempt(s) (enemy={enemy_display})",
             logging.WARNING,
         )
         return "FAILURE"

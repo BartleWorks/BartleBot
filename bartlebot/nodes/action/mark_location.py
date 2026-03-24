@@ -48,6 +48,7 @@ NODE_SPEC = NodeSpec(
             "or the mark cooldown timer did not clear within the timeout.",
         ),
     ],
+    max_consecutive_retries=5,
 )
 
 

@@ -77,14 +77,18 @@ class NodeSpec:
     The GUI reads directly from NodeSpec; markdown docs are secondary.
 
     Attributes:
-        description:          Short description of what the node does.
-        params:               Ordered list of parameter fields accepted by this node.
-        returns:              Ordered list of possible return values from this node.
-        required_bot_options: Bot-level options this node needs. The editor auto-injects
-                              them and prevents deletion while the node is present.
+        description:             Short description of what the node does.
+        params:                  Ordered list of parameter fields accepted by this node.
+        returns:                 Ordered list of possible return values from this node.
+        required_bot_options:    Bot-level options this node needs. The editor auto-injects
+                                 them and prevents deletion while the node is present.
+        max_consecutive_retries: Maximum number of times the FSM may self-loop on this
+                                 node type before BotMachine stops the bot. None = no limit.
+                                 Set by the node author based on worst-case tick duration.
     """
 
     description: str
     params: list[ParamField] = field(default_factory=list)
     returns: list[ReturnSpec] = field(default_factory=list)
     required_bot_options: list[BotOptionSpec] = field(default_factory=list)
+    max_consecutive_retries: int | None = None

@@ -40,6 +40,7 @@ NODE_SPEC = NodeSpec(
             "reached the target XYZ after teleporting.",
         ),
     ],
+    max_consecutive_retries=20,
 )
 
 

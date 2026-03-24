@@ -49,6 +49,7 @@ NODE_SPEC = NodeSpec(
             "after recalling.",
         ),
     ],
+    max_consecutive_retries=5,
 )
 
 

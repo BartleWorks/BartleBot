@@ -63,6 +63,7 @@ NODE_SPEC = NodeSpec(
             "the timeout, or not all clients arrived in to_zone.",
         ),
     ],
+    max_consecutive_retries=10,
 )
 
 from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT

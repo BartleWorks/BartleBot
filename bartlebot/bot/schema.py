@@ -83,8 +83,13 @@ class BotConfig(BaseModel):
             raise ValueError(f"initial state '{self.initial}' is not in states list")
         return self
 
-    def to_machine_config(self) -> dict:
-        """Convert to the flat dict format BotMachine expects."""
+    def to_machine_config(self, node_specs: dict | None = None) -> dict:
+        """Convert to the flat dict format BotMachine expects.
+
+        If node_specs (a dict mapping node_type -> NodeSpec) is provided, each state
+        dict will include a ``max_consecutive_retries`` key when the corresponding
+        NodeSpec declares one. BotMachine uses this for per-state idle detection.
+        """
         trans_list = []
         for t in self.transitions:
             d: dict = {"trigger": t.trigger, "source": t.source, "dest": t.dest}
@@ -95,9 +100,17 @@ class BotConfig(BaseModel):
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
+        states = []
+        for s in self.states:
+            sd = s.model_dump()
+            if node_specs:
+                spec = node_specs.get(s.node_type)
+                if spec is not None and spec.max_consecutive_retries is not None:
+                    sd["max_consecutive_retries"] = spec.max_consecutive_retries
+            states.append(sd)
         return {
             "initial": self.initial,
-            "states": [s.model_dump() for s in self.states],
+            "states": states,
             "transitions": trans_list,
             "default_combat_config": self.default_combat_config,
         }

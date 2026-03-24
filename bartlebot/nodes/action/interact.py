@@ -72,6 +72,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
+    max_consecutive_retries=10,
 )
 
 from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL

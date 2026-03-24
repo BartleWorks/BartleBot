@@ -10,12 +10,12 @@ from wizwalker.errors import MemoryReadError
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot.bot.machine import BotMachine
-from bartlebot.settings_manager import SettingsManager
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
-from bartlebot.nodes.registry import NODE_REGISTRY
+from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
+from bartlebot.settings_manager import SettingsManager
 
 
 class AppController(QObject):
@@ -162,7 +162,7 @@ class AppController(QObject):
             return
         machine = BotMachine(
             clients=self._clients,
-            config=self._loaded_config.to_machine_config(),
+            config=self._loaded_config.to_machine_config(node_specs=NODE_SPECS),
             node_registry=NODE_REGISTRY,
             bot_config=self._loaded_config,
             on_state_change=self._on_machine_state_change,

@@ -32,6 +32,7 @@ class BotMachine:
         on_transition: Callable[[str, str, str], None] | None = None,
         on_drop: Callable[[str, int, int], None] | None = None,
         on_log: Callable[[str, int], None] | None = None,
+        max_consecutive_same_state: int | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -48,6 +49,8 @@ class BotMachine:
         self._ambient_combat_lock = asyncio.Lock()
         self.last_result: str | None = None
         self._no_match_count: int = 0
+        self._max_consecutive_same_state = max_consecutive_same_state
+        self._consecutive_same_state_count: int = 0
 
         self._state_map = {s["id"]: s for s in config["states"]}
 
@@ -196,6 +199,26 @@ class BotMachine:
                                     prev_state,
                                     self.state,
                                 )
+
+                    # Per-state idle detection (independent of no-match counter).
+                    # Counts how many consecutive ticks the FSM has stayed on the same
+                    # state (whether via a self-loop transition or a no-match).
+                    per_state_limit = state_def.get("max_consecutive_retries")
+                    effective_limit = (
+                        per_state_limit if per_state_limit is not None else self._max_consecutive_same_state
+                    )
+                    if self.state == state_id:
+                        self._consecutive_same_state_count += 1
+                        if effective_limit is not None and self._consecutive_same_state_count >= effective_limit:
+                            self.log(
+                                f"State {state_id!r} active for"
+                                f" {self._consecutive_same_state_count} consecutive ticks"
+                                " without advancing; stopping.",
+                                logging.WARNING,
+                            )
+                            self.stop()
+                    else:
+                        self._consecutive_same_state_count = 0
         finally:
             watcher.cancel()
             combat_watcher.cancel()

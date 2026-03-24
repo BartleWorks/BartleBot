@@ -106,6 +106,7 @@ NODE_SPEC = NodeSpec(
             "or the potion shop could not be reached.",
         ),
     ],
+    max_consecutive_retries=5,
 )
 
 
