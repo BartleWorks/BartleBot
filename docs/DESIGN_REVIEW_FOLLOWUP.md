@@ -111,7 +111,7 @@ These directly impact whether the bot can run unattended.
 
 | Status | Item | Effort | What to do |
 |--------|------|--------|------------|
-| `TODO` | Max iterations / max runtime / idle detection | Low | Add `max_ticks`, `max_runtime_seconds`, `max_consecutive_same_state` to `BotMachine`. Counter and timer in the run loop. |
+| `DONE` | Idle detection (`max_consecutive_same_state`) | Low | `max_ticks` skipped — impractical because FSMs loop by design. `max_runtime_seconds` deferred — no clear use case identified. `max_consecutive_same_state` implemented as a per-node default via `NodeSpec.max_consecutive_retries` (baked into the machine config by `BotConfig.to_machine_config(node_specs=NODE_SPECS)`). Each node declares a sensible limit based on its worst-case tick duration; the machine stops and logs a WARNING when the threshold is reached. A machine-level `max_consecutive_same_state` fallback is also available on `BotMachine.__init__`. `handle_combat` was also updated to retry target acquisition up to 3× with a 3 s delay before returning FAILURE, so the "enemy not yet loaded" scenario is absorbed internally rather than burning FSM retries. |
 | `TODO` | Dead client detection | Medium | Health check before each tick in `BotMachine.run()` — call a lightweight WizWalker method, mark client dead after 3 consecutive `MemoryReadError`. |
 | `TODO` | Disconnect/ban detection | Medium | Check zone name or window state for login/disconnect indicators before each node execution. |
 | `TODO` | Background watchers pause during bot pause | Low | Check `_resume_event.is_set()` in watcher loops. One-line fix per watcher. |

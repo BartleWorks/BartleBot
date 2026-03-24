@@ -34,7 +34,7 @@ async def test_no_target_found_fails():
     client = FakeClient()
     client.find_closest_mob.return_value = None
 
-    with _patch_run_combat():
+    with _patch_run_combat(), patch.object(hc, "TARGET_ACQUIRE_DELAY", 0):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
