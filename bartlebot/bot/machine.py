@@ -33,6 +33,7 @@ class BotMachine:
         on_drop: Callable[[str, int, int], None] | None = None,
         on_log: Callable[[str, int], None] | None = None,
         max_consecutive_same_state: int | None = None,
+        on_client_disconnected: Callable | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -42,6 +43,7 @@ class BotMachine:
         self._on_transition = on_transition
         self._on_drop = on_drop
         self._on_log = on_log
+        self._on_client_disconnected = on_client_disconnected
         self._stop_flag = asyncio.Event()
         self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)
         self._resume_event = asyncio.Event()
@@ -51,6 +53,7 @@ class BotMachine:
         self._no_match_count: int = 0
         self._max_consecutive_same_state = max_consecutive_same_state
         self._consecutive_same_state_count: int = 0
+        self._disconnect_notified: set[int] = set()  # client indices already reported
 
         self._state_map = {s["id"]: s for s in config["states"]}
 
@@ -132,6 +135,7 @@ class BotMachine:
         """Drive the FSM until stop() is called."""
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
+        disconnect_watcher = asyncio.create_task(self._disconnect_watcher())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -222,11 +226,42 @@ class BotMachine:
         finally:
             watcher.cancel()
             combat_watcher.cancel()
-            for t in (watcher, combat_watcher):
+            disconnect_watcher.cancel()
+            for t in (watcher, combat_watcher, disconnect_watcher):
                 try:
                     await t
                 except asyncio.CancelledError:
                     pass
+
+    async def _disconnect_watcher(self) -> None:
+        """Background task: detect disconnect popup on each client and click OK.
+
+        Checks every 5 seconds for the disconnect modal window. When found, clicks the OK
+        button (which closes the game). The resulting process exit is detected by
+        AppController._client_loop, which then triggers the reconnect procedure.
+
+        DISCONNECT_POPUP_OK_PATH is empty by default; fill it in paths.py after discovering
+        the correct UI path by triggering a disconnect and walking client.root_window.
+        """
+        from bartlebot.nodes.node_helpers import click_by_path, is_visible_by_path  # noqa: PLC0415
+        from bartlebot.nodes.paths import DISCONNECT_POPUP_OK_PATH  # noqa: PLC0415
+
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(5.0)
+            if not self.clients or not DISCONNECT_POPUP_OK_PATH:
+                continue
+            for i, client in enumerate(list(self.clients)):
+                if i in self._disconnect_notified:
+                    continue
+                try:
+                    if await is_visible_by_path(client, DISCONNECT_POPUP_OK_PATH):
+                        logger.warning("Disconnect popup detected on client %d — clicking OK", i)
+                        self._disconnect_notified.add(i)
+                        await click_by_path(client, DISCONNECT_POPUP_OK_PATH)
+                        # Game will close; AppController._client_loop detects the removal
+                        # and triggers the reconnect procedure.
+                except Exception:
+                    logger.debug("Disconnect watcher: error on client %d", i, exc_info=True)
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
@@ -349,4 +384,12 @@ class BotMachine:
 
     def resume(self) -> None:
         """Resume a paused FSM."""
+        self._disconnect_notified.clear()  # allow re-detection on recovered client positions
         self._resume_event.set()
+
+    def force_state(self, state_id: str) -> None:
+        """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks."""
+        self.set_state(state_id)
+        self._consecutive_same_state_count = 0
+        self._no_match_count = 0
+        logger.info("FSM state forced to %r (recovery)", state_id)

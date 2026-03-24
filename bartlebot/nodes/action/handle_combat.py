@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import re
+import time
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -35,6 +36,17 @@ PARAM_SCHEMA: list[ParamField] = [
         default="",
         default_hint="Default: uses the bot-level or BartleBot built-in combat config",
         disabled_by="use_bot_default",
+    ),
+    ParamField(
+        key="max_duration",
+        type="float",
+        label="Max Duration (s)",
+        help=(
+            "If the entire combat node (target acquisition + waiting for battle + SprintyCombat) "
+            "exceeds this many seconds, exit early with FAILURE. "
+            "0 = no limit."
+        ),
+        default=0.0,
     ),
 ]
 
@@ -75,6 +87,13 @@ _TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 async def run(machine, clients: list, params: dict) -> str:
     """Enter and complete a combat encounter for all clients."""
     from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
+
+    max_duration: float = float(params.get("max_duration", 0.0))
+    _node_start = time.monotonic()
+
+    def _check_max_duration() -> bool:
+        """Return True if max_duration is set and has been exceeded."""
+        return max_duration > 0 and time.monotonic() - _node_start > max_duration
 
     enemy_name: str = params.get("enemy", "")
     use_bot_default: bool = params.get("use_bot_default", True)
@@ -119,6 +138,13 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
+    if _check_max_duration():
+        machine.log(
+            f"FAILURE: max_duration {max_duration:.0f}s exceeded during target acquisition",
+            logging.WARNING,
+        )
+        return "FAILURE"
+
     machine.log(f"Targets resolved for {len(clients)} client(s)", logging.DEBUG)
 
     # 2. Snapshot chat before combat so we can diff for drops afterward
@@ -154,6 +180,13 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
+
+    if _check_max_duration():
+        machine.log(
+            f"FAILURE: max_duration {max_duration:.0f}s exceeded before SprintyCombat",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     machine.log("All clients in combat — running SprintyCombat")
 
