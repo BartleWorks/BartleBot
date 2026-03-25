@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
-from wizwalker.errors import ClientClosedError
+from wizwalker.errors import ClientClosedError, MemoryReadError
 
 logger = logging.getLogger(__name__)
 
@@ -163,12 +163,19 @@ class BotMachine:
                 node_fn = self._registry[node_type]
                 try:
                     self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
-                except ClientClosedError:
+                except (ClientClosedError, MemoryReadError) as exc:
                     # A client process has died. Pause immediately rather than treating
                     # this as a normal FAILURE — prevents the no-match / idle counters
                     # from hitting their limits before _client_loop detects the removal
                     # and triggers the recovery procedure.
-                    logger.warning("ClientClosedError in state %r — client died, pausing for recovery", state_id)
+                    # MemoryReadError (e.g. error 299 = ERROR_PARTIAL_COPY) occurs when the
+                    # process dies before WizWalker's ClientClosedError fires; both indicate
+                    # a dead game process and need the same recovery path.
+                    logger.warning(
+                        "%s in state %r — client may have died, pausing for recovery",
+                        type(exc).__name__,
+                        state_id,
+                    )
                     self._no_match_count = 0
                     self._consecutive_same_state_count = 0
                     self.pause()
