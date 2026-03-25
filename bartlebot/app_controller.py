@@ -280,6 +280,11 @@ class AppController(QObject):
 
                 clients = list(self._handler.clients)
                 if not clients:
+                    # Detect removals before clearing the list — handles the case where the
+                    # last remaining client(s) crash, which would otherwise skip _on_clients_removed.
+                    if self._clients:
+                        removed_hwnds = {c.window_handle for c in self._clients}
+                        self._on_clients_removed(removed_hwnds)
                     self._sync_embedded_clients(self._clients, [])
                     self._clients = []
                     if self._current_machine:
@@ -432,7 +437,12 @@ class AppController(QObject):
         # Game view panel is always visible; no need to show/hide on client changes.
 
     async def _run_recovery_queue(self) -> None:
-        """Process _pending_recovery sequentially — one client at a time."""
+        """Process _pending_recovery sequentially — one client at a time.
+
+        The FSM is kept paused for the entire duration (across all clients). Once all
+        pending recoveries complete successfully, the FSM is jumped to recovery_state
+        and resumed exactly once.
+        """
         try:
             while self._pending_recovery:
                 orig_pos, username = next(iter(self._pending_recovery.items()))
@@ -443,6 +453,21 @@ class AppController(QObject):
                     if self._current_machine:
                         self._current_machine.stop()
                 self._pending_recovery.pop(orig_pos, None)
+
+            # All pending clients are back in-game — jump to recovery state and resume.
+            machine = self._current_machine
+            if machine and not machine._stop_flag.is_set():
+                recovery_state = self._loaded_config.recovery_state if self._loaded_config else None
+                if recovery_state:
+                    machine.force_state(recovery_state)
+                    machine.resume()
+                    logger.info("All clients recovered — FSM resuming at %r", recovery_state)
+                else:
+                    logger.warning(
+                        "Bot config has no recovery_state set — stopping. "
+                        "Set recovery_state in your bot config to enable automatic recovery."
+                    )
+                    machine.stop()
         finally:
             self._recovery_in_progress = False
 
@@ -462,8 +487,6 @@ class AppController(QObject):
         machine = self._current_machine
         if machine is None:
             return
-
-        machine.pause()
 
         password = CredentialStore.retrieve(username)
         if not password:
@@ -532,24 +555,11 @@ class AppController(QObject):
             machine.stop()
             return
 
-        logger.info("Client '%s' recovered and in-game", display_name)
+        logger.info("Client '%s' recovered and in-game, slot %d restored", display_name, orig_pos)
 
         # Restore the slot so the next _client_loop rebuild puts the client back in order.
         # machine.clients is kept in sync by _client_loop automatically.
         self._client_order[orig_pos] = username
-
-        # Jump FSM to recovery state and resume
-        recovery_state = self._loaded_config.recovery_state if self._loaded_config else None
-        if recovery_state:
-            machine.force_state(recovery_state)
-            machine.resume()
-            logger.info("Recovery complete — FSM resuming at %r", recovery_state)
-        else:
-            logger.warning(
-                "Bot config has no recovery_state set — stopping. "
-                "Set recovery_state in your bot config to enable automatic recovery."
-            )
-            machine.stop()
 
     def swap_clients(self, idx_a: int, idx_b: int) -> None:
         """Swap the positions of two clients in the live list.
