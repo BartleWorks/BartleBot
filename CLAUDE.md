@@ -56,7 +56,7 @@ Use Python `logging` module with per-module loggers:
 import logging
 logger = logging.getLogger(__name__)
 ```
-Never use `print()` for diagnostics. Logging is configured in `bartlebot/logging_setup.py` — RotatingFileHandler writes to `logs/bartlebot.log`, plus a GUI bridge handler for the in-app log widget.
+Never use `print()` for diagnostics. Logging is configured in `bartlebot/logging_setup.py` — per-session timestamped files in `logs/` (10 most recent kept), plus a GUI bridge handler for the in-app log widget.
 
 ### GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
