@@ -464,3 +464,87 @@ async def test_no_match_stops_after_threshold(caplog):
     assert machine._stop_flag.is_set()
     assert machine._no_match_count == 10
     assert any("stuck after" in r.message for r in caplog.records)
+
+
+# ---------------------------------------------------------------------------
+# Per-state idle detection (max_consecutive_retries / max_consecutive_same_state)
+# ---------------------------------------------------------------------------
+
+SELF_LOOP_ONLY_CONFIG = {
+    "initial": "state_a",
+    "states": [
+        {"id": "state_a", "node_type": "mock", "params": {}, "max_consecutive_retries": 3},
+    ],
+    "transitions": [
+        {"trigger": "advance", "source": "state_a", "dest": "state_a"},
+    ],
+}
+
+
+async def test_consecutive_same_state_stops_at_per_state_limit(caplog):
+    """Machine stops after max_consecutive_retries self-loop ticks on one state."""
+    calls = [0]
+
+    async def node(machine, clients, params):
+        calls[0] += 1
+        return "FAILURE"  # always self-loops
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.bot.machine"):
+        registry = {"mock": node}
+        machine = BotMachine(clients=[], config=SELF_LOOP_ONLY_CONFIG, node_registry=registry)
+        await machine.run()
+
+    assert machine._stop_flag.is_set()
+    assert calls[0] == 3
+    assert machine._consecutive_same_state_count == 3
+    assert any("consecutive ticks without advancing" in r.message for r in caplog.records)
+
+
+async def test_consecutive_same_state_resets_on_state_change():
+    """Counter resets when the FSM advances to a different state."""
+    visited = []
+
+    async def node(machine, clients, params):
+        visited.append(machine.state)
+        if len(visited) >= 6:
+            machine.stop()
+        return "SUCCESS"  # always advances to the other state
+
+    # machine-level limit of 3; alternating states means counter always resets to 0
+    registry = {"mock": node}
+    machine = BotMachine(
+        clients=[],
+        config=TWO_STATE_CONFIG,
+        node_registry=registry,
+        max_consecutive_same_state=3,
+    )
+    await machine.run()
+
+    assert machine._stop_flag.is_set()
+    assert machine._consecutive_same_state_count == 0  # reset on last state change
+    assert len(visited) == 6
+
+
+async def test_consecutive_same_state_none_disables():
+    """When no limit is set, the counter never triggers a stop."""
+    calls = [0]
+
+    async def node(machine, clients, params):
+        calls[0] += 1
+        if calls[0] >= 5:
+            machine.stop()
+        return "FAILURE"  # self-loops via the unconditional transition
+
+    registry = {"mock": node}
+    # Use a config without max_consecutive_retries on the state and no machine-level limit
+    config = {
+        "initial": "state_a",
+        "states": [{"id": "state_a", "node_type": "mock", "params": {}}],
+        "transitions": [{"trigger": "advance", "source": "state_a", "dest": "state_a"}],
+    }
+    machine = BotMachine(clients=[], config=config, node_registry=registry)
+    await machine.run()
+
+    # Stopped by the node, not by the idle check
+    assert calls[0] == 5
+    assert machine._consecutive_same_state_count == 4  # 4 self-loops before node stopped on 5th

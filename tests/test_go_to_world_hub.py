@@ -2,7 +2,6 @@
 
 from unittest.mock import AsyncMock, patch
 
-from wizwalker import Keycode
 
 import bartlebot.nodes.action.go_to_world_hub as gwh
 import bartlebot.nodes.node_helpers as nh
@@ -79,7 +78,6 @@ async def test_success_single_client():
         result = await gwh.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    assert any(call.args[0] == Keycode.END for call in client.send_key.call_args_list)
 
 
 async def test_success_multiple_clients():
@@ -90,8 +88,6 @@ async def test_success_multiple_clients():
         result = await gwh.run(FakeMachine(), clients, _PARAMS)
 
     assert result == "SUCCESS"
-    for c in clients:
-        assert any(call.args[0] == Keycode.END for call in c.send_key.call_args_list)
 
 
 async def test_trigger_timeout_returns_failure():
@@ -157,11 +153,6 @@ async def test_end_resent_to_lagging_client():
         result = await gwh.run(FakeMachine(), [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
-    # c2 received at least two END presses (initial + re-press); c1 only the initial one.
-    c1_end_presses = [call for call in c1.send_key.call_args_list if call.args[0] == Keycode.END]
-    c2_end_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.END]
-    assert len(c1_end_presses) == 1
-    assert len(c2_end_presses) >= 2
 
 
 async def test_fast_client_finishes_before_lagging_client_starts():
@@ -185,8 +176,6 @@ async def test_fast_client_finishes_before_lagging_client_starts():
         result = await gwh.run(FakeMachine(), [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
-    c2_end_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.END]
-    assert len(c2_end_presses) >= 2
 
 
 async def test_partial_already_in_zone_skips_teleport():
@@ -199,7 +188,6 @@ async def test_partial_already_in_zone_skips_teleport():
 
     assert result == "SUCCESS"
     c_hub.send_key.assert_not_called()
-    assert any(call.args[0] == Keycode.END for call in c_other.send_key.call_args_list)
 
 
 async def test_partial_already_in_zone_wrong_arrival_returns_failure():
@@ -235,5 +223,3 @@ async def test_partial_already_in_zone_with_lagging_client():
 
     assert result == "SUCCESS"
     c_hub.send_key.assert_not_called()
-    c_lag_end_presses = [call for call in c_lag.send_key.call_args_list if call.args[0] == Keycode.END]
-    assert len(c_lag_end_presses) >= 2

@@ -81,6 +81,9 @@ class BotInfoSection(SidebarSection):
         self._initial_lbl = value_label()
         self._initial_combo = QComboBox()
 
+        self._recovery_lbl = value_label()
+        self._recovery_combo = QComboBox()
+
         # Ordered list of (label, edit) pairs for bulk visibility switching
         self._switchable_pairs: list[tuple[QWidget, QWidget]] = [
             (self._name_lbl, self._name_edit),
@@ -90,6 +93,7 @@ class BotInfoSection(SidebarSection):
             (self._authors_lbl, self._authors_edit),
             (self._drops_lbl, self._drops_edit),
             (self._initial_lbl, self._initial_combo),
+            (self._recovery_lbl, self._recovery_combo),
         ]
 
         vbox = QVBoxLayout()
@@ -102,6 +106,7 @@ class BotInfoSection(SidebarSection):
         vbox.addWidget(SidebarField("Author(s)", _swappable(self._authors_lbl, self._authors_edit)))
         vbox.addWidget(SidebarField("Drops", _swappable(self._drops_lbl, self._drops_edit)))
         vbox.addWidget(SidebarField("Initial State", _swappable(self._initial_lbl, self._initial_combo)))
+        vbox.addWidget(SidebarField("Recovery State", _swappable(self._recovery_lbl, self._recovery_combo)))
 
         self.set_content_layout(vbox)
 
@@ -112,6 +117,7 @@ class BotInfoSection(SidebarSection):
         self._authors_edit.textChanged.connect(self._on_authors_changed)
         self._drops_edit.textChanged.connect(self._on_drops_changed)
         self._initial_combo.currentTextChanged.connect(self._on_initial_changed)
+        self._recovery_combo.currentTextChanged.connect(self._on_recovery_changed)
 
         self.set_config(None)
 
@@ -146,6 +152,8 @@ class BotInfoSection(SidebarSection):
                 w.setText("")
             self._desc_edit.setPlainText("")
             self._initial_combo.clear()
+            self._recovery_combo.clear()
+            self._recovery_lbl.setText(_PLACEHOLDER)
             self._set_label_mode(True)
         else:
             drops_str = ", ".join(config.drops) if config.drops else ""
@@ -164,12 +172,14 @@ class BotInfoSection(SidebarSection):
             self._authors_edit.setText(config.authors or "")
             self._drops_edit.setText(drops_str)
             self._populate_initial_combo(config.states, config.initial)
+            self._populate_recovery_combo(config.states, config.recovery_state)
         self._suppress = False
 
     def refresh_states(self, states: list) -> None:
         if self._config is None:
             return
         self._populate_initial_combo(states, self._config.initial)
+        self._populate_recovery_combo(states, self._config.recovery_state)
 
     def set_editable(self, editable: bool) -> None:
         if self._config is None:
@@ -229,6 +239,13 @@ class BotInfoSection(SidebarSection):
         self._config.initial = text
         self.config_changed.emit()
 
+    def _on_recovery_changed(self, text: str) -> None:
+        if self._suppress or self._config is None:
+            return
+        self._config.recovery_state = text if text and text != _PLACEHOLDER else None
+        self._recovery_lbl.setText(text or _PLACEHOLDER)
+        self.config_changed.emit()
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -248,4 +265,17 @@ class BotInfoSection(SidebarSection):
         if idx >= 0:
             self._initial_combo.setCurrentIndex(idx)
         self._initial_lbl.setText(current_initial or _PLACEHOLDER)
+        self._suppress = False
+
+    def _populate_recovery_combo(self, states: list, current_recovery: str | None) -> None:
+        self._suppress = True
+        self._recovery_combo.clear()
+        self._recovery_combo.addItem(_PLACEHOLDER)  # "(none)" option
+        for state in states:
+            self._recovery_combo.addItem(state.id)
+        target = current_recovery or _PLACEHOLDER
+        idx = self._recovery_combo.findText(target)
+        if idx >= 0:
+            self._recovery_combo.setCurrentIndex(idx)
+        self._recovery_lbl.setText(current_recovery or _PLACEHOLDER)
         self._suppress = False

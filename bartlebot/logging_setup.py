@@ -1,3 +1,4 @@
+import datetime
 import logging
 import logging.handlers
 import platform
@@ -41,13 +42,17 @@ def configure_logging() -> None:
     log_dir = Path(__file__).parent.parent / "logs"
     log_dir.mkdir(exist_ok=True)
 
-    file_handler = logging.handlers.RotatingFileHandler(
-        log_dir / "bartlebot.log",
-        maxBytes=5 * 1024 * 1024,
-        backupCount=3,
-        encoding="utf-8",
-    )
+    session_name = datetime.datetime.now().strftime("bartlebot_%Y-%m-%d_%H-%M-%S.log")
+    file_handler = logging.FileHandler(log_dir / session_name, encoding="utf-8")
     file_handler.setFormatter(_FORMATTER)
+
+    # Prune old session logs — keep only the 10 most recent.
+    old_logs = sorted(log_dir.glob("bartlebot_*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    for old in old_logs[10:]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
     _gui_bridge.setFormatter(_FORMATTER)
 
     root = logging.getLogger()

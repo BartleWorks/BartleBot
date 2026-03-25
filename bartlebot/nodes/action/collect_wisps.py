@@ -74,6 +74,7 @@ NODE_SPEC = NodeSpec(
             "At least one client is still below a fail threshold after wisps were exhausted.",
         ),
     ],
+    max_consecutive_retries=15,
 )
 
 # Small delay between wisp teleports so the wisp collection registers before

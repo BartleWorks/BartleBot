@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import re
+import time
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -36,6 +37,17 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="Default: uses the bot-level or BartleBot built-in combat config",
         disabled_by="use_bot_default",
     ),
+    ParamField(
+        key="max_duration",
+        type="float",
+        label="Max Duration (s)",
+        help=(
+            "If the entire combat node (target acquisition + waiting for battle + SprintyCombat) "
+            "exceeds this many seconds, exit early with FAILURE. "
+            "0 = no limit."
+        ),
+        default=0.0,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -64,9 +76,10 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
+    max_consecutive_retries=5,
 )
 
-from bartlebot.nodes.timing import ENTER_COMBAT_TIMEOUT, POLL_INTERVAL
+from bartlebot.nodes.timing import ENTER_COMBAT_TIMEOUT, POLL_INTERVAL, TARGET_ACQUIRE_DELAY, TARGET_ACQUIRE_RETRIES
 
 _TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 
@@ -74,6 +87,13 @@ _TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 async def run(machine, clients: list, params: dict) -> str:
     """Enter and complete a combat encounter for all clients."""
     from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
+
+    max_duration: float = float(params.get("max_duration", 0.0))
+    _node_start = time.monotonic()
+
+    def _check_max_duration() -> bool:
+        """Return True if max_duration is set and has been exceeded."""
+        return max_duration > 0 and time.monotonic() - _node_start > max_duration
 
     enemy_name: str = params.get("enemy", "")
     use_bot_default: bool = params.get("use_bot_default", True)
@@ -93,12 +113,34 @@ async def run(machine, clients: list, params: dict) -> str:
         logging.DEBUG,
     )
 
-    # 1. Resolve target entity for each client
-    targets = await asyncio.gather(*[_find_target(c, enemy_name) for c in clients])
-    if not all(targets):
-        none_idx = [i for i, t in enumerate(targets) if t is None]
+    # 1. Resolve target entity for each client, retrying to allow enemies time to load.
+    targets = None
+    results: list = []
+    for attempt in range(TARGET_ACQUIRE_RETRIES):
+        results = list(await asyncio.gather(*[_find_target(c, enemy_name) for c in clients]))
+        if all(results):
+            targets = results
+            break
+        if attempt < TARGET_ACQUIRE_RETRIES - 1:
+            machine.log(
+                f"Target not found on attempt {attempt + 1}/{TARGET_ACQUIRE_RETRIES},"
+                f" waiting {TARGET_ACQUIRE_DELAY}s for enemy to load\u2026",
+                logging.DEBUG,
+            )
+            await asyncio.sleep(TARGET_ACQUIRE_DELAY)
+
+    if not targets:
+        none_idx = [i for i, t in enumerate(results) if t is None]
         machine.log(
-            f"FAILURE: target not found for client(s) {none_idx} (enemy={enemy_display})",
+            f"FAILURE: target not found for client(s) {none_idx} after"
+            f" {TARGET_ACQUIRE_RETRIES} attempt(s) (enemy={enemy_display})",
+            logging.WARNING,
+        )
+        return "FAILURE"
+
+    if _check_max_duration():
+        machine.log(
+            f"FAILURE: max_duration {max_duration:.0f}s exceeded during target acquisition",
             logging.WARNING,
         )
         return "FAILURE"
@@ -138,6 +180,13 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
+
+    if _check_max_duration():
+        machine.log(
+            f"FAILURE: max_duration {max_duration:.0f}s exceeded before SprintyCombat",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     machine.log("All clients in combat — running SprintyCombat")
 

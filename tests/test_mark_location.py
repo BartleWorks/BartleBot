@@ -3,7 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
 import bartlebot.nodes.action.mark_location as ml
 import bartlebot.nodes.node_helpers as nh
@@ -138,15 +138,14 @@ async def test_correct_zone_correct_xyz_no_teleport():
 
 
 async def test_success_single_client():
-    """Happy path: timer clear, RecallButton enabled after marking → SUCCESS, PAGE_DOWN pressed."""
+    """Happy path: timer clear, RecallButton enabled after marking → SUCCESS, MarkButton clicked."""
     client = _ready_client()
 
     with _TIMER_CLEAR, _RECALL_ENABLED, patch.object(ml, "POST_MARK_WAIT", 0):
         result = await ml.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    pg_down_calls = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.PAGE_DOWN]
-    assert len(pg_down_calls) == 1
+    assert client.mouse_handler.click_window.call_count == 1
 
 
 async def test_success_multiple_clients():
@@ -158,8 +157,7 @@ async def test_success_multiple_clients():
 
     assert result == "SUCCESS"
     for c in clients:
-        pg_down_calls = [call for call in c.send_key.call_args_list if call.args[0] == Keycode.PAGE_DOWN]
-        assert len(pg_down_calls) == 1
+        assert c.mouse_handler.click_window.call_count == 1
 
 
 # ---------------------------------------------------------------------------
@@ -188,12 +186,12 @@ async def test_cooldown_timer_timeout_returns_failure():
 # ---------------------------------------------------------------------------
 
 
-async def test_same_spot_presses_page_down_twice():
+async def test_same_spot_clicks_mark_button_twice():
     """Same-spot mark scenario: RecallButton grayed after first mark → wait and re-mark.
 
-    When the client already has a mark at this exact location, pressing PAGE_DOWN
+    When the client already has a mark at this exact location, clicking MarkButton
     clears it (RecallButton grays out) rather than resetting it. The node must wait
-    for the cooldown and press PAGE_DOWN a second time.
+    for the cooldown and click MarkButton a second time.
     """
     client = _ready_client()
     # First check after marking: grayed (mark cleared); second check: enabled (re-mark succeeded).
@@ -203,8 +201,7 @@ async def test_same_spot_presses_page_down_twice():
         result = await ml.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    pg_down_calls = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.PAGE_DOWN]
-    assert len(pg_down_calls) == 2
+    assert client.mouse_handler.click_window.call_count == 2
 
 
 async def test_same_spot_remark_cooldown_timeout_returns_failure():

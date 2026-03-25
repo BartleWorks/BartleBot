@@ -7,6 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -72,6 +73,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
+    max_consecutive_retries=10,
 )
 
 from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
@@ -180,7 +182,7 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
         if any(dialogs):
-            await asyncio.gather(*[c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(active_clients, dialogs) if d])
+            await asyncio.gather(*[node_helpers.click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(active_clients, dialogs) if d])
         await asyncio.sleep(POLL_INTERVAL)
 
     machine.log("SUCCESS: interaction complete")

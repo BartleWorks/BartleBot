@@ -106,6 +106,7 @@ NODE_SPEC = NodeSpec(
             "or the potion shop could not be reached.",
         ),
     ],
+    max_consecutive_retries=5,
 )
 
 
@@ -297,10 +298,10 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     and will result in FAILURE.
     """
     for attempt in range(1, 3):
-        machine.log(f"Pressing HOME (attempt {attempt}/2)…", logging.DEBUG)
-        await asyncio.gather(*[c.send_key(Keycode.HOME, 0.1) for c in clients])
+        machine.log(f"Clicking GotoDormButton (attempt {attempt}/2)…", logging.DEBUG)
+        await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in clients])
 
-        # "Ever seen loading" pattern: re-press HOME for slow clients that don't start loading.
+        # "Ever seen loading" pattern: re-click for slow clients that don't start loading.
         seen_loading: set[int] = set()
         loop_start = asyncio.get_event_loop().time()
         while len(seen_loading) < len(clients):
@@ -315,7 +316,7 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
                 machine.log(f"Clients not loading at timeout: {still_waiting}", logging.DEBUG)
                 break
             not_loading = [c for i, c in enumerate(clients) if i not in seen_loading]
-            await asyncio.gather(*[c.send_key(Keycode.HOME, 0.1) for c in not_loading])
+            await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in not_loading])
             await asyncio.sleep(POLL_INTERVAL)
 
         await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)

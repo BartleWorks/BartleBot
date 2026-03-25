@@ -358,7 +358,7 @@ class OptionsSection(SidebarSection):
             if t.flag == name:
                 t.flag = None
         self._rebuild_options(self._config.options)
-        self.on_config_changed()
+        self.config_changed.emit()
 
     def _connect_option_widget(self, widget: QWidget, opt) -> None:
         def _update(value) -> None:

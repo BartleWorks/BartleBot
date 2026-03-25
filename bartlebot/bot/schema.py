@@ -64,6 +64,8 @@ class BotConfig(BaseModel):
     version: str = "1.0"
     clients: str | list[int] = "all"
     initial: str
+    # Optional state to jump to after a client reconnects. If None, the bot stops on disconnect.
+    recovery_state: str | None = None
     # Inline WizSprinter combat DSL string. None = use BartleBot built-in default.
     # use_bartlebot_default_combat_config controls whether this field is active.
     default_combat_config: str | None = None
@@ -81,10 +83,17 @@ class BotConfig(BaseModel):
         ids = {s.id for s in self.states}
         if self.initial not in ids:
             raise ValueError(f"initial state '{self.initial}' is not in states list")
+        if self.recovery_state is not None and self.recovery_state not in ids:
+            raise ValueError(f"recovery_state '{self.recovery_state}' is not in states list")
         return self
 
-    def to_machine_config(self) -> dict:
-        """Convert to the flat dict format BotMachine expects."""
+    def to_machine_config(self, node_specs: dict | None = None) -> dict:
+        """Convert to the flat dict format BotMachine expects.
+
+        If node_specs (a dict mapping node_type -> NodeSpec) is provided, each state
+        dict will include a ``max_consecutive_retries`` key when the corresponding
+        NodeSpec declares one. BotMachine uses this for per-state idle detection.
+        """
         trans_list = []
         for t in self.transitions:
             d: dict = {"trigger": t.trigger, "source": t.source, "dest": t.dest}
@@ -95,9 +104,17 @@ class BotConfig(BaseModel):
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
+        states = []
+        for s in self.states:
+            sd = s.model_dump()
+            if node_specs:
+                spec = node_specs.get(s.node_type)
+                if spec is not None and spec.max_consecutive_retries is not None:
+                    sd["max_consecutive_retries"] = spec.max_consecutive_retries
+            states.append(sd)
         return {
             "initial": self.initial,
-            "states": [s.model_dump() for s in self.states],
+            "states": states,
             "transitions": trans_list,
             "default_combat_config": self.default_combat_config,
         }

@@ -33,3 +33,10 @@ ENTER_COMBAT_TIMEOUT = 30.0
 # Seconds to wait for the combat-state flag to become active after teleporting
 # to a mob.  Kept separate from ZONE_CHANGE_TIMEOUT — entering combat is a
 # distinct game mechanic from a zone transition.
+
+TARGET_ACQUIRE_RETRIES = 3
+# Attempts to find a target entity before handle_combat returns FAILURE.
+# Enemy entities may not be loaded immediately after a teleport.
+
+TARGET_ACQUIRE_DELAY = 3.0
+# Seconds to wait between target-acquire retries.

@@ -8,6 +8,7 @@ in-game UI elements.
 # compassAndTeleporterButtons group
 HUB_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]
 GOTO_DORM_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GotoDormButton"]
+MARK_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "MarkButton"]
 RECALL_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton"]
 RECALL_TIMER_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton", "txtRecallTimer"]
 
@@ -48,3 +49,7 @@ DUNGEON_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground", "TeamUpBut
 
 # Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
 ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]
+
+# Character select screen ('WorldView/mainWindow' is visible when on the char select screen)
+CHAR_SELECT_PATH = ["WorldView", "mainWindow"]
+CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]

@@ -5,11 +5,18 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
+from wizwalker.errors import ClientClosedError, MemoryReadError
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+
+_CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
+# Seconds between client responsiveness polls in _client_status_watcher.
+
+_CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
+# Consecutive failed zone_name() calls before a client is treated as unresponsive.
 
 
 class BotMachine:
@@ -32,6 +39,8 @@ class BotMachine:
         on_transition: Callable[[str, str, str], None] | None = None,
         on_drop: Callable[[str, int, int], None] | None = None,
         on_log: Callable[[str, int], None] | None = None,
+        max_consecutive_same_state: int | None = None,
+        on_client_disconnected: Callable[[int], None] | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -41,6 +50,7 @@ class BotMachine:
         self._on_transition = on_transition
         self._on_drop = on_drop
         self._on_log = on_log
+        self._on_client_disconnected = on_client_disconnected
         self._stop_flag = asyncio.Event()
         self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)
         self._resume_event = asyncio.Event()
@@ -48,6 +58,9 @@ class BotMachine:
         self._ambient_combat_lock = asyncio.Lock()
         self.last_result: str | None = None
         self._no_match_count: int = 0
+        self._max_consecutive_same_state = max_consecutive_same_state
+        self._consecutive_same_state_count: int = 0
+        self._status_check_flagged: set[int] = set()  # HWNDs already flagged as unresponsive
 
         self._state_map = {s["id"]: s for s in config["states"]}
 
@@ -129,6 +142,7 @@ class BotMachine:
         """Drive the FSM until stop() is called."""
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
+        status_watcher = asyncio.create_task(self._client_status_watcher())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -149,6 +163,23 @@ class BotMachine:
                 node_fn = self._registry[node_type]
                 try:
                     self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
+                except (ClientClosedError, MemoryReadError) as exc:
+                    # A client process has died. Pause immediately rather than treating
+                    # this as a normal FAILURE — prevents the no-match / idle counters
+                    # from hitting their limits before _client_loop detects the removal
+                    # and triggers the recovery procedure.
+                    # MemoryReadError (e.g. error 299 = ERROR_PARTIAL_COPY) occurs when the
+                    # process dies before WizWalker's ClientClosedError fires; both indicate
+                    # a dead game process and need the same recovery path.
+                    logger.warning(
+                        "%s in state %r — client may have died, pausing for recovery",
+                        type(exc).__name__,
+                        state_id,
+                    )
+                    self._no_match_count = 0
+                    self._consecutive_same_state_count = 0
+                    self.pause()
+                    continue
                 except Exception:
                     logger.exception("Node execution failed in state %r", state_id)
                     self.last_result = "FAILURE"
@@ -196,14 +227,81 @@ class BotMachine:
                                     prev_state,
                                     self.state,
                                 )
+
+                    # Per-state idle detection (independent of no-match counter).
+                    # Counts how many consecutive ticks the FSM has stayed on the same
+                    # state (whether via a self-loop transition or a no-match).
+                    per_state_limit = state_def.get("max_consecutive_retries")
+                    effective_limit = (
+                        per_state_limit if per_state_limit is not None else self._max_consecutive_same_state
+                    )
+                    if self.state == state_id:
+                        self._consecutive_same_state_count += 1
+                        if effective_limit is not None and self._consecutive_same_state_count >= effective_limit:
+                            self.log(
+                                f"State {state_id!r} active for"
+                                f" {self._consecutive_same_state_count} consecutive ticks"
+                                " without advancing; stopping.",
+                                logging.WARNING,
+                            )
+                            self.stop()
+                    else:
+                        self._consecutive_same_state_count = 0
         finally:
             watcher.cancel()
             combat_watcher.cancel()
-            for t in (watcher, combat_watcher):
+            status_watcher.cancel()
+            for t in (watcher, combat_watcher, status_watcher):
                 try:
                     await t
                 except asyncio.CancelledError:
                     pass
+
+    async def _client_status_watcher(self) -> None:
+        """Background task: detect unresponsive clients via zone_name() polling.
+
+        Checks every _CLIENT_STATUS_CHECK_INTERVAL seconds. If a client fails
+        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD consecutive checks, it is considered dead
+        (crashed or stuck on a disconnect dialog). The machine is paused and
+        on_client_disconnected is fired with the client's HWND so AppController can
+        force-close the game window. The resulting process exit is detected by
+        _client_loop / remove_dead_clients(), which triggers the reconnect procedure.
+
+        This approach avoids trying to match a specific disconnect dialog UI path, which
+        shares the same generic MessageBoxModalWindow structure as many other dialogs.
+        """
+        fail_counts: dict[int, int] = {}  # hwnd -> consecutive failure count
+
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(_CLIENT_STATUS_CHECK_INTERVAL)
+            for client in list(self.clients):
+                hwnd = client.window_handle
+                if hwnd in self._status_check_flagged:
+                    continue
+                try:
+                    await client.zone_name()
+                    fail_counts[hwnd] = 0
+                except Exception:
+                    fail_counts[hwnd] = fail_counts.get(hwnd, 0) + 1
+                    logger.debug(
+                        "Client status check failed for hwnd=%d (%d/%d)",
+                        hwnd,
+                        fail_counts[hwnd],
+                        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD,
+                    )
+                    if fail_counts[hwnd] >= _CLIENT_STATUS_CHECK_FAIL_THRESHOLD:
+                        logger.warning(
+                            "Client hwnd=%d unresponsive after %d checks — pausing and notifying",
+                            hwnd,
+                            fail_counts[hwnd],
+                        )
+                        self._status_check_flagged.add(hwnd)
+                        self.pause()
+                        if self._on_client_disconnected:
+                            try:
+                                self._on_client_disconnected(hwnd)
+                            except Exception:
+                                logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
@@ -211,6 +309,8 @@ class BotMachine:
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            if not self._resume_event.is_set():
+                continue
             if not self.clients:
                 continue
             results = await asyncio.gather(
@@ -240,6 +340,8 @@ class BotMachine:
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            if not self._resume_event.is_set():
+                continue
             clients = list(self.clients)
             if not clients:
                 continue
@@ -316,7 +418,8 @@ class BotMachine:
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""
-        self.log("Bot stopped.", logging.INFO)
+        if not self._stop_flag.is_set():
+            self.log("Bot stopped.", logging.INFO)
         self._stop_flag.set()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
 
@@ -326,4 +429,12 @@ class BotMachine:
 
     def resume(self) -> None:
         """Resume a paused FSM."""
+        self._status_check_flagged.clear()  # allow re-detection after client recovery
         self._resume_event.set()
+
+    def force_state(self, state_id: str) -> None:
+        """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks."""
+        self.machine.set_state(state_id)  # sets self.state via the transitions machine
+        self._consecutive_same_state_count = 0
+        self._no_match_count = 0
+        logger.info("FSM state forced to %r (recovery)", state_id)
