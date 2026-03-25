@@ -302,6 +302,8 @@ class BotMachine:
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            if not self._resume_event.is_set():
+                continue
             if not self.clients:
                 continue
             results = await asyncio.gather(
@@ -331,6 +333,8 @@ class BotMachine:
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            if not self._resume_event.is_set():
+                continue
             clients = list(self.clients)
             if not clients:
                 continue
