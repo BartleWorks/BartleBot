@@ -49,12 +49,6 @@ DUNGEON_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground", "TeamUpBut
 # Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
 ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]
 
-# Disconnect modal OK button. Path TBD — discover by triggering a disconnect and walking
-# client.root_window. The quit-confirm dialog uses ['MessageBoxModalWindow', 'messageBoxBG',
-# 'messageBoxLayout', 'AdjustmentWindow', 'Layout', 'centerButton'] and is a likely candidate.
-# Empty list disables disconnect popup detection until the path is confirmed.
-DISCONNECT_POPUP_OK_PATH: list[str] = []
-
 # Character select screen ('WorldView/mainWindow' is visible when on the char select screen)
 CHAR_SELECT_PATH = ["WorldView", "mainWindow"]
 CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]

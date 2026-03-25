@@ -4,6 +4,7 @@
   "version": "2.0",
   "clients": "all",
   "initial": "go_to_zone_a",
+  "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
   "start_location": "The Commons",
   "drops": [],
@@ -23,7 +24,7 @@
       "label": "Go to Ravenwood",
       "position": {
         "x": -129.452868852459,
-        "y": 42.0
+        "y": 49.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -34,7 +35,8 @@
           "z": -27.99
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "go_to_zone_b",
@@ -42,7 +44,7 @@
       "label": "Go to The Commons",
       "position": {
         "x": 130.0,
-        "y": 42.0
+        "y": 49.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Ravenwood",
@@ -53,7 +55,22 @@
           "z": -130.64
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_1",
+      "node_type": "go_to_world_hub",
+      "label": "Teleport to The Commons",
+      "position": {
+        "x": -401.3186813186814,
+        "y": 49.13500784929355
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
     }
   ],
   "transitions": [
@@ -68,6 +85,31 @@
       "source": "go_to_zone_b",
       "dest": "go_to_zone_a",
       "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "go_to_zone_a",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "go_to_zone_a",
+      "dest": "state_1",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "go_to_zone_b",
+      "dest": "state_1",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE"
     }
-  ]
+  ],
+  "regions": []
 }

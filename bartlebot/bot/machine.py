@@ -5,11 +5,18 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
+from wizwalker.errors import ClientClosedError
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+
+_CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
+# Seconds between client responsiveness polls in _client_status_watcher.
+
+_CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
+# Consecutive failed zone_name() calls before a client is treated as unresponsive.
 
 
 class BotMachine:
@@ -33,7 +40,7 @@ class BotMachine:
         on_drop: Callable[[str, int, int], None] | None = None,
         on_log: Callable[[str, int], None] | None = None,
         max_consecutive_same_state: int | None = None,
-        on_client_disconnected: Callable | None = None,
+        on_client_disconnected: Callable[[int], None] | None = None,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -53,7 +60,7 @@ class BotMachine:
         self._no_match_count: int = 0
         self._max_consecutive_same_state = max_consecutive_same_state
         self._consecutive_same_state_count: int = 0
-        self._disconnect_notified: set[int] = set()  # client indices already reported
+        self._status_check_flagged: set[int] = set()  # HWNDs already flagged as unresponsive
 
         self._state_map = {s["id"]: s for s in config["states"]}
 
@@ -135,7 +142,7 @@ class BotMachine:
         """Drive the FSM until stop() is called."""
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
-        disconnect_watcher = asyncio.create_task(self._disconnect_watcher())
+        status_watcher = asyncio.create_task(self._client_status_watcher())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -156,6 +163,16 @@ class BotMachine:
                 node_fn = self._registry[node_type]
                 try:
                     self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
+                except ClientClosedError:
+                    # A client process has died. Pause immediately rather than treating
+                    # this as a normal FAILURE — prevents the no-match / idle counters
+                    # from hitting their limits before _client_loop detects the removal
+                    # and triggers the recovery procedure.
+                    logger.warning("ClientClosedError in state %r — client died, pausing for recovery", state_id)
+                    self._no_match_count = 0
+                    self._consecutive_same_state_count = 0
+                    self.pause()
+                    continue
                 except Exception:
                     logger.exception("Node execution failed in state %r", state_id)
                     self.last_result = "FAILURE"
@@ -226,42 +243,58 @@ class BotMachine:
         finally:
             watcher.cancel()
             combat_watcher.cancel()
-            disconnect_watcher.cancel()
-            for t in (watcher, combat_watcher, disconnect_watcher):
+            status_watcher.cancel()
+            for t in (watcher, combat_watcher, status_watcher):
                 try:
                     await t
                 except asyncio.CancelledError:
                     pass
 
-    async def _disconnect_watcher(self) -> None:
-        """Background task: detect disconnect popup on each client and click OK.
+    async def _client_status_watcher(self) -> None:
+        """Background task: detect unresponsive clients via zone_name() polling.
 
-        Checks every 5 seconds for the disconnect modal window. When found, clicks the OK
-        button (which closes the game). The resulting process exit is detected by
-        AppController._client_loop, which then triggers the reconnect procedure.
+        Checks every _CLIENT_STATUS_CHECK_INTERVAL seconds. If a client fails
+        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD consecutive checks, it is considered dead
+        (crashed or stuck on a disconnect dialog). The machine is paused and
+        on_client_disconnected is fired with the client's HWND so AppController can
+        force-close the game window. The resulting process exit is detected by
+        _client_loop / remove_dead_clients(), which triggers the reconnect procedure.
 
-        DISCONNECT_POPUP_OK_PATH is empty by default; fill it in paths.py after discovering
-        the correct UI path by triggering a disconnect and walking client.root_window.
+        This approach avoids trying to match a specific disconnect dialog UI path, which
+        shares the same generic MessageBoxModalWindow structure as many other dialogs.
         """
-        from bartlebot.nodes.node_helpers import click_by_path, is_visible_by_path  # noqa: PLC0415
-        from bartlebot.nodes.paths import DISCONNECT_POPUP_OK_PATH  # noqa: PLC0415
+        fail_counts: dict[int, int] = {}  # hwnd -> consecutive failure count
 
         while not self._stop_flag.is_set():
-            await asyncio.sleep(5.0)
-            if not self.clients or not DISCONNECT_POPUP_OK_PATH:
-                continue
-            for i, client in enumerate(list(self.clients)):
-                if i in self._disconnect_notified:
+            await asyncio.sleep(_CLIENT_STATUS_CHECK_INTERVAL)
+            for client in list(self.clients):
+                hwnd = client.window_handle
+                if hwnd in self._status_check_flagged:
                     continue
                 try:
-                    if await is_visible_by_path(client, DISCONNECT_POPUP_OK_PATH):
-                        logger.warning("Disconnect popup detected on client %d — clicking OK", i)
-                        self._disconnect_notified.add(i)
-                        await click_by_path(client, DISCONNECT_POPUP_OK_PATH)
-                        # Game will close; AppController._client_loop detects the removal
-                        # and triggers the reconnect procedure.
+                    await client.zone_name()
+                    fail_counts[hwnd] = 0
                 except Exception:
-                    logger.debug("Disconnect watcher: error on client %d", i, exc_info=True)
+                    fail_counts[hwnd] = fail_counts.get(hwnd, 0) + 1
+                    logger.debug(
+                        "Client status check failed for hwnd=%d (%d/%d)",
+                        hwnd,
+                        fail_counts[hwnd],
+                        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD,
+                    )
+                    if fail_counts[hwnd] >= _CLIENT_STATUS_CHECK_FAIL_THRESHOLD:
+                        logger.warning(
+                            "Client hwnd=%d unresponsive after %d checks — pausing and notifying",
+                            hwnd,
+                            fail_counts[hwnd],
+                        )
+                        self._status_check_flagged.add(hwnd)
+                        self.pause()
+                        if self._on_client_disconnected:
+                            try:
+                                self._on_client_disconnected(hwnd)
+                            except Exception:
+                                logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
@@ -374,7 +407,8 @@ class BotMachine:
 
     def stop(self) -> None:
         """Signal the FSM to halt after the current node finishes."""
-        self.log("Bot stopped.", logging.INFO)
+        if not self._stop_flag.is_set():
+            self.log("Bot stopped.", logging.INFO)
         self._stop_flag.set()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
 
@@ -384,12 +418,12 @@ class BotMachine:
 
     def resume(self) -> None:
         """Resume a paused FSM."""
-        self._disconnect_notified.clear()  # allow re-detection on recovered client positions
+        self._status_check_flagged.clear()  # allow re-detection after client recovery
         self._resume_event.set()
 
     def force_state(self, state_id: str) -> None:
         """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks."""
-        self.set_state(state_id)
+        self.machine.set_state(state_id)  # sets self.state via the transitions machine
         self._consecutive_same_state_count = 0
         self._no_match_count = 0
         logger.info("FSM state forced to %r (recovery)", state_id)

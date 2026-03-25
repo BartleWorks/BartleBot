@@ -182,6 +182,7 @@ class AppController(QObject):
             on_transition=self._on_machine_transition,
             on_drop=self._on_machine_drop,
             on_log=self._on_machine_log,
+            on_client_disconnected=self._on_machine_client_disconnected,
         )
         # Reset recovery state for the new run
         self._pending_recovery.clear()
@@ -228,6 +229,17 @@ class AppController(QObject):
     def _on_machine_log(self, msg: str, level: int) -> None:
         self._window.bot_canvas.append_log(msg, level)
 
+    def _on_machine_client_disconnected(self, hwnd: int) -> None:
+        """Called by _client_status_watcher when a client becomes unresponsive.
+
+        Force-closes the game window so that remove_dead_clients() detects the exit
+        and triggers the reconnect procedure via _on_clients_removed.
+        """
+        import ctypes  # noqa: PLC0415
+
+        logger.warning("Client hwnd=%d flagged unresponsive — sending WM_CLOSE", hwnd)
+        ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)  # WM_CLOSE
+
     # ------------------------------------------------------------------
     # Signal handlers
     # ------------------------------------------------------------------
@@ -270,6 +282,8 @@ class AppController(QObject):
                 if not clients:
                     self._sync_embedded_clients(self._clients, [])
                     self._clients = []
+                    if self._current_machine:
+                        self._current_machine.clients = self._clients
                     self.clients_changed.emit([])
                     self._window.set_start_enabled(False)
                     await asyncio.sleep(3.0)
@@ -297,6 +311,8 @@ class AppController(QObject):
                     ordered = self._build_ordered_clients(clients)
                     self._sync_embedded_clients(self._clients, ordered)
                     self._clients = ordered
+                    if self._current_machine:
+                        self._current_machine.clients = self._clients
                     self.clients_changed.emit(self._clients)
                     self._window.set_start_enabled(self._start_enabled())
 
@@ -305,12 +321,16 @@ class AppController(QObject):
             except MemoryReadError:
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
+                if self._current_machine:
+                    self._current_machine.clients = self._clients
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
                 await asyncio.sleep(1.0)
             except Exception:
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
+                if self._current_machine:
+                    self._current_machine.clients = self._clients
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
                 logger.exception("Client loop error")
@@ -336,6 +356,7 @@ class AppController(QObject):
 
     def _on_clients_removed(self, removed_hwnds: set) -> None:
         """Handle client removal: update _client_order and queue recovery if bot is running."""
+        machine = self._current_machine
         for hwnd in removed_hwnds:
             username = self._hwnd_account_map.get(hwnd)
             if not username:
@@ -343,7 +364,6 @@ class AppController(QObject):
             orig_pos = next((i for i, u in enumerate(self._client_order) if u == username), None)
             if orig_pos is not None:
                 self._client_order[orig_pos] = None
-                machine = self._current_machine
                 if machine is not None and not machine._stop_flag.is_set():
                     self._pending_recovery[orig_pos] = username
                     logger.warning(
@@ -351,9 +371,14 @@ class AppController(QObject):
                         orig_pos,
                         username,
                     )
-        if self._pending_recovery and not self._recovery_in_progress:
-            self._recovery_in_progress = True
-            asyncio.create_task(self._run_recovery_queue())
+        if self._pending_recovery:
+            # Pause immediately to prevent FAILURE results from accumulating before
+            # recovery resumes the machine. Idempotent if already paused.
+            if machine is not None and not machine._stop_flag.is_set():
+                machine.pause()
+            if not self._recovery_in_progress:
+                self._recovery_in_progress = True
+                asyncio.create_task(self._run_recovery_queue())
 
     def _build_ordered_clients(self, live_clients: list) -> list:
         """Build the client list in _client_order order; unknown-account clients go at the end."""
@@ -403,16 +428,28 @@ class AppController(QObject):
         try:
             while self._pending_recovery:
                 orig_pos, username = next(iter(self._pending_recovery.items()))
-                await self._reconnect_client(orig_pos, username)
+                try:
+                    await self._reconnect_client(orig_pos, username)
+                except Exception:
+                    logger.exception("Unhandled error in recovery for slot %d — stopping bot", orig_pos)
+                    if self._current_machine:
+                        self._current_machine.stop()
                 self._pending_recovery.pop(orig_pos, None)
         finally:
             self._recovery_in_progress = False
 
     async def _reconnect_client(self, orig_pos: int, username: str) -> None:
-        """Relaunch a disconnected client, log it in, select character, and resume the FSM."""
+        """Relaunch a disconnected client, navigate to in-game, then resume the FSM.
+
+        WizWalker hooks can only be activated once the character is in-game (not during
+        loading screens or the character select menu). To advance through those screens
+        without hooks, we spam the Enter key via Win32 PostMessageW until the client
+        appears in self._clients (meaning _client_loop successfully activated hooks,
+        implying the character is now in a game zone).
+        """
+        import ctypes  # noqa: PLC0415
+
         from bartlebot.launcher.launch_profile import launch_account  # noqa: PLC0415
-        from bartlebot.nodes.node_helpers import click_by_path, is_visible_by_path  # noqa: PLC0415
-        from bartlebot.nodes.paths import CHAR_SELECT_PATH, CHAR_SELECT_PLAY_PATH  # noqa: PLC0415
 
         machine = self._current_machine
         if machine is None:
@@ -440,78 +477,58 @@ class AppController(QObject):
             machine.stop()
             return
 
-        # Wait for _client_loop to hook the new instance (detected by window title)
+        # Spam Enter key into the game window to advance through login loading screens
+        # and the character select menu. Hooks only activate once in-game, so we keep
+        # pressing until the client appears in self._clients.
+        _VK_RETURN = 0x0D
+        _WM_KEYDOWN = 0x0100
+        _WM_KEYUP = 0x0101
+        _enter_stop = asyncio.Event()
+
+        async def _enter_spam() -> None:
+            while not _enter_stop.is_set():
+                hwnd = ctypes.windll.user32.FindWindowW(None, expected_title)
+                if hwnd:
+                    ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_RETURN, 0)
+                    await asyncio.sleep(0.05)
+                    ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_RETURN, 0)
+                await asyncio.sleep(1.0)
+
+        spam_task = asyncio.create_task(_enter_spam())
+
+        # Wait for _client_loop to hook the new instance (only succeeds once in-game)
         new_client = None
         deadline = asyncio.get_event_loop().time() + 120.0
-        while asyncio.get_event_loop().time() < deadline:
-            for c in self._clients:
-                try:
-                    if get_window_title(c.window_handle) == expected_title:
-                        new_client = c
-                        break
-                except Exception:
-                    pass
-            if new_client:
-                break
-            await asyncio.sleep(1.0)
+        try:
+            while asyncio.get_event_loop().time() < deadline:
+                for c in self._clients:
+                    try:
+                        if get_window_title(c.window_handle) == expected_title:
+                            new_client = c
+                            break
+                    except Exception:
+                        pass
+                if new_client:
+                    break
+                await asyncio.sleep(1.0)
+        finally:
+            _enter_stop.set()
+            spam_task.cancel()
+            try:
+                await spam_task
+            except asyncio.CancelledError:
+                pass
 
         if new_client is None:
             logger.error("Timed out waiting for reconnected client '%s' — stopping bot", display_name)
             machine.stop()
             return
 
-        # Restore the slot so the next _client_loop rebuild puts the client back in order
-        self._client_order[orig_pos] = username
-
-        # Wait for the character select screen
-        char_select_deadline = asyncio.get_event_loop().time() + 60.0
-        on_char_select = False
-        while asyncio.get_event_loop().time() < char_select_deadline:
-            try:
-                if await is_visible_by_path(new_client, CHAR_SELECT_PATH):
-                    on_char_select = True
-                    break
-            except Exception:
-                pass
-            await asyncio.sleep(1.0)
-
-        if not on_char_select:
-            logger.error("Char select didn't appear for '%s' — stopping bot", display_name)
-            machine.stop()
-            return
-
-        try:
-            await click_by_path(new_client, CHAR_SELECT_PLAY_PATH)
-        except Exception:
-            logger.exception("Failed to click Play for '%s' — stopping bot", display_name)
-            machine.stop()
-            return
-
-        # Wait for zone load (off char select, not loading, non-empty zone name)
-        zone_deadline = asyncio.get_event_loop().time() + 60.0
-        fully_loaded = False
-        while asyncio.get_event_loop().time() < zone_deadline:
-            try:
-                if await is_visible_by_path(new_client, CHAR_SELECT_PATH):
-                    await asyncio.sleep(1.0)
-                    continue
-                if await new_client.is_loading():
-                    await asyncio.sleep(1.0)
-                    continue
-                zone = await new_client.zone_name()
-                if zone:
-                    fully_loaded = True
-                    break
-            except Exception:
-                pass
-            await asyncio.sleep(1.0)
-
-        if not fully_loaded:
-            logger.error("Zone load timed out for '%s' — stopping bot", display_name)
-            machine.stop()
-            return
-
         logger.info("Client '%s' recovered and in-game", display_name)
+
+        # Restore the slot so the next _client_loop rebuild puts the client back in order.
+        # machine.clients is kept in sync by _client_loop automatically.
+        self._client_order[orig_pos] = username
 
         # Jump FSM to recovery state and resume
         recovery_state = self._loaded_config.recovery_state if self._loaded_config else None
