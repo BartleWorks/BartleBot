@@ -98,18 +98,18 @@ async def test_loading_screen_awaited():
 
 
 async def test_exit_dungeon_dialog_dismissed():
-    """When the dungeon exit warning appears after teleport, ENTER is pressed to dismiss it."""
+    """When the dungeon exit warning appears after teleport, the confirm button is clicked."""
     client = FakeClient()
     client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
+    click_by_path_mock = AsyncMock(return_value=True)
 
     with (
         patch.object(gtz, "POLL_INTERVAL", 0),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
+        patch.object(nh, "click_by_path", click_by_path_mock),
     ):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    # ENTER sent once (to dismiss the dungeon exit dialog)
-    from wizwalker import Keycode
-
-    client.send_key.assert_called_once_with(Keycode.ENTER, 0.1)
+    # confirm button clicked; no keypresses
+    client.send_key.assert_not_called()
+    assert click_by_path_mock.called

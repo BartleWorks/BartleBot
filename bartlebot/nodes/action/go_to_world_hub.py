@@ -3,8 +3,6 @@
 import asyncio
 import logging
 
-from wizwalker import Keycode
-
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
@@ -75,14 +73,14 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 3. Press END on clients that need to move; re-press for any that haven't started loading.
-    machine.log("Pressing END to teleport to hub…", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.END, 0.1) for c in clients_to_move])
+    # 3. Click the hub button on clients that need to move; re-click for any that haven't started loading.
+    machine.log("Clicking hub teleport button…", logging.DEBUG)
+    await asyncio.gather(*[node_helpers.click_by_path(c, HUB_BUTTON_PATH) for c in clients_to_move])
 
     seen_loading = await node_helpers.poll_each_until_seen(
         clients_to_move,
         check_fn=lambda c: c.is_loading(),
-        action_fn=lambda c: c.send_key(Keycode.END, 0.1),
+        action_fn=lambda c: node_helpers.click_by_path(c, HUB_BUTTON_PATH),
         timeout=TRIGGER_TIMEOUT,
     )
     if len(seen_loading) < len(clients_to_move):

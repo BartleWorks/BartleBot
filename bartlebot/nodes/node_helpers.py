@@ -2,8 +2,6 @@
 
 import asyncio
 
-from wizwalker import Keycode
-
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_PATH,
@@ -37,10 +35,9 @@ async def none_at_dungeon_entrance(clients: list) -> bool:
 
 
 async def dismiss_ambient_dialog_once(client) -> bool:
-    """If client has an advanceable dialog open, press SPACEBAR to dismiss it. Returns True if dismissed."""
+    """If client has an advanceable dialog open, click the advance button to dismiss it. Returns True if dismissed."""
     if await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
-        await client.send_key(Keycode.SPACEBAR, 0.1)
-        return True
+        return await click_by_path(client, ADVANCE_DIALOG_PATH)
     return False
 
 
@@ -48,13 +45,12 @@ async def confirm_dungeon_warning_dialog(client, delay: float = 3.0) -> None:
     """Poll for the dungeon warning dialog; confirm it immediately when it appears.
 
     Keeps polling for at least `delay` seconds before concluding the dialog will
-    not appear. If the dialog appears before `delay` has elapsed, ENTER is pressed
-    immediately and the function returns — no further waiting.
+    not appear. If the dialog appears before `delay` has elapsed, the confirm button
+    is clicked immediately and the function returns — no further waiting.
     """
     loop_start = asyncio.get_event_loop().time()
     while True:
-        if await is_visible_by_path(client, DUNGEON_WARNING_PATH):
-            await client.send_key(Keycode.ENTER, 0.1)
+        if await click_by_path(client, DUNGEON_WARNING_PATH):
             return
         if asyncio.get_event_loop().time() - loop_start >= delay:
             return

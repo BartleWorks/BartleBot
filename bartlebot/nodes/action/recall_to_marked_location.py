@@ -4,11 +4,11 @@ import asyncio
 import logging
 import math
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import RECALL_BUTTON_PATH  # used only to check button state
+from bartlebot.nodes.paths import RECALL_BUTTON_PATH
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT
 
 TRIGGER_MARGIN = 5.0  # minimum XYZ movement that counts as a same-zone recall trigger
@@ -89,9 +89,9 @@ async def run(machine, clients: list, params: dict) -> str:
     #    by XYZ movement instead.
     start_positions = await asyncio.gather(*[c.body.position() for c in clients])
 
-    # 4. Press PAGE_UP on all clients to recall to the marked location.
-    machine.log("Pressing PAGE_UP to recall on all clients…", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.PAGE_UP, 0.1) for c in clients])
+    # 4. Click the RecallButton on all clients to recall to the marked location.
+    machine.log("Clicking RecallButton on all clients…", logging.DEBUG)
+    await asyncio.gather(*[node_helpers.click_by_path(c, RECALL_BUTTON_PATH) for c in clients])
 
     # 5. Wait for all clients to trigger ("ever seen" pattern).
     #    A recall triggers either a loading screen (cross-zone) or an immediate XYZ jump
@@ -116,7 +116,7 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
         not_triggered_clients = [c for i, c in enumerate(clients) if i not in seen_triggered]
-        await asyncio.gather(*[c.send_key(Keycode.PAGE_UP, 0.1) for c in not_triggered_clients])
+        await asyncio.gather(*[node_helpers.click_by_path(c, RECALL_BUTTON_PATH) for c in not_triggered_clients])
         await asyncio.sleep(POLL_INTERVAL)
 
     # 6. Wait for any loading screens to finish (no-op for same-zone recalls).

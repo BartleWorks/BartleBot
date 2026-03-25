@@ -41,6 +41,7 @@ class FakeClient:
         self.mouse_handler = MagicMock()
         self.mouse_handler.__aenter__ = AsyncMock(return_value=None)
         self.mouse_handler.__aexit__ = AsyncMock(return_value=False)
+        self.mouse_handler.click_window = AsyncMock()
 
 
 class FakeEntity:

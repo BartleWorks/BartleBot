@@ -3,11 +3,11 @@
 import asyncio
 import logging
 
-from wizwalker import XYZ, Keycode
+from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import RECALL_BUTTON_PATH, RECALL_TIMER_PATH
+from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
 
 POST_MARK_WAIT = 2.0  # seconds to wait for UI to reflect mark state after PAGE_DOWN
@@ -35,7 +35,7 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Marks the current in-game location using the PAGE_DOWN hotkey. "
+        "Marks the current in-game location by clicking the MarkButton in the compass HUD. "
         "Handles the 30-second mark cooldown timer and the edge case where marking the "
         "same location as an existing mark clears it rather than resetting it."
     ),
@@ -118,8 +118,8 @@ async def _mark_client(machine, client) -> bool:
         )
         return False
 
-    # Press PAGE_DOWN to mark location.
-    await client.send_key(Keycode.PAGE_DOWN, 0.1)
+    # Click the MarkButton to mark location.
+    await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
     await asyncio.sleep(POST_MARK_WAIT)
 
     # Check if the RecallButton is now enabled (mark successfully set).
@@ -127,7 +127,7 @@ async def _mark_client(machine, client) -> bool:
     if recall_enabled:
         return True
 
-    # Edge case: client had an existing mark at this exact spot. Pressing PAGE_DOWN
+    # Edge case: client had an existing mark at this exact spot. Clicking MarkButton
     # cleared it instead of resetting it. Wait for the cooldown again and re-mark.
     machine.log(
         "RecallButton grayed after marking — same-spot mark cleared; waiting to re-mark…",
@@ -140,7 +140,7 @@ async def _mark_client(machine, client) -> bool:
         )
         return False
 
-    await client.send_key(Keycode.PAGE_DOWN, 0.1)
+    await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
     await asyncio.sleep(POST_MARK_WAIT)
 
     # Final check.

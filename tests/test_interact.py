@@ -50,7 +50,6 @@ async def test_success_with_dialog():
 
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
-    assert Keycode.SPACEBAR in calls
 
 
 async def test_success_multiple_clients():
@@ -72,7 +71,6 @@ async def test_success_multiple_clients():
     for c in clients:
         calls = [call.args[0] for call in c.send_key.call_args_list]
         assert Keycode.X in calls
-        assert Keycode.SPACEBAR in calls
 
 
 async def test_prompt_never_appears_fails():
@@ -258,7 +256,3 @@ async def test_late_dialog_caught_within_safety_window():
         result = await ix.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
-    from wizwalker import Keycode
-
-    calls = [call.args[0] for call in client.send_key.call_args_list]
-    assert Keycode.SPACEBAR in calls
