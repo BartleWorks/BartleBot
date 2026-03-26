@@ -120,14 +120,14 @@ These directly impact whether the bot can run unattended.
 
 ### Phase 2: Code Quality (Before Next Feature Sprint)
 
-| Status | Item | Effort | What to do |
-|--------|------|--------|------------|
-| `TODO` | CI/CD pipeline | Low | GitHub Actions: `poetry install` → `ruff check` → `ruff format --check` → `pytest`. Add pre-commit hook simultaneously. |
-| `TODO` | Anti-detection timing jitter | Low | Add `jitter(base, factor=0.2)` to `timing.py`. Update nodes to use it. |
-| `TODO` | Decouple ambient combat watcher | Medium | Extract combat execution into `bartlebot/nodes/combat_runner.py`. Both watcher and handle_combat import from it. |
-| `TODO` | Settings schema validation | Low | Pydantic model or type-check dict for `_DEFAULTS`. Validate on load. |
+| Status | Item | Effort | What was done |
+|--------|------|--------|---------------|
+| `DONE` | CI/CD pipeline | Low | Created `.github/workflows/ci.yml` (GitHub Actions, `windows-latest`, Python 3.13): runs `poetry install` → `ruff check` → `ruff format --check` → `pytest` on every push/PR to `master`. Created `.pre-commit-config.yaml` using `astral-sh/ruff-pre-commit` pinned to `v0.15.7` with `ruff --fix` and `ruff-format` hooks. |
+| `DONE` | Anti-detection timing jitter | Low | Added `jitter(base, factor=0.2) -> float` to `bartlebot/nodes/timing.py` (uses `random.uniform`). Applied to deliberate action delays in three nodes: `mark_location.py` (`POST_MARK_WAIT` ×2), `handle_combat.py` (`TARGET_ACQUIRE_DELAY`), `collect_wisps.py` (`_WISP_COLLECT_DELAY` ×2). Polling-interval sleeps (`POLL_INTERVAL`) were intentionally left un-jittered — they are state-check loops, not human-action simulations. |
+| `DONE` | Decouple ambient combat watcher | Medium | Extracted `_resolve_combat_dsl`, `_run_combat`, and `_split_combat_config` from `handle_combat.py` into a new shared module `bartlebot/nodes/combat_runner.py`. Both `handle_combat.py` and the ambient combat watcher in `machine.py` now import from `combat_runner` — the FSM engine no longer couples to a specific node's implementation. Import graph is a clean DAG: `machine` → `combat_runner` ← `handle_combat`. |
+| `DONE` | Settings schema validation | Low | Added three Pydantic `BaseModel` subclasses to `settings_manager.py` (`_GeneralSettings`, `_GameEmbedSettings`, `_CanvasSettings`) mirroring the structured sections of `_DEFAULTS`. `_load()` validates each section after `_deep_merge`; on `ValidationError` or `TypeError` it logs a `WARNING` and resets that section to its defaults — so a corrupt `window_width: "bad"` doesn't silently propagate to downstream GUI code. Unstructured list fields (`accounts`, `launch_profiles`, etc.) are left as-is since they have their own typed helpers and CredentialStore validation. |
 
-**Key files:** new `.github/workflows/ci.yml`, `bartlebot/nodes/timing.py`, `bartlebot/bot/machine.py`, `bartlebot/settings_manager.py`
+**Key files:** `.github/workflows/ci.yml` (new), `.pre-commit-config.yaml` (new), `bartlebot/nodes/timing.py`, `bartlebot/nodes/combat_runner.py` (new), `bartlebot/nodes/action/handle_combat.py`, `bartlebot/bot/machine.py`, `bartlebot/settings_manager.py`
 
 ### Phase 3: Structural Improvements (Opportunistic)
 

@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.timing import jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -139,14 +140,14 @@ async def _collect_for_client(client, if_health_below: float, if_mana_below: flo
             found = await client.tp_to_closest_health_wisp()
             if not found:
                 break
-            await asyncio.sleep(_WISP_COLLECT_DELAY)
+            await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
 
     if if_mana_below > 0.0:
         while await client.calc_mana_ratio() < if_mana_below:
             found = await client.tp_to_closest_mana_wisp()
             if not found:
                 break
-            await asyncio.sleep(_WISP_COLLECT_DELAY)
+            await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
 
 
 async def _get_ratios(client) -> tuple[float, float]:

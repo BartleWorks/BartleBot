@@ -1,9 +1,44 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Any
+
+from pydantic import BaseModel, ValidationError
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Settings schema (structured sections only — list fields managed separately)
+# ---------------------------------------------------------------------------
+
+
+class _GeneralSettings(BaseModel):
+    maximize_on_open: bool = False
+    window_width: int = 1400
+    window_height: int = 800
+    left_sidebar_width: int = 300
+    right_sidebar_width: int = 300
+    bottom_section_height: int = 220
+
+
+class _GameEmbedSettings(BaseModel):
+    resolution: list[int] = [800, 600]
+
+
+class _CanvasSettings(BaseModel):
+    minimap_visible: bool = True
+    auto_layout_on_load: bool = True
+    lod_compact_threshold: float = 0.6
+
+
+_SECTION_MODELS: dict[str, type[BaseModel]] = {
+    "general": _GeneralSettings,
+    "game_embed": _GameEmbedSettings,
+    "canvas": _CanvasSettings,
+}
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -105,6 +140,18 @@ class SettingsManager:
                 self._data = _deep_merge(_DEFAULTS, on_disk)
             except Exception:
                 pass  # corrupt file → use defaults
+
+        # Validate structured sections; reset any that fail to their defaults.
+        for section_key, model_cls in _SECTION_MODELS.items():
+            try:
+                model_cls(**self._data[section_key])
+            except (ValidationError, TypeError) as exc:
+                logger.warning(
+                    "Settings section %r failed validation — resetting to defaults: %s",
+                    section_key,
+                    exc,
+                )
+                self._data[section_key] = dict(_DEFAULTS[section_key])
 
     def save(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)

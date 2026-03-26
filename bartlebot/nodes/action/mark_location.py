@@ -8,7 +8,7 @@ from wizwalker import XYZ
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
-from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, jitter
 
 POST_MARK_WAIT = 2.0  # seconds to wait for UI to reflect mark state after PAGE_DOWN
 STABILIZE_TIMEOUT = 5.0  # seconds to wait for server position to match teleport target
@@ -120,7 +120,7 @@ async def _mark_client(machine, client) -> bool:
 
     # Click the MarkButton to mark location.
     await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
-    await asyncio.sleep(POST_MARK_WAIT)
+    await asyncio.sleep(jitter(POST_MARK_WAIT))
 
     # Check if the RecallButton is now enabled (mark successfully set).
     recall_enabled = await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH)
@@ -141,7 +141,7 @@ async def _mark_client(machine, client) -> bool:
         return False
 
     await node_helpers.click_by_path(client, MARK_BUTTON_PATH)
-    await asyncio.sleep(POST_MARK_WAIT)
+    await asyncio.sleep(jitter(POST_MARK_WAIT))
 
     # Final check.
     return await node_helpers.is_enabled_by_path(client, RECALL_BUTTON_PATH)

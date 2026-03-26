@@ -331,11 +331,7 @@ class BotMachine:
         re-entry and against conflicting with intentional combat nodes.
         """
         from bartlebot.nodes import node_helpers
-        from bartlebot.nodes.action.handle_combat import (
-            _resolve_combat_dsl,
-            _run_combat,
-            _split_combat_config,
-        )
+        from bartlebot.nodes.combat_runner import _resolve_combat_dsl, _run_combat, _split_combat_config
         from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat
 
         while not self._stop_flag.is_set():
