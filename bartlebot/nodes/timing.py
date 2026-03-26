@@ -6,6 +6,8 @@ a timeout, interval, or retry count imports from this module instead of
 defining its own copy.
 """
 
+import random
+
 POLL_INTERVAL = 0.25
 # General polling interval used by all wait loops (poll_until, poll_each_until_seen, manual sleep loops).
 
@@ -40,3 +42,14 @@ TARGET_ACQUIRE_RETRIES = 3
 
 TARGET_ACQUIRE_DELAY = 3.0
 # Seconds to wait between target-acquire retries.
+
+
+def jitter(base: float, factor: float = 0.2) -> float:
+    """Return base ± (factor * base) as a uniform random value.
+
+    Use on deliberate action delays (waits after clicks, teleports, etc.)
+    to avoid perfectly regular timing that could fingerprint the bot.
+    Do NOT use on polling intervals — those are state-check loops, not
+    human-action simulations.
+    """
+    return base * (1.0 + random.uniform(-factor, factor))
