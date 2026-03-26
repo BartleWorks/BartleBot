@@ -182,7 +182,9 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
         if any(dialogs):
-            await asyncio.gather(*[node_helpers.click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(active_clients, dialogs) if d])
+            await asyncio.gather(
+                *[node_helpers.click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(active_clients, dialogs) if d]
+            )
         await asyncio.sleep(POLL_INTERVAL)
 
     machine.log("SUCCESS: interaction complete")
