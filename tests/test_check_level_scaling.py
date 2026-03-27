@@ -18,36 +18,40 @@ _NONE_SCALED = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value
 
 async def test_single_client_scaled_returns_true():
     """TRUE when the only client is level scaled."""
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
     with _ALL_SCALED:
-        result = await cls.run(FakeMachine(), [FakeClient()], {})
+        result = await cls.run(machine, [FakeClient()], {})
     assert result == "TRUE"
 
 
 async def test_single_client_not_scaled_returns_false():
     """FALSE when the only client is not level scaled."""
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
     with _NONE_SCALED:
-        result = await cls.run(FakeMachine(), [FakeClient()], {})
+        result = await cls.run(machine, [FakeClient()], {})
     assert result == "FALSE"
 
 
 # ---------------------------------------------------------------------------
-# Multiple clients — all checked by default
+# Multiple clients — explicit client list required
 # ---------------------------------------------------------------------------
 
 
 async def test_all_clients_scaled_returns_true():
-    """TRUE when all clients are level scaled."""
+    """TRUE when all specified clients are level scaled."""
+    machine = FakeMachine(options={"Level Scaling Clients": [1, 2]})
     with _ALL_SCALED:
-        result = await cls.run(FakeMachine(), [FakeClient(), FakeClient()], {})
+        result = await cls.run(machine, [FakeClient(), FakeClient()], {})
     assert result == "TRUE"
 
 
 async def test_one_client_not_scaled_returns_false():
-    """FALSE when at least one client is not scaled."""
+    """FALSE when at least one specified client is not scaled."""
+    machine = FakeMachine(options={"Level Scaling Clients": [1, 2]})
     # Client 1 scaled, client 2 not scaled.
     scaled_states = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, False]))
     with scaled_states:
-        result = await cls.run(FakeMachine(), [FakeClient(), FakeClient()], {})
+        result = await cls.run(machine, [FakeClient(), FakeClient()], {})
     assert result == "FALSE"
 
 
@@ -83,8 +87,8 @@ async def test_clients_to_check_specified_client_not_scaled_returns_false():
     assert result == "FALSE"
 
 
-async def test_empty_clients_to_check_defaults_to_all():
-    """Level Scaling Clients=[] (default) → all clients are checked."""
+async def test_empty_clients_to_check_returns_true():
+    """Level Scaling Clients=[] (default) → no clients checked → TRUE (vacuous pass)."""
     with _NONE_SCALED:
         result = await cls.run(FakeMachine(), [FakeClient(), FakeClient()], {})
-    assert result == "FALSE"
+    assert result == "TRUE"

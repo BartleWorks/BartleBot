@@ -14,7 +14,7 @@ _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     default=[],
     description=(
         "1-based client numbers to check/apply level scaling (e.g. '2, 3'). "
-        "Empty = all clients. Shared by check_level_scaling and apply_level_scaling."
+        "Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     ),
 )
 
@@ -36,9 +36,7 @@ async def run(machine, clients: list, params: dict) -> str:
     """Return 'TRUE' if all specified clients are level scaled, 'FALSE' otherwise."""
     clients_to_check: list[int] = machine.get_option("Level Scaling Clients", []) or []
 
-    check_indices = (
-        [n - 1 for n in clients_to_check if 0 < n <= len(clients)] if clients_to_check else list(range(len(clients)))
-    )
+    check_indices = [n - 1 for n in clients_to_check if 0 < n <= len(clients)]
     check_clients = [clients[i] for i in check_indices]
 
     results = await asyncio.gather(

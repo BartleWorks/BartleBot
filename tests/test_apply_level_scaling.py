@@ -76,9 +76,10 @@ async def test_prompt_never_appears_fails():
     """FAILURE when the interact prompt never shows after MAX_RETRIES attempts."""
     client = FakeClient()
     client.is_in_npc_range.return_value = False  # never appears
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
 
     with patch.object(als, "POLL_INTERVAL", 0), patch.object(als, "INTERACT_TIMEOUT", 0.01):
-        result = await als.run(FakeMachine(), [client], _PARAMS)
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
     # teleport(interact) + teleport(reset) for each attempt
@@ -88,13 +89,14 @@ async def test_prompt_never_appears_fails():
 async def test_menu_never_appears_fails():
     """FAILURE when NPCServicesWin menu never appears after pressing X."""
     client = _ready_client()
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
 
     with (
         patch("bartlebot.nodes.action.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
         patch.object(als, "POLL_INTERVAL", 0),
         patch.object(als, "INTERACT_TIMEOUT", 0.01),
     ):
-        result = await als.run(FakeMachine(), [client], _PARAMS)
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
     from wizwalker import Keycode
@@ -105,9 +107,10 @@ async def test_menu_never_appears_fails():
 async def test_success():
     """Happy path: prompt appears, X pressed, menu appears and dismisses → SUCCESS."""
     client = _ready_client()
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
 
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [client], _PARAMS)
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
@@ -115,19 +118,18 @@ async def test_success():
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
-async def test_empty_clients_to_scale_scales_all():
-    """Level Scaling Clients=[] (default) scales every connected client."""
-    c1 = _ready_client()
-    c2 = _ready_client()
+async def test_empty_clients_to_scale_skips_all():
+    """Level Scaling Clients=[] (default) skips all clients — returns SUCCESS immediately."""
+    c1 = FakeClient()
+    c2 = FakeClient()
 
-    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [c1, c2], _PARAMS)
+    result = await als.run(FakeMachine(), [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
-    from wizwalker import Keycode
-
-    for c in (c1, c2):
-        assert any(call.args[0] == Keycode.X for call in c.send_key.call_args_list)
+    c1.teleport.assert_not_called()
+    c1.send_key.assert_not_called()
+    c2.teleport.assert_not_called()
+    c2.send_key.assert_not_called()
 
 
 async def test_clients_to_scale_subset():
@@ -166,6 +168,7 @@ async def test_out_of_range_client_numbers_skipped():
 async def test_stale_prompt_cleared_before_interaction():
     """A pre-existing interact prompt is dismissed via reset_xyz before the retry loop."""
     client = FakeClient()
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
     call_count = 0
 
     async def _npc_range():
@@ -180,7 +183,7 @@ async def test_stale_prompt_cleared_before_interaction():
     client.is_in_npc_range.side_effect = _npc_range
 
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
-        result = await als.run(FakeMachine(), [client], _PARAMS)
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     # First teleport must be to reset_xyz (x=1.0), second to interact_xyz (x=0.0).
@@ -192,6 +195,7 @@ async def test_stale_prompt_cleared_before_interaction():
 async def test_prompt_retry_then_success():
     """Prompt times out on first attempt; appears after reset on second attempt."""
     client = FakeClient()
+    machine = FakeMachine(options={"Level Scaling Clients": [1]})
     reset_visited: list[bool] = []
 
     async def tracking_teleport(xyz):
@@ -212,7 +216,7 @@ async def test_prompt_retry_then_success():
         patch.object(als, "POLL_INTERVAL", 0),
         patch.object(als, "INTERACT_TIMEOUT", 0.01),
     ):
-        result = await als.run(FakeMachine(), [client], _PARAMS)
+        result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
     assert len(reset_visited) == 1

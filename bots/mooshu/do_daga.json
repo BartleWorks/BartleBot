@@ -1,9 +1,10 @@
 {
-  "name": "Do-Daga Farmer (unscaled)",
-  "description": "Endlessly farms Do-Daga. Does not handle level scaling (yet).",
-  "version": "2.0",
+  "name": "Do-Daga Farmer",
+  "description": "Endlessly farms Do-Daga.",
+  "version": "3.0",
   "clients": "all",
   "initial": "state_1",
+  "recovery_state": "state_1",
   "default_combat_config": "### p1\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Mooshu",
@@ -28,6 +29,12 @@
         4
       ],
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Level Scaling Clients",
+      "type": "int_list",
+      "default": [],
+      "description": "1-based client numbers to check/apply level scaling (e.g. '2, 3'). Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     }
   ],
   "states": [
@@ -92,8 +99,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 740.8976713676617,
-        "y": 152.6372581174155
+        "x": 750.0,
+        "y": 7.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -186,6 +193,119 @@
       },
       "option_overrides": {},
       "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 2550.0,
+        "y": 7.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "go_to_world_hub",
+      "label": "Go to Jade Palace",
+      "position": {
+        "x": 3150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "enter_dungeon",
+      "label": "Enter Emperor's Throne Room",
+      "position": {
+        "x": 3450.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Hub",
+        "dungeon_zone": "MooShu/Interiors/MS_Emperor_Palace",
+        "sigil_xyz": {
+          "x": 19169.84,
+          "y": 209.98,
+          "z": 898.45
+        },
+        "reset_xyz": {
+          "x": 18533.88,
+          "y": -480.59,
+          "z": 898.45
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 3750.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/Interiors/MS_Emperor_Palace",
+        "interact_xyz": {
+          "x": -405.3,
+          "y": 1323.0,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -260.72,
+          "y": 926.12,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "mark_location",
+      "label": "Mark location",
+      "position": {
+        "x": 2850.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+        "xyz": {
+          "x": -45420.47,
+          "y": -48413.26,
+          "z": 0.1
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_12",
+      "node_type": "recall_to_marked_location",
+      "label": "Recall to marked location",
+      "position": {
+        "x": 4050.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+        "xyz": {
+          "x": -45420.47,
+          "y": -48413.26,
+          "z": 0.1
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
     }
   ],
   "transitions": [
@@ -193,89 +313,215 @@
       "trigger": "advance",
       "source": "state_1",
       "dest": "state_25",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_48",
-      "dest": "state_2"
+      "dest": "state_2",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_25",
       "dest": "state_48",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_25",
       "dest": "state_2",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_2",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_2",
       "dest": "state_3",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_3",
       "dest": "state_4",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_6",
-      "when": "SUCCESS"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_5"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_6",
       "dest": "state_5",
-      "when": "FAILURE"
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_3",
-      "when": "SUCCESS"
+      "source": "state_6",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_3",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_5",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_1",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_3",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_11",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     }
   ],
   "regions": [
@@ -289,6 +535,30 @@
         "state_3"
       ],
       "color": "amber"
+    },
+    {
+      "id": "4b9e460f",
+      "label": "Handle level scaling",
+      "members": [
+        "state_11",
+        "state_10",
+        "state_7",
+        "state_8",
+        "state_9",
+        "state_12"
+      ],
+      "color": "green"
+    },
+    {
+      "id": "088daf63",
+      "label": "Go to dungeon",
+      "members": [
+        "state_48",
+        "state_25",
+        "state_2",
+        "state_1"
+      ],
+      "color": "blue"
     }
   ]
 }
