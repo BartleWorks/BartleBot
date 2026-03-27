@@ -77,6 +77,19 @@ class GeneralTab(QWidget):
         self._bottom_sb.setValue(sm.get_general("bottom_section_height", default=220))
         form.addRow("Default bottom section height:", self._bottom_sb)
 
+        # Auto-save enabled
+        self._autosave_cb = QCheckBox()
+        self._autosave_cb.setChecked(sm.get_general("auto_save_enabled", default=True))
+        form.addRow("Auto-save enabled:", self._autosave_cb)
+
+        # Auto-save interval
+        self._autosave_interval_sb = QSpinBox()
+        self._autosave_interval_sb.setRange(30, 3600)
+        self._autosave_interval_sb.setSingleStep(30)
+        self._autosave_interval_sb.setSuffix(" sec")
+        self._autosave_interval_sb.setValue(sm.get_general("auto_save_interval_seconds", default=300))
+        form.addRow("Auto-save interval:", self._autosave_interval_sb)
+
         layout.addLayout(form)
         layout.addStretch()
 
@@ -84,9 +97,16 @@ class GeneralTab(QWidget):
         self._maximize_cb.toggled.connect(self._on_maximize_toggled)
         self._on_maximize_toggled(self._maximize_cb.isChecked())
 
+        # Disable interval spinbox when auto-save is unchecked
+        self._autosave_cb.toggled.connect(self._on_autosave_toggled)
+        self._on_autosave_toggled(self._autosave_cb.isChecked())
+
     def _on_maximize_toggled(self, checked: bool) -> None:
         self._width_sb.setEnabled(not checked)
         self._height_sb.setEnabled(not checked)
+
+    def _on_autosave_toggled(self, checked: bool) -> None:
+        self._autosave_interval_sb.setEnabled(checked)
 
     def apply(self) -> None:
         sm = SettingsManager.instance()
@@ -97,3 +117,5 @@ class GeneralTab(QWidget):
         sm.set_general("left_sidebar_width", self._left_sb.value())
         sm.set_general("right_sidebar_width", self._right_sb.value())
         sm.set_general("bottom_section_height", self._bottom_sb.value())
+        sm.set_general("auto_save_enabled", self._autosave_cb.isChecked())
+        sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())

@@ -1,10 +1,11 @@
 import asyncio
 import logging
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt6.QtCore import QObject, QTimer, pyqtSignal
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.errors import MemoryReadError
 from wizwalker.extensions.wizsprinter import WizSprinter
@@ -50,9 +51,17 @@ class AppController(QObject):
         self._pending_recovery: dict[int, str] = {}
         self._recovery_in_progress: bool = False
 
+        # Auto-save state
+        self._has_unsaved_changes: bool = False
+        self._auto_save_timer = QTimer(self)
+        self._auto_save_timer.setSingleShot(False)
+        self._auto_save_timer.timeout.connect(self._do_autosave)
+
         self._window = MainWindow()
         self._wire()
         self._window.show()
+        self._reconfigure_autosave_timer()
+        self._check_crash_recovery()
 
     # ------------------------------------------------------------------
     # Wiring
@@ -89,6 +98,7 @@ class AppController(QObject):
         w.right_sidebar.clients.swap_requested.connect(self.swap_clients)
 
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
+        w.settings_applied.connect(self._reconfigure_autosave_timer)
 
     # ------------------------------------------------------------------
     # Entry point
@@ -105,6 +115,8 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _new_bot(self) -> None:
+        self._delete_autosave()
+        self._has_unsaved_changes = False
         config = BotConfig(
             name="New Bot",
             initial="state_1",
@@ -130,6 +142,9 @@ class AppController(QObject):
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to load bot", str(e))
             return
+        old_save_path = self._last_save_path
+        self._delete_autosave(old_save_path)
+        self._has_unsaved_changes = False
         self._loaded_config = config
         self._last_save_path = path
         self._window.set_bot_name(config.name, Path(path).name)
@@ -147,6 +162,8 @@ class AppController(QObject):
             return
         try:
             self._loaded_config.save(self._last_save_path)
+            self._has_unsaved_changes = False
+            self._delete_autosave()
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
 
@@ -158,9 +175,12 @@ class AppController(QObject):
             return
         if not path.endswith(".json"):
             path += ".json"
+        old_save_path = self._last_save_path
         try:
             self._loaded_config.save(path)
             self._last_save_path = path
+            self._has_unsaved_changes = False
+            self._delete_autosave(old_save_path)
             self._window.set_bot_name(self._loaded_config.name, Path(path).name)
             self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         except Exception as e:
@@ -246,6 +266,7 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _on_config_changed(self) -> None:
+        self._has_unsaved_changes = True
         self._window.set_save_enabled(True)
         if self._loaded_config is not None:
             self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
@@ -585,3 +606,126 @@ class AppController(QObject):
 
     def _start_enabled(self) -> bool:
         return bool(self._clients) and self._loaded_config is not None
+
+    # ------------------------------------------------------------------
+    # Auto-save / crash recovery
+    # ------------------------------------------------------------------
+
+    def _reconfigure_autosave_timer(self) -> None:
+        """Read current settings and start/stop/reconfigure the auto-save timer."""
+        sm = SettingsManager.instance()
+        enabled = sm.get_general("auto_save_enabled", default=True)
+        interval_sec = sm.get_general("auto_save_interval_seconds", default=300)
+        interval_ms = max(30, interval_sec) * 1000
+        self._auto_save_timer.stop()
+        if enabled:
+            self._auto_save_timer.setInterval(interval_ms)
+            self._auto_save_timer.start()
+
+    def _autosave_path(self) -> Path:
+        """Derive the recovery file path for the currently loaded config."""
+        stem = Path(self._last_save_path).stem if self._last_save_path else "_unsaved"
+        return SettingsManager.autosave_dir() / f"{stem}.autosave.json"
+
+    def _do_autosave(self) -> None:
+        """Timer callback — write a recovery file if there are unsaved changes."""
+        if not self._has_unsaved_changes or self._loaded_config is None:
+            return
+        # The config is read-only while the bot is running, nothing new to save.
+        if self._current_machine is not None:
+            return
+        try:
+            self._loaded_config.save(self._autosave_path())
+            logger.debug("Auto-saved recovery file: %s", self._autosave_path())
+        except Exception:
+            logger.exception("Auto-save failed")
+
+    def _delete_autosave(self, save_path: str | None = None) -> None:
+        """Remove the recovery file after a successful manual save."""
+        stem = Path(save_path).stem if save_path else "_unsaved"
+        p = SettingsManager.autosave_dir() / f"{stem}.autosave.json"
+        try:
+            if p.exists():
+                p.unlink()
+                logger.debug("Deleted auto-save file: %s", p)
+        except OSError:
+            logger.warning("Could not delete auto-save file %s", p)
+
+    def _check_crash_recovery(self) -> None:
+        """Scan the autosave directory at startup and offer to restore newer files."""
+        candidates = []
+        for autosave_path in sorted(SettingsManager.autosave_dir().glob("*.autosave.json")):
+            stem = autosave_path.name.replace(".autosave.json", "")
+            if stem == "_unsaved":
+                original_path: Path | None = None
+                is_candidate = True
+            else:
+                original_path = self._find_original_for_stem(stem)
+                if original_path and original_path.exists():
+                    is_candidate = autosave_path.stat().st_mtime > original_path.stat().st_mtime
+                else:
+                    is_candidate = True
+            if is_candidate:
+                candidates.append(
+                    {
+                        "autosave_path": autosave_path,
+                        "original_path": original_path,
+                        "modified": datetime.fromtimestamp(autosave_path.stat().st_mtime),
+                    }
+                )
+        if candidates:
+            self._offer_recovery(candidates)
+
+    def _find_original_for_stem(self, stem: str) -> Path | None:
+        """Search recent_bot_files for a path whose stem matches the autosave stem."""
+        for recent_path in SettingsManager.instance().recent_bot_files:
+            p = Path(recent_path)
+            if p.stem == stem:
+                return p
+        return None
+
+    def _offer_recovery(self, candidates: list[dict]) -> None:
+        """Show the RecoveryDialog and act on the user's choices."""
+        from bartlebot.gui.recovery_dialog import RecoveryDialog  # noqa: PLC0415
+
+        dlg = RecoveryDialog(candidates, parent=self._window)
+        if dlg.exec():
+            chosen = dlg.selected_candidates()
+        else:
+            chosen = []
+
+        chosen_paths = {c["autosave_path"] for c in chosen}
+
+        # Restore chosen candidates (last one loaded becomes the active config).
+        for c in chosen:
+            autosave_path: Path = c["autosave_path"]
+            original_path: Path | None = c.get("original_path")
+            try:
+                config = BotConfig.load(autosave_path)
+            except Exception as e:
+                QMessageBox.warning(
+                    self._window,
+                    "Recovery failed",
+                    f"Could not load recovery file:\n{autosave_path}\n\n{e}",
+                )
+                chosen_paths.discard(autosave_path)
+                continue
+            self._loaded_config = config
+            self._last_save_path = str(original_path) if original_path else None
+            display_name = original_path.name if original_path else "Untitled (recovered)"
+            self._window.set_bot_name(config.name, display_name)
+            self._window.bot_canvas.setup(config)
+            self._window.left_sidebar.set_config(config)
+            self._window.bot_canvas.enter_edit_mode()
+            self._window.set_save_enabled(True)
+            self._window.set_start_enabled(self._start_enabled())
+            # Mark dirty so the user is reminded to save and autosave continues.
+            self._has_unsaved_changes = True
+
+        # Delete autosave files that were not chosen (discarded by the user).
+        for c in candidates:
+            if c["autosave_path"] not in chosen_paths:
+                try:
+                    c["autosave_path"].unlink()
+                except OSError:
+                    pass

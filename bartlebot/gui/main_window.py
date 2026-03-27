@@ -18,6 +18,9 @@ from bartlebot.settings_manager import SettingsManager
 class MainWindow(QMainWindow):
     # Emitted when a recent-file menu entry is clicked (passes the file path)
     open_recent_requested = pyqtSignal(str)
+    # Emitted after the Settings dialog is accepted, so AppController can
+    # reconfigure timers and other settings-dependent state.
+    settings_applied = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -358,6 +361,7 @@ class MainWindow(QMainWindow):
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
             self.bot_canvas._apply_canvas_settings()
+            self.settings_applied.emit()
         self._game_view_panel.game_view._placeholder.refresh()
 
     def _open_launcher(self) -> None:

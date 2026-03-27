@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -154,5 +156,18 @@ class BotConfig(BaseModel):
         return cls.model_validate(data)
 
     def save(self, path: str | Path) -> None:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(self.model_dump(exclude_none=True), f, indent=2)
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # Write to a sibling temp file then atomically replace the target.
+        # Prevents corruption if the process crashes mid-write.
+        fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(self.model_dump(exclude_none=True), f, indent=2)
+            os.replace(tmp_path, path)
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise

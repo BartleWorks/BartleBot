@@ -23,6 +23,8 @@ class _GeneralSettings(BaseModel):
     left_sidebar_width: int = 300
     right_sidebar_width: int = 300
     bottom_section_height: int = 220
+    auto_save_enabled: bool = True
+    auto_save_interval_seconds: int = 300
 
 
 class _GameEmbedSettings(BaseModel):
@@ -54,6 +56,8 @@ _DEFAULTS: dict[str, Any] = {
         "left_sidebar_width": 300,
         "right_sidebar_width": 300,
         "bottom_section_height": 220,
+        "auto_save_enabled": True,
+        "auto_save_interval_seconds": 300,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -122,6 +126,13 @@ class SettingsManager:
     # ------------------------------------------------------------------
     # Singleton
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def autosave_dir() -> Path:
+        """Return the dedicated auto-save directory, creating it if necessary."""
+        d = _appdata_dir() / "autosave"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
 
     @classmethod
     def instance(cls) -> SettingsManager:
