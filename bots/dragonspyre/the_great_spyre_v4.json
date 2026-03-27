@@ -711,7 +711,13 @@
       "source": "state_15",
       "dest": "state_17",
       "when": "SUCCESS",
-      "flag": "Defeat Gurtok Firebender"
+      "flags": [
+        {
+          "option": "Defeat Gurtok Firebender",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
@@ -760,21 +766,39 @@
       "source": "state_5",
       "dest": "state_9",
       "when": "SUCCESS",
-      "flag": "Defeat Gurtok Firebender"
+      "flags": [
+        {
+          "option": "Defeat Gurtok Firebender",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_5",
       "dest": "state_18",
       "when": "SUCCESS",
-      "flag": "Defeat Gurtok Piercer"
+      "flags": [
+        {
+          "option": "Defeat Gurtok Piercer",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_9",
       "dest": "state_18",
       "when": "SUCCESS",
-      "flag": "Defeat Gurtok Piercer"
+      "flags": [
+        {
+          "option": "Defeat Gurtok Piercer",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",

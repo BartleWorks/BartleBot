@@ -140,7 +140,7 @@ Fix when touching adjacent code:
 | `DONE` | Cross-panel widget ownership | Extracted `LogPanel` from `BotCanvas` into a new `bartlebot/gui/sidebar/log_panel.py`. `LeftSidebar` now creates and owns `self.log_panel` directly; the `log_widget` parameter was removed from `LeftSidebar.__init__`. `BotCanvas` no longer holds any log state or methods (`append_log`, `append_log_formatted`, `_append_log`, `log_widget` property all removed). `AppController` calls `left_sidebar.log_panel.append_log[_formatted]` and `on_run_started()` directly. As part of this work, two new features were added to `LogPanel`: a **Clear button** in the header row, and a **"Clear log on Run"** boolean setting (default: on) exposed in Settings → General; `on_run_started()` checks the setting and clears before the Python logging bridge is registered, so "=== Bot started ===" is always the first line of a fresh log. |
 | `TODO` | `config_changed` signal disambiguation | Any signal chain refactor |
 | `TODO` | Auto-save / crash recovery | Before distribution to other users |
-| `TODO` | Delete confirmation for nodes/edges | Any edit mode UX improvement |
+| `DONE` | Delete confirmation for nodes/edges | QMessageBox.question() in _delete_node() and _delete_edge_item(). confirm=False param for programmatic deletes (orphan cleanup, Insert State Here). |
 | `TODO` | Log widget (file export, rotation) | Observability improvements |
 | `TODO` | Integration tests | Next batch of nodes |
 

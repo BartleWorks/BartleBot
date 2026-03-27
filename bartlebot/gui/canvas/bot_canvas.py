@@ -370,6 +370,7 @@ class BotCanvas(QWidget):
         # ── Wire internal signals ─────────────────────────────────────
         self._scene.config_changed.connect(self._on_scene_changed)
         self._param_panel.config_changed.connect(self._on_scene_changed)
+        self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
@@ -868,7 +869,7 @@ class BotCanvas(QWidget):
         reachable = _reachable_states(config)
         orphan_ids = [s.id for s in config.states if s.id not in reachable]
         for sid in orphan_ids:
-            self._scene._delete_node(sid)
+            self._scene._delete_node(sid, confirm=False)
 
     def _on_selection_changed(self) -> None:
         try:
@@ -899,7 +900,14 @@ class BotCanvas(QWidget):
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
                         option_names = [opt.name for opt in self._scene._config.options]
-                        self._param_panel.show_transition(trans, src_returns, option_names)
+                        state_ids = [st.id for st in self._scene._config.states]
+                        self._param_panel.show_transition(
+                            trans,
+                            src_returns,
+                            option_names,
+                            state_ids=state_ids,
+                            all_transitions=self._scene._config.transitions,
+                        )
                         self.tab_switch.emit("properties")
                     break
         else:

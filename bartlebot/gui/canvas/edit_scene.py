@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
     QGraphicsScene,
+    QMessageBox,
     QPushButton,
     QWidget,
 )
@@ -35,6 +36,29 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPE
 _PORT_HIT_RADIUS = 16
 _AUTO_SPACING = 260
 _PASTE_OFFSET = 40  # px shift per successive paste of the same clipboard
+
+_SCROLL_MARGIN = 40  # px from viewport edge at which auto-scroll activates during drag
+_SCROLL_SPEED = 10  # max px to scroll per mouseMoveEvent while in the margin zone
+
+
+def _auto_scroll_view(view, scene_pos: QPointF) -> None:
+    """Scroll the viewport when the drag cursor enters the margin zone near an edge."""
+    vp_pos = view.mapFromScene(scene_pos)
+    rect = view.viewport().rect()
+    dx = dy = 0
+    if vp_pos.x() < _SCROLL_MARGIN:
+        dx = -((_SCROLL_MARGIN - vp_pos.x()) * _SCROLL_SPEED // _SCROLL_MARGIN + 1)
+    elif vp_pos.x() > rect.width() - _SCROLL_MARGIN:
+        dx = (vp_pos.x() - (rect.width() - _SCROLL_MARGIN)) * _SCROLL_SPEED // _SCROLL_MARGIN + 1
+    if vp_pos.y() < _SCROLL_MARGIN:
+        dy = -((_SCROLL_MARGIN - vp_pos.y()) * _SCROLL_SPEED // _SCROLL_MARGIN + 1)
+    elif vp_pos.y() > rect.height() - _SCROLL_MARGIN:
+        dy = (vp_pos.y() - (rect.height() - _SCROLL_MARGIN)) * _SCROLL_SPEED // _SCROLL_MARGIN + 1
+    if dx:
+        view.horizontalScrollBar().setValue(view.horizontalScrollBar().value() + dx)
+    if dy:
+        view.verticalScrollBar().setValue(view.verticalScrollBar().value() + dy)
+
 
 # ---------------------------------------------------------------------------
 # Module-level helpers (also imported by BotCanvas)
@@ -195,6 +219,7 @@ class EditScene(QGraphicsScene):
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
+        self._auto_scrolling: bool = False
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
         self._paste_count: int = 0
@@ -375,6 +400,11 @@ class EditScene(QGraphicsScene):
             src_pt = self._drag_src.port_out_for(self._drag_when)
             cur = event.scenePos()
             self._temp_edge.setLine(src_pt.x(), src_pt.y(), cur.x(), cur.y())
+            views = self.views()
+            if views and not self._auto_scrolling:
+                self._auto_scrolling = True
+                _auto_scroll_view(views[0], cur)
+                self._auto_scrolling = False
             event.accept()
             return
         super().mouseMoveEvent(event)
@@ -669,20 +699,30 @@ class EditScene(QGraphicsScene):
             self.config_changed.emit()
 
     def _delete_selected(self) -> None:
-        changed = False
         for item in list(self.selectedItems()):
             if isinstance(item, NodeItem):
                 self._delete_node(item.state_id)
-                changed = True
             elif isinstance(item, EdgeItem):
                 self._delete_edge_item(item)
-                changed = True
-        if changed:
-            self.config_changed.emit()
 
-    def _delete_node(self, state_id: str) -> None:
+    def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
+        """Delete a state and all its edges.  Returns False if the user cancels."""
         if self._config is None:
-            return
+            return False
+        if confirm:
+            state = next((s for s in self._config.states if s.id == state_id), None)
+            label = (state.label or state_id) if state else state_id
+            edges_count = sum(1 for t in self._config.transitions if t.source == state_id or t.dest == state_id)
+            detail = f" All {edges_count} connected transition(s) will also be deleted." if edges_count else ""
+            answer = QMessageBox.question(
+                self.views()[0] if self.views() else None,
+                "Delete State",
+                f"Delete state '{label}'?{detail}",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return False
         self._config.transitions = [t for t in self._config.transitions if t.source != state_id and t.dest != state_id]
         remaining = []
         for s, w, d, edge_item in self._edge_items:
@@ -705,10 +745,27 @@ class EditScene(QGraphicsScene):
         self._flush_regions()
         self._update_scene_rect()
         self.config_changed.emit()
+        return True
 
-    def _delete_edge_item(self, edge_item: EdgeItem) -> None:
+    def _delete_edge_item(self, edge_item: EdgeItem, *, confirm: bool = True) -> bool:
+        """Delete a transition edge.  Returns False if the user cancels."""
         if self._config is None:
-            return
+            return False
+        if confirm:
+            src = dst = ""
+            for s, _w, d, ei in self._edge_items:
+                if ei is edge_item:
+                    src, dst = s, d
+                    break
+            answer = QMessageBox.question(
+                self.views()[0] if self.views() else None,
+                "Delete Transition",
+                f"Delete transition from '{src}' to '{dst}'?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return False
         remaining = []
         for s, w, d, ei in self._edge_items:
             if ei is edge_item:
@@ -725,6 +782,89 @@ class EditScene(QGraphicsScene):
             else:
                 remaining.append((s, w, d, ei))
         self._edge_items = remaining
+        self.refresh_terminal()
+        self.refresh_errors()
+        self.config_changed.emit()
+        return True
+
+    def change_edge_endpoints(
+        self,
+        old_src: str,
+        old_when: object,  # str | None
+        old_dst: str,
+        new_src: str,
+        new_dst: str,
+    ) -> None:
+        """Rebuild a scene edge after its source/dest was changed via the properties panel.
+
+        The TransitionModel itself is already updated by the param panel before this
+        is called.  This method updates the visual EdgeItem and all data structures.
+        """
+        if self._config is None:
+            return
+        old_when_str: str | None = old_when  # type: ignore[assignment]
+        # Locate the edge record
+        record_idx: int | None = None
+        for i, (s, w, d, _ei) in enumerate(self._edge_items):
+            if s == old_src and w == old_when_str and d == old_dst:
+                record_idx = i
+                break
+        if record_idx is None:
+            return
+        _s, _w, _d, edge_item = self._edge_items[record_idx]
+
+        old_src_node = self._node_items.get(old_src)
+        old_dst_node = self._node_items.get(old_dst)
+        new_src_node = self._node_items.get(new_src)
+        new_dst_node = self._node_items.get(new_dst)
+        if new_src_node is None or new_dst_node is None:
+            return
+
+        # Unregister from old nodes
+        if old_src_node:
+            old_src_node.remove_edge(edge_item)
+        if old_dst_node and old_dst_node is not old_src_node:
+            old_dst_node.remove_edge(edge_item)
+
+        # Recalculate offset — check if a reverse edge already exists on the NEW pair
+        reverse_exists = any(
+            es == new_dst and ed == new_src for (es, _ew, ed, _ei2) in self._edge_items if _ei2 is not edge_item
+        )
+        if reverse_exists:
+            for _i2, (es, _ew, ed, ei2) in enumerate(self._edge_items):
+                if ei2 is not edge_item and es == new_dst and ed == new_src:
+                    ei2._offset = -22.0
+                    ei2._rebuild()
+            new_offset = 22.0
+        else:
+            new_offset = 0.0
+
+        # Update the EdgeItem in-place
+        edge_item._src = new_src_node
+        edge_item._dst = new_dst_node
+        edge_item._is_self_loop = new_src_node is new_dst_node
+        edge_item._offset = new_offset
+        edge_item._rebuild()
+
+        # Register with new nodes
+        new_src_node.add_edge(edge_item)
+        if new_dst_node is not new_src_node:
+            new_dst_node.add_edge(edge_item)
+
+        # Update the _edge_items record
+        self._edge_items[record_idx] = (new_src, old_when_str, new_dst, edge_item)
+
+        # Clean up offsets on the OLD pair if the reverse was offset for it
+        old_reverse = any(
+            es == old_dst and ed == old_src for (es, _ew, ed, ei2) in self._edge_items if ei2 is not edge_item
+        )
+        if not old_reverse:
+            for _i2, (es, _ew, ed, ei2) in enumerate(self._edge_items):
+                if ei2 is not edge_item and es == old_dst and ed == old_src:
+                    ei2._offset = 0.0
+                    ei2._rebuild()
+
+        self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
         self.config_changed.emit()
@@ -770,7 +910,7 @@ class EditScene(QGraphicsScene):
         self._node_items[new_id] = new_node
 
         # Remove original edge (src --w--> dst), then wire src --w--> new --∅--> dst
-        self._delete_edge_item(edge_item)
+        self._delete_edge_item(edge_item, confirm=False)
         self._create_transition(src_node, new_node, w)
         self._create_transition(new_node, dst_node, None)
         self._update_scene_rect()

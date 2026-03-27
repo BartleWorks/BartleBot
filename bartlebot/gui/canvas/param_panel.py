@@ -17,9 +17,11 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
@@ -29,7 +31,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import StateModel, TransitionModel
+from bartlebot.bot.schema import FlagCondition, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -408,6 +410,182 @@ def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# _FlagConditionsWidget  — dynamic AND/OR/NOT flag condition list for edges
+# ---------------------------------------------------------------------------
+
+
+class _FlagConditionsWidget(QWidget):
+    """Widget that edits a list of FlagConditions on a TransitionModel.
+
+    Layout:
+        [AND | OR ▾]   ← operator selector (top row)
+        [NOT □] [option ▾]  [✕]   ← one row per condition
+        [NOT □] [option ▾]  [✕]
+        [+ Add condition]          ← append button
+    """
+
+    changed = pyqtSignal()
+
+    # Width budget for the NOT checkbox and remove button
+    _NOT_W = 40
+    _REM_W = 24
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._transition: TransitionModel | None = None
+        self._option_names: list[str] = []
+        self._updating: bool = False
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(4)
+
+        # Operator row
+        op_row = QHBoxLayout()
+        op_row.setContentsMargins(0, 0, 0, 0)
+        op_lbl = QLabel("Combine with:")
+        op_lbl.setStyleSheet(
+            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.muted_text}; font-size: 11px; font-weight: 600;"
+        )
+        self._op_combo = QComboBox()
+        self._op_combo.addItems(["AND", "OR"])
+        self._op_combo.setFixedWidth(64)
+        op_row.addWidget(op_lbl)
+        op_row.addWidget(self._op_combo)
+        op_row.addStretch()
+        outer.addLayout(op_row)
+
+        # Rows container
+        self._rows_widget = QWidget()
+        self._rows_layout = QVBoxLayout(self._rows_widget)
+        self._rows_layout.setContentsMargins(0, 0, 0, 0)
+        self._rows_layout.setSpacing(2)
+        outer.addWidget(self._rows_widget)
+
+        # Add button
+        self._add_btn = QPushButton("+ Add condition")
+        self._add_btn.setFixedHeight(22)
+        self._add_btn.clicked.connect(self._on_add)
+        outer.addWidget(self._add_btn)
+
+        # Separator
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setStyleSheet("color: #444;")
+        outer.addWidget(sep)
+
+        self._op_combo.currentTextChanged.connect(self._on_op_changed)
+        self._row_widgets: list[tuple[QCheckBox, QComboBox, QPushButton]] = []
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def set_conditions(
+        self,
+        flags: list[FlagCondition],
+        flag_op: str,
+        option_names: list[str],
+    ) -> None:
+        """Rebuild the widget from a transition's flags list."""
+        self._updating = True
+        self._option_names = list(option_names)
+
+        # Clear existing rows
+        for not_cb, opt_cb, rem_btn in self._row_widgets:
+            not_cb.setParent(None)
+            opt_cb.setParent(None)
+            rem_btn.setParent(None)
+        self._row_widgets.clear()
+        while self._rows_layout.count():
+            item = self._rows_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Operator
+        idx = self._op_combo.findText(flag_op)
+        self._op_combo.setCurrentIndex(idx if idx >= 0 else 0)
+
+        # One row per FlagCondition
+        for fc in flags:
+            self._add_row(fc.option, fc.negate)
+
+        self._updating = False
+
+    def get_conditions(self) -> tuple[list[FlagCondition], str]:
+        """Return the current flags list and flag_op string."""
+        flags = []
+        for not_cb, opt_cb, _rem in self._row_widgets:
+            option = opt_cb.currentText()
+            if option:
+                flags.append(FlagCondition(option=option, negate=not_cb.isChecked()))
+        return flags, self._op_combo.currentText()
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _add_row(self, option: str = "", negate: bool = False) -> None:
+        from bartlebot.gui.theme import THEME
+
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(4)
+
+        not_cb = QCheckBox("NOT")
+        not_cb.setChecked(negate)
+        not_cb.setFixedWidth(self._NOT_W)
+
+        opt_combo = QComboBox()
+        opt_combo.addItems(self._option_names)
+        if option and opt_combo.findText(option) < 0:
+            opt_combo.addItem(option)
+        if option:
+            opt_combo.setCurrentText(option)
+
+        rem_btn = QPushButton("✕")
+        rem_btn.setFixedWidth(self._REM_W)
+        rem_btn.setStyleSheet(f"color: {THEME.error_border}; font-weight: bold; border: none; padding: 0;")
+
+        row_layout.addWidget(not_cb)
+        row_layout.addWidget(opt_combo, 1)
+        row_layout.addWidget(rem_btn)
+        self._rows_layout.addWidget(row)
+
+        self._row_widgets.append((not_cb, opt_combo, rem_btn))
+
+        not_cb.checkStateChanged.connect(self._on_row_changed)
+        opt_combo.currentTextChanged.connect(self._on_row_changed)
+        rem_btn.clicked.connect(lambda _=None, r=row, t=(not_cb, opt_combo, rem_btn): self._on_remove(r, t))
+
+    def _on_add(self) -> None:
+        default = self._option_names[0] if self._option_names else ""
+        self._add_row(option=default, negate=False)
+        if not self._updating:
+            self._emit()
+
+    def _on_remove(self, row: QWidget, widgets: tuple) -> None:
+        if widgets in self._row_widgets:
+            self._row_widgets.remove(widgets)
+        self._rows_layout.removeWidget(row)
+        row.deleteLater()
+        if not self._updating:
+            self._emit()
+
+    def _on_op_changed(self, _text: str) -> None:
+        if not self._updating:
+            self._emit()
+
+    def _on_row_changed(self, *_) -> None:
+        if not self._updating:
+            self._emit()
+
+    def _emit(self) -> None:
+        self.changed.emit()
+
+
+# ---------------------------------------------------------------------------
 # _ParamPanel
 # ---------------------------------------------------------------------------
 
@@ -418,6 +596,9 @@ _PAGE_EDGE = 2
 
 class _ParamPanel(QWidget):
     config_changed = pyqtSignal()
+    # Emitted when the user changes source or dest via the dropdowns.
+    # Args: old_source, old_when (str|None), old_dest, new_source, new_dest
+    edge_endpoints_changed = pyqtSignal(str, object, str, str, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -426,6 +607,10 @@ class _ParamPanel(QWidget):
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
         self._record_task: asyncio.Task | None = None
+        # All state IDs for the source/dest dropdowns; populated by show_transition()
+        self._all_state_ids: list[str] = []
+        # Other transitions in the config — for duplicate-check in endpoint change
+        self._all_transitions: list[TransitionModel] = []
 
         self._stack = QStackedWidget()
         layout = QVBoxLayout(self)
@@ -509,30 +694,51 @@ class _ParamPanel(QWidget):
         self._stack.addWidget(node_outer)
 
         # Page 2 — edge
-        edge_w = QWidget()
-        ef = QFormLayout(edge_w)
+        edge_outer = QWidget()
+        edge_vbox = QVBoxLayout(edge_outer)
+        edge_vbox.setContentsMargins(0, 0, 0, 0)
+        edge_vbox.setSpacing(0)
+
+        edge_form_w = QWidget()
+        ef = QFormLayout(edge_form_w)
         ef.setContentsMargins(6, 6, 6, 6)
-        self._edge_src_lbl = QLabel()
-        self._edge_dst_lbl = QLabel()
+
+        self._edge_src_combo = QComboBox()
+        self._edge_src_combo.setToolTip("Source state — the state that runs before this transition.")
+        self._edge_dst_combo = QComboBox()
+        self._edge_dst_combo.setToolTip("Destination state — the state to enter when this transition fires.")
         self._edge_when_combo = QComboBox()
-        self._edge_flag_combo = QComboBox()
-        ef.addRow("Source", self._edge_src_lbl)
-        ef.addRow("Dest", self._edge_dst_lbl)
+
+        ef.addRow("Source", self._edge_src_combo)
+        ef.addRow("Dest", self._edge_dst_combo)
         ef.addRow("When", self._edge_when_combo)
 
-        flag_lbl = QLabel("Flag")
-        flag_lbl.setToolTip(
-            "Bot option that must be truthy for this transition to fire.\n"
-            "Both When and Flag conditions must be satisfied."
+        flags_lbl = QLabel("Flag conditions")
+        flags_lbl.setStyleSheet(
+            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.muted_text};"
+            " font-size: 11px; font-weight: 600; margin-top: 4px;"
         )
-        ef.addRow(flag_lbl, self._edge_flag_combo)
-        self._stack.addWidget(edge_w)
+        flags_lbl.setToolTip(
+            "Bot options that must be satisfied for this transition to fire.\n"
+            "Combine multiple conditions with AND (all must be true) or OR (any must be true).\n"
+            "Check NOT to invert a condition."
+        )
+
+        self._flag_conditions_widget = _FlagConditionsWidget()
+
+        edge_vbox.addWidget(edge_form_w)
+        edge_vbox.addWidget(flags_lbl)
+        edge_vbox.addWidget(self._flag_conditions_widget)
+        edge_vbox.addStretch()
+        self._stack.addWidget(edge_outer)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_type_combo.currentTextChanged.connect(self._on_node_type_changed)
         self._param_form.changed.connect(self._on_param_form_changed)
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
-        self._edge_flag_combo.currentTextChanged.connect(self._on_edge_flag_changed)
+        self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
+        self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
+        self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
 
     def show_idle(self) -> None:
         self._cancel_record()
@@ -563,14 +769,27 @@ class _ParamPanel(QWidget):
         transition: TransitionModel,
         src_returns: list[str] | None = None,
         option_names: list[str] | None = None,
+        state_ids: list[str] | None = None,
+        all_transitions: list[TransitionModel] | None = None,
     ) -> None:
         self._transition = transition
         self._state = None
+        self._all_state_ids = list(state_ids or [])
+        self._all_transitions = list(all_transitions or [])
         self._suppress = True
-        self._edge_src_lbl.setText(transition.source)
-        self._edge_dst_lbl.setText(transition.dest)
 
-        # Populate "When" combo from source node's possible return values
+        # Source / dest dropdowns
+        self._edge_src_combo.clear()
+        self._edge_src_combo.addItems(self._all_state_ids)
+        src_idx = self._edge_src_combo.findText(transition.source)
+        self._edge_src_combo.setCurrentIndex(src_idx if src_idx >= 0 else 0)
+
+        self._edge_dst_combo.clear()
+        self._edge_dst_combo.addItems(self._all_state_ids)
+        dst_idx = self._edge_dst_combo.findText(transition.dest)
+        self._edge_dst_combo.setCurrentIndex(dst_idx if dst_idx >= 0 else 0)
+
+        # When combo from source node's possible return values
         self._edge_when_combo.clear()
         self._edge_when_combo.addItem("(none)")
         for name in src_returns or []:
@@ -584,20 +803,12 @@ class _ParamPanel(QWidget):
         else:
             self._edge_when_combo.setCurrentIndex(0)
 
-        # Populate "Flag" combo from bot-wide options
-        self._edge_flag_combo.clear()
-        self._edge_flag_combo.addItem("(none)")
-        for name in option_names or []:
-            self._edge_flag_combo.addItem(name)
-        if transition.flag and self._edge_flag_combo.findText(transition.flag) < 0:
-            # Flag references an option that no longer exists — show it anyway
-            self._edge_flag_combo.addItem(transition.flag)
-        if transition.flag:
-            idx = self._edge_flag_combo.findText(transition.flag)
-            if idx >= 0:
-                self._edge_flag_combo.setCurrentIndex(idx)
-        else:
-            self._edge_flag_combo.setCurrentIndex(0)
+        # Flag conditions widget
+        self._flag_conditions_widget.set_conditions(
+            transition.flags,
+            transition.flag_op,
+            option_names or [],
+        )
 
         self._suppress = False
         self._stack.setCurrentIndex(_PAGE_EDGE)
@@ -635,10 +846,64 @@ class _ParamPanel(QWidget):
         self._transition.when = None if text == "(none)" else text
         self.config_changed.emit()
 
-    def _on_edge_flag_changed(self, text: str) -> None:
+    def _on_edge_src_changed(self, new_src: str) -> None:
+        if self._suppress or self._transition is None or not new_src:
+            return
+        old_src = self._transition.source
+        if new_src == old_src:
+            return
+        old_when = self._transition.when
+        old_dst = self._transition.dest
+        # Duplicate check: another transition with the same (new_src, dest, when) must not exist
+        if any(
+            t is not self._transition and t.source == new_src and t.dest == old_dst and t.when == old_when
+            for t in self._all_transitions
+        ):
+            QMessageBox.warning(
+                self,
+                "Duplicate Transition",
+                f"A transition from '{new_src}' to '{old_dst}' with the same When condition already exists.",
+            )
+            self._suppress = True
+            self._edge_src_combo.setCurrentText(old_src)
+            self._suppress = False
+            return
+        self._transition.source = new_src
+        self.edge_endpoints_changed.emit(old_src, old_when, old_dst, new_src, old_dst)
+        self.config_changed.emit()
+
+    def _on_edge_dst_changed(self, new_dst: str) -> None:
+        if self._suppress or self._transition is None or not new_dst:
+            return
+        old_dst = self._transition.dest
+        if new_dst == old_dst:
+            return
+        old_src = self._transition.source
+        old_when = self._transition.when
+        # Duplicate check
+        if any(
+            t is not self._transition and t.source == old_src and t.dest == new_dst and t.when == old_when
+            for t in self._all_transitions
+        ):
+            QMessageBox.warning(
+                self,
+                "Duplicate Transition",
+                f"A transition from '{old_src}' to '{new_dst}' with the same When condition already exists.",
+            )
+            self._suppress = True
+            self._edge_dst_combo.setCurrentText(old_dst)
+            self._suppress = False
+            return
+        self._transition.dest = new_dst
+        self.edge_endpoints_changed.emit(old_src, old_when, old_dst, old_src, new_dst)
+        self.config_changed.emit()
+
+    def _on_flag_conditions_changed(self) -> None:
         if self._suppress or self._transition is None:
             return
-        self._transition.flag = None if text == "(none)" else text
+        flags, flag_op = self._flag_conditions_widget.get_conditions()
+        self._transition.flags = flags
+        self._transition.flag_op = flag_op
         self.config_changed.emit()
 
     # ------------------------------------------------------------------

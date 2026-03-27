@@ -63,6 +63,9 @@ class BotMachine:
         self._status_check_flagged: set[int] = set()  # HWNDs already flagged as unresponsive
 
         self._state_map = {s["id"]: s for s in config["states"]}
+        # Compiled compound flag expressions from to_machine_config().
+        # Keys are _flag_compound_<idx> strings; values are {"flags": [...], "op": "AND"|"OR"}.
+        self._conditions_registry: dict[str, dict] = config.get("conditions_registry", {})
 
         states = [s["id"] for s in config["states"]]
         transitions = config["transitions"]
@@ -81,14 +84,29 @@ class BotMachine:
     def __getattr__(self, name: str):
         """Dynamically provide condition methods for transitions.
 
-        _result_is_<VALUE>  — BotConfig.to_machine_config() converts when="SUCCESS"
-                              into this condition name.
-        _flag_<NAME>        — fires when bot option <NAME> is truthy. Used for
-                              bot-level behavioural flags (e.g. "repeat").
+        _result_is_<VALUE>    — BotConfig.to_machine_config() converts when="SUCCESS"
+                                into this condition name.
+        _flag_<NAME>          — fires when bot option <NAME> is truthy.
+        _flag_compound_<IDX>  — evaluates a compiled multi-flag AND/OR/NOT expression
+                                stored in self._conditions_registry.
         """
         if name.startswith("_result_is_"):
             expected = name[len("_result_is_") :]
             return lambda: self.last_result == expected
+        if name.startswith("_flag_compound_"):
+            cond_info = self._conditions_registry.get(name)
+            if cond_info:
+
+                def _eval_compound(ci=cond_info):
+                    results = [
+                        (not bool(self.get_option(c["option"], default=False)))
+                        if c["negate"]
+                        else bool(self.get_option(c["option"], default=False))
+                        for c in ci["flags"]
+                    ]
+                    return any(results) if ci["op"] == "OR" else all(results)
+
+                return _eval_compound
         if name.startswith("_flag_"):
             option_name = name[len("_flag_") :]
             return lambda: bool(self.get_option(option_name, default=False))
