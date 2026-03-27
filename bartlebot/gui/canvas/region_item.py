@@ -16,7 +16,7 @@ from bartlebot.gui.theme import THEME
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import RegionModel
-    from bartlebot.gui.canvas.graph_items import NodeItem
+    from bartlebot.gui.canvas.node_item import NodeItem
 
 # ---------------------------------------------------------------------------
 # Constants

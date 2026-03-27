@@ -135,8 +135,8 @@ Fix when touching adjacent code:
 
 | Status | Item | Trigger |
 |--------|------|---------|
-| `TODO` | Split `bot_canvas.py` (~2000 lines) | Next canvas feature (undo, subgraphs) |
-| `TODO` | Split `graph_items.py` (~1000 lines) | Next node rendering or minimap change |
+| `DONE` | Split `bot_canvas.py` (~2000 lines) | Extracted `EditScene`, `_EditView`, `_ColorPickerDialog`, and module-level helpers (`_inject_required_options`, `_node_returns`, `_validate_node`, `_reachable_states`, `_dist`, `_unique_id`) into `edit_scene.py`; `BotCanvas` + `_SearchBar` remain in `bot_canvas.py`. |
+| `DONE` | Split `graph_items.py` (~1000 lines) | Split into `graph_view.py` (`GraphView`, `_MinimapView`), `node_item.py` (`NodeItem` + geometry constants), `edge_item.py` (`EdgeItem` + path helpers); `graph_items.py` deleted entirely (no external importers). |
 | `TODO` | Cross-panel widget ownership | Sidebar redesign or undo/redo |
 | `TODO` | `config_changed` signal disambiguation | Any signal chain refactor |
 | `TODO` | Auto-save / crash recovery | Before distribution to other users |

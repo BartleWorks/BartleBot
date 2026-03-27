@@ -1,6 +1,6 @@
 """Tests for non-GUI helper functions in the editor module."""
 
-from bartlebot.gui.canvas.bot_canvas import _unique_id
+from bartlebot.gui.canvas.edit_scene import _unique_id
 
 
 def test_unique_id_empty_list():
