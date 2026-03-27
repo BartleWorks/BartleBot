@@ -32,6 +32,11 @@ class GeneralTab(QWidget):
         self._maximize_cb.setChecked(sm.get_general("maximize_on_open", default=False))
         form.addRow("Maximize on open:", self._maximize_cb)
 
+        # Clear log on run
+        self._clear_log_cb = QCheckBox()
+        self._clear_log_cb.setChecked(sm.get_general("clear_log_on_run", default=True))
+        form.addRow("Clear log on Run:", self._clear_log_cb)
+
         # Default window size (width × height)
         self._width_sb = QSpinBox()
         self._width_sb.setRange(800, 3840)
@@ -86,6 +91,7 @@ class GeneralTab(QWidget):
     def apply(self) -> None:
         sm = SettingsManager.instance()
         sm.set_general("maximize_on_open", self._maximize_cb.isChecked())
+        sm.set_general("clear_log_on_run", self._clear_log_cb.isChecked())
         sm.set_general("window_width", self._width_sb.value())
         sm.set_general("window_height", self._height_sb.value())
         sm.set_general("left_sidebar_width", self._left_sb.value())

@@ -119,12 +119,9 @@ class MainWindow(QMainWindow):
         self._rebuild_launch_menu()
 
     def _build_central(self) -> None:
-        # BotCanvas must be created first — it owns param_panel and log_widget
+        # BotCanvas must be created first — it owns param_panel
         self.bot_canvas = BotCanvas()
-        self.left_sidebar = LeftSidebar(
-            self.bot_canvas.param_panel,
-            self.bot_canvas.log_widget,
-        )
+        self.left_sidebar = LeftSidebar(self.bot_canvas.param_panel)
         self.right_sidebar = RightSidebar()
         self._game_view_panel = GameViewPanel()
         self.game_view = self._game_view_panel.game_view

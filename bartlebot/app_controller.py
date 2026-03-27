@@ -191,13 +191,14 @@ class AppController(QObject):
         self._window.set_start_enabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._clients))
         self._window.right_sidebar.drops.clear_drops()
-        add_gui_callback(self._window.bot_canvas.append_log_formatted)
+        self._window.left_sidebar.log_panel.on_run_started()
+        add_gui_callback(self._window.left_sidebar.log_panel.append_log_formatted)
         self._window.bot_canvas.set_running()
         try:
             await machine.run()
         finally:
             self._window.bot_canvas.set_idle()
-            remove_gui_callback(self._window.bot_canvas.append_log_formatted)
+            remove_gui_callback(self._window.left_sidebar.log_panel.append_log_formatted)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
 
@@ -227,7 +228,7 @@ class AppController(QObject):
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)
 
     def _on_machine_log(self, msg: str, level: int) -> None:
-        self._window.bot_canvas.append_log(msg, level)
+        self._window.left_sidebar.log_panel.append_log(msg, level)
 
     def _on_machine_client_disconnected(self, hwnd: int) -> None:
         """Called by _client_status_watcher when a client becomes unresponsive.

@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class _GeneralSettings(BaseModel):
     maximize_on_open: bool = False
+    clear_log_on_run: bool = True
     window_width: int = 1400
     window_height: int = 800
     left_sidebar_width: int = 300
@@ -47,6 +48,7 @@ _SECTION_MODELS: dict[str, type[BaseModel]] = {
 _DEFAULTS: dict[str, Any] = {
     "general": {
         "maximize_on_open": False,
+        "clear_log_on_run": True,
         "window_width": 1400,
         "window_height": 800,
         "left_sidebar_width": 300,

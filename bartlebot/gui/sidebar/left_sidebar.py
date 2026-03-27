@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
+from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
 from bartlebot.gui.sidebar.sections.combat_config_section import CombatConfigSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
@@ -22,8 +23,8 @@ _LOG_TAB = 2
 class LeftSidebar(QTabWidget):
     """Left sidebar with three tabs: Bot, Properties, Log.
 
-    The Properties and Log widgets are created externally (in BotCanvas) and
-    passed in here so that BotCanvas retains ownership and can drive them.
+    The Properties widget is created externally (in BotCanvas) and passed in.
+    The Log tab is owned here as a LogPanel instance.
     """
 
     config_changed = pyqtSignal()
@@ -31,7 +32,6 @@ class LeftSidebar(QTabWidget):
     def __init__(
         self,
         param_panel: QWidget,
-        log_widget: QWidget,
         parent=None,
     ):
         super().__init__(parent)
@@ -55,9 +55,11 @@ class LeftSidebar(QTabWidget):
         bot_scroll.setWidget(bot_content)
         bot_scroll.setWidgetResizable(True)
 
+        self.log_panel = LogPanel()
+
         self.addTab(bot_scroll, "Bot")  # _BOT_TAB        = 0
         self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 1
-        self.addTab(log_widget, "Log")  # _LOG_TAB        = 2
+        self.addTab(self.log_panel, "Log")  # _LOG_TAB        = 2
 
         # Propagate config_changed from any sub-section upward
         self.bot_info.config_changed.connect(self.config_changed)

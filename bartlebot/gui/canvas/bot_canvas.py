@@ -1,7 +1,6 @@
 """Unified bot canvas — single QGraphicsScene with Run and Edit modes.
 
-BotCanvas  — top-level widget; owns the scene, toolbars, properties panel,
-             and run log.
+BotCanvas  — top-level widget; owns the scene, toolbars, and properties panel.
 """
 
 import enum
@@ -11,18 +10,13 @@ from collections.abc import Callable
 
 from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
-    QColor,
     QKeySequence,
     QShortcut,
-    QTextCharFormat,
-    QTextCursor,
 )
 from PyQt6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPlainTextEdit,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
@@ -60,18 +54,6 @@ _IDLE = "idle"
 _RUNNING = "running"
 _PAUSED = "paused"
 
-_NAME_TO_LEVEL: dict[str, int] = {
-    "DEBUG": logging.DEBUG,
-    "INFO": logging.INFO,
-    "WARNING": logging.WARNING,
-    "ERROR": logging.ERROR,
-}
-_LOG_COLORS: dict[int, str] = {
-    logging.DEBUG: THEME.log_debug,
-    logging.INFO: THEME.log_info,
-    logging.WARNING: THEME.log_warning,
-    logging.ERROR: THEME.log_error,
-}
 
 _STATUS_DOT_COLORS: dict[str, str] = {
     _IDLE: THEME.status_idle,
@@ -339,29 +321,6 @@ class BotCanvas(QWidget):
         self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
         self._minimap.setVisible(SettingsManager.instance().get("canvas", "minimap_visible", default=True))
 
-        # ── Log pane (owned here, displayed in left sidebar Log tab) ──
-        self._log = QPlainTextEdit()
-        self._log.setReadOnly(True)
-        self._log.setFont(THEME.font_mono())
-
-        log_header = QWidget()
-        log_header_row = QHBoxLayout(log_header)
-        log_header_row.setContentsMargins(4, 2, 4, 2)
-        log_header_row.addWidget(QLabel("Min level:"))
-        self._log_level_combo = QComboBox()
-        self._log_level_combo.addItems(["DEBUG", "INFO", "WARNING", "ERROR"])
-        self._log_level_combo.setCurrentText("INFO")
-        self._log_level_combo.setFixedWidth(90)
-        log_header_row.addWidget(self._log_level_combo)
-        log_header_row.addStretch()
-
-        self._log_widget = QWidget()
-        log_vbox = QVBoxLayout(self._log_widget)
-        log_vbox.setContentsMargins(0, 0, 0, 0)
-        log_vbox.setSpacing(0)
-        log_vbox.addWidget(log_header)
-        log_vbox.addWidget(self._log, 1)
-
         # ── Main layout: toolbar + validation banner + graph view ─────
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -535,11 +494,6 @@ class BotCanvas(QWidget):
     def param_panel(self) -> QWidget:
         """The _ParamPanel widget — placed in the left sidebar Properties tab."""
         return self._param_panel
-
-    @property
-    def log_widget(self) -> QWidget:
-        """The log container widget — placed in the left sidebar Log tab."""
-        return self._log_widget
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable that returns the current list of hooked clients."""
@@ -950,44 +904,6 @@ class BotCanvas(QWidget):
                     break
         else:
             self._param_panel.show_idle()
-
-    # ------------------------------------------------------------------
-    # Log helpers
-    # ------------------------------------------------------------------
-
-    def append_log(self, msg: str, level: int = logging.INFO) -> None:
-        """Public log entry point for node messages. Filtered by the level dropdown."""
-        threshold = _NAME_TO_LEVEL.get(self._log_level_combo.currentText(), logging.DEBUG)
-        if level < threshold:
-            return
-        color = _LOG_COLORS.get(level, "#55cc55")
-
-        fmt_plain = QTextCharFormat()
-        fmt_colored = QTextCharFormat()
-        fmt_colored.setForeground(QColor(color))
-
-        cursor = self._log.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        cursor.insertText(f"[{self._elapsed_str()}] ", fmt_plain)
-        cursor.insertText(f" {msg}\n", fmt_colored)
-        self._log.moveCursor(QTextCursor.MoveOperation.End)
-
-    def append_log_formatted(self, formatted_text: str, level: int) -> None:
-        """Append a pre-formatted log line from the Python logging bridge."""
-        threshold = _NAME_TO_LEVEL.get(self._log_level_combo.currentText(), logging.DEBUG)
-        if level < threshold:
-            return
-        color = _LOG_COLORS.get(level, "#55cc55")
-        fmt = QTextCharFormat()
-        fmt.setForeground(QColor(color))
-        cursor = self._log.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.End)
-        cursor.insertText(formatted_text + "\n", fmt)
-        self._log.moveCursor(QTextCursor.MoveOperation.End)
-
-    def _append_log(self, text: str) -> None:
-        self._log.appendPlainText(text)
-        self._log.moveCursor(QTextCursor.MoveOperation.End)
 
     def _tick(self) -> None:
         self._emit_bot_status()
