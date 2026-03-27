@@ -61,10 +61,10 @@ class LeftSidebar(QTabWidget):
         self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 1
         self.addTab(self.log_panel, "Log")  # _LOG_TAB        = 2
 
-        # Propagate config_changed from any sub-section upward
-        self.bot_info.config_changed.connect(self.config_changed)
-        self.options.config_changed.connect(self.config_changed)
-        self.combat_config.config_changed.connect(self.config_changed)
+        # Propagate section-level signals up as the unified config_changed signal.
+        self.bot_info.metadata_changed.connect(self.config_changed)
+        self.options.options_changed.connect(self.config_changed)
+        self.combat_config.combat_config_changed.connect(self.config_changed)
 
     # ------------------------------------------------------------------
     # Tab switching (called by BotCanvas.on_tab_switch)

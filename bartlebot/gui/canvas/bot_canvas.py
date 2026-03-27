@@ -368,8 +368,8 @@ class BotCanvas(QWidget):
         self._view.viewport().installEventFilter(self)
 
         # ── Wire internal signals ─────────────────────────────────────
-        self._scene.config_changed.connect(self._on_scene_changed)
-        self._param_panel.config_changed.connect(self._on_scene_changed)
+        self._scene.graph_changed.connect(self._on_scene_changed)
+        self._param_panel.properties_changed.connect(self._on_scene_changed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)

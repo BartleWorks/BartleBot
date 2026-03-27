@@ -371,6 +371,10 @@ class GameView(QWidget):
                 tile = self._tiles[old_idx]
                 tile._label = f"Client {new_idx + 1}"
                 tile.update()
+                # Reconnect detach_requested with the updated index so the detach
+                # button targets the correct slot after a client reorder.
+                tile.detach_requested.disconnect()
+                tile.detach_requested.connect(lambda idx=new_idx: self._detach_client(idx))
                 new_tiles[new_idx] = tile
         self._tiles = new_tiles
         self._recompute_geometry()

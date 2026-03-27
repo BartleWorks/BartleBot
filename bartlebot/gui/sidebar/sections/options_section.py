@@ -203,7 +203,7 @@ class _AddOptionDialog(QDialog):
 class OptionsSection(SidebarSection):
     """Collapsible 'Options' section: per-option value widgets + CRUD controls."""
 
-    config_changed = pyqtSignal()
+    options_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__("Options", parent)
@@ -328,7 +328,7 @@ class OptionsSection(SidebarSection):
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self._config.options.append(dlg.get_option())
             self._rebuild_options(self._config.options)
-            self.config_changed.emit()
+            self.options_changed.emit()
 
     def _on_edit_option(self, name: str) -> None:
         if self._config is None:
@@ -348,7 +348,7 @@ class OptionsSection(SidebarSection):
         idx = next(i for i, o in enumerate(self._config.options) if o.name == name)
         self._config.options[idx] = updated
         self._rebuild_options(self._config.options)
-        self.on_config_changed()
+        self.options_changed.emit()
 
     def _on_delete_option(self, name: str) -> None:
         if self._config is None:
@@ -358,14 +358,14 @@ class OptionsSection(SidebarSection):
             if t.flag == name:
                 t.flag = None
         self._rebuild_options(self._config.options)
-        self.config_changed.emit()
+        self.options_changed.emit()
 
     def _connect_option_widget(self, widget: QWidget, opt) -> None:
         def _update(value) -> None:
             if self._suppress or self._config is None:
                 return
             opt.default = value
-            self.config_changed.emit()
+            self.options_changed.emit()
 
         if isinstance(widget, QCheckBox):
             widget.toggled.connect(_update)

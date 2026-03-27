@@ -7,7 +7,9 @@
   "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
   "start_location": "The Commons",
-  "drops": [],
+  "drops": [
+    "Nothing"
+  ],
   "authors": "BartleBot",
   "options": [
     {

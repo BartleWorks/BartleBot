@@ -7,10 +7,12 @@ the GUI via SettingsManager and CredentialStore.
 from __future__ import annotations
 
 import asyncio
+import re
 
 from wizwalker.utils import (
     get_all_wizard_handles,
     get_window_title,
+    get_wiz_install,
     instance_login,
     patch_open_browser,
     set_window_title,
@@ -19,6 +21,38 @@ from wizwalker.utils import (
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.settings_manager import SettingsManager
+
+# Grid offsets for up to 4 instances: 2×2 layout matching the embed view.
+# Client 1 at anchor, Client 2 right, Client 3 below, Client 4 bottom-right.
+_LAUNCH_ANCHOR_X = 50
+_LAUNCH_ANCHOR_Y = 50
+_LAUNCH_GRID_OFFSETS = [(0, 0), (1, 0), (0, 1), (1, 1)]  # (col, row) multipliers
+
+
+def _patch_xml_fields(path, updates: dict[str, str]) -> None:
+    """Update named element text values in an XML file using regex replacement.
+
+    Replaces only the text content of matched tags, leaving the rest of the
+    file (declaration, encoding, whitespace, attribute formatting) byte-for-byte
+    identical to what the game wrote — which matters because the game's parser
+    is strict about the declaration format.
+    """
+    text = path.read_text(encoding="utf-8")
+    for tag, value in updates.items():
+        text = re.sub(rf"(<{tag}\b[^>]*>)[^<]*(</\s*{tag}\s*>)", rf"\g<1>{value}\2", text)
+    path.write_text(text, encoding="utf-8")
+
+
+def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
+    """Set the game window resolution and position before launch.
+
+    Wizard101 reads Resolution from preferences.xml and WindowedX/WindowedY
+    from config.xml on startup.  Uses the same get_wiz_install() path as
+    patch_open_browser().
+    """
+    bin_dir = get_wiz_install() / "Bin"
+    _patch_xml_fields(bin_dir / "preferences.xml", {"Resolution": f"{width}x{height}"})
+    _patch_xml_fields(bin_dir / "config.xml", {"WindowedX": str(x), "WindowedY": str(y)})
 
 
 async def _wait_for_login_screen(handle: int) -> None:
@@ -52,6 +86,8 @@ async def launch_account(
     Sets the window title to *display_name* once the login screen is ready.
     """
     patch_open_browser()
+    w, h = SettingsManager.instance().game_resolution
+    _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
     await _wait_for_login_screen(handle)
     instance_login(handle, username, password)
@@ -94,10 +130,14 @@ async def launch_profile(profile_name: str) -> None:
         accounts.append((username, password, display_name))
 
     # Start instances one at a time so each handle is unambiguously claimed
-    # before the next instance is spawned.
+    # before the next instance is spawned.  Patch config.xml before each spawn
+    # so the window opens at the configured resolution and grid position.
     handles: list[int] = []
     known = set(get_all_wizard_handles())
-    for _ in accounts:
+    w, h = SettingsManager.instance().game_resolution
+    for i, _ in enumerate(accounts):
+        col, row = _LAUNCH_GRID_OFFSETS[i] if i < len(_LAUNCH_GRID_OFFSETS) else (0, 0)
+        _patch_window_config(w, h, _LAUNCH_ANCHOR_X + col * w, _LAUNCH_ANCHOR_Y + row * h)
         handles.append(await _start_and_claim_handle(known | set(handles)))
 
     # Single shared wait for all instances to reach the login screen

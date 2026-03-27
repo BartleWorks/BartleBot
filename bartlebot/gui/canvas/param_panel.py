@@ -595,7 +595,7 @@ _PAGE_EDGE = 2
 
 
 class _ParamPanel(QWidget):
-    config_changed = pyqtSignal()
+    properties_changed = pyqtSignal()
     # Emitted when the user changes source or dest via the dropdowns.
     # Args: old_source, old_when (str|None), old_dest, new_source, new_dest
     edge_endpoints_changed = pyqtSignal(str, object, str, str, str)
@@ -817,7 +817,7 @@ class _ParamPanel(QWidget):
         if self._suppress or self._state is None:
             return
         self._state.label = text or None
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _on_node_type_changed(self, text: str) -> None:
         if self._suppress or self._state is None:
@@ -832,19 +832,19 @@ class _ParamPanel(QWidget):
         self._rebuild_overrides(self._state)
         self._rebuild_returns(text)
         self._record_row.setVisible(text in recording.RECORDABLE_NODES)
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _on_param_form_changed(self) -> None:
         if self._state is None:
             return
         self._state.params = self._param_form.get_params()
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _on_edge_when_changed(self, text: str) -> None:
         if self._suppress or self._transition is None:
             return
         self._transition.when = None if text == "(none)" else text
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _on_edge_src_changed(self, new_src: str) -> None:
         if self._suppress or self._transition is None or not new_src:
@@ -870,7 +870,7 @@ class _ParamPanel(QWidget):
             return
         self._transition.source = new_src
         self.edge_endpoints_changed.emit(old_src, old_when, old_dst, new_src, old_dst)
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _on_edge_dst_changed(self, new_dst: str) -> None:
         if self._suppress or self._transition is None or not new_dst:
@@ -896,7 +896,7 @@ class _ParamPanel(QWidget):
             return
         self._transition.dest = new_dst
         self.edge_endpoints_changed.emit(old_src, old_when, old_dst, old_src, new_dst)
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _on_flag_conditions_changed(self) -> None:
         if self._suppress or self._transition is None:
@@ -904,7 +904,7 @@ class _ParamPanel(QWidget):
         flags, flag_op = self._flag_conditions_widget.get_conditions()
         self._transition.flags = flags
         self._transition.flag_op = flag_op
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     # ------------------------------------------------------------------
     # Recording
@@ -948,7 +948,7 @@ class _ParamPanel(QWidget):
         self._suppress = True
         self._node_label_edit.setText(label)
         self._suppress = False
-        self.config_changed.emit()
+        self.properties_changed.emit()
 
     def _rebuild_overrides(self, state: StateModel) -> None:
         for row in self._override_rows:
@@ -992,13 +992,13 @@ class _ParamPanel(QWidget):
                     s.option_overrides[n] = _read_override_widget(w)
                 else:
                     s.option_overrides.pop(n, None)
-                self.config_changed.emit()
+                self.properties_changed.emit()
 
             def _on_val_changed(n=name, cb_ref=cb, w=val_widget, s=state) -> None:
                 if self._suppress or not cb_ref.isChecked():
                     return
                 s.option_overrides[n] = _read_override_widget(w)
-                self.config_changed.emit()
+                self.properties_changed.emit()
 
             cb.toggled.connect(_on_cb_toggled)
             _connect_override_widget(val_widget, _on_val_changed)

@@ -40,7 +40,7 @@ def _swappable(label_w: QWidget, edit_w: QWidget) -> QWidget:
 class BotInfoSection(SidebarSection):
     """Collapsible 'Bot Info' section: file, name, version, description, etc."""
 
-    config_changed = pyqtSignal()
+    metadata_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__("Bot Info", parent)
@@ -195,14 +195,14 @@ class BotInfoSection(SidebarSection):
             return
         self._config.name = text
         self._name_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_version_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.version = text
         self._version_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_desc_changed(self) -> None:
         if self._suppress or self._config is None:
@@ -210,41 +210,41 @@ class BotInfoSection(SidebarSection):
         text = self._desc_edit.toPlainText()
         self._config.description = text or None
         self._desc_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_start_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.start_location = text or None
         self._start_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_authors_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.authors = text or None
         self._authors_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_drops_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.drops = [x.strip() for x in text.split(",") if x.strip()]
         self._drops_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_initial_changed(self, text: str) -> None:
         if self._suppress or self._config is None or not text:
             return
         self._config.initial = text
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     def _on_recovery_changed(self, text: str) -> None:
         if self._suppress or self._config is None:
             return
         self._config.recovery_state = text if text and text != _PLACEHOLDER else None
         self._recovery_lbl.setText(text or _PLACEHOLDER)
-        self.config_changed.emit()
+        self.metadata_changed.emit()
 
     # ------------------------------------------------------------------
     # Internal helpers

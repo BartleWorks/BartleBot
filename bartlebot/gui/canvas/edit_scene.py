@@ -207,7 +207,7 @@ def _inject_required_options(config: BotConfig) -> None:
 class EditScene(QGraphicsScene):
     """Manages interactive nodes, edge dragging, deletion, and positions."""
 
-    config_changed = pyqtSignal()
+    graph_changed = pyqtSignal()
     focus_region_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
@@ -371,7 +371,7 @@ class EditScene(QGraphicsScene):
         self.addItem(node)
         self._node_items[state_id] = node
         self._update_scene_rect()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     # ------------------------------------------------------------------
     # Mouse events
@@ -590,7 +590,7 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _copy_selected(self) -> None:
         if self._config is None:
@@ -668,7 +668,7 @@ class EditScene(QGraphicsScene):
                 self._node_items[new_id].setSelected(True)
 
         self._update_scene_rect()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _flip_node(self, state_id: str) -> None:
         if self._config is None:
@@ -681,7 +681,7 @@ class EditScene(QGraphicsScene):
         state = next((s for s in self._config.states if s.id == state_id), None)
         if state is not None:
             state.flipped = new_flipped
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _flip_selected_nodes(self) -> None:
         if self._config is None:
@@ -696,7 +696,7 @@ class EditScene(QGraphicsScene):
                     state.flipped = new_flipped
                 changed = True
         if changed:
-            self.config_changed.emit()
+            self.graph_changed.emit()
 
     def _delete_selected(self) -> None:
         for item in list(self.selectedItems()):
@@ -744,7 +744,7 @@ class EditScene(QGraphicsScene):
         self.refresh_errors()
         self._flush_regions()
         self._update_scene_rect()
-        self.config_changed.emit()
+        self.graph_changed.emit()
         return True
 
     def _delete_edge_item(self, edge_item: EdgeItem, *, confirm: bool = True) -> bool:
@@ -784,7 +784,7 @@ class EditScene(QGraphicsScene):
         self._edge_items = remaining
         self.refresh_terminal()
         self.refresh_errors()
-        self.config_changed.emit()
+        self.graph_changed.emit()
         return True
 
     def change_edge_endpoints(
@@ -867,7 +867,7 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _insert_state_on_edge(self, edge_item: EdgeItem) -> None:
         """Split an existing edge by inserting a new state at its midpoint."""
@@ -931,7 +931,7 @@ class EditScene(QGraphicsScene):
                 state.position = new_pos
                 changed = True
         if changed:
-            self.config_changed.emit()
+            self.graph_changed.emit()
 
     def _flush_regions(self) -> None:
         """Remove stale member IDs from regions; auto-delete regions with < 2 members."""
@@ -968,7 +968,7 @@ class EditScene(QGraphicsScene):
         self._region_items[region.id] = ri
         self.changed.connect(ri._recompute_rect)
         ri._recompute_rect()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _delete_region(self, region_id: str) -> None:
         if self._config is None:
@@ -981,7 +981,7 @@ class EditScene(QGraphicsScene):
                 pass
             self.removeItem(ri)
         self._config.regions = [r for r in self._config.regions if r.id != region_id]
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _rename_region(self, region_id: str) -> None:
         if self._config is None:
@@ -1000,7 +1000,7 @@ class EditScene(QGraphicsScene):
         ri = self._region_items.get(region_id)
         if ri is not None:
             ri.set_label(region.label)
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _recolor_region(self, region_id: str) -> None:
         if self._config is None:
@@ -1017,7 +1017,7 @@ class EditScene(QGraphicsScene):
         ri = self._region_items.get(region_id)
         if ri is not None:
             ri.set_color(region.color)
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _add_to_region(self, state_id: str, region_id: str) -> None:
         if self._config is None:
@@ -1030,7 +1030,7 @@ class EditScene(QGraphicsScene):
         if ri is not None:
             ri._member_ids.append(state_id)
             ri._recompute_rect()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _remove_from_region(self, state_id: str, region_id: str) -> None:
         if self._config is None:
@@ -1047,7 +1047,7 @@ class EditScene(QGraphicsScene):
             if state_id in ri._member_ids:
                 ri._member_ids.remove(state_id)
             ri._recompute_rect()
-        self.config_changed.emit()
+        self.graph_changed.emit()
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
