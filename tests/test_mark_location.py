@@ -20,6 +20,7 @@ def _timer_window(text: str = ""):
     """Fake timer window. Empty text = no cooldown active."""
     w = MagicMock()
     w.maybe_text = AsyncMock(return_value=text)
+    w.is_control_grayed = AsyncMock(return_value=False)
     return w
 
 

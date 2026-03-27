@@ -162,9 +162,12 @@ async def none_loading(clients: list) -> bool:
 
 
 async def click_by_path(client, path: list[str]) -> bool:
-    """Click the UI window at path. Returns True if found and clicked, False otherwise."""
+    """Click the UI window at path if it exists and is enabled (not grayed out).
+    Returns True if found, enabled, and clicked. Returns False if not found or grayed."""
     window = await _get_window_from_path(client.root_window, path)
     if window is None:
+        return False
+    if await window.is_control_grayed():
         return False
     async with client.mouse_handler:
         await client.mouse_handler.click_window(window)
