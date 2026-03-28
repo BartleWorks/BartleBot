@@ -38,7 +38,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | Node | Description | Status |
 |------|-------------|--------|
 | [`handle_potions`](#handle_potions) | Use and optionally refill potions based on health/mana thresholds | `done` |
-| [`quicksell`](#quicksell) | Quicksell backpack items when full, respecting a keep list | `todo` |
+| [`quicksell`](#quicksell) | Quicksell backpack items when full, respecting a keep list | `done` |
 
 ---
 
@@ -466,22 +466,37 @@ For Arcanum Apartment users, could potentially add a flag that lets them go to t
 
 ### quicksell
 
-**Status:** `todo`
+**Status:** `done`
 
-Checks if backpack is full. If full, quicksells items except for those specified in `keep_list`.
+Checks if backpack is full. If full, quicksells items except for those specified in `keep_list`. Needs to be able to operate separately for different clients, since they will receive different drops. May also want 
 
 | Parameter Name   | Parameter Type | Parameter Description |
 |------------------|----------------|-----------------------|
-| `keep_list`      | path           | A path to a `.txt` file containing names of items to keep when quickselling.
+| `keep_list`      | path           | A list of strings to search item names for when quickselling. If a match is found, the item is kept. Does not need to be a full title match, any word or part of a word will cause the item to be kept.
 
 <details>
 <summary>Implementation</summary>
 
 - APIs: `client.backpack_space()`, window tree helpers for the quicksell UI
 - Flow:
-  1. Check `client.backpack_space()` for each client. If not full, return `SUCCESS` immediately.
-  2. For clients with a full backpack, open the backpack UI.
-  3. Iterate items; for each item not in `keep_list`, sell it via the quicksell interface.
-  4. Return `SUCCESS` once backpack is no longer full (or all sellable items have been sold).
+  1. Open backpack by sending `B` key.
+  2. Check `client.backpack_space()` for each client. If not full, return `SUCCESS` immediately.
+  3. For clients with a full backpack, open the quicksell UI by clicking path `['WorldView', 'DeckConfiguration', 'JewelSpellbookPage', 'windowForBtns', 'Layout', 'QuickSell_Item']`
+  4. Click the `All` button by clicking path `['WorldView', 'shopGUI', 'buyWindow', 'AllAction']`
+  5. 10 items appear on each quicksell page. Check the contents of each row, and if a match is found, uncheck the sell box.
+    - Item title path for each row: `['WorldView', 'shopGUI', 'buyWindow', 'column0', 'shoplistX']` where `X` is the row number `0-9`
+    - Sell checkbox path for each row: `['WorldView', 'shopGUI', 'buyWindow', 'column1', 'numX']` where `X` is the row number `0-9`
+  6. Repeat for each page until the next page button is disabled.
+    - Next page button path: `['WorldView', 'shopGUI', 'buyWindow', 'rightscroll']`
+  7. Sell all items that did not meet the criteria by clicking the sell button.
+    - Primary sell button path: `['WorldView', 'shopGUI', 'buyWindow', 'sellAction']`
+  8. Click the `Sell` button in the confirm dialog.
+    - Confirm sell button path: `['WorldView', 'shopGUI', 'QuickSellConfirmationWindow', 'SellButton']`
+  9. Dismiss any warnings about exceeding the gold limit by clicking the `Ok` button.
+    - `Ok` button path: `['MessageBoxModalWindow', 'messageBoxBG', 'messageBoxLayout', 'AdjustmentWindow', 'Layout', 'centerButton']`
+  10. Wait to return to main backpack page by sleeping until backpack close button is visible.
+    - Backpack close button path: `['WorldView', 'DeckConfiguration', 'Close_Button']`
+  11. Close backpack by clicking the backpack close button path and confirming that it is no longer visible.
+  12. Return `SUCCESS`.
 
 </details>
