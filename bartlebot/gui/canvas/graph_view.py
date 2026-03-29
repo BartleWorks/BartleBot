@@ -4,7 +4,7 @@ GraphView    — base view used by both the editor and the read-only run view.
 _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
-from PyQt6.QtCore import QPointF, Qt, pyqtSignal
+from PyQt6.QtCore import QPointF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
 
@@ -34,6 +34,7 @@ class GraphView(QGraphicsView):
         self._user_zoomed = False
         self._pan_origin: QPointF | None = None
         self._space_held: bool = False
+        self._fitting: bool = False
 
         if interactive:
             self.setInteractive(True)
@@ -44,14 +45,25 @@ class GraphView(QGraphicsView):
 
     def fit_scene(self) -> None:
         """Fit the full scene content into the viewport. Resets user-zoom state."""
+        if self._fitting:
+            return
+        self._fitting = True
         self._user_zoomed = False
         scene = self.scene()
         if scene is None:
+            self._fitting = False
             return
         bounds = scene.itemsBoundingRect()
         if bounds.isEmpty():
+            self._fitting = False
             return
         self.fitInView(bounds.adjusted(-80, -60, 80, 60), Qt.AspectRatioMode.KeepAspectRatio)
+        # Keep _fitting True until after any resize events queued by fitInView are
+        # delivered — a 0ms timer fires after already-queued events, breaking the loop.
+        QTimer.singleShot(0, self._clear_fitting)
+
+    def _clear_fitting(self) -> None:
+        self._fitting = False
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         self._user_zoomed = True
