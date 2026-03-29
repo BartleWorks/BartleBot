@@ -50,7 +50,7 @@ DUNGEON_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground", "TeamUpBut
 # Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
 ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]
 
-# Character select screen ('WorldView/mainWindow' is visible when on the char select screen)
+# Character select screen ("WorldView/mainWindow" is visible when on the char select screen)
 CHAR_SELECT_PATH = ["WorldView", "mainWindow"]
 CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]
 
@@ -72,10 +72,28 @@ QUICKSELL_JEWEL_OPEN_PATH = [
 JEWEL_INVENTORY_SPACE_PATH = ["WorldView", "DeckConfiguration", "JewelSpellbookPage", "inventorySpace"]
 
 # Shared quicksell shopGUI paths — same UI regardless of which page opened it
+QUICKSELL_ALL_TAB_PATH = ["WorldView", "shopGUI", "BackpackStuff", "ShopCategory_All"]
 QUICKSELL_ALL_BUTTON_PATH = ["WorldView", "shopGUI", "buyWindow", "AllAction"]
 QUICKSELL_SELL_BUTTON_PATH = ["WorldView", "shopGUI", "buyWindow", "sellAction"]
 QUICKSELL_CONFIRM_SELL_PATH = ["WorldView", "shopGUI", "QuickSellConfirmationWindow", "SellButton"]
 QUICKSELL_NEXT_PAGE_PATH = ["WorldView", "shopGUI", "buyWindow", "rightscroll"]
+QUICKSELL_SELL_CROWNS_YES = [
+    "MessageBoxModalWindow",
+    "messageBoxBG",
+    "messageBoxLayout",
+    "AdjustmentWindow",
+    "Layout",
+    "centerButton",
+]
+QUICKSELL_SELL_CROWNS_NO = [
+    "MessageBoxModalWindow",
+    "messageBoxBG",
+    "messageBoxLayout",
+    "AdjustmentWindow",
+    "Layout",
+    "rightButton",
+]
+QUICKSELL_CLOSE_BUTTON_PATH = ["WorldView", "shopGUI", "buyWindow", "exit"]
 
 # Gold limit exceeded warning dialog (shares structure with dungeon warning but different context)
 GOLD_LIMIT_OK_PATH = [
@@ -89,10 +107,10 @@ GOLD_LIMIT_OK_PATH = [
 
 
 def quicksell_item_title_path(row: int) -> list[str]:
-    """Return the window path to the item title label for the given quicksell row (0–9)."""
+    """Return the window path to the item title label for the given quicksell row (0-9)."""
     return ["WorldView", "shopGUI", "buyWindow", "column0", f"shoplist{row}"]
 
 
 def quicksell_item_checkbox_path(row: int) -> list[str]:
-    """Return the window path to the sell checkbox for the given quicksell row (0–9)."""
+    """Return the window path to the sell checkbox for the given quicksell row (0-9)."""
     return ["WorldView", "shopGUI", "buyWindow", "column1", f"num{row}"]

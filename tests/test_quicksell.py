@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 import bartlebot.nodes.action.quicksell as qs
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
-    QUICKSELL_INVENTORY_OPEN_PATH,
+    QUICKSELL_CLOSE_BUTTON_PATH,
     QUICKSELL_JEWEL_OPEN_PATH,
     QUICKSELL_NEXT_PAGE_PATH,
     quicksell_item_checkbox_path,
@@ -56,15 +56,12 @@ async def test_returns_success_when_neither_backpack_full():
         result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
 
     assert result == "SUCCESS"
-    # The only click_by_path calls should be the close-button calls (one per backpack type).
-    # The quicksell open buttons must NOT have been clicked.
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
-    assert QUICKSELL_INVENTORY_OPEN_PATH not in clicked_paths
     assert QUICKSELL_JEWEL_OPEN_PATH not in clicked_paths
 
 
 async def test_quicksells_when_main_backpack_full():
-    """Main backpack full, jewel not full → only inventory quicksell UI opened."""
+    """Main backpack full, jewel not full → quicksell UI opened via jewel path."""
     client = FakeClient()
     client.backpack_space.return_value = (100, 100)
 
@@ -81,12 +78,11 @@ async def test_quicksells_when_main_backpack_full():
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
-    assert QUICKSELL_INVENTORY_OPEN_PATH in clicked_paths
-    assert QUICKSELL_JEWEL_OPEN_PATH not in clicked_paths
+    assert QUICKSELL_JEWEL_OPEN_PATH in clicked_paths
 
 
 async def test_quicksells_when_jewel_full():
-    """Main not full, jewel full → only jewel quicksell UI opened."""
+    """Main not full, jewel full → quicksell UI opened via jewel path."""
     client = FakeClient()
     client.backpack_space.return_value = (50, 100)
 
@@ -104,11 +100,10 @@ async def test_quicksells_when_jewel_full():
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
     assert QUICKSELL_JEWEL_OPEN_PATH in clicked_paths
-    assert QUICKSELL_INVENTORY_OPEN_PATH not in clicked_paths
 
 
-async def test_skips_jewel_when_not_full():
-    """Main not full and jewel not full → jewel quicksell UI never opened."""
+async def test_skips_quicksell_when_not_full():
+    """Neither backpack full → quicksell UI never opened."""
     client = FakeClient()
     client.backpack_space.return_value = (0, 100)
 
@@ -126,11 +121,10 @@ async def test_skips_jewel_when_not_full():
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
     assert QUICKSELL_JEWEL_OPEN_PATH not in clicked_paths
-    assert QUICKSELL_INVENTORY_OPEN_PATH not in clicked_paths
 
 
-async def test_quicksells_both_when_both_full():
-    """Both backpacks full → both inventory and jewel quicksell UIs are opened."""
+async def test_quicksells_once_when_both_full():
+    """Both backpacks full → quicksell UI opened exactly once via jewel path."""
     client = FakeClient()
     client.backpack_space.return_value = (100, 100)
 
@@ -147,8 +141,29 @@ async def test_quicksells_both_when_both_full():
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
-    assert QUICKSELL_INVENTORY_OPEN_PATH in clicked_paths
-    assert QUICKSELL_JEWEL_OPEN_PATH in clicked_paths
+    jewel_open_clicks = [p for p in clicked_paths if p == QUICKSELL_JEWEL_OPEN_PATH]
+    assert len(jewel_open_clicks) == 1
+
+
+async def test_closes_shop_gui_when_all_items_kept():
+    """All items match the keep list (sell button grayed) → shop GUI closed before backpack."""
+    client = FakeClient()
+    client.backpack_space.return_value = (100, 100)
+
+    p = _make_patchers(is_jewel_full_returns=False, is_enabled_by_path_returns=False)
+    with (
+        p["poll_until"],
+        p["click_by_path"] as mock_click,
+        p["is_enabled"],
+        p["get_text"],
+        p["jewel_full"],
+        p["poll_interval"],
+    ):
+        result = await qs.run(FakeMachine(), [client], _HAT_KEEPS)
+
+    assert result == "SUCCESS"
+    clicked_paths = [c.args[1] for c in mock_click.call_args_list]
+    assert QUICKSELL_CLOSE_BUTTON_PATH in clicked_paths
 
 
 async def test_keeps_items_matching_keyword():
@@ -217,13 +232,12 @@ async def test_iterates_multiple_pages():
     client.backpack_space.return_value = (100, 100)
 
     p = _make_patchers(is_jewel_full_returns=False)
-    # is_enabled_by_path: first call True (advance), second call False (stop).
+    # is_enabled_by_path calls: next-page True (advance), next-page False (stop), sell-button False (grayed).
     with p["poll_until"], p["click_by_path"] as mock_click, p["get_text"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(node_helpers, "is_enabled_by_path", new_callable=AsyncMock, side_effect=[True, False]):
+        with patch.object(node_helpers, "is_enabled_by_path", new_callable=AsyncMock, side_effect=[True, False, False]):
             result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
 
     assert result == "SUCCESS"
-    # Next-page button should have been clicked exactly once.
     next_page_clicks = [c for c in mock_click.call_args_list if c.args[1] == QUICKSELL_NEXT_PAGE_PATH]
     assert len(next_page_clicks) == 1
 
@@ -252,7 +266,6 @@ async def test_handles_multiple_clients():
         result = await qs.run(FakeMachine(), [client1, client2], _NO_KEEPS)
 
     assert result == "SUCCESS"
-    # Both clients should have sent B to open the inventory.
     assert client1.send_key.called
     assert client2.send_key.called
 

@@ -212,13 +212,14 @@ class AppController(QObject):
         self._window.right_sidebar.drops.setup_clients(len(self._clients))
         self._window.right_sidebar.drops.clear_drops()
         self._window.left_sidebar.log_panel.on_run_started()
-        add_gui_callback(self._window.left_sidebar.log_panel.append_log_formatted)
+        log_cb = self._window.left_sidebar.log_panel.append_log_formatted
+        add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         try:
             await machine.run()
         finally:
             self._window.bot_canvas.set_idle()
-            remove_gui_callback(self._window.left_sidebar.log_panel.append_log_formatted)
+            remove_gui_callback(log_cb)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
 
