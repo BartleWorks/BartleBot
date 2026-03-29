@@ -34,6 +34,11 @@ Reference docs:
 - @docs/GUI_ARCHITECTURE.md — widget hierarchy and signal flow
 - @docs/DESIGN_REVIEW.md — quality review with open issues and roadmap
 
+Several related repos have been downloaded locally so they can be easily referenced:
+- WizWalker: C:\GitHub\wizwalker
+- WizSprinter: C:\GitHub\wizsprinter
+- Deimos: C:\GitHub\Deimos-Wizard101
+
 ## Adding a New Node
 
 1. Create `bartlebot/nodes/action/<name>.py` (or `condition/`)

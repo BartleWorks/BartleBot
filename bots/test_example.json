@@ -7,7 +7,9 @@
   "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
   "start_location": "The Commons",
-  "drops": [],
+  "drops": [
+    "Nothing"
+  ],
   "authors": "BartleBot",
   "options": [
     {
@@ -23,8 +25,8 @@
       "node_type": "go_to_zone",
       "label": "Go to Ravenwood",
       "position": {
-        "x": -129.452868852459,
-        "y": 49.0
+        "x": 150.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -43,8 +45,8 @@
       "node_type": "go_to_zone",
       "label": "Go to The Commons",
       "position": {
-        "x": 130.0,
-        "y": 49.0
+        "x": 450.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Ravenwood",
@@ -63,8 +65,8 @@
       "node_type": "go_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": -401.3186813186814,
-        "y": 49.13500784929355
+        "x": 750.0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -78,37 +80,49 @@
       "trigger": "advance",
       "source": "go_to_zone_a",
       "dest": "go_to_zone_b",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "go_to_zone_b",
       "dest": "go_to_zone_a",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_1",
       "dest": "go_to_zone_a",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "go_to_zone_a",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "go_to_zone_b",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_1",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     }
   ],
   "regions": []

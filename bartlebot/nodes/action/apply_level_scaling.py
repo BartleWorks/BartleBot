@@ -45,7 +45,7 @@ _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     default=[],
     description=(
         "1-based client numbers to check/apply level scaling (e.g. '2, 3'). "
-        "Empty = all clients. Shared by check_level_scaling and apply_level_scaling."
+        "Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     ),
 )
 
@@ -91,7 +91,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Resolve clients_to_scale.
     raw: list[int] = machine.get_option("Level Scaling Clients", []) or []
-    scale_indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else list(range(len(clients)))
+    scale_indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else []
     if not scale_indices:
         machine.log("apply_level_scaling: no clients to scale — SUCCESS")
         return "SUCCESS"

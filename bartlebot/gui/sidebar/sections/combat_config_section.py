@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class CombatConfigSection(SidebarSection):
     """Collapsible 'Combat Config' section."""
 
-    config_changed = pyqtSignal()
+    combat_config_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__("Combat Config", parent)
@@ -77,10 +77,10 @@ class CombatConfigSection(SidebarSection):
         if self._suppress or self._config is None:
             return
         self._config.use_bartlebot_default_combat_config = checked
-        self.config_changed.emit()
+        self.combat_config_changed.emit()
 
     def _on_dsl_changed(self) -> None:
         if self._suppress or self._config is None:
             return
         self._config.default_combat_config = self._dsl_edit.toPlainText() or None
-        self.config_changed.emit()
+        self.combat_config_changed.emit()

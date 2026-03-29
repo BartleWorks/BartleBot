@@ -1153,7 +1153,13 @@
       "source": "state_4",
       "dest": "state_5",
       "when": "SUCCESS",
-      "flag": "Defeat Yakedo"
+      "flags": [
+        {
+          "option": "Defeat Yakedo",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
@@ -1376,7 +1382,13 @@
       "source": "state_31",
       "dest": "state_32",
       "when": "SUCCESS",
-      "flag": "Defeat Yakedo"
+      "flags": [
+        {
+          "option": "Defeat Yakedo",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",

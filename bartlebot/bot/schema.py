@@ -1,4 +1,6 @@
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Literal
 
@@ -11,6 +13,17 @@ class XYZModel(BaseModel):
     z: float
 
 
+class FlagCondition(BaseModel):
+    """A single bot-option guard on a transition.
+
+    ``option`` is a BotOptionModel.name; ``negate`` inverts the truthiness check.
+    Multiple FlagConditions are combined by TransitionModel.flag_op (AND or OR).
+    """
+
+    option: str
+    negate: bool = False
+
+
 class TransitionModel(BaseModel):
     trigger: str
     source: str
@@ -19,10 +32,10 @@ class TransitionModel(BaseModel):
     # BotMachine auto-generates a condition method from this at construction time.
     # None means the transition fires unconditionally (no condition check).
     when: str | None = None
-    # Bot option name that must be truthy for this transition to fire.
-    # BotMachine generates a _flag_<name> condition method for this.
-    # Used to implement bot-level behavioural flags (e.g. "repeat").
-    flag: str | None = None
+    # List of bot-option guards.  Empty = no flag conditions (transition fires freely
+    # when 'when' is satisfied).  Combined by flag_op (AND or OR).
+    flags: list[FlagCondition] = Field(default_factory=list)
+    flag_op: Literal["AND", "OR"] = "AND"
     label: str | None = None
 
 
@@ -93,14 +106,30 @@ class BotConfig(BaseModel):
         If node_specs (a dict mapping node_type -> NodeSpec) is provided, each state
         dict will include a ``max_consecutive_retries`` key when the corresponding
         NodeSpec declares one. BotMachine uses this for per-state idle detection.
+
+        Flag conditions are compiled to condition method names that BotMachine's
+        ``__getattr__`` resolves at runtime:
+          - Single non-negated flag, AND: ``_flag_<option>`` (simple, backward-compat)
+          - All other cases: ``_flag_compound_<idx>`` with an entry in conditions_registry
         """
+        conditions_registry: dict[str, dict] = {}
         trans_list = []
-        for t in self.transitions:
+        for idx, t in enumerate(self.transitions):
             d: dict = {"trigger": t.trigger, "source": t.source, "dest": t.dest}
             if t.when:
                 d["conditions"] = [f"_result_is_{t.when}"]
-            if t.flag:
-                d.setdefault("conditions", []).append(f"_flag_{t.flag}")
+            if t.flags:
+                if len(t.flags) == 1 and not t.flags[0].negate and t.flag_op == "AND":
+                    # Simple case: keep the cheap _flag_<name> form so existing bots
+                    # with one plain flag condition continue to work without a registry lookup.
+                    d.setdefault("conditions", []).append(f"_flag_{t.flags[0].option}")
+                else:
+                    cond_name = f"_flag_compound_{idx}"
+                    d.setdefault("conditions", []).append(cond_name)
+                    conditions_registry[cond_name] = {
+                        "flags": [{"option": fc.option, "negate": fc.negate} for fc in t.flags],
+                        "op": t.flag_op,
+                    }
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
@@ -117,6 +146,7 @@ class BotConfig(BaseModel):
             "states": states,
             "transitions": trans_list,
             "default_combat_config": self.default_combat_config,
+            "conditions_registry": conditions_registry,
         }
 
     @classmethod
@@ -126,5 +156,18 @@ class BotConfig(BaseModel):
         return cls.model_validate(data)
 
     def save(self, path: str | Path) -> None:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(self.model_dump(exclude_none=True), f, indent=2)
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        # Write to a sibling temp file then atomically replace the target.
+        # Prevents corruption if the process crashes mid-write.
+        fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                json.dump(self.model_dump(exclude_none=True), f, indent=2)
+            os.replace(tmp_path, path)
+        except Exception:
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+            raise

@@ -38,7 +38,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | Node | Description | Status |
 |------|-------------|--------|
 | [`handle_potions`](#handle_potions) | Use and optionally refill potions based on health/mana thresholds | `done` |
-| [`quicksell`](#quicksell) | Quicksell backpack items when full, respecting a keep list | `todo` |
+| [`quicksell`](#quicksell) | Quicksell backpack items when full, respecting a keep list | `done` |
 
 ---
 
@@ -288,7 +288,7 @@ Teleports to the hub zone for the current world.
 <summary>Implementation</summary>
 
 - APIs: `client.zone_name()`, `client.send_key(Keycode.END)`, `client.is_loading()`, `window.is_control_grayed()`, window tree helpers for button detection
-- Hub teleport button path: `["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]`
+- Hub teleport button path: `['WorldView', 'windowHUD', 'compassAndTeleporterButtons', 'GoHomeButton']`
 - Flow:
   1. Check if all clients are already in `zone`. If so, return `SUCCESS` immediately.
   2. Filter to only clients not already in `zone`. All remaining steps operate on this subset.
@@ -371,7 +371,7 @@ Interacts with the level-scaling NPC to apply the level-scaling elixir. Assumes 
 
 Condition nodes evaluate game state and return `TRUE` or `FALSE`. They have no in-game side effects — they exist purely to drive routing decisions in the bot graph. Like action nodes, they use named output ports; downstream edges connect from the `TRUE` or `FALSE` port as appropriate.
 
-For simple bot-option checks (e.g. "only follow this path if repeat mode is enabled"), use the `flag` field on a transition edge instead of a condition node. Condition nodes are for parameterized checks that evaluate live game data and need their own configuration panel.
+For simple bot-option checks (e.g. 'only follow this path if repeat mode is enabled'), use the `flag` field on a transition edge instead of a condition node. Condition nodes are for parameterized checks that evaluate live game data and need their own configuration panel.
 
 ### check_if_dropped
 
@@ -453,7 +453,7 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
   6. After loading home, check zone. If zone is `WizardCity/Interiors/WC_Housing_Dorm_Interior` then we're set. If not, wait for the home teleport button to become available again and then teleport home.
     -  Almost all houses have a spiral door available, but there are niche cases (specifically, the Apartment series houses) that need to be handled. Rather than branch on these cases, let's just be 100% sure that we end up in a dorm in a near-infallible manner.
   7. Call go_to_zone logic to go from the dorm to Ravenwood (`WizardCity/WC_Ravenwood`)
-  8. Call go_to_zone logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{"x": 12.1, "y": -2037.77, "z": -130.64}`)
+  8. Call go_to_zone logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{'x': 12.1, 'y': -2037.77, 'z': -130.64}`)
   9. Teleport to Hilda Brewer via go_to_xyz, then talk to her via interact.
   10. Navigate the potions menu following the buy_potions() logic in utils.py at C:/GitHub/Deimos
   11. Return `SUCCESS` if potions were bought successfully, `FAILURE` otherwise.
@@ -466,22 +466,38 @@ For Arcanum Apartment users, could potentially add a flag that lets them go to t
 
 ### quicksell
 
-**Status:** `todo`
+**Status:** `done`
 
-Checks if backpack is full. If full, quicksells items except for those specified in `keep_list`.
+Checks if backpack is full. If full, quicksells items except for those specified in `keep_list`. Needs to be able to operate separately for different clients, since they will receive different drops. May also want 
 
 | Parameter Name   | Parameter Type | Parameter Description |
 |------------------|----------------|-----------------------|
-| `keep_list`      | path           | A path to a `.txt` file containing names of items to keep when quickselling.
+| `keep_list`      | path           | A list of strings to search item names for when quickselling. If a match is found, the item is kept. Does not need to be a full title match, any word or part of a word will cause the item to be kept.
 
 <details>
 <summary>Implementation</summary>
 
 - APIs: `client.backpack_space()`, window tree helpers for the quicksell UI
 - Flow:
-  1. Check `client.backpack_space()` for each client. If not full, return `SUCCESS` immediately.
-  2. For clients with a full backpack, open the backpack UI.
-  3. Iterate items; for each item not in `keep_list`, sell it via the quicksell interface.
-  4. Return `SUCCESS` once backpack is no longer full (or all sellable items have been sold).
+  1. Open backpack by sending `B` key.
+  2. Check `client.backpack_space()` for each client. If not full, return `SUCCESS` immediately.
+  3. For clients with a full backpack, open the quicksell UI by clicking path `['WorldView', 'DeckConfiguration', 'JewelSpellbookPage', 'windowForBtns', 'Layout', 'QuickSell_Item']`
+  4. Switch to the `All` tab by clicking path `['WorldView', 'shopGUI', 'BackpackStuff', 'ShopCategory_All']`
+  5. Click the `All` button by clicking path `['WorldView', 'shopGUI', 'buyWindow', 'AllAction']`
+  6. 10 items appear on each quicksell page. Check the contents of each row, and if a match is found, uncheck the sell box.
+    - Item title path for each row: `['WorldView', 'shopGUI', 'buyWindow', 'column0', 'shoplistX']` where `X` is the row number `0-9`
+    - Sell checkbox path for each row: `['WorldView', 'shopGUI', 'buyWindow', 'column1', 'numX']` where `X` is the row number `0-9`
+  7. Repeat for each page until the next page button is disabled.
+    - Next page button path: `['WorldView', 'shopGUI', 'buyWindow', 'rightscroll']`
+  8. Sell all items that did not meet the criteria by clicking the sell button.
+    - Primary sell button path: `['WorldView', 'shopGUI', 'buyWindow', 'sellAction']`
+  9. Click the `Sell` button in the confirm dialog.
+    - Confirm sell button path: `['WorldView', 'shopGUI', 'QuickSellConfirmationWindow', 'SellButton']`
+  10. Dismiss any warnings about exceeding the gold limit by clicking the `Ok` button.
+    - `Ok` button path: `['MessageBoxModalWindow', 'messageBoxBG', 'messageBoxLayout', 'AdjustmentWindow', 'Layout', 'centerButton']`
+  11. Wait to return to main backpack page by sleeping until backpack close button is visible.
+    - Backpack close button path: `['WorldView', 'DeckConfiguration', 'Close_Button']`
+  12. Close backpack by clicking the backpack close button path and confirming that it is no longer visible.
+  13. Return `SUCCESS`.
 
 </details>

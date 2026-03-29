@@ -38,7 +38,7 @@ async def _run_combat(client, combat_dsl: str) -> None:
             self.config = self.parse_config(content)
 
     provider = _StrCombatConfigProvider(combat_dsl)
-    await SprintyCombat(client, provider).handle_combat()
+    await SprintyCombat(client, provider).wait_for_combat()
 
 
 def _split_combat_config(dsl: str, num_clients: int) -> list[str]:

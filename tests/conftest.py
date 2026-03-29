@@ -38,6 +38,7 @@ class FakeClient:
         self.stats.potion_charge = AsyncMock(return_value=10)
         self.tp_to_closest_health_wisp = AsyncMock(return_value=False)
         self.tp_to_closest_mana_wisp = AsyncMock(return_value=False)
+        self.backpack_space = AsyncMock(return_value=(0, 100))  # (used, total)
         self.mouse_handler = MagicMock()
         self.mouse_handler.__aenter__ = AsyncMock(return_value=None)
         self.mouse_handler.__aexit__ = AsyncMock(return_value=False)

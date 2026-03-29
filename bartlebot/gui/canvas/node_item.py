@@ -1,46 +1,37 @@
-"""QGraphicsItem subclasses shared by the Editor and Running tabs.
-
-GraphView  — zoomable/pannable QGraphicsView (read-only or interactive).
-NodeItem   — rounded-rect representing a single FSM state.
-EdgeItem   — directed edge between two NodeItems, including self-loops
-             and offset bidirectional pairs.
-"""
+"""NodeItem — QGraphicsItem representing a single FSM state."""
 
 import math
 
-from PyQt6.QtCore import QEasingCurve, QPointF, QRectF, QSequentialAnimationGroup, Qt, QVariantAnimation, pyqtSignal
+from PyQt6.QtCore import QEasingCurve, QPointF, QRectF, QSequentialAnimationGroup, Qt, QVariantAnimation
 from PyQt6.QtGui import (
     QBrush,
     QColor,
     QFont,
-    QKeyEvent,
     QPainter,
-    QPainterPath,
     QPen,
-    QWheelEvent,
 )
 from PyQt6.QtWidgets import (
     QGraphicsItem,
-    QGraphicsPathItem,
-    QGraphicsScene,
-    QGraphicsView,
     QStyleOptionGraphicsItem,
 )
 
 from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
-# Constants
+# Geometry constants (also used by EdgeItem for port positions)
 # ---------------------------------------------------------------------------
 
 NODE_W = 220
 NODE_H = 70
 NODE_RADIUS = 12
-ARROW_SIZE = 13
 PORT_R = 6  # radius of connection-port circles
 PORT_SPACING = 28  # vertical spacing between named output ports
 _HEADER_H = 28  # height reserved for text label when returns are present
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
+
+# ---------------------------------------------------------------------------
+# Color constants
+# ---------------------------------------------------------------------------
 
 _FILL_NORMAL = THEME.qcolor("node_fill_normal")
 _FILL_HOVER = THEME.qcolor("node_fill_hover")
@@ -59,124 +50,13 @@ _BORDER_WARNING = THEME.qcolor("node_border_warning")
 _BADGE_INITIAL = THEME.qcolor("badge_initial")
 _BADGE_TERMINAL = THEME.qcolor("badge_terminal")
 _BADGE_FLIPPED = THEME.qcolor("badge_flipped")
-_EDGE_COLOR = THEME.qcolor("edge_color")
-_EDGE_HOVER_COLOR = THEME.qcolor("edge_hover_color")
-_EDGE_SEL_COLOR = THEME.qcolor("edge_sel_color")
 _PORT_COLOR = THEME.qcolor("port_color")
 _BADGE_FONT = THEME.font_node_sub()
-
-_CORNER_R = 8  # rounded-corner radius on orthogonal paths (px)
-_BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
-_BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
-_STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 
 
 def node_height(n_returns: int) -> int:
     """Compute the pixel height for a node with *n_returns* named output ports."""
     return max(NODE_H, (max(n_returns, 1) + 1) * PORT_SPACING)
-
-
-# ---------------------------------------------------------------------------
-# GraphView — reusable zoomable/pannable view
-# ---------------------------------------------------------------------------
-
-
-class GraphView(QGraphicsView):
-    """Zoomable, pannable QGraphicsView.
-
-    interactive=False (default): read-only, left-drag pans.
-    interactive=True: items are selectable/movable, middle-mouse pans,
-                      left-drag produces a rubber-band selection rect.
-    """
-
-    view_changed = pyqtSignal()  # emitted after zoom so overlays can repaint
-    _ZOOM_FACTOR = 1.15
-
-    def __init__(self, scene: QGraphicsScene, interactive: bool = False, parent=None):
-        super().__init__(scene, parent)
-        self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
-        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
-        self._user_zoomed = False
-        self._pan_origin: QPointF | None = None
-        self._space_held: bool = False
-
-        if interactive:
-            self.setInteractive(True)
-            self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
-        else:
-            self.setInteractive(False)
-            self.setDragMode(QGraphicsView.DragMode.NoDrag)
-
-    def fit_scene(self) -> None:
-        """Fit the full scene content into the viewport. Resets user-zoom state."""
-        self._user_zoomed = False
-        scene = self.scene()
-        if scene is None:
-            return
-        bounds = scene.itemsBoundingRect()
-        if bounds.isEmpty():
-            return
-        self.fitInView(bounds.adjusted(-80, -60, 80, 60), Qt.AspectRatioMode.KeepAspectRatio)
-
-    def wheelEvent(self, event: QWheelEvent) -> None:
-        self._user_zoomed = True
-        factor = self._ZOOM_FACTOR if event.angleDelta().y() > 0 else 1 / self._ZOOM_FACTOR
-        self.scale(factor, factor)
-        self.view_changed.emit()
-
-    def resizeEvent(self, event) -> None:
-        super().resizeEvent(event)
-        if not self._user_zoomed:
-            self.fit_scene()
-
-    # Space + left-drag panning
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
-            self._space_held = True
-            if self._pan_origin is None:
-                self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
-            event.accept()
-            return
-        super().keyPressEvent(event)
-
-    def keyReleaseEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
-            self._space_held = False
-            if self._pan_origin is None:
-                self.viewport().unsetCursor()
-            event.accept()
-            return
-        super().keyReleaseEvent(event)
-
-    def mousePressEvent(self, event) -> None:
-        if self._space_held and event.button() == Qt.MouseButton.LeftButton:
-            self._pan_origin = event.position()
-            self.viewport().setCursor(Qt.CursorShape.ClosedHandCursor)
-            event.accept()
-            return
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if self._pan_origin is not None:
-            delta = event.position() - self._pan_origin
-            self._pan_origin = event.position()
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - int(delta.x()))
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - int(delta.y()))
-            event.accept()
-            return
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton and self._pan_origin is not None:
-            self._pan_origin = None
-            if self._space_held:
-                self.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
-            else:
-                self.viewport().unsetCursor()
-            event.accept()
-            return
-        super().mouseReleaseEvent(event)
 
 
 # ---------------------------------------------------------------------------
@@ -614,366 +494,3 @@ class NodeItem(QGraphicsItem):
                 painter.setPen(QPen(_PORT_COLOR, 1.5))
                 painter.setBrush(QBrush(_PORT_COLOR))
                 painter.drawEllipse(QPointF(in_x, h / 2), PORT_R, PORT_R)
-
-
-# ---------------------------------------------------------------------------
-# EdgeItem
-# ---------------------------------------------------------------------------
-
-
-class EdgeItem(QGraphicsPathItem):
-    """Directed edge between two NodeItems.
-
-    - Forward edge (dst to the right): Z-shaped orthogonal path with rounded corners.
-    - Backward edge (dst to the left): Z-shaped path mirrored horizontally, bridge
-      clamped to clear both node boxes vertically.
-    - Self-loop (src_node is dst_node): cubic bezier arc above the node.
-    - when: the return value name the edge fires on (e.g. "SUCCESS").
-    """
-
-    def __init__(
-        self,
-        src_node: NodeItem,
-        dst_node: NodeItem,
-        offset: float = 0.0,
-        when: str | None = None,
-    ):
-        super().__init__()
-        self._src = src_node
-        self._dst = dst_node
-        self._offset = offset
-        self._when = when
-        self._is_self_loop = src_node is dst_node
-        self._hovered = False
-
-        self.setZValue(0)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
-        self.setAcceptHoverEvents(True)
-        self._rebuild()
-
-    def shape(self):
-        """Widen the hit area so thin paths are easier to click."""
-        from PyQt6.QtGui import QPainterPathStroker
-
-        ps = QPainterPathStroker()
-        ps.setWidth(12)
-        return ps.createStroke(self.path())
-
-    def _rebuild(self) -> None:
-        path = QPainterPath()
-        if self._is_self_loop:
-            self._build_self_loop(path)
-        else:
-            self._build_edge(path)
-        self.setPath(path)
-
-    # ------------------------------------------------------------------
-    # Hover events
-    # ------------------------------------------------------------------
-
-    def hoverEnterEvent(self, event) -> None:
-        self._hovered = True
-        self.update()
-        super().hoverEnterEvent(event)
-
-    def hoverLeaveEvent(self, event) -> None:
-        self._hovered = False
-        self.update()
-        super().hoverLeaveEvent(event)
-
-    # ------------------------------------------------------------------
-    # Paint
-    # ------------------------------------------------------------------
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        if self.isSelected():
-            pen = QPen(_EDGE_SEL_COLOR, 2.5, Qt.PenStyle.DashLine)
-        elif self._hovered:
-            pen = QPen(_EDGE_HOVER_COLOR, 2.5)
-        else:
-            pen = QPen(_EDGE_COLOR, 1.5)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawPath(self.path())
-
-    # ------------------------------------------------------------------
-    # Path builders
-    # ------------------------------------------------------------------
-
-    def _build_edge(self, path: QPainterPath) -> None:
-        src_pt = self._src.port_out_for(self._when)
-        dst_pt = self._dst.port_in()
-        if math.hypot(dst_pt.x() - src_pt.x(), dst_pt.y() - src_pt.y()) < 1:
-            return
-        src_flipped = self._src._flipped
-        dst_flipped = self._dst._flipped
-        if src_flipped or dst_flipped:
-            # Flipped ports: use direction-aware routing so path extensions always
-            # go *outside* the node body regardless of which side the port is on.
-            # src exits left (-1) when flipped, right (+1) when normal.
-            # dst is approached from right (+1) when flipped, left (-1) when normal.
-            src_sign = -1 if src_flipped else 1
-            dst_sign = 1 if dst_flipped else -1
-            if src_flipped and dst_flipped and dst_pt.x() <= src_pt.x():
-                # Both ports face each other (src exits left, dst accepts from right)
-                # and dst is to the left — the natural forward direction for flipped
-                # nodes. Route as a simple Z-path through the horizontal midpoint;
-                # no node-clearing bridge needed.
-                self._build_forward_ortho(path, src_pt, dst_pt)
-            else:
-                self._build_directed_ortho(path, src_pt, dst_pt, src_sign, dst_sign)
-        elif dst_pt.x() > src_pt.x():
-            self._build_forward_ortho(path, src_pt, dst_pt)
-        else:
-            self._build_backward_ortho(path, src_pt, dst_pt)
-
-    def _build_forward_ortho(self, path: QPainterPath, src_pt: QPointF, dst_pt: QPointF) -> None:
-        """Z-shaped orthogonal path for forward (left-to-right) edges.
-
-        When the vertical difference is small (nearly horizontal), falls back
-        to a straight line so the Z elbow doesn't look broken.
-        """
-        if abs(dst_pt.y() - src_pt.y()) < _STRAIGHT_THRESHOLD:
-            path.moveTo(src_pt)
-            path.lineTo(dst_pt)
-            _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
-            return
-        # For bidirectional pairs the offset shifts the vertical segment laterally
-        # so the two mirrored paths are visually separated.
-        mid_x = (src_pt.x() + dst_pt.x()) / 2 + self._offset * 0.5
-        waypoints = [
-            src_pt,
-            QPointF(mid_x, src_pt.y()),
-            QPointF(mid_x, dst_pt.y()),
-            dst_pt,
-        ]
-        _draw_ortho_path(path, waypoints)
-
-    def _build_directed_ortho(
-        self,
-        path: QPainterPath,
-        src_pt: QPointF,
-        dst_pt: QPointF,
-        src_sign: int,
-        dst_sign: int,
-    ) -> None:
-        """Orthogonal path with parameterized exit/approach directions.
-
-        *src_sign* (+1/-1): direction the departure arm extends from the source
-        port (+1 = rightward for normal output, -1 = leftward for flipped output).
-
-        *dst_sign* (+1/-1): direction the arrival arm extends from the destination
-        port (-1 = leftward for normal input, +1 = rightward for flipped input).
-
-        When both signs are equal the departure and arrival arms are on the same
-        side, so a simple 4-point Z-path suffices — no horizontal bridge needed.
-        When the signs differ a 6-point bridge path is used instead.
-        """
-        if src_sign == dst_sign:
-            # Both ports face the same direction: 4-point Z-path.
-            # The vertical column sits at the outermost arm on that side.
-            if src_sign > 0:
-                x_col = max(src_pt.x() + _BACK_H_STEP, dst_pt.x() + _BACK_H_STEP)
-            else:
-                x_col = min(src_pt.x() - _BACK_H_STEP, dst_pt.x() - _BACK_H_STEP)
-            if abs(dst_pt.y() - src_pt.y()) < _STRAIGHT_THRESHOLD:
-                path.moveTo(src_pt)
-                path.lineTo(dst_pt)
-                _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
-                return
-            waypoints = [
-                src_pt,
-                QPointF(x_col, src_pt.y()),
-                QPointF(x_col, dst_pt.y()),
-                dst_pt,
-            ]
-            _draw_ortho_path(path, waypoints)
-        else:
-            # Ports face opposite directions: 6-point bridge path.
-            mid_y = (src_pt.y() + dst_pt.y()) / 2 + self._offset * 0.5
-            src_h = self._src._height
-            dst_h = self._dst._height
-            if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
-                above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
-                below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
-                if mid_y - above_limit > below_limit - mid_y:
-                    mid_y = above_limit
-                else:
-                    mid_y = below_limit
-            waypoints = [
-                src_pt,
-                QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),
-                QPointF(src_pt.x() + src_sign * _BACK_H_STEP, mid_y),
-                QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, mid_y),
-                QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, dst_pt.y()),
-                dst_pt,
-            ]
-            _draw_ortho_path(path, waypoints)
-
-    def _build_backward_ortho(self, path: QPainterPath, src_pt: QPointF, dst_pt: QPointF) -> None:
-        """Backward (right-to-left) edge routed as a 6-point Z-shape."""
-        self._build_directed_ortho(path, src_pt, dst_pt, src_sign=1, dst_sign=-1)
-
-    def _build_self_loop(self, path: QPainterPath) -> None:
-        """Orthogonal path departing from the output port, routing above or below
-        the node (based on port position), and arriving at the input port."""
-        src_pt = self._src.port_out_for(self._when)
-        dst_pt = self._src.port_in()
-        node_top = self._src.scenePos().y()
-        src_h = self._src._height
-        src_center_y = node_top + src_h / 2
-        if src_pt.y() <= src_center_y:
-            bridge_y = node_top - _BACK_PADDING - _BACK_H_STEP
-        else:
-            bridge_y = node_top + src_h + _BACK_PADDING + _BACK_H_STEP
-        flipped = self._src._flipped
-        src_sign = -1 if flipped else 1
-        dst_sign = 1 if flipped else -1
-        waypoints = [
-            src_pt,
-            QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),
-            QPointF(src_pt.x() + src_sign * _BACK_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, dst_pt.y()),
-            dst_pt,
-        ]
-        _draw_ortho_path(path, waypoints)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _draw_ortho_path(path: QPainterPath, waypoints: list) -> None:
-    """Draw an orthogonal path through *waypoints* with rounded corners and an arrowhead.
-
-    Corners are rounded with a quadratic bezier of radius _CORNER_R so the
-    path looks like PowerPoint's elbow connectors rather than a sharp polygon.
-    The arrowhead is appended at the final waypoint pointing along the last segment.
-    """
-    r = _CORNER_R
-    path.moveTo(waypoints[0])
-
-    for i in range(1, len(waypoints) - 1):
-        prev = waypoints[i - 1]
-        curr = waypoints[i]
-        nxt = waypoints[i + 1]
-
-        d1 = math.hypot(curr.x() - prev.x(), curr.y() - prev.y())
-        d2 = math.hypot(nxt.x() - curr.x(), nxt.y() - curr.y())
-        eff_r = min(r, d1 / 2.0, d2 / 2.0)
-
-        if d1 < 1 or d2 < 1 or eff_r < 0.5:
-            path.lineTo(curr)
-            continue
-
-        # Point eff_r before the corner (along incoming segment)
-        t1 = eff_r / d1
-        approach = QPointF(
-            curr.x() + (prev.x() - curr.x()) * t1,
-            curr.y() + (prev.y() - curr.y()) * t1,
-        )
-        # Point eff_r after the corner (along outgoing segment)
-        t2 = eff_r / d2
-        depart = QPointF(
-            curr.x() + (nxt.x() - curr.x()) * t2,
-            curr.y() + (nxt.y() - curr.y()) * t2,
-        )
-        path.lineTo(approach)
-        path.quadTo(curr, depart)
-
-    path.lineTo(waypoints[-1])
-
-    tip = waypoints[-1]
-    pre = waypoints[-2]
-    _add_arrowhead(path, tip, math.atan2(tip.y() - pre.y(), tip.x() - pre.x()))
-
-
-def _add_arrowhead(path: QPainterPath, tip: QPointF, angle: float) -> None:
-    s = ARROW_SIZE
-    a1 = angle + math.pi * 5 / 6
-    a2 = angle - math.pi * 5 / 6
-    p1 = QPointF(tip.x() + s * math.cos(a1), tip.y() + s * math.sin(a1))
-    p2 = QPointF(tip.x() + s * math.cos(a2), tip.y() + s * math.sin(a2))
-    path.moveTo(p1)
-    path.lineTo(tip)
-    path.lineTo(p2)
-
-
-# ---------------------------------------------------------------------------
-# _MinimapView — thumbnail overview of the full scene
-# ---------------------------------------------------------------------------
-
-
-class _MinimapView(QGraphicsView):
-    """Small read-only thumbnail of the EditScene, shown as an overlay.
-
-    Renders the same QGraphicsScene as the main view.  Clicking or dragging
-    inside the minimap pans the main view to that scene position.  A
-    translucent rectangle is drawn over the minimap to indicate the portion
-    of the scene currently visible in the main view.
-    """
-
-    _W = 160
-    _H = 110
-
-    def __init__(self, scene: QGraphicsScene, main_view: GraphView, parent=None):
-        super().__init__(scene, parent)
-        self._main_view = main_view
-
-        self.setFixedSize(self._W, self._H)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.setDragMode(QGraphicsView.DragMode.NoDrag)
-        self.setInteractive(False)
-        self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setStyleSheet(
-            f"QGraphicsView {{"
-            f"  border: 1px solid {THEME.minimap_border};"
-            f"  border-radius: 4px;"
-            f"  background: {THEME.minimap_bg};"
-            f"}}"
-        )
-
-        # Repaint viewport rect whenever main view scrolls or zooms
-        main_view.horizontalScrollBar().valueChanged.connect(self.viewport().update)
-        main_view.verticalScrollBar().valueChanged.connect(self.viewport().update)
-        main_view.view_changed.connect(self.viewport().update)
-
-    def fit_to_scene(self) -> None:
-        """Fit the minimap to show the full scene bounds."""
-        bounds = self.scene().itemsBoundingRect()
-        if not bounds.isEmpty():
-            self.fitInView(
-                bounds.adjusted(-60, -60, 60, 60),
-                Qt.AspectRatioMode.KeepAspectRatio,
-            )
-
-    def paintEvent(self, event) -> None:
-        super().paintEvent(event)
-        # Draw the main view's visible scene rect as a translucent overlay
-        visible_scene = self._main_view.mapToScene(self._main_view.viewport().rect()).boundingRect()
-        mini_rect = self.mapFromScene(visible_scene).boundingRect()
-
-        painter = QPainter(self.viewport())
-        painter.setPen(QPen(QColor(60, 120, 210, 200), 1.5))
-        painter.setBrush(QBrush(QColor(60, 120, 210, 40)))
-        painter.drawRect(mini_rect)
-        painter.end()
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._main_view.centerOn(self.mapToScene(event.pos()))
-            event.accept()
-            return
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event) -> None:
-        if event.buttons() & Qt.MouseButton.LeftButton:
-            self._main_view.centerOn(self.mapToScene(event.pos()))
-            event.accept()
-            return
-        super().mouseMoveEvent(event)

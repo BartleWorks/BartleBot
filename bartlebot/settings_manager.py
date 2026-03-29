@@ -17,11 +17,15 @@ logger = logging.getLogger(__name__)
 
 class _GeneralSettings(BaseModel):
     maximize_on_open: bool = False
+    clear_log_on_run: bool = True
+    log_max_lines: int = 5000
     window_width: int = 1400
     window_height: int = 800
     left_sidebar_width: int = 300
     right_sidebar_width: int = 300
     bottom_section_height: int = 220
+    auto_save_enabled: bool = True
+    auto_save_interval_seconds: int = 300
 
 
 class _GameEmbedSettings(BaseModel):
@@ -47,11 +51,15 @@ _SECTION_MODELS: dict[str, type[BaseModel]] = {
 _DEFAULTS: dict[str, Any] = {
     "general": {
         "maximize_on_open": False,
+        "clear_log_on_run": True,
+        "log_max_lines": 5000,
         "window_width": 1400,
         "window_height": 800,
         "left_sidebar_width": 300,
         "right_sidebar_width": 300,
         "bottom_section_height": 220,
+        "auto_save_enabled": True,
+        "auto_save_interval_seconds": 300,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -120,6 +128,13 @@ class SettingsManager:
     # ------------------------------------------------------------------
     # Singleton
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def autosave_dir() -> Path:
+        """Return the dedicated auto-save directory, creating it if necessary."""
+        d = _appdata_dir() / "autosave"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
 
     @classmethod
     def instance(cls) -> SettingsManager:
