@@ -99,6 +99,7 @@ class AppController(QObject):
 
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
         w.settings_applied.connect(self._reconfigure_autosave_timer)
+        w.settings_applied.connect(w.left_sidebar.log_panel.apply_settings)
 
     # ------------------------------------------------------------------
     # Entry point
@@ -201,7 +202,6 @@ class AppController(QObject):
             on_state_change=self._on_machine_state_change,
             on_transition=self._on_machine_transition,
             on_drop=self._on_machine_drop,
-            on_log=self._on_machine_log,
             on_client_disconnected=self._on_machine_client_disconnected,
         )
         # Reset recovery state for the new run
@@ -247,9 +247,6 @@ class AppController(QObject):
 
     def _on_machine_drop(self, item: str, qty: int, client_idx: int) -> None:
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)
-
-    def _on_machine_log(self, msg: str, level: int) -> None:
-        self._window.left_sidebar.log_panel.append_log(msg, level)
 
     def _on_machine_client_disconnected(self, hwnd: int) -> None:
         """Called by _client_status_watcher when a client becomes unresponsive.

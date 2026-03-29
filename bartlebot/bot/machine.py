@@ -38,7 +38,6 @@ class BotMachine:
         on_state_change: Callable[[str], None] | None = None,
         on_transition: Callable[[str, str, str], None] | None = None,
         on_drop: Callable[[str, int, int], None] | None = None,
-        on_log: Callable[[str, int], None] | None = None,
         max_consecutive_same_state: int | None = None,
         on_client_disconnected: Callable[[int], None] | None = None,
     ) -> None:
@@ -49,7 +48,6 @@ class BotMachine:
         self._on_state_change = on_state_change
         self._on_transition = on_transition
         self._on_drop = on_drop
-        self._on_log = on_log
         self._on_client_disconnected = on_client_disconnected
         self._stop_flag = asyncio.Event()
         self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)

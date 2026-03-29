@@ -15,29 +15,59 @@ from PyQt6.QtWidgets import (
 from bartlebot.settings_manager import BOTCANVAS_MIN_HEIGHT, SIDEBAR_MIN_WIDTH, SettingsManager
 
 
+def _section_label(title: str) -> QLabel:
+    """Bold section header label, styled like _SectionHeader in sidebar_section.py."""
+    lbl = QLabel(title)
+    font = lbl.font()
+    font.setBold(True)
+    font.setPointSize(font.pointSize() + 1)
+    lbl.setFont(font)
+    lbl.setContentsMargins(0, 8, 0, 4)
+    return lbl
+
+
 class GeneralTab(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(10)
-
-        form = QFormLayout()
-        form.setSpacing(8)
+        layout.setSpacing(4)
 
         sm = SettingsManager.instance()
 
-        # Maximize on open
-        self._maximize_cb = QCheckBox()
-        self._maximize_cb.setChecked(sm.get_general("maximize_on_open", default=False))
-        form.addRow("Maximize on open:", self._maximize_cb)
+        # ------------------------------------------------------------------
+        # Log section
+        # ------------------------------------------------------------------
+        layout.addWidget(_section_label("Log"))
 
-        # Clear log on run
+        log_form = QFormLayout()
+        log_form.setSpacing(8)
+
         self._clear_log_cb = QCheckBox()
         self._clear_log_cb.setChecked(sm.get_general("clear_log_on_run", default=True))
-        form.addRow("Clear log on Run:", self._clear_log_cb)
+        log_form.addRow("Clear log on Run:", self._clear_log_cb)
 
-        # Default window size (width × height)
+        self._log_max_lines_sb = QSpinBox()
+        self._log_max_lines_sb.setRange(500, 50000)
+        self._log_max_lines_sb.setSingleStep(500)
+        self._log_max_lines_sb.setSuffix(" lines")
+        self._log_max_lines_sb.setValue(sm.get_general("log_max_lines", default=5000))
+        log_form.addRow("Max log lines:", self._log_max_lines_sb)
+
+        layout.addLayout(log_form)
+
+        # ------------------------------------------------------------------
+        # Layout section
+        # ------------------------------------------------------------------
+        layout.addWidget(_section_label("Layout"))
+
+        layout_form = QFormLayout()
+        layout_form.setSpacing(8)
+
+        self._maximize_cb = QCheckBox()
+        self._maximize_cb.setChecked(sm.get_general("maximize_on_open", default=False))
+        layout_form.addRow("Maximize on open:", self._maximize_cb)
+
         self._width_sb = QSpinBox()
         self._width_sb.setRange(800, 3840)
         self._width_sb.setSuffix(" px")
@@ -54,43 +84,48 @@ class GeneralTab(QWidget):
         size_row.addWidget(QLabel("×"))
         size_row.addWidget(self._height_sb)
         size_row.addStretch()
-        form.addRow("Default window size:", size_row)
+        layout_form.addRow("Default window size:", size_row)
 
-        # Left sidebar width
         self._left_sb = QSpinBox()
         self._left_sb.setRange(SIDEBAR_MIN_WIDTH, 1200)
         self._left_sb.setSuffix(" px")
         self._left_sb.setValue(sm.get_general("left_sidebar_width", default=300))
-        form.addRow("Default left sidebar width:", self._left_sb)
+        layout_form.addRow("Default left sidebar width:", self._left_sb)
 
-        # Right sidebar width
         self._right_sb = QSpinBox()
         self._right_sb.setRange(SIDEBAR_MIN_WIDTH, 1200)
         self._right_sb.setSuffix(" px")
         self._right_sb.setValue(sm.get_general("right_sidebar_width", default=300))
-        form.addRow("Default right sidebar width:", self._right_sb)
+        layout_form.addRow("Default right sidebar width:", self._right_sb)
 
-        # Bottom section height
         self._bottom_sb = QSpinBox()
         self._bottom_sb.setRange(BOTCANVAS_MIN_HEIGHT, 800)
         self._bottom_sb.setSuffix(" px")
         self._bottom_sb.setValue(sm.get_general("bottom_section_height", default=220))
-        form.addRow("Default bottom section height:", self._bottom_sb)
+        layout_form.addRow("Default bottom section height:", self._bottom_sb)
 
-        # Auto-save enabled
+        layout.addLayout(layout_form)
+
+        # ------------------------------------------------------------------
+        # Auto-save section
+        # ------------------------------------------------------------------
+        layout.addWidget(_section_label("Auto-save"))
+
+        autosave_form = QFormLayout()
+        autosave_form.setSpacing(8)
+
         self._autosave_cb = QCheckBox()
         self._autosave_cb.setChecked(sm.get_general("auto_save_enabled", default=True))
-        form.addRow("Auto-save enabled:", self._autosave_cb)
+        autosave_form.addRow("Auto-save enabled:", self._autosave_cb)
 
-        # Auto-save interval
         self._autosave_interval_sb = QSpinBox()
         self._autosave_interval_sb.setRange(30, 3600)
         self._autosave_interval_sb.setSingleStep(30)
         self._autosave_interval_sb.setSuffix(" sec")
         self._autosave_interval_sb.setValue(sm.get_general("auto_save_interval_seconds", default=300))
-        form.addRow("Auto-save interval:", self._autosave_interval_sb)
+        autosave_form.addRow("Auto-save interval:", self._autosave_interval_sb)
 
-        layout.addLayout(form)
+        layout.addLayout(autosave_form)
         layout.addStretch()
 
         # Disable size fields when maximized is checked
@@ -110,8 +145,9 @@ class GeneralTab(QWidget):
 
     def apply(self) -> None:
         sm = SettingsManager.instance()
-        sm.set_general("maximize_on_open", self._maximize_cb.isChecked())
         sm.set_general("clear_log_on_run", self._clear_log_cb.isChecked())
+        sm.set_general("log_max_lines", self._log_max_lines_sb.value())
+        sm.set_general("maximize_on_open", self._maximize_cb.isChecked())
         sm.set_general("window_width", self._width_sb.value())
         sm.set_general("window_height", self._height_sb.value())
         sm.set_general("left_sidebar_width", self._left_sb.value())

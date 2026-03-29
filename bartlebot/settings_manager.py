@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class _GeneralSettings(BaseModel):
     maximize_on_open: bool = False
     clear_log_on_run: bool = True
+    log_max_lines: int = 5000
     window_width: int = 1400
     window_height: int = 800
     left_sidebar_width: int = 300
@@ -51,6 +52,7 @@ _DEFAULTS: dict[str, Any] = {
     "general": {
         "maximize_on_open": False,
         "clear_log_on_run": True,
+        "log_max_lines": 5000,
         "window_width": 1400,
         "window_height": 800,
         "left_sidebar_width": 300,
