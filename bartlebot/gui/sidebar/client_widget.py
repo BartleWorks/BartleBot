@@ -138,6 +138,12 @@ class ClientWidget(QWidget):
         line.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(line)
 
+        # UI tree browser
+        ui_tree_btn = QPushButton("UI Tree Browser")
+        ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this client")
+        ui_tree_btn.clicked.connect(lambda: asyncio.ensure_future(self._open_ui_tree()))
+        layout.addWidget(ui_tree_btn)
+
     # ------------------------------------------------------------------
     # Copy helpers
     # ------------------------------------------------------------------
@@ -176,6 +182,12 @@ class ClientWidget(QWidget):
                 self._tp_btn.setEnabled(True)
         except Exception:
             pass  # client may have disconnected
+
+    async def _open_ui_tree(self) -> None:
+        from bartlebot.gui.ui_tree_browser import UITreeBrowserDialog
+
+        dlg = UITreeBrowserDialog(self._client, parent=self)
+        dlg.show()
 
     async def _tp_to_freecam(self) -> None:
         """Teleport client to current freecam position, then exit freecam."""
