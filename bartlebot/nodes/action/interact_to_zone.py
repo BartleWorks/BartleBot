@@ -6,7 +6,7 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -61,6 +61,16 @@ NODE_SPEC = NodeSpec(
             "Clients were not in from_zone at the start, the interact prompt never "
             "appeared after retries, clients did not enter a loading screen within "
             "the timeout, or not all clients arrived in to_zone.",
+        ),
+    ],
+    required_bot_options=[
+        BotOptionSpec(
+            name="Safety Delay",
+            type="float",
+            default=3.0,
+            description=(
+                "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+            ),
         ),
     ],
     max_consecutive_retries=10,
@@ -142,6 +152,12 @@ async def run(machine, clients: list, params: dict) -> str:
     # 4. Press X for all clients simultaneously.
     machine.log("Pressing X to interact", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+
+    # 4b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
+    machine.log("Checking for dungeon exit warning…", logging.DEBUG)
+    await asyncio.gather(
+        *[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients]
+    )
 
     # 5. Re-press X for any client that hasn't entered a loading screen yet.
     #    Track which clients have *ever* been seen loading rather than requiring
