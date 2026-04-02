@@ -22,6 +22,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`interact_to_zone`](#interact_to_zone) | Interact with an object that triggers a zone change | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `done` |
 | [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `done` |
+| [`teleport_to_friend`](#teleport_to_friend) | Teleport clients to a named friend | `done` |
 | [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
 | [`apply_level_scaling`](#apply_level_scaling) | Apply the level-scaling elixir via NPC interaction | `done` |
@@ -269,6 +270,37 @@ Recalls to existing marked location.
   2. Wait until the UI path element to return to the marked location is enabled. If it isn't enabled within 30 seconds (maybe wait 35 just to be safe), that means that no mark has been set and the node returns `FAILURE`.
   3. Teleport to mark and handle loading screen safely.
   4. Check that clients are in `zone` and at `xyz` (with small margin of error). Return `FAILURE` if false.
+
+</details>
+
+---
+
+### teleport_to_friend
+
+**Status:** `done`
+
+Teleports one or more clients to a named friend on their friends list. Clients already in the destination zone are skipped. Handles the friend-busy / instance-unavailable error dialog.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `friend_name`  | `str`          | Wizard name to search for (case-insensitive). Must be online and on each client's friends list. |
+| `to_zone`      | `str`          | Expected zone name after teleport. Clients already in this zone are skipped. Used to verify arrival. |
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `wizwalker.extensions.scripting.teleport_to_friend_from_list(client, name=str)`, `client.zone_name()`, `client.is_loading()`, window tree helpers for dialog detection
+- Friend-busy dialog path constant: `FRIEND_BUSY_DISMISS_PATH` in `bartlebot/nodes/paths.py`
+- Note: `teleport_to_friend_from_list` uses `client.mouse_handler` internally; the node activates the mouse handler context for each client before calling it.
+- Flow:
+  1. Check if all clients are already in `to_zone`. If so, return `SUCCESS` immediately.
+  2. Filter to only clients not in `to_zone`.
+  3. Call `teleport_to_friend_from_list(client, name=friend_name)` for all clients-to-move simultaneously (each wrapped in `async with client.mouse_handler:`). `ValueError` (friend not found / no friends online) → `FAILURE`.
+  4. "Ever seen" loading loop (up to `TRIGGER_TIMEOUT`): on each tick, check each not-yet-loading client for the friend-busy dialog — if visible, dismiss it and return `FAILURE`. Then check `is_loading()` for each; add newly-loading clients to the seen set. Break when all have been seen loading. On timeout, return `FAILURE`. For stragglers (not loading, no dialog), re-call `teleport_to_friend_from_list`. Sleep `POLL_INTERVAL` between iterations.
+  5. Wait for all loading screens to finish.
+  6. Verify all clients (including those already in `to_zone`) are in `to_zone` via `wait_for_zone`. Return `FAILURE` if any are not.
+  7. Return `SUCCESS`.
+- `FAILURE` cases: friend not found or not online; friend-busy/instance-unavailable dialog appeared; clients did not enter a loading screen within `TRIGGER_TIMEOUT`; not all clients arrived in `to_zone` after loading.
 
 </details>
 
