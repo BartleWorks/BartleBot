@@ -61,9 +61,11 @@ async def _record_go_to_zone(client, param_form, on_status, on_btn, try_set_labe
     try:
         from_zone = await client.zone_name()
         param_form.set_str("from_zone", from_zone)
+        start_pos = await client.body.position()
+        param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
         on_status("Walk to transition…")
 
-        last_pos = await client.body.position()
+        last_pos = start_pos
 
         while True:
             await asyncio.sleep(POLL)
