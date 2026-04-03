@@ -51,7 +51,7 @@
       "label": "Go to the Jade Palace",
       "position": {
         "x": 150.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -65,7 +65,7 @@
       "label": "Collect mana wisps",
       "position": {
         "x": 450.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -82,7 +82,7 @@
       "label": "Enter the Emperor's Throne Room",
       "position": {
         "x": 1050.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -107,7 +107,7 @@
       "label": "Summon the Jade Oni",
       "position": {
         "x": 1950.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -136,7 +136,7 @@
       "label": "Defeat the Jade Oni",
       "position": {
         "x": 2550.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "enemy": "Oni-Jade-MSBoss-L76",
@@ -153,7 +153,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 2850.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 0.8,
@@ -170,7 +170,7 @@
       "label": "Exit combat area",
       "position": {
         "x": 3150.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -203,7 +203,7 @@
       "label": "Handle potions",
       "position": {
         "x": 750.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -220,7 +220,7 @@
       "label": "Enter Jade Oni's render radius",
       "position": {
         "x": 2250.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -239,7 +239,7 @@
       "label": "Check level scaling",
       "position": {
         "x": 1350.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {},
       "option_overrides": {},
@@ -250,8 +250,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1621.7713633398569,
+        "y": -57.18525766470975
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",

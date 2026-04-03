@@ -26,6 +26,8 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
 | [`apply_level_scaling`](#apply_level_scaling) | Apply the level-scaling elixir via NPC interaction | `done` |
+| [`wait_for_health`](#wait_for_health) | Block until all clients' health reaches a threshold | `done` |
+| [`wait_for_dialogue`](#wait_for_dialogue) | Block until all clients are out of dialogue | `done` |
 
 ## Condition Nodes
 
@@ -394,6 +396,59 @@ Interacts with the level-scaling NPC to apply the level-scaling elixir. Assumes 
   9. Wait for `LEVEL_SCALING_OPTION_BUTTON_PATH` to disappear on all scaled clients (menu dismissed, elixir applied).
   10. Return `SUCCESS`.
 - `FAILURE` cases: clients not in `zone`; interact prompt never appeared after retries; NPCServicesWin option button never became visible.
+
+</details>
+
+---
+
+### wait_for_health
+
+**Status:** `done`
+
+Blocks until all clients' health ratio is at or above a threshold, then returns `SUCCESS`. Use after combat or potion use to pause the bot until clients have recovered enough to continue safely. Set `timeout` to `0` to wait indefinitely.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `threshold`    | `float`        | Target health ratio (0.0–1.0). The node waits until all clients are at or above this value. |
+| `timeout`      | `float`        | Maximum seconds to wait before returning `FAILURE`. Set to `0` for no time limit. Default: `120`. |
+
+**Returns:** `SUCCESS` when all clients meet the threshold; `FAILURE` if the timeout expires first (unreachable when `timeout=0`).
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `SprintyClient.calc_health_ratio()`
+- Flow:
+  1. Poll `calc_health_ratio()` on all clients simultaneously via `asyncio.gather`.
+  2. If all ratios are at or above `threshold`, return `SUCCESS`.
+  3. Otherwise sleep `POLL_INTERVAL` and repeat.
+  4. If `timeout > 0` and it expires before the condition is met, return `FAILURE`.
+
+</details>
+
+---
+
+### wait_for_dialogue
+
+**Status:** `done`
+
+Blocks until all clients are out of dialogue, then returns `SUCCESS`. Use after an `interact` node or cutscene to ensure dialogue has fully cleared before the next action. Set `timeout` to `0` for no time limit (equivalent to Deimos's `waitforfree`).
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `timeout`      | `float`        | Maximum seconds to wait before returning `FAILURE`. Set to `0` for no time limit. Default: `60`. |
+
+**Returns:** `SUCCESS` when all clients are out of dialogue; `FAILURE` if the timeout expires first (unreachable when `timeout=0`).
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `SprintyClient.is_in_dialog()`
+- Flow:
+  1. Poll `is_in_dialog()` on all clients simultaneously via `asyncio.gather`.
+  2. If no client is in dialogue, return `SUCCESS`.
+  3. Otherwise sleep `POLL_INTERVAL` and repeat.
+  4. If `timeout > 0` and it expires before the condition is met, return `FAILURE`.
 
 </details>
 
