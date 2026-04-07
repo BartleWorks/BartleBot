@@ -39,6 +39,13 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
 ]
 
+_SAFETY_DELAY_OPTION = BotOptionSpec(
+    name="Safety Delay",
+    type="float",
+    default=3.0,
+    description="Seconds to wait after interacting before verifying elixir status.",
+)
+
 _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     name="Level Scaling Clients",
     type="int_list",
@@ -64,7 +71,7 @@ NODE_SPEC = NodeSpec(
             "or elixir not active after interaction.",
         ),
     ],
-    required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
+    required_bot_options=[_SAFETY_DELAY_OPTION, _LEVEL_SCALING_CLIENTS_OPTION],
 )
 
 from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
@@ -159,7 +166,12 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
     await node_helpers.poll_until(lambda: _none_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL)
 
-    # 10. Verify elixir is active on all scaled clients.
+    # 10. Wait for elixir to apply before checking.
+    safety_delay = machine.get_option("Safety Delay", 3.0)
+    machine.log(f"Waiting {safety_delay}s for elixir to apply…", logging.DEBUG)
+    await asyncio.sleep(safety_delay)
+
+    # 11. Verify elixir is active on all scaled clients.
     machine.log("Verifying level-scaling elixir is active…", logging.DEBUG)
     elixir_results = await asyncio.gather(
         *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_ELIXIR_PATH) for c in scale_clients]

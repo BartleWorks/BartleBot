@@ -95,6 +95,18 @@ QUICKSELL_SELL_CROWNS_NO = [
 ]
 QUICKSELL_CLOSE_BUTTON_PATH = ["WorldView", "shopGUI", "buyWindow", "exit"]
 
+# Friend teleport "friend is busy / instance unavailable" error dialog dismiss button
+# Note: path is structurally identical to QUICKSELL_SELL_CROWNS_NO but named for this context.
+# rightButton (not centerButton) — getting this wrong leaves the dialog blocking the client.
+FRIEND_BUSY_DISMISS_PATH = [
+    "MessageBoxModalWindow",
+    "messageBoxBG",
+    "messageBoxLayout",
+    "AdjustmentWindow",
+    "Layout",
+    "rightButton",
+]
+
 # Gold limit exceeded warning dialog (shares structure with dungeon warning but different context)
 GOLD_LIMIT_OK_PATH = [
     "MessageBoxModalWindow",

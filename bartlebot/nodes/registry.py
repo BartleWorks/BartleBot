@@ -26,6 +26,12 @@ from bartlebot.nodes.action.recall_to_marked_location import NODE_SPEC as _recal
 from bartlebot.nodes.action.recall_to_marked_location import run as recall_to_marked_location_run
 from bartlebot.nodes.action.sleep import NODE_SPEC as _sleep_spec
 from bartlebot.nodes.action.sleep import run as sleep_run
+from bartlebot.nodes.action.teleport_to_friend import NODE_SPEC as _teleport_to_friend_spec
+from bartlebot.nodes.action.teleport_to_friend import run as teleport_to_friend_run
+from bartlebot.nodes.action.wait_for_dialogue import NODE_SPEC as _wait_for_dialogue_spec
+from bartlebot.nodes.action.wait_for_dialogue import run as wait_for_dialogue_run
+from bartlebot.nodes.action.wait_for_health import NODE_SPEC as _wait_for_health_spec
+from bartlebot.nodes.action.wait_for_health import run as wait_for_health_run
 from bartlebot.nodes.condition.check_if_dropped import NODE_SPEC as _check_if_dropped_spec
 from bartlebot.nodes.condition.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.condition.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
@@ -46,7 +52,10 @@ NODE_REGISTRY: dict = {
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
     "recall_to_marked_location": recall_to_marked_location_run,
+    "teleport_to_friend": teleport_to_friend_run,
     "sleep": sleep_run,
+    "wait_for_dialogue": wait_for_dialogue_run,
+    "wait_for_health": wait_for_health_run,
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
 }
@@ -65,7 +74,10 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
     "recall_to_marked_location": _recall_to_marked_location_spec,
+    "teleport_to_friend": _teleport_to_friend_spec,
     "sleep": _sleep_spec,
+    "wait_for_dialogue": _wait_for_dialogue_spec,
+    "wait_for_health": _wait_for_health_spec,
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
 }
