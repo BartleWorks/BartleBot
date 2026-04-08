@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         self.action_new.setShortcut(QKeySequence("Ctrl+N"))
         file_menu.addAction(self.action_new)
 
-        self.action_open = QAction("Open Bot…", self)
+        self.action_open = QAction("Open Bot", self)
         self.action_open.setShortcut(QKeySequence("Ctrl+O"))
         file_menu.addAction(self.action_open)
 
@@ -143,6 +143,10 @@ class MainWindow(QMainWindow):
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
         # Wire bot status to game view panel title bar
         self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
+        # Wire canvas placeholder quick-start buttons to file menu actions
+        self.bot_canvas.new_bot_requested.connect(self.action_new.trigger)
+        self.bot_canvas.open_bot_requested.connect(self.action_open.trigger)
+        self.bot_canvas.open_recent_requested.connect(self.open_recent_requested)
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(

@@ -154,6 +154,7 @@ class AppController(QObject):
         self._window.set_save_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
         self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
+        self._window.bot_canvas.refresh_placeholder()
 
     def _save_bot(self) -> None:
         if self._loaded_config is None:
@@ -184,6 +185,7 @@ class AppController(QObject):
             self._delete_autosave(old_save_path)
             self._window.set_bot_name(self._loaded_config.name, Path(path).name)
             self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
+            self._window.bot_canvas.refresh_placeholder()
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
 

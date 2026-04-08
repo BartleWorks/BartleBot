@@ -7,6 +7,7 @@ import enum
 import logging
 import time
 from collections.abc import Callable
+from pathlib import Path
 
 from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
@@ -14,10 +15,13 @@ from PyQt6.QtGui import (
     QShortcut,
 )
 from PyQt6.QtWidgets import (
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -79,6 +83,154 @@ def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
 class BotMode(enum.Enum):
     RUN = "run"
     EDIT = "edit"
+
+
+# ---------------------------------------------------------------------------
+# _BotCanvasPlaceholder — shown when no bot file is open
+# ---------------------------------------------------------------------------
+
+
+class _BotCanvasPlaceholder(QWidget):
+    """Placeholder shown in BotCanvas when no bot file is open.
+
+    Centered layout: title, recent files list, New Bot / Open Bot links.
+    """
+
+    new_bot_requested = pyqtSignal()
+    open_bot_requested = pyqtSignal()
+    open_recent_requested = pyqtSignal(str)  # path
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self._build_ui()
+        self.refresh()
+
+    # ------------------------------------------------------------------
+    # Construction
+    # ------------------------------------------------------------------
+
+    def _build_ui(self) -> None:
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(24, 16, 24, 16)
+        outer.setSpacing(12)
+
+        # Centered content column
+        content_row = QHBoxLayout()
+        content_row.setSpacing(0)
+        content_row.addStretch(1)
+
+        content = QWidget()
+        content.setMaximumWidth(400)
+        inner = QVBoxLayout(content)
+        inner.setContentsMargins(0, 0, 0, 0)
+        inner.setSpacing(6)
+
+        recent_hdr = QLabel("Recent Files")
+        recent_hdr_font = recent_hdr.font()
+        recent_hdr_font.setBold(True)
+        recent_hdr.setFont(recent_hdr_font)
+        recent_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        recent_hdr.setStyleSheet(f"color: {THEME.muted_text};")
+        inner.addWidget(recent_hdr)
+
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.HLine)
+        sep.setFrameShadow(QFrame.Shadow.Sunken)
+        inner.addWidget(sep)
+
+        self._recent_area = self._make_scroll_area()
+        inner.addWidget(self._recent_area, stretch=1)
+
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(16)
+        btn_row.addStretch(1)
+
+        self._new_btn = QPushButton("New Bot")
+        self._new_btn.setFlat(True)
+        self._new_btn.setStyleSheet(
+            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
+        )
+        self._new_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._new_btn.clicked.connect(self.new_bot_requested)
+        btn_row.addWidget(self._new_btn)
+
+        self._open_btn = QPushButton("Open Bot")
+        self._open_btn.setFlat(True)
+        self._open_btn.setStyleSheet(
+            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
+        )
+        self._open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._open_btn.clicked.connect(self.open_bot_requested)
+        btn_row.addWidget(self._open_btn)
+
+        btn_row.addStretch(1)
+        inner.addLayout(btn_row)
+
+        content_row.addWidget(content, stretch=2)
+        content_row.addStretch(1)
+        outer.addLayout(content_row, stretch=1)
+
+    @staticmethod
+    def _make_scroll_area() -> QScrollArea:
+        area = QScrollArea()
+        area.setWidgetResizable(True)
+        area.setFrameShape(QFrame.Shape.NoFrame)
+        area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addStretch()
+        area.setWidget(container)
+        return area
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def refresh(self) -> None:
+        """Rebuild recent files list from current settings."""
+        paths = SettingsManager.instance().recent_bot_files
+        self._rebuild_list(
+            self._recent_area,
+            items=[(Path(p).name, p, lambda *_, path=p: self.open_recent_requested.emit(path)) for p in paths],
+            empty_hint="(No recent files)",
+        )
+
+    # ------------------------------------------------------------------
+    # Internal
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _rebuild_list(
+        area: QScrollArea,
+        items: list[tuple[str, str, object]],
+        empty_hint: str,
+    ) -> None:
+        container = area.widget()
+        layout = container.layout()
+
+        # Remove all existing widgets
+        while layout.count() > 0:
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        if not items:
+            hint = QLabel(empty_hint)
+            hint.setWordWrap(True)
+            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            hint.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
+            layout.addWidget(hint)
+        else:
+            for label, tooltip, callback in items:
+                btn = QPushButton(label)
+                btn.setToolTip(tooltip)
+                btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                btn.clicked.connect(callback)
+                layout.addWidget(btn)
+
+        layout.addStretch()
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +324,10 @@ class BotCanvas(QWidget):
     tab_switch = pyqtSignal(str)
     # (css_color, status, state_label, elapsed_text) — consumed by MainWindow title bar
     bot_status_changed = pyqtSignal(str, str, str, str)
+    # Placeholder quick-start signals
+    new_bot_requested = pyqtSignal()
+    open_bot_requested = pyqtSignal()
+    open_recent_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -281,7 +437,8 @@ class BotCanvas(QWidget):
 
         # ── Validation badge — shown left of center when errors/warnings exist ──
         # ── Persistent toolbar row ────────────────────────────────────
-        toolbar = QWidget()
+        self._toolbar = QWidget()
+        toolbar = self._toolbar
         toolbar_row = QHBoxLayout(toolbar)
         toolbar_row.setContentsMargins(4, 4, 4, 4)
         toolbar_row.addWidget(left_section)
@@ -374,12 +531,20 @@ class BotCanvas(QWidget):
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
+        # ── Placeholder — shown until the first bot is loaded ────────
+        self._placeholder = _BotCanvasPlaceholder(self)
+        self._placeholder.new_bot_requested.connect(self.new_bot_requested)
+        self._placeholder.open_bot_requested.connect(self.open_bot_requested)
+        self._placeholder.open_recent_requested.connect(self.open_recent_requested)
+        self._placeholder.show()
+
     # ------------------------------------------------------------------
     # Public API — bot loading
     # ------------------------------------------------------------------
 
     def setup(self, config: BotConfig) -> None:
         """Load a BotConfig. Enters RUN mode with the graph ready."""
+        self._placeholder.setVisible(False)
         self._exit_focus_mode()
         self._close_search()
         self._tab_idx = 0
@@ -403,6 +568,15 @@ class BotCanvas(QWidget):
         self._edit_btn.setEnabled(True)
         self._update_validation_badge()
         self.mode_changed.emit(BotMode.RUN)
+
+    def refresh_placeholder(self) -> None:
+        """Rebuild the recent files list in the placeholder."""
+        self._placeholder.refresh()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        tb_h = self._toolbar.height()
+        self._placeholder.setGeometry(0, tb_h, self.width(), self.height() - tb_h)
 
     # ------------------------------------------------------------------
     # Public API — run state management
