@@ -53,6 +53,11 @@ class MainWindow(QMainWindow):
         file_menu.addMenu(self._recent_menu)
         self._update_recent_placeholder()
 
+        self.action_close = QAction("Close Bot", self)
+        self.action_close.setShortcut(QKeySequence("Ctrl+W"))
+        self.action_close.setEnabled(False)
+        file_menu.addAction(self.action_close)
+
         file_menu.addSeparator()
 
         self.action_save = QAction("Save Bot", self)
@@ -236,6 +241,9 @@ class MainWindow(QMainWindow):
     def set_save_enabled(self, enabled: bool) -> None:
         self.action_save.setEnabled(enabled)
         self.action_save_as.setEnabled(enabled)
+
+    def set_close_enabled(self, enabled: bool) -> None:
+        self.action_close.setEnabled(enabled)
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""

@@ -569,6 +569,17 @@ class BotCanvas(QWidget):
         self._update_validation_badge()
         self.mode_changed.emit(BotMode.RUN)
 
+    def close_bot(self) -> None:
+        """Unload the current bot and return to the placeholder."""
+        self._exit_focus_mode()
+        self._close_search()
+        self._scene.teardown()
+        self._config = None
+        self._active_state = None
+        self._edit_btn.setEnabled(False)
+        self._placeholder.refresh()
+        self._placeholder.setVisible(True)
+
     def refresh_placeholder(self) -> None:
         """Rebuild the recent files list in the placeholder."""
         self._placeholder.refresh()
