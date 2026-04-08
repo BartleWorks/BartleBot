@@ -545,6 +545,10 @@ class BotCanvas(QWidget):
     def setup(self, config: BotConfig) -> None:
         """Load a BotConfig. Enters RUN mode with the graph ready."""
         self._placeholder.setVisible(False)
+        self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        sm = SettingsManager.instance()
+        self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
         self._exit_focus_mode()
         self._close_search()
         self._tab_idx = 0
@@ -574,9 +578,13 @@ class BotCanvas(QWidget):
         self._exit_focus_mode()
         self._close_search()
         self._scene.teardown()
+        self._update_validation_badge()
         self._config = None
         self._active_state = None
         self._edit_btn.setEnabled(False)
+        self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._minimap.setVisible(False)
         self._placeholder.refresh()
         self._placeholder.setVisible(True)
 
