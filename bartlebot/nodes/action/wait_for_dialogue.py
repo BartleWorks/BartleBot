@@ -4,7 +4,7 @@ import asyncio
 
 from bartlebot.nodes.node_helpers import poll_until
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT
+from bartlebot.nodes.timing import POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -39,23 +39,11 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log("wait_for_dialogue: waiting for all clients to leave dialogue")
 
-    # Poll for dialogue to appear for up to TRIGGER_TIMEOUT before proceeding.
-    # This prevents an instant SUCCESS when dialogue hasn't rendered yet.
-    elapsed = 0.0
-    while elapsed < TRIGGER_TIMEOUT:
-        in_dialog = await asyncio.gather(*[c.is_in_dialog() for c in clients])
-        if any(in_dialog):
-            break
-        await asyncio.sleep(POLL_INTERVAL)
-        elapsed += POLL_INTERVAL
-
-    remaining: float | None = None if timeout_val is None else max(0.0, timeout_val - elapsed)
-
     async def condition() -> bool:
         in_dialog = await asyncio.gather(*[c.is_in_dialog() for c in clients])
         return not any(in_dialog)
 
-    met = await poll_until(condition, remaining, POLL_INTERVAL)
+    met = await poll_until(condition, timeout_val, POLL_INTERVAL)
     if met:
         machine.log("wait_for_dialogue: SUCCESS — all clients are out of dialogue")
         return "SUCCESS"
