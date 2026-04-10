@@ -39,7 +39,7 @@ BartleBot/
 │   ├── nodes/
 │   │   ├── registry.py       # NODE_REGISTRY and NODE_SPECS — all registered node types
 │   │   ├── param_schema.py   # ParamField, NodeSpec, ReturnSpec — GUI/doc metadata types
-│   │   ├── go_to_zone.py     # Node: transition between zones
+│   │   ├── enter_zone_gateway.py  # Node: transition between zones via gateway coords
 │   │   └── handle_combat.py  # Node: enter and complete a combat encounter
 │   │
 │   ├── gui/
@@ -211,7 +211,7 @@ Bot files are plain JSON. The full schema is in `docs/BOT_SCHEMA.md`. A minimal 
   "states": [
     {
       "id": "go_to_dungeon",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "params": {
         "from_zone": "WizardCity/WC_Hub",
         "to_zone": "WizardCity/WC_Interiors/WC_Dungeon01_Interior",
@@ -263,7 +263,7 @@ async def test_advances_on_success():
     assert visited == ["state_a", "state_b"]
 ```
 
-Individual node implementations (`go_to_zone`, `handle_combat`, etc.) are not yet unit-tested because they call real WizWalker/WizSprinter client methods. Adding a `FakeClient` with async method stubs in `bartlebot/testing/fake_client.py` would enable this without any architectural changes — nodes receive their clients via injection and do not import client types.
+Individual node implementations (`enter_zone_gateway`, `handle_combat`, etc.) are not yet unit-tested because they call real WizWalker/WizSprinter client methods. Adding a `FakeClient` with async method stubs in `bartlebot/testing/fake_client.py` would enable this without any architectural changes — nodes receive their clients via injection and do not import client types.
 
 ---
 

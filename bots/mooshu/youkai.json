@@ -29,7 +29,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Jade Palace",
       "position": {
         "x": 150.0,
@@ -43,7 +43,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Rock Dojo",
       "position": {
         "x": 750.0,
@@ -68,7 +68,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Shirataki Temple",
       "position": {
         "x": 1050.0,
@@ -170,7 +170,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Youkai's Dojo",
       "position": {
         "x": 2545.0777304034114,
@@ -212,7 +212,7 @@
     },
     {
       "id": "state_11",
-      "node_type": "recall_to_marked_location",
+      "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
         "x": 2551.9442440144294,

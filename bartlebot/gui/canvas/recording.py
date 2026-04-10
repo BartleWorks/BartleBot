@@ -54,7 +54,7 @@ def _zone_display(zone: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _record_go_to_zone(client, param_form, on_status, on_btn, try_set_label) -> None:
+async def _record_enter_zone_gateway(client, param_form, on_status, on_btn, try_set_label) -> None:
     POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
@@ -216,7 +216,7 @@ async def _record_apply_level_scaling(client, param_form, on_status, on_btn, try
         on_btn("Record")
 
 
-async def _record_interact_to_zone(client, param_form, on_status, on_btn, try_set_label) -> None:
+async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try_set_label) -> None:
     POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
@@ -274,7 +274,7 @@ async def _record_mark_location(client, param_form, on_status, on_btn, try_set_l
         on_btn("Record")
 
 
-async def _record_recall_to_marked_location(client, param_form, on_status, on_btn, try_set_label) -> None:
+async def _record_teleport_to_marked_location(client, param_form, on_status, on_btn, try_set_label) -> None:
     POLL = 0.15
     on_btn("Stop")
     on_status("Press PAGE_UP to recall…")
@@ -307,14 +307,14 @@ async def _record_recall_to_marked_location(client, param_form, on_status, on_bt
 # ---------------------------------------------------------------------------
 
 _REGISTRY: dict[str, Any] = {
-    "go_to_zone": _record_go_to_zone,
+    "enter_zone_gateway": _record_enter_zone_gateway,
     "go_to_xyz": _record_go_to_xyz,
     "enter_dungeon": _record_enter_dungeon,
     "interact": _record_interact,
     "apply_level_scaling": _record_apply_level_scaling,
-    "interact_to_zone": _record_interact_to_zone,
+    "enter_zone_interact": _record_enter_zone_interact,
     "mark_location": _record_mark_location,
-    "recall_to_marked_location": _record_recall_to_marked_location,
+    "teleport_to_marked_location": _record_teleport_to_marked_location,
 }
 
 #: Frozenset of node_type strings that have a recording workflow.

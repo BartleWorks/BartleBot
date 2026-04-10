@@ -92,7 +92,6 @@ async def run(machine, clients: list, params: dict) -> str:
     dungeon_zone: str = params["dungeon_zone"]
     sigil = XYZ(**params["sigil_xyz"])
     reset = XYZ(**params["reset_xyz"])
-
     machine.log(f"enter_dungeon: {from_zone!r} → {dungeon_zone!r}")
 
     # 1. Verify all clients are in from_zone.

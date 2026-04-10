@@ -22,7 +22,7 @@
   "states": [
     {
       "id": "go_to_zone_a",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Ravenwood",
       "position": {
         "x": 150.0,
@@ -42,7 +42,7 @@
     },
     {
       "id": "go_to_zone_b",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to The Commons",
       "position": {
         "x": 450.0,
@@ -62,7 +62,7 @@
     },
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
         "x": 750.0,

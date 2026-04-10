@@ -21,7 +21,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "TP to Walruskberg",
       "position": {
         "x": -36.12252896888245,
@@ -58,7 +58,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Enter boss room",
       "position": {
         "x": 749.7191394274226,
@@ -96,7 +96,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit boss room",
       "position": {
         "x": 1277.6404616140298,
@@ -115,7 +115,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit Sunless Shrine",
       "position": {
         "x": 1791.249462994457,
@@ -134,7 +134,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "interact_to_zone",
+      "node_type": "enter_zone_interact",
       "label": "Take snowglobe to River of Frozen Tears",
       "position": {
         "x": 216.13606054726895,

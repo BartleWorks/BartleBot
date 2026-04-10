@@ -40,7 +40,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
         "x": 150.0,
@@ -54,7 +54,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Hametsu Village",
       "position": {
         "x": 1050.0,
@@ -609,7 +609,7 @@
     },
     {
       "id": "state_23",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Enter Grum Foultooth's tower",
       "position": {
         "x": 7350.0,
@@ -650,7 +650,7 @@
     },
     {
       "id": "state_26",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit Grum Foultooth's tower",
       "position": {
         "x": 7950.0,
@@ -962,7 +962,7 @@
     },
     {
       "id": "state_40",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Enter Katsumori's Dojo",
       "position": {
         "x": 10948.201878179036,

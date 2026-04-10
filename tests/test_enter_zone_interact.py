@@ -1,10 +1,10 @@
-"""Unit tests for the interact_to_zone node."""
+"""Unit tests for the enter_zone_interact node."""
 
 from unittest.mock import AsyncMock, patch
 
 from wizwalker import Keycode
 
-import bartlebot.nodes.action.interact_to_zone as itz
+import bartlebot.nodes.action.enter_zone_interact as itz
 from tests.conftest import FakeClient, FakeMachine
 
 _FROM_ZONE = "TestZone"  # matches FakeClient zone_name default

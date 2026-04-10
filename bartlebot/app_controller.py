@@ -73,6 +73,7 @@ class AppController(QObject):
         # File operations — connect directly to exposed QAction signals
         w.action_new.triggered.connect(lambda: self._new_bot())
         w.action_open.triggered.connect(lambda: self._open_bot())
+        w.action_close.triggered.connect(lambda: self._close_bot())
         w.action_save.triggered.connect(lambda: self._save_bot())
         w.action_save_as.triggered.connect(lambda: self._save_bot_as())
         w.open_recent_requested.connect(self._open_bot)
@@ -121,7 +122,7 @@ class AppController(QObject):
         config = BotConfig(
             name="New Bot",
             initial="state_1",
-            states=[StateModel(id="state_1", node_type="go_to_zone")],
+            states=[StateModel(id="state_1", node_type="enter_zone_gateway")],
             transitions=[],
         )
         self._loaded_config = config
@@ -131,6 +132,7 @@ class AppController(QObject):
         self._window.left_sidebar.set_config(config)
         self._window.bot_canvas.enter_edit_mode()
         self._window.set_save_enabled(True)
+        self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
 
     def _open_bot(self, path: str | None = None) -> None:
@@ -152,8 +154,39 @@ class AppController(QObject):
         self._window.bot_canvas.setup(config)
         self._window.left_sidebar.set_config(config)
         self._window.set_save_enabled(True)
+        self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
         self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
+        self._window.bot_canvas.refresh_placeholder()
+
+    def _close_bot(self) -> None:
+        if self._loaded_config is None:
+            return
+        if self._has_unsaved_changes:
+            reply = QMessageBox.question(
+                self._window,
+                "Close Bot",
+                "You have unsaved changes. Close without saving?",
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
+            )
+            if reply == QMessageBox.StandardButton.Cancel:
+                return
+            if reply == QMessageBox.StandardButton.Save:
+                self._save_bot()
+                if self._has_unsaved_changes:  # save was cancelled or failed
+                    return
+        self._delete_autosave()
+        self._loaded_config = None
+        self._last_save_path = None
+        self._has_unsaved_changes = False
+        self._window.bot_canvas.close_bot()
+        self._window.left_sidebar.set_config(None)
+        self._window.set_bot_name(None, None)
+        self._window.set_save_enabled(False)
+        self._window.set_close_enabled(False)
+        self._window.set_start_enabled(False)
 
     def _save_bot(self) -> None:
         if self._loaded_config is None:
@@ -184,6 +217,7 @@ class AppController(QObject):
             self._delete_autosave(old_save_path)
             self._window.set_bot_name(self._loaded_config.name, Path(path).name)
             self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
+            self._window.bot_canvas.refresh_placeholder()
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
 

@@ -45,13 +45,18 @@ class MainWindow(QMainWindow):
         self.action_new.setShortcut(QKeySequence("Ctrl+N"))
         file_menu.addAction(self.action_new)
 
-        self.action_open = QAction("Open Bot…", self)
+        self.action_open = QAction("Open Bot", self)
         self.action_open.setShortcut(QKeySequence("Ctrl+O"))
         file_menu.addAction(self.action_open)
 
         self._recent_menu = QMenu("Open Recent", self)
         file_menu.addMenu(self._recent_menu)
         self._update_recent_placeholder()
+
+        self.action_close = QAction("Close Bot", self)
+        self.action_close.setShortcut(QKeySequence("Ctrl+W"))
+        self.action_close.setEnabled(False)
+        file_menu.addAction(self.action_close)
 
         file_menu.addSeparator()
 
@@ -143,6 +148,10 @@ class MainWindow(QMainWindow):
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
         # Wire bot status to game view panel title bar
         self.bot_canvas.bot_status_changed.connect(self._on_bot_status_changed)
+        # Wire canvas placeholder quick-start buttons to file menu actions
+        self.bot_canvas.new_bot_requested.connect(self.action_new.trigger)
+        self.bot_canvas.open_bot_requested.connect(self.action_open.trigger)
+        self.bot_canvas.open_recent_requested.connect(self.open_recent_requested)
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
@@ -232,6 +241,9 @@ class MainWindow(QMainWindow):
     def set_save_enabled(self, enabled: bool) -> None:
         self.action_save.setEnabled(enabled)
         self.action_save_as.setEnabled(enabled)
+
+    def set_close_enabled(self, enabled: bool) -> None:
+        self.action_close.setEnabled(enabled)
 
     def show_game_view(self, visible: bool) -> None:
         """Show or hide the top game-view area. When hidden, bot canvas fills the window."""

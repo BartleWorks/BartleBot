@@ -1,4 +1,4 @@
-"""recall_to_marked_location node — recall to an existing marked location."""
+"""teleport_to_marked_location node — recall to an existing marked location."""
 
 import asyncio
 import logging
@@ -66,7 +66,7 @@ async def run(machine, clients: list, params: dict) -> str:
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
     machine.log(
-        f"recall_to_marked_location: expected zone={zone!r} XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
+        f"teleport_to_marked_location: expected zone={zone!r} XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
     )
 
     # 1. Verify all clients have mana to cast recall.

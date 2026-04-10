@@ -1,10 +1,10 @@
-"""Unit tests for the recall_to_marked_location node."""
+"""Unit tests for the teleport_to_marked_location node."""
 
 from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ
 
-import bartlebot.nodes.action.recall_to_marked_location as rtm
+import bartlebot.nodes.action.teleport_to_marked_location as rtm
 import bartlebot.nodes.node_helpers as nh
 from tests.conftest import FakeClient, FakeMachine
 

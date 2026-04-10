@@ -22,7 +22,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
         "x": 150.0,

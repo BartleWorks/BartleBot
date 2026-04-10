@@ -40,7 +40,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
         "x": 150.0,
@@ -54,7 +54,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Hametsu Village",
       "position": {
         "x": 1050.0,
@@ -154,7 +154,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit Do-Daga's Dojo",
       "position": {
         "x": 2250.0,
@@ -208,7 +208,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
         "x": 3150.0,
@@ -290,7 +290,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "recall_to_marked_location",
+      "node_type": "teleport_to_marked_location",
       "label": "Recall to marked location",
       "position": {
         "x": 4050.0,

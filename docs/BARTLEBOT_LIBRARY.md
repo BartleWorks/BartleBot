@@ -15,15 +15,16 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | Node | Description | Status |
 |------|-------------|--------|
 | [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
-| [`go_to_zone`](#go_to_zone) | Transition clients between zones via gateway coordinates | `done` |
+| [`enter_zone_gateway`](#enter_zone_gateway) | Transition clients between zones via gateway coordinates | `done` |
 | [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
+| [`enter_gauntlet`](#enter_gauntlet) | Enter a gauntlet dungeon placed in a player's house | `done` |
 | [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
-| [`interact_to_zone`](#interact_to_zone) | Interact with an object that triggers a zone change | `done` |
+| [`enter_zone_interact`](#enter_zone_interact) | Interact with an object that triggers a zone change | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `done` |
-| [`recall_to_marked_location`](#recall_to_marked_location) | Recall to an existing marked location | `done` |
+| [`teleport_to_marked_location`](#teleport_to_marked_location) | Recall to an existing marked location | `done` |
 | [`teleport_to_friend`](#teleport_to_friend) | Teleport clients to a named friend | `done` |
-| [`go_to_world_hub`](#go_to_world_hub) | Teleport to the current world's hub zone | `done` |
+| [`teleport_to_world_hub`](#teleport_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
 | [`apply_level_scaling`](#apply_level_scaling) | Apply the level-scaling elixir via NPC interaction | `done` |
 | [`wait_for_health`](#wait_for_health) | Block until all clients' health reaches a threshold | `done` |
@@ -76,7 +77,7 @@ Teleports clients to a given XYZ location within the same zone.
 
 ---
 
-### go_to_zone
+### enter_zone_gateway
 
 **Status:** `done`
 
@@ -131,6 +132,39 @@ Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil
   7. If any clients did not enter `dungeon_zone` (desync) return `FAILURE`
   8. Return `SUCCESS` once all clients are in `dungeon_zone`; return `FAILURE` if retries are exhausted.
 - `FAILURE` cases: clients not in `from_zone`; clients not in `dungeon_zone` after loading attempted.
+
+</details>
+
+---
+
+### enter_gauntlet
+
+**Status:** `done`
+
+Enters a gauntlet dungeon placed in a player's house. Unlike `enter_dungeon`, this node does not teleport clients — the player must walk to the gauntlet sigil before the node is called.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `dungeon_zone` | `str`          | Zone name all clients must be in after successfully entering the gauntlet.
+
+**Bot Options:**
+
+| Option Name    | Type    | Default | Description |
+|----------------|---------|---------|-------------|
+| `Safety Delay` | `float` | `3`     | Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.send_key(Keycode.X)`, `client.is_loading()`, window tree helpers for prompt detection
+- Flow:
+  1. Wait for the gauntlet entrance prompt to appear on all clients (detected via `node_helpers.all_at_dungeon_entrance()` with `GAUNTLET_ENTRANCE_PATH`). If the prompt does not appear within `INTERACT_TIMEOUT`, return `FAILURE`.
+  2. Press X on all clients simultaneously to enter.
+  3. Poll for a dungeon warning dialog for `Safety Delay` seconds; confirm it if it appears.
+  4. Wait for all clients' loading screens to clear.
+  5. Wait for all clients to arrive in `dungeon_zone`. If any client is not in `dungeon_zone` after `ZONE_CHANGE_TIMEOUT`, return `FAILURE`.
+  6. Return `SUCCESS`.
+- `FAILURE` cases: gauntlet entrance prompt never appeared within timeout; not all clients reached `dungeon_zone` after loading.
 
 </details>
 
@@ -194,7 +228,7 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
 
 ---
 
-### interact_to_zone
+### enter_zone_interact
 
 **Status:** `done`
 
@@ -253,7 +287,7 @@ Marks current location, including failsafes to handle edge cases such as a pre-e
 
 ---
 
-### recall_to_marked_location
+### teleport_to_marked_location
 
 **Status:** `done`
 
@@ -308,7 +342,7 @@ Teleports one or more clients to a named friend on their friends list. Clients a
 
 ---
 
-### go_to_world_hub
+### teleport_to_world_hub
 
 **Status:** `done`
 
@@ -539,8 +573,8 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
   5. Teleport home
   6. After loading home, check zone. If zone is `WizardCity/Interiors/WC_Housing_Dorm_Interior` then we're set. If not, wait for the home teleport button to become available again and then teleport home.
     -  Almost all houses have a spiral door available, but there are niche cases (specifically, the Apartment series houses) that need to be handled. Rather than branch on these cases, let's just be 100% sure that we end up in a dorm in a near-infallible manner.
-  7. Call go_to_zone logic to go from the dorm to Ravenwood (`WizardCity/WC_Ravenwood`)
-  8. Call go_to_zone logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{'x': 12.1, 'y': -2037.77, 'z': -130.64}`)
+  7. Call enter_zone_gateway logic to go from the dorm to Ravenwood (`WizardCity/WC_Ravenwood`)
+  8. Call enter_zone_gateway logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{'x': 12.1, 'y': -2037.77, 'z': -130.64}`)
   9. Teleport to Hilda Brewer via go_to_xyz, then talk to her via interact.
   10. Navigate the potions menu following the buy_potions() logic in utils.py at C:/GitHub/Deimos
   11. Return `SUCCESS` if potions were bought successfully, `FAILURE` otherwise.

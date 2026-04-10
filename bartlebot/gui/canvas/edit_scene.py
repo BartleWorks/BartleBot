@@ -228,12 +228,12 @@ class EditScene(QGraphicsScene):
     # Public API
     # ------------------------------------------------------------------
 
-    def setup(self, config: BotConfig) -> None:
-        """Rebuild the scene from a BotConfig."""
+    def teardown(self) -> None:
+        """Remove all items and reset internal state without loading a new config."""
         for ri in self._region_items.values():
             try:
                 self.changed.disconnect(ri._recompute_rect)
-            except RuntimeError:
+            except (RuntimeError, TypeError):
                 pass
         self._region_items.clear()
         self.clear()
@@ -242,6 +242,11 @@ class EditScene(QGraphicsScene):
         self._drag_src = None
         self._drag_when = None
         self._temp_edge = None
+        self._config = None
+
+    def setup(self, config: BotConfig) -> None:
+        """Rebuild the scene from a BotConfig."""
+        self.teardown()
         self._config = config
 
         states = config.states
@@ -358,7 +363,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         state_id = _unique_id([s.id for s in self._config.states])
-        default_type = next(iter(NODE_REGISTRY), "go_to_zone")
+        default_type = next(iter(NODE_REGISTRY), "enter_zone_gateway")
         state = StateModel(
             id=state_id,
             node_type=default_type,
@@ -889,7 +894,7 @@ class EditScene(QGraphicsScene):
 
         # Create a new state at the midpoint
         new_id = _unique_id([st.id for st in self._config.states])
-        default_type = next(iter(NODE_REGISTRY), "go_to_zone")
+        default_type = next(iter(NODE_REGISTRY), "enter_zone_gateway")
         state = StateModel(
             id=new_id,
             node_type=default_type,
