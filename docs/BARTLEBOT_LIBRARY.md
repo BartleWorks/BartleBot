@@ -17,6 +17,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
 | [`enter_zone_gateway`](#enter_zone_gateway) | Transition clients between zones via gateway coordinates | `done` |
 | [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
+| [`enter_gauntlet`](#enter_gauntlet) | Enter a gauntlet dungeon placed in a player's house | `done` |
 | [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
 | [`enter_zone_interact`](#enter_zone_interact) | Interact with an object that triggers a zone change | `done` |
@@ -131,6 +132,39 @@ Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil
   7. If any clients did not enter `dungeon_zone` (desync) return `FAILURE`
   8. Return `SUCCESS` once all clients are in `dungeon_zone`; return `FAILURE` if retries are exhausted.
 - `FAILURE` cases: clients not in `from_zone`; clients not in `dungeon_zone` after loading attempted.
+
+</details>
+
+---
+
+### enter_gauntlet
+
+**Status:** `done`
+
+Enters a gauntlet dungeon placed in a player's house. Unlike `enter_dungeon`, this node does not teleport clients — the player must walk to the gauntlet sigil before the node is called.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `dungeon_zone` | `str`          | Zone name all clients must be in after successfully entering the gauntlet.
+
+**Bot Options:**
+
+| Option Name    | Type    | Default | Description |
+|----------------|---------|---------|-------------|
+| `Safety Delay` | `float` | `3`     | Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.send_key(Keycode.X)`, `client.is_loading()`, window tree helpers for prompt detection
+- Flow:
+  1. Wait for the gauntlet entrance prompt to appear on all clients (detected via `node_helpers.all_at_dungeon_entrance()` with `GAUNTLET_ENTRANCE_PATH`). If the prompt does not appear within `INTERACT_TIMEOUT`, return `FAILURE`.
+  2. Press X on all clients simultaneously to enter.
+  3. Poll for a dungeon warning dialog for `Safety Delay` seconds; confirm it if it appears.
+  4. Wait for all clients' loading screens to clear.
+  5. Wait for all clients to arrive in `dungeon_zone`. If any client is not in `dungeon_zone` after `ZONE_CHANGE_TIMEOUT`, return `FAILURE`.
+  6. Return `SUCCESS`.
+- `FAILURE` cases: gauntlet entrance prompt never appeared within timeout; not all clients reached `dungeon_zone` after loading.
 
 </details>
 
