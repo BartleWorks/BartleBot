@@ -44,17 +44,6 @@ PARAM_SCHEMA: list[ParamField] = [
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
-    ParamField(
-        key="is_gauntlet",
-        type="bool",
-        label="Is Gauntlet",
-        help=(
-            "Enable for gauntlet dungeons, which do not have a Team Up button. "
-            "The entrance prompt is detected differently for gauntlets."
-        ),
-        default=False,
-        required=False,
-    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -103,9 +92,6 @@ async def run(machine, clients: list, params: dict) -> str:
     dungeon_zone: str = params["dungeon_zone"]
     sigil = XYZ(**params["sigil_xyz"])
     reset = XYZ(**params["reset_xyz"])
-    is_gauntlet: bool = params.get("is_gauntlet", False)
-    entrance_path = node_helpers.GAUNTLET_ENTRANCE_PATH if is_gauntlet else node_helpers.DUNGEON_ENTRANCE_PATH
-
     machine.log(f"enter_dungeon: {from_zone!r} → {dungeon_zone!r}")
 
     # 1. Verify all clients are in from_zone.
@@ -120,7 +106,9 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 2. Clear any pre-existing dungeon entrance prompt before starting.
-    prompts = await asyncio.gather(*[node_helpers.is_visible_by_path(c, entrance_path) for c in clients])
+    prompts = await asyncio.gather(
+        *[node_helpers.is_visible_by_path(c, node_helpers.DUNGEON_ENTRANCE_PATH) for c in clients]
+    )
     if any(prompts):
         stale = [i for i, p in enumerate(prompts) if p]
         machine.log(
@@ -129,7 +117,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.poll_until(
-            lambda: node_helpers.none_at_dungeon_entrance(clients, path=entrance_path), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         )
 
     # 3. Retry loop: teleport to sigil, wait for dungeon entrance prompt.
@@ -140,7 +128,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
         if await node_helpers.poll_until(
-            lambda: node_helpers.all_at_dungeon_entrance(clients, path=entrance_path), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
