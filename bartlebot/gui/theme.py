@@ -412,10 +412,33 @@ DARK = _Theme(
 
 
 # ---------------------------------------------------------------------------
-# Active theme singleton
+# Active theme singleton — proxy pattern
+#
+# All consumer files bind ``THEME`` once at import time:
+#
+#     from bartlebot.gui.theme import THEME
+#
+# ``_ThemeProxy`` forwards every attribute lookup to ``_current_theme`` at
+# access time, so ``set_theme()`` only needs to update ``_current_theme``
+# and every consumer automatically reads the new values without rebinding.
 # ---------------------------------------------------------------------------
 
-THEME: _Theme = LIGHT
+
+class _ThemeProxy:
+    """Transparent proxy for the active ``_Theme`` instance.
+
+    Attribute reads are forwarded to ``_current_theme`` at call time, not at
+    import time, so theme switches are immediately visible everywhere.
+    """
+
+    __slots__ = ()
+
+    def __getattr__(self, name: str):  # type: ignore[override]
+        return getattr(_current_theme, name)
+
+
+_current_theme: _Theme = LIGHT
+THEME: _Theme = _ThemeProxy()  # type: ignore[assignment]
 
 
 def _detect_system_dark_mode() -> bool:
@@ -446,11 +469,12 @@ def resolve_theme(mode: str) -> _Theme:
 
 
 def set_theme(mode: str) -> None:
-    """Replace the module-level ``THEME`` singleton.
+    """Update the active theme.
 
-    Call ``QApplication.setPalette(THEME.build_palette())`` and
-    ``QApplication.setStyleSheet(THEME.global_stylesheet())`` after this
-    to apply the new theme to all widgets.
+    ``THEME`` is a proxy, so all consumers pick up the change immediately on
+    the next attribute access.  Call ``QApplication.setPalette`` and
+    ``QApplication.setStyleSheet`` afterwards to push the new palette/QSS to
+    all existing widgets.
     """
-    global THEME  # noqa: PLW0603
-    THEME = resolve_theme(mode)
+    global _current_theme  # noqa: PLW0603
+    _current_theme = resolve_theme(mode)

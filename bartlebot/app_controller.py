@@ -645,12 +645,12 @@ class AppController(QObject):
 
     def _apply_theme(self) -> None:
         """Read the theme setting and apply palette + stylesheet to the app."""
-        from bartlebot.gui import theme as _theme_mod  # noqa: PLC0415
+        from bartlebot.gui.theme import THEME, set_theme  # noqa: PLC0415
 
         theme_mode = SettingsManager.instance().get_general("theme", default="system")
-        _theme_mod.set_theme(theme_mode)
-        self._app.setPalette(_theme_mod.THEME.build_palette())
-        self._app.setStyleSheet(_theme_mod.THEME.global_stylesheet())
+        set_theme(theme_mode)
+        self._app.setPalette(THEME.build_palette())
+        self._app.setStyleSheet(THEME.global_stylesheet())
 
     def _reconfigure_autosave_timer(self) -> None:
         """Read current settings and start/stop/reconfigure the auto-save timer."""

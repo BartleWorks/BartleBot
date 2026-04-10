@@ -212,11 +212,11 @@ class ClientTile(QWidget):
         gx = max(0, (self.width() - gw) // 2)
         gy = LABEL_RESERVE + max(0, (self.height() - LABEL_RESERVE - gh) // 2)
 
-        # Focus highlight — filled red rectangle behind the game window.
+        # Focus highlight — filled accent rectangle behind the game window.
         # The Win32 child covers the game area, leaving only the surrounding
-        # _FOCUS_BORDER-wide strip visible as the red highlight.
+        # _FOCUS_BORDER-wide strip visible as the accent highlight.
         if self._focused:
-            painter.setBrush(THEME.qcolor("error"))
+            painter.setBrush(THEME.qcolor("accent"))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(
                 gx - FOCUS_BORDER,

@@ -387,6 +387,19 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
+        # Track (button → current icon name) so changeEvent can re-tint on theme switch.
+        # _run_pause_btn entry is updated by _set_run_icon() whenever the icon changes.
+        self._btn_icons: dict[QPushButton, str] = {
+            self._run_pause_btn: "play",
+            self.stop_button: "stop",
+            self._edit_btn: "pencil",
+            self._fit_btn: "fit",
+            self._add_state_btn: "plus",
+            self._layout_btn: "layout",
+            self._done_btn: "checkmark",
+            self._save_done_btn: "save_done",
+        }
+
         # ── Swappable center zone ─────────────────────────────────────
         run_center = QWidget()
         run_center_row = QHBoxLayout(run_center)
@@ -694,9 +707,20 @@ class BotCanvas(QWidget):
         """Pass a callable that returns the current list of hooked clients."""
         self._param_panel._get_clients = fn
 
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            for btn, icon_name in self._btn_icons.items():
+                btn.setIcon(svg_icon(icon_name))
+
+    def _set_run_icon(self, icon_name: str) -> None:
+        """Set the run/pause button icon and record it for live theme updates."""
+        self._btn_icons[self._run_pause_btn] = icon_name
+        self._run_pause_btn.setIcon(svg_icon(icon_name))
+
     def set_running(self) -> None:
         self._run_state = _RUNNING
-        self._run_pause_btn.setIcon(svg_icon("pause"))
+        self._set_run_icon("pause")
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
         self._edit_btn.setEnabled(False)
@@ -708,14 +732,14 @@ class BotCanvas(QWidget):
 
     def set_paused(self) -> None:
         self._run_state = _PAUSED
-        self._run_pause_btn.setIcon(svg_icon("play"))
+        self._set_run_icon("play")
         self._run_pause_btn.setEnabled(True)
         self._emit_bot_status()
         logger.info("=== Paused ===")
 
     def set_idle(self) -> None:
         self._run_state = _IDLE
-        self._run_pause_btn.setIcon(svg_icon("play"))
+        self._set_run_icon("play")
         self._run_pause_btn.setEnabled(False)  # re-enabled by set_run_enabled
         self.stop_button.setEnabled(False)
         self._edit_btn.setEnabled(self._config is not None)
@@ -754,7 +778,7 @@ class BotCanvas(QWidget):
             self.pause_requested.emit()
         elif self._run_state == _PAUSED:
             self._run_state = _RUNNING
-            self._run_pause_btn.setIcon(svg_icon("pause"))
+            self._set_run_icon("pause")
             self._emit_bot_status()
             logger.info("=== Resumed ===")
             self.resume_requested.emit()

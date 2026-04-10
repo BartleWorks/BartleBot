@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -59,6 +59,13 @@ class _SectionHeader(QWidget):
         self._expanded = not self._expanded
         self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
         self.toggled.emit(self._expanded)
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._pixmap_down = svg_pixmap("arrow_down", 10, tint=THEME.icon_tint)
+            self._pixmap_right = svg_pixmap("arrow_right", 10, tint=THEME.icon_tint)
+            self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
 
 
 # ---------------------------------------------------------------------------
