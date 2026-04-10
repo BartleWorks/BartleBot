@@ -52,13 +52,13 @@ class _Theme:
     # Tier 2 — Semantic colors
     # ------------------------------------------------------------------
     error: str = "#CC2222"  # errors, terminal badges, required indicators
-    warning: str = "#BB7700"  # warnings, paused-ish state, flipped badges
+    warning: str = "#9a6c00"  # warnings, paused-ish state, flipped badges
     success: str = "#33bb55"  # running, active, initial badges
 
     # ------------------------------------------------------------------
     # Text variants
     # ------------------------------------------------------------------
-    text_muted: str = "#888888"  # secondary text: labels, hints, descriptions
+    text_muted: str = "#6b6b6b"  # secondary text: labels, hints, descriptions
     text_subtle: str = "#555555"  # sub-headers, third-level text
 
     # ------------------------------------------------------------------
@@ -106,7 +106,7 @@ class _Theme:
     # ------------------------------------------------------------------
     # Validation pills
     # ------------------------------------------------------------------
-    pill_warning_hover: str = "#cc8800"
+    pill_warning_hover: str = "#9a6c00"  # matches warning — gold hues can't lighten and still pass WCAG AA
     pill_text: str = "#ffffff"
     # error bg → ``error``, warning bg → ``warning``
 
@@ -361,11 +361,11 @@ DARK = _Theme(
     accent="#4488cc",
     border="#474747",
     # Semantic
-    error="#f44747",
-    warning="#cca700",
+    error="#d93030",  # darkened from #f44747 — #ffffff pill text needs >=4.5:1 (was 3.60:1)
+    warning="#9a6c00",  # darkened from #cca700 — #ffffff pill text needs >=4.5:1
     success="#4caf50",
     # Text variants
-    text_muted="#808080",
+    text_muted="#9e9e9e",  # lightened from #808080 — was 3.5:1 on bg, now ~5.5:1
     text_subtle="#999999",
     # Node: Neutral
     node_fill="#3c3c3c",
@@ -376,9 +376,9 @@ DARK = _Theme(
     node_fill_active="#2e7d32",
     node_fill_active_dim="#256b28",
     node_border_active="#4caf50",
-    # Node: Error
-    node_fill_error="#4a2020",
-    node_fill_error_hover="#5a2828",
+    # Node: Error — darkened to restore 3:1 contrast with new error border (#d93030)
+    node_fill_error="#3a1515",
+    node_fill_error_hover="#4a2020",
     # Node: Warning
     node_fill_warning="#3d3520",
     node_fill_warning_hover="#4d4228",
@@ -390,7 +390,7 @@ DARK = _Theme(
     # Status
     status_paused="#cca700",
     # Pills
-    pill_warning_hover="#ddb800",
+    pill_warning_hover="#9a6c00",  # matches warning — gold hues can't lighten and still pass WCAG AA
     pill_text="#ffffff",
     # Search
     search_match_current="#00ccee",
@@ -515,14 +515,18 @@ _COLOR_TOKENS: list[str] = [
 ]
 
 
-def build_custom_theme(overrides: dict) -> _Theme:
+def build_custom_theme(overrides: dict, base: _Theme | None = None) -> _Theme:
     """Build a ``_Theme`` from a flat ``{token_name: hex_color}`` dict.
 
-    Missing tokens fall back to the ``LIGHT`` defaults so the result is
-    always a complete, valid theme.
+    Missing tokens fall back to *base*.  When *base* is ``None`` (the default)
+    it is auto-detected from the Windows system theme preference, so a first-
+    run custom theme on a dark-mode machine starts from ``DARK`` rather than
+    always defaulting to ``LIGHT``.
     """
-    kwargs = {token: overrides.get(token, getattr(LIGHT, token)) for token in _COLOR_TOKENS}
-    # Keep the rgba tokens at their LIGHT defaults (not user-editable)
-    kwargs["minimap_bg"] = LIGHT.minimap_bg
-    kwargs["minimap_border"] = LIGHT.minimap_border
+    if base is None:
+        base = DARK if _detect_system_dark_mode() else LIGHT
+    kwargs = {token: overrides.get(token, getattr(base, token)) for token in _COLOR_TOKENS}
+    # Keep the rgba tokens at their base-theme defaults (not user-editable)
+    kwargs["minimap_bg"] = base.minimap_bg
+    kwargs["minimap_border"] = base.minimap_border
     return _Theme(**kwargs)

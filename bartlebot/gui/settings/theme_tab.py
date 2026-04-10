@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -20,7 +21,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _Theme
+from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
@@ -100,6 +101,10 @@ _CONTRAST_PAIRS: list[tuple[str, str, str]] = [
 
 _WCAG_AA_NORMAL = 4.5  # minimum for normal-size text
 
+# Width reserved for the label column in the color grid.
+# Long enough for the widest label ("Fill (active dim):") at the UI font size.
+_LABEL_COL_WIDTH = 150
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -124,7 +129,6 @@ def _wcag_contrast(hex1: str, hex2: str) -> float:
 
 def _button_style(hex_color: str) -> str:
     """Return a QSS string for a color swatch button."""
-    # Choose black or white label text based on which has better contrast
     label_color = (
         "#000000" if _wcag_contrast(hex_color, "#000000") >= _wcag_contrast(hex_color, "#ffffff") else "#ffffff"
     )
@@ -145,6 +149,11 @@ def _section_label(title: str) -> QLabel:
     return lbl
 
 
+def _system_base() -> _Theme:
+    """Return DARK or LIGHT based on the current Windows system preference."""
+    return DARK if _detect_system_dark_mode() else LIGHT
+
+
 # ---------------------------------------------------------------------------
 # ThemeTab
 # ---------------------------------------------------------------------------
@@ -156,6 +165,7 @@ class ThemeTab(QWidget):
 
         sm = SettingsManager.instance()
         saved_overrides: dict = sm.get("custom_theme", default={})
+        base = _system_base()
 
         # {token_name: current_hex} — the live form state
         self._colors: dict[str, str] = {}
@@ -167,20 +177,36 @@ class ThemeTab(QWidget):
         outer.setSpacing(6)
 
         # ------------------------------------------------------------------
-        # Toolbar row
+        # Theme mode selector (moved here from General tab)
+        # ------------------------------------------------------------------
+        mode_form = QFormLayout()
+        mode_form.setSpacing(8)
+
+        self._theme_combo = QComboBox()
+        self._theme_combo.addItem("System (follows Windows)", userData="system")
+        self._theme_combo.addItem("Light", userData="light")
+        self._theme_combo.addItem("Dark", userData="dark")
+        self._theme_combo.addItem("Custom", userData="custom")
+        current_theme = sm.get_general("theme", default="system")
+        for i in range(self._theme_combo.count()):
+            if self._theme_combo.itemData(i) == current_theme:
+                self._theme_combo.setCurrentIndex(i)
+                break
+        mode_form.addRow("Theme:", self._theme_combo)
+        outer.addLayout(mode_form)
+
+        # ------------------------------------------------------------------
+        # Toolbar row (custom colors section)
         # ------------------------------------------------------------------
         toolbar = QHBoxLayout()
         toolbar.setSpacing(6)
 
-        toolbar.addWidget(QLabel("Reset base:"))
+        self._custom_lbl = QLabel("Custom colors:")
+        self._custom_lbl.setContentsMargins(0, 4, 0, 0)
+        toolbar.addWidget(self._custom_lbl)
+        toolbar.addStretch()
 
-        self._base_combo = QComboBox()
-        self._base_combo.addItem("Light", userData="light")
-        self._base_combo.addItem("Dark", userData="dark")
-        self._base_combo.setFixedWidth(80)
-        toolbar.addWidget(self._base_combo)
-
-        self._reset_btn = QPushButton("Reset to Base")
+        self._reset_btn = QPushButton("Reset to System Default")
         # Hardcoded style so the button is always visible regardless of any
         # custom colors the user may have applied to the running theme.
         self._reset_btn.setStyleSheet(
@@ -190,53 +216,58 @@ class ThemeTab(QWidget):
         self._reset_btn.clicked.connect(self._on_reset)
         toolbar.addWidget(self._reset_btn)
 
-        toolbar.addStretch()
+        self._import_btn = QPushButton("Import…")
+        self._import_btn.clicked.connect(self._on_import)
+        toolbar.addWidget(self._import_btn)
 
-        import_btn = QPushButton("Import…")
-        import_btn.clicked.connect(self._on_import)
-        toolbar.addWidget(import_btn)
-
-        export_btn = QPushButton("Export…")
-        export_btn.clicked.connect(self._on_export)
-        toolbar.addWidget(export_btn)
+        self._export_btn = QPushButton("Export…")
+        self._export_btn.clicked.connect(self._on_export)
+        toolbar.addWidget(self._export_btn)
 
         outer.addLayout(toolbar)
 
         # ------------------------------------------------------------------
-        # Scrollable color form
+        # Scrollable color grid
         # ------------------------------------------------------------------
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(scroll.Shape.NoFrame)
 
-        form_widget = QWidget()
-        form_layout = QVBoxLayout(form_widget)
-        form_layout.setContentsMargins(0, 0, 8, 0)
-        form_layout.setSpacing(0)
+        grid_widget = QWidget()
+        grid = QGridLayout(grid_widget)
+        grid.setSpacing(4)
+        grid.setContentsMargins(0, 0, 8, 0)
+        # Fixed label column; button column takes remaining space (left-aligned)
+        grid.setColumnMinimumWidth(0, _LABEL_COL_WIDTH)
+        grid.setColumnStretch(1, 1)
 
+        grid_row = 0
         for section_title, tokens in _SECTIONS:
-            form_layout.addWidget(_section_label(section_title))
-            row_form = QFormLayout()
-            row_form.setSpacing(6)
-            row_form.setContentsMargins(8, 0, 0, 4)
+            hdr = _section_label(section_title)
+            grid.addWidget(hdr, grid_row, 0, 1, 2)
+            grid_row += 1
+
             for token in tokens:
                 if token not in _COLOR_TOKENS:
                     continue
-                # Initial color: saved override → LIGHT default
-                hex_val = saved_overrides.get(token, getattr(LIGHT, token))
+
+                hex_val = saved_overrides.get(token, getattr(base, token))
                 self._colors[token] = hex_val
 
+                lbl = QLabel("  " + _LABELS.get(token, token) + ":")
                 btn = QPushButton(hex_val)
                 btn.setFixedWidth(130)
                 btn.setStyleSheet(_button_style(hex_val))
                 btn.clicked.connect(lambda checked, t=token: self._pick_color(t))
                 self._buttons[token] = btn
 
-                row_form.addRow(_LABELS.get(token, token) + ":", btn)
-            form_layout.addLayout(row_form)
+                grid.addWidget(lbl, grid_row, 0, Qt.AlignmentFlag.AlignVCenter)
+                grid.addWidget(btn, grid_row, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                grid_row += 1
 
-        form_layout.addStretch()
-        scroll.setWidget(form_widget)
+        grid.setRowStretch(grid_row, 1)
+        self._scroll = scroll
+        scroll.setWidget(grid_widget)
         outer.addWidget(scroll, 1)
 
         # ------------------------------------------------------------------
@@ -248,6 +279,25 @@ class ThemeTab(QWidget):
         outer.addWidget(self._contrast_label)
 
         self._refresh_contrast()
+
+        # Enable/disable the custom-color section based on the selected mode
+        self._theme_combo.currentIndexChanged.connect(self._on_mode_changed)
+        self._set_custom_enabled(self._theme_combo.currentData() == "custom")
+
+    # ------------------------------------------------------------------
+    # Mode switching
+    # ------------------------------------------------------------------
+
+    def _on_mode_changed(self) -> None:
+        self._set_custom_enabled(self._theme_combo.currentData() == "custom")
+
+    def _set_custom_enabled(self, enabled: bool) -> None:
+        self._custom_lbl.setVisible(enabled)
+        self._reset_btn.setVisible(enabled)
+        self._import_btn.setVisible(enabled)
+        self._export_btn.setVisible(enabled)
+        self._scroll.setVisible(enabled)
+        self._contrast_label.setVisible(enabled)
 
     # ------------------------------------------------------------------
     # Color picking
@@ -270,7 +320,7 @@ class ThemeTab(QWidget):
     # ------------------------------------------------------------------
 
     def _on_reset(self) -> None:
-        base: _Theme = DARK if self._base_combo.currentData() == "dark" else LIGHT
+        base = _system_base()
         for token, btn in self._buttons.items():
             hex_val: str = getattr(base, token)
             self._colors[token] = hex_val
@@ -329,8 +379,9 @@ class ThemeTab(QWidget):
             text_hex = self._colors.get(text_token, getattr(LIGHT, text_token))
             bg_hex = self._colors.get(bg_token, getattr(LIGHT, bg_token))
             ratio = _wcag_contrast(text_hex, bg_hex)
-            line = f"{label}: {ratio:.1f}:1"
-            tooltip_lines.append(line + (" ✓" if ratio >= _WCAG_AA_NORMAL else f" ✗ (needs {_WCAG_AA_NORMAL})"))
+            tooltip_lines.append(
+                label + f": {ratio:.1f}:1" + (" ✓" if ratio >= _WCAG_AA_NORMAL else f" ✗ (needs {_WCAG_AA_NORMAL})")
+            )
             if ratio < _WCAG_AA_NORMAL:
                 failures.append(f"{label} ({ratio:.1f}:1)")
 
@@ -350,4 +401,6 @@ class ThemeTab(QWidget):
     # ------------------------------------------------------------------
 
     def apply(self) -> None:
-        SettingsManager.instance().set("custom_theme", value=dict(self._colors))
+        sm = SettingsManager.instance()
+        sm.set_general("theme", self._theme_combo.currentData())
+        sm.set("custom_theme", value=dict(self._colors))
