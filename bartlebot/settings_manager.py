@@ -75,6 +75,7 @@ _DEFAULTS: dict[str, Any] = {
     "launch_profiles": [],
     "recent_launches": [],
     "recent_bot_files": [],
+    "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
 }
 
 # Valid Wizard101 windowed resolutions (width, height)

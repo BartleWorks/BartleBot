@@ -645,10 +645,15 @@ class AppController(QObject):
 
     def _apply_theme(self) -> None:
         """Read the theme setting and apply palette + stylesheet to the app."""
-        from bartlebot.gui.theme import THEME, set_theme  # noqa: PLC0415
+        from bartlebot.gui.theme import THEME, build_custom_theme, set_theme, set_theme_instance  # noqa: PLC0415
 
-        theme_mode = SettingsManager.instance().get_general("theme", default="system")
-        set_theme(theme_mode)
+        sm = SettingsManager.instance()
+        theme_mode = sm.get_general("theme", default="system")
+        if theme_mode == "custom":
+            overrides = sm.get("custom_theme", default={})
+            set_theme_instance(build_custom_theme(overrides))
+        else:
+            set_theme(theme_mode)
         self._app.setPalette(THEME.build_palette())
         self._app.setStyleSheet(THEME.global_stylesheet())
 

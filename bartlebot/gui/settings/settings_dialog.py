@@ -13,6 +13,7 @@ from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.game_embed_tab import GameEmbedTab
 from bartlebot.gui.settings.general_tab import GeneralTab
+from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -38,6 +39,10 @@ class SettingsDialog(QDialog):
         self._canvas_tab = CanvasTab()
         self._tabs.addTab(self._canvas_tab, "Canvas")
 
+        # Theme tab
+        self._theme_tab = ThemeTab()
+        self._tabs.addTab(self._theme_tab, "Theme")
+
         # Accounts tab
         self._accounts_tab = AccountsTab()
         self._tabs.addTab(self._accounts_tab, "Accounts")
@@ -54,5 +59,6 @@ class SettingsDialog(QDialog):
         self._general_tab.apply()
         self._game_embed_tab.apply()
         self._canvas_tab.apply()
+        self._theme_tab.apply()
         SettingsManager.instance().save()
         self.accept()

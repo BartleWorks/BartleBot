@@ -32,7 +32,7 @@ the global stylesheet.
 from __future__ import annotations
 
 import winreg
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from PyQt6.QtGui import QColor, QFont, QPalette
 
@@ -478,3 +478,51 @@ def set_theme(mode: str) -> None:
     """
     global _current_theme  # noqa: PLW0603
     _current_theme = resolve_theme(mode)
+
+
+def set_theme_instance(theme: _Theme) -> None:
+    """Set the active theme to an arbitrary ``_Theme`` instance.
+
+    Used for the custom theme mode where the caller has already constructed
+    the instance (e.g. from user-defined color overrides).
+    """
+    global _current_theme  # noqa: PLW0603
+    _current_theme = theme
+
+
+# ---------------------------------------------------------------------------
+# Custom theme support
+# ---------------------------------------------------------------------------
+
+# All color token names (string fields of _Theme, excluding font fields).
+# This is the authoritative list for the Theme editor tab.
+_COLOR_TOKENS: list[str] = [
+    f.name
+    for f in fields(_Theme)
+    if f.name
+    not in {
+        "font_ui_family",
+        "font_mono_family",
+        "font_mono_size",
+        "font_node_main_size",
+        "font_node_sub_size",
+        "font_node_hdr_size",
+        "REGION_PALETTE",
+        # rgba() strings that QColorDialog cannot round-trip
+        "minimap_bg",
+        "minimap_border",
+    }
+]
+
+
+def build_custom_theme(overrides: dict) -> _Theme:
+    """Build a ``_Theme`` from a flat ``{token_name: hex_color}`` dict.
+
+    Missing tokens fall back to the ``LIGHT`` defaults so the result is
+    always a complete, valid theme.
+    """
+    kwargs = {token: overrides.get(token, getattr(LIGHT, token)) for token in _COLOR_TOKENS}
+    # Keep the rgba tokens at their LIGHT defaults (not user-editable)
+    kwargs["minimap_bg"] = LIGHT.minimap_bg
+    kwargs["minimap_border"] = LIGHT.minimap_border
+    return _Theme(**kwargs)

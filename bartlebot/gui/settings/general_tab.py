@@ -48,6 +48,7 @@ class GeneralTab(QWidget):
         self._theme_combo.addItem("Light", userData="light")
         self._theme_combo.addItem("Dark", userData="dark")
         self._theme_combo.addItem("System (follows Windows)", userData="system")
+        self._theme_combo.addItem("Custom (see Theme tab)", userData="custom")
         current_theme = sm.get_general("theme", default="system")
         for i in range(self._theme_combo.count()):
             if self._theme_combo.itemData(i) == current_theme:
