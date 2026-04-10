@@ -363,7 +363,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         state_id = _unique_id([s.id for s in self._config.states])
-        default_type = next(iter(NODE_REGISTRY), "go_to_zone")
+        default_type = next(iter(NODE_REGISTRY), "enter_zone_gateway")
         state = StateModel(
             id=state_id,
             node_type=default_type,
@@ -894,7 +894,7 @@ class EditScene(QGraphicsScene):
 
         # Create a new state at the midpoint
         new_id = _unique_id([st.id for st in self._config.states])
-        default_type = next(iter(NODE_REGISTRY), "go_to_zone")
+        default_type = next(iter(NODE_REGISTRY), "enter_zone_gateway")
         state = StateModel(
             id=new_id,
             node_type=default_type,

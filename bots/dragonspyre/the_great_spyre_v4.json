@@ -55,7 +55,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to the Basilica",
       "position": {
         "x": 152.65066580608053,
@@ -69,7 +69,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "interact_to_zone",
+      "node_type": "enter_zone_interact",
       "label": "Take portal to Dragonspyre Academy",
       "position": {
         "x": 452.6506658060805,
@@ -94,7 +94,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "interact_to_zone",
+      "node_type": "enter_zone_interact",
       "label": "Start dragon ride",
       "position": {
         "x": 750.0,
@@ -228,7 +228,7 @@
     },
     {
       "id": "state_11",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Path of Scales",
       "position": {
         "x": 2844.4690062315512,
@@ -253,7 +253,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to the Great Spyre",
       "position": {
         "x": 3118.5313217448347,
@@ -278,7 +278,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "interact_to_zone",
+      "node_type": "enter_zone_interact",
       "label": "Activate elevator",
       "position": {
         "x": 3400.2223679895046,
@@ -317,7 +317,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit elevator",
       "position": {
         "x": 3952.9242374549026,
@@ -460,7 +460,7 @@
     },
     {
       "id": "state_21",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to the Crown of Fire",
       "position": {
         "x": 6025.158905973386,
@@ -621,7 +621,7 @@
     },
     {
       "id": "state_36",
-      "node_type": "recall_to_marked_location",
+      "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
         "x": 1648.2334419841957,

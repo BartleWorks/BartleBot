@@ -1,8 +1,8 @@
-"""Unit tests for the go_to_world_hub node."""
+"""Unit tests for the teleport_to_world_hub node."""
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.go_to_world_hub as gwh
+import bartlebot.nodes.action.teleport_to_world_hub as gwh
 import bartlebot.nodes.node_helpers as nh
 from tests.conftest import FakeClient, FakeMachine
 

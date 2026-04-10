@@ -95,7 +95,7 @@ async def run(machine, clients: list, params: dict) -> str:
     reset = XYZ(**params["reset_xyz"])
 
     machine.log(
-        f"interact_to_zone: {from_zone!r} → {to_zone!r} via XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
+        f"enter_zone_interact: {from_zone!r} → {to_zone!r} via XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})"
     )
 
     # 1. Verify all clients are in from_zone.

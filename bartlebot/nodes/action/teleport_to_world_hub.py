@@ -1,4 +1,4 @@
-"""go_to_world_hub node — teleport all clients to the current world's hub zone."""
+"""teleport_to_world_hub node — teleport all clients to the current world's hub zone."""
 
 import asyncio
 import logging
@@ -46,7 +46,7 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     zone: str = params["zone"]
 
-    machine.log(f"go_to_world_hub: target zone {zone!r}")
+    machine.log(f"teleport_to_world_hub: target zone {zone!r}")
 
     # 1. Skip if already in hub zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])

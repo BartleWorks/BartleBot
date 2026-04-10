@@ -6,7 +6,7 @@ from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.action.handle_potions as hp
 import bartlebot.nodes.node_helpers as nh
-from bartlebot.nodes.action import go_to_zone, mark_location, recall_to_marked_location
+from bartlebot.nodes.action import enter_zone_gateway, mark_location, teleport_to_marked_location
 from tests.conftest import FakeClient, FakeMachine
 
 # ── Zone aliases ─────────────────────────────────────────────────────────────
@@ -24,8 +24,8 @@ _PARAMS = {
 
 # ── Re-usable sub-node patches ────────────────────────────────────────────────
 _MARK_OK = patch.object(mark_location, "run", new=AsyncMock(return_value="SUCCESS"))
-_RECALL_OK = patch.object(recall_to_marked_location, "run", new=AsyncMock(return_value="SUCCESS"))
-_ZONES_OK = patch.object(go_to_zone, "run", new=AsyncMock(return_value="SUCCESS"))
+_RECALL_OK = patch.object(teleport_to_marked_location, "run", new=AsyncMock(return_value="SUCCESS"))
+_ZONES_OK = patch.object(enter_zone_gateway, "run", new=AsyncMock(return_value="SUCCESS"))
 
 # Patch the private helpers so run() tests don't need to drive their internals.
 _HOME_OK = patch(
@@ -243,7 +243,7 @@ async def test_home_teleport_failure_returns_failure():
 
 async def test_dorm_to_ravenwood_failure_returns_failure():
     client = _depleted_client()
-    zone_fail = patch.object(go_to_zone, "run", new=AsyncMock(return_value="FAILURE"))
+    zone_fail = patch.object(enter_zone_gateway, "run", new=AsyncMock(return_value="FAILURE"))
 
     with _MARK_OK, _HOME_OK, zone_fail:
         result = await hp.run(FakeMachine(), [client], _PARAMS)
@@ -252,9 +252,9 @@ async def test_dorm_to_ravenwood_failure_returns_failure():
 
 
 async def test_ravenwood_to_commons_failure_returns_failure():
-    """First go_to_zone (dorm→ravenwood) succeeds; second (ravenwood→commons) fails."""
+    """First enter_zone_gateway (dorm→ravenwood) succeeds; second (ravenwood→commons) fails."""
     client = _depleted_client()
-    zone_mixed = patch.object(go_to_zone, "run", new=AsyncMock(side_effect=["SUCCESS", "FAILURE"]))
+    zone_mixed = patch.object(enter_zone_gateway, "run", new=AsyncMock(side_effect=["SUCCESS", "FAILURE"]))
 
     with _MARK_OK, _HOME_OK, zone_mixed:
         result = await hp.run(FakeMachine(), [client], _PARAMS)
@@ -277,7 +277,7 @@ async def test_open_potion_shop_failure_returns_failure():
 
 async def test_recall_failure_returns_failure():
     client = _depleted_client()
-    recall_fail = patch.object(recall_to_marked_location, "run", new=AsyncMock(return_value="FAILURE"))
+    recall_fail = patch.object(teleport_to_marked_location, "run", new=AsyncMock(return_value="FAILURE"))
 
     with _MARK_OK, _HOME_OK, _ZONES_OK, _SHOP_FN_OK, _BUY_OK, recall_fail:
         result = await hp.run(FakeMachine(), [client], _PARAMS)
@@ -318,11 +318,11 @@ async def test_only_depleted_clients_enter_refill():
     assert buy_mock.call_args.args[1] is c_depleted
 
 
-async def test_go_to_zone_called_twice_for_route():
-    """go_to_zone must be called exactly twice (dorm→raven, raven→commons)."""
+async def test_enter_zone_gateway_called_twice_for_route():
+    """enter_zone_gateway must be called exactly twice (dorm→raven, raven→commons)."""
     client = _depleted_client()
     zone_mock = AsyncMock(return_value="SUCCESS")
-    zone_patch = patch.object(go_to_zone, "run", new=zone_mock)
+    zone_patch = patch.object(enter_zone_gateway, "run", new=zone_mock)
 
     with _MARK_OK, _HOME_OK, zone_patch, _SHOP_FN_OK, _BUY_OK, _RECALL_OK:
         result = await hp.run(FakeMachine(), [client], _PARAMS)

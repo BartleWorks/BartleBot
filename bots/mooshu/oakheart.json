@@ -32,7 +32,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
         "x": 150.0,
@@ -46,7 +46,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Rock Dojo",
       "position": {
         "x": 450.0,
@@ -71,7 +71,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Yoshihito Temple",
       "position": {
         "x": 750.0,
@@ -96,7 +96,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Village of Sorrow",
       "position": {
         "x": 1050.0,
@@ -179,7 +179,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit Oakheart's Lair",
       "position": {
         "x": 2250.0,

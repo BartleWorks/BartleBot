@@ -49,7 +49,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Take teleporter",
       "position": {
         "x": 1050.0,
@@ -127,7 +127,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Enter Temple of Water",
       "position": {
         "x": 1950.0,
@@ -152,7 +152,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Enter boss room",
       "position": {
         "x": 2250.0,
@@ -227,7 +227,7 @@
     },
     {
       "id": "state_10",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to The Commons",
       "position": {
         "x": 150.0,

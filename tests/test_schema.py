@@ -17,12 +17,12 @@ VALID_DATA = {
     "states": [
         {
             "id": "state_a",
-            "node_type": "go_to_zone",
+            "node_type": "enter_zone_gateway",
             "params": {"from_zone": "ZoneA", "to_zone": "ZoneB", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}},
         },
         {
             "id": "state_b",
-            "node_type": "go_to_zone",
+            "node_type": "enter_zone_gateway",
             "params": {"from_zone": "ZoneB", "to_zone": "ZoneA", "xyz": {"x": 1.0, "y": 2.0, "z": 3.0}},
         },
     ],
@@ -124,7 +124,7 @@ def test_to_machine_config_state_has_id_and_node_type():
     config = BotConfig.model_validate(VALID_DATA)
     state = config.to_machine_config()["states"][0]
     assert state["id"] == "state_a"
-    assert state["node_type"] == "go_to_zone"
+    assert state["node_type"] == "enter_zone_gateway"
 
 
 def test_to_machine_config_when_generates_condition():

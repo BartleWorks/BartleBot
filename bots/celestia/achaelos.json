@@ -34,7 +34,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world_hub",
+      "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
         "x": 150.0,
@@ -48,7 +48,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Go to Crustacean Empire",
       "position": {
         "x": 450.0,
@@ -131,7 +131,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit Achaelos's Cloister",
       "position": {
         "x": 1055.2739621187275,
@@ -156,7 +156,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "go_to_zone",
+      "node_type": "enter_zone_gateway",
       "label": "Exit Achaelos's Cloister",
       "position": {
         "x": 1056.885685798622,

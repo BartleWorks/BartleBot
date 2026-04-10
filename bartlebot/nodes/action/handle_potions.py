@@ -6,7 +6,7 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.action import go_to_zone, mark_location, recall_to_marked_location
+from bartlebot.nodes.action import enter_zone_gateway, mark_location, teleport_to_marked_location
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
@@ -231,7 +231,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 8. Navigate Dorm → Ravenwood.
     machine.log("Navigating Dorm → Ravenwood…")
     if (
-        await go_to_zone.run(
+        await enter_zone_gateway.run(
             machine,
             buying_clients,
             {
@@ -248,7 +248,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 9. Navigate Ravenwood → Commons.
     machine.log("Navigating Ravenwood → Commons…")
     if (
-        await go_to_zone.run(
+        await enter_zone_gateway.run(
             machine,
             buying_clients,
             {
@@ -274,8 +274,8 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 12. Recall all buying clients to the marked location.
     machine.log("Recalling buying clients to marked location…")
-    if await recall_to_marked_location.run(machine, buying_clients, recall_params) != "SUCCESS":
-        machine.log("FAILURE: recall_to_marked_location failed", logging.WARNING)
+    if await teleport_to_marked_location.run(machine, buying_clients, recall_params) != "SUCCESS":
+        machine.log("FAILURE: teleport_to_marked_location failed", logging.WARNING)
         return "FAILURE"
 
     machine.log(f"SUCCESS: potions refilled, {len(buying_clients)} client(s) recalled to {current_zone!r}")
