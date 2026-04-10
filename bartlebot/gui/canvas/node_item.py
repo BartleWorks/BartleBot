@@ -415,7 +415,7 @@ class NodeItem(QGraphicsItem):
         if lod < _lod_threshold:
             compact_font = QFont(THEME.font_ui_family, 14)
             painter.setFont(compact_font)
-            painter.setPen(Qt.GlobalColor.black)
+            painter.setPen(THEME.qcolor("text"))
             _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(
                 Qt.TextFlag.TextWordWrap
             )
@@ -458,7 +458,7 @@ class NodeItem(QGraphicsItem):
                 painter.setFont(THEME.font_node_hdr())
                 fm = painter.fontMetrics()
                 label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.setPen(Qt.GlobalColor.black)
+                painter.setPen(THEME.qcolor("text"))
                 painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
 
                 sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
@@ -496,7 +496,7 @@ class NodeItem(QGraphicsItem):
                 painter.setFont(THEME.font_node_main())
                 fm = painter.fontMetrics()
                 label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.setPen(Qt.GlobalColor.black)
+                painter.setPen(THEME.qcolor("text"))
                 painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
 
                 sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
