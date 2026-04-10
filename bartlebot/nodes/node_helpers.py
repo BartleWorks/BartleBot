@@ -6,6 +6,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_PATH,
     DUNGEON_WARNING_PATH,
+    GAUNTLET_ENTRANCE_PATH,
 )
 from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
@@ -22,15 +23,21 @@ async def none_in_npc_range(clients: list) -> bool:
     return not any(results)
 
 
-async def all_at_dungeon_entrance(clients: list) -> bool:
-    """Return True when every client has the dungeon entrance prompt (TeamUpButton) showing."""
-    results = await asyncio.gather(*[is_visible_by_path(c, DUNGEON_ENTRANCE_PATH) for c in clients])
+async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_PATH) -> bool:
+    """Return True when every client has the dungeon entrance prompt showing.
+
+    Pass GAUNTLET_ENTRANCE_PATH for gauntlets, which lack a TeamUpButton.
+    """
+    results = await asyncio.gather(*[is_visible_by_path(c, path) for c in clients])
     return all(results)
 
 
-async def none_at_dungeon_entrance(clients: list) -> bool:
-    """Return True when no client has the dungeon entrance prompt (TeamUpButton) showing."""
-    results = await asyncio.gather(*[is_visible_by_path(c, DUNGEON_ENTRANCE_PATH) for c in clients])
+async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_PATH) -> bool:
+    """Return True when no client has the dungeon entrance prompt showing.
+
+    Pass GAUNTLET_ENTRANCE_PATH for gauntlets, which lack a TeamUpButton.
+    """
+    results = await asyncio.gather(*[is_visible_by_path(c, path) for c in clients])
     return not any(results)
 
 
