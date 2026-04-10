@@ -1,11 +1,11 @@
 {
   "name": "Hidden Temple Gauntlet",
-  "description": "Endlessly farms the Hidden Temple Gauntlet.\n\nYou MUST change the friend name in the friend teleport node.",
+  "description": "Endlessly farms the Hidden Temple Gauntlet.\n\nREQUIREMENTS: Change the client name in \"Teleport to friend\" to your friend. Must be standing on the gauntlet entrance sigil.\n\nDouble-click to teleport to friend must be disabled.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_10",
   "recovery_state": "state_10",
-  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nany<blade>[sharp] @ ally(0)\n\n### p3\nany<blade>[sharp] @ ally(0)\n\n### p4\nany<blade>[sharp] @ ally(0)\n\n",
+  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nany<blade>[sharp] @ ally(1)\n\n### p3\nany<blade>[sharp] @ ally(1)\n\n### p4\nany<blade>[sharp] @ ally(1)\n\n",
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
@@ -35,7 +35,7 @@
     {
       "id": "state_1",
       "node_type": "teleport_to_friend",
-      "label": "Teleport to Friend",
+      "label": "Teleport to friend",
       "position": {
         "x": 750.0,
         "y": 7.0
@@ -48,62 +48,11 @@
       "flipped": false
     },
     {
-      "id": "state_2",
-      "node_type": "enter_zone_gateway",
-      "label": "Take teleporter",
-      "position": {
-        "x": 1050.0,
-        "y": 7.0
-      },
-      "params": {
-        "from_zone": "WizardCity/Interiors/WC_Housing_Dorm_Interior",
-        "to_zone": "Housing_AR_Dormroom/Interior",
-        "xyz": {
-          "x": 802.9,
-          "y": 50.5,
-          "z": 20.53
-        },
-        "reset_xyz": {
-          "x": 374.55,
-          "y": 223.61,
-          "z": 3.3
-        }
-      },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_dungeon",
-      "label": "Enter dungeon",
-      "position": {
-        "x": 1350.0,
-        "y": 7.0
-      },
-      "params": {
-        "from_zone": "Housing_AR_Dormroom/Interior",
-        "dungeon_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
-        "sigil_xyz": {
-          "x": 1289.91,
-          "y": -198.1,
-          "z": 15.97
-        },
-        "reset_xyz": {
-          "x": 1289.91,
-          "y": -198.1,
-          "z": 15.97
-        },
-        "is_gauntlet": true
-      },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
       "id": "state_4",
       "node_type": "interact",
       "label": "Talk to Fitzhume",
       "position": {
-        "x": 1650.0,
+        "x": 1350.0,
         "y": 7.0
       },
       "params": {
@@ -130,7 +79,7 @@
       "node_type": "enter_zone_gateway",
       "label": "Enter Temple of Water",
       "position": {
-        "x": 1950.0,
+        "x": 1650.0,
         "y": 7.0
       },
       "params": {
@@ -155,7 +104,7 @@
       "node_type": "enter_zone_gateway",
       "label": "Enter boss room",
       "position": {
-        "x": 2250.0,
+        "x": 1950.0,
         "y": 7.0
       },
       "params": {
@@ -180,7 +129,7 @@
       "node_type": "go_to_xyz",
       "label": "Go to final boss fight",
       "position": {
-        "x": 2550.0,
+        "x": 2250.0,
         "y": 7.0
       },
       "params": {
@@ -199,7 +148,7 @@
       "node_type": "handle_combat",
       "label": "Defeat final bosses",
       "position": {
-        "x": 2850.0,
+        "x": 2550.0,
         "y": 7.0
       },
       "params": {
@@ -216,7 +165,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 3150.0,
+        "x": 2850.0,
         "y": 7.0
       },
       "params": {
@@ -255,25 +204,23 @@
       },
       "option_overrides": {},
       "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 1050.0,
+        "y": 7.0
+      },
+      "params": {
+        "dungeon_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01"
+      },
+      "option_overrides": {},
+      "flipped": false
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
     {
       "trigger": "advance",
       "source": "state_4",
@@ -364,22 +311,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_1",
       "dest": "state_10",
       "when": "FAILURE",
@@ -428,9 +359,25 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
       "dest": "state_3",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_10",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
     }
