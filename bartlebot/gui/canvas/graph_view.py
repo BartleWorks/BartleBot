@@ -180,9 +180,13 @@ class _MinimapView(QGraphicsView):
         visible_scene = self._main_view.mapToScene(self._main_view.viewport().rect()).boundingRect()
         mini_rect = self.mapFromScene(visible_scene).boundingRect()
 
+        vp_color = THEME.qcolor("minimap_viewport")
+        vp_fill = QColor(vp_color)
+        vp_fill.setAlpha(40)
+        vp_color.setAlpha(200)
         painter = QPainter(self.viewport())
-        painter.setPen(QPen(QColor(60, 120, 210, 200), 1.5))
-        painter.setBrush(QBrush(QColor(60, 120, 210, 40)))
+        painter.setPen(QPen(vp_color, 1.5))
+        painter.setBrush(QBrush(vp_fill))
         painter.drawRect(mini_rect)
         painter.end()
 

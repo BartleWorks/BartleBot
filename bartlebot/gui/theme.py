@@ -7,139 +7,142 @@ name:
     from bartlebot.gui.theme import THEME
 
     # In QSS f-strings:
-    widget.setStyleSheet(f"color: {THEME.muted_text};")
+    widget.setStyleSheet(f"color: {THEME.text_muted};")
 
     # In QPainter / QColor code:
-    painter.setBrush(QBrush(THEME.qcolor("node_fill_normal")))
+    painter.setBrush(QBrush(THEME.qcolor("node_fill")))
 
     # As a QFont:
     widget.setFont(THEME.font_mono())
 
-Swapping themes later requires only replacing the ``THEME`` assignment at the
-bottom of this file (or patching it at startup) with a different ``_Theme``
-subclass instance.
+Tokens are organized in three tiers:
+
+- **Tier 1 — Core (5):** ``bg``, ``surface``, ``text``, ``accent``,
+  ``border``.  Changing just these produces a coherent custom theme.
+- **Tier 2 — Semantic (3):** ``error``, ``warning``, ``success``.
+  Status/state colors also used for log levels, badges, and pills.
+- **Tier 3 — Derived:** Component-specific tokens that default to
+  values derived from Tier 1+2 but can be individually overridden.
+
+Swapping themes requires calling ``set_theme()`` which replaces the
+module-level ``THEME`` singleton, rebuilds the QPalette, and reapplies
+the global stylesheet.
 """
 
 from __future__ import annotations
 
+import winreg
 from dataclasses import dataclass
 
-from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtGui import QColor, QFont, QPalette
 
 
 @dataclass(frozen=True)
 class _Theme:
     # ------------------------------------------------------------------
-    # Text colours
+    # Tier 1 — Core palette
     # ------------------------------------------------------------------
-    muted_text: str = "#999999"  # sidebar field labels
-    muted_text_alt: str = "#888888"  # placeholder / secondary muted text
-    option_desc_text: str = "#888888"  # description text shown under bot options
-    subtle_text: str = "#555555"  # section sub-headers (returns, overrides)
-    error_text: str = "#cc4444"  # inline validation error messages
-    error_border: str = "#CC2222"  # required-field empty border / badges
+    bg: str = "#ffffff"  # main window / canvas / input backgrounds
+    surface: str = "#f0f2f5"  # panels, overlays, node fills
+    text: str = "#1a1e28"  # primary text
+    accent: str = "#3366bb"  # interactive: ports, selected edges, links
+    border: str = "#b0b8c8"  # borders, dividers, splitter handles
 
     # ------------------------------------------------------------------
-    # Chrome
+    # Tier 2 — Semantic colors
     # ------------------------------------------------------------------
-    splitter_handle: str = "#888888"
+    error: str = "#CC2222"  # errors, terminal badges, required indicators
+    warning: str = "#BB7700"  # warnings, paused-ish state, flipped badges
+    success: str = "#33bb55"  # running, active, initial badges
 
     # ------------------------------------------------------------------
-    # Bot run-state status dots
+    # Text variants
     # ------------------------------------------------------------------
-    status_idle: str = "#888888"
-    status_running: str = "#33bb55"
-    status_paused: str = "#cc9900"
+    text_muted: str = "#888888"  # secondary text: labels, hints, descriptions
+    text_subtle: str = "#555555"  # sub-headers, third-level text
 
     # ------------------------------------------------------------------
-    # Log level colours
+    # Node: Neutral (default / hover / selected)
     # ------------------------------------------------------------------
-    log_debug: str = "#5599ff"
-    log_info: str = "#55cc55"
-    log_warning: str = "#ddcc00"
-    log_error: str = "#ff5555"
-
-    # ------------------------------------------------------------------
-    # Validation pills (error / warning banners on the canvas toolbar)
-    # ------------------------------------------------------------------
-    pill_error_bg: str = "#cc2222"
-    pill_warning_bg: str = "#bb7700"
-    pill_warning_bg_hover: str = "#cc8800"
-    pill_text: str = "#ffffff"
-
-    # ------------------------------------------------------------------
-    # Node canvas — fills
-    # ------------------------------------------------------------------
-    node_fill_normal: str = "#d5dce8"
+    node_fill: str = "#d5dce8"
     node_fill_hover: str = "#dce4f0"
-    node_fill_active: str = "#5cb85c"
-    node_fill_active_dim: str = "#4aa84a"
     node_fill_selected: str = "#b8cce4"
+    node_border: str = "#8a9ab8"
+
+    # ------------------------------------------------------------------
+    # Node: Active (currently executing)
+    # ------------------------------------------------------------------
+    node_fill_active: str = "#5cb85c"
+    node_fill_active_dim: str = "#4aa84a"  # pulse animation low
+    node_border_active: str = "#2e7d32"
+
+    # ------------------------------------------------------------------
+    # Node: Error (has validation errors)
+    # ------------------------------------------------------------------
     node_fill_error: str = "#fce8e8"
     node_fill_error_hover: str = "#fdd4d4"
+    # border → uses ``error`` directly
+
+    # ------------------------------------------------------------------
+    # Node: Warning (has validation warnings)
+    # ------------------------------------------------------------------
     node_fill_warning: str = "#fff8e0"
     node_fill_warning_hover: str = "#ffedb3"
-
-    # ------------------------------------------------------------------
-    # Node canvas — borders
-    # ------------------------------------------------------------------
-    node_border_normal: str = "#8a9ab8"
-    node_border_active: str = "#2e7d32"
-    node_border_selected: str = "#2255aa"
-    node_border_error: str = "#CC2222"
-    node_border_warning: str = "#BB7700"
-
-    # ------------------------------------------------------------------
-    # Node canvas — badges & labels
-    # ------------------------------------------------------------------
-    badge_initial: str = "#22AA44"
-    badge_terminal: str = "#CC2222"
-    badge_flipped: str = "#DDAA00"
-    node_sublabel_inactive: str = "#888888"
+    # border → uses ``warning`` directly
 
     # ------------------------------------------------------------------
     # Edges and ports
     # ------------------------------------------------------------------
     edge_color: str = "#607090"
-    edge_hover_color: str = "#4488cc"
-    edge_sel_color: str = "#2255aa"
+    edge_hover: str = "#4488cc"
+    edge_selected: str = "#2255aa"
     port_color: str = "#3366bb"
-    port_label_color: str = "#444444"
 
     # ------------------------------------------------------------------
-    # Floating overlay panels (search bar, minimap, etc.) — light theme
+    # Status (idle → text_muted, running → success)
     # ------------------------------------------------------------------
-    overlay_bg: str = "#f0f2f5"  # near-white panel background
-    overlay_border: str = "#b0b8c8"  # medium grey border
-    overlay_text: str = "#1a1e28"  # near-black primary text
-    overlay_muted: str = "#666e84"  # muted secondary text
-
-    minimap_bg: str = "rgba(240, 242, 245, 220)"  # semi-transparent light background
-    minimap_border: str = "rgba(160, 168, 192, 200)"  # semi-transparent border
+    status_paused: str = "#cc9900"
 
     # ------------------------------------------------------------------
-    # Search match highlight (node rings drawn behind nodes)
+    # Validation pills
     # ------------------------------------------------------------------
-    search_match_current: str = "#00ccee"  # bright cyan — the centered/active match
-    search_match_other: str = "#0088aa"  # teal — other matches
+    pill_warning_hover: str = "#cc8800"
+    pill_text: str = "#ffffff"
+    # error bg → ``error``, warning bg → ``warning``
 
     # ------------------------------------------------------------------
-    # Region palette colors (fill / border / handle for node regions)
+    # Search match highlights
     # ------------------------------------------------------------------
-    region_amber: str = "#F59E0B"
-    region_teal: str = "#14B8A6"
-    region_purple: str = "#8B5CF6"
-    region_red: str = "#EF4444"
-    region_blue: str = "#3B82F6"
-    region_green: str = "#22C55E"
-
-    REGION_PALETTE: tuple = ("amber", "teal", "purple", "red", "blue", "green")
+    search_match_current: str = "#00ccee"
+    search_match_other: str = "#0088aa"
 
     # ------------------------------------------------------------------
-    # Game-embed client tile
+    # Minimap
     # ------------------------------------------------------------------
-    client_tile_focus_border: str = "#cc2222"
-    placeholder_box_border: str = "#555555"  # border of the no-client placeholder box
+    minimap_bg: str = "rgba(240, 242, 245, 220)"
+    minimap_border: str = "rgba(160, 168, 192, 200)"
+    minimap_viewport: str = "#3c78d2"
+
+    # ------------------------------------------------------------------
+    # Region palette (numbered — users may customize to any color)
+    # ------------------------------------------------------------------
+    region_1: str = "#F59E0B"
+    region_2: str = "#14B8A6"
+    region_3: str = "#8B5CF6"
+    region_4: str = "#EF4444"
+    region_5: str = "#3B82F6"
+    region_6: str = "#22C55E"
+
+    REGION_PALETTE: tuple = (1, 2, 3, 4, 5, 6)
+
+    # ------------------------------------------------------------------
+    # Icon tint
+    # ------------------------------------------------------------------
+    icon_tint: str = "#404040"
+
+    # ------------------------------------------------------------------
+    # Game-embed client tile (helper methods below)
+    # ------------------------------------------------------------------
 
     # ------------------------------------------------------------------
     # Font tokens
@@ -157,16 +160,16 @@ class _Theme:
     # ------------------------------------------------------------------
 
     def qcolor(self, token_name: str) -> QColor:
-        """Return a QColor for the named hex token.
+        """Return a QColor for the named token.
 
         Example::
 
-            THEME.qcolor("node_fill_normal")
+            THEME.qcolor("node_fill")
         """
         return QColor(getattr(self, token_name))
 
-    def region_color(self, key: str) -> QColor:
-        """Return a QColor for the named region palette key (e.g. "amber")."""
+    def region_color(self, key: int) -> QColor:
+        """Return a QColor for the numbered region palette slot (1-6)."""
         return QColor(getattr(self, f"region_{key}"))
 
     def qcolor_client_pill_bg(self) -> QColor:
@@ -194,19 +197,61 @@ class _Theme:
         return QFont(self.font_ui_family, self.font_node_hdr_size)
 
     # ------------------------------------------------------------------
+    # QPalette builder
+    # ------------------------------------------------------------------
+
+    def build_palette(self) -> QPalette:
+        """Build a QPalette from the theme's core tokens.
+
+        Used with ``QApplication.setStyle("Fusion")`` — Fusion fully
+        respects palette colors for all widget types.
+        """
+        p = QPalette()
+
+        # Active / Inactive groups (normal state)
+        p.setColor(QPalette.ColorRole.Window, QColor(self.bg))
+        p.setColor(QPalette.ColorRole.WindowText, QColor(self.text))
+        p.setColor(QPalette.ColorRole.Base, QColor(self.surface))
+        p.setColor(QPalette.ColorRole.AlternateBase, QColor(self.surface))
+        p.setColor(QPalette.ColorRole.Text, QColor(self.text))
+        p.setColor(QPalette.ColorRole.Button, QColor(self.surface))
+        p.setColor(QPalette.ColorRole.ButtonText, QColor(self.text))
+        p.setColor(QPalette.ColorRole.BrightText, QColor("#ffffff"))
+        p.setColor(QPalette.ColorRole.Highlight, QColor(self.accent))
+        p.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+        p.setColor(QPalette.ColorRole.ToolTipBase, QColor(self.surface))
+        p.setColor(QPalette.ColorRole.ToolTipText, QColor(self.text))
+        p.setColor(QPalette.ColorRole.PlaceholderText, QColor(self.text_muted))
+        p.setColor(QPalette.ColorRole.Light, QColor(self.surface))
+        p.setColor(QPalette.ColorRole.Mid, QColor(self.border))
+        p.setColor(QPalette.ColorRole.Dark, QColor(self.border))
+        p.setColor(QPalette.ColorRole.Shadow, QColor(self.border))
+        p.setColor(QPalette.ColorRole.Link, QColor(self.accent))
+        p.setColor(QPalette.ColorRole.LinkVisited, QColor(self.accent))
+
+        # Disabled group
+        muted = QColor(self.text_muted)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, muted)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, muted)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, muted)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, muted)
+
+        return p
+
+    # ------------------------------------------------------------------
     # Global QSS stylesheet
     # ------------------------------------------------------------------
 
     def global_stylesheet(self) -> str:
         """Return the application-level QSS string.
 
-        Applied once to ``QApplication`` at startup, before any windows are
-        constructed.  Contains rules that apply app-wide and cannot reasonably
-        be expressed per-widget.
+        Applied once to ``QApplication`` at startup (and re-applied on
+        theme switch).  Contains rules that QPalette alone cannot express.
         """
         return f"""
+            /* ── Splitter handles ── */
             QSplitter::handle {{
-                background: {self.splitter_handle};
+                background: {self.border};
             }}
             QSplitter::handle:horizontal {{
                 width: 2px;
@@ -215,11 +260,197 @@ class _Theme:
                 height: 2px;
             }}
 
+            /* ── Graphics view (canvas background) ── */
+            QGraphicsView {{
+                background: {self.bg};
+                border: none;
+            }}
+
+            /* ── Scroll bars ── */
+            QScrollBar:vertical {{
+                background: {self.bg};
+                width: 10px;
+                margin: 0;
+            }}
+            QScrollBar::handle:vertical {{
+                background: {self.border};
+                border-radius: 4px;
+                min-height: 20px;
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0;
+            }}
+            QScrollBar:horizontal {{
+                background: {self.bg};
+                height: 10px;
+                margin: 0;
+            }}
+            QScrollBar::handle:horizontal {{
+                background: {self.border};
+                border-radius: 4px;
+                min-width: 20px;
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0;
+            }}
+
+            /* ── Tab bar ── */
+            QTabWidget::pane {{
+                border: 1px solid {self.border};
+                background: {self.bg};
+            }}
+            QTabBar::tab {{
+                background: {self.surface};
+                color: {self.text_muted};
+                border: 1px solid {self.border};
+                border-bottom: none;
+                padding: 4px 10px;
+                margin-right: 1px;
+            }}
+            QTabBar::tab:selected {{
+                background: {self.bg};
+                color: {self.text};
+            }}
+
+            /* ── Menu bar ── */
+            QMenuBar {{
+                background: {self.surface};
+                color: {self.text};
+                border-bottom: 1px solid {self.border};
+            }}
+            QMenuBar::item:selected {{
+                background: {self.accent};
+                color: #ffffff;
+            }}
+            QMenu {{
+                background: {self.surface};
+                color: {self.text};
+                border: 1px solid {self.border};
+            }}
+            QMenu::item:selected {{
+                background: {self.accent};
+                color: #ffffff;
+            }}
+            QMenu::separator {{
+                height: 1px;
+                background: {self.border};
+                margin: 4px 8px;
+            }}
+
+            /* ── Tooltips ── */
+            QToolTip {{
+                background: {self.surface};
+                color: {self.text};
+                border: 1px solid {self.border};
+                padding: 4px;
+            }}
         """
 
 
 # ---------------------------------------------------------------------------
-# Singleton — replace with a different _Theme subclass for alternate themes
+# Light and Dark theme instances
 # ---------------------------------------------------------------------------
 
-THEME: _Theme = _Theme()
+LIGHT = _Theme()  # all defaults are the light-theme values
+
+DARK = _Theme(
+    # Core
+    bg="#1e1e1e",
+    surface="#2d2d30",
+    text="#d4d4d4",
+    accent="#4488cc",
+    border="#474747",
+    # Semantic
+    error="#f44747",
+    warning="#cca700",
+    success="#4caf50",
+    # Text variants
+    text_muted="#808080",
+    text_subtle="#999999",
+    # Node: Neutral
+    node_fill="#3c3c3c",
+    node_fill_hover="#454545",
+    node_fill_selected="#2a4a6b",
+    node_border="#606060",
+    # Node: Active
+    node_fill_active="#2e7d32",
+    node_fill_active_dim="#256b28",
+    node_border_active="#4caf50",
+    # Node: Error
+    node_fill_error="#4a2020",
+    node_fill_error_hover="#5a2828",
+    # Node: Warning
+    node_fill_warning="#3d3520",
+    node_fill_warning_hover="#4d4228",
+    # Edges
+    edge_color="#607090",
+    edge_hover="#4488cc",
+    edge_selected="#4488cc",
+    port_color="#4488cc",
+    # Status
+    status_paused="#cca700",
+    # Pills
+    pill_warning_hover="#ddb800",
+    pill_text="#ffffff",
+    # Search
+    search_match_current="#00ccee",
+    search_match_other="#0088aa",
+    # Minimap
+    minimap_bg="rgba(45, 45, 48, 220)",
+    minimap_border="rgba(80, 80, 85, 200)",
+    minimap_viewport="#4488cc",
+    # Regions (same vivid palette — works on both light and dark)
+    region_1="#F59E0B",
+    region_2="#14B8A6",
+    region_3="#8B5CF6",
+    region_4="#EF4444",
+    region_5="#3B82F6",
+    region_6="#22C55E",
+    # Icon
+    icon_tint="#cccccc",
+)
+
+
+# ---------------------------------------------------------------------------
+# Active theme singleton
+# ---------------------------------------------------------------------------
+
+THEME: _Theme = LIGHT
+
+
+def _detect_system_dark_mode() -> bool:
+    """Return True if Windows is set to dark mode (AppsUseLightTheme=0)."""
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
+        )
+        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+        winreg.CloseKey(key)
+        return value == 0
+    except OSError:
+        return False
+
+
+def resolve_theme(mode: str) -> _Theme:
+    """Return the ``_Theme`` instance for the given mode string.
+
+    *mode* is one of ``"light"``, ``"dark"``, or ``"system"``.
+    """
+    if mode == "dark":
+        return DARK
+    if mode == "light":
+        return LIGHT
+    # "system" — follow Windows setting
+    return DARK if _detect_system_dark_mode() else LIGHT
+
+
+def set_theme(mode: str) -> None:
+    """Replace the module-level ``THEME`` singleton.
+
+    Call ``QApplication.setPalette(THEME.build_palette())`` and
+    ``QApplication.setStyleSheet(THEME.global_stylesheet())`` after this
+    to apply the new theme to all widgets.
+    """
+    global THEME  # noqa: PLW0603
+    THEME = resolve_theme(mode)

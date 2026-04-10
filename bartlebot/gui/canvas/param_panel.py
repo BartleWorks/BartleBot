@@ -88,10 +88,10 @@ class _DynamicParamForm(QWidget):
         for field in schema:
             label_text = field.label
             if field.required:
-                label_text += f" <span style='color:{THEME.error_border}'>*</span>"
+                label_text += f" <span style='color:{THEME.error}'>*</span>"
             label_w = QLabel(label_text)
             label_w.setTextFormat(Qt.TextFormat.RichText)
-            _muted = f"color: {THEME.muted_text}; font-size: 11px; font-weight: 600;"
+            _muted = f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;"
             style = _muted + (" margin-top: 8px;" if insert_idx > 0 else "")
             label_w.setStyleSheet(style)
             if field.help:
@@ -118,13 +118,13 @@ class _DynamicParamForm(QWidget):
                 insert_idx += 2
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(field.default_hint)
-                hint_lbl.setStyleSheet(f"color: {THEME.muted_text_alt};")
+                hint_lbl.setStyleSheet(f"color: {THEME.text_muted};")
                 hint_lbl.setWordWrap(True)
                 self._form.insertWidget(insert_idx, hint_lbl)
                 insert_idx += 1
         if not schema:
             placeholder = QLabel("This node type has no parameters.")
-            placeholder.setStyleSheet(f"color: {THEME.muted_text_alt};")
+            placeholder.setStyleSheet(f"color: {THEME.text_muted};")
             self._form.insertWidget(0, placeholder)
         # Wire disabled_by: when controller checkbox is checked, disable the target widget
         for field in schema:
@@ -157,7 +157,7 @@ class _DynamicParamForm(QWidget):
                 # QSpinBox, QDoubleSpinBox, QCheckBox — always have a value
                 display_w = widget
                 empty = False
-            display_w.setStyleSheet(f"border: 1px solid {THEME.error_border};" if empty else "")
+            display_w.setStyleSheet(f"border: 1px solid {THEME.error};" if empty else "")
 
     def get_params(self) -> dict:
         result: dict[str, Any] = {}
@@ -282,7 +282,7 @@ class _DynamicParamForm(QWidget):
             row.addWidget(paste_btn)
             return (spins[0], spins[1], spins[2], container)
         w = QLabel(f"(unsupported type: {field_type})")
-        w.setStyleSheet(f"color: {THEME.muted_text_alt};")
+        w.setStyleSheet(f"color: {THEME.text_muted};")
         return w
 
     def _emit_changed(self, *_) -> None:
@@ -445,7 +445,7 @@ class _FlagConditionsWidget(QWidget):
         op_row.setContentsMargins(0, 0, 0, 0)
         op_lbl = QLabel("Combine with:")
         op_lbl.setStyleSheet(
-            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.muted_text}; font-size: 11px; font-weight: 600;"
+            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.text_muted}; font-size: 11px; font-weight: 600;"
         )
         self._op_combo = QComboBox()
         self._op_combo.addItems(["AND", "OR"])
@@ -471,7 +471,7 @@ class _FlagConditionsWidget(QWidget):
         # Separator
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet("color: #444;")
+        sep.setStyleSheet(f"color: {THEME.border};")
         outer.addWidget(sep)
 
         self._op_combo.currentTextChanged.connect(self._on_op_changed)
@@ -546,7 +546,7 @@ class _FlagConditionsWidget(QWidget):
 
         rem_btn = QPushButton("✕")
         rem_btn.setFixedWidth(self._REM_W)
-        rem_btn.setStyleSheet(f"color: {THEME.error_border}; font-weight: bold; border: none; padding: 0;")
+        rem_btn.setStyleSheet(f"color: {THEME.error}; font-weight: bold; border: none; padding: 0;")
 
         row_layout.addWidget(not_cb)
         row_layout.addWidget(opt_combo, 1)
@@ -620,7 +620,7 @@ class _ParamPanel(QWidget):
         # Page 0 — idle
         idle = QLabel("Select a node or edge to edit its properties.")
         idle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        idle.setStyleSheet(f"color: {THEME.muted_text_alt};")
+        idle.setStyleSheet(f"color: {THEME.text_muted};")
         self._stack.addWidget(idle)
 
         # Page 1 — node
@@ -646,7 +646,7 @@ class _ParamPanel(QWidget):
         returns_layout.setContentsMargins(6, 4, 6, 4)
         returns_layout.setSpacing(2)
         returns_title = QLabel("Returns:")
-        returns_title.setStyleSheet(f"font-weight: bold; color: {THEME.subtle_text};")
+        returns_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
         returns_layout.addWidget(returns_title)
         self._returns_body_layout = QVBoxLayout()
         self._returns_body_layout.setSpacing(1)
@@ -659,7 +659,7 @@ class _ParamPanel(QWidget):
         _ov_vbox.setContentsMargins(6, 4, 6, 4)
         _ov_vbox.setSpacing(4)
         _ov_title = QLabel("Option Overrides:")
-        _ov_title.setStyleSheet(f"font-weight: bold; color: {THEME.subtle_text};")
+        _ov_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
         _ov_vbox.addWidget(_ov_title)
         self._overrides_body = QVBoxLayout()
         self._overrides_body.setSpacing(4)
@@ -676,7 +676,7 @@ class _ParamPanel(QWidget):
         self._record_btn = QPushButton("Record")
         self._record_btn.setFixedWidth(70)
         self._record_status_lbl = QLabel("")
-        self._record_status_lbl.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
+        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         _rr_layout.addWidget(self._record_btn)
         _rr_layout.addWidget(self._record_status_lbl, 1)
         self._record_row.setVisible(False)
@@ -715,7 +715,7 @@ class _ParamPanel(QWidget):
 
         flags_lbl = QLabel("Flag conditions")
         flags_lbl.setStyleSheet(
-            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.muted_text};"
+            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.text_muted};"
             " font-size: 11px; font-weight: 600; margin-top: 4px;"
         )
         flags_lbl.setToolTip(

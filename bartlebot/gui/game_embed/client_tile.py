@@ -216,7 +216,7 @@ class ClientTile(QWidget):
         # The Win32 child covers the game area, leaving only the surrounding
         # _FOCUS_BORDER-wide strip visible as the red highlight.
         if self._focused:
-            painter.setBrush(THEME.qcolor("client_tile_focus_border"))
+            painter.setBrush(THEME.qcolor("error"))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(
                 gx - FOCUS_BORDER,
@@ -299,7 +299,7 @@ class DetachedTile(QWidget):
         # Body text
         body_top = LABEL_RESERVE
         body_h = self.height() - body_top
-        painter.setPen(THEME.qcolor("muted_text"))
+        painter.setPen(THEME.qcolor("text_muted"))
         body_font = QFont()
         body_font.setPointSize(9)
         painter.setFont(body_font)

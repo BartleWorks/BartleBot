@@ -26,12 +26,16 @@ _NAME_TO_LEVEL: dict[str, int] = {
     "ERROR": logging.ERROR,
 }
 
-_LOG_COLORS: dict[int, str] = {
-    logging.DEBUG: THEME.log_debug,
-    logging.INFO: THEME.log_info,
-    logging.WARNING: THEME.log_warning,
-    logging.ERROR: THEME.log_error,
-}
+
+def _log_color(level: int) -> str:
+    """Return the theme color for a log level, using semantic tokens."""
+    if level >= logging.ERROR:
+        return THEME.error
+    if level >= logging.WARNING:
+        return THEME.warning
+    if level >= logging.INFO:
+        return THEME.success
+    return THEME.accent  # DEBUG
 
 
 class LogPanel(QWidget):
@@ -99,7 +103,7 @@ class LogPanel(QWidget):
         threshold = _NAME_TO_LEVEL.get(self._log_level_combo.currentText(), logging.DEBUG)
         if level < threshold:
             return
-        color = _LOG_COLORS.get(level, "#55cc55")
+        color = _log_color(level)
         fmt = QTextCharFormat()
         fmt.setForeground(QColor(color))
         cursor = self._log.textCursor()

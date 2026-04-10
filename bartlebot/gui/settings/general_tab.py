@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -34,6 +35,26 @@ class GeneralTab(QWidget):
         layout.setSpacing(4)
 
         sm = SettingsManager.instance()
+
+        # ------------------------------------------------------------------
+        # Appearance section
+        # ------------------------------------------------------------------
+        layout.addWidget(_section_label("Appearance"))
+
+        appearance_form = QFormLayout()
+        appearance_form.setSpacing(8)
+
+        self._theme_combo = QComboBox()
+        self._theme_combo.addItem("Light", userData="light")
+        self._theme_combo.addItem("Dark", userData="dark")
+        self._theme_combo.addItem("System (follows Windows)", userData="system")
+        current_theme = sm.get_general("theme", default="system")
+        for i in range(self._theme_combo.count()):
+            if self._theme_combo.itemData(i) == current_theme:
+                self._theme_combo.setCurrentIndex(i)
+                break
+        appearance_form.addRow("Theme:", self._theme_combo)
+        layout.addLayout(appearance_form)
 
         # ------------------------------------------------------------------
         # Log section
@@ -145,6 +166,7 @@ class GeneralTab(QWidget):
 
     def apply(self) -> None:
         sm = SettingsManager.instance()
+        sm.set_general("theme", self._theme_combo.currentData())
         sm.set_general("clear_log_on_run", self._clear_log_cb.isChecked())
         sm.set_general("log_max_lines", self._log_max_lines_sb.value())
         sm.set_general("maximize_on_open", self._maximize_cb.isChecked())

@@ -30,28 +30,80 @@ _HEADER_H = 28  # height reserved for text label when returns are present
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 
 # ---------------------------------------------------------------------------
-# Color constants
+# Color helpers — read from THEME at paint time so theme switches take effect
 # ---------------------------------------------------------------------------
 
-_FILL_NORMAL = THEME.qcolor("node_fill_normal")
-_FILL_HOVER = THEME.qcolor("node_fill_hover")
-_FILL_ACTIVE = THEME.qcolor("node_fill_active")
-_FILL_ACTIVE_DIM = THEME.qcolor("node_fill_active_dim")
-_FILL_SELECTED = THEME.qcolor("node_fill_selected")
-_FILL_ERROR = THEME.qcolor("node_fill_error")
-_FILL_ERROR_HOVER = THEME.qcolor("node_fill_error_hover")
-_FILL_WARNING = THEME.qcolor("node_fill_warning")
-_FILL_WARNING_HOVER = THEME.qcolor("node_fill_warning_hover")
-_BORDER_NORMAL = THEME.qcolor("node_border_normal")
-_BORDER_ACTIVE = THEME.qcolor("node_border_active")
-_BORDER_SELECTED = THEME.qcolor("node_border_selected")
-_BORDER_ERROR = THEME.qcolor("node_border_error")
-_BORDER_WARNING = THEME.qcolor("node_border_warning")
-_BADGE_INITIAL = THEME.qcolor("badge_initial")
-_BADGE_TERMINAL = THEME.qcolor("badge_terminal")
-_BADGE_FLIPPED = THEME.qcolor("badge_flipped")
-_PORT_COLOR = THEME.qcolor("port_color")
-_BADGE_FONT = THEME.font_node_sub()
+
+def _fill_normal() -> QColor:
+    return THEME.qcolor("node_fill")
+
+
+def _fill_hover() -> QColor:
+    return THEME.qcolor("node_fill_hover")
+
+
+def _fill_active() -> QColor:
+    return THEME.qcolor("node_fill_active")
+
+
+def _fill_active_dim() -> QColor:
+    return THEME.qcolor("node_fill_active_dim")
+
+
+def _fill_selected() -> QColor:
+    return THEME.qcolor("node_fill_selected")
+
+
+def _fill_error() -> QColor:
+    return THEME.qcolor("node_fill_error")
+
+
+def _fill_error_hover() -> QColor:
+    return THEME.qcolor("node_fill_error_hover")
+
+
+def _fill_warning() -> QColor:
+    return THEME.qcolor("node_fill_warning")
+
+
+def _fill_warning_hover() -> QColor:
+    return THEME.qcolor("node_fill_warning_hover")
+
+
+def _border_normal() -> QColor:
+    return THEME.qcolor("node_border")
+
+
+def _border_active() -> QColor:
+    return THEME.qcolor("node_border_active")
+
+
+def _border_selected() -> QColor:
+    return THEME.qcolor("accent")
+
+
+def _border_error() -> QColor:
+    return THEME.qcolor("error")
+
+
+def _border_warning() -> QColor:
+    return THEME.qcolor("warning")
+
+
+def _badge_initial() -> QColor:
+    return THEME.qcolor("success")
+
+
+def _badge_terminal() -> QColor:
+    return THEME.qcolor("error")
+
+
+def _badge_flipped() -> QColor:
+    return THEME.qcolor("warning")
+
+
+def _port_color() -> QColor:
+    return THEME.qcolor("port_color")
 
 
 def node_height(n_returns: int) -> int:
@@ -85,19 +137,19 @@ class NodeItem(QGraphicsItem):
         self._label = label or state_id
         self._node_type = node_type
         self._active = False
-        self._active_fill: QColor = _FILL_ACTIVE
+        self._active_fill: QColor = _fill_active()
         self._hovered = False
 
         _anim_fwd = QVariantAnimation()
-        _anim_fwd.setStartValue(_FILL_ACTIVE)
-        _anim_fwd.setEndValue(_FILL_ACTIVE_DIM)
+        _anim_fwd.setStartValue(_fill_active())
+        _anim_fwd.setEndValue(_fill_active_dim())
         _anim_fwd.setDuration(800)
         _anim_fwd.setEasingCurve(QEasingCurve.Type.InOutSine)
         _anim_fwd.valueChanged.connect(self._on_pulse_value)
 
         _anim_rev = QVariantAnimation()
-        _anim_rev.setStartValue(_FILL_ACTIVE_DIM)
-        _anim_rev.setEndValue(_FILL_ACTIVE)
+        _anim_rev.setStartValue(_fill_active_dim())
+        _anim_rev.setEndValue(_fill_active())
         _anim_rev.setDuration(800)
         _anim_rev.setEasingCurve(QEasingCurve.Type.InOutSine)
         _anim_rev.valueChanged.connect(self._on_pulse_value)
@@ -139,11 +191,11 @@ class NodeItem(QGraphicsItem):
     def set_active(self, active: bool) -> None:
         self._active = active
         if active:
-            self._active_fill = _FILL_ACTIVE
+            self._active_fill = _fill_active()
             self._pulse_group.start()
         else:
             self._pulse_group.stop()
-            self._active_fill = _FILL_ACTIVE
+            self._active_fill = _fill_active()
         self.update()
 
     def _on_pulse_value(self, color: QColor) -> None:
@@ -325,19 +377,19 @@ class NodeItem(QGraphicsItem):
         selected = self._interactive and self.isSelected()
         if self._active:
             fill = self._active_fill
-            border, border_w = _BORDER_ACTIVE, 2.5
+            border, border_w = _border_active(), 2.5
         elif selected:
-            fill, border, border_w = _FILL_SELECTED, _BORDER_SELECTED, 2.5
+            fill, border, border_w = _fill_selected(), _border_selected(), 2.5
         elif self._is_error:
-            fill = _FILL_ERROR_HOVER if self._hovered else _FILL_ERROR
-            border, border_w = _BORDER_ERROR, 2.5
+            fill = _fill_error_hover() if self._hovered else _fill_error()
+            border, border_w = _border_error(), 2.5
         elif self._is_warning:
-            fill = _FILL_WARNING_HOVER if self._hovered else _FILL_WARNING
-            border, border_w = _BORDER_WARNING, 2.5
+            fill = _fill_warning_hover() if self._hovered else _fill_warning()
+            border, border_w = _border_warning(), 2.5
         elif self._hovered:
-            fill, border, border_w = _FILL_HOVER, _BORDER_NORMAL, 2.0
+            fill, border, border_w = _fill_hover(), _border_normal(), 2.0
         else:
-            fill, border, border_w = _FILL_NORMAL, _BORDER_NORMAL, 1.5
+            fill, border, border_w = _fill_normal(), _border_normal(), 1.5
 
         h = self._height
         lod = option.levelOfDetailFromTransform(painter.worldTransform())
@@ -373,17 +425,17 @@ class NodeItem(QGraphicsItem):
             _BADGE_GAP = 4
             badges = []
             if self._is_initial:
-                badges.append((_BADGE_INITIAL, "▶"))
+                badges.append((_badge_initial(), "▶"))
             if self._is_terminal:
-                badges.append((_BADGE_TERMINAL, "■"))
+                badges.append((_badge_terminal(), "■"))
             if self._flipped:
-                badges.append((_BADGE_FLIPPED, "◀"))
+                badges.append((_badge_flipped(), "◀"))
             if badges:
                 n = len(badges)
                 total_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
                 x_start = (NODE_W - total_w) / 2
                 badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
-                painter.setFont(_BADGE_FONT)
+                painter.setFont(THEME.font_node_sub())
                 for i, (color, icon) in enumerate(badges):
                     bx = x_start + i * (_BADGE_SIZE + _BADGE_GAP)
                     r = QRectF(bx, badge_y, _BADGE_SIZE, _BADGE_SIZE)
@@ -397,7 +449,7 @@ class NodeItem(QGraphicsItem):
         else:
             # --- Full LOD ---
             # Sub-label text uses black on colored fills for readability
-            sub_label_color = Qt.GlobalColor.black if self._active else THEME.qcolor("node_sublabel_inactive")
+            sub_label_color = QColor(THEME.text) if self._active else THEME.qcolor("text_muted")
 
             if self._returns:
                 # ----------------------------------------------------------
@@ -424,7 +476,7 @@ class NodeItem(QGraphicsItem):
                 port_x = 0 if self._flipped else NODE_W
                 for i, name in enumerate(self._returns):
                     py = self._port_y(i)
-                    painter.setPen(THEME.qcolor("port_label_color"))
+                    painter.setPen(THEME.qcolor("text_subtle"))
                     painter.setFont(THEME.font_node_sub())
                     if self._flipped:
                         label_rect = QRectF(PORT_R * 2 + 6, py - 8, NODE_W - PORT_R * 2 - 10, 16)
@@ -434,8 +486,8 @@ class NodeItem(QGraphicsItem):
                         align = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
                     painter.drawText(label_rect, align, name)
                     if self._interactive:
-                        painter.setPen(QPen(_PORT_COLOR, 1.5))
-                        painter.setBrush(QBrush(_PORT_COLOR))
+                        painter.setPen(QPen(_port_color(), 1.5))
+                        painter.setBrush(QBrush(_port_color()))
                         painter.drawEllipse(QPointF(port_x, py), PORT_R, PORT_R)
             else:
                 # ----------------------------------------------------------
@@ -456,8 +508,8 @@ class NodeItem(QGraphicsItem):
 
                 if self._interactive:
                     port_x = 0 if self._flipped else NODE_W
-                    painter.setPen(QPen(_PORT_COLOR, 1.5))
-                    painter.setBrush(QBrush(_PORT_COLOR))
+                    painter.setPen(QPen(_port_color(), 1.5))
+                    painter.setBrush(QBrush(_port_color()))
                     painter.drawEllipse(QPointF(port_x, h / 2), PORT_R, PORT_R)
 
             # Structural-role badges drawn at bottom center, auto-spaced for 1–3 badges.
@@ -466,17 +518,17 @@ class NodeItem(QGraphicsItem):
             _BADGE_GAP = 4
             badges = []
             if self._is_initial:
-                badges.append((_BADGE_INITIAL, "▶"))
+                badges.append((_badge_initial(), "▶"))
             if self._is_terminal:
-                badges.append((_BADGE_TERMINAL, "■"))
+                badges.append((_badge_terminal(), "■"))
             if self._flipped:
-                badges.append((_BADGE_FLIPPED, "◀"))
+                badges.append((_badge_flipped(), "◀"))
             if badges:
                 n = len(badges)
                 total_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
                 x_start = (NODE_W - total_w) / 2
                 badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
-                painter.setFont(_BADGE_FONT)
+                painter.setFont(THEME.font_node_sub())
                 for i, (color, icon) in enumerate(badges):
                     bx = x_start + i * (_BADGE_SIZE + _BADGE_GAP)
                     r = QRectF(bx, badge_y, _BADGE_SIZE, _BADGE_SIZE)
@@ -491,6 +543,6 @@ class NodeItem(QGraphicsItem):
             # Input port (right when flipped, left otherwise)
             if self._interactive:
                 in_x = NODE_W if self._flipped else 0
-                painter.setPen(QPen(_PORT_COLOR, 1.5))
-                painter.setBrush(QBrush(_PORT_COLOR))
+                painter.setPen(QPen(_port_color(), 1.5))
+                painter.setBrush(QBrush(_port_color()))
                 painter.drawEllipse(QPointF(in_x, h / 2), PORT_R, PORT_R)

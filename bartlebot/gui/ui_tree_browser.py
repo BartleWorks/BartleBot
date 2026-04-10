@@ -14,7 +14,7 @@ import logging
 
 import pyperclip
 from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QColor, QPainter, QPen, QWindow
+from PyQt6.QtGui import QPainter, QPen, QWindow
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -51,7 +51,9 @@ class _RectOverlay(QWidget):
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        pen = QPen(QColor(255, 50, 50), 3)
+        from bartlebot.gui.theme import THEME
+
+        pen = QPen(THEME.qcolor("error"), 3)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(self.rect().adjusted(2, 2, -2, -2))
@@ -136,7 +138,9 @@ class UITreeBrowserDialog(QDialog):
 
         # Status bar
         self._status = QLabel("Loading…")
-        self._status.setStyleSheet("color: #999999; font-size: 11px;")
+        from bartlebot.gui.theme import THEME
+
+        self._status.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         root_layout.addWidget(self._status)
 
         self._add_loading_placeholder()
