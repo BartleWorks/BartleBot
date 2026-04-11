@@ -201,11 +201,6 @@ class ThemeTab(QWidget):
         toolbar = QHBoxLayout()
         toolbar.setSpacing(6)
 
-        self._custom_lbl = QLabel("Custom colors:")
-        self._custom_lbl.setContentsMargins(0, 4, 0, 0)
-        toolbar.addWidget(self._custom_lbl)
-        toolbar.addStretch()
-
         self._reset_btn = QPushButton("Reset to System Default")
         # Hardcoded style so the button is always visible regardless of any
         # custom colors the user may have applied to the running theme.
@@ -292,7 +287,6 @@ class ThemeTab(QWidget):
         self._set_custom_enabled(self._theme_combo.currentData() == "custom")
 
     def _set_custom_enabled(self, enabled: bool) -> None:
-        self._custom_lbl.setVisible(enabled)
         self._reset_btn.setVisible(enabled)
         self._import_btn.setVisible(enabled)
         self._export_btn.setVisible(enabled)
