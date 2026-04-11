@@ -275,17 +275,9 @@ async def _record_mark_location(client, param_form, on_status, on_btn, try_set_l
 
 
 async def _record_teleport_to_marked_location(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Click the Recall button to recall…")
     try:
-        while not await client.is_loading():
-            await asyncio.sleep(POLL)
-
-        on_status("Loading…")
-        while await client.is_loading():
-            await asyncio.sleep(POLL)
-
         zone = await client.zone_name()
         pos = await client.body.position()
         param_form.set_str("zone", zone)
