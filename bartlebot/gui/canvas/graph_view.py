@@ -4,7 +4,7 @@ GraphView    — base view used by both the editor and the read-only run view.
 _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
-from PyQt6.QtCore import QPointF, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QPointF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
 
@@ -152,18 +152,28 @@ class _MinimapView(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
         self.setInteractive(False)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setStyleSheet(
+        self._apply_stylesheet()
+
+        # Repaint viewport rect whenever main view scrolls or zooms
+        main_view.horizontalScrollBar().valueChanged.connect(self.viewport().update)
+        main_view.verticalScrollBar().valueChanged.connect(self.viewport().update)
+        main_view.view_changed.connect(self.viewport().update)
+
+    def _apply_stylesheet(self) -> None:
+        css = (
             f"QGraphicsView {{"
             f"  border: 1px solid {THEME.minimap_border};"
             f"  border-radius: 4px;"
             f"  background: {THEME.minimap_bg};"
             f"}}"
         )
+        if self.styleSheet() != css:
+            self.setStyleSheet(css)
 
-        # Repaint viewport rect whenever main view scrolls or zooms
-        main_view.horizontalScrollBar().valueChanged.connect(self.viewport().update)
-        main_view.verticalScrollBar().valueChanged.connect(self.viewport().update)
-        main_view.view_changed.connect(self.viewport().update)
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._apply_stylesheet()
 
     def fit_to_scene(self) -> None:
         """Fit the minimap to show the full scene bounds."""
@@ -180,9 +190,13 @@ class _MinimapView(QGraphicsView):
         visible_scene = self._main_view.mapToScene(self._main_view.viewport().rect()).boundingRect()
         mini_rect = self.mapFromScene(visible_scene).boundingRect()
 
+        vp_color = THEME.qcolor("minimap_viewport")
+        vp_fill = QColor(vp_color)
+        vp_fill.setAlpha(40)
+        vp_color.setAlpha(200)
         painter = QPainter(self.viewport())
-        painter.setPen(QPen(QColor(60, 120, 210, 200), 1.5))
-        painter.setBrush(QBrush(QColor(60, 120, 210, 40)))
+        painter.setPen(QPen(vp_color, 1.5))
+        painter.setBrush(QBrush(vp_fill))
         painter.drawRect(mini_rect)
         painter.end()
 

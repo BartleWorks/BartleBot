@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -32,8 +32,10 @@ class _SectionHeader(QWidget):
         super().__init__(parent)
 
         self._expanded = True
-        self._pixmap_down = svg_pixmap("arrow_down", 10, tint="#000000")
-        self._pixmap_right = svg_pixmap("arrow_right", 10, tint="#000000")
+        from bartlebot.gui.theme import THEME
+
+        self._pixmap_down = svg_pixmap("arrow_down", 10, tint=THEME.icon_tint)
+        self._pixmap_right = svg_pixmap("arrow_right", 10, tint=THEME.icon_tint)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -57,6 +59,13 @@ class _SectionHeader(QWidget):
         self._expanded = not self._expanded
         self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
         self.toggled.emit(self._expanded)
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._pixmap_down = svg_pixmap("arrow_down", 10, tint=THEME.icon_tint)
+            self._pixmap_right = svg_pixmap("arrow_right", 10, tint=THEME.icon_tint)
+            self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +157,7 @@ class Sidebar(QScrollArea):
 def field_label(text: str) -> QLabel:
     """Semi-bold field label in muted colour."""
     lbl = QLabel(text + ":")
-    lbl.setStyleSheet(f"color: {THEME.muted_text}; font-size: 11px; font-weight: 600;")
+    lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;")
     lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
     return lbl
 

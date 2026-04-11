@@ -9,15 +9,18 @@ from PyQt6.QtSvg import QSvgRenderer
 _ICONS_DIR = Path(__file__).parent / "icons"
 
 
-def svg_icon(name: str, size: int = 20) -> QIcon:
-    """Render bartlebot/gui/icons/<name>.svg at *size*×*size* and return a QIcon."""
-    renderer = QSvgRenderer(str(_ICONS_DIR / f"{name}.svg"))
-    pm = QPixmap(size, size)
-    pm.fill(Qt.GlobalColor.transparent)
-    p = QPainter(pm)
-    renderer.render(p)
-    p.end()
-    return QIcon(pm)
+def svg_icon(name: str, size: int = 20, tint: str | None = None) -> QIcon:
+    """Render bartlebot/gui/icons/<name>.svg at *size*×*size* and return a QIcon.
+
+    If *tint* is not given, the icon is tinted with ``THEME.icon_tint`` so that
+    toolbar/menu icons automatically adapt to light and dark themes.  Pass
+    ``tint=""`` (empty string) to keep the original SVG colors.
+    """
+    if tint is None:
+        from bartlebot.gui.theme import THEME
+
+        tint = THEME.icon_tint
+    return QIcon(svg_pixmap(name, size, tint=tint or None))
 
 
 def svg_pixmap(name: str, size: int, tint: str | None = None) -> QPixmap:

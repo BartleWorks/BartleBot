@@ -45,7 +45,9 @@ class CanvasTab(QWidget):
             "Range: 0.10 (compact only when very zoomed out) – 1.00 (always compact)."
         )
         hint.setWordWrap(True)
-        hint.setStyleSheet("color: #888888; font-size: 11px;")
+        from bartlebot.gui.theme import THEME
+
+        hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
 
         layout.addLayout(form)
         layout.addWidget(hint)

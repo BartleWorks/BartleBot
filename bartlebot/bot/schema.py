@@ -64,11 +64,33 @@ class BotOptionModel(BaseModel):
         return self
 
 
+# Maps old named region color keys to numbered slots for backward compatibility.
+_REGION_COLOR_MIGRATION: dict[str, int] = {
+    "amber": 1,
+    "teal": 2,
+    "purple": 3,
+    "red": 4,
+    "blue": 5,
+    "green": 6,
+}
+
+
 class RegionModel(BaseModel):
     id: str
     label: str
     members: list[str]  # state IDs
-    color: str  # palette key, e.g. "amber"
+    color: int  # palette slot number (1-6)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_named_color(cls, data):
+        """Accept old string color keys (e.g. ``"amber"``) and convert to int."""
+        if isinstance(data, dict):
+            raw = data.get("color")
+            if isinstance(raw, str) and raw in _REGION_COLOR_MIGRATION:
+                data = dict(data)  # avoid mutating the original
+                data["color"] = _REGION_COLOR_MIGRATION[raw]
+        return data
 
 
 class BotConfig(BaseModel):

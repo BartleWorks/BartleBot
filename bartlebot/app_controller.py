@@ -31,9 +31,8 @@ class AppController(QObject):
     def __init__(self, app: QApplication) -> None:
         super().__init__()
         self._app = app
-        from bartlebot.gui.theme import THEME  # noqa: PLC0415
-
-        self._app.setStyleSheet(THEME.global_stylesheet())
+        self._app.setStyle("Fusion")
+        self._apply_theme()
         self._handler = WizSprinter()
         self._clients: list = []
         self._current_machine: BotMachine | None = None
@@ -101,6 +100,7 @@ class AppController(QObject):
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
         w.settings_applied.connect(self._reconfigure_autosave_timer)
         w.settings_applied.connect(w.left_sidebar.log_panel.apply_settings)
+        w.settings_applied.connect(self._apply_theme)
 
     # ------------------------------------------------------------------
     # Entry point
@@ -642,6 +642,20 @@ class AppController(QObject):
     # ------------------------------------------------------------------
     # Auto-save / crash recovery
     # ------------------------------------------------------------------
+
+    def _apply_theme(self) -> None:
+        """Read the theme setting and apply palette + stylesheet to the app."""
+        from bartlebot.gui.theme import THEME, build_custom_theme, set_theme, set_theme_instance  # noqa: PLC0415
+
+        sm = SettingsManager.instance()
+        theme_mode = sm.get_general("theme", default="system")
+        if theme_mode == "custom":
+            overrides = sm.get("custom_theme", default={})
+            set_theme_instance(build_custom_theme(overrides))
+        else:
+            set_theme(theme_mode)
+        self._app.setPalette(THEME.build_palette())
+        self._app.setStyleSheet(THEME.global_stylesheet())
 
     def _reconfigure_autosave_timer(self) -> None:
         """Read current settings and start/stop/reconfigure the auto-save timer."""

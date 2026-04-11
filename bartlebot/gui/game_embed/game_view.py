@@ -76,7 +76,7 @@ class _GamePlaceholder(QWidget):
         title_font.setPointSize(title_font.pointSize() + 2)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet(f"color: {THEME.muted_text};")
+        title.setStyleSheet(f"color: {THEME.text_muted};")
         outer.addWidget(title)
 
         # Three-column body
@@ -92,7 +92,7 @@ class _GamePlaceholder(QWidget):
         accounts_hdr_font.setBold(True)
         accounts_hdr.setFont(accounts_hdr_font)
         accounts_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        accounts_hdr.setStyleSheet(f"color: {THEME.muted_text};")
+        accounts_hdr.setStyleSheet(f"color: {THEME.text_muted};")
         left.addWidget(accounts_hdr)
         sep_l = QFrame()
         sep_l.setFrameShape(QFrame.Shape.HLine)
@@ -111,9 +111,7 @@ class _GamePlaceholder(QWidget):
 
         logo = QFrame()
         logo.setFixedSize(_LOGO_SIZE, _LOGO_SIZE)
-        logo.setStyleSheet(
-            f"QFrame {{ border: 2px solid {THEME.placeholder_box_border}; border-radius: {_LOGO_SIZE // 2}px; }}"
-        )
+        logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
         logo_wrapper = QHBoxLayout()
         logo_wrapper.setContentsMargins(0, 0, 0, 0)
         logo_wrapper.addStretch()
@@ -126,7 +124,7 @@ class _GamePlaceholder(QWidget):
         self._manage_btn = QPushButton("Manage accounts")
         self._manage_btn.setFlat(True)
         self._manage_btn.setStyleSheet(
-            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
+            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
         )
         self._manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._manage_btn.clicked.connect(self.manage_accounts_requested)
@@ -135,7 +133,7 @@ class _GamePlaceholder(QWidget):
         self._embed_settings_btn = QPushButton("Game embed settings")
         self._embed_settings_btn.setFlat(True)
         self._embed_settings_btn.setStyleSheet(
-            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
+            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
         )
         self._embed_settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._embed_settings_btn.clicked.connect(self.game_embed_settings_requested)
@@ -151,7 +149,7 @@ class _GamePlaceholder(QWidget):
         profiles_hdr_font.setBold(True)
         profiles_hdr.setFont(profiles_hdr_font)
         profiles_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        profiles_hdr.setStyleSheet(f"color: {THEME.muted_text};")
+        profiles_hdr.setStyleSheet(f"color: {THEME.text_muted};")
         right.addWidget(profiles_hdr)
         sep_r = QFrame()
         sep_r.setFrameShape(QFrame.Shape.HLine)
@@ -228,7 +226,7 @@ class _GamePlaceholder(QWidget):
             hint = QLabel(empty_hint)
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            hint.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
+            hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
             layout.addWidget(hint)
         else:
             for label, callback in items:

@@ -100,7 +100,7 @@ class _AddOptionDialog(QDialog):
         form.addRow("Default", self._default_stack)
 
         self._err_lbl = QLabel()
-        self._err_lbl.setStyleSheet(f"color: {THEME.error_text}; font-size: 11px;")
+        self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
         self._err_lbl.setWordWrap(True)
         self._err_lbl.setVisible(False)
 
@@ -432,7 +432,7 @@ def _build_option_row(opt) -> tuple[QWidget, QWidget]:
 
     if opt.description:
         desc_lbl = QLabel(opt.description)
-        desc_lbl.setStyleSheet(f"color: {THEME.option_desc_text}; font-size: 9px;")
+        desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9px;")
         desc_lbl.setWordWrap(True)
         layout.addWidget(desc_lbl)
 

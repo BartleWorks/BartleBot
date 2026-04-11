@@ -964,7 +964,7 @@ class EditScene(QGraphicsScene):
             id=uuid.uuid4().hex[:8],
             label=label.strip(),
             members=list(state_ids),
-            color="amber",
+            color=1,
         )
         self._config.regions.append(region)
         ri = RegionItem(region, self._node_items)
@@ -1102,14 +1102,14 @@ class _EditView(GraphView):
 class _ColorPickerDialog(QWidget):
     """Minimal six-swatch palette dialog for region color selection."""
 
-    def __init__(self, current_key: str, parent=None) -> None:
+    def __init__(self, current_key: int, parent=None) -> None:
         from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QHBoxLayout, QVBoxLayout
 
         # Re-parent as QDialog so exec() works
         self._dialog = QDialog(parent)
         self._dialog.setWindowTitle("Choose Color")
         self._selected = current_key
-        self._swatch_btns: dict[str, QPushButton] = {}
+        self._swatch_btns: dict[int, QPushButton] = {}
 
         swatch_row = QHBoxLayout()
         swatch_row.setSpacing(8)
@@ -1135,11 +1135,11 @@ class _ColorPickerDialog(QWidget):
         self._dialog.setLayout(layout)
         self._highlight(current_key)
 
-    def _select(self, key: str) -> None:
+    def _select(self, key: int) -> None:
         self._selected = key
         self._highlight(key)
 
-    def _highlight(self, key: str) -> None:
+    def _highlight(self, key: int) -> None:
         for k, btn in self._swatch_btns.items():
             color_hex = THEME.region_color(k).name()
             border = "white" if k == key else "transparent"
@@ -1151,5 +1151,5 @@ class _ColorPickerDialog(QWidget):
     def exec(self):
         return self._dialog.exec()
 
-    def selected_color(self) -> str:
+    def selected_color(self) -> int:
         return self._selected

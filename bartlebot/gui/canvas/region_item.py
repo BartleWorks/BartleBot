@@ -43,7 +43,7 @@ class _RegionHandle(QGraphicsItem):
     the handle stationary relative to the region rect.
     """
 
-    def __init__(self, color_key: str, node_items_ref: dict, member_ids_ref: list, parent: QGraphicsItem) -> None:
+    def __init__(self, color_key: int, node_items_ref: dict, member_ids_ref: list, parent: QGraphicsItem) -> None:
         super().__init__(parent)
         self._color_key = color_key
         self._node_items = node_items_ref  # live dict reference from RegionItem
@@ -234,7 +234,7 @@ class RegionItem(QGraphicsItem):
         self._label = label
         self.update()
 
-    def set_color(self, key: str) -> None:
+    def set_color(self, key: int) -> None:
         self._color_key = key
         self._handle._color_key = key
         self._handle.update()

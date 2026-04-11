@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class _GeneralSettings(BaseModel):
+    theme: str = "system"  # "light", "dark", or "system"
     maximize_on_open: bool = False
     clear_log_on_run: bool = True
     log_max_lines: int = 5000
@@ -50,6 +51,7 @@ _SECTION_MODELS: dict[str, type[BaseModel]] = {
 
 _DEFAULTS: dict[str, Any] = {
     "general": {
+        "theme": "system",
         "maximize_on_open": False,
         "clear_log_on_run": True,
         "log_max_lines": 5000,
@@ -73,6 +75,7 @@ _DEFAULTS: dict[str, Any] = {
     "launch_profiles": [],
     "recent_launches": [],
     "recent_bot_files": [],
+    "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
 }
 
 # Valid Wizard101 windowed resolutions (width, height)

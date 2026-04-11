@@ -20,9 +20,17 @@ _BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
 _BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 
-_EDGE_COLOR = THEME.qcolor("edge_color")
-_EDGE_HOVER_COLOR = THEME.qcolor("edge_hover_color")
-_EDGE_SEL_COLOR = THEME.qcolor("edge_sel_color")
+
+def _edge_color():
+    return THEME.qcolor("edge_color")
+
+
+def _edge_hover():
+    return THEME.qcolor("edge_hover")
+
+
+def _edge_selected():
+    return THEME.qcolor("edge_selected")
 
 
 # ---------------------------------------------------------------------------
@@ -97,11 +105,11 @@ class EdgeItem(QGraphicsPathItem):
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if self.isSelected():
-            pen = QPen(_EDGE_SEL_COLOR, 2.5, Qt.PenStyle.DashLine)
+            pen = QPen(_edge_selected(), 2.5, Qt.PenStyle.DashLine)
         elif self._hovered:
-            pen = QPen(_EDGE_HOVER_COLOR, 2.5)
+            pen = QPen(_edge_hover(), 2.5)
         else:
-            pen = QPen(_EDGE_COLOR, 1.5)
+            pen = QPen(_edge_color(), 1.5)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)

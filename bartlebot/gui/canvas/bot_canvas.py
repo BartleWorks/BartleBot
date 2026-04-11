@@ -59,11 +59,12 @@ _RUNNING = "running"
 _PAUSED = "paused"
 
 
-_STATUS_DOT_COLORS: dict[str, str] = {
-    _IDLE: THEME.status_idle,
-    _RUNNING: THEME.status_running,
-    _PAUSED: THEME.status_paused,
-}
+def _status_dot_color(state: str) -> str:
+    if state == _RUNNING:
+        return THEME.success
+    if state == _PAUSED:
+        return THEME.status_paused
+    return THEME.text_muted  # idle / fallback
 
 
 _ICON_SIZE = QSize(20, 20)
@@ -130,7 +131,7 @@ class _BotCanvasPlaceholder(QWidget):
         recent_hdr_font.setBold(True)
         recent_hdr.setFont(recent_hdr_font)
         recent_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        recent_hdr.setStyleSheet(f"color: {THEME.muted_text};")
+        recent_hdr.setStyleSheet(f"color: {THEME.text_muted};")
         inner.addWidget(recent_hdr)
 
         sep = QFrame()
@@ -148,7 +149,7 @@ class _BotCanvasPlaceholder(QWidget):
         self._new_btn = QPushButton("New Bot")
         self._new_btn.setFlat(True)
         self._new_btn.setStyleSheet(
-            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
+            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
         )
         self._new_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._new_btn.clicked.connect(self.new_bot_requested)
@@ -157,7 +158,7 @@ class _BotCanvasPlaceholder(QWidget):
         self._open_btn = QPushButton("Open Bot")
         self._open_btn.setFlat(True)
         self._open_btn.setStyleSheet(
-            f"color: {THEME.muted_text}; text-decoration: underline; border: none; padding: 2px;"
+            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
         )
         self._open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._open_btn.clicked.connect(self.open_bot_requested)
@@ -220,7 +221,7 @@ class _BotCanvasPlaceholder(QWidget):
             hint = QLabel(empty_hint)
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            hint.setStyleSheet(f"color: {THEME.muted_text_alt}; font-size: 11px;")
+            hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
             layout.addWidget(hint)
         else:
             for label, tooltip, callback in items:
@@ -250,11 +251,11 @@ class _SearchBar(QWidget):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setStyleSheet(
-            f"QWidget {{ background-color: {THEME.overlay_bg}; border: 1px solid {THEME.overlay_border}; border-radius: 6px; }}"
-            f"QLineEdit {{ border: none; background: transparent; color: {THEME.overlay_text}; font-size: 13px; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.overlay_muted}; font-size: 14px; }}"
-            f"QPushButton:hover {{ color: {THEME.overlay_text}; }}"
-            f"QLabel {{ border: none; color: {THEME.overlay_muted}; font-size: 11px; }}"
+            f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
+            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: 13px; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.text}; }}"
+            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
         )
 
         self._input = QLineEdit()
@@ -386,6 +387,19 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
+        # Track (button → current icon name) so changeEvent can re-tint on theme switch.
+        # _run_pause_btn entry is updated by _set_run_icon() whenever the icon changes.
+        self._btn_icons: dict[QPushButton, str] = {
+            self._run_pause_btn: "play",
+            self.stop_button: "stop",
+            self._edit_btn: "pencil",
+            self._fit_btn: "fit",
+            self._add_state_btn: "plus",
+            self._layout_btn: "layout",
+            self._done_btn: "checkmark",
+            self._save_done_btn: "save_done",
+        }
+
         # ── Swappable center zone ─────────────────────────────────────
         run_center = QWidget()
         run_center_row = QHBoxLayout(run_center)
@@ -453,14 +467,14 @@ class BotCanvas(QWidget):
         _pill_base = "border-radius: 4px; padding: 1px 7px;"
         self._error_pill = QLabel()
         self._error_pill.setStyleSheet(
-            f"QLabel {{ background-color: {THEME.pill_error_bg}; color: {THEME.pill_text}; {_pill_base} }}"
+            f"QLabel {{ background-color: {THEME.error}; color: {THEME.pill_text}; {_pill_base} }}"
         )
         self._error_pill.setVisible(False)
 
         self._warning_pill = QPushButton()
         self._warning_pill.setStyleSheet(
-            f"QPushButton {{ background-color: {THEME.pill_warning_bg}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
-            f"QPushButton:hover {{ background-color: {THEME.pill_warning_bg_hover}; }}"
+            f"QPushButton {{ background-color: {THEME.warning}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
+            f"QPushButton:hover {{ background-color: {THEME.pill_warning_hover}; }}"
         )
         self._warning_pill.setVisible(False)
         self._warning_pill.clicked.connect(self._cleanup_orphans)
@@ -496,10 +510,10 @@ class BotCanvas(QWidget):
         self._focus_crumb = QWidget(self._view)
         self._focus_crumb.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._focus_crumb.setStyleSheet(
-            f"QWidget {{ background-color: {THEME.overlay_bg}; border: 1px solid {THEME.overlay_border}; border-radius: 6px; }}"
-            f"QLabel {{ border: none; color: {THEME.overlay_text}; font-size: 12px; padding: 0; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.overlay_muted}; font-size: 14px; }}"
-            f"QPushButton:hover {{ color: {THEME.overlay_text}; }}"
+            f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
+            f"QLabel {{ border: none; color: {THEME.text}; font-size: 12px; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.text}; }}"
         )
         self._focus_crumb_label = QLabel("Viewing: ")
         _close_focus_btn = QPushButton("×")
@@ -674,9 +688,9 @@ class BotCanvas(QWidget):
     def _emit_bot_status(self) -> None:
         """Emit bot_status_changed with current run/edit state."""
         if self._mode == BotMode.EDIT:
-            self.bot_status_changed.emit("#888888", "Editing", "", "")
+            self.bot_status_changed.emit(THEME.text_muted, "Editing", "", "")
             return
-        color = _STATUS_DOT_COLORS.get(self._run_state, "#888888")
+        color = _status_dot_color(self._run_state)
         if self._run_state == _IDLE:
             self.bot_status_changed.emit(color, "Idle", "", "")
         elif self._run_state == _RUNNING:
@@ -693,9 +707,20 @@ class BotCanvas(QWidget):
         """Pass a callable that returns the current list of hooked clients."""
         self._param_panel._get_clients = fn
 
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            for btn, icon_name in self._btn_icons.items():
+                btn.setIcon(svg_icon(icon_name))
+
+    def _set_run_icon(self, icon_name: str) -> None:
+        """Set the run/pause button icon and record it for live theme updates."""
+        self._btn_icons[self._run_pause_btn] = icon_name
+        self._run_pause_btn.setIcon(svg_icon(icon_name))
+
     def set_running(self) -> None:
         self._run_state = _RUNNING
-        self._run_pause_btn.setIcon(svg_icon("pause"))
+        self._set_run_icon("pause")
         self._run_pause_btn.setEnabled(True)
         self.stop_button.setEnabled(True)
         self._edit_btn.setEnabled(False)
@@ -707,14 +732,14 @@ class BotCanvas(QWidget):
 
     def set_paused(self) -> None:
         self._run_state = _PAUSED
-        self._run_pause_btn.setIcon(svg_icon("play"))
+        self._set_run_icon("play")
         self._run_pause_btn.setEnabled(True)
         self._emit_bot_status()
         logger.info("=== Paused ===")
 
     def set_idle(self) -> None:
         self._run_state = _IDLE
-        self._run_pause_btn.setIcon(svg_icon("play"))
+        self._set_run_icon("play")
         self._run_pause_btn.setEnabled(False)  # re-enabled by set_run_enabled
         self.stop_button.setEnabled(False)
         self._edit_btn.setEnabled(self._config is not None)
@@ -753,7 +778,7 @@ class BotCanvas(QWidget):
             self.pause_requested.emit()
         elif self._run_state == _PAUSED:
             self._run_state = _RUNNING
-            self._run_pause_btn.setIcon(svg_icon("pause"))
+            self._set_run_icon("pause")
             self._emit_bot_status()
             logger.info("=== Resumed ===")
             self.resume_requested.emit()
