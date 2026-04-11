@@ -55,7 +55,6 @@ NODE_SPEC = NodeSpec(
 from bartlebot.nodes.timing import INTERACT_TIMEOUT, POLL_INTERVAL  # noqa: E402
 
 _ROWS_PER_PAGE = 10
-_GOLD_WARNING_TIMEOUT = 2.0
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -197,7 +196,7 @@ async def _run_quicksell(machine, client, keep_list: list[str]) -> str:
     machine.log("quicksell: waiting for gold limit dialog (optional)", logging.DEBUG)
     gold_warning = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, GOLD_LIMIT_OK_PATH),
-        _GOLD_WARNING_TIMEOUT,
+        INTERACT_TIMEOUT,
         POLL_INTERVAL,
     )
     machine.log(
@@ -240,7 +239,11 @@ async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
 
 async def _is_jewel_backpack_full(client) -> bool:
     """Check jewel pouch fullness by reading the 'X/Y' capacity text in the jewel page UI."""
+    import re
+
     text = await _get_window_text(client, JEWEL_INVENTORY_SPACE_PATH)
+    # The game wraps the value in HTML (e.g. "<center>100/100"), so strip tags first.
+    text = re.sub(r"<[^>]+>", "", text).strip()
     parts = text.split("/")
     if len(parts) != 2:
         return False
