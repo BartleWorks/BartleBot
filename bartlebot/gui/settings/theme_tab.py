@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -251,13 +252,13 @@ class ThemeTab(QWidget):
 
                 lbl = QLabel("  " + _LABELS.get(token, token) + ":")
                 btn = QPushButton(hex_val)
-                btn.setFixedWidth(130)
+                btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
                 btn.setStyleSheet(_button_style(hex_val))
                 btn.clicked.connect(lambda checked, t=token: self._pick_color(t))
                 self._buttons[token] = btn
 
                 grid.addWidget(lbl, grid_row, 0, Qt.AlignmentFlag.AlignVCenter)
-                grid.addWidget(btn, grid_row, 1, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+                grid.addWidget(btn, grid_row, 1, Qt.AlignmentFlag.AlignVCenter)
                 grid_row += 1
 
         grid.setRowStretch(grid_row, 1)
