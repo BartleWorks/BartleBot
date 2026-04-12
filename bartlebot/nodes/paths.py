@@ -74,8 +74,20 @@ MESSAGE_BOX_CAPTION_PATH = [
     "CaptionText",
 ]
 
-# Dungeon entrance prompt (TeamUpButton is present only for dungeon sigils, not generic NPCs)
-DUNGEON_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground", "TeamUpButton"]
+# Team-up paths
+DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH = [
+    "WorldView",
+    "NPCRangeWin",
+    "imgBackground",
+    "TeamUpButton",
+]  # Also used to detect dungeon entrance
+TEAMUP_4_PLAYER_CHECKBOX = [
+    "WorldView",
+    "TeamUpConfirmationWindow",
+    "TeamUpConfirmationBackground",
+    "TeamSize4CheckBox",
+]
+ENTER_TEAMUP_BUTTON_PATH = ["WorldView", "TeamUpConfirmationWindow", "TeamUpConfirmationBackground", "TeamUpButton"]
 
 # Gauntlet entrance prompt (no TeamUpButton — gauntlets use the parent window directly)
 GAUNTLET_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground"]

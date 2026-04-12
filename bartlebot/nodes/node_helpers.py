@@ -4,7 +4,7 @@ import asyncio
 
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
-    DUNGEON_ENTRANCE_PATH,
+    DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     GAUNTLET_ENTRANCE_PATH,
     MESSAGE_BOX_CENTER,
 )
@@ -23,7 +23,7 @@ async def none_in_npc_range(clients: list) -> bool:
     return not any(results)
 
 
-async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_PATH) -> bool:
+async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) -> bool:
     """Return True when every client has the dungeon entrance prompt showing.
 
     Pass GAUNTLET_ENTRANCE_PATH for gauntlets, which lack a TeamUpButton.
@@ -32,7 +32,7 @@ async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRA
     return all(results)
 
 
-async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_PATH) -> bool:
+async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) -> bool:
     """Return True when no client has the dungeon entrance prompt showing.
 
     Pass GAUNTLET_ENTRANCE_PATH for gauntlets, which lack a TeamUpButton.

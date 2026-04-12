@@ -107,7 +107,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Clear any pre-existing dungeon entrance prompt before starting.
     prompts = await asyncio.gather(
-        *[node_helpers.is_visible_by_path(c, node_helpers.DUNGEON_ENTRANCE_PATH) for c in clients]
+        *[node_helpers.is_visible_by_path(c, node_helpers.DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) for c in clients]
     )
     if any(prompts):
         stale = [i for i, p in enumerate(prompts) if p]

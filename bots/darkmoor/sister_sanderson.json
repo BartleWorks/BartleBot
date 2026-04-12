@@ -4,7 +4,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
-  "default_combat_config": "### p1\n{1} stabilize\n{2} any<blade>[sharp] @ self\n{3} any<blade>[sharp] @ self\n{4} any<blade>[sharp] @ self\n{5} lord[epic]\npass\n\n### p2\n{1} plague\n{2} any<blade>[sharp] @ ally(0)\n{3} any<blade>[sharp] @ ally(0)\n{4} any<blade> @ ally(0)\n{5} feint mass\npass",
+  "default_combat_config": "### p1\nany<blade>[sharp] @ ally(0) | any<blade> @ ally(0) | typhoon @ boss | lord[epic]\n\n### p2\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | bunyip[epic]",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Graveholm",
   "drops": [
