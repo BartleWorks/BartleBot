@@ -31,7 +31,7 @@ class ParamField:
 
     Attributes:
         key:          JSON key used in the params dict.
-        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list".
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list" | "int_choice".
                       "text" renders as a multi-line QPlainTextEdit.
         label:        Human-readable form label.
         help:         Tooltip / documentation text shown on hover.
@@ -54,6 +54,8 @@ class ParamField:
     default_hint: str = ""
     disabled_by: str = ""
     required: bool = False
+    choices: list[Any] = field(default_factory=list)
+    """For ``type="int_choice"``: the ordered list of integer values shown in the dropdown."""
 
 
 @dataclass

@@ -75,6 +75,18 @@ DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH = [
     "imgBackground",
     "TeamUpButton",
 ]  # Also used to detect dungeon entrance
+TEAMUP_2_PLAYER_CHECKBOX = [
+    "WorldView",
+    "TeamUpConfirmationWindow",
+    "TeamUpConfirmationBackground",
+    "TeamSize2CheckBox",
+]
+TEAMUP_3_PLAYER_CHECKBOX = [
+    "WorldView",
+    "TeamUpConfirmationWindow",
+    "TeamUpConfirmationBackground",
+    "TeamSize3CheckBox",
+]
 TEAMUP_4_PLAYER_CHECKBOX = [
     "WorldView",
     "TeamUpConfirmationWindow",

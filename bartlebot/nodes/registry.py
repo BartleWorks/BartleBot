@@ -4,6 +4,8 @@ from bartlebot.nodes.action.collect_wisps import NODE_SPEC as _collect_wisps_spe
 from bartlebot.nodes.action.collect_wisps import run as collect_wisps_run
 from bartlebot.nodes.action.enter_dungeon import NODE_SPEC as _enter_dungeon_spec
 from bartlebot.nodes.action.enter_dungeon import run as enter_dungeon_run
+from bartlebot.nodes.action.enter_dungeon_teamup import NODE_SPEC as _enter_dungeon_teamup_spec
+from bartlebot.nodes.action.enter_dungeon_teamup import run as enter_dungeon_teamup_run
 from bartlebot.nodes.action.enter_gauntlet import NODE_SPEC as _enter_gauntlet_spec
 from bartlebot.nodes.action.enter_gauntlet import run as enter_gauntlet_run
 from bartlebot.nodes.action.enter_zone_gateway import NODE_SPEC as _enter_zone_gateway_spec
@@ -47,6 +49,7 @@ NODE_REGISTRY: dict = {
     "teleport_to_world_hub": teleport_to_world_hub_run,
     "go_to_xyz": go_to_xyz_run,
     "enter_dungeon": enter_dungeon_run,
+    "enter_dungeon_teamup": enter_dungeon_teamup_run,
     "enter_gauntlet": enter_gauntlet_run,
     "interact": interact_run,
     "quicksell": quicksell_run,
@@ -70,6 +73,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "teleport_to_world_hub": _teleport_to_world_hub_spec,
     "go_to_xyz": _go_to_xyz_spec,
     "enter_dungeon": _enter_dungeon_spec,
+    "enter_dungeon_teamup": _enter_dungeon_teamup_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
     "interact": _interact_spec,
     "quicksell": _quicksell_spec,

@@ -1,6 +1,6 @@
 {
   "name": "Sister Sanderson",
-  "description": "2-person endless Sister Sanderson farmer. Player 1 is the hitter, player 2 buffs them.",
+  "description": "2-person endless Sister Sanderson farmer, ~5 min per run",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
