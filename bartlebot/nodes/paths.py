@@ -66,13 +66,7 @@ MESSAGE_BOX_RIGHT = [
     "Layout",
     "rightButton",
 ]
-MESSAGE_BOX_CAPTION_PATH = [
-    "MessageBoxModalWindow",
-    "messageBoxBG",
-    "messageBoxLayout",
-    "TextArea",
-    "CaptionText",
-]
+MESSAGE_BOX_CAPTION_PATH = ["MessageBoxModalWindow", "messageBoxBG", "messageBoxLayout", "TextArea", "CaptionText"]
 
 # Team-up paths
 DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH = [
