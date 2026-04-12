@@ -4,7 +4,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
-  "default_combat_config": "### p1\nany<blade>[sharp] @ ally(0) | any<blade> @ ally(0) | typhoon @ boss | lord[epic]\n\n### p2\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | bunyip[epic]",
+  "default_combat_config": "### p1\nany<aoe>[epic] | any<blade>[sharp] @ ally(0) | feint mass\n\n### p2\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | tempest[epic]",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Graveholm",
   "drops": [
@@ -24,8 +24,8 @@
       "name": "Default Combat Order",
       "type": "int_list",
       "default": [
-        2,
-        1
+        1,
+        2
       ],
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
     }
@@ -37,7 +37,7 @@
       "label": "Mark sigil",
       "position": {
         "x": 150.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z01_Graveholm",
@@ -56,7 +56,7 @@
       "label": "Enter dungeon",
       "position": {
         "x": 750.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "Darkmoor/DM_Z01_Graveholm",
@@ -81,7 +81,7 @@
       "label": "Defeat sisters",
       "position": {
         "x": 1050.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "enemy": "DM_Scholomari_WitchF_B_02",
@@ -98,7 +98,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 1350.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -115,7 +115,7 @@
       "label": "Exit dungeon",
       "position": {
         "x": 1650.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "Darkmoor/Interiors/DM_Z01I17_SandersonHouse",
@@ -140,7 +140,7 @@
       "label": "Collect more wisps",
       "position": {
         "x": 1950.0,
-        "y": -83.0
+        "y": -76.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -157,7 +157,7 @@
       "label": "Teleport to mark",
       "position": {
         "x": 1950.0,
-        "y": 97.0
+        "y": 104.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z01_Graveholm",
@@ -176,7 +176,7 @@
       "label": "Handle potions",
       "position": {
         "x": 450.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 0.5,
