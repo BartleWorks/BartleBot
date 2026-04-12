@@ -5,8 +5,8 @@ import asyncio
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_PATH,
-    DUNGEON_WARNING_PATH,
     GAUNTLET_ENTRANCE_PATH,
+    MESSAGE_BOX_CENTER,
 )
 from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
@@ -57,7 +57,7 @@ async def confirm_dungeon_warning_dialog(client, delay: float = 3.0) -> None:
     """
     loop_start = asyncio.get_event_loop().time()
     while True:
-        if await click_by_path(client, DUNGEON_WARNING_PATH):
+        if await click_by_path(client, MESSAGE_BOX_CENTER):
             return
         if asyncio.get_event_loop().time() - loop_start >= delay:
             return

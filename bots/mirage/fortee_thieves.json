@@ -26,7 +26,7 @@
       "label": "Go to corner",
       "position": {
         "x": 150.0,
-        "y": 0.0
+        "y": 14.0
       },
       "params": {
         "zone": "Mirage/MR_Z07_ThievesDen",
@@ -45,7 +45,7 @@
       "label": "Defeat mobs",
       "position": {
         "x": 450.0,
-        "y": 0.0
+        "y": 14.0
       },
       "params": {
         "enemy": "MR_Baboon_Thug_A_01",
@@ -62,7 +62,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 750.0,
-        "y": 0.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -79,7 +79,7 @@
       "label": "Go to corner",
       "position": {
         "x": 1050.0,
-        "y": 0.0
+        "y": 14.0
       },
       "params": {
         "zone": "Mirage/MR_Z07_ThievesDen",
@@ -112,7 +112,7 @@
       "label": "Handle potions",
       "position": {
         "x": 1950.0,
-        "y": 0.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -129,12 +129,14 @@
       "label": "Quicksell",
       "position": {
         "x": 1650.0,
-        "y": 0.0
+        "y": 14.0
       },
       "params": {
         "keep_list": [
           "Piercing"
-        ]
+        ],
+        "sell_crowns": true,
+        "sell_pets": true
       },
       "option_overrides": {},
       "flipped": false
