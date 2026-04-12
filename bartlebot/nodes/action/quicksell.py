@@ -57,6 +57,22 @@ PARAM_SCHEMA: list[ParamField] = [
         default=True,
         required=False,
     ),
+    ParamField(
+        key="sell_socket_wrenches",
+        type="bool",
+        label="Sell Socket Wrenches",
+        help="If disabled, any item whose name contains 'Socket Wrench' will be kept and not sold.",
+        default=False,
+        required=False,
+    ),
+    ParamField(
+        key="sell_skeleton_keys",
+        type="bool",
+        label="Sell Skeleton Keys",
+        help="If disabled, any item whose name contains 'Skeleton Key' will be kept and not sold.",
+        default=False,
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -83,7 +99,16 @@ async def run(machine, clients: list, params: dict) -> str:
     keep_list = [k.lower() for k in (params.get("keep_list") or [])]
     sell_crowns: bool = params.get("sell_crowns", True)
     sell_pets: bool = params.get("sell_pets", True)
-    machine.log(f"quicksell: keep_list={keep_list!r} sell_crowns={sell_crowns} sell_pets={sell_pets}")
+    sell_socket_wrenches: bool = params.get("sell_socket_wrenches", False)
+    sell_skeleton_keys: bool = params.get("sell_skeleton_keys", False)
+    if not sell_socket_wrenches:
+        keep_list.append("socket wrench")
+    if not sell_skeleton_keys:
+        keep_list.append("skeleton key")
+    machine.log(
+        f"quicksell: keep_list={keep_list!r} sell_crowns={sell_crowns} sell_pets={sell_pets} "
+        f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
+    )
 
     results = await asyncio.gather(
         *[_process_client(machine, c, keep_list, sell_crowns, sell_pets) for c in clients],
