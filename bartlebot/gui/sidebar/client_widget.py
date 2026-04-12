@@ -132,17 +132,17 @@ class ClientWidget(QWidget):
         mob_row.addWidget(copy_mob_btn)
         layout.addLayout(mob_row)
 
-        # Separator
-        line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(line)
-
         # UI tree browser
         ui_tree_btn = QPushButton("UI Tree Browser")
         ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this client")
         ui_tree_btn.clicked.connect(lambda: asyncio.ensure_future(self._open_ui_tree()))
         layout.addWidget(ui_tree_btn)
+
+        # Separator
+        line = QFrame()
+        line.setFrameShape(QFrame.Shape.HLine)
+        line.setFrameShadow(QFrame.Shadow.Sunken)
+        layout.addWidget(line)
 
     # ------------------------------------------------------------------
     # Copy helpers
