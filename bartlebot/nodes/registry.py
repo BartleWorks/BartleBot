@@ -1,5 +1,7 @@
 from bartlebot.nodes.action.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.action.apply_level_scaling import run as apply_level_scaling_run
+from bartlebot.nodes.action.collect_reagent import NODE_SPEC as _collect_reagent_spec
+from bartlebot.nodes.action.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.action.collect_wisps import NODE_SPEC as _collect_wisps_spec
 from bartlebot.nodes.action.collect_wisps import run as collect_wisps_run
 from bartlebot.nodes.action.enter_dungeon import NODE_SPEC as _enter_dungeon_spec
@@ -57,6 +59,7 @@ NODE_REGISTRY: dict = {
     "quicksell": quicksell_run,
     "enter_zone_interact": enter_zone_interact_run,
     "handle_combat": handle_combat_run,
+    "collect_reagent": collect_reagent_run,
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
     "teleport_to_marked_location": teleport_to_marked_location_run,
@@ -82,6 +85,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "quicksell": _quicksell_spec,
     "enter_zone_interact": _enter_zone_interact_spec,
     "handle_combat": _handle_combat_spec,
+    "collect_reagent": _collect_reagent_spec,
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
     "teleport_to_marked_location": _teleport_to_marked_location_spec,

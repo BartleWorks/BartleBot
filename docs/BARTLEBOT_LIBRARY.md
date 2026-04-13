@@ -26,6 +26,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`teleport_to_friend`](#teleport_to_friend) | Teleport clients to a named friend | `done` |
 | [`teleport_to_world_hub`](#teleport_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
+| [`collect_reagent`](#collect_reagent) | Visit reagent spawn locations and collect any present reagents | `done` |
 | [`apply_level_scaling`](#apply_level_scaling) | Apply the level-scaling elixir via NPC interaction | `done` |
 | [`wait_for_health`](#wait_for_health) | Block until all clients' health reaches a threshold | `done` |
 | [`wait_for_dialogue`](#wait_for_dialogue) | Block until all clients are out of dialogue | `done` |
@@ -431,6 +432,41 @@ Collects health and mana wisps after a battle if clients are below a specified h
   4. After all clients finish collecting, re-check ratios. If any client's health ratio is below `fail_if_health_below` or mana ratio is below `fail_if_mana_below`, return `FAILURE`.
   5. Return `SUCCESS` if all clients are at or above both fail thresholds.
 - `FAILURE` cases: any client is still below a fail threshold after wisps are exhausted.
+
+</details>
+
+---
+
+### collect_reagent
+
+**Status:** `done`
+
+Visits a list of reagent spawn locations in order and collects any reagents present at each.
+Because reagents spawn randomly, the interact prompt is not guaranteed at every location — the node
+waits a short time at each spawn and moves on if nothing appears. Returns `SUCCESS` after all spawns
+are visited regardless of how many reagents were collected.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | Zone name all clients must be in when this node executes. |
+| `spawns`       | `text`         | Spawn locations to visit, one per line, in Copy XYZ format — e.g. `{"x": -1234.56, "y": 678.9, "z": 0.0}`. Walk to each spawn, click Copy XYZ in the client widget, and paste here. Locations are visited in order. Blank lines are ignored. |
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_in_npc_range()`, `client.send_key(Keycode.X)`
+- Timing: `INTERACT_TIMEOUT` (reused from `timing.py`), `REAGENT_COLLECT_DELAY` (post-collect settle wait)
+- Multi-client: reagents are server-wide; two clients on the same server both press X but only one collects. Clients on separate servers collect independently.
+- Flow:
+  1. Verify all clients are in `zone`. If not, return `FAILURE`.
+  2. Parse `spawns` — one JSON dict per line in Copy XYZ format. If empty, return `SUCCESS` immediately.
+  3. For each spawn XYZ in order:
+     a. `asyncio.gather` teleport all clients to the spawn XYZ.
+     b. Poll `client.is_in_npc_range()` on all clients for up to `INTERACT_TIMEOUT` seconds.
+     c. If a prompt appeared on at least one client: send Keycode.X (0.1 s hold) on all clients that have a prompt. Wait a jitter delay (`REAGENT_COLLECT_DELAY`) to let the collection register.
+     d. Move to the next spawn (no retry — absence is expected).
+  4. Return `SUCCESS`.
+- `FAILURE` cases: clients not in `zone` at start; a line in `spawns` cannot be parsed as a JSON XYZ dict.
 
 </details>
 

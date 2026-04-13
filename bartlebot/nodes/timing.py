@@ -53,6 +53,11 @@ TEAMUP_AFK_INTERVAL = 180.0
 # team-up queue.  Wizard101 idles the character after a few minutes without input.
 
 
+REAGENT_COLLECT_DELAY = 0.5
+# Seconds to wait after pressing X at a reagent spawn before moving to the next
+# location. Gives the game time to register the collection animation and item pickup.
+
+
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.
 
