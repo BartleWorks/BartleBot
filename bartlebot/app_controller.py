@@ -253,7 +253,7 @@ class AppController(QObject):
         self._window.bot_canvas.set_running()
         try:
             try:
-                async with keep.running():
+                with keep.running(on_fail="error"):
                     await machine.run()
             except ActivationError:
                 logger.warning(

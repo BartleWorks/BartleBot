@@ -1,0 +1,45 @@
+{
+  "name": "New Bot",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "drops": [],
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "collect_reagent",
+      "label": "Collect reagents",
+      "position": {
+        "x": 150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Karamelle/KM_Z04_Sweetzburg",
+        "spawns": "{\"x\": 5074.87, \"y\": -5425.66, \"z\": 155.35}\n{\"x\": -2078.24, \"y\": 2340.23, \"z\": 17.31}\n{\"x\": 4329.25, \"y\": -2811.43, \"z\": 99.97}"
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}
