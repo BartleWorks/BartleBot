@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+from wakepy import ActivationError, keep
+
 logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
@@ -250,7 +252,14 @@ class AppController(QObject):
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         try:
-            await machine.run()
+            try:
+                async with keep.running():
+                    await machine.run()
+            except ActivationError:
+                logger.warning(
+                    "wakepy could not acquire a sleep-prevention wake lock; bot will run without sleep guard"
+                )
+                await machine.run()
         finally:
             self._window.bot_canvas.set_idle()
             remove_gui_callback(log_cb)
