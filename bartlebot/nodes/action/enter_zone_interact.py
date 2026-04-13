@@ -163,13 +163,22 @@ async def run(machine, clients: list, params: dict) -> str:
     #    all to be loading simultaneously — a fast client can finish its loading
     #    screen (is_loading() → False) before a slow client even starts, which
     #    would otherwise prevent the all-loading condition from ever being met.
+    #
+    #    Also treat a client already in to_zone as "seen loading" — if the dungeon
+    #    exit warning check (step 4b) delayed us long enough that the loading screen
+    #    completed before we started polling, the client is already in the destination
+    #    zone and we should not require it to show a loading screen again.
     machine.log(
         f"Waiting for all clients to enter loading screen (timeout={TRIGGER_TIMEOUT}s)…",
         logging.DEBUG,
     )
+
+    async def _loading_or_arrived(c) -> bool:
+        return await c.is_loading() or await c.zone_name() == to_zone
+
     seen_loading = await node_helpers.poll_each_until_seen(
         clients,
-        check_fn=lambda c: c.is_loading(),
+        check_fn=_loading_or_arrived,
         action_fn=lambda c: c.send_key(Keycode.X, 0.1),
         timeout=TRIGGER_TIMEOUT,
     )
