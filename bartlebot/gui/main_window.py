@@ -158,8 +158,7 @@ class MainWindow(QMainWindow):
             lambda u, d: asyncio.ensure_future(self._launch_single_account(u, d))
         )
         self._game_view_panel.launch_profile_requested.connect(lambda n: asyncio.ensure_future(self._launch_profile(n)))
-        self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_index=2))
-        self._game_view_panel.game_embed_settings_requested.connect(lambda: self._open_settings(tab_index=1))
+        self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -349,7 +348,7 @@ class MainWindow(QMainWindow):
         self._launch_menu.addSeparator()
 
         manage_action = QAction("Manage Accounts…", self)
-        manage_action.triggered.connect(lambda: self._open_settings(tab_index=2))
+        manage_action.triggered.connect(lambda: self._open_settings(tab_name="game"))
         self._launch_menu.addAction(manage_action)
 
     # ------------------------------------------------------------------
@@ -364,11 +363,11 @@ class MainWindow(QMainWindow):
         elif tab == "bot":
             self.left_sidebar.switch_to_bot()
 
-    def _open_settings(self, tab_index: int = 0) -> None:
+    def _open_settings(self, tab_name: str = "general") -> None:
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
 
         dlg = SettingsDialog(self)
-        dlg._tabs.setCurrentIndex(tab_index)
+        dlg.open_tab(tab_name)
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()

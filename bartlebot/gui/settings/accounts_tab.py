@@ -1,9 +1,11 @@
-"""Settings tab: Accounts (credential management with aliases)."""
+"""Settings tab: Game (accounts, launch profiles, and game embed resolution)."""
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
     QDialog,
     QDialogButtonBox,
     QFormLayout,
@@ -12,14 +14,66 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.credentials import CredentialStore
-from bartlebot.settings_manager import SettingsManager
+from bartlebot.gui.theme import THEME
+from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+
+
+class _ReorderableList(QListWidget):
+    """QListWidget with internal-move drag-and-drop that preserves UserRole data.
+
+    Qt's default InternalMove serialises items to MIME (text only), losing any
+    UserRole data set on each item.  This subclass overrides dropEvent to move
+    the actual QListWidgetItem object via takeItem/insertItem instead, so all
+    item data survives the drag.  A ``reordered`` signal is emitted after each
+    successful drop so callers can persist the new order.
+    """
+
+    reordered = pyqtSignal()
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.setDefaultDropAction(Qt.DropAction.MoveAction)
+
+    def dropEvent(self, event) -> None:
+        src_row = self.currentRow()
+        if src_row < 0:
+            event.ignore()
+            return
+
+        dest_index = self.indexAt(event.position().toPoint())
+        if dest_index.isValid():
+            dest_row = dest_index.row()
+            if self.dropIndicatorPosition() == QAbstractItemView.DropIndicatorPosition.BelowItem:
+                dest_row += 1
+        else:
+            dest_row = self.count()
+
+        # No-op: dropping onto current position or the gap immediately after it
+        if dest_row == src_row or dest_row == src_row + 1:
+            event.ignore()
+            return
+
+        item = self.takeItem(src_row)
+        if src_row < dest_row:
+            dest_row -= 1
+        self.insertItem(dest_row, item)
+        self.setCurrentRow(dest_row)
+        # Report IgnoreAction so QAbstractItemView::startDrag does not attempt
+        # its own source-row deletion — we already moved the item manually.
+        event.setDropAction(Qt.DropAction.IgnoreAction)
+        event.accept()
+        self.reordered.emit()
 
 
 class _AccountDialog(QDialog):
@@ -65,43 +119,164 @@ class _AccountDialog(QDialog):
 
 
 class _ProfileDialog(QDialog):
-    """Small dialog for adding or editing a launch profile."""
+    """Dialog for adding or editing a launch profile.
+
+    Shows only the accounts already included in the profile.  Adding/removing
+    accounts is done via the Add ▾ dropdown and Remove button; order is
+    controlled with the ↑/↓ buttons.  A per-profile resolution override can
+    be selected, or left at "Use global setting".
+    """
 
     def __init__(
         self,
         name: str = "",
         selected_usernames: list[str] | None = None,
+        resolution: tuple[int, int] | None = None,
         parent=None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Launch Profile")
-        self.setMinimumWidth(320)
+        self.setMinimumWidth(340)
 
+        layout = QVBoxLayout(self)
+
+        # --- Profile name ---
         form = QFormLayout()
         self._name_edit = QLineEdit(name)
         form.addRow("Profile name:", self._name_edit)
+        layout.addLayout(form)
 
-        self._account_list = QListWidget()
-        for acct in SettingsManager.instance().accounts:
-            username = acct.get("username", "")
-            alias = acct.get("alias") or None
-            item = QListWidgetItem(CredentialStore.display_name(username, alias))
-            item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsUserCheckable)
-            item.setData(Qt.ItemDataRole.UserRole, username)
-            item.setCheckState(
-                Qt.CheckState.Checked if username in (selected_usernames or []) else Qt.CheckState.Unchecked
-            )
-            self._account_list.addItem(item)
+        # --- Account list (ordered, no checkboxes) ---
+        layout.addWidget(QLabel("Accounts (in player order):"))
 
+        list_and_buttons = QHBoxLayout()
+
+        self._account_list = _ReorderableList()
+        self._account_list.currentRowChanged.connect(self._on_selection_changed)
+        list_and_buttons.addWidget(self._account_list, 1)
+
+        side_buttons = QVBoxLayout()
+
+        # Add — QToolButton with a popup menu (InstantPopup adds its own arrow)
+        self._add_btn = QToolButton()
+        self._add_btn.setText("Add")
+        self._add_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._add_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._add_menu = QMenu(self)
+        self._add_btn.setMenu(self._add_menu)
+        self._add_menu.aboutToShow.connect(self._populate_add_menu)
+
+        self._remove_btn = QPushButton("Remove")
+        self._remove_btn.setEnabled(False)
+        self._remove_btn.clicked.connect(self._on_remove)
+
+        self._up_btn = QPushButton("↑")
+        self._up_btn.setEnabled(False)
+        self._up_btn.clicked.connect(self._on_move_up)
+
+        self._down_btn = QPushButton("↓")
+        self._down_btn.setEnabled(False)
+        self._down_btn.clicked.connect(self._on_move_down)
+
+        side_buttons.addWidget(self._add_btn)
+        side_buttons.addWidget(self._remove_btn)
+        side_buttons.addSpacing(4)
+        side_buttons.addWidget(self._up_btn)
+        side_buttons.addWidget(self._down_btn)
+        side_buttons.addStretch()
+
+        list_and_buttons.addLayout(side_buttons)
+        layout.addLayout(list_and_buttons, 1)
+
+        # --- Per-profile resolution ---
+        res_form = QFormLayout()
+        self._res_combo = QComboBox()
+        self._res_combo.addItem("Use global setting", userData=None)
+        for w, h in VALID_RESOLUTIONS:
+            self._res_combo.addItem(f"{w}×{h}", userData=(w, h))
+
+        if resolution is not None:
+            for i in range(self._res_combo.count()):
+                if self._res_combo.itemData(i) == resolution:
+                    self._res_combo.setCurrentIndex(i)
+                    break
+
+        res_form.addRow("Resolution:", self._res_combo)
+        layout.addLayout(res_form)
+
+        # --- OK / Cancel ---
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-
-        layout = QVBoxLayout(self)
-        layout.addLayout(form)
-        layout.addWidget(QLabel("Accounts:"))
-        layout.addWidget(self._account_list, 1)
         layout.addWidget(buttons)
+
+        # Populate list with pre-selected accounts
+        for username in selected_usernames or []:
+            self._add_account_item(username)
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _add_account_item(self, username: str) -> None:
+        accounts_meta = {a["username"]: a for a in SettingsManager.instance().accounts}
+        meta = accounts_meta.get(username, {})
+        alias = meta.get("alias") or None
+        display = CredentialStore.display_name(username, alias)
+        item = QListWidgetItem(display)
+        item.setData(Qt.ItemDataRole.UserRole, username)
+        self._account_list.addItem(item)
+
+    def _populate_add_menu(self) -> None:
+        self._add_menu.clear()
+        already_in = {
+            self._account_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._account_list.count())
+        }
+        available = [a for a in SettingsManager.instance().accounts if a["username"] not in already_in]
+        if not available:
+            action = self._add_menu.addAction("(no more accounts)")
+            action.setEnabled(False)
+            return
+        for acct in available:
+            username = acct["username"]
+            alias = acct.get("alias") or None
+            display = CredentialStore.display_name(username, alias)
+            action = self._add_menu.addAction(display)
+            action.triggered.connect(lambda _checked, u=username: self._on_add_account(u))
+
+    def _on_add_account(self, username: str) -> None:
+        self._add_account_item(username)
+
+    def _on_remove(self) -> None:
+        row = self._account_list.currentRow()
+        if row >= 0:
+            self._account_list.takeItem(row)
+
+    def _on_move_up(self) -> None:
+        row = self._account_list.currentRow()
+        if row <= 0:
+            return
+        item = self._account_list.takeItem(row)
+        self._account_list.insertItem(row - 1, item)
+        self._account_list.setCurrentRow(row - 1)
+
+    def _on_move_down(self) -> None:
+        row = self._account_list.currentRow()
+        if row < 0 or row >= self._account_list.count() - 1:
+            return
+        item = self._account_list.takeItem(row)
+        self._account_list.insertItem(row + 1, item)
+        self._account_list.setCurrentRow(row + 1)
+
+    def _on_selection_changed(self, row: int) -> None:
+        has_sel = row >= 0
+        self._remove_btn.setEnabled(has_sel)
+        self._up_btn.setEnabled(has_sel and row > 0)
+        self._down_btn.setEnabled(has_sel and row < self._account_list.count() - 1)
+
+    # ------------------------------------------------------------------
+    # Public properties
+    # ------------------------------------------------------------------
 
     @property
     def name(self) -> str:
@@ -109,12 +284,11 @@ class _ProfileDialog(QDialog):
 
     @property
     def selected_usernames(self) -> list[str]:
-        result = []
-        for i in range(self._account_list.count()):
-            item = self._account_list.item(i)
-            if item.checkState() == Qt.CheckState.Checked:
-                result.append(item.data(Qt.ItemDataRole.UserRole))
-        return result
+        return [self._account_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._account_list.count())]
+
+    @property
+    def resolution(self) -> tuple[int, int] | None:
+        return self._res_combo.currentData()
 
 
 class AccountsTab(QWidget):
@@ -124,9 +298,38 @@ class AccountsTab(QWidget):
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
 
+        # ------------------------------------------------------------------
+        # Global resolution section
+        # ------------------------------------------------------------------
+        res_form = QFormLayout()
+        res_form.setSpacing(8)
+        self._res_combo = QComboBox()
+        for w, h in VALID_RESOLUTIONS:
+            self._res_combo.addItem(f"{w}×{h}", userData=(w, h))
+
+        current = SettingsManager.instance().game_resolution
+        for i in range(self._res_combo.count()):
+            if self._res_combo.itemData(i) == current:
+                self._res_combo.setCurrentIndex(i)
+                break
+
+        res_form.addRow("Default game resolution:", self._res_combo)
+        layout.addLayout(res_form)
+
+        hint = QLabel("Set Wizard101 to Windowed mode in Options → Graphics, with this resolution.")
+        hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
+        self._res_combo.currentIndexChanged.connect(self._on_resolution_changed)
+
+        # ------------------------------------------------------------------
+        # Accounts section
+        # ------------------------------------------------------------------
         layout.addWidget(QLabel("Accounts (passwords stored in Windows Credential Manager):"))
 
-        self._list = QListWidget()
+        self._list = _ReorderableList()
+        self._list.reordered.connect(self._on_accounts_reordered)
         layout.addWidget(self._list, 1)
 
         btn_row = QHBoxLayout()
@@ -153,7 +356,8 @@ class AccountsTab(QWidget):
         # ------------------------------------------------------------------
         layout.addWidget(QLabel("Launch Profiles:"))
 
-        self._profile_list = QListWidget()
+        self._profile_list = _ReorderableList()
+        self._profile_list.reordered.connect(self._on_profiles_reordered)
         layout.addWidget(self._profile_list, 1)
 
         profile_btn_row = QHBoxLayout()
@@ -176,6 +380,30 @@ class AccountsTab(QWidget):
         self._refresh_profiles()
 
     # ------------------------------------------------------------------
+    # Resolution
+    # ------------------------------------------------------------------
+
+    def _on_resolution_changed(self) -> None:
+        resolution = self._res_combo.currentData()
+        if resolution:
+            SettingsManager.instance().game_resolution = resolution
+            SettingsManager.instance().save()
+
+    # ------------------------------------------------------------------
+    # Accounts
+    # ------------------------------------------------------------------
+
+    def _on_accounts_reordered(self) -> None:
+        accounts = [self._list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._list.count())]
+        SettingsManager.instance().accounts = accounts
+        SettingsManager.instance().save()
+
+    def _on_profiles_reordered(self) -> None:
+        profiles = [
+            self._profile_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._profile_list.count())
+        ]
+        SettingsManager.instance().launch_profiles = profiles
+        SettingsManager.instance().save()
 
     def _refresh(self) -> None:
         self._list.clear()
@@ -267,7 +495,10 @@ class AccountsTab(QWidget):
         self._profile_list.clear()
         for p in SettingsManager.instance().launch_profiles:
             n = len(p.get("accounts", []))
-            item = QListWidgetItem(f"{p['name']} ({n} account{'s' if n != 1 else ''})")
+            count_str = f"{n} account{'s' if n != 1 else ''}"
+            res = p.get("resolution")
+            res_str = f", {res[0]}×{res[1]}" if res else ""
+            item = QListWidgetItem(f"{p['name']} ({count_str}{res_str})")
             item.setData(Qt.ItemDataRole.UserRole, p)
             self._profile_list.addItem(item)
 
@@ -288,7 +519,10 @@ class AccountsTab(QWidget):
         if any(p["name"] == name for p in profiles):
             QMessageBox.warning(self, "Duplicate", f"Profile '{name}' already exists.")
             return
-        profiles.append({"name": name, "accounts": dlg.selected_usernames})
+        profile: dict = {"name": name, "accounts": dlg.selected_usernames}
+        if dlg.resolution is not None:
+            profile["resolution"] = list(dlg.resolution)
+        profiles.append(profile)
         SettingsManager.instance().launch_profiles = profiles
         self._refresh_profiles()
 
@@ -298,9 +532,12 @@ class AccountsTab(QWidget):
             return
         profile = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
         old_name = profile.get("name", "")
+        raw_res = profile.get("resolution")
+        existing_res = tuple(raw_res) if raw_res else None
         dlg = _ProfileDialog(
             name=old_name,
             selected_usernames=profile.get("accounts", []),
+            resolution=existing_res,
             parent=self,
         )
         if dlg.exec() != QDialog.DialogCode.Accepted:
@@ -317,6 +554,10 @@ class AccountsTab(QWidget):
             if p["name"] == old_name:
                 p["name"] = new_name
                 p["accounts"] = dlg.selected_usernames
+                if dlg.resolution is not None:
+                    p["resolution"] = list(dlg.resolution)
+                else:
+                    p.pop("resolution", None)
                 break
         SettingsManager.instance().launch_profiles = profiles
         self._refresh_profiles()
