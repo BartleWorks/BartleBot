@@ -78,7 +78,7 @@ async def test_prompt_never_appears_fails():
     client.is_in_npc_range.return_value = False  # never appears
     machine = FakeMachine(options={"Level Scaling Clients": [1]})
 
-    with patch.object(als, "POLL_INTERVAL", 0), patch.object(als, "INTERACT_TIMEOUT", 0.01):
+    with patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -94,7 +94,6 @@ async def test_menu_never_appears_fails():
     with (
         patch("bartlebot.nodes.action.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
         patch.object(als, "POLL_INTERVAL", 0),
-        patch.object(als, "INTERACT_TIMEOUT", 0.01),
     ):
         result = await als.run(machine, [client], _PARAMS)
 
@@ -214,7 +213,6 @@ async def test_prompt_retry_then_success():
         _patch_menu_gone(),
         _patch_elixir_active(),
         patch.object(als, "POLL_INTERVAL", 0),
-        patch.object(als, "INTERACT_TIMEOUT", 0.01),
     ):
         result = await als.run(machine, [client], _PARAMS)
 

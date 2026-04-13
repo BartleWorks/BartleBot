@@ -40,7 +40,7 @@ async def test_success_no_reagent_at_spawn():
     client = FakeClient()
     client.is_in_npc_range.return_value = False
 
-    with patch.object(cr, "POLL_INTERVAL", 0), patch.object(cr, "INTERACT_TIMEOUT", 0.01):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [client], _PARAMS_ONE)
 
     assert result == "SUCCESS"
@@ -63,7 +63,6 @@ async def test_success_partial_collection():
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "INTERACT_TIMEOUT", 0.01),
         patch.object(cr, "REAGENT_COLLECT_DELAY", 0),
     ):
         result = await cr.run(FakeMachine(), [client], _PARAMS_TWO)
@@ -140,7 +139,6 @@ async def test_multiple_clients_same_server():
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "INTERACT_TIMEOUT", 0.01),
         patch.object(cr, "REAGENT_COLLECT_DELAY", 0),
     ):
         result = await cr.run(FakeMachine(), [c1, c2], _PARAMS_ONE)
@@ -166,7 +164,6 @@ async def test_prompt_appears_after_poll():
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "INTERACT_TIMEOUT", 1.0),
         patch.object(cr, "REAGENT_COLLECT_DELAY", 0),
     ):
         result = await cr.run(FakeMachine(), [client], _PARAMS_ONE)

@@ -84,8 +84,8 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3,
             description=(
-                "Minimum seconds to watch for dialog windows after triggering an "
-                "interaction before concluding that none will open."
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
             ),
         ),
     ],
@@ -93,7 +93,6 @@ NODE_SPEC = NodeSpec(
 )
 
 from bartlebot.nodes.timing import (  # noqa: E402
-    INTERACT_TIMEOUT,
     MAX_RETRIES,
     POLL_INTERVAL,
     TEAMUP_AFK_INTERVAL,
@@ -124,6 +123,7 @@ async def run(machine, clients: list, params: dict) -> str:
     sigil = XYZ(**params["sigil_xyz"])
     reset = XYZ(**params["reset_xyz"])
     minimum_team_size: int = params.get("minimum_team_size", 2)
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     machine.log(f"enter_dungeon_teamup: {from_zone!r} → {dungeon_zone!r} (min team size: {minimum_team_size})")
 
     # Validate minimum_team_size early so we fail fast before any game interaction.
@@ -158,7 +158,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.poll_until(
-            lambda: node_helpers.none_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_at_dungeon_entrance(clients), safety_delay, POLL_INTERVAL
         )
 
     # 3. Retry loop: teleport to sigil, wait for dungeon entrance prompt.
@@ -169,7 +169,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
         if await node_helpers.poll_until(
-            lambda: node_helpers.all_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_at_dungeon_entrance(clients), safety_delay, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -197,7 +197,7 @@ async def run(machine, clients: list, params: dict) -> str:
         *[
             node_helpers.poll_until(
                 lambda c=c: node_helpers.is_visible_by_path(c, ENTER_TEAMUP_BUTTON_PATH),
-                INTERACT_TIMEOUT,
+                safety_delay,
                 POLL_INTERVAL,
             )
             for c in clients

@@ -68,15 +68,15 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Minimum seconds to watch for dialog windows after triggering an "
-                "interaction before concluding that none will open."
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
             ),
         ),
     ],
     max_consecutive_retries=10,
 )
 
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
 
 DIALOG_TIMEOUT = 60.0
 
@@ -117,6 +117,8 @@ async def run(machine, clients: list, params: dict) -> str:
     active_clients = [clients[i] for i in interact_indices]
     machine.log(f"Interacting client(s): {[i + 1 for i in interact_indices]}", logging.DEBUG)
 
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
     # 3. Clear any pre-existing interact prompt before starting.
     #    A stale prompt from a previous interaction can linger briefly after teleport,
     #    causing the client to interact with the wrong object if X is pressed too soon.
@@ -129,7 +131,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in active_clients])
         await node_helpers.poll_until(
-            lambda: node_helpers.none_in_npc_range(active_clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_in_npc_range(active_clients), safety_delay, POLL_INTERVAL
         )
 
     # 4–5. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
@@ -140,7 +142,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for interact prompt…", logging.DEBUG)
         if await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range(active_clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(active_clients), safety_delay, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -166,7 +168,6 @@ async def run(machine, clients: list, params: dict) -> str:
     #    Only exit once no dialog is open AND at least Safety Delay seconds have
     #    passed, so late-opening dialog windows are not missed.
     machine.log("Advancing dialogue…", logging.DEBUG)
-    safety_delay = machine.get_option("Safety Delay", 3.0)
     loop_start = asyncio.get_event_loop().time()
     while True:
         dialogs = await asyncio.gather(*[c.is_in_dialog() for c in active_clients])

@@ -95,7 +95,7 @@ async def test_prompt_never_appears_fails():
     client = FakeClient()
     client.zone_name.return_value = "Hub"
 
-    with patch.object(edt, "POLL_INTERVAL", 0), patch.object(edt, "INTERACT_TIMEOUT", 0.01):
+    with patch.object(edt, "POLL_INTERVAL", 0):
         result = await edt.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -109,7 +109,6 @@ async def test_teamup_window_never_appears_fails():
 
     with (
         patch.object(edt, "POLL_INTERVAL", 0),
-        patch.object(edt, "INTERACT_TIMEOUT", 0.01),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         # is_visible_by_path returns False → ENTER_TEAMUP_BUTTON_PATH never visible
         patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False)),

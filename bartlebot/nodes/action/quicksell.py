@@ -6,7 +6,7 @@ import logging
 from wizwalker import Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
     JEWEL_INVENTORY_SPACE_PATH,
@@ -87,10 +87,21 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "Neither backpack was full, or items were sold successfully."),
         ReturnSpec("FAILURE", "The quicksell UI did not appear or the sell could not be completed."),
     ],
+    required_bot_options=[
+        BotOptionSpec(
+            name="Safety Delay",
+            type="float",
+            default=3.0,
+            description=(
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
+            ),
+        ),
+    ],
     max_consecutive_retries=5,
 )
 
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, POLL_INTERVAL  # noqa: E402
+from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: E402
 
 _ROWS_PER_PAGE = 10
 
@@ -110,8 +121,9 @@ async def run(machine, clients: list, params: dict) -> str:
         f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
     )
 
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     results = await asyncio.gather(
-        *[_process_client(machine, c, keep_list, sell_crowns, sell_pets) for c in clients],
+        *[_process_client(machine, c, keep_list, sell_crowns, sell_pets, safety_delay) for c in clients],
         return_exceptions=True,
     )
     if any(isinstance(r, Exception) or r == "FAILURE" for r in results):
@@ -119,7 +131,9 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
-async def _process_client(machine, client, keep_list: list[str], sell_crowns: bool, sell_pets: bool) -> str:
+async def _process_client(
+    machine, client, keep_list: list[str], sell_crowns: bool, sell_pets: bool, safety_delay: float
+) -> str:
     """Check both backpack types and quicksell once if either is full."""
     # Open inventory page and check fullness.
     await client.send_key(Keycode.B, 0.1)
@@ -136,21 +150,23 @@ async def _process_client(machine, client, keep_list: list[str], sell_crowns: bo
 
     # If nothing is full, return early
     if not inventory_full and not jewel_full:
-        await _close_backpack(client)
+        await _close_backpack(client, safety_delay)
         return "SUCCESS"
 
     full_desc = " and ".join(t for t, f in [("inventory", inventory_full), ("jewel", jewel_full)] if f)
     machine.log(f"quicksell: {full_desc} backpack full — opening quicksell UI")
-    return await _run_quicksell(machine, client, keep_list, sell_crowns, sell_pets)
+    return await _run_quicksell(machine, client, keep_list, sell_crowns, sell_pets, safety_delay)
 
 
-async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: bool, sell_pets: bool) -> str:
+async def _run_quicksell(
+    machine, client, keep_list: list[str], sell_crowns: bool, sell_pets: bool, safety_delay: float
+) -> str:
     """Open the quicksell UI from the jewel page and sell all unkeep-listed items."""
     # Wait for the quicksell open button to be visible, then click it.
     machine.log("quicksell: waiting for quicksell open button", logging.DEBUG)
     qs_button_visible = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, QUICKSELL_JEWEL_OPEN_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     if not qs_button_visible:
@@ -162,7 +178,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     machine.log("quicksell: waiting for shop UI (QUICKSELL_ALL_BUTTON)", logging.DEBUG)
     appeared = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, QUICKSELL_ALL_BUTTON_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     if not appeared:
@@ -173,7 +189,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     machine.log("quicksell: waiting for All tab (QUICKSELL_ALL_TAB)", logging.DEBUG)
     all_tab_visible = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, QUICKSELL_ALL_TAB_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     machine.log(f"quicksell: All tab {'appeared' if all_tab_visible else 'timed out'}", logging.DEBUG)
@@ -183,7 +199,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     machine.log("quicksell: waiting for Select All button (QUICKSELL_ALL_BUTTON)", logging.DEBUG)
     select_all_visible = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, QUICKSELL_ALL_BUTTON_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     machine.log(f"quicksell: Select All button {'appeared' if select_all_visible else 'timed out'}", logging.DEBUG)
@@ -195,7 +211,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     machine.log("quicksell: waiting for crowns select dialog (optional)", logging.DEBUG)
     crowns_dialog = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, MESSAGE_BOX_CENTER),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     if crowns_dialog:
@@ -227,7 +243,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     machine.log("quicksell: waiting for sell button (QUICKSELL_SELL_BUTTON)", logging.DEBUG)
     sell_button_visible = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, QUICKSELL_SELL_BUTTON_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     machine.log(f"quicksell: sell button {'appeared' if sell_button_visible else 'timed out'}", logging.DEBUG)
@@ -237,11 +253,11 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
         machine.log("quicksell: all items matched keep list — closing shop and backpack")
         await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, QUICKSELL_CLOSE_BUTTON_PATH),
-            INTERACT_TIMEOUT,
+            safety_delay,
             POLL_INTERVAL,
         )
         await node_helpers.click_by_path(client, QUICKSELL_CLOSE_BUTTON_PATH)
-        await _close_backpack(client)
+        await _close_backpack(client, safety_delay)
         return "SUCCESS"
 
     await node_helpers.click_by_path(client, QUICKSELL_SELL_BUTTON_PATH)
@@ -250,7 +266,7 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     machine.log("quicksell: waiting for sell confirmation dialog", logging.DEBUG)
     confirmed = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, QUICKSELL_CONFIRM_SELL_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     if not confirmed:
@@ -259,22 +275,22 @@ async def _run_quicksell(machine, client, keep_list: list[str], sell_crowns: boo
     await node_helpers.click_by_path(client, QUICKSELL_CONFIRM_SELL_PATH)
 
     # Dismiss any post-sell message boxes (crowns confirm, gold limit warning).
-    await _dismiss_post_sell_dialogs(machine, client)
+    await _dismiss_post_sell_dialogs(machine, client, safety_delay)
 
     # Wait to return to the main backpack view and close it.
     machine.log("quicksell: waiting for backpack close button", logging.DEBUG)
     backpack_visible = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     machine.log(f"quicksell: backpack close button {'appeared' if backpack_visible else 'timed out'}", logging.DEBUG)
-    await _close_backpack(client)
+    await _close_backpack(client, safety_delay)
     machine.log("quicksell: sell complete")
     return "SUCCESS"
 
 
-async def _dismiss_post_sell_dialogs(machine, client) -> None:
+async def _dismiss_post_sell_dialogs(machine, client, safety_delay: float) -> None:
     """Dismiss message boxes that appear after confirming the sale.
 
     Handles up to 3 dialogs in sequence (Crowns items confirmation, Pets confirmation,
@@ -285,7 +301,7 @@ async def _dismiss_post_sell_dialogs(machine, client) -> None:
     for _ in range(3):
         visible = await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, MESSAGE_BOX_CENTER),
-            INTERACT_TIMEOUT,
+            safety_delay,
             POLL_INTERVAL,
         )
         if not visible:
@@ -357,11 +373,11 @@ async def _get_window_text(client, path: list[str]) -> str:
     return ""
 
 
-async def _close_backpack(client) -> None:
+async def _close_backpack(client, safety_delay: float) -> None:
     """Click the backpack close button and wait for it to disappear."""
     await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     )
     await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
@@ -369,4 +385,4 @@ async def _close_backpack(client) -> None:
     async def _backpack_closed():
         return not await node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
 
-    await node_helpers.poll_until(_backpack_closed, INTERACT_TIMEOUT, POLL_INTERVAL)
+    await node_helpers.poll_until(_backpack_closed, safety_delay, POLL_INTERVAL)

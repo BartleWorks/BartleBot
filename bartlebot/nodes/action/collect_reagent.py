@@ -7,8 +7,8 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, POLL_INTERVAL, REAGENT_COLLECT_DELAY, jitter
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.timing import POLL_INTERVAL, REAGENT_COLLECT_DELAY, jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -47,11 +47,23 @@ NODE_SPEC = NodeSpec(
             "Clients were not in the expected zone, or a spawns line could not be parsed.",
         ),
     ],
+    required_bot_options=[
+        BotOptionSpec(
+            name="Safety Delay",
+            type="float",
+            default=3.0,
+            description=(
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
+            ),
+        ),
+    ],
 )
 
 
 async def run(machine, clients: list, params: dict) -> str:
     zone: str = params["zone"]
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     machine.log(f"collect_reagent: zone={zone!r}")
 
     # 1. Zone check.
@@ -100,7 +112,7 @@ async def run(machine, clients: list, params: dict) -> str:
         if not any(prompted):
             await node_helpers.poll_until(
                 lambda: node_helpers.all_in_npc_range(clients),
-                INTERACT_TIMEOUT,
+                safety_delay,
                 POLL_INTERVAL,
             )
             prompted = await asyncio.gather(*[c.is_in_npc_range() for c in clients])

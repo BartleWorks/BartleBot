@@ -43,7 +43,10 @@ _SAFETY_DELAY_OPTION = BotOptionSpec(
     name="Safety Delay",
     type="float",
     default=3.0,
-    description="Seconds to wait after interacting before verifying elixir status.",
+    description=(
+        "Seconds to allow for game-server responses when waiting for prompts or menus. "
+        "Increase on high-latency connections."
+    ),
 )
 
 _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
@@ -74,7 +77,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[_SAFETY_DELAY_OPTION, _LEVEL_SCALING_CLIENTS_OPTION],
 )
 
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -83,6 +86,7 @@ async def run(machine, clients: list, params: dict) -> str:
     interact = XYZ(**params["interact_xyz"])
     reset = XYZ(**params["reset_xyz"])
 
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     machine.log(f"apply_level_scaling: {zone!r} XYZ({interact.x:.1f}, {interact.y:.1f}, {interact.z:.1f})")
 
     # 1. Verify all clients are in zone.
@@ -116,7 +120,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
         await node_helpers.poll_until(
-            lambda: node_helpers.none_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_in_npc_range(scale_clients), safety_delay, POLL_INTERVAL
         )
 
     # 4-5. Retry loop: teleport to interact_xyz, wait for prompt.
@@ -127,7 +131,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for interact prompt…", logging.DEBUG)
         if await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(scale_clients), safety_delay, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -151,9 +155,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 7. Wait for NPCServicesWin option button to appear.
     machine.log("Waiting for NPCServicesWin menu…", logging.DEBUG)
-    if not await node_helpers.poll_until(lambda: _all_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(lambda: _all_menu_visible(scale_clients), safety_delay, POLL_INTERVAL):
         machine.log(
-            f"FAILURE: NPCServicesWin option button never appeared within {INTERACT_TIMEOUT}s",
+            f"FAILURE: NPCServicesWin option button never appeared within {safety_delay}s",
             logging.WARNING,
         )
         return "FAILURE"
@@ -164,10 +168,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 9. Wait for menu to dismiss.
     machine.log("Waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
-    await node_helpers.poll_until(lambda: _none_menu_visible(scale_clients), INTERACT_TIMEOUT, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: _none_menu_visible(scale_clients), safety_delay, POLL_INTERVAL)
 
     # 10. Wait for elixir to apply before checking.
-    safety_delay = machine.get_option("Safety Delay", 3.0)
     machine.log(f"Waiting {safety_delay}s for elixir to apply…", logging.DEBUG)
     await asyncio.sleep(safety_delay)
 

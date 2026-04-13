@@ -1,0 +1,58 @@
+{
+  "name": "Flax Collector",
+  "description": "Collects Flax in Nightside",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Nightside",
+  "drops": [
+    "Flax",
+    "Frosted Flax"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 2.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "collect_reagent",
+      "label": "Collect Flax",
+      "position": {
+        "x": 150.0,
+        "y": 21.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_NightSide",
+        "spawns": "{\"x\": -969.3, \"y\": -1826.52, \"z\": 1.27}\n{\"x\": -1628.06, \"y\": -44.41, \"z\": 38.97}\n{\"x\": 1551.8, \"y\": -1168.05, \"z\": 1.3}\n{\"x\": -2137.52, \"y\": -434.4, \"z\": 26.23}\n{\"x\": 1311.99, \"y\": 17.14, \"z\": -13.08}\n{\"x\": -2227.57, \"y\": -1197.66, \"z\": 28.18}\n{\"x\": 1283.03, \"y\": 1788.56, \"z\": 1.27}\n{\"x\": -1958.8, \"y\": -151.92, \"z\": 38.97}"
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

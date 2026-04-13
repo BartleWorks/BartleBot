@@ -91,7 +91,7 @@ async def test_prompt_never_appears_retries_exhausted_fails():
     # Entrance prompt never appears — FakeClient root_window has no children, so
     # is_visible_by_path → False → all_at_dungeon_entrance → False.
 
-    with patch.object(ed, "POLL_INTERVAL", 0), patch.object(ed, "INTERACT_TIMEOUT", 0.01):
+    with patch.object(ed, "POLL_INTERVAL", 0):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -119,7 +119,6 @@ async def test_prompt_retry_then_success():
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
-        patch.object(ed, "INTERACT_TIMEOUT", 0.01),
         patch.object(nh, "all_at_dungeon_entrance", side_effect=entrance_prompt),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
