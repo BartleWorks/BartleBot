@@ -36,6 +36,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 |------|-------------|--------|
 | [`check_if_dropped`](#check_if_dropped) | Check if a specific item has been dropped | `done` |
 | [`check_level_scaling`](#check_level_scaling) | Check if clients are level scaled | `done` |
+| [`check_zone`](#check_zone) | Check if all clients are in a specific zone | `done` |
 
 ## Advanced Behaviors
 
@@ -575,6 +576,32 @@ Checks if a list of clients are all level scaled. Checks level scaling by checki
 - Flow:
   1. For each client in `clients_to_check`, check if the level scaling UI path element is visible.
   2. Return `FALSE` if any client is not level scaled, else return `TRUE`.
+
+</details>
+
+---
+
+### check_zone
+
+**Status:** `done`
+
+Checks whether all specified clients are currently in a given zone.
+
+| Parameter Name     | Parameter Type | Parameter Description |
+|--------------------|----------------|-----------------------|
+| `zone`             | `str`          | Zone name to check (e.g. `WizardCity/WC_Ravenwood`). |
+| `clients_to_check` | `List[int]`    | 1-based client numbers to check (e.g. `[1, 2]`). Leave empty to check all clients. |
+
+**Returns:** `TRUE` if all checked clients are in `zone`, `FALSE` otherwise.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `node_helpers.all_in_zone()`
+- Flow:
+  1. Resolve `clients_to_check` to 0-based indices (default: all clients).
+  2. Call `node_helpers.all_in_zone()` which gathers zone names in parallel and checks all match.
+  3. Return `TRUE` if all match, `FALSE` otherwise.
 
 </details>
 

@@ -40,6 +40,8 @@ from bartlebot.nodes.condition.check_if_dropped import NODE_SPEC as _check_if_dr
 from bartlebot.nodes.condition.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.condition.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
 from bartlebot.nodes.condition.check_level_scaling import run as check_level_scaling_run
+from bartlebot.nodes.condition.check_zone import NODE_SPEC as _check_zone_spec
+from bartlebot.nodes.condition.check_zone import run as check_zone_run
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 
 NODE_REGISTRY: dict = {
@@ -64,6 +66,7 @@ NODE_REGISTRY: dict = {
     "wait_for_health": wait_for_health_run,
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
+    "check_zone": check_zone_run,
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
@@ -88,6 +91,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "wait_for_health": _wait_for_health_spec,
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
+    "check_zone": _check_zone_spec,
 }
 
 # Convenience alias — param schemas derived from NODE_SPECS so there is one source of truth
