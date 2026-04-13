@@ -62,6 +62,8 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
+    from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
+
     zone: str = params["zone"]
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     machine.log(f"collect_reagent: zone={zone!r}")
@@ -122,10 +124,15 @@ async def run(machine, clients: list, params: dict) -> str:
             # Press X on every client with a prompt.
             # On the same server only one client will actually collect, but pressing X
             # is a no-op for the other — the game handles the collision.
-            collectors = [c for c, p in zip(clients, prompted) if p]
-            await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in collectors])
+            collectors = [(clients.index(c), c) for c, p in zip(clients, prompted) if p]
+            chat_before = await asyncio.gather(*[snapshot_chat(c) for _, c in collectors])
+            await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for _, c in collectors])
             await asyncio.sleep(jitter(REAGENT_COLLECT_DELAY))
             collected += 1
+            for (client_idx, c), before in zip(collectors, chat_before):
+                after = await snapshot_chat(c)
+                for item_name in extract_new_drops(before, after):
+                    machine.on_drop(item_name, 1, client_idx)
         else:
             machine.log(f"Spawn {i}: no reagent present — skipping", logging.DEBUG)
 

@@ -105,7 +105,9 @@ class _DynamicParamForm(QWidget):
             if field.help:
                 label_w.setToolTip(field.help)
             val = params.get(field.key, field.default)
-            widget = self._make_widget(field.type, val, field.help, field.key, getattr(field, "choices", []))
+            widget = self._make_widget(
+                field.type, val, field.help, field.key, getattr(field, "choices", []), getattr(field, "placeholder", "")
+            )
             self._widgets[field.key] = widget
             if field.required:
                 self._required_widgets[field.key] = widget
@@ -195,13 +197,19 @@ class _DynamicParamForm(QWidget):
         return result
 
     def _make_widget(
-        self, field_type: str, val: Any, help_text: str, key: str = "", choices: list | None = None
+        self,
+        field_type: str,
+        val: Any,
+        help_text: str,
+        key: str = "",
+        choices: list | None = None,
+        placeholder: str = "",
     ) -> Any:
         if field_type == "text":
             w = QPlainTextEdit()
             w.setPlainText(str(val) if val is not None else "")
             w.setFixedHeight(120)
-            w.setPlaceholderText("Enter combat DSL…")
+            w.setPlaceholderText(placeholder)
             if help_text:
                 w.setToolTip(help_text)
             w.textChanged.connect(self._emit_changed)

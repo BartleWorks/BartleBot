@@ -1,0 +1,63 @@
+{
+  "name": "Athenum Reagent Farmer",
+  "description": "Farms reagents in the Atheneum in Dragonspyre",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "The Atheneum, Dragonspyre",
+  "drops": [
+    "Ore",
+    "Diamonds",
+    "Stone Block",
+    "Fossil",
+    "Lava Lily",
+    "Fire Blossom"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 2.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "collect_reagent",
+      "label": "Collect reagents",
+      "position": {
+        "x": 150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+        "spawns": "{\"x\": 2755.75, \"y\": 2782.35, \"z\": 400.12}\n{\"x\": 3699.18, \"y\": 2196.08, \"z\": 400.14}\n{\"x\": 4818.44, \"y\": 1701.95, \"z\": 400.14}\n{\"x\": 5427.5, \"y\": 3522.57, \"z\": 400.14}\n{\"x\": 5480.13, \"y\": 4691.15, \"z\": 400.14}\n{\"x\": 6263.43, \"y\": 9230.96, \"z\": 400.0}\n{\"x\": 3130.67, \"y\": 1223.4, \"z\": -29.6}\n{\"x\": -975.28, \"y\": 3463.43, \"z\": -78.74}"
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

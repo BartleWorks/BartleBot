@@ -39,6 +39,8 @@ class ParamField:
         default_hint: Short description of the default behaviour shown as a dimmed hint
                       below the input widget when the field is optional. Leave blank for
                       required fields or fields where the default needs no explanation.
+        placeholder:  Ghost text shown inside an empty text widget. Useful for multi-line
+                      "text" fields where the format is not obvious from the label alone.
         disabled_by:  Key of a bool field in the same schema; when that field is
                       True this field's widget is disabled. Empty string = no link.
         required:     When True the param must be explicitly set in state.params
@@ -52,6 +54,7 @@ class ParamField:
     help: str = ""
     default: Any = None
     default_hint: str = ""
+    placeholder: str = ""
     disabled_by: str = ""
     required: bool = False
     choices: list[Any] = field(default_factory=list)
