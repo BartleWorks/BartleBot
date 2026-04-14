@@ -40,6 +40,7 @@ class BotMachine:
         on_drop: Callable[[str, int, int], None] | None = None,
         max_consecutive_same_state: int | None = None,
         on_client_disconnected: Callable[[int], None] | None = None,
+        stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
         self._config = config
@@ -50,6 +51,8 @@ class BotMachine:
         self._on_drop = on_drop
         self._on_client_disconnected = on_client_disconnected
         self._stop_flag = asyncio.Event()
+        self._stop_grace_period = stop_grace_period
+        self._current_node_task: asyncio.Task | None = None
         self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
@@ -154,6 +157,20 @@ class BotMachine:
     def is_paused(self) -> bool:
         return not self._resume_event.is_set()
 
+    @property
+    def is_stopped(self) -> bool:
+        return self._stop_flag.is_set()
+
+    @property
+    def stop_event(self) -> asyncio.Event:
+        """The asyncio Event that is set when stop() is called.
+
+        Nodes may await or check this to exit early within the grace period,
+        avoiding the hard task cancellation that fires after stop_grace_period seconds.
+        Example: ``if machine.is_stopped: return "FAILURE"``
+        """
+        return self._stop_flag
+
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
@@ -177,8 +194,16 @@ class BotMachine:
                 self.log(f"Executing state {state_id!r} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
+                self._current_node_task = asyncio.create_task(node_fn(self, self.clients, state_def.get("params", {})))
                 try:
-                    self.last_result = await node_fn(self, self.clients, state_def.get("params", {}))
+                    self.last_result = await self._current_node_task
+                except asyncio.CancelledError:
+                    if self._stop_flag.is_set():
+                        # Our deferred_cancel fired after the grace period elapsed.
+                        self.log("Node forcibly cancelled after grace period.", logging.WARNING)
+                        break
+                    # run() was cancelled from outside — propagate.
+                    raise
                 except (ClientClosedError, MemoryReadError) as exc:
                     # A client process has died. Pause immediately rather than treating
                     # this as a normal FAILURE — prevents the no-match / idle counters
@@ -199,6 +224,8 @@ class BotMachine:
                 except Exception:
                     logger.exception("Node execution failed in state %r", state_id)
                     self.last_result = "FAILURE"
+                finally:
+                    self._current_node_task = None
                 _duration = time.monotonic() - _tick_start
                 self.log(
                     f"State {state_id!r} returned {self.last_result!r} in {_duration:.1f}s",
@@ -429,11 +456,36 @@ class BotMachine:
                         )
 
     def stop(self) -> None:
-        """Signal the FSM to halt after the current node finishes."""
+        """Signal the FSM to stop.
+
+        Sets the stop flag so cooperative nodes can exit at their next polling checkpoint.
+        After stop_grace_period seconds, any still-running node task is forcibly cancelled
+        so the bot always halts promptly regardless of what the node is doing.
+        """
         if not self._stop_flag.is_set():
             self.log("Bot stopped.", logging.INFO)
         self._stop_flag.set()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
+        # Schedule hard cancellation as a fallback if the node doesn't exit cooperatively.
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(self._deferred_cancel(self._current_node_task, self._stop_grace_period))
+        except RuntimeError:
+            pass  # no running event loop; node will complete naturally
+
+    async def _deferred_cancel(self, task: "asyncio.Task | None", grace: float) -> None:
+        """Cancel the node task after a grace period if it hasn't already finished.
+
+        Called by stop() to enforce a maximum stop latency. Nodes that check
+        machine.is_stopped (or machine.stop_event) will exit within their polling
+        interval and the task will be done before this fires.
+        """
+        if task is None or task.done():
+            return
+        await asyncio.sleep(grace)
+        if task is not None and not task.done():
+            logger.warning("Grace period elapsed; forcibly cancelling running node task")
+            task.cancel()
 
     def pause(self) -> None:
         """Suspend the FSM after the current node finishes."""

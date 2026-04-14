@@ -113,6 +113,7 @@ REALM_CURRENT_NAME_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "Rea
 REALM_NEXT_PAGE_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnRealmRight"]
 REALM_PREV_PAGE_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnRealmLeft"]
 REALM_GO_TO_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnGoToRealm"]
+REALM_PAGE_LABEL_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "txtRealmPage"]
 
 
 def realm_name_path(row: int) -> list[str]:

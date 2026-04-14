@@ -77,7 +77,8 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Seconds to allow for game-server responses when waiting for UI panels to appear. "
+                "Seconds to allow for game-server responses when waiting for UI panels "
+                "to appear, and for the realm list to initially render. "
                 "Increase on high-latency connections."
             ),
         ),
@@ -89,6 +90,55 @@ NODE_SPEC = NodeSpec(
 def _strip_html(text: str) -> str:
     """Remove HTML tags from a string (e.g. '<center>Unicorn' → 'Unicorn')."""
     return re.sub(r"<[^>]+>", "", text).strip()
+
+
+async def _get_row0_name(client) -> str:
+    """Read the name of the first realm on the currently displayed page."""
+    return _strip_html(await node_helpers.get_text_by_path(client, realm_name_path(0)))
+
+
+async def _content_changed(client, before: str) -> bool:
+    """Return True once the row-0 realm name is non-empty and differs from before."""
+    current = await _get_row0_name(client)
+    return bool(current) and current != before
+
+
+async def _navigate_pages(machine, client, steps: int, timeout: float) -> bool:
+    """Navigate the realm list by steps pages (positive = right, negative = left).
+
+    After each click, polls until the row-0 realm name changes to confirm the page
+    actually flipped before proceeding to the next step. Returns False if any step
+    does not produce a content change within timeout.
+    """
+    direction = REALM_NEXT_PAGE_PATH if steps > 0 else REALM_PREV_PAGE_PATH
+    for step in range(abs(steps)):
+        before = await _get_row0_name(client)
+        await node_helpers.click_by_path(client, direction)
+        if not await node_helpers.poll_until(
+            lambda b=before: _content_changed(client, b),
+            timeout,
+            POLL_INTERVAL,
+        ):
+            machine.log(
+                f"change_realm: page did not change on step {step + 1}/{abs(steps)} "
+                f"(direction={'right' if steps > 0 else 'left'})",
+                logging.WARNING,
+            )
+            return False
+    return True
+
+
+async def _navigate_to_page_1(machine, client, timeout: float) -> bool:
+    """Navigate left until btnRealmLeft is disabled, confirming we are on page 1.
+
+    Each left-click is verified by waiting for the row-0 realm name to change.
+    Returns False if any step times out.
+    """
+    while await node_helpers.is_enabled_by_path(client, REALM_PREV_PAGE_PATH):
+        if not await _navigate_pages(machine, client, -1, timeout):
+            machine.log("change_realm: could not reach page 1 via left navigation", logging.WARNING)
+            return False
+    return True
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -142,10 +192,13 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
         POLL_INTERVAL,
     )
 
-    # 3. Open Realms tab.
-    # REALM_CURRENT_NAME_PATH is used as a presence check — the window exists but its
-    # text is not readable via WizWalker (maybe_text() and offset reads both return '').
-    # Current-realm detection is done via the grayed button state instead (see step 5).
+    # 3. Open Realms tab and wait for the list to fully render.
+    #    The realm list can be slow to appear on the first open. We wait up to
+    #    safety_delay for the panel itself to appear, then up to safety_delay again
+    #    for the first realm name to become readable. This prevents falsely detecting
+    #    a page change by comparing against an empty initial state.
+    #    Note: REALM_CURRENT_NAME_PATH is used only as a presence check — its text
+    #    is not readable via WizWalker; current-realm detection uses button state instead.
     machine.log("change_realm: opening Realms tab", logging.DEBUG)
     await node_helpers.click_by_path(client, SPELLBOOK_REALMS_BUTTON_PATH)
     if not await node_helpers.poll_until(
@@ -157,17 +210,39 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
         await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
         return "FAILURE"
 
-    # 4. Navigate from page 1 (the panel's initial page) to start_page.
-    current_page = 1
-    for _ in range(start_page - 1):
-        await node_helpers.click_by_path(client, REALM_NEXT_PAGE_PATH)
-        await asyncio.sleep(POLL_INTERVAL)
-        current_page += 1
+    machine.log("change_realm: waiting for realm list to render…", logging.DEBUG)
+    if not await node_helpers.poll_until(
+        lambda: _content_ready(client),
+        safety_delay,
+        POLL_INTERVAL,
+    ):
+        machine.log("FAILURE: realm list did not render within safety delay", logging.WARNING)
+        await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+        return "FAILURE"
 
-    # 5. Search for the current realm across pages [start_page .. end_page].
+    # 4. Anchor to page 1 by clicking left until btnRealmLeft is disabled.
+    #    The panel may open on a different page than page 1 (e.g. the last page
+    #    visited), so we cannot assume a starting position. Each left-click is
+    #    verified via row-0 content change before proceeding.
+    machine.log("change_realm: anchoring to page 1", logging.DEBUG)
+    if not await _navigate_to_page_1(machine, client, TRIGGER_TIMEOUT):
+        machine.log("FAILURE: could not anchor to page 1", logging.WARNING)
+        await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+        return "FAILURE"
+
+    # 5. Navigate from page 1 to start_page.
+    if start_page > 1:
+        machine.log(f"change_realm: navigating to page {start_page}", logging.DEBUG)
+        if not await _navigate_pages(machine, client, start_page - 1, TRIGGER_TIMEOUT):
+            machine.log(f"FAILURE: could not navigate to start page {start_page}", logging.WARNING)
+            await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+            return "FAILURE"
+
+    # 6. Search for the current realm across pages [start_page .. end_page].
     #    The current realm's button is grayed out (disabled) because you cannot switch
     #    to the realm you are already on. txtYourRealmName exists but its text is not
     #    accessible via WizWalker, so button state is the reliable detection method.
+    current_scan_page = start_page
     found_page: int | None = None
     found_row: int | None = None
     for page in range(start_page, end_page + 1):
@@ -179,9 +254,11 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
         if found_page is not None:
             break
         if page < end_page:
-            await node_helpers.click_by_path(client, REALM_NEXT_PAGE_PATH)
-            await asyncio.sleep(POLL_INTERVAL)
-            current_page = page + 1
+            if not await _navigate_pages(machine, client, 1, TRIGGER_TIMEOUT):
+                machine.log(f"FAILURE: could not advance past page {page}", logging.WARNING)
+                await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+                return "FAILURE"
+            current_scan_page = page + 1
 
     if found_page is not None:
         current_realm_name = _strip_html(await node_helpers.get_text_by_path(client, realm_name_path(found_row)))
@@ -197,7 +274,7 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
         )
         current_realm_name = ""
 
-    # 6. Determine the target realm (next after current, with wraparound).
+    # 7. Determine the target realm (next after current, with wraparound).
     if found_page is not None:
         assert found_row is not None
         next_row = found_row + 1
@@ -219,27 +296,25 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
 
     machine.log(f"change_realm: target page {target_page}, row {target_row}", logging.DEBUG)
 
-    # 7. Navigate to target_page from current_page.
-    if target_page > current_page:
-        for _ in range(target_page - current_page):
-            await node_helpers.click_by_path(client, REALM_NEXT_PAGE_PATH)
-            await asyncio.sleep(POLL_INTERVAL)
-    elif target_page < current_page:
-        for _ in range(current_page - target_page):
-            await node_helpers.click_by_path(client, REALM_PREV_PAGE_PATH)
-            await asyncio.sleep(POLL_INTERVAL)
+    # 8. Navigate from the end of the scan to target_page.
+    steps = target_page - current_scan_page
+    if steps != 0:
+        if not await _navigate_pages(machine, client, steps, TRIGGER_TIMEOUT):
+            machine.log(f"FAILURE: could not navigate to target page {target_page}", logging.WARNING)
+            await node_helpers.click_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+            return "FAILURE"
 
-    # 8. Select the target realm.
+    # 9. Select the target realm.
     await node_helpers.click_by_path(client, realm_button_path(target_row))
     await asyncio.sleep(POLL_INTERVAL)
 
     selected_name = _strip_html(await node_helpers.get_text_by_path(client, realm_name_path(target_row)))
     machine.log(f"change_realm: switching {current_realm_name!r} → {selected_name!r}")
 
-    # 9. Wait for the Go To Realm button to become enabled (realm-hop cooldown).
-    #    The game deselects the chosen row when the timer expires, which keeps the button
-    #    disabled even after the cooldown clears. Re-click the target row on every poll
-    #    cycle so the selection is restored as soon as the timer allows it.
+    # 10. Wait for the Go To Realm button to become enabled (realm-hop cooldown).
+    #     The game deselects the chosen row when the timer expires, which keeps the
+    #     button disabled even after the cooldown clears. Re-click the target row on
+    #     every poll cycle so the selection is restored as soon as the timer allows it.
     loop_start = asyncio.get_event_loop().time()
     while not await node_helpers.is_enabled_by_path(client, REALM_GO_TO_BUTTON_PATH):
         elapsed = asyncio.get_event_loop().time() - loop_start
@@ -257,7 +332,7 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
 
     await node_helpers.click_by_path(client, REALM_GO_TO_BUTTON_PATH)
 
-    # 10. Wait for the loading screen to start.
+    # 11. Wait for the loading screen to start.
     seen = await node_helpers.poll_each_until_seen(
         [client],
         check_fn=lambda c: c.is_loading(),
@@ -271,9 +346,14 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
         )
         return "FAILURE"
 
-    # 11. Wait for the loading screen to clear.
+    # 12. Wait for the loading screen to clear.
     machine.log("change_realm: loading screen active, waiting for it to clear…", logging.DEBUG)
     await node_helpers.poll_until(lambda: node_helpers.none_loading([client]), None, POLL_INTERVAL)
 
     machine.log(f"SUCCESS: realm changed to {selected_name!r}")
     return "SUCCESS"
+
+
+async def _content_ready(client) -> bool:
+    """Return True once the realm list has rendered at least one readable realm name."""
+    return bool(await _get_row0_name(client))

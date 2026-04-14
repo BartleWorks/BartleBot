@@ -187,12 +187,16 @@ async def test_wrong_to_zone_after_loading_fails():
 async def test_x_resent_to_lagging_client():
     """One client loads immediately; the lagging client gets X re-pressed."""
     c1 = _ready_client()
-    # Trigger loop iter1: loading; iter2: still loading; none_loading: done.
-    c1.is_loading.side_effect = [True, True, False]
+    # iter1: loading (seen); iter2: done (_loading_or_arrived checks zone_name); none_loading: done.
+    c1.is_loading.side_effect = [True, False, False]
+    # zone_name: zone_check → iter2 loading_or_arrived (_TO_ZONE, c1 already seen) → wait_for_zone.
+    c1.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE, _TO_ZONE]
 
     c2 = _ready_client()
-    # Trigger loop iter1: not loading yet; iter2: loading; none_loading: done.
+    # iter1: not loading (_loading_or_arrived checks zone_name, not yet arrived); iter2: loading (seen); none_loading: done.
     c2.is_loading.side_effect = [False, True, False]
+    # zone_name: zone_check → iter1 loading_or_arrived (still _FROM_ZONE, not arrived yet) → wait_for_zone.
+    c2.zone_name.side_effect = [_FROM_ZONE, _FROM_ZONE, _TO_ZONE]
 
     with patch.object(itz, "POLL_INTERVAL", 0):
         result = await itz.run(FakeMachine(), [c1, c2], _PARAMS)
@@ -212,12 +216,16 @@ async def test_fast_client_finishes_before_lagging_client_starts():
     never be True. The seen_loading approach handles it correctly.
     """
     c1 = _ready_client()
-    # iter1: loading (seen); iter2: already done; iter3: done; none_loading: done
+    # iter1: loading (seen); iter2+iter3: done (_loading_or_arrived calls zone_name each time); none_loading: done.
     c1.is_loading.side_effect = [True, False, False, False]
+    # zone_name: zone_check → iter2 loading_or_arrived → iter3 loading_or_arrived → wait_for_zone.
+    c1.zone_name.side_effect = [_FROM_ZONE, _TO_ZONE, _TO_ZONE, _TO_ZONE]
 
     c2 = _ready_client()
-    # iter1: not started; iter2: not started; iter3: loading (seen); none_loading: done
+    # iter1+iter2: not started (_loading_or_arrived calls zone_name, not yet arrived); iter3: loading (seen); none_loading: done.
     c2.is_loading.side_effect = [False, False, True, False]
+    # zone_name: zone_check → iter1 loading_or_arrived → iter2 loading_or_arrived → wait_for_zone.
+    c2.zone_name.side_effect = [_FROM_ZONE, _FROM_ZONE, _FROM_ZONE, _TO_ZONE]
 
     with patch.object(itz, "POLL_INTERVAL", 0):
         result = await itz.run(FakeMachine(), [c1, c2], _PARAMS)

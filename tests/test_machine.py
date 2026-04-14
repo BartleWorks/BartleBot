@@ -36,7 +36,7 @@ TWO_STATE_CONFIG = {
 }
 
 
-def make_machine(node_fn, on_state_change=None, on_transition=None):
+def make_machine(node_fn, on_state_change=None, on_transition=None, stop_grace_period=1.0):
     registry = {"mock": node_fn}
     return BotMachine(
         clients=[],
@@ -44,6 +44,7 @@ def make_machine(node_fn, on_state_change=None, on_transition=None):
         node_registry=registry,
         on_state_change=on_state_change,
         on_transition=on_transition,
+        stop_grace_period=stop_grace_period,
     )
 
 
@@ -238,21 +239,43 @@ async def test_stop_before_run_exits_immediately():
 
 
 async def test_run_can_be_stopped_externally():
-    """stop() called from outside (simulating a button press) halts the loop."""
+    """stop() halts the FSM even when a node is blocking, within the grace period."""
     started = asyncio.Event()
 
     async def blocking_node(machine, clients, params):
         started.set()
-        await asyncio.sleep(10)  # Simulate long-running node
+        await asyncio.sleep(30)  # Simulate long-running node
         return "SUCCESS"
 
-    machine = make_machine(blocking_node)
+    # Use a short grace period so the test runs quickly.
+    machine = make_machine(blocking_node, stop_grace_period=0.1)
     task = asyncio.create_task(machine.run())
     await started.wait()
     machine.stop()
-    task.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await task
+    # The deferred cancel fires after 0.1 s; run() should exit cleanly without
+    # needing an external task.cancel().
+    await asyncio.wait_for(task, timeout=1.0)
+
+
+async def test_stop_before_grace_period_exits_cleanly_if_node_cooperates():
+    """A node that checks is_stopped exits within the grace period without hard cancellation."""
+    exited_cleanly = False
+
+    async def cooperative_node(machine, clients, params):
+        nonlocal exited_cleanly
+        for _ in range(100):
+            if machine.is_stopped:
+                exited_cleanly = True
+                return "FAILURE"
+            await asyncio.sleep(0.01)
+        return "SUCCESS"
+
+    machine = make_machine(cooperative_node, stop_grace_period=5.0)
+    task = asyncio.create_task(machine.run())
+    await asyncio.sleep(0.05)
+    machine.stop()
+    await asyncio.wait_for(task, timeout=1.0)
+    assert exited_cleanly
 
 
 # ---------------------------------------------------------------------------

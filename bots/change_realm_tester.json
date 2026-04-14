@@ -1,0 +1,74 @@
+{
+  "name": "New Bot",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "drops": [],
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "change_realm",
+      "label": "Change realm",
+      "position": {
+        "x": 150.0,
+        "y": 14.0
+      },
+      "params": {
+        "start_realm_page": 3,
+        "end_realm_page": 5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "sleep",
+      "label": "Sleep",
+      "position": {
+        "x": 450.4157509157509,
+        "y": 7.483516483516482
+      },
+      "params": {
+        "duration": 65.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}
