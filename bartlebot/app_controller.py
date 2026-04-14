@@ -255,6 +255,13 @@ class AppController(QObject):
     async def _start_bot(self) -> None:
         if not self._clients or self._loaded_config is None:
             return
+        from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
+
+        safety_warnings = collect_safety_warnings(self._loaded_config)
+        if safety_warnings:
+            dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
+            if not dlg.exec():
+                return
         machine = BotMachine(
             clients=self._clients,
             config=self._loaded_config.to_machine_config(node_specs=NODE_SPECS),

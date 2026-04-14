@@ -88,7 +88,13 @@ class DropSection(SidebarSection):
                 qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 table.setItem(row, 1, qty_item)
                 return
-        row = table.rowCount()
+        name_lower = item.lower()
+        row = 0
+        while row < table.rowCount():
+            cell = table.item(row, 0)
+            if cell and cell.text().lower() > name_lower:
+                break
+            row += 1
         table.insertRow(row)
         table.setItem(row, 0, QTableWidgetItem(item))
         qty_item = QTableWidgetItem(str(quantity))

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import re
 import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
 _CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
+_QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 # Seconds between client responsiveness polls in _client_status_watcher.
 
 _CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
@@ -147,6 +149,9 @@ class BotMachine:
 
     def on_drop(self, item: str, quantity: int, client_index: int = 0) -> None:
         """Record a detected drop and notify the callback if one was provided."""
+        m = _QTY_PREFIX.match(item)
+        if m:
+            item, quantity = m.group(2), quantity * int(m.group(1))
         self.drops.append((item, quantity, client_index))
         if self._on_drop:
             self._on_drop(item, quantity, client_index)
