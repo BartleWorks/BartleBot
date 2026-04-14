@@ -1,5 +1,7 @@
 from bartlebot.nodes.action.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.action.apply_level_scaling import run as apply_level_scaling_run
+from bartlebot.nodes.action.change_realm import NODE_SPEC as _change_realm_spec
+from bartlebot.nodes.action.change_realm import run as change_realm_run
 from bartlebot.nodes.action.collect_reagent import NODE_SPEC as _collect_reagent_spec
 from bartlebot.nodes.action.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.action.collect_wisps import NODE_SPEC as _collect_wisps_spec
@@ -48,6 +50,7 @@ from bartlebot.nodes.param_schema import NodeSpec, ParamField
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
+    "change_realm": change_realm_run,
     "enter_zone_gateway": enter_zone_gateway_run,
     "handle_potions": handle_potions_run,
     "teleport_to_world_hub": teleport_to_world_hub_run,
@@ -74,6 +77,7 @@ NODE_REGISTRY: dict = {
 
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
+    "change_realm": _change_realm_spec,
     "enter_zone_gateway": _enter_zone_gateway_spec,
     "handle_potions": _handle_potions_spec,
     "teleport_to_world_hub": _teleport_to_world_hub_spec,

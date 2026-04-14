@@ -105,6 +105,41 @@ ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]
 CHAR_SELECT_PATH = ["WorldView", "mainWindow"]
 CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]
 
+# Realm selection UI — accessed via Spellbook > Preferences > Realms tab
+SPELLBOOK_BUTTON_PATH = ["WorldView", "windowHUD", "btnSpellbook"]
+SPELLBOOK_PREFERENCES_TAB_PATH = ["WorldView", "DeckConfiguration", "Preferences"]
+SPELLBOOK_REALMS_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "TabWindow", "RealmsButton"]
+REALM_CURRENT_NAME_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "txtYourRealmName"]
+REALM_NEXT_PAGE_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnRealmRight"]
+REALM_PREV_PAGE_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnRealmLeft"]
+REALM_GO_TO_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnGoToRealm"]
+
+
+def realm_name_path(row: int) -> list[str]:
+    """Return the path to the realm name label for the given row (0–6)."""
+    return [
+        "WorldView",
+        "DeckConfiguration",
+        "SettingPage",
+        "RealmOptions",
+        "wndRealmPanel",
+        f"btnRealm{row}",
+        f"txtRealm{row}Name",
+    ]
+
+
+def realm_button_path(row: int) -> list[str]:
+    """Return the path to the selectable realm button for the given row (0–6)."""
+    return [
+        "WorldView",
+        "DeckConfiguration",
+        "SettingPage",
+        "RealmOptions",
+        "wndRealmPanel",
+        f"btnRealm{row}",
+    ]
+
+
 # Backpack / Quicksell UI
 BACKPACK_CLOSE_BUTTON_PATH = ["WorldView", "DeckConfiguration", "Close_Button"]
 

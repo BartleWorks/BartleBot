@@ -306,7 +306,7 @@ async def _dismiss_post_sell_dialogs(machine, client, safety_delay: float) -> No
         )
         if not visible:
             break
-        text = await _get_window_text(client, MESSAGE_BOX_CAPTION_PATH)
+        text = await node_helpers.get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH)
         machine.log(f"quicksell: post-sell dialog {text!r} — dismissing", logging.DEBUG)
         await node_helpers.click_by_path(client, MESSAGE_BOX_CENTER)
         await asyncio.sleep(POLL_INTERVAL)
@@ -316,7 +316,7 @@ async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
     """Page through the quicksell UI and uncheck items that match any keep_list keyword."""
     while True:
         for row in range(_ROWS_PER_PAGE):
-            text = await _get_window_text(client, quicksell_item_title_path(row))
+            text = await node_helpers.get_text_by_path(client, quicksell_item_title_path(row))
             if not text:
                 continue
             if any(kw in text.lower() for kw in keep_list):
@@ -335,7 +335,7 @@ async def _is_jewel_backpack_full(client) -> bool:
     """Check jewel pouch fullness by reading the 'X/Y' capacity text in the jewel page UI."""
     import re
 
-    text = await _get_window_text(client, JEWEL_INVENTORY_SPACE_PATH)
+    text = await node_helpers.get_text_by_path(client, JEWEL_INVENTORY_SPACE_PATH)
     # The game wraps the value in HTML (e.g. "<center>100/100"), so strip tags first.
     text = re.sub(r"<[^>]+>", "", text).strip()
     parts = text.split("/")
@@ -345,32 +345,6 @@ async def _is_jewel_backpack_full(client) -> bool:
         return int(parts[0].strip()) >= int(parts[1].strip())
     except ValueError:
         return False
-
-
-async def _get_window_text(client, path: list[str]) -> str:
-    """Return the displayed text of the UI window at path, or '' if not found.
-
-    Tries maybe_text() first; falls back to reading the wide string at offset 616,
-    which is where control elements (like item name labels) store their text.
-    """
-    from wizwalker.errors import MemoryReadError
-
-    window = await node_helpers._get_window_from_path(client.root_window, path)
-    if window is None:
-        return ""
-    try:
-        text = await window.maybe_text()
-        if text:
-            return text
-    except (ValueError, MemoryReadError):
-        pass
-    try:
-        text = await window.read_wide_string_from_offset(616)
-        if text:
-            return text
-    except (ValueError, MemoryReadError):
-        pass
-    return ""
 
 
 async def _close_backpack(client, safety_delay: float) -> None:

@@ -54,6 +54,11 @@ REAGENT_COLLECT_DELAY = 0.5
 # location. Gives the game time to register the collection animation and item pickup.
 
 
+REALM_HOP_TIMEOUT = 65.0
+# Seconds to wait for the realm-hop cooldown to expire.
+# Wizard101 imposes a ~60-second timer between realm changes; this adds a 5-second margin.
+
+
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.
 
