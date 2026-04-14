@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import (
     QCheckBox,
+    QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -126,6 +127,42 @@ class GeneralTab(QWidget):
         autosave_form.addRow("Auto-save interval:", self._autosave_interval_sb)
 
         layout.addLayout(autosave_form)
+
+        # ------------------------------------------------------------------
+        # Bot section
+        # ------------------------------------------------------------------
+        layout.addWidget(_section_label("Bot"))
+
+        bot_form = QFormLayout()
+        bot_form.setSpacing(8)
+
+        self._safety_delay_sb = QDoubleSpinBox()
+        self._safety_delay_sb.setRange(0.0, 30.0)
+        self._safety_delay_sb.setSingleStep(0.5)
+        self._safety_delay_sb.setDecimals(1)
+        self._safety_delay_sb.setSuffix(" sec")
+        self._safety_delay_sb.setValue(sm.default_safety_delay)
+        bot_form.addRow("Default Safety Delay:", self._safety_delay_sb)
+
+        self._sell_crowns_cb = QCheckBox()
+        self._sell_crowns_cb.setChecked(sm.get_general("default_quicksell_sell_crowns", default=True))
+        bot_form.addRow("Quicksell: Sell Crowns Items:", self._sell_crowns_cb)
+
+        self._sell_pets_cb = QCheckBox()
+        self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
+        bot_form.addRow("Quicksell: Sell Pets:", self._sell_pets_cb)
+
+        self._sell_socket_wrenches_cb = QCheckBox()
+        self._sell_socket_wrenches_cb.setChecked(
+            sm.get_general("default_quicksell_sell_socket_wrenches", default=False)
+        )
+        bot_form.addRow("Quicksell: Sell Socket Wrenches:", self._sell_socket_wrenches_cb)
+
+        self._sell_skeleton_keys_cb = QCheckBox()
+        self._sell_skeleton_keys_cb.setChecked(sm.get_general("default_quicksell_sell_skeleton_keys", default=False))
+        bot_form.addRow("Quicksell: Sell Skeleton Keys:", self._sell_skeleton_keys_cb)
+
+        layout.addLayout(bot_form)
         layout.addStretch()
 
         # Disable size fields when maximized is checked
@@ -155,3 +192,8 @@ class GeneralTab(QWidget):
         sm.set_general("bottom_section_height", self._bottom_sb.value())
         sm.set_general("auto_save_enabled", self._autosave_cb.isChecked())
         sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())
+        sm.default_safety_delay = self._safety_delay_sb.value()
+        sm.set_general("default_quicksell_sell_crowns", self._sell_crowns_cb.isChecked())
+        sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
+        sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
+        sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())

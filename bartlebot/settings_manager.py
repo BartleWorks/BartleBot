@@ -27,6 +27,11 @@ class _GeneralSettings(BaseModel):
     bottom_section_height: int = 220
     auto_save_enabled: bool = True
     auto_save_interval_seconds: int = 300
+    default_safety_delay: float = 3.0
+    default_quicksell_sell_crowns: bool = True
+    default_quicksell_sell_pets: bool = True
+    default_quicksell_sell_socket_wrenches: bool = False
+    default_quicksell_sell_skeleton_keys: bool = False
 
 
 class _GameEmbedSettings(BaseModel):
@@ -62,6 +67,11 @@ _DEFAULTS: dict[str, Any] = {
         "bottom_section_height": 220,
         "auto_save_enabled": True,
         "auto_save_interval_seconds": 300,
+        "default_safety_delay": 3.0,
+        "default_quicksell_sell_crowns": True,
+        "default_quicksell_sell_pets": True,
+        "default_quicksell_sell_socket_wrenches": False,
+        "default_quicksell_sell_skeleton_keys": False,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -217,6 +227,14 @@ class SettingsManager:
 
     def set_general(self, key: str, value: Any) -> None:
         self.set("general", key, value=value)
+
+    @property
+    def default_safety_delay(self) -> float:
+        return float(self.get_general("default_safety_delay", default=3.0))
+
+    @default_safety_delay.setter
+    def default_safety_delay(self, value: float) -> None:
+        self.set_general("default_safety_delay", value)
 
     @property
     def accounts(self) -> list[dict]:
