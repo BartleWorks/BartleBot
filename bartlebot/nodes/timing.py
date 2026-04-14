@@ -22,6 +22,12 @@ TRIGGER_TIMEOUT = 10.0
 # Seconds to wait for a UI event to fire after an input (loading screen start,
 # button becoming enabled, dialog appearing).
 
+QUICKSELL_COMPLETE_TIMEOUT = 15.0
+# Seconds to wait for the backpack close button to reappear after confirming
+# a quicksell. Selling a full backpack triggers a server-side transaction that
+# can lag significantly; this gives the game time to finish processing before
+# treating the operation as failed.
+
 COMPASS_TELEPORT_TIMEOUT = 35.0
 # Seconds to wait for a compass-controlled teleport button to become enabled.
 # The game imposes a 30-second cooldown on mark/recall/dorm/hub teleports;

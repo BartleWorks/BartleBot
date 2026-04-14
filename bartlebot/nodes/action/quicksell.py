@@ -101,7 +101,7 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=5,
 )
 
-from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: E402
+from bartlebot.nodes.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # noqa: E402
 
 _ROWS_PER_PAGE = 10
 
@@ -278,10 +278,14 @@ async def _run_quicksell(
     await _dismiss_post_sell_dialogs(machine, client, safety_delay)
 
     # Wait to return to the main backpack view and close it.
+    # Use QUICKSELL_COMPLETE_TIMEOUT rather than safety_delay here: selling a full
+    # backpack triggers a server-side transaction that can cause noticeable lag,
+    # and the close button may take longer than safety_delay to reappear even on
+    # a successful sale.
     machine.log("quicksell: waiting for backpack close button", logging.DEBUG)
     backpack_visible = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, BACKPACK_CLOSE_BUTTON_PATH),
-        safety_delay,
+        QUICKSELL_COMPLETE_TIMEOUT,
         POLL_INTERVAL,
     )
     machine.log(f"quicksell: backpack close button {'appeared' if backpack_visible else 'timed out'}", logging.DEBUG)
