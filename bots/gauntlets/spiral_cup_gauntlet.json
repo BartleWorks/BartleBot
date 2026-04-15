@@ -1,0 +1,1146 @@
+{
+  "name": "Spiral Cup Gauntlet",
+  "description": "Endlessly farms the Spiral Cup Gauntlet.\n\nREQUIREMENTS: Change the client name in \"Teleport to friend\" to your friend. Must be standing on the gauntlet entrance sigil.\n\nDouble-click to teleport to friend must be disabled.",
+  "version": "2.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "tempest[epic] | bunyip[epic]\n",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "The Commons",
+  "drops": [
+    "Greenwarden's Energetic gear set"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to wait after interacting before verifying elixir status."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Defeat final boss",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat Barbarous van der Borst. Does NOT drop energy gear."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend",
+      "position": {
+        "x": 150.0,
+        "y": 7.0
+      },
+      "params": {
+        "friend_name": "Alice StormBlade",
+        "to_zone": "Housing_AR_Dormroom/Interior"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 750.0,
+        "y": 7.0
+      },
+      "params": {
+        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 1050.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_gateway",
+      "label": "Enter Chamber of the Hydra",
+      "position": {
+        "x": 1350.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02",
+        "xyz": {
+          "x": -1482.77,
+          "y": -13.7,
+          "z": 20.97
+        },
+        "reset_xyz": {
+          "x": -990.95,
+          "y": -15.13,
+          "z": 1.23
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 1650.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone_gateway",
+      "label": "Exit Chamber of the Hydra",
+      "position": {
+        "x": 1950.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "xyz": {
+          "x": 647.42,
+          "y": 1578.09,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 350.64,
+          "y": 825.16,
+          "z": 0.2
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 2550.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_zone_gateway",
+      "label": "Enter Hall of the Specter",
+      "position": {
+        "x": 2850.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03",
+        "xyz": {
+          "x": -1039.09,
+          "y": -1057.99,
+          "z": 82.52
+        },
+        "reset_xyz": {
+          "x": -656.17,
+          "y": -678.95,
+          "z": 1.08
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 3150.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone_gateway",
+      "label": "Exit Hall of the Specter",
+      "position": {
+        "x": 3450.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "xyz": {
+          "x": 601.38,
+          "y": 1446.98,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 381.4,
+          "y": 918.21,
+          "z": 0.2
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_13",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2250.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 4050.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "enter_zone_gateway",
+      "label": "Enter Hall of the Harpy",
+      "position": {
+        "x": 4350.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_04",
+        "xyz": {
+          "x": 1048.44,
+          "y": -1053.31,
+          "z": 82.52
+        },
+        "reset_xyz": {
+          "x": 692.82,
+          "y": -684.4,
+          "z": 1.15
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_16",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 4650.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone_gateway",
+      "label": "Exit Hall of the Harpy",
+      "position": {
+        "x": 4950.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_04",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "xyz": {
+          "x": 605.41,
+          "y": 1406.74,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 316.82,
+          "y": 785.95,
+          "z": 0.2
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_18",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3750.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_19",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 5250.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_20",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 5550.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_21",
+      "node_type": "enter_zone_gateway",
+      "label": "Enter Chamber of the Basilisk",
+      "position": {
+        "x": 5850.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_05",
+        "xyz": {
+          "x": 1488.28,
+          "y": -6.51,
+          "z": 20.96
+        },
+        "reset_xyz": {
+          "x": 1048.74,
+          "y": 12.46,
+          "z": 1.15
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_22",
+      "node_type": "handle_combat",
+      "label": "Defeat Tamworth Brickhouse",
+      "position": {
+        "x": 6150.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": false,
+        "combat_config": "bunyip[epic] | tempest[epic]",
+        "max_duration": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone_gateway",
+      "label": "Exit Chamber of the Basilisk",
+      "position": {
+        "x": 6450.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_05",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "xyz": {
+          "x": 605.41,
+          "y": 1406.74,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 316.82,
+          "y": 785.95,
+          "z": 0.2
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_24",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 6750.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_25",
+      "node_type": "enter_zone_interact",
+      "label": "Enter final boss room",
+      "position": {
+        "x": 7050.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_06",
+        "interact_xyz": {
+          "x": -17.35,
+          "y": -1310.53,
+          "z": 179.62
+        },
+        "reset_xyz": {
+          "x": -4.7,
+          "y": -660.85,
+          "z": 1.41
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_26",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 7350.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "SC-AV-Ogre-80",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_27",
+      "node_type": "go_to_xyz",
+      "label": "Exit combat",
+      "position": {
+        "x": 7650.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_06",
+        "xyz": {
+          "x": -24.78,
+          "y": 832.96,
+          "z": 0.19
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_28",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 7950.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 1.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_29",
+      "node_type": "handle_combat",
+      "label": "Defeat final boss",
+      "position": {
+        "x": 8250.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "SC-AV-Giant-FormoriHandsome-80",
+        "use_bot_default": false,
+        "combat_config": "bunyip[epic] | tempest[epic]",
+        "max_duration": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "wait_for_health",
+      "label": "Wait for health",
+      "position": {
+        "x": 450.0,
+        "y": 7.0
+      },
+      "params": {
+        "threshold": 0.8,
+        "timeout": 120.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_7",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_14",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat final boss",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_3",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat final boss",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": [
+    {
+      "id": "6fb632fc",
+      "label": "Enter gauntlet",
+      "members": [
+        "state_1",
+        "state_3",
+        "state_10"
+      ],
+      "color": 1
+    },
+    {
+      "id": "c47780d8",
+      "label": "Chamber of the Hydra",
+      "members": [
+        "state_5",
+        "state_4",
+        "state_2",
+        "state_6",
+        "state_13"
+      ],
+      "color": 2
+    },
+    {
+      "id": "427c45c4",
+      "label": "Hall of the Specter",
+      "members": [
+        "state_12",
+        "state_8",
+        "state_7",
+        "state_18",
+        "state_9"
+      ],
+      "color": 3
+    },
+    {
+      "id": "f6e07e7d",
+      "label": "Hall of the Harpy",
+      "members": [
+        "state_15",
+        "state_14",
+        "state_19",
+        "state_17",
+        "state_16"
+      ],
+      "color": 4
+    },
+    {
+      "id": "06d89e97",
+      "label": "Chamber of the Basilisk",
+      "members": [
+        "state_20",
+        "state_23",
+        "state_24",
+        "state_21",
+        "state_22"
+      ],
+      "color": 5
+    },
+    {
+      "id": "f8c13b9f",
+      "label": "Final boss",
+      "members": [
+        "state_27",
+        "state_29",
+        "state_25",
+        "state_28",
+        "state_26"
+      ],
+      "color": 6
+    }
+  ]
+}
