@@ -126,8 +126,16 @@ async def run(machine, clients: list, params: dict) -> str:
             # is a no-op for the other — the game handles the collision.
             collectors = [(clients.index(c), c) for c, p in zip(clients, prompted) if p]
             chat_before = await asyncio.gather(*[snapshot_chat(c) for _, c in collectors])
-            await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for _, c in collectors])
-            await asyncio.sleep(jitter(REAGENT_COLLECT_DELAY))
+
+            # Keep pressing X on still-prompted clients until all prompts clear or timeout.
+            still_prompted = [c for _, c in collectors]
+            deadline = asyncio.get_event_loop().time() + safety_delay
+            while still_prompted and asyncio.get_event_loop().time() < deadline:
+                await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in still_prompted])
+                await asyncio.sleep(jitter(REAGENT_COLLECT_DELAY))
+                in_range = await asyncio.gather(*[c.is_in_npc_range() for c in still_prompted])
+                still_prompted = [c for c, p in zip(still_prompted, in_range) if p]
+
             collected += 1
             for (client_idx, c), before in zip(collectors, chat_before):
                 after = await snapshot_chat(c)

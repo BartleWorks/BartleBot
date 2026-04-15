@@ -41,6 +41,11 @@ class AppController(QObject):
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
 
+        # Long-lived asyncio tasks — held here to prevent GC (event loop keeps weak refs only).
+        self._client_loop_task: asyncio.Task | None = None
+        self._bot_task: asyncio.Task | None = None
+        self._recovery_task: asyncio.Task | None = None
+
         # Client recovery state
         # Maps window_handle → username for all clients seen this session.
         # Persists after process exit so we can identify removed clients.
@@ -82,7 +87,7 @@ class AppController(QObject):
         # Canvas signals
         w.bot_canvas.config_changed.connect(self._on_config_changed)
         w.bot_canvas.mode_changed.connect(self._on_mode_changed)
-        w.bot_canvas.run_requested.connect(lambda: asyncio.create_task(self._start_bot()))
+        w.bot_canvas.run_requested.connect(self._on_run_requested)
         w.bot_canvas.pause_requested.connect(self._pause_bot)
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
@@ -109,7 +114,7 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     async def run(self) -> None:
-        asyncio.create_task(self._client_loop())
+        self._client_loop_task = asyncio.create_task(self._client_loop())
         quit_event = asyncio.Event()
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
@@ -251,6 +256,9 @@ class AppController(QObject):
     # ------------------------------------------------------------------
     # Bot control
     # ------------------------------------------------------------------
+
+    def _on_run_requested(self) -> None:
+        self._bot_task = asyncio.create_task(self._start_bot())
 
     async def _start_bot(self) -> None:
         if not self._clients or self._loaded_config is None:
@@ -486,7 +494,7 @@ class AppController(QObject):
                 machine.pause()
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
-                asyncio.create_task(self._run_recovery_queue())
+                self._recovery_task = asyncio.create_task(self._run_recovery_queue())
 
     def _build_ordered_clients(self, live_clients: list) -> list:
         """Build the client list in _client_order order; unknown-account clients go at the end."""

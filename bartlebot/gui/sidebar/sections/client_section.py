@@ -19,6 +19,7 @@ class ClientSection(SidebarSection):
     def __init__(self, parent=None):
         super().__init__("Clients", parent)
         self._widgets: list[ClientWidget] = []
+        self._refresh_task: asyncio.Task | None = None
 
         self._clients_layout = QVBoxLayout()
         self._clients_layout.setSpacing(0)
@@ -53,8 +54,8 @@ class ClientSection(SidebarSection):
     # ------------------------------------------------------------------
 
     def _schedule_refresh(self) -> None:
-        if self._widgets:
-            asyncio.ensure_future(self._refresh_all())
+        if self._widgets and (self._refresh_task is None or self._refresh_task.done()):
+            self._refresh_task = asyncio.ensure_future(self._refresh_all())
 
     async def _refresh_all(self) -> None:
         if self._widgets:
