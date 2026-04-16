@@ -1,0 +1,730 @@
+"""NodeBrowserDialog — searchable node reference and add-node dialog.
+
+Serves two roles depending on the ``mode`` constructor argument:
+
+- ``mode="add"``  (default): the primary "add a state" flow. Shows Add + Cancel
+  buttons; double-clicking or pressing Enter on a selected node triggers Add.
+- ``mode="view"``: read-only reference browser. Shows only a Close button. Used
+  when the user right-clicks an existing node and chooses "Node Help", or clicks
+  the "?" button in the properties panel.
+
+The dialog is driven entirely by ``NODE_SPECS`` and ``NODE_CATEGORIES`` from the
+node registry — no separate documentation source to maintain.
+"""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QListWidgetItem,
+    QPushButton,
+    QScrollArea,
+    QSplitter,
+    QStackedWidget,
+    QTabBar,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
+from bartlebot.gui.theme import THEME
+from bartlebot.nodes.param_schema import NodeSpec, ParamField
+from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
+from bartlebot.settings_manager import SettingsManager
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_CONDITION_TYPES = {"check_if_dropped", "check_level_scaling", "check_zone"}
+
+
+def _humanize(node_type: str) -> str:
+    """Convert snake_case node key to a readable label.
+
+    Examples:
+        enter_dungeon_teamup → "Enter Dungeon Teamup"
+        handle_combat        → "Handle Combat"
+    """
+    return node_type.replace("_", " ").title()
+
+
+def _is_condition(node_type: str) -> bool:
+    return node_type in _CONDITION_TYPES
+
+
+def _chip_color(return_name: str) -> tuple[str, str]:
+    """Return (background_hex, text_hex) for a return-value chip."""
+    name_upper = return_name.upper()
+    if name_upper in ("SUCCESS", "TRUE"):
+        return THEME.chip_success_bg, THEME.chip_text
+    if name_upper in ("FAILURE", "FALSE"):
+        return THEME.chip_failure_bg, THEME.chip_text
+    return THEME.chip_neutral_bg, THEME.chip_text
+
+
+def _make_separator() -> QFrame:
+    sep = QFrame()
+    sep.setFrameShape(QFrame.Shape.HLine)
+    sep.setFrameShadow(QFrame.Shadow.Sunken)
+    sep.setStyleSheet(f"color: {THEME.border};")
+    return sep
+
+
+# ---------------------------------------------------------------------------
+# Return-value chip widget
+# ---------------------------------------------------------------------------
+
+
+class _Chip(QLabel):
+    """Small pill label with a colored rounded-rect background."""
+
+    def __init__(self, text: str, bg: str, fg: str, parent: QWidget | None = None) -> None:
+        super().__init__(f"  {text}  ", parent)
+        self.setFont(QFont(THEME.font_ui_family, 8, QFont.Weight.Bold))
+        self.setStyleSheet(f"background: {bg}; color: {fg}; border-radius: 4px; padding: 1px 4px;")
+        self.setFixedHeight(20)
+
+
+# ---------------------------------------------------------------------------
+# Detail panel
+# ---------------------------------------------------------------------------
+
+
+class _DetailPanel(QScrollArea):
+    """Scrollable right panel displaying full NodeSpec documentation."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setWidgetResizable(True)
+        self.setFrameShape(QFrame.Shape.NoFrame)
+
+        self._node_type: str = ""
+        self._layout: QVBoxLayout | None = None
+
+        # Show placeholder until a node is selected
+        placeholder = QLabel("Select a node to view its documentation.")
+        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 13px;")
+        self.setWidget(placeholder)
+
+    def show_node(self, node_type: str, spec: NodeSpec, on_see_also=None) -> None:
+        """Replace the scroll area content with documentation for node_type."""
+        self._node_type = node_type
+
+        # Build a fresh container each call — avoids the stale-widget problem that
+        # occurs when QHBoxLayouts added via addLayout() leave child widgets parented
+        # to the old container even after takeAt() clears the top-level layout items.
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(16, 12, 16, 16)
+        layout.setSpacing(10)
+        self._layout = layout
+
+        self.setWidget(container)
+
+        # ── Title row ──────────────────────────────────────────────
+        title_row = QHBoxLayout()
+        title_label = QLabel(_humanize(node_type))
+        title_font = QFont(THEME.font_ui_family, 16, QFont.Weight.Bold)
+        title_label.setFont(title_font)
+        title_label.setStyleSheet(f"color: {THEME.text};")
+        title_row.addWidget(title_label, 1)
+
+        if _is_condition(node_type):
+            badge = _Chip("Condition", THEME.accent, THEME.chip_text)
+        else:
+            badge = _Chip("Action", THEME.border, THEME.text)
+        title_row.addWidget(badge)
+        self._layout.addLayout(title_row)
+
+        # ── Node type key (muted) ───────────────────────────────────
+        key_label = QLabel(node_type)
+        key_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        self._layout.addWidget(key_label)
+
+        # ── Description ────────────────────────────────────────────
+        if spec.description:
+            desc = QLabel(spec.description)
+            desc.setWordWrap(True)
+            desc.setStyleSheet(f"color: {THEME.text}; font-size: 11px;")
+            self._layout.addWidget(desc)
+
+        # ── Max retries note ───────────────────────────────────────
+        if spec.max_consecutive_retries is not None:
+            retries_label = QLabel(
+                f"⚠ The bot will stop after {spec.max_consecutive_retries} consecutive failures on this node."
+            )
+            retries_label.setWordWrap(True)
+            retries_label.setStyleSheet(f"color: {THEME.warning}; font-size: 10px;")
+            self._layout.addWidget(retries_label)
+
+        # ── Separator ──────────────────────────────────────────────
+        self._layout.addWidget(_make_separator())
+
+        # ── Parameters ─────────────────────────────────────────────
+        if spec.params:
+            params_hdr = QLabel("Parameters")
+            params_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            params_hdr.setStyleSheet(f"color: {THEME.text};")
+            self._layout.addWidget(params_hdr)
+
+            table = self._build_params_table(spec.params)
+            self._layout.addWidget(table)
+        else:
+            no_params = QLabel("This node has no parameters.")
+            no_params.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            self._layout.addWidget(no_params)
+
+        # ── Returns ────────────────────────────────────────────────
+        if spec.returns:
+            self._layout.addWidget(_make_separator())
+            returns_hdr = QLabel("Returns")
+            returns_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            returns_hdr.setStyleSheet(f"color: {THEME.text};")
+            self._layout.addWidget(returns_hdr)
+
+            for ret in spec.returns:
+                row = QHBoxLayout()
+                bg, fg = _chip_color(ret.name)
+                chip = _Chip(ret.name, bg, fg)
+                chip.setFixedWidth(80)
+                row.addWidget(chip)
+
+                if ret.description:
+                    desc_lbl = QLabel(ret.description)
+                    desc_lbl.setWordWrap(True)
+                    desc_lbl.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+                    row.addWidget(desc_lbl, 1)
+                row.addStretch()
+                self._layout.addLayout(row)
+
+        # ── Required bot options ───────────────────────────────────
+        if spec.required_bot_options:
+            self._layout.addWidget(_make_separator())
+            opts_hdr = QLabel("Required Bot Options")
+            opts_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            opts_hdr.setStyleSheet(f"color: {THEME.text};")
+            self._layout.addWidget(opts_hdr)
+
+            opts_note = QLabel(
+                "Adding this node to a bot automatically injects the following options into the Bot Options panel."
+            )
+            opts_note.setWordWrap(True)
+            opts_note.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            self._layout.addWidget(opts_note)
+
+            for opt in spec.required_bot_options:
+                row = QHBoxLayout()
+                name_chip = _Chip(opt.name, THEME.surface, THEME.text_subtle)
+                type_chip = _Chip(opt.type, THEME.border, THEME.text_muted)
+                row.addWidget(name_chip)
+                row.addWidget(type_chip)
+
+                if opt.description:
+                    opt_desc = QLabel(opt.description)
+                    opt_desc.setWordWrap(True)
+                    opt_desc.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+                    row.addWidget(opt_desc, 1)
+                row.addStretch()
+                self._layout.addLayout(row)
+
+        # ── Usage notes ────────────────────────────────────────────
+        if spec.usage_notes:
+            self._layout.addWidget(_make_separator())
+            notes_hdr = QLabel("Usage Notes")
+            notes_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            notes_hdr.setStyleSheet(f"color: {THEME.text};")
+            self._layout.addWidget(notes_hdr)
+
+            notes_lbl = QLabel(spec.usage_notes)
+            notes_lbl.setWordWrap(True)
+            notes_lbl.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+            self._layout.addWidget(notes_lbl)
+
+        # ── See also ───────────────────────────────────────────────
+        if spec.see_also:
+            self._layout.addWidget(_make_separator())
+            see_hdr = QLabel("See Also")
+            see_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            see_hdr.setStyleSheet(f"color: {THEME.text};")
+            self._layout.addWidget(see_hdr)
+
+            see_row = QHBoxLayout()
+            for related_type in spec.see_also:
+                btn = QPushButton(_humanize(related_type))
+                btn.setStyleSheet(
+                    f"color: {THEME.accent}; background: transparent; border: none; "
+                    f"text-decoration: underline; font-size: 10px; padding: 0;"
+                )
+                btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                if on_see_also:
+                    btn.clicked.connect(lambda _checked, t=related_type: on_see_also(t))
+                see_row.addWidget(btn)
+            see_row.addStretch()
+            self._layout.addLayout(see_row)
+
+        self._layout.addStretch()
+        # Scroll to top when switching nodes
+        QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
+
+    def _build_params_table(self, params: list[ParamField]) -> QTableWidget:
+        """Build a read-only table showing all parameters for this node."""
+        headers = ["Name", "Type", "Req", "Default", "Description"]
+        table = QTableWidget(len(params), len(headers))
+        table.setHorizontalHeaderLabels(headers)
+        table.verticalHeader().setVisible(False)
+        table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        table.setAlternatingRowColors(True)
+        table.setShowGrid(False)
+        table.setWordWrap(True)
+
+        table.setStyleSheet(
+            f"""
+            QTableWidget {{
+                background: {THEME.bg};
+                alternate-background-color: {THEME.surface};
+                border: 1px solid {THEME.border};
+                font-size: 10px;
+            }}
+            QHeaderView::section {{
+                background: {THEME.surface};
+                color: {THEME.text_muted};
+                font-size: 9px;
+                font-weight: bold;
+                padding: 3px 6px;
+                border: none;
+                border-bottom: 1px solid {THEME.border};
+            }}
+            """
+        )
+
+        col_widths = [140, 60, 30, 80, -1]  # -1 = stretch
+        for col, w in enumerate(col_widths):
+            if w >= 0:
+                table.setColumnWidth(col, w)
+        table.horizontalHeader().setStretchLastSection(True)
+
+        for row, pf in enumerate(params):
+            # Name
+            name_item = QTableWidgetItem(pf.label)
+            name_item.setToolTip(pf.key)
+            if pf.required:
+                font = name_item.font()
+                font.setBold(True)
+                name_item.setFont(font)
+            table.setItem(row, 0, name_item)
+
+            # Type
+            type_item = QTableWidgetItem(pf.type)
+            type_item.setForeground(QColor(THEME.text_muted))
+            table.setItem(row, 1, type_item)
+
+            # Required
+            req_item = QTableWidgetItem("✓" if pf.required else "")
+            req_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            if pf.required:
+                req_item.setForeground(QColor(THEME.error))
+            table.setItem(row, 2, req_item)
+
+            # Default
+            default_str = ""
+            if pf.default is not None and pf.default != "":
+                default_str = str(pf.default)
+            elif pf.default_hint:
+                default_str = pf.default_hint
+            default_item = QTableWidgetItem(default_str)
+            default_item.setForeground(QColor(THEME.text_muted))
+            table.setItem(row, 3, default_item)
+
+            # Description
+            desc_item = QTableWidgetItem(pf.help)
+            table.setItem(row, 4, desc_item)
+
+            table.resizeRowToContents(row)
+
+        return table
+
+
+# ---------------------------------------------------------------------------
+# Node list delegate (two-line items: humanized name + raw key)
+# ---------------------------------------------------------------------------
+
+
+class _NodeListItem(QListWidgetItem):
+    """List item storing the raw node_type key with a two-line display."""
+
+    def __init__(self, node_type: str) -> None:
+        super().__init__()
+        self._node_type = node_type
+        self.setText(_humanize(node_type))
+        self.setData(Qt.ItemDataRole.UserRole, node_type)
+        self.setData(Qt.ItemDataRole.UserRole + 1, node_type)  # for key display
+        self.setToolTip(node_type)
+
+    @property
+    def node_type(self) -> str:
+        return self._node_type
+
+
+# ---------------------------------------------------------------------------
+# Main dialog
+# ---------------------------------------------------------------------------
+
+
+class NodeBrowserDialog(QDialog):
+    """Node browser and reference dialog.
+
+    Args:
+        parent: Parent widget.
+        mode: ``"add"`` shows Add+Cancel and records the chosen node in recent
+              history. ``"view"`` shows only Close — used for reference lookups.
+        initial_node_type: If provided, the dialog pre-selects this node and
+              scrolls to it. Otherwise the first item in the current tab is
+              selected.
+    """
+
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        mode: Literal["add", "view"] = "add",
+        initial_node_type: str | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._mode = mode
+        self._selected_node_type: str | None = None
+
+        self.setWindowTitle("Node Browser" if mode == "view" else "Add Node")
+        self.setMinimumSize(700, 480)
+        self._restore_geometry()
+
+        # ── Build all tab entries ──────────────────────────────────
+        # Each entry: (tab_label, list[node_type]) — "All" and "Recent" are synthetic
+        self._tabs_data: list[tuple[str, list[str]]] = [
+            ("All", list(NODE_SPECS.keys())),
+            ("Recent", SettingsManager.instance().recently_used_nodes),
+            *NODE_CATEGORIES,
+        ]
+
+        # ── Search bar ────────────────────────────────────────────
+        self._search = QLineEdit()
+        self._search.setPlaceholderText("Search nodes…")
+        self._search.setClearButtonEnabled(True)
+        self._search.setStyleSheet(
+            f"padding: 4px 8px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"
+        )
+        self._search.textChanged.connect(self._on_search_changed)
+
+        # ── Tab bar ───────────────────────────────────────────────
+        self._tab_bar = QTabBar()
+        self._tab_bar.setExpanding(False)
+        for label, _ in self._tabs_data:
+            self._tab_bar.addTab(label)
+        self._tab_bar.currentChanged.connect(self._on_tab_changed)
+
+        # ── Node list ─────────────────────────────────────────────
+        self._list = QListWidget()
+        self._list.setAlternatingRowColors(True)
+        self._list.setSpacing(1)
+        self._list.setStyleSheet(
+            f"""
+            QListWidget {{
+                border: 1px solid {THEME.border};
+                font-size: 11px;
+                background: {THEME.bg};
+                alternate-background-color: {THEME.surface};
+            }}
+            QListWidget::item {{
+                padding: 5px 8px;
+            }}
+            QListWidget::item:selected {{
+                background: {THEME.accent};
+                color: #ffffff;
+            }}
+            """
+        )
+        self._list.currentItemChanged.connect(self._on_list_selection_changed)
+        self._list.itemDoubleClicked.connect(self._on_double_click)
+
+        # Empty-search label (shown when search has no results)
+        self._empty_label = QLabel()
+        self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._empty_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._empty_label.hide()
+
+        # Stack: page 0 = list, page 1 = empty label
+        self._list_stack = QStackedWidget()
+        self._list_stack.addWidget(self._list)
+        self._list_stack.addWidget(self._empty_label)
+
+        # ── Left panel ────────────────────────────────────────────
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(4)
+        left_layout.addWidget(self._tab_bar)
+        left_layout.addWidget(self._list_stack, 1)
+        left_widget.setMinimumWidth(220)
+
+        # ── Detail panel ──────────────────────────────────────────
+        self._detail = _DetailPanel()
+
+        # ── Splitter ──────────────────────────────────────────────
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        splitter.addWidget(left_widget)
+        splitter.addWidget(self._detail)
+        splitter.setSizes([280, 580])
+        splitter.setCollapsible(0, False)
+        splitter.setCollapsible(1, False)
+
+        # ── Button row ────────────────────────────────────────────
+        if mode == "add":
+            self._add_btn = QPushButton("Add")
+            self._add_btn.setDefault(True)
+            self._add_btn.setEnabled(False)
+            self._add_btn.setStyleSheet(
+                f"background: {THEME.accent}; color: #ffffff; padding: 5px 18px; border-radius: 4px; font-weight: bold;"
+            )
+            self._add_btn.clicked.connect(self._on_add)
+
+            cancel_btn = QPushButton("Cancel")
+            cancel_btn.clicked.connect(self.reject)
+
+            btn_row = QHBoxLayout()
+            btn_row.addStretch()
+            btn_row.addWidget(cancel_btn)
+            btn_row.addWidget(self._add_btn)
+        else:
+            close_btn = QPushButton("Close")
+            close_btn.setDefault(True)
+            close_btn.clicked.connect(self.accept)
+
+            btn_row = QHBoxLayout()
+            btn_row.addStretch()
+            btn_row.addWidget(close_btn)
+
+        # ── Root layout ───────────────────────────────────────────
+        root = QVBoxLayout(self)
+        root.setContentsMargins(10, 10, 10, 10)
+        root.setSpacing(8)
+        root.addWidget(self._search)
+        root.addWidget(splitter, 1)
+        root.addLayout(btn_row)
+
+        # ── Initial population ────────────────────────────────────
+        self._populate_list(self._tabs_data[0][1])  # "All" tab
+
+        if initial_node_type and initial_node_type in NODE_SPECS:
+            # Find and select the node; navigate to its category tab first
+            cat = NODE_TYPE_TO_CATEGORY.get(initial_node_type)
+            if cat:
+                for i, (label, _) in enumerate(self._tabs_data):
+                    if label == cat:
+                        self._tab_bar.setCurrentIndex(i)
+                        break
+            self._select_node_type(initial_node_type)
+        elif self._list.count() > 0:
+            self._list.setCurrentRow(0)
+
+        # Focus the search bar on open
+        QTimer.singleShot(0, self._search.setFocus)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    @property
+    def selected_node_type(self) -> str | None:
+        """Returns the chosen node_type key, or None if nothing was selected."""
+        return self._selected_node_type
+
+    # ------------------------------------------------------------------
+    # List population
+    # ------------------------------------------------------------------
+
+    def _populate_list(self, node_types: list[str]) -> None:
+        """Fill the list widget with items for the given node_type keys."""
+        self._list.clear()
+        for nt in node_types:
+            if nt in NODE_SPECS:
+                self._list.addItem(_NodeListItem(nt))
+
+    def _select_node_type(self, node_type: str) -> None:
+        """Select the list item for node_type, scrolling to it."""
+        for i in range(self._list.count()):
+            item = self._list.item(i)
+            if isinstance(item, _NodeListItem) and item.node_type == node_type:
+                self._list.setCurrentItem(item)
+                self._list.scrollToItem(item)
+                return
+
+    # ------------------------------------------------------------------
+    # Slot: tab changed
+    # ------------------------------------------------------------------
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self._search.text():
+            # While searching, tabs are visually inactive — ignore
+            return
+        _, node_types = self._tabs_data[index]
+        self._populate_list(node_types)
+
+        if index == 1 and self._list.count() == 0:
+            # Recent tab is empty
+            self._empty_label.setText("Nodes you add will appear here.")
+            self._list_stack.setCurrentIndex(1)
+        else:
+            self._list_stack.setCurrentIndex(0)
+            if self._list.count() > 0:
+                self._list.setCurrentRow(0)
+
+    # ------------------------------------------------------------------
+    # Slot: search changed
+    # ------------------------------------------------------------------
+
+    def _on_search_changed(self, text: str) -> None:
+        if not text:
+            # Restore the current tab's contents
+            self._tab_bar.setEnabled(True)
+            self._on_tab_changed(self._tab_bar.currentIndex())
+            return
+
+        self._tab_bar.setEnabled(False)
+        query = text.lower()
+        matches: list[str] = []
+
+        for node_type, spec in NODE_SPECS.items():
+            if self._spec_matches(node_type, spec, query):
+                matches.append(node_type)
+
+        if matches:
+            self._populate_list(matches)
+            self._list.setCurrentRow(0)
+            self._list_stack.setCurrentIndex(0)
+        else:
+            self._list.clear()
+            self._empty_label.setText(f'No nodes match "{text}".')
+            self._list_stack.setCurrentIndex(1)
+
+        # If exactly one result, auto-select it
+        if len(matches) == 1:
+            self._list.setCurrentRow(0)
+
+    @staticmethod
+    def _spec_matches(node_type: str, spec: NodeSpec, query: str) -> bool:
+        """Return True if any searchable field in the spec contains query."""
+        if query in node_type:
+            return True
+        if query in _humanize(node_type).lower():
+            return True
+        if query in spec.description.lower():
+            return True
+        for pf in spec.params:
+            if query in pf.label.lower() or query in pf.help.lower():
+                return True
+        if spec.usage_notes and query in spec.usage_notes.lower():
+            return True
+        return False
+
+    # ------------------------------------------------------------------
+    # Slot: list selection changed
+    # ------------------------------------------------------------------
+
+    def _on_list_selection_changed(
+        self,
+        current: QListWidgetItem | None,
+        _previous: QListWidgetItem | None,
+    ) -> None:
+        if not isinstance(current, _NodeListItem):
+            self._selected_node_type = None
+            if self._mode == "add":
+                self._add_btn.setEnabled(False)
+            return
+
+        node_type = current.node_type
+        self._selected_node_type = node_type
+
+        if self._mode == "add":
+            self._add_btn.setEnabled(True)
+
+        spec = NODE_SPECS.get(node_type)
+        if spec:
+            self._detail.show_node(node_type, spec, on_see_also=self._on_see_also_clicked)
+
+    # ------------------------------------------------------------------
+    # Slot: see-also link clicked
+    # ------------------------------------------------------------------
+
+    def _on_see_also_clicked(self, node_type: str) -> None:
+        """Navigate the list to node_type when a see-also link is clicked."""
+        # Switch to "All" tab so the target is always visible
+        self._tab_bar.setCurrentIndex(0)
+        self._select_node_type(node_type)
+
+    # ------------------------------------------------------------------
+    # Slot: double-click (add mode only)
+    # ------------------------------------------------------------------
+
+    def _on_double_click(self, item: QListWidgetItem) -> None:
+        if self._mode == "add" and isinstance(item, _NodeListItem):
+            self._on_add()
+
+    # ------------------------------------------------------------------
+    # Slot: Add button
+    # ------------------------------------------------------------------
+
+    def _on_add(self) -> None:
+        if self._selected_node_type:
+            SettingsManager.instance().add_recently_used_node(self._selected_node_type)
+            self.accept()
+
+    # ------------------------------------------------------------------
+    # Keyboard
+    # ------------------------------------------------------------------
+
+    def keyPressEvent(self, event) -> None:  # type: ignore[override]
+        from PyQt6.QtCore import Qt as _Qt
+
+        key = event.key()
+        if key in (
+            _Qt.Key.Key_Return,
+            _Qt.Key.Key_Enter,
+        ):
+            if self._mode == "add" and self._selected_node_type:
+                self._on_add()
+            else:
+                self.accept()
+        elif key == _Qt.Key.Key_Escape:
+            self.reject()
+        else:
+            super().keyPressEvent(event)
+
+    # ------------------------------------------------------------------
+    # Geometry persistence
+    # ------------------------------------------------------------------
+
+    def _restore_geometry(self) -> None:
+        geom = SettingsManager.instance().get("node_browser_geometry", default=None)
+        if isinstance(geom, list) and len(geom) == 4:
+            self.setGeometry(*geom)
+        else:
+            self.resize(900, 600)
+
+    def closeEvent(self, event) -> None:  # type: ignore[override]
+        g = self.geometry()
+        SettingsManager.instance().set("node_browser_geometry", value=[g.x(), g.y(), g.width(), g.height()])
+        SettingsManager.instance().save()
+        super().closeEvent(event)

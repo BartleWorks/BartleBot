@@ -158,3 +158,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         ],
     ),
 ]
+
+NODE_TYPE_TO_CATEGORY: dict[str, str] = {
+    node_type: category for category, node_types in NODE_CATEGORIES for node_type in node_types
+}

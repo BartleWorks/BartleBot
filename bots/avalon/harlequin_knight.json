@@ -5,7 +5,7 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss",
+  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic] | any<damage>@boss\n\n### p2\nfeint @ boss",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Avalon",
   "drops": [

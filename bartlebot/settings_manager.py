@@ -85,6 +85,7 @@ _DEFAULTS: dict[str, Any] = {
     "launch_profiles": [],
     "recent_launches": [],
     "recent_bot_files": [],
+    "recently_used_nodes": [],
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
 }
 
@@ -284,6 +285,18 @@ class SettingsManager:
         self.set("recent_bot_files", value=recent[:8])
         self.save()
         return list(self.get("recent_bot_files", default=[]))
+
+    @property
+    def recently_used_nodes(self) -> list[str]:
+        """List of recently added node types, newest first. Capped at 10."""
+        return list(self.get("recently_used_nodes", default=[]))
+
+    def add_recently_used_node(self, node_type: str) -> None:
+        """Prepend node_type to recently_used_nodes, deduplicating and capping at 10."""
+        recent = [n for n in self.recently_used_nodes if n != node_type]
+        recent.insert(0, node_type)
+        self.set("recently_used_nodes", value=recent[:10])
+        self.save()
 
     # ------------------------------------------------------------------
     # Window sizing helper

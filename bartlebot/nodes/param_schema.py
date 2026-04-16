@@ -97,3 +97,7 @@ class NodeSpec:
     returns: list[ReturnSpec] = field(default_factory=list)
     required_bot_options: list[BotOptionSpec] = field(default_factory=list)
     max_consecutive_retries: int | None = None
+    usage_notes: str = ""
+    """Free-text field for gotchas, prerequisites, and common usage patterns shown in the node browser."""
+    see_also: list[str] = field(default_factory=list)
+    """List of related node_type keys shown as clickable links in the node browser."""

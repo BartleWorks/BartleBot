@@ -711,9 +711,26 @@ class _ParamPanel(QWidget):
                 _model.appendRow(_item)
         self._node_type_combo.setModel(_model)
         self._node_type_combo.setItemDelegate(_NodeTypeDelegate(self._node_type_combo))
+        self._node_help_btn = QPushButton("?")
+        self._node_help_btn.setFixedSize(22, 22)
+        self._node_help_btn.setToolTip("View node documentation")
+        self._node_help_btn.setStyleSheet(
+            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
+            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
+        )
+        self._node_help_btn.clicked.connect(self._on_node_help)
+
+        _node_type_row = QWidget()
+        _nt_row_layout = QHBoxLayout(_node_type_row)
+        _nt_row_layout.setContentsMargins(0, 0, 0, 0)
+        _nt_row_layout.setSpacing(4)
+        _nt_row_layout.addWidget(self._node_type_combo, 1)
+        _nt_row_layout.addWidget(self._node_help_btn)
+
         nf.addRow("ID", self._node_id_lbl)
         nf.addRow("Label", self._node_label_edit)
-        nf.addRow("Node type", self._node_type_combo)
+        nf.addRow("Node type", _node_type_row)
 
         self._param_form = _DynamicParamForm()
         scroll = QScrollArea()
@@ -898,6 +915,17 @@ class _ParamPanel(QWidget):
             return
         self._state.label = text or None
         self.properties_changed.emit()
+
+    def _on_node_help(self) -> None:
+        """Open the node browser in view mode for the currently displayed node type."""
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        node_type: str | None = None
+        if self._state is not None:
+            node_type = self._state.node_type
+        else:
+            node_type = self._node_type_combo.currentData(Qt.ItemDataRole.UserRole)
+        NodeBrowserDialog(self, mode="view", initial_node_type=node_type).exec()
 
     def _on_node_type_changed(self, _index: int) -> None:
         node_type: str = self._node_type_combo.currentData(Qt.ItemDataRole.UserRole)

@@ -111,6 +111,14 @@ class _Theme:
     # error bg → ``error``, warning bg → ``warning``
 
     # ------------------------------------------------------------------
+    # Node-browser return-value chips
+    # ------------------------------------------------------------------
+    chip_success_bg: str = "#2e7d32"  # SUCCESS / TRUE — dark green, readable against white text
+    chip_failure_bg: str = "#b71c1c"  # FAILURE / FALSE — dark red, readable against white text
+    chip_neutral_bg: str = "#546e7a"  # any other return value — blue-grey
+    chip_text: str = "#ffffff"  # label text on all chip variants
+
+    # ------------------------------------------------------------------
     # Search match highlights
     # ------------------------------------------------------------------
     search_match_current: str = "#00ccee"
@@ -392,6 +400,11 @@ DARK = _Theme(
     # Pills
     pill_warning_hover="#9a6c00",  # matches warning — gold hues can't lighten and still pass WCAG AA
     pill_text="#ffffff",
+    # Node-browser chips (slightly lighter on dark bg for contrast)
+    chip_success_bg="#388e3c",
+    chip_failure_bg="#c62828",
+    chip_neutral_bg="#607d8b",
+    chip_text="#ffffff",
     # Search
     search_match_current="#00ccee",
     search_match_other="#0088aa",
@@ -511,6 +524,11 @@ _COLOR_TOKENS: list[str] = [
         # rgba() strings that QColorDialog cannot round-trip
         "minimap_bg",
         "minimap_border",
+        # node-browser chip colors — derived from semantic success/failure, not independently editable
+        "chip_success_bg",
+        "chip_failure_bg",
+        "chip_neutral_bg",
+        "chip_text",
     }
 ]
 
