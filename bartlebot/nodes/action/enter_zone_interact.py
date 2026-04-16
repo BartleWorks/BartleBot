@@ -69,14 +69,15 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
             ),
         ),
     ],
     max_consecutive_retries=10,
 )
 
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -109,6 +110,8 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
     # 2. Clear any pre-existing interact prompt before starting.
     prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
     if any(prompts):
@@ -118,7 +121,7 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await node_helpers.poll_until(lambda: node_helpers.none_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL)
+        await node_helpers.poll_until(lambda: node_helpers.none_in_npc_range(clients), safety_delay, POLL_INTERVAL)
 
     # 3. Retry loop: teleport to interact_xyz, wait for prompt on all clients.
     prompt_appeared = False
@@ -130,9 +133,7 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.gather(*[c.teleport(interact) for c in clients])
 
         machine.log("Waiting for interact prompt on all clients…", logging.DEBUG)
-        if await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
-        ):
+        if await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range(clients), safety_delay, POLL_INTERVAL):
             prompt_appeared = True
             break
 
@@ -155,22 +156,29 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
     machine.log("Checking for dungeon exit warning…", logging.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients]
-    )
+    await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay) for c in clients])
 
     # 5. Re-press X for any client that hasn't entered a loading screen yet.
     #    Track which clients have *ever* been seen loading rather than requiring
     #    all to be loading simultaneously — a fast client can finish its loading
     #    screen (is_loading() → False) before a slow client even starts, which
     #    would otherwise prevent the all-loading condition from ever being met.
+    #
+    #    Also treat a client already in to_zone as "seen loading" — if the dungeon
+    #    exit warning check (step 4b) delayed us long enough that the loading screen
+    #    completed before we started polling, the client is already in the destination
+    #    zone and we should not require it to show a loading screen again.
     machine.log(
         f"Waiting for all clients to enter loading screen (timeout={TRIGGER_TIMEOUT}s)…",
         logging.DEBUG,
     )
+
+    async def _loading_or_arrived(c) -> bool:
+        return await c.is_loading() or await c.zone_name() == to_zone
+
     seen_loading = await node_helpers.poll_each_until_seen(
         clients,
-        check_fn=lambda c: c.is_loading(),
+        check_fn=_loading_or_arrived,
         action_fn=lambda c: c.send_key(Keycode.X, 0.1),
         timeout=TRIGGER_TIMEOUT,
     )

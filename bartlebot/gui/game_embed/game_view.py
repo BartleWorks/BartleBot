@@ -52,7 +52,6 @@ class _GamePlaceholder(QWidget):
     launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
     manage_accounts_requested = pyqtSignal()
-    game_embed_settings_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -121,7 +120,7 @@ class _GamePlaceholder(QWidget):
 
         center.addStretch(1)
 
-        self._manage_btn = QPushButton("Manage accounts")
+        self._manage_btn = QPushButton("Game settings")
         self._manage_btn.setFlat(True)
         self._manage_btn.setStyleSheet(
             f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
@@ -129,15 +128,6 @@ class _GamePlaceholder(QWidget):
         self._manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._manage_btn.clicked.connect(self.manage_accounts_requested)
         center.addWidget(self._manage_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
-
-        self._embed_settings_btn = QPushButton("Game embed settings")
-        self._embed_settings_btn.setFlat(True)
-        self._embed_settings_btn.setStyleSheet(
-            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
-        )
-        self._embed_settings_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._embed_settings_btn.clicked.connect(self.game_embed_settings_requested)
-        center.addWidget(self._embed_settings_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         body.addLayout(center, stretch=1)
 
@@ -263,7 +253,6 @@ class GameView(QWidget):
         self._placeholder.launch_account_requested.connect(self.launch_account_requested)
         self._placeholder.launch_profile_requested.connect(self.launch_profile_requested)
         self._placeholder.manage_accounts_requested.connect(self.manage_accounts_requested)
-        self._placeholder.game_embed_settings_requested.connect(self.game_embed_settings_requested)
         self._placeholder.show()
 
         # Overlay button: detach-all (when embedded) / re-attach-all (when detached)

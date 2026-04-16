@@ -39,8 +39,18 @@ async def test_success_no_dialog():
 async def test_success_with_dialog():
     """Dialogue appears after X and is advanced with SPACE until dismissed."""
     client = _ready_client()
-    # Dialog visible on first check, cleared on second.
-    client.is_in_dialog.side_effect = [True, False]
+    # Dialog visible on first check, False on all subsequent checks.
+    # Uses a function so the mock never exhausts — the dialog loop spins until
+    # elapsed >= Safety Delay (0.1s from FakeMachine) with POLL_INTERVAL=0.
+    _seen = []
+
+    async def _dialog():
+        if not _seen:
+            _seen.append(True)
+            return True
+        return False
+
+    client.is_in_dialog.side_effect = _dialog
 
     with patch.object(ix, "POLL_INTERVAL", 0):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
@@ -57,7 +67,15 @@ async def test_success_multiple_clients():
 
     def _make_client():
         c = _ready_client()
-        c.is_in_dialog.side_effect = [True, False]
+        _seen: list = []
+
+        async def _dialog():
+            if not _seen:
+                _seen.append(True)
+                return True
+            return False
+
+        c.is_in_dialog.side_effect = _dialog
         return c
 
     clients = [_make_client(), _make_client()]
@@ -78,7 +96,7 @@ async def test_prompt_never_appears_fails():
     client = FakeClient()
     client.is_in_npc_range.return_value = False
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(ix, "INTERACT_TIMEOUT", 0.01):
+    with patch.object(ix, "POLL_INTERVAL", 0):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
@@ -102,10 +120,7 @@ async def test_prompt_retry_then_success():
 
     client.is_in_npc_range.side_effect = npc_range
 
-    with (
-        patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(ix, "INTERACT_TIMEOUT", 0.01),
-    ):
+    with patch.object(ix, "POLL_INTERVAL", 0):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"

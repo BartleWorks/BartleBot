@@ -68,7 +68,10 @@ class FakeMachine:
         self.drops.append((item, qty, client_index))
 
     def get_option(self, name: str, default=None):
-        """Return configured option value, or 0 for numeric fallback (avoids real delays)."""
+        """Return configured option value, or a short non-zero timeout for Safety Delay (avoids
+        real delays while still allowing poll_until to check conditions), or 0 for other options."""
         if name in self._options:
             return self._options[name]
+        if name == "Safety Delay":
+            return 0.1  # Short but non-zero so poll_until can run at least one condition check.
         return 0

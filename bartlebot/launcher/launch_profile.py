@@ -132,9 +132,11 @@ async def launch_profile(profile_name: str) -> None:
     # Start instances one at a time so each handle is unambiguously claimed
     # before the next instance is spawned.  Patch config.xml before each spawn
     # so the window opens at the configured resolution and grid position.
+    # A per-profile resolution overrides the global setting.
     handles: list[int] = []
     known = set(get_all_wizard_handles())
-    w, h = SettingsManager.instance().game_resolution
+    profile_res = profile.get("resolution")
+    w, h = tuple(profile_res) if profile_res else SettingsManager.instance().game_resolution
     for i, _ in enumerate(accounts):
         col, row = _LAUNCH_GRID_OFFSETS[i] if i < len(_LAUNCH_GRID_OFFSETS) else (0, 0)
         _patch_window_config(w, h, _LAUNCH_ANCHOR_X + col * w, _LAUNCH_ANCHOR_Y + row * h)

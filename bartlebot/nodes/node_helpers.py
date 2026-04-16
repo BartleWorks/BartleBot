@@ -4,9 +4,9 @@ import asyncio
 
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
-    DUNGEON_ENTRANCE_PATH,
-    DUNGEON_WARNING_PATH,
+    DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     GAUNTLET_ENTRANCE_PATH,
+    MESSAGE_BOX_CENTER,
 )
 from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
@@ -23,7 +23,7 @@ async def none_in_npc_range(clients: list) -> bool:
     return not any(results)
 
 
-async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_PATH) -> bool:
+async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) -> bool:
     """Return True when every client has the dungeon entrance prompt showing.
 
     Pass GAUNTLET_ENTRANCE_PATH for gauntlets, which lack a TeamUpButton.
@@ -32,7 +32,7 @@ async def all_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRA
     return all(results)
 
 
-async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_PATH) -> bool:
+async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) -> bool:
     """Return True when no client has the dungeon entrance prompt showing.
 
     Pass GAUNTLET_ENTRANCE_PATH for gauntlets, which lack a TeamUpButton.
@@ -57,7 +57,7 @@ async def confirm_dungeon_warning_dialog(client, delay: float = 3.0) -> None:
     """
     loop_start = asyncio.get_event_loop().time()
     while True:
-        if await click_by_path(client, DUNGEON_WARNING_PATH):
+        if await click_by_path(client, MESSAGE_BOX_CENTER):
             return
         if asyncio.get_event_loop().time() - loop_start >= delay:
             return
@@ -166,6 +166,32 @@ async def none_loading(clients: list) -> bool:
     """Return True when no client is on a loading screen."""
     loading = await asyncio.gather(*[c.is_loading() for c in clients])
     return not any(loading)
+
+
+async def get_text_by_path(client, path: list[str]) -> str:
+    """Return the displayed text of the UI window at path, or '' if not found.
+
+    Tries maybe_text() first; falls back to reading the wide string at offset 616,
+    which is where control elements (item name labels, realm name labels) store text.
+    """
+    from wizwalker.errors import MemoryReadError
+
+    window = await _get_window_from_path(client.root_window, path)
+    if window is None:
+        return ""
+    try:
+        text = await window.maybe_text()
+        if text:
+            return text
+    except (ValueError, MemoryReadError):
+        pass
+    try:
+        text = await window.read_wide_string_from_offset(616)
+        if text:
+            return text
+    except (ValueError, MemoryReadError):
+        pass
+    return ""
 
 
 async def click_by_path(client, path: list[str]) -> bool:

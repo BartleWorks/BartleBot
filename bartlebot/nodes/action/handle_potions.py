@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.action import enter_zone_gateway, mark_location, teleport_to_marked_location
-from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
     POTION_BUY_PATH,
@@ -35,7 +35,7 @@ _HILDA_XYZ = XYZ(-4398.70654296875, 1016.1954345703125, 229.00079345703125)
 _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
 
 # ── Timing constants ───────────────────────────────────────────────────────────
-from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
 
 _HOME_LOADING_TIMEOUT = 15.0  # max seconds to wait for a loading screen after HOME.
 _SHOP_OPEN_TIMEOUT = 5.0  # max seconds to wait for the potion shop window.
@@ -104,6 +104,17 @@ NODE_SPEC = NodeSpec(
             "FAILURE",
             "Buying clients were not in mark_zone; mark failed; a navigation step failed; "
             "or the potion shop could not be reached.",
+        ),
+    ],
+    required_bot_options=[
+        BotOptionSpec(
+            name="Safety Delay",
+            type="float",
+            default=3.0,
+            description=(
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
+            ),
         ),
     ],
     max_consecutive_retries=5,
@@ -352,12 +363,13 @@ async def _open_potion_shop(machine, clients: list) -> bool:
 
     Returns True if the shop opened successfully, False after all retries are exhausted.
     """
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to Hilda…", logging.DEBUG)
         await asyncio.gather(*[c.teleport(_HILDA_XYZ) for c in clients])
 
         if not await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range(clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_in_npc_range(clients), safety_delay, POLL_INTERVAL
         ):
             machine.log(f"Interact prompt did not appear (attempt {attempt}); resetting…", logging.DEBUG)
             await asyncio.gather(*[c.teleport(_HILDA_RESET_XYZ) for c in clients])

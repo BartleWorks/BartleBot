@@ -346,7 +346,7 @@ description = "Low-level, pure Python DBus protocol wrapper."
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
-markers = "sys_platform == \"linux\""
+markers = "sys_platform == \"linux\" or platform_system == \"Linux\" or platform_system == \"FreeBSD\" or platform_system == \"OpenBSD\" or platform_system == \"NetBSD\" or platform_system == \"DragonFly\" or platform_system == \"SunOS\" or platform_system == \"AIX\" or platform_system == \"Minix\""
 files = [
     {file = "jeepney-0.9.0-py3-none-any.whl", hash = "sha256:97e5714520c16fc0a45695e5365a2e11b81ea79bba796e26f9f1d178cb182683"},
     {file = "jeepney-0.9.0.tar.gz", hash = "sha256:cf0e9e845622b81e4a28df94c40345400256ec608d0e55bb8a3feaa9163f5732"},
@@ -1054,6 +1054,21 @@ files = [
 typing-extensions = ">=4.12.0"
 
 [[package]]
+name = "wakepy"
+version = "1.0.0"
+description = "wakelock / keep-awake / stay-awake"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "wakepy-1.0.0-py3-none-any.whl", hash = "sha256:d5497640791517982cf66d894c502e9fa5133dc75c4a45d3b18a3495d1cf8afb"},
+    {file = "wakepy-1.0.0.tar.gz", hash = "sha256:a9425e8e77e89bccfe24a70f33ecd8596b474c75ddac79310cd54f2bc92210e3"},
+]
+
+[package.dependencies]
+jeepney = {version = ">=0.7.1", markers = "platform_system == \"Linux\" or platform_system == \"FreeBSD\" or platform_system == \"OpenBSD\" or platform_system == \"NetBSD\" or platform_system == \"DragonFly\" or platform_system == \"SunOS\" or platform_system == \"AIX\" or platform_system == \"Minix\""}
+
+[[package]]
 name = "win32-setctime"
 version = "1.2.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -1119,4 +1134,4 @@ resolved_reference = "fc3381db1ae426316afa6b682c11b4be72876e24"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "933f237928bd3aaf2f07009461fb0af0af0140d7582678066c34be2114ab603b"
+content-hash = "7ab854338ff41bf78073741719c0ef2d4b3ce9533ba4e7e869e418d5179a1fe0"

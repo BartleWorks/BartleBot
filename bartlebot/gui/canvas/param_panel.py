@@ -57,6 +57,14 @@ class _StrListLineEdit(QLineEdit):
     """
 
 
+class _IntChoiceComboBox(QComboBox):
+    """QComboBox variant used for 'int_choice' param fields.
+
+    Displays a fixed dropdown of integer options defined by ``ParamField.choices``.
+    ``get_params()`` returns the selected value as an int.
+    """
+
+
 # ---------------------------------------------------------------------------
 # _DynamicParamForm
 # ---------------------------------------------------------------------------
@@ -97,7 +105,9 @@ class _DynamicParamForm(QWidget):
             if field.help:
                 label_w.setToolTip(field.help)
             val = params.get(field.key, field.default)
-            widget = self._make_widget(field.type, val, field.help, field.key)
+            widget = self._make_widget(
+                field.type, val, field.help, field.key, getattr(field, "choices", []), getattr(field, "placeholder", "")
+            )
             self._widgets[field.key] = widget
             if field.required:
                 self._required_widgets[field.key] = widget
@@ -177,16 +187,29 @@ class _DynamicParamForm(QWidget):
                 result[key] = w.value()
             elif isinstance(w, QDoubleSpinBox):
                 result[key] = w.value()
+            elif isinstance(w, _IntChoiceComboBox):
+                try:
+                    result[key] = int(w.currentText())
+                except (TypeError, ValueError):
+                    result[key] = 0
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
         return result
 
-    def _make_widget(self, field_type: str, val: Any, help_text: str, key: str = "") -> Any:
+    def _make_widget(
+        self,
+        field_type: str,
+        val: Any,
+        help_text: str,
+        key: str = "",
+        choices: list | None = None,
+        placeholder: str = "",
+    ) -> Any:
         if field_type == "text":
             w = QPlainTextEdit()
             w.setPlainText(str(val) if val is not None else "")
             w.setFixedHeight(120)
-            w.setPlaceholderText("Enter combat DSL…")
+            w.setPlaceholderText(placeholder)
             if help_text:
                 w.setToolTip(help_text)
             w.textChanged.connect(self._emit_changed)
@@ -281,6 +304,20 @@ class _DynamicParamForm(QWidget):
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
             row.addWidget(paste_btn)
             return (spins[0], spins[1], spins[2], container)
+        if field_type == "int_choice":
+            w = _IntChoiceComboBox()
+            for c in choices or []:
+                w.addItem(str(c))
+            try:
+                idx = w.findText(str(int(val)) if val is not None else "")
+                if idx >= 0:
+                    w.setCurrentIndex(idx)
+            except (TypeError, ValueError):
+                pass
+            if help_text:
+                w.setToolTip(help_text)
+            w.currentTextChanged.connect(self._emit_changed)
+            return w
         w = QLabel(f"(unsupported type: {field_type})")
         w.setStyleSheet(f"color: {THEME.text_muted};")
         return w

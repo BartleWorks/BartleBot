@@ -40,15 +40,15 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3,
             description=(
-                "Minimum seconds to watch for dialog windows after triggering an "
-                "interaction before concluding that none will open."
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
             ),
         ),
     ],
     max_consecutive_retries=10,
 )
 
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from bartlebot.nodes.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -67,7 +67,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Waiting for gauntlet entrance prompt…", logging.DEBUG)
     if not await node_helpers.poll_until(
         lambda: node_helpers.all_at_dungeon_entrance(clients, path=node_helpers.GAUNTLET_ENTRANCE_PATH),
-        INTERACT_TIMEOUT,
+        safety_delay,
         POLL_INTERVAL,
     ):
         machine.log("FAILURE: gauntlet entrance prompt never appeared", logging.WARNING)

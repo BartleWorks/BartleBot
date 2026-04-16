@@ -7,7 +7,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import FRIEND_BUSY_DISMISS_PATH
+from bartlebot.nodes.paths import MESSAGE_BOX_RIGHT
 from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -92,13 +92,13 @@ async def run(machine, clients: list, params: dict) -> str:
         for i, c in enumerate(clients_to_move):
             if i in seen_loading:
                 continue
-            if await node_helpers.is_visible_by_path(c, FRIEND_BUSY_DISMISS_PATH):
+            if await node_helpers.is_visible_by_path(c, MESSAGE_BOX_RIGHT):
                 machine.log(
                     f"FAILURE: friend-busy dialog on client {i} — friend has teleports off, "
                     "is in combat, or the instance is no longer accessible",
                     logging.WARNING,
                 )
-                await node_helpers.click_by_path(c, FRIEND_BUSY_DISMISS_PATH)
+                await node_helpers.click_by_path(c, MESSAGE_BOX_RIGHT)
                 return "FAILURE"
 
         # Record newly-loading clients.

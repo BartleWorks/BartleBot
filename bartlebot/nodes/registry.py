@@ -1,9 +1,15 @@
 from bartlebot.nodes.action.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.action.apply_level_scaling import run as apply_level_scaling_run
+from bartlebot.nodes.action.change_realm import NODE_SPEC as _change_realm_spec
+from bartlebot.nodes.action.change_realm import run as change_realm_run
+from bartlebot.nodes.action.collect_reagent import NODE_SPEC as _collect_reagent_spec
+from bartlebot.nodes.action.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.action.collect_wisps import NODE_SPEC as _collect_wisps_spec
 from bartlebot.nodes.action.collect_wisps import run as collect_wisps_run
 from bartlebot.nodes.action.enter_dungeon import NODE_SPEC as _enter_dungeon_spec
 from bartlebot.nodes.action.enter_dungeon import run as enter_dungeon_run
+from bartlebot.nodes.action.enter_dungeon_teamup import NODE_SPEC as _enter_dungeon_teamup_spec
+from bartlebot.nodes.action.enter_dungeon_teamup import run as enter_dungeon_teamup_run
 from bartlebot.nodes.action.enter_gauntlet import NODE_SPEC as _enter_gauntlet_spec
 from bartlebot.nodes.action.enter_gauntlet import run as enter_gauntlet_run
 from bartlebot.nodes.action.enter_zone_gateway import NODE_SPEC as _enter_zone_gateway_spec
@@ -38,20 +44,25 @@ from bartlebot.nodes.condition.check_if_dropped import NODE_SPEC as _check_if_dr
 from bartlebot.nodes.condition.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.condition.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
 from bartlebot.nodes.condition.check_level_scaling import run as check_level_scaling_run
+from bartlebot.nodes.condition.check_zone import NODE_SPEC as _check_zone_spec
+from bartlebot.nodes.condition.check_zone import run as check_zone_run
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
+    "change_realm": change_realm_run,
     "enter_zone_gateway": enter_zone_gateway_run,
     "handle_potions": handle_potions_run,
     "teleport_to_world_hub": teleport_to_world_hub_run,
     "go_to_xyz": go_to_xyz_run,
     "enter_dungeon": enter_dungeon_run,
+    "enter_dungeon_teamup": enter_dungeon_teamup_run,
     "enter_gauntlet": enter_gauntlet_run,
     "interact": interact_run,
     "quicksell": quicksell_run,
     "enter_zone_interact": enter_zone_interact_run,
     "handle_combat": handle_combat_run,
+    "collect_reagent": collect_reagent_run,
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
     "teleport_to_marked_location": teleport_to_marked_location_run,
@@ -61,20 +72,24 @@ NODE_REGISTRY: dict = {
     "wait_for_health": wait_for_health_run,
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
+    "check_zone": check_zone_run,
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
+    "change_realm": _change_realm_spec,
     "enter_zone_gateway": _enter_zone_gateway_spec,
     "handle_potions": _handle_potions_spec,
     "teleport_to_world_hub": _teleport_to_world_hub_spec,
     "go_to_xyz": _go_to_xyz_spec,
     "enter_dungeon": _enter_dungeon_spec,
+    "enter_dungeon_teamup": _enter_dungeon_teamup_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
     "interact": _interact_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_interact": _enter_zone_interact_spec,
     "handle_combat": _handle_combat_spec,
+    "collect_reagent": _collect_reagent_spec,
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
     "teleport_to_marked_location": _teleport_to_marked_location_spec,
@@ -84,6 +99,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "wait_for_health": _wait_for_health_spec,
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
+    "check_zone": _check_zone_spec,
 }
 
 # Convenience alias — param schemas derived from NODE_SPECS so there is one source of truth

@@ -1,0 +1,165 @@
+{
+  "name": "Athenum Reagent Farmer",
+  "description": "Farms reagents in the Atheneum in Dragonspyre",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_3",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Dragonspyre",
+  "drops": [
+    "Ore",
+    "Diamonds",
+    "Stone Block",
+    "Fossil",
+    "Lava Lily",
+    "Fire Blossom"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 2.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "collect_reagent",
+      "label": "Collect reagents",
+      "position": {
+        "x": 150.0,
+        "y": 21.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+        "spawns": "{\"x\": 2755.75, \"y\": 2782.35, \"z\": 400.12}\n{\"x\": 3699.18, \"y\": 2196.08, \"z\": 400.14}\n{\"x\": 4818.44, \"y\": 1701.95, \"z\": 400.14}\n{\"x\": 4222.43, \"y\": 1908.44, \"z\": 400.14}\n{\"x\": 5427.5, \"y\": 3522.57, \"z\": 400.14}\n{\"x\": 5480.13, \"y\": 4691.15, \"z\": 400.14}\n{\"x\": 6263.43, \"y\": 9230.96, \"z\": 400.0}\n{\"x\": 4783.32, \"y\": 9097.44, \"z\": 400.0}\n{\"x\": 3130.67, \"y\": 1223.4, \"z\": -29.6}\n{\"x\": -975.28, \"y\": 3463.43, \"z\": -78.74}"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "change_realm",
+      "label": "Change realm",
+      "position": {
+        "x": 450.0,
+        "y": -69.0
+      },
+      "params": {
+        "start_realm_page": 3,
+        "end_realm_page": 5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Basilica",
+      "position": {
+        "x": 450.0,
+        "y": 111.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_Hub_Cathedral"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_interact",
+      "label": "Enter the Atheneum",
+      "position": {
+        "x": 750.0,
+        "y": 21.0
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_Hub_Cathedral",
+        "to_zone": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+        "interact_xyz": {
+          "x": -1166.98,
+          "y": 1204.67,
+          "z": -0.07
+        },
+        "reset_xyz": {
+          "x": -911.43,
+          "y": 901.54,
+          "z": -0.04
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

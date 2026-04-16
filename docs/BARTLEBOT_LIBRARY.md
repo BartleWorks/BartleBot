@@ -26,6 +26,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 | [`teleport_to_friend`](#teleport_to_friend) | Teleport clients to a named friend | `done` |
 | [`teleport_to_world_hub`](#teleport_to_world_hub) | Teleport to the current world's hub zone | `done` |
 | [`collect_wisps`](#collect_wisps) | Collect health/mana wisps after combat | `done` |
+| [`collect_reagent`](#collect_reagent) | Visit reagent spawn locations and collect any present reagents | `done` |
 | [`apply_level_scaling`](#apply_level_scaling) | Apply the level-scaling elixir via NPC interaction | `done` |
 | [`wait_for_health`](#wait_for_health) | Block until all clients' health reaches a threshold | `done` |
 | [`wait_for_dialogue`](#wait_for_dialogue) | Block until all clients are out of dialogue | `done` |
@@ -36,6 +37,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 |------|-------------|--------|
 | [`check_if_dropped`](#check_if_dropped) | Check if a specific item has been dropped | `done` |
 | [`check_level_scaling`](#check_level_scaling) | Check if clients are level scaled | `done` |
+| [`check_zone`](#check_zone) | Check if all clients are in a specific zone | `done` |
 
 ## Advanced Behaviors
 
@@ -132,6 +134,41 @@ Enters a dungeon via dungeon sigil. Handles client zone desynchronization, sigil
   7. If any clients did not enter `dungeon_zone` (desync) return `FAILURE`
   8. Return `SUCCESS` once all clients are in `dungeon_zone`; return `FAILURE` if retries are exhausted.
 - `FAILURE` cases: clients not in `from_zone`; clients not in `dungeon_zone` after loading attempted.
+
+</details>
+
+---
+
+### enter_dungeon_teamup
+
+**Status:** `done`
+
+Enters a dungeon via the team-up queue. Handles prompt detection, team size selection, anti-AFK inputs during the queue wait, and client zone desynchronization.
+
+| Parameter Name       | Parameter Type | Parameter Description |
+|----------------------|----------------|-----------------------|
+| `from_zone`          | `str`          | The zone to transition from. All selected clients must be in this zone when the node is called.
+| `dungeon_zone`       | `str`          | The name of the dungeon zone. If not all selected clients are in this zone when the node is done, it returns FAILURE.
+| `sigil_xyz`          | `XYZ`          | The XYZ coordinates of the dungeon sigil. The dungeon entrance prompt must appear when standing here.
+| `reset_xyz`          | `XYZ`          | The XYZ coordinates of a location within `from_zone` used to dismiss the entrance prompt. The prompt must **not** appear when standing here.
+| `minimum_team_size`  | `int`          | Minimum number of players required before the dungeon starts. Valid values: `2`, `3`, or `4`. Defaults to `2`.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_loading()`, `client.send_key(Keycode.A)`, window tree helpers (`click_by_path`, `is_visible_by_path`)
+- Flow:
+  1. Validate `minimum_team_size` (must be 2, 3, or 4). Return `FAILURE` immediately if invalid.
+  2. Verify all clients are in `from_zone`. Return `FAILURE` if not.
+  3. Teleport all clients to `sigil_xyz`. If the dungeon entrance prompt was already visible beforehand, teleport to `reset_xyz` first to dismiss it.
+  4. Wait for the dungeon entrance (team-up button) prompt to appear. If the prompt does not show after a short timeout, teleport to `reset_xyz` and retry (up to `MAX_RETRIES` attempts).
+  5. Click the team-up button (`DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH`) on all clients.
+  6. Wait for the team-up confirmation window to appear (`ENTER_TEAMUP_BUTTON_PATH` visible). Return `FAILURE` if it never appears.
+  7. Click the appropriate team size checkbox on all clients.
+  8. Click the enter team-up button on all clients to join the queue.
+  9. Poll for zone change, sending a brief `A` keypress every 3 minutes to prevent idle disconnection. Timeout after 1 hour.
+  10. Wait for loading screens to clear, then verify all clients are in `dungeon_zone`. Return `FAILURE` if any client is in the wrong zone.
+- `FAILURE` cases: invalid `minimum_team_size`; clients not in `from_zone`; entrance prompt never appeared; team-up window never opened; queue timed out (1 hour); clients not in `dungeon_zone` after loading.
 
 </details>
 
@@ -400,6 +437,41 @@ Collects health and mana wisps after a battle if clients are below a specified h
 
 ---
 
+### collect_reagent
+
+**Status:** `done`
+
+Visits a list of reagent spawn locations in order and collects any reagents present at each.
+Because reagents spawn randomly, the interact prompt is not guaranteed at every location — the node
+waits a short time at each spawn and moves on if nothing appears. Returns `SUCCESS` after all spawns
+are visited regardless of how many reagents were collected.
+
+| Parameter Name | Parameter Type | Parameter Description |
+|----------------|----------------|-----------------------|
+| `zone`         | `str`          | Zone name all clients must be in when this node executes. |
+| `spawns`       | `text`         | Spawn locations to visit, one per line, in Copy XYZ format — e.g. `{"x": -1234.56, "y": 678.9, "z": 0.0}`. Walk to each spawn, click Copy XYZ in the client widget, and paste here. Locations are visited in order. Blank lines are ignored. |
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `client.teleport(XYZ)`, `client.is_in_npc_range()`, `client.send_key(Keycode.X)`
+- Timing: `INTERACT_TIMEOUT` (reused from `timing.py`), `REAGENT_COLLECT_DELAY` (post-collect settle wait)
+- Multi-client: reagents are server-wide; two clients on the same server both press X but only one collects. Clients on separate servers collect independently.
+- Flow:
+  1. Verify all clients are in `zone`. If not, return `FAILURE`.
+  2. Parse `spawns` — one JSON dict per line in Copy XYZ format. If empty, return `SUCCESS` immediately.
+  3. For each spawn XYZ in order:
+     a. `asyncio.gather` teleport all clients to the spawn XYZ.
+     b. Poll `client.is_in_npc_range()` on all clients for up to `INTERACT_TIMEOUT` seconds.
+     c. If a prompt appeared on at least one client: send Keycode.X (0.1 s hold) on all clients that have a prompt. Wait a jitter delay (`REAGENT_COLLECT_DELAY`) to let the collection register.
+     d. Move to the next spawn (no retry — absence is expected).
+  4. Return `SUCCESS`.
+- `FAILURE` cases: clients not in `zone` at start; a line in `spawns` cannot be parsed as a JSON XYZ dict.
+
+</details>
+
+---
+
 ### apply_level_scaling
 
 **Status:** `done`
@@ -540,6 +612,32 @@ Checks if a list of clients are all level scaled. Checks level scaling by checki
 - Flow:
   1. For each client in `clients_to_check`, check if the level scaling UI path element is visible.
   2. Return `FALSE` if any client is not level scaled, else return `TRUE`.
+
+</details>
+
+---
+
+### check_zone
+
+**Status:** `done`
+
+Checks whether all specified clients are currently in a given zone.
+
+| Parameter Name     | Parameter Type | Parameter Description |
+|--------------------|----------------|-----------------------|
+| `zone`             | `str`          | Zone name to check (e.g. `WizardCity/WC_Ravenwood`). |
+| `clients_to_check` | `List[int]`    | 1-based client numbers to check (e.g. `[1, 2]`). Leave empty to check all clients. |
+
+**Returns:** `TRUE` if all checked clients are in `zone`, `FALSE` otherwise.
+
+<details>
+<summary>Implementation</summary>
+
+- APIs: `client.zone_name()`, `node_helpers.all_in_zone()`
+- Flow:
+  1. Resolve `clients_to_check` to 0-based indices (default: all clients).
+  2. Call `node_helpers.all_in_zone()` which gathers zone names in parallel and checks all match.
+  3. Return `TRUE` if all match, `FALSE` otherwise.
 
 </details>
 

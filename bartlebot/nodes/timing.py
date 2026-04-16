@@ -11,10 +11,6 @@ import random
 POLL_INTERVAL = 0.25
 # General polling interval used by all wait loops (poll_until, poll_each_until_seen, manual sleep loops).
 
-INTERACT_TIMEOUT = 5.0
-# Seconds to wait for an NPC interaction prompt to appear, or for menu elements
-# (e.g. NPCServicesWin buttons) to become visible after an interaction.
-
 ZONE_CHANGE_TIMEOUT = 30.0
 # Seconds to wait for a zone transition to complete (clients leave the source
 # zone and arrive in the destination zone).
@@ -25,6 +21,12 @@ MAX_RETRIES = 3
 TRIGGER_TIMEOUT = 10.0
 # Seconds to wait for a UI event to fire after an input (loading screen start,
 # button becoming enabled, dialog appearing).
+
+QUICKSELL_COMPLETE_TIMEOUT = 15.0
+# Seconds to wait for the backpack close button to reappear after confirming
+# a quicksell. Selling a full backpack triggers a server-side transaction that
+# can lag significantly; this gives the game time to finish processing before
+# treating the operation as failed.
 
 COMPASS_TELEPORT_TIMEOUT = 35.0
 # Seconds to wait for a compass-controlled teleport button to become enabled.
@@ -42,6 +44,25 @@ TARGET_ACQUIRE_RETRIES = 3
 
 TARGET_ACQUIRE_DELAY = 3.0
 # Seconds to wait between target-acquire retries.
+
+TEAMUP_QUEUE_TIMEOUT = 3600.0
+# Maximum seconds to wait for a team-up queue match to complete and zone-change.
+# Team-up matchmaking can take well over 10 minutes in low-population instances,
+# so a 1-hour ceiling is used.
+
+TEAMUP_AFK_INTERVAL = 180.0
+# Seconds between anti-AFK inputs (pressing A briefly) while waiting in the
+# team-up queue.  Wizard101 idles the character after a few minutes without input.
+
+
+REAGENT_COLLECT_DELAY = 0.5
+# Seconds to wait after pressing X at a reagent spawn before moving to the next
+# location. Gives the game time to register the collection animation and item pickup.
+
+
+REALM_HOP_TIMEOUT = 65.0
+# Seconds to wait for the realm-hop cooldown to expire.
+# Wizard101 imposes a ~60-second timer between realm changes; this adds a 5-second margin.
 
 
 def jitter(base: float, factor: float = 0.2) -> float:

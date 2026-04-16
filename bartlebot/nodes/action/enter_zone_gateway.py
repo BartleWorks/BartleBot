@@ -74,7 +74,8 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3.0,
             description=(
-                "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
             ),
         ),
     ],

@@ -31,7 +31,9 @@ def _make_patchers(
         "is_enabled": patch.object(
             node_helpers, "is_enabled_by_path", new_callable=AsyncMock, return_value=is_enabled_by_path_returns
         ),
-        "get_text": patch.object(qs, "_get_window_text", new_callable=AsyncMock, return_value=get_window_text_returns),
+        "get_text": patch.object(
+            node_helpers, "get_text_by_path", new_callable=AsyncMock, return_value=get_window_text_returns
+        ),
         "jewel_full": patch.object(
             qs, "_is_jewel_backpack_full", new_callable=AsyncMock, return_value=is_jewel_full_returns
         ),
@@ -178,7 +180,7 @@ async def test_keeps_items_matching_keyword():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(qs, "_get_window_text", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(FakeMachine(), [client], _HAT_KEEPS)
 
     assert result == "SUCCESS"
@@ -198,7 +200,7 @@ async def test_case_insensitive_keep_match():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(qs, "_get_window_text", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(FakeMachine(), [client], {"keep_list": ["STAFF"]})
 
     assert result == "SUCCESS"
@@ -218,7 +220,7 @@ async def test_non_matching_items_not_unchecked():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
-        with patch.object(qs, "_get_window_text", side_effect=_text_for_path, new_callable=AsyncMock):
+        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
             result = await qs.run(FakeMachine(), [client], _HAT_KEEPS)
 
     assert result == "SUCCESS"
@@ -272,7 +274,7 @@ async def test_handles_multiple_clients():
 
 async def test_is_jewel_backpack_full_parses_text():
     """_is_jewel_backpack_full returns True when text is 'X/Y' with X >= Y."""
-    with patch.object(qs, "_get_window_text", new_callable=AsyncMock) as mock_text:
+    with patch.object(node_helpers, "get_text_by_path", new_callable=AsyncMock) as mock_text:
         mock_text.return_value = "100/100"
         assert await qs._is_jewel_backpack_full(FakeClient()) is True
 

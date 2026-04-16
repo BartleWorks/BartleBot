@@ -34,6 +34,7 @@ PARAM_SCHEMA: list[ParamField] = [
         help=("Combat config to use for this encounter. Only active when 'Use bot-level default' is unchecked."),
         default="",
         default_hint="Default: uses the bot-level or BartleBot built-in combat config",
+        placeholder="Enter combat DSL…",
         disabled_by="use_bot_default",
     ),
     ParamField(

@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+from wakepy import ActivationError, keep
+
 logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, QTimer, pyqtSignal
@@ -38,6 +40,11 @@ class AppController(QObject):
         self._current_machine: BotMachine | None = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
+
+        # Long-lived asyncio tasks — held here to prevent GC (event loop keeps weak refs only).
+        self._client_loop_task: asyncio.Task | None = None
+        self._bot_task: asyncio.Task | None = None
+        self._recovery_task: asyncio.Task | None = None
 
         # Client recovery state
         # Maps window_handle → username for all clients seen this session.
@@ -80,7 +87,7 @@ class AppController(QObject):
         # Canvas signals
         w.bot_canvas.config_changed.connect(self._on_config_changed)
         w.bot_canvas.mode_changed.connect(self._on_mode_changed)
-        w.bot_canvas.run_requested.connect(lambda: asyncio.create_task(self._start_bot()))
+        w.bot_canvas.run_requested.connect(self._on_run_requested)
         w.bot_canvas.pause_requested.connect(self._pause_bot)
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
@@ -107,7 +114,7 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     async def run(self) -> None:
-        asyncio.create_task(self._client_loop())
+        self._client_loop_task = asyncio.create_task(self._client_loop())
         quit_event = asyncio.Event()
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
@@ -152,12 +159,37 @@ class AppController(QObject):
         self._last_save_path = path
         self._window.set_bot_name(config.name, Path(path).name)
         self._window.bot_canvas.setup(config)
+        self._apply_bot_defaults(config)
         self._window.left_sidebar.set_config(config)
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
         self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         self._window.bot_canvas.refresh_placeholder()
+
+    def _apply_bot_defaults(self, config: BotConfig) -> None:
+        """Apply user-configured defaults to a freshly loaded BotConfig.
+
+        - Safety Delay (bot option): replace its value with the configured default.
+        - Quicksell params: overwrite sell_* params on every quicksell state.
+        """
+        sm = SettingsManager.instance()
+
+        delay = sm.default_safety_delay
+        config.options = [
+            opt.model_copy(update={"default": delay}) if opt.name == "Safety Delay" else opt for opt in config.options
+        ]
+
+        sell_crowns = sm.get_general("default_quicksell_sell_crowns", default=True)
+        sell_pets = sm.get_general("default_quicksell_sell_pets", default=True)
+        sell_socket_wrenches = sm.get_general("default_quicksell_sell_socket_wrenches", default=False)
+        sell_skeleton_keys = sm.get_general("default_quicksell_sell_skeleton_keys", default=False)
+        for state in config.states:
+            if state.node_type == "quicksell":
+                state.params["sell_crowns"] = sell_crowns
+                state.params["sell_pets"] = sell_pets
+                state.params["sell_socket_wrenches"] = sell_socket_wrenches
+                state.params["sell_skeleton_keys"] = sell_skeleton_keys
 
     def _close_bot(self) -> None:
         if self._loaded_config is None:
@@ -225,9 +257,19 @@ class AppController(QObject):
     # Bot control
     # ------------------------------------------------------------------
 
+    def _on_run_requested(self) -> None:
+        self._bot_task = asyncio.create_task(self._start_bot())
+
     async def _start_bot(self) -> None:
         if not self._clients or self._loaded_config is None:
             return
+        from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
+
+        safety_warnings = collect_safety_warnings(self._loaded_config)
+        if safety_warnings:
+            dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
+            if not dlg.exec():
+                return
         machine = BotMachine(
             clients=self._clients,
             config=self._loaded_config.to_machine_config(node_specs=NODE_SPECS),
@@ -250,7 +292,14 @@ class AppController(QObject):
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         try:
-            await machine.run()
+            try:
+                with keep.running(on_fail="error"):
+                    await machine.run()
+            except ActivationError:
+                logger.warning(
+                    "wakepy could not acquire a sleep-prevention wake lock; bot will run without sleep guard"
+                )
+                await machine.run()
         finally:
             self._window.bot_canvas.set_idle()
             remove_gui_callback(log_cb)
@@ -445,7 +494,7 @@ class AppController(QObject):
                 machine.pause()
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
-                asyncio.create_task(self._run_recovery_queue())
+                self._recovery_task = asyncio.create_task(self._run_recovery_queue())
 
     def _build_ordered_clients(self, live_clients: list) -> list:
         """Build the client list in _client_order order; unknown-account clients go at the end."""

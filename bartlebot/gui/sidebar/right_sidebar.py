@@ -16,3 +16,7 @@ class RightSidebar(Sidebar):
 
         self._add_section(self.clients)
         self._add_section(self.drops)
+
+        # Remove the trailing stretch added by Sidebar so the expanding DropSection
+        # fills all remaining vertical space instead of the stretch taking it.
+        self._layout.takeAt(self._layout.count() - 1)

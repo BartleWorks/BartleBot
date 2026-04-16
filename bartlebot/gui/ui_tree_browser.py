@@ -179,9 +179,10 @@ class UITreeBrowserDialog(QDialog):
             return
 
         item = QTreeWidgetItem([f"[{name}]  {type_name}"])
-        # path for this node: root stores [] so _get_window_from_path returns client.root_window.
-        # Children start with [name].
-        item.setData(0, _PATH_ROLE, path)
+        # Root stores [] so _get_window_from_path(root_window, []) returns root_window.
+        # All other nodes store the full path to themselves (excluding the root window).
+        own_path = [] if parent_item is None else path + [name]
+        item.setData(0, _PATH_ROLE, own_path)
         item.setData(0, _WINDOW_ROLE, window)
         self._node_count += 1
 
@@ -196,7 +197,7 @@ class UITreeBrowserDialog(QDialog):
             return
 
         for child in children:
-            await self._fetch_node(child, item, path + [name])
+            await self._fetch_node(child, item, own_path)
 
     # ------------------------------------------------------------------
     # Refresh

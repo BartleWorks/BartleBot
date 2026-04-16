@@ -67,15 +67,15 @@ NODE_SPEC = NodeSpec(
             type="float",
             default=3,
             description=(
-                "Minimum seconds to watch for dialog windows after triggering an "
-                "interaction before concluding that none will open."
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
+                "Increase on high-latency connections."
             ),
         ),
     ],
     max_consecutive_retries=10,
 )
 
-from bartlebot.nodes.timing import INTERACT_TIMEOUT, MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -92,6 +92,7 @@ async def run(machine, clients: list, params: dict) -> str:
     dungeon_zone: str = params["dungeon_zone"]
     sigil = XYZ(**params["sigil_xyz"])
     reset = XYZ(**params["reset_xyz"])
+    safety_delay: float = machine.get_option("Safety Delay", 3.0)
     machine.log(f"enter_dungeon: {from_zone!r} → {dungeon_zone!r}")
 
     # 1. Verify all clients are in from_zone.
@@ -107,7 +108,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Clear any pre-existing dungeon entrance prompt before starting.
     prompts = await asyncio.gather(
-        *[node_helpers.is_visible_by_path(c, node_helpers.DUNGEON_ENTRANCE_PATH) for c in clients]
+        *[node_helpers.is_visible_by_path(c, node_helpers.DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) for c in clients]
     )
     if any(prompts):
         stale = [i for i, p in enumerate(prompts) if p]
@@ -117,7 +118,7 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
         await node_helpers.poll_until(
-            lambda: node_helpers.none_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.none_at_dungeon_entrance(clients), safety_delay, POLL_INTERVAL
         )
 
     # 3. Retry loop: teleport to sigil, wait for dungeon entrance prompt.
@@ -128,7 +129,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
         machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
         if await node_helpers.poll_until(
-            lambda: node_helpers.all_at_dungeon_entrance(clients), INTERACT_TIMEOUT, POLL_INTERVAL
+            lambda: node_helpers.all_at_dungeon_entrance(clients), safety_delay, POLL_INTERVAL
         ):
             prompt_appeared = True
             break
@@ -152,9 +153,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 5. Wait briefly, then confirm dungeon warning dialog if it appeared.
     machine.log("Checking for dungeon warning dialog…", logging.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0)) for c in clients]
-    )
+    await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay) for c in clients])
 
     # 6. Wait for all clients to leave from_zone.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)

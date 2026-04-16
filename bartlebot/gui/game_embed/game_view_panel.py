@@ -26,7 +26,6 @@ class GameViewPanel(QWidget):
     launch_account_requested = pyqtSignal(str, str)  # forwarded from GameView
     launch_profile_requested = pyqtSignal(str)  # forwarded from GameView
     manage_accounts_requested = pyqtSignal()  # forwarded from GameView
-    game_embed_settings_requested = pyqtSignal()  # forwarded from GameView
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -37,7 +36,6 @@ class GameViewPanel(QWidget):
         self.game_view.launch_account_requested.connect(self.launch_account_requested)
         self.game_view.launch_profile_requested.connect(self.launch_profile_requested)
         self.game_view.manage_accounts_requested.connect(self.manage_accounts_requested)
-        self.game_view.game_embed_settings_requested.connect(self.game_embed_settings_requested)
 
     # ------------------------------------------------------------------
     # Construction
