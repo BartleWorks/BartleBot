@@ -14,13 +14,13 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
 | Node | Description | Status |
 |------|-------------|--------|
-| [`go_to_xyz`](#go_to_xyz) | Teleport clients to an XYZ within the current zone | `done` |
-| [`enter_zone_gateway`](#enter_zone_gateway) | Transition clients between zones via gateway coordinates | `done` |
+| [`teleport_to_coordinates`](#teleport_to_coordinates) | Teleport clients to an XYZ within the current zone | `done` |
+| [`enter_zone`](#enter_zone) | Transition clients between zones via gateway coordinates | `done` |
 | [`enter_dungeon`](#enter_dungeon) | Enter a dungeon via its sigil | `done` |
 | [`enter_gauntlet`](#enter_gauntlet) | Enter a gauntlet dungeon placed in a player's house | `done` |
 | [`handle_combat`](#handle_combat) | Fight an enemy using WizSprinter combat DSL | `done` |
 | [`interact`](#interact) | Interact with an NPC or world object | `done` |
-| [`enter_zone_interact`](#enter_zone_interact) | Interact with an object that triggers a zone change | `done` |
+| [`enter_zone_via_object`](#enter_zone_via_object) | Interact with an object that triggers a zone change | `done` |
 | [`mark_location`](#mark_location) | Mark current location with failsafe handling | `done` |
 | [`teleport_to_marked_location`](#teleport_to_marked_location) | Recall to an existing marked location | `done` |
 | [`teleport_to_friend`](#teleport_to_friend) | Teleport clients to a named friend | `done` |
@@ -54,7 +54,7 @@ See `FSM_ARCHITECTURE.md` for how nodes integrate with the FSM.
 
 Action nodes are nodes that execute in-game actions. They make up the core behavior of a BartleBot FSM.
 
-### go_to_xyz
+### teleport_to_coordinates
 
 **Status:** `done`
 
@@ -79,7 +79,7 @@ Teleports clients to a given XYZ location within the same zone.
 
 ---
 
-### enter_zone_gateway
+### enter_zone
 
 **Status:** `done`
 
@@ -265,7 +265,7 @@ Interacts with an NPC or interactable world item such as a lever, collectable, e
 
 ---
 
-### enter_zone_interact
+### enter_zone_via_object
 
 **Status:** `done`
 
@@ -671,9 +671,9 @@ Uses potions if clients are below a specified health or mana threshold. Refills 
   5. Teleport home
   6. After loading home, check zone. If zone is `WizardCity/Interiors/WC_Housing_Dorm_Interior` then we're set. If not, wait for the home teleport button to become available again and then teleport home.
     -  Almost all houses have a spiral door available, but there are niche cases (specifically, the Apartment series houses) that need to be handled. Rather than branch on these cases, let's just be 100% sure that we end up in a dorm in a near-infallible manner.
-  7. Call enter_zone_gateway logic to go from the dorm to Ravenwood (`WizardCity/WC_Ravenwood`)
-  8. Call enter_zone_gateway logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{'x': 12.1, 'y': -2037.77, 'z': -130.64}`)
-  9. Teleport to Hilda Brewer via go_to_xyz, then talk to her via interact.
+  7. Call enter_zone logic to go from the dorm to Ravenwood (`WizardCity/WC_Ravenwood`)
+  8. Call enter_zone logic to go from Ravenwood to The Commons (`WizardCity/WC_Hub` via `{'x': 12.1, 'y': -2037.77, 'z': -130.64}`)
+  9. Teleport to Hilda Brewer via teleport_to_coordinates, then talk to her via interact.
   10. Navigate the potions menu following the buy_potions() logic in utils.py at C:/GitHub/Deimos
   11. Return `SUCCESS` if potions were bought successfully, `FAILURE` otherwise.
 

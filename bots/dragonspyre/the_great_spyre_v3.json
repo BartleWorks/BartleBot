@@ -68,7 +68,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Take portal to Dragonspyre Academy",
       "position": {
         "x": 450.0,
@@ -92,7 +92,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Start dragon ride",
       "position": {
         "x": 750.0,
@@ -220,7 +220,7 @@
     },
     {
       "id": "state_11",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Path of Scales",
       "position": {
         "x": 2844.4690062315512,
@@ -244,7 +244,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to the Great Spyre",
       "position": {
         "x": 3118.5313217448347,
@@ -268,7 +268,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Activate elevator",
       "position": {
         "x": 3400.2223679895046,
@@ -305,7 +305,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit elevator",
       "position": {
         "x": 3952.9242374549026,
@@ -355,7 +355,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Enter Gurtok Piercer render radius",
       "position": {
         "x": 4605.8879255799,
@@ -440,7 +440,7 @@
     },
     {
       "id": "state_21",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to the Crown of Fire",
       "position": {
         "x": 5991.663581554078,
@@ -464,7 +464,7 @@
     },
     {
       "id": "state_28",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for mobs",
       "position": {
         "x": 6270.216648538085,
@@ -528,7 +528,7 @@
     },
     {
       "id": "state_32",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Activate Malistaire dialogue",
       "position": {
         "x": 7345.11398262121,
@@ -559,7 +559,7 @@
     },
     {
       "id": "state_34",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Reset Malistaire dialogue",
       "position": {
         "x": 7346.834736090926,

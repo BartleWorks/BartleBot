@@ -54,7 +54,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Hametsu Village",
       "position": {
         "x": 1050.0,
@@ -154,7 +154,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Do-Daga's Dojo",
       "position": {
         "x": 2250.0,

@@ -73,7 +73,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Mirkholm Keep",
       "position": {
         "x": 1350.3223443223444,

@@ -41,7 +41,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Go from the Basilica to Dragonspyre Academy",
       "position": {
         "x": 750.0,
@@ -65,7 +65,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Go from Dragonspyre Academy to Dragon's Roost",
       "position": {
         "x": 1050.0,
@@ -89,7 +89,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Skip dragon ride",
       "position": {
         "x": 1350.0,
@@ -165,7 +165,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Path of Scales",
       "position": {
         "x": 1350.0,
@@ -184,7 +184,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Lower Great Spyre",
       "position": {
         "x": 1650.0,
@@ -203,7 +203,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Take elevator",
       "position": {
         "x": 1950.0,
@@ -227,7 +227,7 @@
     },
     {
       "id": "state_9",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit elevator",
       "position": {
         "x": 2250.0,
@@ -275,7 +275,7 @@
     },
     {
       "id": "state_11",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for Gurtok Piercer",
       "position": {
         "x": 2850.0,
@@ -337,7 +337,7 @@
     },
     {
       "id": "state_14",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to the Crown of Fire",
       "position": {
         "x": 3750.0,
@@ -391,7 +391,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for Soulless Servants",
       "position": {
         "x": 5250.0,
@@ -428,7 +428,7 @@
     },
     {
       "id": "state_19",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Start Malistaire dialogue",
       "position": {
         "x": 5850.0,
@@ -506,7 +506,7 @@
     },
     {
       "id": "state_23",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for Decaying Blackguard",
       "position": {
         "x": 4050.0,
@@ -537,7 +537,7 @@
     },
     {
       "id": "state_25",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Reset Malistaire dialogue",
       "position": {
         "x": 6150.0,
@@ -571,7 +571,7 @@
     },
     {
       "id": "state_27",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Cancel invulnerability",
       "position": {
         "x": 4650.0,

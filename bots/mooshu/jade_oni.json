@@ -166,7 +166,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
       "position": {
         "x": 3150.0,
@@ -216,7 +216,7 @@
     },
     {
       "id": "state_10",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Enter Jade Oni's render radius",
       "position": {
         "x": 2250.0,

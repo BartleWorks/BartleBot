@@ -71,7 +71,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Enter the Atheneum",
       "position": {
         "x": 750.0,

@@ -1,4 +1,4 @@
-"""go_to_xyz node — teleport all clients to an XYZ coordinate within the current zone."""
+"""teleport_to_coordinates node — teleport all clients to an XYZ coordinate within the current zone."""
 
 import asyncio
 import logging
@@ -56,7 +56,7 @@ async def run(machine, clients: list, params: dict) -> str:
     xyz_data: dict = params["xyz"]
     target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
 
-    machine.log(f"go_to_xyz: {zone!r} → XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
+    machine.log(f"teleport_to_coordinates: {zone!r} → XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])

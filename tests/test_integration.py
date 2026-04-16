@@ -8,7 +8,7 @@ These tests cover four integration boundaries that existing unit tests leave unt
      converted, and used to construct BotMachine without errors.
   3. Flag transitions through BotMachine: BotConfig-generated flag conditions
      (_flag_X, _flag_compound_X) are evaluated correctly by the live FSM.
-  4. Real node execution through the FSM: enter_zone_gateway returns SUCCESS/FAILURE and
+  4. Real node execution through the FSM: enter_zone returns SUCCESS/FAILURE and
      the machine routes those results through real transitions from a real BotConfig.
 
 What is NOT tested here (by design):
@@ -19,7 +19,7 @@ What is NOT tested here (by design):
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.enter_zone_gateway as gtz
+import bartlebot.nodes.action.enter_zone as gtz
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, StateModel, TransitionModel
 from bartlebot.nodes.registry import NODE_REGISTRY
@@ -318,7 +318,7 @@ async def test_compound_flag_AND_one_false_falls_through():
 # Part 4: Real node execution through BotMachine
 # ---------------------------------------------------------------------------
 
-# Shared params for enter_zone_gateway in all real-node tests
+# Shared params for enter_zone in all real-node tests
 _GZ_PARAMS = {"from_zone": "Src", "to_zone": "Dst", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
 
 # Safety Delay = 0.0 so confirm_dungeon_warning_dialog returns immediately in tests
@@ -328,7 +328,7 @@ _SAFETY_DELAY_ZERO = BotOptionModel(name="Safety Delay", type="float", default=0
 def _make_enter_zone_gateway_client_success():
     """FakeClient that simulates a successful Src → Dst zone transition.
 
-    zone_name sequence matches the enter_zone_gateway call pattern:
+    zone_name sequence matches the enter_zone call pattern:
       call 1 – pre-condition check           → "Src"
       call 2 – poll_each_until_seen iter 1   → "Src" (still leaving; reteleport)
       call 3 – poll_each_until_seen iter 2   → "Dst" (left zone; seen)
@@ -340,8 +340,8 @@ def _make_enter_zone_gateway_client_success():
     return client
 
 
-async def test_enter_zone_gateway_success_advances_state():
-    """enter_zone_gateway returning SUCCESS routes the FSM from state_a to the terminal state_b.
+async def test_enter_zone_success_advances_state():
+    """enter_zone returning SUCCESS routes the FSM from state_a to the terminal state_b.
 
     This is the primary seam test: a real node function executes via the FSM engine,
     its return value is routed through a real transition, and on_transition fires with
@@ -355,8 +355,8 @@ async def test_enter_zone_gateway_success_advances_state():
         initial="state_a",
         options=[_SAFETY_DELAY_ZERO],
         states=[
-            StateModel(id="state_a", node_type="enter_zone_gateway", params=_GZ_PARAMS),
-            StateModel(id="state_b", node_type="enter_zone_gateway", params=_GZ_PARAMS),
+            StateModel(id="state_a", node_type="enter_zone", params=_GZ_PARAMS),
+            StateModel(id="state_b", node_type="enter_zone", params=_GZ_PARAMS),
             # state_b has no outgoing transitions → terminal
         ],
         transitions=[
@@ -379,8 +379,8 @@ async def test_enter_zone_gateway_success_advances_state():
     assert ("state_a", "SUCCESS", "state_b") in transitions_seen
 
 
-async def test_enter_zone_gateway_failure_self_loops():
-    """enter_zone_gateway returning FAILURE self-loops on state_a until the machine's idle limit stops it.
+async def test_enter_zone_failure_self_loops():
+    """enter_zone returning FAILURE self-loops on state_a until the machine's idle limit stops it.
 
     Verifies that FAILURE results are routed through real transitions and that
     max_consecutive_same_state provides a circuit-breaker for a stuck node.
@@ -396,8 +396,8 @@ async def test_enter_zone_gateway_failure_self_loops():
         initial="state_a",
         options=[_SAFETY_DELAY_ZERO],
         states=[
-            StateModel(id="state_a", node_type="enter_zone_gateway", params=_GZ_PARAMS),
-            StateModel(id="state_b", node_type="enter_zone_gateway", params=_GZ_PARAMS),
+            StateModel(id="state_a", node_type="enter_zone", params=_GZ_PARAMS),
+            StateModel(id="state_b", node_type="enter_zone", params=_GZ_PARAMS),
         ],
         transitions=[
             TransitionModel(trigger="advance", source="state_a", dest="state_b", when="SUCCESS"),

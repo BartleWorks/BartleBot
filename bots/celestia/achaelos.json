@@ -48,7 +48,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Crustacean Empire",
       "position": {
         "x": 450.0,
@@ -131,7 +131,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
         "x": 1055.2739621187275,
@@ -156,7 +156,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
         "x": 1056.885685798622,

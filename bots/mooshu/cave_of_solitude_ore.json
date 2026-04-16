@@ -67,7 +67,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Water Dojo",
       "position": {
         "x": 1050.0,
@@ -92,7 +92,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Shoshun Village",
       "position": {
         "x": 1350.0,
@@ -117,7 +117,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Cave of Solitude",
       "position": {
         "x": 1650.0,

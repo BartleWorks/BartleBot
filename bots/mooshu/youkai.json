@@ -43,7 +43,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Rock Dojo",
       "position": {
         "x": 750.0,
@@ -68,7 +68,7 @@
     },
     {
       "id": "state_3",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Shirataki Temple",
       "position": {
         "x": 1050.0,
@@ -112,7 +112,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Go to sigil",
       "position": {
         "x": 1350.0,
@@ -170,7 +170,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Youkai's Dojo",
       "position": {
         "x": 2545.0777304034114,

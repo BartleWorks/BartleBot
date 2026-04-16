@@ -129,7 +129,7 @@ class AppController(QObject):
         config = BotConfig(
             name="New Bot",
             initial="state_1",
-            states=[StateModel(id="state_1", node_type="enter_zone_gateway")],
+            states=[StateModel(id="state_1", node_type="enter_zone")],
             transitions=[],
         )
         self._loaded_config = config

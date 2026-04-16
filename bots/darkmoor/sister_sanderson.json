@@ -111,7 +111,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
         "x": 1950.0,

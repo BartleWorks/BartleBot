@@ -6,7 +6,7 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.action import enter_zone_gateway, mark_location, teleport_to_marked_location
+from bartlebot.nodes.action import enter_zone, mark_location, teleport_to_marked_location
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
@@ -242,7 +242,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 8. Navigate Dorm → Ravenwood.
     machine.log("Navigating Dorm → Ravenwood…")
     if (
-        await enter_zone_gateway.run(
+        await enter_zone.run(
             machine,
             buying_clients,
             {
@@ -259,7 +259,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 9. Navigate Ravenwood → Commons.
     machine.log("Navigating Ravenwood → Commons…")
     if (
-        await enter_zone_gateway.run(
+        await enter_zone.run(
             machine,
             buying_clients,
             {

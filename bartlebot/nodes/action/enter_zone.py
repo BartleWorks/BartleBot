@@ -111,9 +111,7 @@ async def run(machine, clients: list, params: dict) -> str:
     reset_xyz_data: dict | None = params.get("reset_xyz")
     reset = XYZ(reset_xyz_data["x"], reset_xyz_data["y"], reset_xyz_data["z"]) if reset_xyz_data else None
 
-    machine.log(
-        f"enter_zone_gateway: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})"
-    )
+    machine.log(f"enter_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
 
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])

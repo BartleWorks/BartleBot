@@ -338,13 +338,13 @@ async def _record_teleport_to_marked_location(client, param_form, on_status, on_
 # ---------------------------------------------------------------------------
 
 _REGISTRY: dict[str, Any] = {
-    "enter_zone_gateway": _record_enter_zone_gateway,
-    "go_to_xyz": _record_go_to_xyz,
+    "enter_zone": _record_enter_zone_gateway,
+    "teleport_to_coordinates": _record_go_to_xyz,
     "enter_dungeon": _record_enter_dungeon,
     "enter_dungeon_teamup": _record_enter_dungeon_teamup,
     "interact": _record_interact,
     "apply_level_scaling": _record_apply_level_scaling,
-    "enter_zone_interact": _record_enter_zone_interact,
+    "enter_zone_via_object": _record_enter_zone_interact,
     "mark_location": _record_mark_location,
     "teleport_to_marked_location": _record_teleport_to_marked_location,
 }

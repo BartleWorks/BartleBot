@@ -1,8 +1,8 @@
-"""Unit tests for the go_to_xyz node."""
+"""Unit tests for the teleport_to_coordinates node."""
 
 from wizwalker import XYZ
 
-import bartlebot.nodes.action.go_to_xyz as gxyz
+import bartlebot.nodes.action.teleport_to_coordinates as gxyz
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "WizardCity/WC_Hub"

@@ -78,7 +78,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Teleport to Big Salgio",
       "position": {
         "x": 1350.0,

@@ -58,7 +58,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter High Road",
       "position": {
         "x": 450.0,
@@ -142,7 +142,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Harlequin Knight's Tower",
       "position": {
         "x": 2250.0,
@@ -196,7 +196,7 @@
     },
     {
       "id": "state_9",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Caer Lyon",
       "position": {
         "x": 1041.6546762589928,
@@ -221,7 +221,7 @@
     },
     {
       "id": "state_10",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Outer Yard",
       "position": {
         "x": 1341.6546762589928,

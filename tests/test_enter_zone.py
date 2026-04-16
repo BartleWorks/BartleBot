@@ -1,8 +1,8 @@
-"""Unit tests for the enter_zone_gateway node."""
+"""Unit tests for the enter_zone node."""
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.enter_zone_gateway as gtz
+import bartlebot.nodes.action.enter_zone as gtz
 import bartlebot.nodes.node_helpers as nh
 from tests.conftest import FakeClient, FakeMachine
 

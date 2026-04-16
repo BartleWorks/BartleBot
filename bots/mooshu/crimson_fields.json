@@ -54,7 +54,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Go to Hametsu Village",
       "position": {
         "x": 1050.0,
@@ -417,7 +417,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Construct first barricade",
       "position": {
         "x": 4950.0,
@@ -436,7 +436,7 @@
     },
     {
       "id": "state_16",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Construct second barricade",
       "position": {
         "x": 5250.0,
@@ -455,7 +455,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Construct third barricade",
       "position": {
         "x": 5550.0,
@@ -609,7 +609,7 @@
     },
     {
       "id": "state_23",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Grum Foultooth's tower",
       "position": {
         "x": 7350.0,
@@ -650,7 +650,7 @@
     },
     {
       "id": "state_26",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Grum Foultooth's tower",
       "position": {
         "x": 7950.0,
@@ -812,7 +812,7 @@
     },
     {
       "id": "state_32",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Go to Yakedo",
       "position": {
         "x": 9750.0,
@@ -865,7 +865,7 @@
     },
     {
       "id": "state_36",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
         "x": 9750.0,
@@ -902,7 +902,7 @@
     },
     {
       "id": "state_37",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
         "x": 10939.21126907424,
@@ -962,7 +962,7 @@
     },
     {
       "id": "state_40",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Katsumori's Dojo",
       "position": {
         "x": 10948.201878179036,
@@ -1003,7 +1003,7 @@
     },
     {
       "id": "state_42",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Cancel invulnerability",
       "position": {
         "x": 11548.201878179036,
@@ -1069,7 +1069,7 @@
     },
     {
       "id": "state_47",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Leave battlefield",
       "position": {
         "x": 11839.21126907424,
