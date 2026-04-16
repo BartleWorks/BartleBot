@@ -76,6 +76,27 @@ def collect_safety_warnings(config: BotConfig) -> list[SafetyWarning]:
             )
         )
 
+    teleport_to_friend_states = [s for s in config.states if s.node_type == "teleport_to_friend"]
+    if teleport_to_friend_states:
+        details: list[tuple[str, str]] = []
+        for state in teleport_to_friend_states:
+            prefix = f"{state.label or state.id}: " if len(teleport_to_friend_states) > 1 else ""
+            p = state.params
+            details += [
+                (f"{prefix}Friend Name", p.get("friend_name", "")),
+                (f"{prefix}Destination Zone", p.get("to_zone", "")),
+            ]
+        details.append(("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"))
+        warnings.append(
+            SafetyWarning(
+                message=(
+                    "This bot teleports you to a friend. You must have the following player on your "
+                    "friends list or change the friend name in the teleport_to_friend node settings."
+                ),
+                details=details,
+            )
+        )
+
     return warnings
 
 
