@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from wizwalker import XYZ
 
-import bartlebot.nodes.action.mark_location as ml
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.teleportation.mark_location as ml
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default

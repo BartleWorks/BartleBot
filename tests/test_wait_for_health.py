@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-import bartlebot.nodes.action.wait_for_health as wfh
+import bartlebot.nodes.combat.wait_for_health as wfh
 from tests.conftest import FakeClient, FakeMachine
 
 

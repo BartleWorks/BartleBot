@@ -209,6 +209,7 @@ class EditScene(QGraphicsScene):
 
     graph_changed = pyqtSignal()
     focus_region_requested = pyqtSignal(str)
+    node_type_chosen = pyqtSignal(str, object)  # (node_type, QPointF canvas position)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -360,18 +361,29 @@ class EditScene(QGraphicsScene):
             self.clearSelection()
 
     def add_state(self, pos: QPointF) -> None:
+        """Open the node browser dialog and emit node_type_chosen on confirmation."""
+        if self._config is None:
+            return
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        view = self.views()[0] if self.views() else None
+        dlg = NodeBrowserDialog(view, mode="add")
+        if dlg.exec() and dlg.selected_node_type:
+            self.node_type_chosen.emit(dlg.selected_node_type, pos)
+
+    def _create_state_at(self, node_type: str, pos: QPointF) -> None:
+        """Instantiate a state of the given node_type at pos. Called after dialog confirmation."""
         if self._config is None:
             return
         state_id = _unique_id([s.id for s in self._config.states])
-        default_type = next(iter(NODE_REGISTRY), "enter_zone_gateway")
         state = StateModel(
             id=state_id,
-            node_type=default_type,
+            node_type=node_type,
             position={"x": pos.x() + NODE_W / 2, "y": pos.y() + NODE_H / 2},
         )
         self._config.states.append(state)
-        returns = _node_returns(default_type)
-        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True, node_type=default_type)
+        returns = _node_returns(node_type)
+        node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True, node_type=node_type)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -487,6 +499,9 @@ class EditScene(QGraphicsScene):
             sid = item.state_id
             act_flip.triggered.connect(lambda _=None, s=sid: self._flip_node(s))
             menu.addAction(act_flip)
+            act_help = QAction("Node Help", menu)
+            act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
+            menu.addAction(act_help)
             # Region membership actions
             if self._config and self._config.regions:
                 menu.addSeparator()
@@ -549,6 +564,18 @@ class EditScene(QGraphicsScene):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _open_node_help(self, state_id: str) -> None:
+        """Open the node browser in view mode pre-selected on the given state's node type."""
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        if self._config is None:
+            return
+        state = next((s for s in self._config.states if s.id == state_id), None)
+        if state is None:
+            return
+        view = self.views()[0] if self.views() else None
+        NodeBrowserDialog(view, mode="view", initial_node_type=state.node_type).exec()
 
     def _node_near_port_out(self, pos: QPointF) -> tuple[NodeItem, str | None] | None:
         for node in self._node_items.values():
@@ -891,28 +918,41 @@ class EditScene(QGraphicsScene):
 
         # Midpoint of the edge path in scene coordinates
         mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
+        insert_pos = QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2)
 
-        # Create a new state at the midpoint
+        # Ask the user which node type to insert
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        view = self.views()[0] if self.views() else None
+        dlg = NodeBrowserDialog(view, mode="add")
+        if not (dlg.exec() and dlg.selected_node_type):
+            return
+        node_type = dlg.selected_node_type
+
+        # Create a new state at the midpoint with the chosen type
         new_id = _unique_id([st.id for st in self._config.states])
-        default_type = next(iter(NODE_REGISTRY), "enter_zone_gateway")
         state = StateModel(
             id=new_id,
-            node_type=default_type,
+            node_type=node_type,
             position={"x": mid.x() + NODE_W / 2, "y": mid.y() + NODE_H / 2},
         )
         self._config.states.append(state)
-        returns = _node_returns(default_type)
+        returns = _node_returns(node_type)
         new_node = NodeItem(
             new_id,
             None,
             interactive=True,
             returns=returns,
             is_terminal=True,
-            node_type=default_type,
+            node_type=node_type,
         )
-        new_node.setPos(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2))
+        new_node.setPos(insert_pos)
         self.addItem(new_node)
         self._node_items[new_id] = new_node
+
+        from bartlebot.settings_manager import SettingsManager
+
+        SettingsManager.instance().add_recently_used_node(node_type)
 
         # Remove original edge (src --w--> dst), then wire src --w--> new --∅--> dst
         self._delete_edge_item(edge_item, confirm=False)

@@ -540,6 +540,7 @@ class BotCanvas(QWidget):
 
         # ── Wire internal signals ─────────────────────────────────────
         self._scene.graph_changed.connect(self._on_scene_changed)
+        self._scene.node_type_chosen.connect(self._on_node_type_chosen)
         self._param_panel.properties_changed.connect(self._on_scene_changed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
         self._scene.selectionChanged.connect(self._on_selection_changed)
@@ -806,6 +807,13 @@ class BotCanvas(QWidget):
     def _on_add_state(self) -> None:
         center = self._view.mapToScene(self._view.viewport().rect().center())
         self._scene.add_state(QPointF(center.x() - NODE_W / 2, center.y() - NODE_H / 2))
+
+    def _on_node_type_chosen(self, node_type: str, pos: object) -> None:
+        """Slot for EditScene.node_type_chosen — creates the state after dialog confirmation."""
+        from PyQt6.QtCore import QPointF as _QPointF
+
+        if isinstance(pos, _QPointF):
+            self._scene._create_state_at(node_type, pos)
 
     def _on_layout_clicked(self) -> None:
         if self._config is None or self._focus_region_id is not None:

@@ -1,6 +1,6 @@
 """Unit tests for the check_if_dropped condition node."""
 
-import bartlebot.nodes.condition.check_if_dropped as cid
+import bartlebot.nodes.utility.check_if_dropped as cid
 from tests.conftest import FakeClient, FakeMachine
 
 

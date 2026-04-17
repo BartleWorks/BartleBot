@@ -76,7 +76,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Temple of Water",
       "position": {
         "x": 1650.0,
@@ -101,7 +101,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
         "x": 1950.0,
@@ -126,7 +126,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Go to final boss fight",
       "position": {
         "x": 2250.0,

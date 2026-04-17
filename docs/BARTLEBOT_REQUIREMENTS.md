@@ -21,7 +21,7 @@ There are several example scripts located in /BartleBot/.claude/example_deimos_s
 
 Bots are designed as a deterministic FSM due to the mostly linear nature of the tasks that they are intended to perform.
 
-The FSM state nodes define behavior on a per-node basis. The behavior is defined by a Python script, which uses WizWalker and WizSprinter to interface with the Wizard101 clients. BartleBot will provide a library of standard behavior action scripts, some of which are detailed in BARTLEBOT_LIBRARY.md in the same directory as this file. Node behavior will generally consist of transitions between zones, performing combat, and interacting with NPCs or other world items. Combat is configured via WizSprinter's combat config DSL, so BartleBot does not need to concern itself with combat handling and any of the decision making that comes with it.
+The FSM state nodes define behavior on a per-node basis. The behavior is defined by a Python script, which uses WizWalker and WizSprinter to interface with the Wizard101 clients. BartleBot will provide a library of standard behavior action scripts, accessible via the in-app node browser. Node behavior will generally consist of transitions between zones, performing combat, and interacting with NPCs or other world items. Combat is configured via WizSprinter's combat config DSL, so BartleBot does not need to concern itself with combat handling and any of the decision making that comes with it.
 
 The edges define conditions for transitions between states, which will mainly depend on certain game states accessed via the WizWalker `client` object such as current player health/mana or the zone the player is currently in.
 

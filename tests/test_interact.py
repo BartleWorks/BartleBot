@@ -3,7 +3,7 @@
 import asyncio
 from unittest.mock import patch
 
-import bartlebot.nodes.action.interact as ix
+import bartlebot.nodes.interaction.interact as ix
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {

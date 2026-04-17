@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-import bartlebot.nodes.action.collect_wisps as cw
+import bartlebot.nodes.combat.collect_wisps as cw
 from tests.conftest import FakeClient, FakeMachine
 
 # Default params: collect if not at full health/mana, fail if below 50%.

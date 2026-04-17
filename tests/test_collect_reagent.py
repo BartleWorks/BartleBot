@@ -3,7 +3,7 @@
 import json
 from unittest.mock import patch
 
-import bartlebot.nodes.action.collect_reagent as cr
+import bartlebot.nodes.interaction.collect_reagent as cr
 from tests.conftest import FakeClient, FakeMachine
 
 _SPAWN_A = {"x": 100.0, "y": 200.0, "z": 0.0}

@@ -91,7 +91,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Chamber of the Hydra",
       "position": {
         "x": 1350.0,
@@ -133,7 +133,7 @@
     },
     {
       "id": "state_6",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Chamber of the Hydra",
       "position": {
         "x": 1950.0,
@@ -185,7 +185,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Hall of the Specter",
       "position": {
         "x": 2850.0,
@@ -227,7 +227,7 @@
     },
     {
       "id": "state_12",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Hall of the Specter",
       "position": {
         "x": 3450.0,
@@ -296,7 +296,7 @@
     },
     {
       "id": "state_15",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Hall of the Harpy",
       "position": {
         "x": 4350.0,
@@ -338,7 +338,7 @@
     },
     {
       "id": "state_17",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Hall of the Harpy",
       "position": {
         "x": 4950.0,
@@ -424,7 +424,7 @@
     },
     {
       "id": "state_21",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Enter Chamber of the Basilisk",
       "position": {
         "x": 5850.0,
@@ -466,7 +466,7 @@
     },
     {
       "id": "state_23",
-      "node_type": "enter_zone_gateway",
+      "node_type": "enter_zone",
       "label": "Exit Chamber of the Basilisk",
       "position": {
         "x": 6450.0,
@@ -508,7 +508,7 @@
     },
     {
       "id": "state_25",
-      "node_type": "enter_zone_interact",
+      "node_type": "enter_zone_via_object",
       "label": "Enter final boss room",
       "position": {
         "x": 7050.0,
@@ -550,7 +550,7 @@
     },
     {
       "id": "state_27",
-      "node_type": "go_to_xyz",
+      "node_type": "teleport_to_coordinates",
       "label": "Exit combat",
       "position": {
         "x": 7650.0,

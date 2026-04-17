@@ -1,0 +1,1619 @@
+{
+  "name": "Crimson Fields Farmer",
+  "description": "Completes the entire Crimson Fields dungeon, optionally defeating Yakedo.",
+  "version": "2.0",
+  "clients": "all",
+  "initial": "state_1",
+  "default_combat_config": "### p1\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Mooshu",
+  "drops": [
+    "School design gear",
+    "rank 1-5 elemental spellements"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+    },
+    {
+      "name": "Defeat Yakedo",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to summon and defeat Yakedo, an optional secret boss that drops school design gear."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Go to Jade Palace",
+      "position": {
+        "x": 150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Go to Hametsu Village",
+      "position": {
+        "x": 1050.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Hub",
+        "to_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+        "xyz": {
+          "x": 3021.04,
+          "y": 3419.09,
+          "z": 1.1
+        },
+        "reset_xyz": {
+          "x": 3038.89,
+          "y": 2775.06,
+          "z": 1.1
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Crimson Fields",
+      "position": {
+        "x": 1350.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+        "dungeon_zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "sigil_xyz": {
+          "x": -6737.96,
+          "y": -27769.27,
+          "z": 79.59
+        },
+        "reset_xyz": {
+          "x": -6349.41,
+          "y": -27516.95,
+          "z": 79.59
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "interact",
+      "label": "Talk to Hoi Mang",
+      "position": {
+        "x": 1650.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -1023.0,
+          "y": -362.32,
+          "z": 10.0
+        },
+        "reset_xyz": {
+          "x": -1001.34,
+          "y": -769.98,
+          "z": 10.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Raise first flag",
+      "position": {
+        "x": 1944.6056345371194,
+        "y": 244.35208036675482
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -3966.95,
+          "y": 13735.54,
+          "z": -399.99
+        },
+        "reset_xyz": {
+          "x": -3380.8,
+          "y": 13749.57,
+          "z": -399.99
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "interact",
+      "label": "Raise second flag",
+      "position": {
+        "x": 2244.6056345371194,
+        "y": 244.35208036675482
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -9014.3,
+          "y": 11268.04,
+          "z": -399.99
+        },
+        "reset_xyz": {
+          "x": -9447.98,
+          "y": 10825.06,
+          "z": -399.99
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Raise third flag",
+      "position": {
+        "x": 2544.6056345371194,
+        "y": 244.35208036675482
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -9472.11,
+          "y": 15300.49,
+          "z": -150.02
+        },
+        "reset_xyz": {
+          "x": -10207.36,
+          "y": 15039.85,
+          "z": -148.92
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "interact",
+      "label": "Raise fourth flag",
+      "position": {
+        "x": 2844.6056345371194,
+        "y": 244.35208036675482
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -3398.32,
+          "y": 18343.4,
+          "z": -149.3
+        },
+        "reset_xyz": {
+          "x": -3060.82,
+          "y": 17781.81,
+          "z": -148.47
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "interact",
+      "label": "Talk to Rikugun Mikawa",
+      "position": {
+        "x": 3150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6022.88,
+          "y": 21665.16,
+          "z": 216.08
+        },
+        "reset_xyz": {
+          "x": -6310.28,
+          "y": 21169.58,
+          "z": 215.16
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Gather first wood pile",
+      "position": {
+        "x": 3450.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -12547.77,
+          "y": 18951.12,
+          "z": -151.12
+        },
+        "reset_xyz": {
+          "x": -11798.15,
+          "y": 19145.75,
+          "z": -150.48
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "interact",
+      "label": "Gather second wood pile",
+      "position": {
+        "x": 3750.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -11792.19,
+          "y": 17313.27,
+          "z": -148.77
+        },
+        "reset_xyz": {
+          "x": -12147.03,
+          "y": 17853.03,
+          "z": -149.36
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_12",
+      "node_type": "interact",
+      "label": "Gather third wood pile",
+      "position": {
+        "x": 4050.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6825.62,
+          "y": 15106.45,
+          "z": -150.91
+        },
+        "reset_xyz": {
+          "x": -7359.95,
+          "y": 15349.76,
+          "z": -150.64
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact",
+      "label": "Gather fourth wood pile",
+      "position": {
+        "x": 4350.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6557.34,
+          "y": 16701.9,
+          "z": -149.54
+        },
+        "reset_xyz": {
+          "x": -7095.52,
+          "y": 16116.12,
+          "z": -149.3
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Talk to Rikugun Mikawa",
+      "position": {
+        "x": 4650.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6022.88,
+          "y": 21665.16,
+          "z": 216.08
+        },
+        "reset_xyz": {
+          "x": -6310.28,
+          "y": 21169.58,
+          "z": 215.16
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_coordinates",
+      "label": "Construct first barricade",
+      "position": {
+        "x": 4950.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -6838.52,
+          "y": 19479.15,
+          "z": 216.48
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_16",
+      "node_type": "teleport_to_coordinates",
+      "label": "Construct second barricade",
+      "position": {
+        "x": 5250.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -9287.07,
+          "y": 17766.01,
+          "z": -149.74
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_17",
+      "node_type": "teleport_to_coordinates",
+      "label": "Construct third barricade",
+      "position": {
+        "x": 5550.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -4066.81,
+          "y": 18090.65,
+          "z": -149.69
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_18",
+      "node_type": "interact",
+      "label": "Talk to Rikugun Mikawa",
+      "position": {
+        "x": 5850.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6022.88,
+          "y": 21665.16,
+          "z": 216.08
+        },
+        "reset_xyz": {
+          "x": -6310.28,
+          "y": 21169.58,
+          "z": 215.16
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_19",
+      "node_type": "interact",
+      "label": "Talk to Ahn Nao",
+      "position": {
+        "x": 6150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -25125.81,
+          "y": 2669.04,
+          "z": 10.0
+        },
+        "reset_xyz": {
+          "x": -25282.8,
+          "y": 2086.97,
+          "z": 10.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_20",
+      "node_type": "interact",
+      "label": "Talk to Sekou Leong",
+      "position": {
+        "x": 6450.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -24779.31,
+          "y": 24901.1,
+          "z": -145.76
+        },
+        "reset_xyz": {
+          "x": -24978.55,
+          "y": 24054.48,
+          "z": -116.59
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_21",
+      "node_type": "interact",
+      "label": "Talk to Rikugun Mikawa",
+      "position": {
+        "x": 6750.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6022.88,
+          "y": 21665.16,
+          "z": 216.08
+        },
+        "reset_xyz": {
+          "x": -6310.28,
+          "y": 21169.58,
+          "z": 215.16
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_22",
+      "node_type": "interact",
+      "label": "Talk to Bricktop",
+      "position": {
+        "x": 7050.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -10341.7,
+          "y": 20696.52,
+          "z": -149.78
+        },
+        "reset_xyz": {
+          "x": -10664.51,
+          "y": 20146.73,
+          "z": -149.78
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone",
+      "label": "Enter Grum Foultooth's tower",
+      "position": {
+        "x": 7350.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "to_zone": "MooShu/MS_War/Interiors/MS_War2_T2",
+        "xyz": {
+          "x": -34644.75,
+          "y": 24997.59,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": -34277.64,
+          "y": 26092.55,
+          "z": 53.96
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_24",
+      "node_type": "handle_combat",
+      "label": "Defeat Grum Foultooth",
+      "position": {
+        "x": 7650.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "Troll-Yellow-MSBoss-L42",
+        "use_bot_default": true,
+        "combat_config": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_26",
+      "node_type": "enter_zone",
+      "label": "Exit Grum Foultooth's tower",
+      "position": {
+        "x": 7950.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_War/Interiors/MS_War2_T2",
+        "to_zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": 17.86,
+          "y": -1837.5,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 19.43,
+          "y": -996.3,
+          "z": -100.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_27",
+      "node_type": "interact",
+      "label": "Talk to Bricktop",
+      "position": {
+        "x": 8250.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -10341.7,
+          "y": 20696.52,
+          "z": -149.78
+        },
+        "reset_xyz": {
+          "x": -10664.51,
+          "y": 20146.73,
+          "z": -149.78
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_28",
+      "node_type": "interact",
+      "label": "Use first cairn",
+      "position": {
+        "x": 8550.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -7121.08,
+          "y": 7584.47,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -7753.01,
+          "y": 7631.1,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_29",
+      "node_type": "interact",
+      "label": "Use second cairn",
+      "position": {
+        "x": 8850.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -15127.64,
+          "y": 18001.01,
+          "z": 0.01
+        },
+        "reset_xyz": {
+          "x": -14176.16,
+          "y": 17878.9,
+          "z": -65.33
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {
+        "Safety Delay": 1.0
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_30",
+      "node_type": "interact",
+      "label": "Talk to Bricktop",
+      "position": {
+        "x": 9150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -10341.7,
+          "y": 20696.52,
+          "z": -149.78
+        },
+        "reset_xyz": {
+          "x": -10664.51,
+          "y": 20146.73,
+          "z": -149.78
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_31",
+      "node_type": "interact",
+      "label": "Talk to Rikugun Mikawa",
+      "position": {
+        "x": 9450.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6022.88,
+          "y": 21665.16,
+          "z": 216.08
+        },
+        "reset_xyz": {
+          "x": -6310.28,
+          "y": 21169.58,
+          "z": 215.16
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_32",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Yakedo",
+      "position": {
+        "x": 9750.0,
+        "y": -203.47416200433776
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -7024.54,
+          "y": 9284.73,
+          "z": -389.72
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_33",
+      "node_type": "handle_combat",
+      "label": "Defeat Yakedo",
+      "position": {
+        "x": 10350.0,
+        "y": -113.47416200433776
+      },
+      "params": {
+        "enemy": "Pig-War-Warrior-LXX",
+        "use_bot_default": false,
+        "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_35",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs",
+      "position": {
+        "x": 10050.0,
+        "y": 97.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": false,
+        "combat_config": "### p1\n{1} pass\n{2} pass\n{3} tempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
+      },
+      "option_overrides": {
+        "Default Combat Order": []
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_36",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Mobs",
+      "position": {
+        "x": 9750.0,
+        "y": 97.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -7496.21,
+          "y": 17251.1,
+          "z": -149.72
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_34",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs",
+      "position": {
+        "x": 11539.21126907424,
+        "y": 262.4272075283443
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": false,
+        "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
+      },
+      "option_overrides": {
+        "Default Combat Order": []
+      },
+      "flipped": false
+    },
+    {
+      "id": "state_37",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Mobs",
+      "position": {
+        "x": 10939.21126907424,
+        "y": 262.4272075283443
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -7496.21,
+          "y": 17251.1,
+          "z": -149.72
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_38",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 11239.21126907424,
+        "y": 255.4272075283443
+      },
+      "params": {
+        "duration": 5.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_39",
+      "node_type": "interact",
+      "label": "Talk to Rikugun Mikawa",
+      "position": {
+        "x": 10650.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "interact_xyz": {
+          "x": -6022.88,
+          "y": 21665.16,
+          "z": 216.08
+        },
+        "reset_xyz": {
+          "x": -6310.28,
+          "y": 21169.58,
+          "z": 215.16
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_40",
+      "node_type": "enter_zone",
+      "label": "Enter Katsumori's Dojo",
+      "position": {
+        "x": 10948.201878179036,
+        "y": -205.27228382529796
+      },
+      "params": {
+        "from_zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "to_zone": "MooShu/MS_War/Interiors/MS_War2_T1",
+        "xyz": {
+          "x": -11.96,
+          "y": 69421.54,
+          "z": 295.14
+        },
+        "reset_xyz": {
+          "x": -68.52,
+          "y": 68188.27,
+          "z": 79.6
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_41",
+      "node_type": "handle_combat",
+      "label": "Defeat Katsumori",
+      "position": {
+        "x": 11248.201878179036,
+        "y": -205.27228382529796
+      },
+      "params": {
+        "enemy": "Pig-War-Lord-MSBoss-L43",
+        "use_bot_default": true,
+        "combat_config": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_42",
+      "node_type": "teleport_to_coordinates",
+      "label": "Cancel invulnerability",
+      "position": {
+        "x": 11548.201878179036,
+        "y": -205.27228382529796
+      },
+      "params": {
+        "zone": "MooShu/MS_War/Interiors/MS_War2_T1",
+        "xyz": {
+          "x": 2.08,
+          "y": -1415.3,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_43",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 11848.201878179036,
+        "y": -212.27228382529796
+      },
+      "params": {
+        "duration": 5.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_44",
+      "node_type": "handle_combat",
+      "label": "Defeat War Oni",
+      "position": {
+        "x": 12155.394365462877,
+        "y": -205.17837487331116
+      },
+      "params": {
+        "enemy": "Oni-War-MSBoss-L50",
+        "use_bot_default": true,
+        "combat_config": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_46",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 12432.018781790399,
+        "y": 12.394365462880792
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_47",
+      "node_type": "teleport_to_coordinates",
+      "label": "Leave battlefield",
+      "position": {
+        "x": 11839.21126907424,
+        "y": 262.4272075283443
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "xyz": {
+          "x": -7496.21,
+          "y": 17251.1,
+          "z": -149.72
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_25",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 450.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_48",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 750.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "MooShu/MS_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_45",
+      "node_type": "sleep",
+      "label": "Wait for Yakedo to spawn",
+      "position": {
+        "x": 10050.0,
+        "y": -210.47416200433776
+      },
+      "params": {
+        "duration": 3.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Yakedo",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_9",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_5",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_8",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_9",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_9",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_9",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_14",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_14",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_14",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_30",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Yakedo",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_35",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_36",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_41",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_42",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_43",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_44",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_46",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_26",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_25",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_2"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_48",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_2",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_1",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_45",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_33"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_15",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_39",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_39",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_37",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_34",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_47",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_39",
+      "when": "SUCCESS"
+    }
+  ],
+  "regions": [
+    {
+      "id": "58b7d820",
+      "label": "Raise flags",
+      "members": [
+        "state_5",
+        "state_8",
+        "state_6",
+        "state_7"
+      ],
+      "color": "red"
+    },
+    {
+      "id": "1dd88d62",
+      "label": "Gather wood piles",
+      "members": [
+        "state_11",
+        "state_13",
+        "state_12",
+        "state_10"
+      ],
+      "color": "amber"
+    },
+    {
+      "id": "f3b0741c",
+      "label": "Construct barricades",
+      "members": [
+        "state_17",
+        "state_15",
+        "state_16"
+      ],
+      "color": "green"
+    },
+    {
+      "id": "69392b51",
+      "label": "Defeat Grum Foultooth",
+      "members": [
+        "state_23",
+        "state_24",
+        "state_26"
+      ],
+      "color": "amber"
+    },
+    {
+      "id": "e70fe9f0",
+      "label": "Defeat War Oni",
+      "members": [
+        "state_44",
+        "state_42",
+        "state_40",
+        "state_41",
+        "state_43"
+      ],
+      "color": "purple"
+    },
+    {
+      "id": "f9304d0c",
+      "label": "Defeat Yakedo",
+      "members": [
+        "state_33",
+        "state_32",
+        "state_45"
+      ],
+      "color": "blue"
+    },
+    {
+      "id": "b250a028",
+      "label": "Defeat mobs failsafe",
+      "members": [
+        "state_47",
+        "state_38",
+        "state_37",
+        "state_34"
+      ],
+      "color": "amber"
+    }
+  ]
+}

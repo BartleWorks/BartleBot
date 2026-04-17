@@ -1,0 +1,883 @@
+{
+  "name": "The Great Spyre",
+  "description": "Completes the Great Spyre dungeon in Dragonspyre. Defeats both Gurtok demons as well as Malistaire.",
+  "version": "2.0",
+  "clients": "all",
+  "initial": "state_4",
+  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint@boss",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "The Basilica",
+  "drops": [
+    "Level 50 hat",
+    "robe",
+    "and boots"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3,
+      "description": "Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open."
+    },
+    {
+      "name": "Level Scaling Clients",
+      "type": "int_list",
+      "default": [
+        2,
+        3,
+        4
+      ],
+      "description": "1-based client numbers to check/apply level scaling (e.g. '2, 3'). Empty = all clients. Shared by check_level_scaling and apply_level_scaling."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        2,
+        1
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Defeat Gurtok Firebender",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to defeat the Gurtok Firebender, which drops level 50 rings"
+    },
+    {
+      "name": "Defeat Gurtok Piercer",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat the Gurtok Piercer, which drops level 50 athames"
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Go to the Basilica",
+      "position": {
+        "x": 150.0,
+        "y": 5.245391931780915
+      },
+      "params": {
+        "zone": "DragonSpire/DS_Hub_Cathedral"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone_via_object",
+      "label": "Take portal to Dragonspyre Academy",
+      "position": {
+        "x": 450.0,
+        "y": 5.245391931780915
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_Hub_Cathedral",
+        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+        "interact_xyz": {
+          "x": 1296.47,
+          "y": -1254.53,
+          "z": -0.09
+        },
+        "reset_xyz": {
+          "x": 852.88,
+          "y": -808.36,
+          "z": -0.04
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone_via_object",
+      "label": "Start dragon ride",
+      "position": {
+        "x": 750.0,
+        "y": 5.245391931780915
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
+        "interact_xyz": {
+          "x": -5415.53,
+          "y": 10081.53,
+          "z": 1998.8
+        },
+        "reset_xyz": {
+          "x": -4490.77,
+          "y": 10068.47,
+          "z": 1998.84
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "mark_location",
+      "label": "Mark location outside dungeon entrance",
+      "position": {
+        "x": 1350.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+        "xyz": {
+          "x": 1.84,
+          "y": 5384.82,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1650.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_dungeon",
+      "label": "Enter the Great Spyre dungeon",
+      "position": {
+        "x": 1950.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+        "dungeon_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+        "sigil_xyz": {
+          "x": -216.38,
+          "y": 6265.21,
+          "z": 100.0
+        },
+        "reset_xyz": {
+          "x": 1.84,
+          "y": 5384.82,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 2513.3820924893416,
+        "y": 138.19514594949163
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+        "interact_xyz": {
+          "x": 46.82,
+          "y": 408.69,
+          "z": -274.89
+        },
+        "reset_xyz": {
+          "x": 46.82,
+          "y": -349.83,
+          "z": -274.89
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Skip dragon ride",
+      "position": {
+        "x": 1048.4742538537225,
+        "y": 5.226369301410294
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
+        "interact_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 16.0
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 16.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Go to Path of Scales",
+      "position": {
+        "x": 2844.4690062315512,
+        "y": 3.9675303378156883
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
+        "xyz": {
+          "x": 3819.64,
+          "y": 11459.53,
+          "z": -403.52
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Go to the Great Spyre",
+      "position": {
+        "x": 3118.5313217448347,
+        "y": 3.9485077074451027
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
+        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
+        "xyz": {
+          "x": -782.46,
+          "y": -10509.64,
+          "z": -2404.18
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "enter_zone_via_object",
+      "label": "Activate elevator",
+      "position": {
+        "x": 3400.2223679895046,
+        "y": 3.948507707445117
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
+        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Elevator_Up",
+        "interact_xyz": {
+          "x": -1370.25,
+          "y": 5446.92,
+          "z": -5777.42
+        },
+        "reset_xyz": {
+          "x": -1369.5,
+          "y": 4755.59,
+          "z": -5777.41
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "sleep",
+      "label": "Wait for elevator",
+      "position": {
+        "x": 3681.913414234175,
+        "y": 4.5772384388324525
+      },
+      "params": {
+        "duration": 25.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "enter_zone",
+      "label": "Exit elevator",
+      "position": {
+        "x": 3952.9242374549026,
+        "y": 11.577238438832453
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Elevator_Up",
+        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
+        "xyz": {
+          "x": -112.48,
+          "y": 485.71,
+          "z": -14.57
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 2248.474253853723,
+        "y": 6.980977369629372
+      },
+      "params": {},
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "handle_combat",
+      "label": "Defeat Gurtok Firebender",
+      "position": {
+        "x": 4305.653893821311,
+        "y": -68.69016367543114
+      },
+      "params": {
+        "enemy": "Helephant-Fire-Boss-R9",
+        "use_bot_default": true,
+        "combat_config": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "teleport_to_coordinates",
+      "label": "Enter Gurtok Piercer render radius",
+      "position": {
+        "x": 4605.8879255799,
+        "y": 11.518907736796557
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
+        "xyz": {
+          "x": -717.58,
+          "y": 5591.99,
+          "z": 4734.39
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 4889.084985502737,
+        "y": -174.3696849313077
+      },
+      "params": {
+        "duration": 4.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "handle_combat",
+      "label": "Defeat Gurtok Piercer",
+      "position": {
+        "x": 5145.8986133988055,
+        "y": -67.56470195280048
+      },
+      "params": {
+        "enemy": "Helephant-Death-Boss-R9",
+        "use_bot_default": true,
+        "combat_config": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "interact",
+      "label": "Activate crystal stand",
+      "position": {
+        "x": 5431.595734845368,
+        "y": 7.000000000000021
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
+        "interact_xyz": {
+          "x": -1030.99,
+          "y": 1212.84,
+          "z": 4734.19
+        },
+        "reset_xyz": {
+          "x": -925.01,
+          "y": 1909.58,
+          "z": 4734.24
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "collect_wisps",
+      "label": "Collect health and mana wisps",
+      "position": {
+        "x": 5706.592090070986,
+        "y": 7.5735844899056275
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "enter_zone",
+      "label": "Go to the Crown of Fire",
+      "position": {
+        "x": 5991.663581554078,
+        "y": 7.573584489905613
+      },
+      "params": {
+        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
+        "to_zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
+        "xyz": {
+          "x": -1425.48,
+          "y": 11610.05,
+          "z": 4734.21
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_28",
+      "node_type": "teleport_to_coordinates",
+      "label": "Enter render radius for mobs",
+      "position": {
+        "x": 6270.216648538085,
+        "y": 7.79690025237943
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
+        "xyz": {
+          "x": 3101.07,
+          "y": 7439.64,
+          "z": 410.58
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "sleep",
+      "label": "Wait for mobs to render",
+      "position": {
+        "x": 6543.242865733159,
+        "y": 8.253498621152449
+      },
+      "params": {
+        "duration": 3.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs",
+      "position": {
+        "x": 6807.6653155796475,
+        "y": 9.517653722096263
+      },
+      "params": {
+        "enemy": "Undead-Caster-Blue-R8-1",
+        "use_bot_default": false,
+        "combat_config": "### p1\ntempest[epic]\n\n### p2\npass"
+      },
+      "option_overrides": {
+        "Default Combat Order": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "id": "state_31",
+      "node_type": "sleep",
+      "label": "Wait for Malistaire to start dialogue",
+      "position": {
+        "x": 7079.544363794913,
+        "y": 4.811991681718752
+      },
+      "params": {
+        "duration": 8.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "teleport_to_coordinates",
+      "label": "Activate Malistaire dialogue",
+      "position": {
+        "x": 7345.11398262121,
+        "y": 12.959160661529978
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
+        "xyz": {
+          "x": -1741.61,
+          "y": 8883.95,
+          "z": 626.36
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "sleep",
+      "label": "Wait for Malistaire dialogue to end",
+      "position": {
+        "x": 7614.125108386944,
+        "y": 9.400667600963697
+      },
+      "params": {
+        "duration": 20.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "teleport_to_coordinates",
+      "label": "Reset Malistaire dialogue",
+      "position": {
+        "x": 7346.834736090926,
+        "y": 146.03076231963323
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
+        "xyz": {
+          "x": -10.05,
+          "y": 9028.63,
+          "z": 410.4
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "handle_combat",
+      "label": "Defeat Malistaire",
+      "position": {
+        "x": 7871.090959864664,
+        "y": 14.679914131246836
+      },
+      "params": {
+        "enemy": "Malistaire-Boss-R10",
+        "use_bot_default": true,
+        "combat_config": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to mark",
+      "position": {
+        "x": 1648.233441984196,
+        "y": 431.5817557532523
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+        "xyz": {
+          "x": 0.0,
+          "y": 5384.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_10",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_11",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_16",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_11",
+      "when": "TRUE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_8",
+      "when": "FALSE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Gurtok Firebender",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_4",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_6",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_5",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_5",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Gurtok Firebender",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Gurtok Piercer",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Gurtok Piercer",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_19",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_30",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_34",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_32",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_35",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_34",
+      "when": "FAILURE"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_6",
+      "when": "SUCCESS"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_28",
+      "when": "SUCCESS"
+    }
+  ],
+  "regions": [
+    {
+      "id": "e8cce5eb",
+      "label": "Go to Dungeon from the Basilica",
+      "members": [
+        "state_3",
+        "state_1",
+        "state_10",
+        "state_2"
+      ],
+      "color": "red"
+    }
+  ]
+}

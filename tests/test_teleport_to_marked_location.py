@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ
 
-import bartlebot.nodes.action.teleport_to_marked_location as rtm
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.teleportation.teleport_to_marked_location as rtm
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default

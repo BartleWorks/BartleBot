@@ -10,7 +10,8 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -27,6 +28,7 @@ from PyQt6.QtWidgets import (
     QScrollArea,
     QSpinBox,
     QStackedWidget,
+    QStyledItemDelegate,
     QVBoxLayout,
     QWidget,
 )
@@ -34,7 +36,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import FlagCondition, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.theme import THEME
-from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 
 # ---------------------------------------------------------------------------
 # Sentinel QLineEdit subclasses  (identified by get_params())
@@ -127,7 +129,7 @@ class _DynamicParamForm(QWidget):
                 self._form.insertWidget(insert_idx + 1, display_w)
                 insert_idx += 2
             if field.default_hint and not field.required:
-                hint_lbl = QLabel(field.default_hint)
+                hint_lbl = QLabel(f"Default: {field.default_hint}")
                 hint_lbl.setStyleSheet(f"color: {THEME.text_muted};")
                 hint_lbl.setWordWrap(True)
                 self._form.insertWidget(insert_idx, hint_lbl)
@@ -631,6 +633,25 @@ _PAGE_NODE = 1
 _PAGE_EDGE = 2
 
 
+class _NodeTypeDelegate(QStyledItemDelegate):
+    """Custom delegate that renders separator items as a consistent 1px line in THEME.border."""
+
+    def paint(self, painter, option, index):
+        if index.data(Qt.ItemDataRole.AccessibleDescriptionRole) == "separator":
+            painter.save()
+            mid = option.rect.center().y()
+            painter.setPen(QPen(QColor(THEME.border), 1))
+            painter.drawLine(option.rect.left() + 4, mid, option.rect.right() - 4, mid)
+            painter.restore()
+            return
+        super().paint(painter, option, index)
+
+    def sizeHint(self, option, index):
+        if index.data(Qt.ItemDataRole.AccessibleDescriptionRole) == "separator":
+            return QSize(0, 9)
+        return super().sizeHint(option, index)
+
+
 class _ParamPanel(QWidget):
     properties_changed = pyqtSignal()
     # Emitted when the user changes source or dest via the dropdowns.
@@ -667,10 +688,49 @@ class _ParamPanel(QWidget):
         self._node_id_lbl = QLabel()
         self._node_label_edit = QLineEdit()
         self._node_type_combo = QComboBox()
-        self._node_type_combo.addItems(sorted(NODE_REGISTRY.keys()))
+        _model = QStandardItemModel()
+        for _i, (_category, _node_types) in enumerate(NODE_CATEGORIES):
+            if _i > 0:
+                _sep = QStandardItem()
+                _sep.setData("separator", Qt.ItemDataRole.AccessibleDescriptionRole)
+                _sep.setEnabled(False)
+                _sep.setSelectable(False)
+                _model.appendRow(_sep)
+            _header = QStandardItem(_category)
+            _header.setEnabled(False)
+            _header.setSelectable(False)
+            _font = _header.font()
+            _font.setBold(True)
+            _font.setPointSize(max(1, _font.pointSize() - 1))
+            _header.setFont(_font)
+            _header.setForeground(QColor(THEME.text_muted))
+            _model.appendRow(_header)
+            for _node_type in _node_types:
+                _item = QStandardItem("    " + _node_type)
+                _item.setData(_node_type, Qt.ItemDataRole.UserRole)
+                _model.appendRow(_item)
+        self._node_type_combo.setModel(_model)
+        self._node_type_combo.setItemDelegate(_NodeTypeDelegate(self._node_type_combo))
+        self._node_help_btn = QPushButton("?")
+        self._node_help_btn.setFixedSize(22, 22)
+        self._node_help_btn.setToolTip("View node documentation")
+        self._node_help_btn.setStyleSheet(
+            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
+            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
+        )
+        self._node_help_btn.clicked.connect(self._on_node_help)
+
+        _node_type_row = QWidget()
+        _nt_row_layout = QHBoxLayout(_node_type_row)
+        _nt_row_layout.setContentsMargins(0, 0, 0, 0)
+        _nt_row_layout.setSpacing(4)
+        _nt_row_layout.addWidget(self._node_type_combo, 1)
+        _nt_row_layout.addWidget(self._node_help_btn)
+
         nf.addRow("ID", self._node_id_lbl)
         nf.addRow("Label", self._node_label_edit)
-        nf.addRow("Node type", self._node_type_combo)
+        nf.addRow("Node type", _node_type_row)
 
         self._param_form = _DynamicParamForm()
         scroll = QScrollArea()
@@ -770,7 +830,7 @@ class _ParamPanel(QWidget):
         self._stack.addWidget(edge_outer)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
-        self._node_type_combo.currentTextChanged.connect(self._on_node_type_changed)
+        self._node_type_combo.currentIndexChanged.connect(self._on_node_type_changed)
         self._param_form.changed.connect(self._on_param_form_changed)
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
@@ -790,7 +850,7 @@ class _ParamPanel(QWidget):
         self._suppress = True
         self._node_id_lbl.setText(state.id)
         self._node_label_edit.setText(state.label or "")
-        idx = self._node_type_combo.findText(state.node_type)
+        idx = self._node_type_combo.findData(state.node_type, Qt.ItemDataRole.UserRole)
         if idx >= 0:
             self._node_type_combo.setCurrentIndex(idx)
         schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
@@ -856,19 +916,31 @@ class _ParamPanel(QWidget):
         self._state.label = text or None
         self.properties_changed.emit()
 
-    def _on_node_type_changed(self, text: str) -> None:
-        if self._suppress or self._state is None:
+    def _on_node_help(self) -> None:
+        """Open the node browser in view mode for the currently displayed node type."""
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        node_type: str | None = None
+        if self._state is not None:
+            node_type = self._state.node_type
+        else:
+            node_type = self._node_type_combo.currentData(Qt.ItemDataRole.UserRole)
+        NodeBrowserDialog(self, mode="view", initial_node_type=node_type).exec()
+
+    def _on_node_type_changed(self, _index: int) -> None:
+        node_type: str = self._node_type_combo.currentData(Qt.ItemDataRole.UserRole)
+        if self._suppress or self._state is None or node_type not in NODE_REGISTRY:
             return
         self._cancel_record()
-        self._state.node_type = text
+        self._state.node_type = node_type
         self._state.params = {}
         self._state.option_overrides = {}
-        schema = NODE_PARAM_SCHEMAS.get(text, [])
+        schema = NODE_PARAM_SCHEMAS.get(node_type, [])
         self._param_form.load_schema(schema, {})
         self._state.params = self._param_form.get_params()
         self._rebuild_overrides(self._state)
-        self._rebuild_returns(text)
-        self._record_row.setVisible(text in recording.RECORDABLE_NODES)
+        self._rebuild_returns(node_type)
+        self._record_row.setVisible(node_type in recording.RECORDABLE_NODES)
         self.properties_changed.emit()
 
     def _on_param_form_changed(self) -> None:
