@@ -151,9 +151,9 @@ Fix when touching adjacent code:
 | Status | Item | Why defer |
 |--------|------|-----------|
 | `TODO` | Undo/redo (QUndoStack) | Large effort, high bug risk. Auto-save (Phase 3) is the interim safety net. |
-| `TODO` | Stop interrupting running nodes | Cooperative cancellation in every node. Current 5-35s wait is acceptable. |
+| `DONE` | Stop interrupting running nodes | Cooperative cancellation in every node. Current 5-35s wait is acceptable. |
 | `TODO` | HierarchicalAsyncMachine | No use case yet. Flat FSM handles all current bots. |
-| `TODO` | Dark theme | Pure polish. Token system ready when desired. |
+| `DONE` | Dark theme | Pure polish. Token system ready when desired. |
 | `TODO` | FakeClient → spec=SprintyClient | Current approach fine for 15 nodes. Revisit on API churn. |
 
 ---
