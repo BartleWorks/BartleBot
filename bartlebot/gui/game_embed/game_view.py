@@ -367,6 +367,15 @@ class GameView(QWidget):
         self._recompute_geometry()
         self._update_minimum_size()
 
+    def reposition_tiles(self) -> None:
+        """Re-anchor all embedded game windows to their tile coordinates.
+
+        Called after a WM_DISPLAYCHANGE event (e.g. monitor wake from sleep) to
+        ensure Win32 child window positions are still valid.
+        """
+        for tile in self._tiles.values():
+            tile._reposition()
+
     def toggle(self) -> None:
         """Show or hide the GameView (used by the toggle_embed keybinding)."""
         visible = not self.isVisible()
