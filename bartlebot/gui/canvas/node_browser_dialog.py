@@ -91,7 +91,8 @@ class _Chip(QLabel):
     """Small pill label with a colored rounded-rect background."""
 
     def __init__(self, text: str, bg: str, fg: str, parent: QWidget | None = None) -> None:
-        super().__init__(f"  {text}  ", parent)
+        super().__init__(text, parent)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setFont(QFont(THEME.font_ui_family, 8, QFont.Weight.Bold))
         self.setStyleSheet(f"background: {bg}; color: {fg}; border-radius: 4px; padding: 1px 4px;")
         self.setFixedHeight(20)
@@ -330,12 +331,13 @@ class _DetailPanel(QScrollArea):
 
             # Type
             type_item = QTableWidgetItem(pf.type)
+            type_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
             type_item.setForeground(QColor(THEME.text_muted))
             table.setItem(row, 1, type_item)
 
             # Required
             req_item = QTableWidgetItem("✓" if pf.required else "")
-            req_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            req_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
             if pf.required:
                 req_item.setForeground(QColor(THEME.error))
             table.setItem(row, 2, req_item)
@@ -347,6 +349,7 @@ class _DetailPanel(QScrollArea):
             elif pf.default_hint:
                 default_str = pf.default_hint
             default_item = QTableWidgetItem(default_str)
+            default_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
             default_item.setForeground(QColor(THEME.text_muted))
             table.setItem(row, 3, default_item)
 
@@ -408,7 +411,7 @@ class NodeBrowserDialog(QDialog):
         self._selected_node_type: str | None = None
 
         self.setWindowTitle("Node Browser" if mode == "view" else "Add Node")
-        self.setMinimumSize(700, 480)
+        self.setMinimumSize(860, 520)
         self._restore_geometry()
 
         # ── Build all tab entries ──────────────────────────────────
@@ -470,14 +473,13 @@ class NodeBrowserDialog(QDialog):
         self._list_stack.addWidget(self._list)
         self._list_stack.addWidget(self._empty_label)
 
-        # ── Left panel ────────────────────────────────────────────
+        # ── Left panel (list only — tab bar moves above the splitter) ──
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.setSpacing(4)
-        left_layout.addWidget(self._tab_bar)
+        left_layout.setSpacing(0)
         left_layout.addWidget(self._list_stack, 1)
-        left_widget.setMinimumWidth(220)
+        left_widget.setMinimumWidth(200)
 
         # ── Detail panel ──────────────────────────────────────────
         self._detail = _DetailPanel()
@@ -486,7 +488,7 @@ class NodeBrowserDialog(QDialog):
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_widget)
         splitter.addWidget(self._detail)
-        splitter.setSizes([280, 580])
+        splitter.setSizes([240, 660])
         splitter.setCollapsible(0, False)
         splitter.setCollapsible(1, False)
 
@@ -517,10 +519,13 @@ class NodeBrowserDialog(QDialog):
             btn_row.addWidget(close_btn)
 
         # ── Root layout ───────────────────────────────────────────
+        # Tab bar spans full width above the splitter so all category tabs
+        # are visible without scrolling regardless of the list panel width.
         root = QVBoxLayout(self)
         root.setContentsMargins(10, 10, 10, 10)
-        root.setSpacing(8)
+        root.setSpacing(6)
         root.addWidget(self._search)
+        root.addWidget(self._tab_bar)
         root.addWidget(splitter, 1)
         root.addLayout(btn_row)
 
@@ -721,7 +726,7 @@ class NodeBrowserDialog(QDialog):
         if isinstance(geom, list) and len(geom) == 4:
             self.setGeometry(*geom)
         else:
-            self.resize(900, 600)
+            self.resize(980, 620)
 
     def closeEvent(self, event) -> None:  # type: ignore[override]
         g = self.geometry()
