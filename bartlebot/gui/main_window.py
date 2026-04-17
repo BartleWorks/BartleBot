@@ -1,6 +1,4 @@
 import asyncio
-import ctypes
-import ctypes.wintypes
 import logging
 
 logger = logging.getLogger(__name__)
@@ -419,18 +417,3 @@ class MainWindow(QMainWindow):
         action = QAction("(No recent files)", self)
         action.setEnabled(False)
         self._recent_menu.addAction(action)
-
-    # ------------------------------------------------------------------
-    # Native event handling
-    # ------------------------------------------------------------------
-
-    def nativeEvent(self, event_type, message):
-        # WM_DISPLAYCHANGE fires when a monitor wakes from sleep or the display
-        # configuration changes.  Re-anchor embedded game windows so their Win32
-        # child window coordinates remain valid after the display geometry changes.
-        _WM_DISPLAYCHANGE = 0x007E
-        if event_type == b"windows_generic_MSG":
-            msg = ctypes.wintypes.MSG.from_address(int(message))
-            if msg.message == _WM_DISPLAYCHANGE:
-                self.game_view.reposition_tiles()
-        return super().nativeEvent(event_type, message)
