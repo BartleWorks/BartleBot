@@ -4,9 +4,10 @@ from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ, Keycode
 
-import bartlebot.nodes.action.handle_potions as hp
+import bartlebot.nodes.combat.handle_potions as hp
 import bartlebot.nodes.node_helpers as nh
-from bartlebot.nodes.action import enter_zone, mark_location, teleport_to_marked_location
+from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
+from bartlebot.nodes.zone_entry import enter_zone
 from tests.conftest import FakeClient, FakeMachine
 
 # ── Zone aliases ─────────────────────────────────────────────────────────────
@@ -29,15 +30,15 @@ _ZONES_OK = patch.object(enter_zone, "run", new=AsyncMock(return_value="SUCCESS"
 
 # Patch the private helpers so run() tests don't need to drive their internals.
 _HOME_OK = patch(
-    "bartlebot.nodes.action.handle_potions._teleport_home_and_verify_dorm",
+    "bartlebot.nodes.combat.handle_potions._teleport_home_and_verify_dorm",
     new=AsyncMock(return_value=True),
 )
 _SHOP_FN_OK = patch(
-    "bartlebot.nodes.action.handle_potions._open_potion_shop",
+    "bartlebot.nodes.combat.handle_potions._open_potion_shop",
     new=AsyncMock(return_value=True),
 )
 _BUY_OK = patch(
-    "bartlebot.nodes.action.handle_potions._buy_potions_for_client",
+    "bartlebot.nodes.combat.handle_potions._buy_potions_for_client",
     new=AsyncMock(),
 )
 
@@ -231,7 +232,7 @@ async def test_mark_location_failure_returns_failure():
 async def test_home_teleport_failure_returns_failure():
     client = _depleted_client()
     home_fail = patch(
-        "bartlebot.nodes.action.handle_potions._teleport_home_and_verify_dorm",
+        "bartlebot.nodes.combat.handle_potions._teleport_home_and_verify_dorm",
         new=AsyncMock(return_value=False),
     )
 
@@ -265,7 +266,7 @@ async def test_ravenwood_to_commons_failure_returns_failure():
 async def test_open_potion_shop_failure_returns_failure():
     client = _depleted_client()
     shop_fail = patch(
-        "bartlebot.nodes.action.handle_potions._open_potion_shop",
+        "bartlebot.nodes.combat.handle_potions._open_potion_shop",
         new=AsyncMock(return_value=False),
     )
 
@@ -306,7 +307,7 @@ async def test_only_depleted_clients_enter_refill():
     c_depleted = _depleted_client()
     buy_mock = AsyncMock()
     buy_patch = patch(
-        "bartlebot.nodes.action.handle_potions._buy_potions_for_client",
+        "bartlebot.nodes.combat.handle_potions._buy_potions_for_client",
         new=buy_mock,
     )
 

@@ -2,8 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.teleport_to_friend as ttf
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.teleportation.teleport_to_friend as ttf
 from tests.conftest import FakeClient, FakeMachine
 
 _FROM_ZONE = "HubZone"
@@ -14,7 +14,7 @@ _PARAMS = {"friend_name": _FRIEND, "to_zone": _TO_ZONE}
 
 # Patch the WizWalker function at its imported reference in the module under test.
 _TELEPORT_OK = patch(
-    "bartlebot.nodes.action.teleport_to_friend.teleport_to_friend_from_list",
+    "bartlebot.nodes.teleportation.teleport_to_friend.teleport_to_friend_from_list",
     new_callable=AsyncMock,
 )
 

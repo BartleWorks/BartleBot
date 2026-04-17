@@ -3,8 +3,8 @@
 import asyncio
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.enter_dungeon as ed
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.zone_entry.enter_dungeon as ed
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {

@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.quicksell as qs
+import bartlebot.nodes.utility.quicksell as qs
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     QUICKSELL_CLOSE_BUTTON_PATH,

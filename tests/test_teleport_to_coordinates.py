@@ -2,7 +2,7 @@
 
 from wizwalker import XYZ
 
-import bartlebot.nodes.action.teleport_to_coordinates as gxyz
+import bartlebot.nodes.teleportation.teleport_to_coordinates as gxyz
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "WizardCity/WC_Hub"

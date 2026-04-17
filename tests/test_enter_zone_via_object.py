@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 from wizwalker import Keycode
 
-import bartlebot.nodes.action.enter_zone_via_object as itz
+import bartlebot.nodes.zone_entry.enter_zone_via_object as itz
 from tests.conftest import FakeClient, FakeMachine
 
 _FROM_ZONE = "TestZone"  # matches FakeClient zone_name default

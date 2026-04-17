@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, call, patch
 
-import bartlebot.nodes.action.handle_combat as hc
+import bartlebot.nodes.combat.handle_combat as hc
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 
 # A chat line that drop_detection.extract_new_drops recognises as a Reagent drop.
@@ -13,7 +13,7 @@ _DEFAULT_PARAMS = {"enemy": "", "use_bot_default": True, "combat_config": ""}
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.action.handle_combat._run_combat", new_callable=AsyncMock
+    "bartlebot.nodes.combat.handle_combat._run_combat", new_callable=AsyncMock
 )
 
 

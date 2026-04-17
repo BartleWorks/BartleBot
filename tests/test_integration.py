@@ -19,7 +19,7 @@ What is NOT tested here (by design):
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.enter_zone as gtz
+import bartlebot.nodes.zone_entry.enter_zone as gtz
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, StateModel, TransitionModel
 from bartlebot.nodes.registry import NODE_REGISTRY
@@ -38,7 +38,7 @@ _BOTS_DIR = Path(__file__).parent.parent / "bots"
 
 async def test_real_bot_config_loads_and_round_trips(tmp_path):
     """Load a real bot file, save it to a temp path, reload it, and compare key fields."""
-    src = _BOTS_DIR / "mooshu" / "crimson_fields.json"
+    src = _BOTS_DIR / "04_mooshu" / "crimson_fields.json"
     config = BotConfig.load(src)
     dest = tmp_path / "roundtrip.json"
     config.save(dest)
@@ -156,7 +156,7 @@ async def test_botmachine_constructs_from_real_bot_config():
     Exercises the full path: BotConfig.load() → to_machine_config() → BotMachine()
     and verifies that the machine starts at the correct initial state.
     """
-    src = _BOTS_DIR / "mooshu" / "crimson_fields.json"
+    src = _BOTS_DIR / "04_mooshu" / "crimson_fields.json"
     config = BotConfig.load(src)
     mc = config.to_machine_config()
 

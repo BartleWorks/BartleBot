@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.apply_level_scaling as als
+import bartlebot.nodes.utility.apply_level_scaling as als
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -13,11 +13,11 @@ _PARAMS = {
 
 # No-op patches for the NPCServicesWin menu (instantly visible, then instantly gone).
 _patch_menu_visible = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.action.apply_level_scaling._all_menu_visible",
+    "bartlebot.nodes.utility.apply_level_scaling._all_menu_visible",
     new=AsyncMock(return_value=True),
 )
 _patch_menu_gone = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.action.apply_level_scaling._none_menu_visible",
+    "bartlebot.nodes.utility.apply_level_scaling._none_menu_visible",
     new=AsyncMock(return_value=True),
 )
 # Patch for step 10: elixir is active on all clients after interaction.
@@ -92,7 +92,7 @@ async def test_menu_never_appears_fails():
     machine = FakeMachine(options={"Level Scaling Clients": [1]})
 
     with (
-        patch("bartlebot.nodes.action.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
+        patch("bartlebot.nodes.utility.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
         patch.object(als, "POLL_INTERVAL", 0),
     ):
         result = await als.run(machine, [client], _PARAMS)

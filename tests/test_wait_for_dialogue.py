@@ -2,7 +2,7 @@
 
 from unittest.mock import patch
 
-import bartlebot.nodes.action.wait_for_dialogue as wfd
+import bartlebot.nodes.interaction.wait_for_dialogue as wfd
 from tests.conftest import FakeClient, FakeMachine
 
 

@@ -6,7 +6,6 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.action import enter_zone, mark_location, teleport_to_marked_location
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
@@ -15,6 +14,8 @@ from bartlebot.nodes.paths import (
     POTION_FILL_ALL_PATH,
     POTION_SHOP_BASE_PATH,
 )
+from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
+from bartlebot.nodes.zone_entry import enter_zone
 
 # ── Zone names ─────────────────────────────────────────────────────────────────
 DORM_ZONE = "WizardCity/Interiors/WC_Housing_Dorm_Interior"

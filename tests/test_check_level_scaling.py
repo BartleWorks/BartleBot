@@ -2,8 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.condition.check_level_scaling as cls
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.utility.check_level_scaling as cls
 from tests.conftest import FakeClient, FakeMachine
 
 # Patch is_visible_by_path so the level-scaling indicator is visible (scaled) by default.

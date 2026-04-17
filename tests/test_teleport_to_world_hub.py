@@ -2,8 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.teleport_to_world_hub as gwh
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.teleportation.teleport_to_world_hub as gwh
 from tests.conftest import FakeClient, FakeMachine
 
 _ZONE = "WizardCity/WC_Hub"

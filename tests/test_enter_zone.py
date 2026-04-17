@@ -2,8 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.enter_zone as gtz
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.zone_entry.enter_zone as gtz
 from tests.conftest import FakeClient, FakeMachine
 
 # Minimal params used across all tests.

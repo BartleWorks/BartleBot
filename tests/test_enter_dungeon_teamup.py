@@ -2,8 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.action.enter_dungeon_teamup as edt
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.zone_entry.enter_dungeon_teamup as edt
 from bartlebot.nodes.paths import (
     ENTER_TEAMUP_BUTTON_PATH,
     TEAMUP_2_PLAYER_CHECKBOX,
