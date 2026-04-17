@@ -46,11 +46,16 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Teleport all clients to an XYZ coordinate within the current zone.
+    APIs: client.zone_name(), client.teleport(XYZ), client.body.position()
 
-    Params:
-        zone (str): Zone clients must be in when this node is called.
-        xyz (dict): {"x": float, "y": float, "z": float} — target coordinates.
+    Flow:
+      1. Verify all clients are in zone. Return FAILURE if not.
+      2. asyncio.gather teleport all clients to the target XYZ.
+      3. Verify all clients' positions are within POSITION_MARGIN of the target.
+         Return FAILURE if any client is too far from the target.
+
+    FAILURE: clients not in zone at start; one or more clients not within POSITION_MARGIN
+    of the target XYZ after teleporting.
     """
     zone: str = params["zone"]
     xyz_data: dict = params["xyz"]

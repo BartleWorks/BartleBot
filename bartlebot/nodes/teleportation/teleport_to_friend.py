@@ -51,6 +51,27 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
+    """
+    APIs: client.zone_name(), client.is_loading(),
+          wizwalker.extensions.scripting.teleport_to_friend_from_list()
+
+    Flow:
+      1. Check if all clients are already in to_zone. Return SUCCESS immediately if so.
+      2. Filter to only clients not yet in to_zone.
+      3. Call teleport_to_friend_from_list (wrapped in mouse_handler context) for all
+         clients_to_move simultaneously. ValueError (friend not found/offline) → FAILURE.
+      4. "Ever seen" loading loop: on each tick, check each not-yet-loading client for the
+         friend-busy dialog — if visible, dismiss it and return FAILURE. Record newly-loading
+         clients. Re-attempt teleport for stragglers after TRIGGER_TIMEOUT has elapsed.
+         Return FAILURE if ZONE_CHANGE_TIMEOUT expires.
+      5. Wait for all loading screens to finish.
+      6. Wait for all clients (including those already in to_zone) to arrive in to_zone.
+         Return FAILURE if any are not.
+
+    FAILURE: friend not found or not online; friend-busy dialog appeared (friend has teleports
+    off, is in combat, or the instance is unavailable); loading not detected within
+    ZONE_CHANGE_TIMEOUT; not all clients arrived in to_zone.
+    """
     friend_name: str = params["friend_name"].lower()
     to_zone: str = params["to_zone"]
 

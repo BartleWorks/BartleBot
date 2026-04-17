@@ -53,10 +53,18 @@ from bartlebot.nodes.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Enter a gauntlet dungeon via its housing sigil.
+    APIs: client.send_key(Keycode.X), client.is_loading()
 
-    Params:
-        dungeon_zone (str): Zone clients must be in after successfully entering the gauntlet.
+    Flow:
+      1. Wait for the gauntlet entrance prompt to appear on all clients within Safety Delay
+         seconds. Return FAILURE if the prompt does not appear.
+      2. Press X on all clients simultaneously.
+      3. Poll for a dungeon warning dialog for Safety Delay seconds; confirm it if present.
+      4. Wait for all loading screens to finish.
+      5. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
+
+    FAILURE: gauntlet entrance prompt never appeared within the timeout; not all clients
+    reached dungeon_zone after loading.
     """
     dungeon_zone: str = params["dungeon_zone"]
     safety_delay: float = machine.get_option("Safety Delay", 3.0)

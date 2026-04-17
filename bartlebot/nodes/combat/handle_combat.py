@@ -14,7 +14,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Enemy Name",
         help=("Entity name of the enemy to initiate combat with. Leave empty to use the closest available mob."),
         default="",
-        default_hint="Default: targets the closest available mob",
+        default_hint="targets the closest available mob",
     ),
     ParamField(
         key="use_bot_default",
@@ -33,7 +33,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Combat Config",
         help=("Combat config to use for this encounter. Only active when 'Use bot-level default' is unchecked."),
         default="",
-        default_hint="Default: uses the bot-level or BartleBot built-in combat config",
+        default_hint="uses the bot-level or BartleBot built-in combat config",
         placeholder="Enter combat DSL…",
         disabled_by="use_bot_default",
     ),
@@ -91,7 +91,29 @@ _TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 
 
 async def run(machine, clients: list, params: dict) -> str:
-    """Enter and complete a combat encounter for all clients."""
+    """
+    APIs: SprintyClient.find_closest_by_vague_name(), SprintyClient.find_closest_mob(),
+          SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
+
+    Flow:
+      1. Resolve combat DSL (per-node config if use_bot_default is off, else bot-level
+         default or built-in BartleBot default). Return FAILURE if none available.
+      2. Resolve target entity for each client (by enemy name or closest mob), retrying
+         TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
+      3. If max_duration is set and has elapsed, return FAILURE.
+      4. Snapshot chat to enable drop detection after combat.
+      5. Teleport clients to their targets:
+         - If Default Combat Order is set: send clients one at a time in order, waiting
+           for each to report in_battle() before sending the next.
+         - Otherwise: teleport all clients simultaneously, retrying every _TP_RETRY_INTERVAL
+           until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
+      6. If max_duration is set and has elapsed, return FAILURE.
+      7. Run SprintyCombat for all clients in parallel until combat ends.
+      8. Diff chat to detect drops; report each via machine.on_drop().
+
+    FAILURE: no combat DSL available; target not found after retries; max_duration exceeded;
+    clients did not enter combat within ENTER_COMBAT_TIMEOUT.
+    """
     from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
 
     max_duration: float = float(params.get("max_duration", 0.0))

@@ -107,6 +107,38 @@ _ROWS_PER_PAGE = 10
 
 
 async def run(machine, clients: list, params: dict) -> str:
+    """
+    APIs: client.backpack_space(), client.send_key(Keycode.B), client.send_key(Keycode.Y),
+          node_helpers.is_visible_by_path(), node_helpers.is_enabled_by_path(),
+          node_helpers.click_by_path(), node_helpers.get_text_by_path()
+
+    Flow (per client, run concurrently via asyncio.gather):
+      1. Build the effective keep_list: start from the keep_list param, then append
+         'socket wrench' if sell_socket_wrenches is False, 'skeleton key' if
+         sell_skeleton_keys is False.
+      2. Open the inventory page (B key); read backpack_space() to check if full.
+      3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
+      4. If neither is full, close the backpack and return SUCCESS.
+      5. Click the quicksell open button on the jewel page.
+      6. Wait for the shop UI to appear (QUICKSELL_ALL_BUTTON).
+      7. Click the "All" tab to see all item types.
+      8. Click "Select All" to check every item.
+      9. Handle the crowns dialog if it appears: confirm (YES) if sell_crowns is True,
+         decline (NO) to exclude crowns items.
+      10. If sell_pets is False, switch to the Pet tab, click All to deselect pets,
+          then return to the All tab.
+      11. Page through the quicksell list and uncheck any item whose name matches a
+          keyword in keep_list (case-insensitive partial match).
+      12. If the Sell button is grayed out (all items unchecked), close the shop and
+          backpack and return SUCCESS.
+      13. Click the Sell button; wait for the sell confirmation dialog; confirm it.
+      14. Dismiss up to 3 post-sell dialogs (crowns confirm, pets confirm, gold limit
+          warning) by clicking the center/YES button each time.
+      15. Wait for the backpack close button to reappear, then close the backpack.
+
+    FAILURE: quicksell open button did not appear; shop UI did not appear;
+    sell confirmation dialog did not appear.
+    """
     keep_list = [k.lower() for k in (params.get("keep_list") or [])]
     sell_crowns: bool = params.get("sell_crowns", True)
     sell_pets: bool = params.get("sell_pets", True)

@@ -28,7 +28,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Transition XYZ",
         help=(
-            "A point inside the destination zone's transition bounding box.\n"
+            "A point inside the destination zone's transition bounding box. "
             "Teleporting clients here triggers the automatic zone change."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
@@ -45,7 +45,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "returning FAILURE."
         ),
         default=None,
-        default_hint="If no Reset XYZ is provided, zone change is only attempted once.",
+        default_hint="not set — zone entry is attempted once, no retry",
         required=False,
     ),
 ]
@@ -91,17 +91,19 @@ async def _has_left_zone(client, zone: str) -> bool:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Transition all clients from one zone to another.
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_loading()
 
-    Params:
-        from_zone (str):  Zone clients must be in when this node is called.
-        to_zone (str):    Zone clients must be in when this node completes.
-        xyz (dict):       {"x": float, "y": float, "z": float} — a point inside
-                          the destination zone's transition bounding box.
-                          Teleporting clients here triggers the zone change automatically.
-        reset_xyz (dict): Optional. A safe position to teleport clients back to when the
-                          zone change does not fire within ZONE_CHANGE_TIMEOUT. When set,
-                          the node retries up to MAX_RETRIES times before returning FAILURE.
+    Flow:
+      1. Verify all clients are in from_zone. Return FAILURE if not.
+      2. asyncio.gather teleport all clients into the transition bounding box (xyz).
+      3. Dismiss any dungeon exit warning dialog that appears.
+      4. Poll until all clients have left from_zone, re-teleporting stragglers each tick.
+         If any clients time out and reset_xyz is set, teleport to reset_xyz and retry (up to MAX_RETRIES).
+      5. Wait for all loading screens to finish.
+      6. Wait for all clients to arrive in to_zone. Return FAILURE if any are not.
+
+    FAILURE: clients not in from_zone at start; zone change timed out after all retry
+    attempts; not all clients arrived in to_zone after the transition.
     """
     from_zone: str = params["from_zone"]
     to_zone: str = params["to_zone"]

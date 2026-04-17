@@ -21,7 +21,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Timeout (seconds, 0 = no limit)",
         help=("Maximum seconds to wait before returning FAILURE. Set to 0 to wait indefinitely."),
         default=120.0,
-        default_hint="Default: 120s",
+        default_hint="120s",
     ),
 ]
 
@@ -40,6 +40,18 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
+    """
+    APIs: SprintyClient.calc_health_ratio()
+
+    Flow:
+      1. Poll calc_health_ratio() on all clients simultaneously via asyncio.gather.
+      2. If all ratios are at or above threshold, return SUCCESS.
+      3. Otherwise sleep POLL_INTERVAL and repeat.
+      4. If timeout > 0 and it expires, return FAILURE.
+
+    FAILURE: timeout expired before all clients met the health threshold
+    (unreachable when timeout=0).
+    """
     threshold: float = params["threshold"]
     timeout_raw: float = params.get("timeout", 120.0)
     timeout_val: float | None = None if timeout_raw == 0.0 else timeout_raw

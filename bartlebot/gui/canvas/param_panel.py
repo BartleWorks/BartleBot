@@ -129,7 +129,7 @@ class _DynamicParamForm(QWidget):
                 self._form.insertWidget(insert_idx + 1, display_w)
                 insert_idx += 2
             if field.default_hint and not field.required:
-                hint_lbl = QLabel(field.default_hint)
+                hint_lbl = QLabel(f"Default: {field.default_hint}")
                 hint_lbl.setStyleSheet(f"color: {THEME.text_muted};")
                 hint_lbl.setWordWrap(True)
                 self._form.insertWidget(insert_idx, hint_lbl)

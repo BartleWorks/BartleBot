@@ -20,7 +20,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Clients to Check",
         help=("1-based client numbers to check (e.g. '1, 2'). Leave empty to check all clients."),
         default=[],
-        default_hint="Default: checks all clients",
+        default_hint="checks all clients",
     ),
     ParamField(
         key="require_all",
@@ -49,7 +49,18 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
-    """Return 'TRUE' if the requested drop condition is met, 'FALSE' otherwise."""
+    """
+    APIs: machine.drops (runtime state — no client API calls)
+
+    Flow:
+      1. Normalize item_names to lowercase; return FALSE immediately if the list is empty.
+      2. Resolve which 0-based client indices to check (defaults to all clients).
+      3. Build a set of (client_index, item_name_lower) from machine.drops.
+      4. If require_all: return TRUE only if every item appears for every checked client.
+         Otherwise: return TRUE as soon as any item matches any checked client.
+
+    FAILURE: never — always returns TRUE or FALSE.
+    """
     item_names: list[str] = params.get("item_names") or []
     clients_to_check: list[int] = params.get("clients_to_check") or []
     require_all: bool = params.get("require_all", False)

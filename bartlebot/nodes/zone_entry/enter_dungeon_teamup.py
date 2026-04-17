@@ -109,14 +109,26 @@ _TEAM_SIZE_PATHS = {
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Enter a dungeon via the team-up queue.
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_loading(),
+          client.send_key(Keycode.A), node_helpers.click_by_path()
 
-    Params:
-        from_zone (str):          Zone clients must be in when this node is called.
-        dungeon_zone (str):       Zone clients must be in when this node completes.
-        sigil_xyz (dict):         {"x", "y", "z"} — coordinates of the dungeon sigil.
-        reset_xyz (dict):         {"x", "y", "z"} — coordinates used to dismiss the entrance prompt.
-        minimum_team_size (int):  Minimum team size to select in the confirmation window (2, 3, or 4).
+    Flow:
+      1. Validate minimum_team_size (must be 2, 3, or 4). Return FAILURE if invalid.
+      2. Verify all clients are in from_zone. Return FAILURE if not.
+      3. Clear any pre-existing dungeon entrance prompt by teleporting to reset_xyz.
+      4. Retry loop (up to MAX_RETRIES): teleport to sigil_xyz, wait for the entrance
+         prompt. If it does not appear, teleport to reset_xyz and retry.
+      5. Click the team-up button on all clients.
+      6. Wait for the team-up confirmation window to appear on all clients. Return FAILURE if not.
+      7. Select the minimum_team_size checkbox on all clients.
+      8. Click the enter team-up button on all clients to join the queue.
+      9. Poll for zone change, sending a brief A keypress every TEAMUP_AFK_INTERVAL seconds
+         to prevent idle disconnection. Timeout after TEAMUP_QUEUE_TIMEOUT (1 hour).
+      10. Wait for all loading screens to finish.
+      11. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
+
+    FAILURE: invalid minimum_team_size; clients not in from_zone; entrance prompt never
+    appeared; team-up window never opened; queue timed out; not all clients reached dungeon_zone.
     """
     from_zone: str = params["from_zone"]
     dungeon_zone: str = params["dungeon_zone"]

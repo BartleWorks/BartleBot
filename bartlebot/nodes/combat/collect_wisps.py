@@ -17,7 +17,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "health wisp collection entirely."
         ),
         default=1.0,
-        default_hint="Default: collect health wisps whenever not at full health",
+        default_hint="collect health wisps whenever not at full health",
     ),
     ParamField(
         key="if_mana_below",
@@ -29,7 +29,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "mana wisp collection entirely."
         ),
         default=1.0,
-        default_hint="Default: collect mana wisps whenever not at full mana",
+        default_hint="collect mana wisps whenever not at full mana",
     ),
     ParamField(
         key="fail_if_health_below",
@@ -42,7 +42,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Set to 0.0 to never fail on health."
         ),
         default=0.5,
-        default_hint="Default: FAILURE if any client is still below 50% health",
+        default_hint="FAILURE if any client is still below 50% health",
     ),
     ParamField(
         key="fail_if_mana_below",
@@ -55,7 +55,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Set to 0.0 to never fail on mana."
         ),
         default=0.5,
-        default_hint="Default: FAILURE if any client is still below 50% mana",
+        default_hint="FAILURE if any client is still below 50% mana",
     ),
 ]
 
@@ -84,7 +84,20 @@ _WISP_COLLECT_DELAY = 0.1
 
 
 async def run(machine, clients: list, params: dict) -> str:
-    """Collect health and mana wisps for all clients based on configured thresholds."""
+    """
+    APIs: SprintyClient.calc_health_ratio(), SprintyClient.calc_mana_ratio(),
+          SprintyClient.tp_to_closest_health_wisp(), SprintyClient.tp_to_closest_mana_wisp()
+
+    Flow:
+      1. For each client (in parallel), collect health wisps while health < if_health_below.
+         Stop when no more wisps are in range (tp_to_closest_health_wisp returns False).
+      2. For each client (in parallel), collect mana wisps while mana < if_mana_below.
+         Stop when no more wisps are in range.
+      3. Re-check all ratios. Return FAILURE if any client's health is still below
+         fail_if_health_below or mana is still below fail_if_mana_below.
+
+    FAILURE: any client is still below a fail threshold after wisps are exhausted.
+    """
     if_health_below: float = params.get("if_health_below", 1.0)
     if_mana_below: float = params.get("if_mana_below", 1.0)
     fail_if_health_below: float = params.get("fail_if_health_below", 0.5)

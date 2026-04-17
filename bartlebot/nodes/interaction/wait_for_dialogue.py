@@ -16,7 +16,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Set to 0 to wait indefinitely (mirrors Deimos waitforfree behavior)."
         ),
         default=60.0,
-        default_hint="Default: 60s",
+        default_hint="60s",
     ),
 ]
 
@@ -34,6 +34,18 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
+    """
+    APIs: SprintyClient.is_in_dialog()
+
+    Flow:
+      1. Poll is_in_dialog() on all clients simultaneously via asyncio.gather.
+      2. If no client is in dialogue, return SUCCESS.
+      3. Otherwise sleep POLL_INTERVAL and repeat.
+      4. If timeout > 0 and it expires, return FAILURE.
+
+    FAILURE: timeout expired before all clients left dialogue
+    (unreachable when timeout=0).
+    """
     timeout_raw: float = params.get("timeout", 60.0)
     timeout_val: float | None = None if timeout_raw == 0.0 else timeout_raw
 

@@ -143,11 +143,31 @@ async def _navigate_to_page_1(machine, client, timeout: float) -> bool:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Change realms for all clients by cycling to the next realm in the configured range.
+    APIs: node_helpers.click_by_path(), node_helpers.poll_until(), node_helpers.is_visible_by_path(),
+          node_helpers.is_enabled_by_path(), node_helpers.get_text_by_path(), client.is_loading()
 
-    Params:
-        start_realm_page (int): First page of the realm list to cycle through (default 3).
-        end_realm_page (int):   Last page of the realm list to cycle through (default 5).
+    Flow (per client, run concurrently via asyncio.gather):
+      1. Click the spellbook button; poll until the Preferences tab is visible.
+      2. Click the Preferences tab; poll until the Realms button is visible.
+      3. Click the Realms button; poll until the realm panel appears and the first realm
+         name is readable (the list can be slow to render on first open).
+      4. Anchor to page 1 by clicking the left arrow until the left button is disabled.
+      5. Navigate right from page 1 to start_realm_page, verifying each page flip.
+      6. Scan pages start_realm_page–end_realm_page for the current realm, identified by
+         its grayed-out (disabled) button.
+      7. Determine the target realm: the next entry after the current one, wrapping back
+         to start_realm_page row 0 if the current realm is last in the range. If the
+         current realm was not found, default to start_realm_page row 0.
+      8. Navigate from the end of the scan to the target page.
+      9. Click the target realm button.
+      10. Poll until the Go To Realm button is enabled (realm-hop cooldown). Re-click the
+          target row each tick to restore selection if the game deselects it.
+      11. Click Go To Realm; poll until a loading screen starts.
+      12. Wait for the loading screen to clear.
+
+    FAILURE: spellbook or realm panel did not open; page navigation timed out; realm-hop
+    cooldown did not expire within REALM_HOP_TIMEOUT; loading screen did not start after
+    clicking Go To Realm.
     """
     start_page: int = params.get("start_realm_page", 3)
     end_page: int = params.get("end_realm_page", 5)

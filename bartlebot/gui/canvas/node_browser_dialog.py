@@ -343,11 +343,7 @@ class _DetailPanel(QScrollArea):
             table.setItem(row, 2, req_item)
 
             # Default
-            default_str = ""
-            if pf.default is not None and pf.default != "":
-                default_str = str(pf.default)
-            elif pf.default_hint:
-                default_str = pf.default_hint
+            default_str = str(pf.default) if pf.default not in (None, "", [], {}) else "—"
             default_item = QTableWidgetItem(default_str)
             default_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
             default_item.setForeground(QColor(THEME.text_muted))

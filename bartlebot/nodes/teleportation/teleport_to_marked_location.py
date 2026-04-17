@@ -55,11 +55,23 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Recall all clients to their marked location.
+    APIs: client.calc_mana_ratio(), client.is_loading(), client.body.position(),
+          client.zone_name(), node_helpers.click_by_path()
 
-    Params:
-        zone (str): Expected zone after recall.
-        xyz (dict): {"x": float, "y": float, "z": float} — expected position after recall.
+    Flow:
+      1. Verify all clients have mana (ratio > 0.0). Return FAILURE if any do not.
+      2. Wait for RecallButton to be enabled on all clients. Return FAILURE if
+         COMPASS_TELEPORT_TIMEOUT expires (indicates no mark has been set).
+      3. Snapshot starting positions to detect same-zone recalls (no loading screen).
+      4. Click RecallButton on all clients simultaneously.
+      5. "Ever seen" loop: poll until all clients have either entered a loading screen or
+         moved more than TRIGGER_MARGIN units. Re-click RecallButton for stragglers.
+         Return FAILURE if TRIGGER_TIMEOUT expires.
+      6. Wait for all loading screens to finish.
+      7. Verify all clients are in zone and within POSITION_MARGIN of xyz. Return FAILURE if not.
+
+    FAILURE: any client has no mana; RecallButton not enabled within timeout (no mark set);
+    recall not triggered within TRIGGER_TIMEOUT; not all clients arrived at expected zone/XYZ.
     """
     zone: str = params["zone"]
     xyz_data: dict = params["xyz"]

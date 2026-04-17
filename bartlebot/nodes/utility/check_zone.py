@@ -18,7 +18,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Clients to Check",
         help="1-based client numbers to check (e.g. '1, 2'). Leave empty to check all clients.",
         default=[],
-        default_hint="Default: checks all clients",
+        default_hint="checks all clients",
     ),
 ]
 
@@ -33,7 +33,17 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
-    """Return 'TRUE' if all specified clients are in zone, 'FALSE' otherwise."""
+    """
+    APIs: client.zone_name() (via node_helpers.all_in_zone())
+
+    Flow:
+      1. Validate the zone param; return FALSE immediately if empty.
+      2. Resolve which 0-based client indices to check (defaults to all clients).
+      3. Check zone_name() on all specified clients simultaneously.
+      4. Return TRUE if every client is in the specified zone; FALSE otherwise.
+
+    FAILURE: never — always returns TRUE or FALSE.
+    """
     zone: str = params.get("zone", "")
     clients_to_check: list[int] = params.get("clients_to_check") or []
 

@@ -33,7 +33,16 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
-    """Return 'TRUE' if all specified clients are level scaled, 'FALSE' otherwise."""
+    """
+    APIs: node_helpers.is_visible_by_path()
+
+    Flow:
+      1. Read Level Scaling Clients bot option; resolve to 0-based client indices.
+      2. Check LEVEL_SCALING_ELIXIR_PATH visibility on all specified clients simultaneously.
+      3. Return TRUE if every client shows the elixir indicator; FALSE otherwise.
+
+    FAILURE: never — always returns TRUE or FALSE.
+    """
     clients_to_check: list[int] = machine.get_option("Level Scaling Clients", []) or []
 
     check_indices = [n - 1 for n in clients_to_check if 0 < n <= len(clients)]

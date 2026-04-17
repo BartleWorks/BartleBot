@@ -54,11 +54,21 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Mark the current in-game location for all clients.
+    APIs: client.zone_name(), client.teleport(XYZ), client.calc_mana_ratio(),
+          client.body.position(), node_helpers.click_by_path()
 
-    Params:
-        zone (str): Zone clients must be in when this node is called.
-        xyz (dict): {"x": float, "y": float, "z": float} — location to mark.
+    Flow:
+      1. Verify all clients have mana (ratio > 0.0). Return FAILURE if any do not.
+      2. Verify all clients are in zone. Return FAILURE if not.
+      3. Teleport any clients not already at xyz to the mark position, then wait for the
+         server-reported position to stabilize before marking.
+      4. For each client: wait for any existing mark cooldown to clear, then click MarkButton.
+      5. If RecallButton is still grayed after marking, the same-spot edge case triggered —
+         the existing mark was cleared. Wait for the cooldown again and click MarkButton a
+         second time to re-set the mark.
+
+    FAILURE: any client has no mana; clients not in zone; mark cooldown did not clear
+    within COMPASS_TELEPORT_TIMEOUT.
     """
     zone: str = params["zone"]
     xyz_data: dict = params["xyz"]

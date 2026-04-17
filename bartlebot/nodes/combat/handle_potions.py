@@ -124,13 +124,30 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Use potions on clients below thresholds and optionally navigate to refill.
+    APIs: SprintyClient.calc_health_ratio(), SprintyClient.calc_mana_ratio(),
+          SprintyClient.use_potion(), SprintyClient.has_potion(),
+          mark_location.run(), enter_zone.run(), teleport_to_marked_location.run()
 
-    Params:
-        if_health_below (float): Use potion if health ratio is below this value.
-        if_mana_below   (float): Use potion if mana ratio is below this value.
-        refill_potions  (bool):  Navigate to Hilda to buy potions if any client is out.
-        mark_zone       (str):   Optional zone precondition for clients that need to buy.
+    Flow:
+      1. Check health and mana ratios; use potions on clients below threshold that have them.
+      2. Identify buying_clients: clients with no potion charges remaining after use.
+      3. If refill is disabled or no clients need to buy, return SUCCESS.
+      4. Verify buying_clients are in mark_zone (if set) or not in a transit zone.
+         Return FAILURE if not.
+      5. Snapshot current zone and position as the mark/recall target.
+      6. Call mark_location.run() for buying_clients. Return FAILURE if it fails.
+      7. Click GotoDormButton to teleport home; retry once if the first press lands in a
+         non-dorm zone (handles non-dorm primary residences). Return FAILURE if dorm not reached.
+      8. Call enter_zone.run() Dorm → Ravenwood. Return FAILURE if it fails.
+      9. Call enter_zone.run() Ravenwood → Commons. Return FAILURE if it fails.
+      10. Teleport to Hilda Brewer, wait for the interact prompt, press X to open the potion
+          shop. Return FAILURE if the shop does not open after MAX_RETRIES.
+      11. For each buying_client: buy potions until fully stocked or gold runs out.
+      12. Call teleport_to_marked_location.run() for buying_clients. Return FAILURE if it fails.
+
+    FAILURE: buying clients not in mark_zone or already in a transit zone; mark_location
+    failed; could not reach dorm; navigation step failed; potion shop did not open after
+    retries; teleport_to_marked_location failed.
     """
     health_threshold: float = params["if_health_below"]
     mana_threshold: float = params["if_mana_below"]

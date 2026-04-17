@@ -80,13 +80,22 @@ from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEO
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Enter a dungeon via its sigil.
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_loading(),
+          client.send_key(Keycode.X)
 
-    Params:
-        from_zone (str):    Zone clients must be in when this node is called.
-        dungeon_zone (str): Zone clients must be in when this node completes.
-        sigil_xyz (dict):   {"x", "y", "z"} — coordinates of the dungeon sigil.
-        reset_xyz (dict):   {"x", "y", "z"} — coordinates used to dismiss the entrance prompt.
+    Flow:
+      1. Verify all clients are in from_zone. Return FAILURE if not.
+      2. Clear any pre-existing dungeon entrance prompt by teleporting to reset_xyz.
+      3. Retry loop (up to MAX_RETRIES): teleport to sigil_xyz, wait for the entrance
+         prompt. If it does not appear, teleport to reset_xyz and retry.
+      4. Press X on all clients to interact with the sigil.
+      5. Poll for a dungeon warning dialog for Safety Delay seconds; confirm it if present.
+      6. Wait for all clients to leave from_zone. Return FAILURE if timeout expires.
+      7. Wait for all loading screens to finish.
+      8. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
+
+    FAILURE: clients not in from_zone; entrance prompt never appeared after MAX_RETRIES;
+    zone change timed out; not all clients reached dungeon_zone.
     """
     from_zone: str = params["from_zone"]
     dungeon_zone: str = params["dungeon_zone"]

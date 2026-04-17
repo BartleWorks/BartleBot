@@ -62,6 +62,24 @@ NODE_SPEC = NodeSpec(
 
 
 async def run(machine, clients: list, params: dict) -> str:
+    """
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
+          client.send_key(Keycode.X)
+
+    Flow:
+      1. Verify all clients are in zone. Return FAILURE if not.
+      2. Parse spawns — one JSON dict per line (Copy XYZ format). Return FAILURE if any
+         line cannot be parsed. Return SUCCESS immediately if no spawns are configured.
+      3. For each spawn XYZ in order:
+         a. asyncio.gather teleport all clients to the spawn location.
+         b. Check is_in_npc_range() immediately; if no prompt, poll for up to Safety Delay.
+         c. If a prompt appeared on any client: press X on prompted clients and repeat
+            until all prompts clear or Safety Delay expires.
+         d. Move to the next spawn (absence of a reagent is expected — no retry).
+      4. Return SUCCESS after all spawns are visited.
+
+    FAILURE: clients not in zone at start; a spawns line cannot be parsed as a JSON XYZ dict.
+    """
     from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
 
     zone: str = params["zone"]

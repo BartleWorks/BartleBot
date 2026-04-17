@@ -82,13 +82,23 @@ from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, 
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Interact with an NPC or object that causes a zone change.
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
+          client.send_key(Keycode.X), client.is_loading()
 
-    Params:
-        from_zone (str):    Zone clients must be in when this node is called.
-        to_zone (str):      Zone clients must be in when this node completes.
-        interact_xyz (dict): {"x", "y", "z"} — coordinates of the interactable.
-        reset_xyz (dict):   {"x", "y", "z"} — coordinates used to dismiss the prompt.
+    Flow:
+      1. Verify all clients are in from_zone. Return FAILURE if not.
+      2. Clear any pre-existing interact prompt by teleporting to reset_xyz.
+      3. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait for the interact
+         prompt on all clients. If it does not appear, teleport to reset_xyz and retry.
+      4. Press X on all clients simultaneously.
+      5. Dismiss any dungeon exit warning dialog that appears.
+      6. Poll until all clients have entered a loading screen, re-pressing X for stragglers.
+         Clients already in to_zone are also counted as done. Return FAILURE if timeout expires.
+      7. Wait for all loading screens to finish.
+      8. Wait for all clients to arrive in to_zone. Return FAILURE if any are not.
+
+    FAILURE: clients not in from_zone; interact prompt never appeared after MAX_RETRIES;
+    clients did not enter a loading screen within the timeout; not all clients arrived in to_zone.
     """
     from_zone: str = params["from_zone"]
     to_zone: str = params["to_zone"]

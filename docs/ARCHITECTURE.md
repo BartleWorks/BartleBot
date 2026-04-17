@@ -311,7 +311,6 @@ The GUI will automatically render the correct parameter widgets based on `NODE_S
 
 | If you want to understand… | Read… |
 |---------------------------|-------|
-| The full node library spec | `docs/BARTLEBOT_LIBRARY.md` |
 | The JSON bot file schema | `docs/BOT_SCHEMA.md` |
 | The FSM implementation details | `docs/FSM_ARCHITECTURE.md` |
 | The GUI component breakdown | `docs/GUI_ARCHITECTURE.md` |

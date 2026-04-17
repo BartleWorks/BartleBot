@@ -83,11 +83,24 @@ DIALOG_TIMEOUT = 60.0
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Interact with an NPC or world object and advance through dialogue.
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
+          client.send_key(Keycode.X), client.is_in_dialog()
 
-    Params:
-        interact_xyz (dict): {"x", "y", "z"} — coordinates of the interactable.
-        reset_xyz (dict):    {"x", "y", "z"} — coordinates used to dismiss the prompt.
+    Flow:
+      1. Verify all clients are in zone. Return FAILURE if not.
+      2. Resolve active_clients from interact_clients param (default: all clients).
+         Return SUCCESS immediately if the resolved set is empty.
+      3. Clear any pre-existing interact prompt by teleporting to reset_xyz.
+      4. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait for the prompt
+         on all active_clients. If it does not appear, teleport to reset_xyz and retry.
+         Return FAILURE if the prompt never appeared.
+      5. Press X on all active_clients.
+      6. Advance dialogue: click the advance button while any client is in_dialog().
+         Continue until no client is in dialogue AND Safety Delay seconds have elapsed
+         (to avoid missing late-opening windows). Return FAILURE if DIALOG_TIMEOUT expires.
+
+    FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES;
+    dialogue did not clear within DIALOG_TIMEOUT.
     """
     zone: str = params["zone"]
     interact = XYZ(**params["interact_xyz"])

@@ -29,10 +29,13 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Sleep for a fixed duration.
+    APIs: asyncio.sleep()
 
-    Params:
-        duration (float): Seconds to wait.
+    Flow:
+      1. Read duration param.
+      2. Sleep for duration seconds.
+
+    FAILURE: never — always returns SUCCESS.
     """
     duration: float = params["duration"]
     machine.log(f"sleep: waiting {duration}s…")

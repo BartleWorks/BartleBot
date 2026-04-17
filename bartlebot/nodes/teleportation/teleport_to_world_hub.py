@@ -21,7 +21,7 @@ PARAM_SCHEMA: list[ParamField] = [
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports all clients to the hub zone for their current world using the END key.",
+    description="Teleports all clients to the hub zone for their current world by clicking the hub teleport button in the HUD compass.",
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "All clients are now in the hub zone."),
@@ -38,11 +38,23 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    Teleport all clients to the current world's hub zone.
+    APIs: client.zone_name(), client.is_loading(), node_helpers.click_by_path(),
+          node_helpers.is_enabled_by_path()
 
-    Params:
-        zone (str): Expected hub zone name. If clients are already here, returns SUCCESS
-                    immediately. Used to verify arrival after loading.
+    Flow:
+      1. Check if all clients are already in zone. Return SUCCESS immediately if so.
+      2. Filter to only clients not yet in zone.
+      3. Wait for the hub teleport button to become enabled on clients to move. Return
+         FAILURE if COMPASS_TELEPORT_TIMEOUT expires (30-second game cooldown).
+      4. Click the hub teleport button on all clients to move.
+      5. "Ever seen" loop: poll until all clients have entered a loading screen, re-clicking
+         the button for stragglers. Return FAILURE if TRIGGER_TIMEOUT expires.
+      6. Wait for all loading screens to finish.
+      7. Wait for all clients (including those already in zone) to arrive in zone.
+         Return FAILURE if any are not.
+
+    FAILURE: hub teleport button not enabled within timeout; clients did not enter a loading
+    screen within TRIGGER_TIMEOUT; not all clients arrived in the hub zone.
     """
     zone: str = params["zone"]
 

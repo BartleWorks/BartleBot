@@ -81,7 +81,30 @@ from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
 
 
 async def run(machine, clients: list, params: dict) -> str:
-    """Apply the level-scaling elixir via NPC interaction."""
+    """
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
+          client.send_key(Keycode.X), node_helpers.is_visible_by_path(), node_helpers.click_by_path()
+
+    Flow:
+      1. Verify all clients are in zone. Return FAILURE if not.
+      2. Resolve scale_clients from the Level Scaling Clients bot option (1-based).
+         Return SUCCESS immediately if no clients are configured.
+      3. Clear any pre-existing interact prompt by teleporting to reset_xyz.
+      4. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait up to Safety Delay
+         for the prompt to appear on all scale_clients. Reset to reset_xyz and retry if it
+         does not appear. Return FAILURE if the prompt never appeared.
+      5. Press X on all scale_clients simultaneously.
+      6. Poll until the NPCServicesWin option button is visible on all scale_clients.
+         Return FAILURE if it does not appear within Safety Delay.
+      7. Click the option button on all scale_clients simultaneously.
+      8. Poll until the NPCServicesWin menu is no longer visible.
+      9. Wait Safety Delay seconds for the elixir to apply server-side.
+      10. Verify the level-scaling elixir UI indicator is visible on all scale_clients.
+          Return FAILURE if any client is missing it.
+
+    FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES;
+    NPCServicesWin menu did not appear within Safety Delay; elixir not active after interaction.
+    """
     zone: str = params["zone"]
     interact = XYZ(**params["interact_xyz"])
     reset = XYZ(**params["reset_xyz"])
