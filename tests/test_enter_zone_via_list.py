@@ -2,7 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
-import bartlebot.nodes.interaction.enter_zone_via_list as evl
+import bartlebot.nodes.zone_entry.enter_zone_via_list as evl
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -13,8 +13,7 @@ _PARAMS = {
     "zone_list_entry": "Krokotopia",
 }
 
-# Patch targets — helpers are called via node_helpers in both the module and _select_zone
-_NH = "bartlebot.nodes.interaction.enter_zone_via_list.node_helpers"
+_NH = "bartlebot.nodes.zone_entry.enter_zone_via_list.node_helpers"
 
 
 def _ready_client(zone: str = "TestZone") -> FakeClient:
@@ -25,29 +24,6 @@ def _ready_client(zone: str = "TestZone") -> FakeClient:
     # Second call onward: prompt is present at interact_xyz.
     c.is_in_npc_range.side_effect = [False, True]
     return c
-
-
-def _ui_patches(
-    *,
-    teleport_visible: bool = True,
-    prev_enabled: bool = False,
-    next_enabled: bool = False,
-    opt_texts: list[str] | None = None,
-    click_returns: bool = True,
-):
-    """Return a dict of patch kwargs for all node_helpers UI calls.
-
-    Defaults simulate: list opens immediately on page 1 with 'Krokotopia' as opt0.
-    """
-    if opt_texts is None:
-        opt_texts = ["Krokotopia", "", "", ""]
-
-    return {
-        f"{_NH}.is_visible_by_path": AsyncMock(return_value=teleport_visible),
-        f"{_NH}.is_enabled_by_path": AsyncMock(return_value=False),  # prev disabled = page 1
-        f"{_NH}.get_text_by_path": AsyncMock(side_effect=opt_texts * 10),  # repeat for safety
-        f"{_NH}.click_by_path": AsyncMock(return_value=click_returns),
-    }
 
 
 async def test_wrong_zone_fails():
@@ -63,15 +39,14 @@ async def test_wrong_zone_fails():
 
 
 async def test_success_entry_on_first_page():
-    """Happy path: zone list opens, entry is on page 1, teleport → zone change → SUCCESS."""
+    """Happy path: zone list opens, entry is on page 1 → select → teleport → SUCCESS."""
     client = _ready_client()
-    client.zone_name.side_effect = ["TestZone", "DestZone"]  # zone check, then wait_for_zone
+    client.zone_name.side_effect = ["TestZone", "DestZone"]
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.is_enabled_by_path", AsyncMock(return_value=False)),
         patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
         patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
     ):
@@ -81,39 +56,17 @@ async def test_success_entry_on_first_page():
 
 
 async def test_success_entry_on_second_page():
-    """Entry not on page 1; next enabled; entry found on page 2 → SUCCESS."""
+    """Entry not on page 1; after one page turn it appears on page 2 → SUCCESS."""
     client = _ready_client()
     client.zone_name.side_effect = ["TestZone", "DestZone"]
 
-    # is_enabled_by_path: prev always False (page 1), next True on first check then False (last page)
-    enabled_calls = [True, False]
-    enabled_iter = iter(enabled_calls)
-
-    async def _enabled(c, path):
-        if path is evl.UNIVERSE_PREV_PAGE:
-            return False
-        # UNIVERSE_NEXT_PAGE: enabled on first check, disabled after page turn
-        try:
-            return next(enabled_iter)
-        except StopIteration:
-            return False
-
-    # opt texts: page 1 (forward scan), then page 2 twice — once for page_changed
-    # detection inside poll_until and once for the next forward scan read.
-    opt_texts = [
-        "Wizard City",
-        "Marleybone",
-        "Mooshu",
-        "Dragonspyre",  # page 1 scan
-        "Krokotopia",
-        "",
-        "",
-        "",  # page 2 page_changed check
-        "Krokotopia",
-        "",
-        "",
-        "",
-    ]  # page 2 scan
+    # Texts consumed in order:
+    #   page 1 scan (4) → page-changed detection after Next (4) → page 2 scan (4)
+    opt_texts = (
+        ["Wizard City", "Marleybone", "Mooshu", "Dragonspyre"]  # page 1 scan
+        + ["Krokotopia", "", "", ""]  # page_changed check
+        + ["Krokotopia", "", "", ""]  # page 2 scan → match
+    )
     opt_iter = iter(opt_texts)
 
     async def _get_text(c, path):
@@ -126,7 +79,6 @@ async def test_success_entry_on_second_page():
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.is_enabled_by_path", _enabled),
         patch(f"{_NH}.get_text_by_path", _get_text),
         patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
     ):
@@ -135,52 +87,17 @@ async def test_success_entry_on_second_page():
     assert result == "SUCCESS"
 
 
-async def test_rewinds_to_first_page():
-    """List opens on page 2 (prev enabled once); node rewinds then finds entry on page 1 → SUCCESS."""
+async def test_fuzzy_match_partial_name():
+    """Entry 'Krokotopia' matches list text 'Krokotopian Oasis' via substring containment."""
     client = _ready_client()
     client.zone_name.side_effect = ["TestZone", "DestZone"]
-
-    # prev_enabled: True on first check (need to rewind), False after clicking prev
-    prev_calls = iter([True, False])
-
-    async def _enabled(c, path):
-        if path is evl.UNIVERSE_PREV_PAGE:
-            try:
-                return next(prev_calls)
-            except StopIteration:
-                return False
-        return False  # next page disabled — only one page
-
-    # opt texts: page 2 snapshot (for rewind), then page 1 twice — once for
-    # page_changed detection inside poll_until and once for the forward scan read.
-    opt_texts = [
-        "Marleybone",
-        "",
-        "",
-        "",  # page 2 snapshot before prev click
-        "Krokotopia",
-        "",
-        "",
-        "",  # page 1 page_changed check
-        "Krokotopia",
-        "",
-        "",
-        "",
-    ]  # page 1 forward scan
-    opt_iter = iter(opt_texts)
-
-    async def _get_text(c, path):
-        try:
-            return next(opt_iter)
-        except StopIteration:
-            return ""
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.is_enabled_by_path", _enabled),
-        patch(f"{_NH}.get_text_by_path", _get_text),
+        # List shows a longer name; entry is a substring → fuzzy match succeeds
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopian Oasis", "", "", ""] * 10)),
         patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
@@ -188,22 +105,71 @@ async def test_rewinds_to_first_page():
     assert result == "SUCCESS"
 
 
-async def test_entry_not_found_cancels_and_fails():
-    """Entry not on any page; last page reached; cancel clicked → FAILURE."""
+async def test_circular_detection_fails_when_no_match():
+    """Entry absent from all pages; wrap-around detected via repeated page signature → cancel → FAILURE."""
     client = _ready_client()
     click_mock = AsyncMock(return_value=True)
 
+    # Two-page simulation:
+    #   page 1 scan (A×4) → page_changed to page 2 (B×4) → page 2 scan (B×4)
+    #   → page_changed wraps back to page 1 (A×4) → page 1 scan again (A×4) → sig seen → False
+    opt_texts = (
+        ["A", "B", "C", "D"]  # page 1 scan
+        + ["E", "F", "G", "H"]  # page_changed: page 2 appeared
+        + ["E", "F", "G", "H"]  # page 2 scan
+        + ["A", "B", "C", "D"]  # page_changed: wrapped back to page 1
+        + ["A", "B", "C", "D"]  # page 1 scan → sig already in visited → return False
+    )
+    opt_iter = iter(opt_texts)
+
+    async def _get_text(c, path):
+        try:
+            return next(opt_iter)
+        except StopIteration:
+            return ""
+
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.is_enabled_by_path", AsyncMock(return_value=False)),  # already page 1, no next
-        patch(f"{_NH}.get_text_by_path", AsyncMock(return_value="Wizard City")),  # never matches
+        patch(f"{_NH}.get_text_by_path", _get_text),
         patch(f"{_NH}.click_by_path", click_mock),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
-    # Cancel button must have been clicked
+    paths_clicked = [call.args[1] for call in click_mock.call_args_list]
+    assert evl.UNIVERSE_CANCEL_BUTTON in paths_clicked
+
+
+async def test_entry_not_found_cancels_and_fails():
+    """Alias for clarity: entry absent, cancel clicked before returning FAILURE."""
+    # Covered by test_circular_detection_fails_when_no_match; this simpler version
+    # uses a single page whose sig is immediately seen again after the Next click.
+    client = _ready_client()
+    click_mock = AsyncMock(return_value=True)
+
+    # page 1 scan → page_changed returns same texts (single page, Next wraps back) → sig seen
+    opt_texts = (
+        ["A", "A", "A", "A"]  # page 1 scan
+        + ["A", "A", "A", "A"]  # page_changed check: same → times out; next iter: same sig
+    )
+    opt_iter = iter(opt_texts)
+
+    async def _get_text(c, path):
+        try:
+            return next(opt_iter)
+        except StopIteration:
+            return "A"
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", _get_text),
+        patch(f"{_NH}.click_by_path", click_mock),
+    ):
+        result = await evl.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
     paths_clicked = [call.args[1] for call in click_mock.call_args_list]
     assert evl.UNIVERSE_CANCEL_BUTTON in paths_clicked
 
@@ -236,14 +202,12 @@ async def test_zone_list_never_opens_fails():
 async def test_zone_change_timeout_fails():
     """Entry found, teleport clicked, but clients never reach to_zone → FAILURE."""
     client = _ready_client()
-    # zone_name always returns starting zone (never reaches DestZone)
-    client.zone_name.return_value = "TestZone"
+    client.zone_name.return_value = "TestZone"  # never reaches DestZone
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.01),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.is_enabled_by_path", AsyncMock(return_value=False)),
         patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
         patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
     ):
@@ -273,13 +237,11 @@ async def test_stale_prompt_cleared():
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
-        patch(f"{_NH}.is_enabled_by_path", AsyncMock(return_value=False)),
         patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
         patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
     ):
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
-    # First teleport must be to reset_xyz (x=1.0)
     first_tp = client.teleport.call_args_list[0]
-    assert first_tp.args[0].x == 1.0
+    assert first_tp.args[0].x == 1.0  # reset_xyz

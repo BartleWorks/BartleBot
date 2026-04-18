@@ -1,6 +1,7 @@
 """Node: interact with a zone-selection list object and teleport to the chosen zone."""
 
 import asyncio
+import difflib
 import logging
 
 from wizwalker import XYZ, Keycode
@@ -10,7 +11,6 @@ from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, Re
 from bartlebot.nodes.paths import (
     UNIVERSE_CANCEL_BUTTON,
     UNIVERSE_NEXT_PAGE,
-    UNIVERSE_PREV_PAGE,
     UNIVERSE_TELEPORT_BUTTON,
     universe_zone_option_path,
 )
@@ -96,7 +96,23 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=10,
 )
 
-_MAX_PAGES = 20  # Safety cap for page navigation (covers rewind + forward pass)
+_MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
+_FUZZY_THRESHOLD = 0.6  # Minimum SequenceMatcher ratio for a fuzzy match
+
+
+def _fuzzy_match(text: str, query_lower: str) -> bool:
+    """Return True if text is a close enough match for query_lower (already lowercased).
+
+    Checks substring containment first (fast path), then falls back to
+    SequenceMatcher ratio. This handles display names that may differ slightly
+    from the underlying zone name used to derive the query.
+    """
+    t = text.strip().lower()
+    if not t or not query_lower:
+        return False
+    if query_lower in t:
+        return True
+    return difflib.SequenceMatcher(None, t, query_lower).ratio() >= _FUZZY_THRESHOLD
 
 
 async def _select_zone(client, entry: str, safety_delay: float) -> bool:
@@ -104,8 +120,13 @@ async def _select_zone(client, entry: str, safety_delay: float) -> bool:
 
     Returns True if the entry was found and clicked, False if all pages were exhausted.
     Assumes the zone list UI is already open.
+
+    Page navigation uses a visited-signature set to detect when the list has wrapped
+    around (all pages seen), since the prev/next buttons never become disabled — they
+    always cycle through the list circularly.
     """
     entry_lower = entry.strip().lower()
+    visited: set[tuple[str, ...]] = set()
 
     async def read_texts() -> list[str]:
         return [await node_helpers.get_text_by_path(client, universe_zone_option_path(i)) for i in range(4)]
@@ -113,23 +134,20 @@ async def _select_zone(client, entry: str, safety_delay: float) -> bool:
     async def page_changed(s: list[str]) -> bool:
         return await read_texts() != s
 
-    # Rewind to page 1 — the list often opens on the page containing the player's current zone.
-    for _ in range(_MAX_PAGES):
-        if not await node_helpers.is_enabled_by_path(client, UNIVERSE_PREV_PAGE):
-            break
-        snapshot = await read_texts()
-        await node_helpers.click_by_path(client, UNIVERSE_PREV_PAGE)
-        await node_helpers.poll_until(lambda s=snapshot: page_changed(s), safety_delay, POLL_INTERVAL)
-
-    # Search forward through all pages.
     for _ in range(_MAX_PAGES):
         texts = await read_texts()
+        sig = tuple(texts)
+
+        # If we've seen this page before the list has wrapped — all pages exhausted.
+        if sig in visited:
+            return False
+        visited.add(sig)
+
         for i, text in enumerate(texts):
-            if text.strip().lower() == entry_lower:
+            if _fuzzy_match(text, entry_lower):
                 await node_helpers.click_by_path(client, universe_zone_option_path(i))
                 return True
-        if not await node_helpers.is_enabled_by_path(client, UNIVERSE_NEXT_PAGE):
-            return False
+
         snapshot = texts
         await node_helpers.click_by_path(client, UNIVERSE_NEXT_PAGE)
         await node_helpers.poll_until(lambda s=snapshot: page_changed(s), safety_delay, POLL_INTERVAL)
@@ -141,8 +159,7 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
           client.send_key(Keycode.X), node_helpers.is_visible_by_path(),
-          node_helpers.is_enabled_by_path(), node_helpers.get_text_by_path(),
-          node_helpers.click_by_path()
+          node_helpers.get_text_by_path(), node_helpers.click_by_path()
 
     Flow:
       1. Verify all clients are in zone. Return FAILURE if not.
@@ -153,9 +170,11 @@ async def run(machine, clients: list, params: dict) -> str:
       4. Press X on all clients to open the zone list.
       5. Wait for the zone list UI to open (UNIVERSE_TELEPORT_BUTTON visible on all
          clients). Return FAILURE if it never appears within Safety Delay.
-      6. For each client in parallel: rewind to page 1 (clicking prev until disabled),
-         then search forward page by page for zone_list_entry. If found, click it.
-         If not found on any page, click cancel on all clients and return FAILURE.
+      6. For each client in parallel: navigate pages searching for zone_list_entry using
+         fuzzy matching. After each failed page, click Next and wait for the page to
+         change. A visited-signature set detects when all pages have been cycled through
+         (the list wraps circularly — Next/Prev are never disabled). If not found on
+         any page, click cancel on all clients and return FAILURE.
       7. Click the teleport button on all clients.
       8. Wait for all clients to reach to_zone within ZONE_CHANGE_TIMEOUT.
          Return FAILURE if timed out.

@@ -8,8 +8,6 @@ from bartlebot.nodes.combat.wait_for_health import NODE_SPEC as _wait_for_health
 from bartlebot.nodes.combat.wait_for_health import run as wait_for_health_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
 from bartlebot.nodes.interaction.collect_reagent import run as collect_reagent_run
-from bartlebot.nodes.interaction.enter_zone_via_list import NODE_SPEC as _enter_zone_via_list_spec
-from bartlebot.nodes.interaction.enter_zone_via_list import run as enter_zone_via_list_run
 from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
 from bartlebot.nodes.interaction.interact import run as interact_run
 from bartlebot.nodes.interaction.wait_for_dialogue import NODE_SPEC as _wait_for_dialogue_spec
@@ -47,6 +45,8 @@ from bartlebot.nodes.zone_entry.enter_gauntlet import NODE_SPEC as _enter_gauntl
 from bartlebot.nodes.zone_entry.enter_gauntlet import run as enter_gauntlet_run
 from bartlebot.nodes.zone_entry.enter_zone import NODE_SPEC as _enter_zone_spec
 from bartlebot.nodes.zone_entry.enter_zone import run as enter_zone_run
+from bartlebot.nodes.zone_entry.enter_zone_via_list import NODE_SPEC as _enter_zone_via_list_spec
+from bartlebot.nodes.zone_entry.enter_zone_via_list import run as enter_zone_via_list_run
 from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter_zone_via_object_spec
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
 
