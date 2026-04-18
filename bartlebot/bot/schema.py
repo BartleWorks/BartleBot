@@ -49,6 +49,7 @@ class StateModel(BaseModel):
     # Keys are option names; values override the bot-wide default for this node only.
     option_overrides: dict = Field(default_factory=dict)
     flipped: bool = False  # When True, input port is on the right and outputs on the left
+    notes: str | None = None  # User-authored documentation shown in the Properties sidebar
 
 
 class BotOptionModel(BaseModel):

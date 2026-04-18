@@ -4,9 +4,9 @@ GraphView    — base view used by both the editor and the read-only run view.
 _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
-from PyQt6.QtCore import QEvent, QPointF, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QWheelEvent
-from PyQt6.QtWidgets import QGraphicsScene, QGraphicsView
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
 
 from bartlebot.gui.theme import THEME
 
@@ -64,6 +64,37 @@ class GraphView(QGraphicsView):
 
     def _clear_fitting(self) -> None:
         self._fitting = False
+
+    def smooth_center_on(self, item: QGraphicsItem, duration_ms: int = 300) -> None:
+        """Animate the viewport to center on item, but only if it isn't already fully visible."""
+        node_scene_rect = item.mapRectToScene(item.boundingRect())
+        visible_scene_rect = self.mapToScene(self.viewport().rect()).boundingRect()
+        if visible_scene_rect.contains(node_scene_rect):
+            return
+
+        center = node_scene_rect.center()
+        vp = self.mapFromScene(center)
+        dx = int(vp.x() - self.viewport().width() / 2)
+        dy = int(vp.y() - self.viewport().height() / 2)
+
+        for anim in (getattr(self, "_pan_anim_h", None), getattr(self, "_pan_anim_v", None)):
+            if anim is not None:
+                anim.stop()
+
+        self._pan_anim_h = QPropertyAnimation(self.horizontalScrollBar(), b"value", self)
+        self._pan_anim_h.setDuration(duration_ms)
+        self._pan_anim_h.setStartValue(self.horizontalScrollBar().value())
+        self._pan_anim_h.setEndValue(self.horizontalScrollBar().value() + dx)
+        self._pan_anim_h.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        self._pan_anim_v = QPropertyAnimation(self.verticalScrollBar(), b"value", self)
+        self._pan_anim_v.setDuration(duration_ms)
+        self._pan_anim_v.setStartValue(self.verticalScrollBar().value())
+        self._pan_anim_v.setEndValue(self.verticalScrollBar().value() + dy)
+        self._pan_anim_v.setEasingCurve(QEasingCurve.Type.InOutCubic)
+
+        self._pan_anim_h.start()
+        self._pan_anim_v.start()
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         self._user_zoomed = True

@@ -757,7 +757,9 @@ class BotCanvas(QWidget):
             self._scene._node_items[self._active_state].set_active(False)
         self._active_state = state_id
         if state_id in self._scene._node_items:
-            self._scene._node_items[state_id].set_active(True)
+            node = self._scene._node_items[state_id]
+            node.set_active(True)
+            self._view.smooth_center_on(node)
         self._emit_bot_status()
         logger.info("Entered: %s", state_id)
 

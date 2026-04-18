@@ -132,12 +132,18 @@ async def run(machine, clients: list, params: dict) -> str:
       1. Check health and mana ratios; use potions on clients below threshold that have them.
       2. Identify buying_clients: clients with no potion charges remaining after use.
       3. If refill is disabled or no clients need to buy, return SUCCESS.
-      4. Verify buying_clients are in mark_zone (if set) or not in a transit zone.
-         Return FAILURE if not.
+      4. Check buying_clients zones:
+         a. If all are already in the Commons, open the shop and buy immediately (no mark or
+            recall needed). Return SUCCESS or FAILURE from the shop step.
+         b. If mark_zone is set, verify all buying_clients are in that zone. Return FAILURE if not.
+         c. Otherwise, guard against clients stuck in a transit zone (Dorm, Ravenwood).
+            Return FAILURE if any are found there.
       5. Snapshot current zone and position as the mark/recall target.
       6. Call mark_location.run() for buying_clients. Return FAILURE if it fails.
       7. Click GotoDormButton to teleport home; retry once if the first press lands in a
-         non-dorm zone (handles non-dorm primary residences). Return FAILURE if dorm not reached.
+         non-dorm zone (handles non-dorm primary residences). Each attempt only re-presses
+         HOME for clients that have not yet reached the dorm. Return FAILURE if any client
+         fails to reach the dorm after both attempts.
       8. Call enter_zone.run() Dorm → Ravenwood. Return FAILURE if it fails.
       9. Call enter_zone.run() Ravenwood → Commons. Return FAILURE if it fails.
       10. Teleport to Hilda Brewer, wait for the interact prompt, press X to open the potion
@@ -145,9 +151,9 @@ async def run(machine, clients: list, params: dict) -> str:
       11. For each buying_client: buy potions until fully stocked or gold runs out.
       12. Call teleport_to_marked_location.run() for buying_clients. Return FAILURE if it fails.
 
-    FAILURE: buying clients not in mark_zone or already in a transit zone; mark_location
-    failed; could not reach dorm; navigation step failed; potion shop did not open after
-    retries; teleport_to_marked_location failed.
+    FAILURE: buying clients not in mark_zone or stuck in a transit zone (Dorm/Ravenwood);
+    mark_location failed; could not reach dorm; navigation step failed; potion shop did not
+    open after retries; teleport_to_marked_location failed.
     """
     health_threshold: float = params["if_health_below"]
     mana_threshold: float = params["if_mana_below"]
@@ -205,14 +211,27 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("SUCCESS: no refill needed")
         return "SUCCESS"
 
-    # 4. Precondition: buying_clients must be in mark_zone if one was specified.
-    #    Without mark_zone, guard against clients already being in a transit zone
-    #    (DORM → RAVENWOOD → COMMONS). If they are, the mark would be placed there,
-    #    the node would navigate the full HOME loop back to Commons, and the recall
-    #    would return clients to Commons rather than their actual origin.
-    _TRANSIT_ZONES = {DORM_ZONE, RAVENWOOD_ZONE, COMMONS_ZONE}
+    # 4. Check buying_clients zones.
     zones = await asyncio.gather(*[c.zone_name() for c in buying_clients])
     machine.log(f"Buying client zones: {list(zones)}", logging.DEBUG)
+
+    # 4a. Commons shortcut: all buying clients are already at Hilda's location —
+    #     skip mark, HOME, and navigation; just open the shop and buy in place.
+    if all(z == COMMONS_ZONE for z in zones):
+        machine.log("Buying clients already in Commons; skipping mark and recall…")
+        if not await _open_potion_shop(machine, buying_clients):
+            machine.log("FAILURE: could not open potion shop", logging.WARNING)
+            return "FAILURE"
+        machine.log("Buying potions…")
+        await asyncio.gather(*[_buy_potions_for_client(machine, c) for c in buying_clients])
+        machine.log(f"SUCCESS: potions refilled in Commons for {len(buying_clients)} client(s)")
+        return "SUCCESS"
+
+    # 4b/c. Normal path: verify origin zone before placing the mark.
+    #   Without mark_zone, guard against clients already being in a transit zone
+    #   (Dorm → Ravenwood). If they are, the mark would be placed there and the
+    #   recall would return clients to a transit zone rather than their actual origin.
+    _TRANSIT_ZONES = {DORM_ZONE, RAVENWOOD_ZONE}
     if mark_zone:
         if not all(z == mark_zone for z in zones):
             wrong = [z for z in zones if z != mark_zone]
@@ -318,50 +337,57 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     """
     Press HOME and verify all clients end up in DORM_ZONE.
 
-    Retries once if the first HOME press lands elsewhere (e.g., a non-dorm house).
-    Waits out the home-button cooldown between attempts.
+    Retries once for any client that didn't land in the dorm on the first press
+    (e.g., a client whose primary residence is a non-dorm house). Each attempt only
+    re-presses HOME for clients not yet confirmed in the dorm, so a client that
+    reached the dorm on attempt 1 is never pressed again during its HOME cooldown.
 
     NOTE: Clients with a non-dorm primary residence are expected to end up in the dorm
     on the second HOME press (most houses have a spiral door that returns to the street,
     from which HOME reaches the dorm). The Arcanum Apartment edge case is not handled
     and will result in FAILURE.
     """
-    for attempt in range(1, 3):
-        machine.log(f"Clicking GotoDormButton (attempt {attempt}/2)…", logging.DEBUG)
-        await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in clients])
+    needs_home = list(clients)
 
-        # "Ever seen loading" pattern: re-click for slow clients that don't start loading.
+    for attempt in range(1, 3):
+        machine.log(f"Clicking GotoDormButton for {len(needs_home)} client(s) (attempt {attempt}/2)…", logging.DEBUG)
+        await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in needs_home])
+
+        # "Ever seen loading" pattern: re-click for needs_home clients that don't start loading.
         seen_loading: set[int] = set()
         loop_start = asyncio.get_event_loop().time()
-        while len(seen_loading) < len(clients):
-            is_loading = await asyncio.gather(*[c.is_loading() for c in clients])
+        while len(seen_loading) < len(needs_home):
+            is_loading = await asyncio.gather(*[c.is_loading() for c in needs_home])
             for i, loading in enumerate(is_loading):
                 if loading:
                     seen_loading.add(i)
-            if len(seen_loading) == len(clients):
+            if len(seen_loading) == len(needs_home):
                 break
             if asyncio.get_event_loop().time() - loop_start > _HOME_LOADING_TIMEOUT:
-                still_waiting = [i for i in range(len(clients)) if i not in seen_loading]
+                still_waiting = [i for i in range(len(needs_home)) if i not in seen_loading]
                 machine.log(f"Clients not loading at timeout: {still_waiting}", logging.DEBUG)
                 break
-            not_loading = [c for i, c in enumerate(clients) if i not in seen_loading]
+            not_loading = [c for i, c in enumerate(needs_home) if i not in seen_loading]
             await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in not_loading])
             await asyncio.sleep(POLL_INTERVAL)
 
+        # Wait for ALL clients to settle (includes clients already in dorm from a prior attempt).
         await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
-        zones = await asyncio.gather(*[c.zone_name() for c in clients])
+        zones = await asyncio.gather(*[c.zone_name() for c in needs_home])
         machine.log(f"Zones after HOME press {attempt}: {list(zones)}", logging.DEBUG)
-        if all(z == DORM_ZONE for z in zones):
+        needs_home = [c for c, z in zip(needs_home, zones) if z != DORM_ZONE]
+
+        if not needs_home:
             return True
 
         if attempt == 1:
             machine.log(
-                f"Not in dorm zone after HOME (got {list(set(zones))}); waiting for GotoDormButton to become enabled…",
+                f"{len(needs_home)} client(s) not in dorm after HOME; waiting for GotoDormButton to become enabled…",
                 logging.DEBUG,
             )
             if not await node_helpers.poll_until(
-                lambda: _all_dorm_button_enabled(clients),
+                lambda _c=needs_home: _all_dorm_button_enabled(_c),
                 COMPASS_TELEPORT_TIMEOUT,
                 POLL_INTERVAL,
             ):
