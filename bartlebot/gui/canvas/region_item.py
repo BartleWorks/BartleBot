@@ -143,7 +143,9 @@ class RegionItem(QGraphicsItem):
     def boundingRect(self) -> QRectF:
         if self._rect.isNull():
             return self._rect
-        return self._rect.adjusted(0, -(_PILL_H + _PILL_GAP), 0, 0)
+        # Top margin is 8× the nominal pill size: covers constant-screen-size scaling
+        # down to ~12% zoom without clipping the pill above the region rect.
+        return self._rect.adjusted(0, -(_PILL_H + _PILL_GAP) * 8, 0, 0)
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         if self._rect.isNull():
@@ -166,24 +168,31 @@ class RegionItem(QGraphicsItem):
         path.addRoundedRect(self._rect, _REGION_RADIUS, _REGION_RADIUS)
         painter.drawPath(path)
 
-        # Label pill — centered above the region rect
+        # Label pill — constant screen size regardless of zoom level.
+        lod = max(0.1, option.levelOfDetailFromTransform(painter.worldTransform()))
+        s = 1.0 / lod  # scene-unit scale: larger when zoomed out to keep screen size constant
+        pill_h = _PILL_H * s
+        pill_pad_x = _PILL_PAD_X * s
+        pill_gap = _PILL_GAP * s
+
         label_color = QColor(color).darker(_LABEL_DARKER)
-        font = QFont(THEME.font_ui_family, _LABEL_FONT_SIZE)
+        font = QFont(THEME.font_ui_family)
+        font.setPointSizeF(max(1.0, _LABEL_FONT_SIZE * s))
         font.setBold(True)
         painter.setFont(font)
         fm = painter.fontMetrics()
         text_w = fm.horizontalAdvance(self._label)
-        pill_w = text_w + _PILL_PAD_X * 2
+        pill_w = text_w + pill_pad_x * 2
         pill_x = self._rect.left() + (self._rect.width() - pill_w) / 2
-        pill_y = self._rect.top() - _PILL_H - _PILL_GAP
-        pill_rect = QRectF(pill_x, pill_y, pill_w, _PILL_H)
+        pill_y = self._rect.top() - pill_h - pill_gap
+        pill_rect = QRectF(pill_x, pill_y, pill_w, pill_h)
 
         pill_fill = QColor(color)
         pill_fill.setAlpha(_PILL_ALPHA)
         painter.setBrush(QBrush(pill_fill))
-        painter.setPen(QPen(label_color, 1.5))
+        painter.setPen(QPen(label_color, 1.5 * s))
         pill_path = QPainterPath()
-        pill_path.addRoundedRect(pill_rect, _PILL_H / 2, _PILL_H / 2)
+        pill_path.addRoundedRect(pill_rect, pill_h / 2, pill_h / 2)
         painter.drawPath(pill_path)
 
         painter.setPen(label_color)
