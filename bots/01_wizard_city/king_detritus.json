@@ -1,0 +1,644 @@
+{
+  "name": "King Detritus",
+  "description": "Endlessly farms King Detritus in Abandoned House, Wizard City Drains",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "tempest[epic] | lord",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [
+    "Alchemical reagents"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        2,
+        1
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Commons",
+      "position": {
+        "x": 150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Golem Court",
+      "position": {
+        "x": 750.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Golem_Tower",
+        "xyz": {
+          "x": -6315.71,
+          "y": 2686.3,
+          "z": 229.0
+        },
+        "reset_xyz": {
+          "x": -5665.99,
+          "y": 2382.29,
+          "z": 229.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 450.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 0.75,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_via_object",
+      "label": "Enter the Drains",
+      "position": {
+        "x": 1350.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Golem_Tower",
+        "to_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
+        "interact_xyz": {
+          "x": -3505.13,
+          "y": 2142.83,
+          "z": 30.1
+        },
+        "reset_xyz": {
+          "x": -2586.28,
+          "y": 2355.38,
+          "z": 0.1
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Abandoned House",
+      "position": {
+        "x": 1650.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
+        "dungeon_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
+        "sigil_xyz": {
+          "x": 13218.09,
+          "y": -15550.06,
+          "z": 178.95
+        },
+        "reset_xyz": {
+          "x": 13118.82,
+          "y": -14630.11,
+          "z": 4.74
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger first dialogue",
+      "position": {
+        "x": 1950.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
+        "xyz": {
+          "x": -10.82,
+          "y": -4538.14,
+          "z": 539.5
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat first set of mobs",
+      "position": {
+        "x": 2250.0,
+        "y": 7.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger second dialogue",
+      "position": {
+        "x": 2550.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
+        "xyz": {
+          "x": 18.32,
+          "y": -1463.68,
+          "z": 539.5
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat second set of mobs",
+      "position": {
+        "x": 2850.0,
+        "y": 7.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Talk to Belgrim SparklePants",
+      "position": {
+        "x": 3750.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
+        "interact_xyz": {
+          "x": -1036.46,
+          "y": 763.89,
+          "z": 0.4
+        },
+        "reset_xyz": {
+          "x": -1277.99,
+          "y": 246.93,
+          "z": 0.4
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Enter Abandoned Backyard",
+      "position": {
+        "x": 4050.0,
+        "y": 7.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
+        "to_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubBackyard",
+        "xyz": {
+          "x": 34.17,
+          "y": 1131.35,
+          "z": 0.4
+        },
+        "reset_xyz": {
+          "x": 33.25,
+          "y": 721.55,
+          "z": 0.4
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat King Detritus",
+      "position": {
+        "x": 4950.0,
+        "y": 7.0
+      },
+      "params": {
+        "enemy": "CC_Trash_Boss_A_01",
+        "use_bot_default": false,
+        "combat_config": "### p1\n{1} feint @ boss\n{2} any<blade>[sharp] @ self\n{3} any<aura & out_damage>\n{4} lord[epic]\n{5} tempest\npass\n\n### p2\n{1} feint @ boss\n{2} any<blade>[sharp] @ ally(0)\n{3} any<blade> @ ally(0)\n{4} purge @ ally(0)\n{5} tempest[epic]\npass",
+        "max_duration": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger boss dialogue",
+      "position": {
+        "x": 4350.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubBackyard",
+        "xyz": {
+          "x": -6.86,
+          "y": 2549.58,
+          "z": 1.8
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "wait_for_dialogue",
+      "label": "Dismiss dialogue",
+      "position": {
+        "x": 3150.0,
+        "y": 7.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1050.0,
+        "y": 7.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_16",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for boss dialogue",
+      "position": {
+        "x": 4650.0,
+        "y": 7.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_17",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 5250.0,
+        "y": 7.0
+      },
+      "params": {
+        "keep_list": [
+          "Vanguard"
+        ],
+        "sell_crowns": true,
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_18",
+      "node_type": "sleep",
+      "label": "Give Belgrim a moment to get ready",
+      "position": {
+        "x": 3450.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 3.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_12",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_18",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_10",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": [
+    {
+      "id": "b5a45941",
+      "label": "Go to dungeon",
+      "members": [
+        "state_4",
+        "state_3",
+        "state_1",
+        "state_2",
+        "state_5",
+        "state_15"
+      ],
+      "color": 1
+    },
+    {
+      "id": "aa4376b3",
+      "label": "Mob fights",
+      "members": [
+        "state_14",
+        "state_6",
+        "state_10",
+        "state_8",
+        "state_7",
+        "state_9",
+        "state_18"
+      ],
+      "color": 6
+    },
+    {
+      "id": "036bf7c2",
+      "label": "King Detritus",
+      "members": [
+        "state_13",
+        "state_12",
+        "state_11",
+        "state_17"
+      ],
+      "color": 5
+    }
+  ]
+}
