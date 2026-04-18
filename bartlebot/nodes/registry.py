@@ -8,6 +8,8 @@ from bartlebot.nodes.combat.wait_for_health import NODE_SPEC as _wait_for_health
 from bartlebot.nodes.combat.wait_for_health import run as wait_for_health_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
 from bartlebot.nodes.interaction.collect_reagent import run as collect_reagent_run
+from bartlebot.nodes.interaction.enter_zone_via_list import NODE_SPEC as _enter_zone_via_list_spec
+from bartlebot.nodes.interaction.enter_zone_via_list import run as enter_zone_via_list_run
 from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
 from bartlebot.nodes.interaction.interact import run as interact_run
 from bartlebot.nodes.interaction.wait_for_dialogue import NODE_SPEC as _wait_for_dialogue_spec
@@ -58,6 +60,7 @@ NODE_REGISTRY: dict = {
     "enter_dungeon": enter_dungeon_run,
     "enter_dungeon_teamup": enter_dungeon_teamup_run,
     "enter_gauntlet": enter_gauntlet_run,
+    "enter_zone_via_list": enter_zone_via_list_run,
     "interact": interact_run,
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
@@ -85,6 +88,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "enter_dungeon": _enter_dungeon_spec,
     "enter_dungeon_teamup": _enter_dungeon_teamup_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
+    "enter_zone_via_list": _enter_zone_via_list_spec,
     "interact": _interact_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
@@ -141,6 +145,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Interaction",
         [
             "collect_reagent",
+            "enter_zone_via_list",
             "interact",
             "wait_for_dialogue",
         ],

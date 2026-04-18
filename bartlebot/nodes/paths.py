@@ -176,3 +176,15 @@ def quicksell_item_title_path(row: int) -> list[str]:
 def quicksell_item_checkbox_path(row: int) -> list[str]:
     """Return the window path to the sell checkbox for the given quicksell row (0-9)."""
     return ["WorldView", "shopGUI", "buyWindow", "column1", f"num{row}"]
+
+
+# Zone selection list UI (e.g., kiosk or NPC offering zone teleport options)
+UNIVERSE_NEXT_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "rightButton"]
+UNIVERSE_PREV_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "leftButton"]
+UNIVERSE_TELEPORT_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "teleportButton"]
+UNIVERSE_CANCEL_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "cancelButton"]
+
+
+def universe_zone_option_path(index: int) -> list[str]:
+    """Return the path for zone option index (0–3) in the zone selection list."""
+    return ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", f"opt{index}"]
