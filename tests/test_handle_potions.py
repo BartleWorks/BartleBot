@@ -211,12 +211,38 @@ async def test_mixed_clients_only_some_in_wrong_zone_fails():
 
 
 async def test_buying_client_in_transit_zone_returns_failure():
-    """Buying client already in a transit zone (e.g. stuck at Hilda) → FAILURE."""
-    for transit_zone in [hp.COMMONS_ZONE, hp.DORM_ZONE, hp.RAVENWOOD_ZONE]:
+    """Buying client stuck in Dorm or Ravenwood (mid-navigation) → FAILURE."""
+    for transit_zone in [hp.DORM_ZONE, hp.RAVENWOOD_ZONE]:
         client = _depleted_client(zone=transit_zone)
         result = await hp.run(FakeMachine(), [client], _PARAMS)
         assert result == "FAILURE", f"Expected FAILURE for transit zone {transit_zone!r}"
         client.teleport.assert_not_called()
+
+
+async def test_buying_client_in_commons_opens_shop_no_navigate():
+    """Buying clients already in Commons → skip mark/recall, open shop, buy → SUCCESS."""
+    client = _depleted_client(zone=COMMONS)
+    mark_mock = AsyncMock(return_value="SUCCESS")
+
+    with patch.object(mark_location, "run", new=mark_mock), _SHOP_FN_OK, _BUY_OK:
+        result = await hp.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    mark_mock.assert_not_called()
+
+
+async def test_buying_client_in_commons_shop_failure_returns_failure():
+    """Buying clients in Commons but potion shop fails to open → FAILURE."""
+    client = _depleted_client(zone=COMMONS)
+    shop_fail = patch(
+        "bartlebot.nodes.combat.handle_potions._open_potion_shop",
+        new=AsyncMock(return_value=False),
+    )
+
+    with shop_fail:
+        result = await hp.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
 
 
 async def test_mark_location_failure_returns_failure():
@@ -424,6 +450,38 @@ async def test_home_loading_timeout_still_checks_zone():
 
     # Zone is DORM, so should still succeed.
     assert result is True
+
+
+async def test_home_only_retries_clients_not_yet_in_dorm():
+    """One client reaches dorm on attempt 1; the other lands in a house and needs a retry.
+    Only the house client should receive the second HOME press.
+
+    Both clients load immediately on every attempt (no loading re-press), so
+    click_by_path is called exactly once per HOME attempt per client.
+    """
+    c_dorm = FakeClient()
+    c_dorm.zone_name.return_value = DORM
+    c_dorm.is_loading.side_effect = [True]  # loads on first check in attempt 1
+
+    c_house = FakeClient()
+    c_house.zone_name.side_effect = ["SomeHouse", DORM]
+    c_house.is_loading.side_effect = [True, True]  # loads on first check in each attempt
+
+    pressed_for: list = []
+
+    async def fake_click(client, path):
+        pressed_for.append(client)
+
+    none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
+    btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+    click_patch = patch.object(nh, "click_by_path", side_effect=fake_click)
+
+    with none_load, btn_enabled, click_patch, patch.object(hp, "POLL_INTERVAL", 0):
+        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [c_dorm, c_house])
+
+    assert result is True
+    assert pressed_for.count(c_dorm) == 1  # reached dorm on first press; no retry
+    assert pressed_for.count(c_house) == 2  # initial press + second-attempt press
 
 
 async def test_home_repressed_for_lagging_client():

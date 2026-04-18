@@ -779,6 +779,23 @@ class _ParamPanel(QWidget):
         self._record_row.setVisible(False)
         self._record_btn.clicked.connect(self._on_record_clicked)
 
+        # Notes section — freeform per-node annotation
+        self._notes_section = QWidget()
+        _notes_vbox = QVBoxLayout(self._notes_section)
+        _notes_vbox.setContentsMargins(6, 4, 6, 6)
+        _notes_vbox.setSpacing(3)
+        _notes_title = QLabel("Notes:")
+        _notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
+        _notes_vbox.addWidget(_notes_title)
+        self._notes_edit = QPlainTextEdit()
+        self._notes_edit.setPlaceholderText("Add notes about this node…")
+        self._notes_edit.setFixedHeight(72)
+        self._notes_edit.setStyleSheet(
+            f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+        )
+        _notes_vbox.addWidget(self._notes_edit)
+
         node_outer = QWidget()
         node_vbox = QVBoxLayout(node_outer)
         node_vbox.setContentsMargins(0, 0, 0, 0)
@@ -788,6 +805,7 @@ class _ParamPanel(QWidget):
         node_vbox.addWidget(scroll, 1)
         node_vbox.addWidget(self._overrides_section)
         node_vbox.addWidget(self._returns_section)
+        node_vbox.addWidget(self._notes_section)
         self._stack.addWidget(node_outer)
 
         # Page 2 — edge
@@ -832,6 +850,7 @@ class _ParamPanel(QWidget):
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_type_combo.currentIndexChanged.connect(self._on_node_type_changed)
         self._param_form.changed.connect(self._on_param_form_changed)
+        self._notes_edit.textChanged.connect(self._on_notes_changed)
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
@@ -857,6 +876,9 @@ class _ParamPanel(QWidget):
         self._param_form.load_schema(schema, state.params or {})
         self._rebuild_overrides(state)
         self._rebuild_returns(state.node_type)
+        self._notes_edit.blockSignals(True)
+        self._notes_edit.setPlainText(state.notes or "")
+        self._notes_edit.blockSignals(False)
         self._suppress = False
         self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES)
         self._stack.setCurrentIndex(_PAGE_NODE)
@@ -947,6 +969,13 @@ class _ParamPanel(QWidget):
         if self._state is None:
             return
         self._state.params = self._param_form.get_params()
+        self.properties_changed.emit()
+
+    def _on_notes_changed(self) -> None:
+        if self._suppress or self._state is None:
+            return
+        text = self._notes_edit.toPlainText().strip()
+        self._state.notes = text if text else None
         self.properties_changed.emit()
 
     def _on_edge_when_changed(self, text: str) -> None:
