@@ -35,6 +35,9 @@ _SWP_FRAMECHANGED = 0x0020  # Required after SetWindowLongW to flush style chang
 _user32 = ctypes.windll.user32
 _kernel32 = ctypes.windll.kernel32
 
+_user32.IsChild.argtypes = [ctypes.wintypes.HWND, ctypes.wintypes.HWND]
+_user32.IsChild.restype = ctypes.wintypes.BOOL
+
 # Pill icon constants
 _ICON_SIZE = 18
 _ICON_GAP = 6  # pixels between label text and detach icon
