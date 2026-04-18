@@ -119,6 +119,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "enter_dungeon_teamup",
             "enter_gauntlet",
             "enter_zone",
+            "enter_zone_via_list",
             "enter_zone_via_object",
         ],
     ),
@@ -145,7 +146,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Interaction",
         [
             "collect_reagent",
-            "enter_zone_via_list",
             "interact",
             "wait_for_dialogue",
         ],
