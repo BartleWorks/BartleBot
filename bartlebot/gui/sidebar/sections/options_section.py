@@ -343,8 +343,9 @@ class OptionsSection(SidebarSection):
         updated = dlg.get_option()
         if updated.name != name:
             for t in self._config.transitions:
-                if t.flag == name:
-                    t.flag = updated.name
+                for fc in t.flags:
+                    if fc.option == name:
+                        fc.option = updated.name
         idx = next(i for i, o in enumerate(self._config.options) if o.name == name)
         self._config.options[idx] = updated
         self._rebuild_options(self._config.options)
@@ -355,8 +356,7 @@ class OptionsSection(SidebarSection):
             return
         self._config.options = [o for o in self._config.options if o.name != name]
         for t in self._config.transitions:
-            if t.flags == name:
-                t.flags = None
+            t.flags = [fc for fc in t.flags if fc.option != name]
         self._rebuild_options(self._config.options)
         self.options_changed.emit()
 
