@@ -33,6 +33,17 @@ def _edge_selected():
     return THEME.qcolor("edge_selected")
 
 
+def _when_edge_color(when: str | None):
+    if when is None:
+        return _edge_color()
+    name = when.upper()
+    if name in ("SUCCESS", "TRUE"):
+        return THEME.qcolor("chip_success_bg")
+    if name in ("FAILURE", "FALSE"):
+        return THEME.qcolor("chip_failure_bg")
+    return THEME.qcolor("chip_neutral_bg")
+
+
 # ---------------------------------------------------------------------------
 # EdgeItem
 # ---------------------------------------------------------------------------
@@ -109,7 +120,7 @@ class EdgeItem(QGraphicsPathItem):
         elif self._hovered:
             pen = QPen(_edge_hover(), 2.5)
         else:
-            pen = QPen(_edge_color(), 1.5)
+            pen = QPen(_when_edge_color(self._when), 1.5)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)

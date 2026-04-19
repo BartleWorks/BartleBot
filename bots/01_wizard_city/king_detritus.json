@@ -36,7 +36,7 @@
       "label": "Teleport to The Commons",
       "position": {
         "x": 150.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -50,7 +50,7 @@
       "label": "Enter Golem Court",
       "position": {
         "x": 750.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -75,7 +75,7 @@
       "label": "Handle potions",
       "position": {
         "x": 450.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -92,7 +92,7 @@
       "label": "Enter the Drains",
       "position": {
         "x": 1350.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -117,7 +117,7 @@
       "label": "Enter Abandoned House",
       "position": {
         "x": 1650.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
@@ -142,7 +142,7 @@
       "label": "Trigger first dialogue",
       "position": {
         "x": 1950.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -161,7 +161,7 @@
       "label": "Defeat first set of mobs",
       "position": {
         "x": 2250.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -173,7 +173,7 @@
       "label": "Trigger second dialogue",
       "position": {
         "x": 2550.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -192,7 +192,7 @@
       "label": "Defeat second set of mobs",
       "position": {
         "x": 2850.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -204,7 +204,7 @@
       "label": "Talk to Belgrim SparklePants",
       "position": {
         "x": 3750.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -231,7 +231,7 @@
       "label": "Enter Abandoned Backyard",
       "position": {
         "x": 4050.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -256,7 +256,7 @@
       "label": "Defeat King Detritus",
       "position": {
         "x": 4950.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "enemy": "CC_Trash_Boss_A_01",
@@ -273,7 +273,7 @@
       "label": "Trigger boss dialogue",
       "position": {
         "x": 4350.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubBackyard",
@@ -292,7 +292,7 @@
       "label": "Dismiss dialogue",
       "position": {
         "x": 3150.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -304,7 +304,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 1050.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -316,7 +316,7 @@
       "label": "Wait for boss dialogue",
       "position": {
         "x": 4650.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -328,7 +328,7 @@
       "label": "Quicksell",
       "position": {
         "x": 5250.0,
-        "y": 21.0
+        "y": 7.0
       },
       "params": {
         "keep_list": [
@@ -551,23 +551,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_4",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_13",
       "dest": "state_16",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_12",
       "flags": [],
       "flag_op": "AND"
     },
@@ -589,7 +575,48 @@
     {
       "trigger": "advance",
       "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
       "dest": "state_18",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     },
@@ -597,24 +624,20 @@
       "trigger": "advance",
       "source": "state_18",
       "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_12",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }
   ],
   "regions": [
-    {
-      "id": "b5a45941",
-      "label": "Go to dungeon",
-      "members": [
-        "state_4",
-        "state_3",
-        "state_1",
-        "state_2",
-        "state_5",
-        "state_15"
-      ],
-      "color": 1
-    },
     {
       "id": "aa4376b3",
       "label": "Mob fights",
