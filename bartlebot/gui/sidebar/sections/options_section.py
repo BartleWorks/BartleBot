@@ -355,8 +355,8 @@ class OptionsSection(SidebarSection):
             return
         self._config.options = [o for o in self._config.options if o.name != name]
         for t in self._config.transitions:
-            if t.flag == name:
-                t.flag = None
+            if t.flags == name:
+                t.flags = None
         self._rebuild_options(self._config.options)
         self.options_changed.emit()
 
