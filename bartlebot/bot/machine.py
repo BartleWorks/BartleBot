@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, MemoryReadError
 
+from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -181,6 +183,7 @@ class BotMachine:
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         status_watcher = asyncio.create_task(self._client_status_watcher())
+        loading_watcher = asyncio.create_task(self._loading_screen_watcher())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -299,7 +302,8 @@ class BotMachine:
             watcher.cancel()
             combat_watcher.cancel()
             status_watcher.cancel()
-            for t in (watcher, combat_watcher, status_watcher):
+            loading_watcher.cancel()
+            for t in (watcher, combat_watcher, status_watcher, loading_watcher):
                 try:
                     await t
                 except asyncio.CancelledError:
@@ -350,6 +354,55 @@ class BotMachine:
                                 self._on_client_disconnected(hwnd)
                             except Exception:
                                 logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
+
+    async def _loading_screen_watcher(self) -> None:
+        """Background task: detect clients stuck in an infinite loading screen.
+
+        Tracks when each client first enters a loading state. If any client remains
+        loading for longer than LOADING_SCREEN_TIMEOUT seconds, it is treated as a
+        crash: the machine is paused and on_client_disconnected is called so
+        AppController can force-close and relaunch the game via the standard
+        crash-recovery path.
+        """
+        loading_since: dict[int, float] = {}  # hwnd -> monotonic time loading started
+
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(POLL_INTERVAL)
+            for client in list(self.clients):
+                hwnd = client.window_handle
+                if hwnd in self._status_check_flagged:
+                    loading_since.pop(hwnd, None)
+                    continue
+                try:
+                    is_loading = await client.is_loading()
+                except Exception:
+                    loading_since.pop(hwnd, None)
+                    continue  # let _client_status_watcher handle dead clients
+
+                if is_loading:
+                    now = time.monotonic()
+                    start = loading_since.setdefault(hwnd, now)
+                    elapsed = now - start
+                    if elapsed >= LOADING_SCREEN_TIMEOUT:
+                        logger.warning(
+                            "Client hwnd=%d stuck in loading screen for %.0fs — "
+                            "treating as crash and triggering recovery",
+                            hwnd,
+                            elapsed,
+                        )
+                        loading_since.pop(hwnd)
+                        self._status_check_flagged.add(hwnd)
+                        self.pause()
+                        if self._on_client_disconnected:
+                            try:
+                                self._on_client_disconnected(hwnd)
+                            except Exception:
+                                logger.exception(
+                                    "on_client_disconnected callback raised for hwnd=%d (loading timeout)",
+                                    hwnd,
+                                )
+                else:
+                    loading_since.pop(hwnd, None)
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
