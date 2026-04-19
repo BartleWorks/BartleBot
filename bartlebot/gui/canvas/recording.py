@@ -297,6 +297,50 @@ async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, tr
         on_btn("Record")
 
 
+async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try_set_label) -> None:
+    POLL = 0.15
+    on_btn("Stop")
+    on_status("Starting…")
+    try:
+        zone = await client.zone_name()
+        param_form.set_str("zone", zone)
+        start_pos = await client.body.position()
+        param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
+        on_status("Walk to zone-list object…")
+
+        while not await client.is_in_npc_range():
+            await asyncio.sleep(POLL)
+
+        on_status("Press X, select zone, click Teleport…")
+        # Keep updating interact_xyz until the teleport triggers a loading screen.
+        # The player's position at that moment is the correct interact coordinate.
+        while not await client.is_loading():
+            pos = await client.body.position()
+            param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
+            await asyncio.sleep(POLL)
+
+        on_status("Loading…")
+        while await client.is_loading():
+            await asyncio.sleep(POLL)
+
+        to_zone = await client.zone_name()
+        param_form.set_str("to_zone", to_zone)
+        # WizWalker exposes no "selected item" state on list controls, so we derive
+        # the list entry text from the destination zone's display name. The user
+        # should verify this matches the in-game text exactly.
+        param_form.set_str("zone_list_entry", _zone_display(to_zone))
+        try_set_label(f"{_zone_display(zone)} → {_zone_display(to_zone)}")
+        on_status("Done — verify 'Zone List Entry' matches in-game text")
+        on_btn("Record")
+
+    except asyncio.CancelledError:
+        on_status("")
+        on_btn("Record")
+    except Exception as e:
+        on_status(f"Error: {e}")
+        on_btn("Record")
+
+
 async def _record_mark_location(client, param_form, on_status, on_btn, try_set_label) -> None:
     try:
         zone = await client.zone_name()
@@ -345,6 +389,7 @@ _REGISTRY: dict[str, Any] = {
     "interact": _record_interact,
     "apply_level_scaling": _record_apply_level_scaling,
     "enter_zone_via_object": _record_enter_zone_interact,
+    "enter_zone_via_list": _record_enter_zone_via_list,
     "mark_location": _record_mark_location,
     "teleport_to_marked_location": _record_teleport_to_marked_location,
 }

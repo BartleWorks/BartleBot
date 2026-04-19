@@ -551,23 +551,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_4",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_13",
       "dest": "state_16",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_12",
       "flags": [],
       "flag_op": "AND"
     },
@@ -589,7 +575,48 @@
     {
       "trigger": "advance",
       "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
       "dest": "state_18",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     },
@@ -597,24 +624,20 @@
       "trigger": "advance",
       "source": "state_18",
       "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_12",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }
   ],
   "regions": [
-    {
-      "id": "b5a45941",
-      "label": "Go to dungeon",
-      "members": [
-        "state_4",
-        "state_3",
-        "state_1",
-        "state_2",
-        "state_5",
-        "state_15"
-      ],
-      "color": 1
-    },
     {
       "id": "aa4376b3",
       "label": "Mob fights",

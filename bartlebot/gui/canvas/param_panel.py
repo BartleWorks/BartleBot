@@ -466,7 +466,7 @@ class _FlagConditionsWidget(QWidget):
     changed = pyqtSignal()
 
     # Width budget for the NOT checkbox and remove button
-    _NOT_W = 40
+    _NOT_W = 52
     _REM_W = 24
 
     def __init__(self, parent=None):
