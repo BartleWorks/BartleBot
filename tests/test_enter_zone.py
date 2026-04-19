@@ -61,7 +61,7 @@ async def test_timeout_leaving_source_zone_fails():
     client = FakeClient()
     client.zone_name.return_value = "Src"  # never changes
 
-    with patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 0.01):
+    with patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 0.01), patch.object(gtz, "POLL_INTERVAL", 0):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"

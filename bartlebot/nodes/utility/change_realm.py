@@ -358,6 +358,7 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
         check_fn=lambda c: c.is_loading(),
         action_fn=lambda c: asyncio.sleep(0),
         timeout=TRIGGER_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
     )
     if not seen:
         machine.log(

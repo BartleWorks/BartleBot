@@ -48,7 +48,7 @@ async def dismiss_ambient_dialog_once(client) -> bool:
     return False
 
 
-async def confirm_dungeon_warning_dialog(client, delay: float = 3.0) -> None:
+async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interval: float = POLL_INTERVAL) -> None:
     """Poll for the dungeon warning dialog; confirm it immediately when it appears.
 
     Keeps polling for at least `delay` seconds before concluding the dialog will
@@ -61,7 +61,7 @@ async def confirm_dungeon_warning_dialog(client, delay: float = 3.0) -> None:
             return
         if asyncio.get_event_loop().time() - loop_start >= delay:
             return
-        await asyncio.sleep(POLL_INTERVAL)
+        await asyncio.sleep(poll_interval)
 
 
 async def is_visible_by_path(client, path: list[str]) -> bool:

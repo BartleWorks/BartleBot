@@ -87,7 +87,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 3. Confirm dungeon warning dialog if it appears.
     machine.log("Checking for dungeon warning dialog…", logging.DEBUG)
-    await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay) for c in clients])
+    await asyncio.gather(
+        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
+    )
 
     # 4. Wait for loading screens to clear.
     machine.log("Waiting for loading screen to clear…", logging.DEBUG)
