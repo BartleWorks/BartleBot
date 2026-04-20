@@ -1,3 +1,7 @@
+from bartlebot.nodes.combat.check_health import NODE_SPEC as _check_health_spec
+from bartlebot.nodes.combat.check_health import run as check_health_run
+from bartlebot.nodes.combat.check_mana import NODE_SPEC as _check_mana_spec
+from bartlebot.nodes.combat.check_mana import run as check_mana_run
 from bartlebot.nodes.combat.collect_wisps import NODE_SPEC as _collect_wisps_spec
 from bartlebot.nodes.combat.collect_wisps import run as collect_wisps_run
 from bartlebot.nodes.combat.handle_combat import NODE_SPEC as _handle_combat_spec
@@ -66,6 +70,8 @@ NODE_REGISTRY: dict = {
     "enter_zone_via_object": enter_zone_via_object_run,
     "handle_combat": handle_combat_run,
     "collect_reagent": collect_reagent_run,
+    "check_health": check_health_run,
+    "check_mana": check_mana_run,
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
     "teleport_to_marked_location": teleport_to_marked_location_run,
@@ -94,6 +100,8 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "enter_zone_via_object": _enter_zone_via_object_spec,
     "handle_combat": _handle_combat_spec,
     "collect_reagent": _collect_reagent_spec,
+    "check_health": _check_health_spec,
+    "check_mana": _check_mana_spec,
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
     "teleport_to_marked_location": _teleport_to_marked_location_spec,
@@ -136,6 +144,8 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
     (
         "Combat",
         [
+            "check_health",
+            "check_mana",
             "collect_wisps",
             "handle_combat",
             "handle_potions",
