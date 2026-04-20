@@ -4,7 +4,7 @@ GraphView    — base view used by both the editor and the read-only run view.
 _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
-from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
 
@@ -43,6 +43,21 @@ class GraphView(QGraphicsView):
             self.setInteractive(False)
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
+    @staticmethod
+    def _scene_fit_bounds(scene: QGraphicsScene) -> "QRectF":
+        """Bounding rect of all scene items, excluding items with fit_exclude=True.
+
+        Region items inflate their boundingRect upward for constant-screen-size pill
+        labels; including them in the fit calculation adds phantom vertical space.
+        """
+        bounds = QRectF()
+        for item in scene.items():
+            if getattr(item, "fit_exclude", False):
+                continue
+            r = item.mapRectToScene(item.boundingRect())
+            bounds = bounds.united(r) if not bounds.isNull() else r
+        return bounds
+
     def fit_scene(self) -> None:
         """Fit the full scene content into the viewport. Resets user-zoom state."""
         if self._fitting:
@@ -53,7 +68,7 @@ class GraphView(QGraphicsView):
         if scene is None:
             self._fitting = False
             return
-        bounds = scene.itemsBoundingRect()
+        bounds = self._scene_fit_bounds(scene)
         if bounds.isEmpty():
             self._fitting = False
             return
@@ -208,7 +223,7 @@ class _MinimapView(QGraphicsView):
 
     def fit_to_scene(self) -> None:
         """Fit the minimap to show the full scene bounds."""
-        bounds = self.scene().itemsBoundingRect()
+        bounds = GraphView._scene_fit_bounds(self.scene())
         if not bounds.isEmpty():
             self.fitInView(
                 bounds.adjusted(-60, -60, 60, 60),
