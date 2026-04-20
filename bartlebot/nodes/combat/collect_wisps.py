@@ -57,13 +57,26 @@ PARAM_SCHEMA: list[ParamField] = [
         default=0.5,
         default_hint="FAILURE if any client is still below 50% mana",
     ),
+    ParamField(
+        key="only_safe",
+        type="bool",
+        label="Only Collect Safe Wisps",
+        help=(
+            "Skip wisps that are within 700 units of an enemy. Prevents accidentally "
+            "entering combat while collecting wisps after a fight. Disable only if you "
+            "need to collect wisps in areas where enemies are always nearby."
+        ),
+        default=True,
+        default_hint="skip wisps near enemies",
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
         "Collects health and mana wisps after combat if clients are below specified "
         "thresholds. Teleports each client to the nearest wisp repeatedly until the "
-        "threshold is met or no more wisps are in range. Returns FAILURE if any client "
+        "threshold is met or no more wisps are in range. By default, skips wisps within "
+        "700 units of an enemy to avoid re-entering combat. Returns FAILURE if any client "
         "is still below the configured fail thresholds after collection — useful for "
         "routing to a potion fallback node."
     ),
@@ -102,13 +115,14 @@ async def run(machine, clients: list, params: dict) -> str:
     if_mana_below: float = params.get("if_mana_below", 1.0)
     fail_if_health_below: float = params.get("fail_if_health_below", 0.5)
     fail_if_mana_below: float = params.get("fail_if_mana_below", 0.5)
+    only_safe: bool = params.get("only_safe", True)
 
     machine.log(
         f"collect_wisps: collect_health<{if_health_below}, collect_mana<{if_mana_below}, "
-        f"fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}"
+        f"fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}, only_safe={only_safe}"
     )
 
-    await asyncio.gather(*[_collect_for_client(c, if_health_below, if_mana_below) for c in clients])
+    await asyncio.gather(*[_collect_for_client(c, if_health_below, if_mana_below, only_safe) for c in clients])
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
@@ -146,18 +160,18 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _collect_for_client(client, if_health_below: float, if_mana_below: float) -> None:
+async def _collect_for_client(client, if_health_below: float, if_mana_below: float, only_safe: bool) -> None:
     """Collect health and mana wisps for a single client until thresholds are met."""
     if if_health_below > 0.0:
         while await client.calc_health_ratio() < if_health_below:
-            found = await client.tp_to_closest_health_wisp()
+            found = await client.tp_to_closest_health_wisp(only_safe=only_safe)
             if not found:
                 break
             await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
 
     if if_mana_below > 0.0:
         while await client.calc_mana_ratio() < if_mana_below:
-            found = await client.tp_to_closest_mana_wisp()
+            found = await client.tp_to_closest_mana_wisp(only_safe=only_safe)
             if not found:
                 break
             await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
