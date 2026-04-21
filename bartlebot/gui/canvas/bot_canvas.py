@@ -40,6 +40,7 @@ from bartlebot.gui.canvas.edit_scene import (
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
@@ -325,6 +326,8 @@ class BotCanvas(QWidget):
     tab_switch = pyqtSignal(str)
     # (css_color, status, state_label, elapsed_text) — consumed by MainWindow title bar
     bot_status_changed = pyqtSignal(str, str, str, str)
+    # Undo/redo state for MainWindow menu: (can_undo, can_redo, undo_desc, redo_desc)
+    undo_state_changed = pyqtSignal(bool, bool, str, str)
     # Placeholder quick-start signals
     new_bot_requested = pyqtSignal()
     open_bot_requested = pyqtSignal()
@@ -348,6 +351,8 @@ class BotCanvas(QWidget):
         self._search_matches: list[str] = []
         self._search_match_idx: int = 0
         self._focus_region_id: str | None = None
+
+        self._undo_mgr = UndoManager()
 
         self._build_ui()
 
@@ -539,9 +544,11 @@ class BotCanvas(QWidget):
         self._view.viewport().installEventFilter(self)
 
         # ── Wire internal signals ─────────────────────────────────────
+        self._scene.about_to_change.connect(self._on_about_to_change)
         self._scene.graph_changed.connect(self._on_scene_changed)
         self._scene.node_type_chosen.connect(self._on_node_type_chosen)
-        self._param_panel.properties_changed.connect(self._on_scene_changed)
+        self._param_panel.structural_property_changed.connect(self._on_about_to_change)
+        self._param_panel.properties_changed.connect(self._on_param_changed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
@@ -559,6 +566,7 @@ class BotCanvas(QWidget):
 
     def setup(self, config: BotConfig) -> None:
         """Load a BotConfig. Enters RUN mode with the graph ready."""
+        self._undo_mgr.clear()
         self._placeholder.setVisible(False)
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -590,6 +598,8 @@ class BotCanvas(QWidget):
 
     def close_bot(self) -> None:
         """Unload the current bot and return to the placeholder."""
+        self._undo_mgr.clear()
+        self._refresh_undo_actions()
         self._exit_focus_mode()
         self._close_search()
         self._scene.teardown()
@@ -823,6 +833,7 @@ class BotCanvas(QWidget):
         from bartlebot.gui.canvas.layout import auto_layout
 
         self._scene._flush_positions()
+        self._undo_mgr.push(self._config, "Auto Layout")
         auto_layout(self._config)
         self._scene.setup(self._config)
         self._view.fit_scene()
@@ -980,12 +991,16 @@ class BotCanvas(QWidget):
             self._right_stack.setCurrentIndex(_TB_RUN)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
+            self._undo_mgr.set_enabled(False)
+            self._undo_mgr.cancel_debounce()
             self._emit_bot_status()
         else:
             self._center_stack.setCurrentIndex(_TB_EDIT)
             self._right_stack.setCurrentIndex(_TB_EDIT)
             self._scene.set_interactive(True)
+            self._undo_mgr.set_enabled(True)
             self._emit_bot_status()
+        self._refresh_undo_actions()
 
     # ------------------------------------------------------------------
     # Scene change callbacks
@@ -1008,6 +1023,61 @@ class BotCanvas(QWidget):
         if self._search_bar.isVisible():
             self._on_search_text_changed(self._search_bar.current_text())
         self.config_changed.emit()
+        self._refresh_undo_actions()
+
+    def _on_about_to_change(self, desc: str) -> None:
+        if self._config is not None and self._mode == BotMode.EDIT:
+            self._undo_mgr.push(self._config, desc)
+
+    def _on_param_changed(self) -> None:
+        if self._config is not None and self._mode == BotMode.EDIT:
+            desc = "Edit transition" if self._param_panel._transition is not None else "Edit params"
+            self._undo_mgr.begin_debounce(self._config, desc)
+        self._on_scene_changed()
+
+    def _on_undo(self) -> None:
+        if self._config is None or self._mode != BotMode.EDIT:
+            return
+        self._undo_mgr.cancel_debounce()
+        self._undo_mgr.set_enabled(False)
+        try:
+            restored = self._undo_mgr.pop_undo(self._config)
+            if restored is None:
+                return
+            self._restore(restored)
+        finally:
+            self._undo_mgr.set_enabled(True)
+        self._refresh_undo_actions()
+
+    def _on_redo(self) -> None:
+        if self._config is None or self._mode != BotMode.EDIT:
+            return
+        self._undo_mgr.cancel_debounce()
+        self._undo_mgr.set_enabled(False)
+        try:
+            restored = self._undo_mgr.pop_redo(self._config)
+            if restored is None:
+                return
+            self._restore(restored)
+        finally:
+            self._undo_mgr.set_enabled(True)
+        self._refresh_undo_actions()
+
+    def _restore(self, config: BotConfig) -> None:
+        self._config = config
+        self._scene.setup(config)
+        self._param_panel.show_idle()
+        _inject_required_options(config)
+        self._on_scene_changed()
+
+    def _refresh_undo_actions(self) -> None:
+        in_edit = self._mode == BotMode.EDIT
+        self.undo_state_changed.emit(
+            self._undo_mgr.can_undo() and in_edit,
+            self._undo_mgr.can_redo() and in_edit,
+            self._undo_mgr.undo_desc() or "",
+            self._undo_mgr.redo_desc() or "",
+        )
 
     def _update_validation_badge(self) -> None:
         config = self._scene._config
@@ -1100,6 +1170,7 @@ class BotCanvas(QWidget):
             self._scene._delete_node(sid, confirm=False)
 
     def _on_selection_changed(self) -> None:
+        self._undo_mgr.cancel_debounce()
         try:
             selected = self._scene.selectedItems()
         except RuntimeError:

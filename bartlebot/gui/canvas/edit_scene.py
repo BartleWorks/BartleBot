@@ -208,6 +208,7 @@ class EditScene(QGraphicsScene):
     """Manages interactive nodes, edge dragging, deletion, and positions."""
 
     graph_changed = pyqtSignal()
+    about_to_change = pyqtSignal(str)  # emitted BEFORE config is mutated; carries description
     focus_region_requested = pyqtSignal(str)
     node_type_chosen = pyqtSignal(str, object)  # (node_type, QPointF canvas position)
 
@@ -224,6 +225,7 @@ class EditScene(QGraphicsScene):
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
         self._paste_count: int = 0
+        self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
 
     # ------------------------------------------------------------------
     # Public API
@@ -244,6 +246,11 @@ class EditScene(QGraphicsScene):
         self._drag_when = None
         self._temp_edge = None
         self._config = None
+
+    def _pre_edit(self, desc: str) -> None:
+        """Emit about_to_change unless we are already inside a compound structural edit."""
+        if not self._in_structural_edit:
+            self.about_to_change.emit(desc)
 
     def setup(self, config: BotConfig) -> None:
         """Rebuild the scene from a BotConfig."""
@@ -375,6 +382,7 @@ class EditScene(QGraphicsScene):
         """Instantiate a state of the given node_type at pos. Called after dialog confirmation."""
         if self._config is None:
             return
+        self._pre_edit("Create Node")
         state_id = _unique_id([s.id for s in self._config.states])
         state = StateModel(
             id=state_id,
@@ -600,6 +608,7 @@ class EditScene(QGraphicsScene):
         s, d = src_node.state_id, dst_node.state_id
         if any(t.source == s and t.dest == d and t.when == when for t in self._config.transitions):
             return
+        self._pre_edit("Create Edge")
         t = TransitionModel(trigger="advance", source=s, dest=d, when=when)
         self._config.transitions.append(t)
 
@@ -640,6 +649,8 @@ class EditScene(QGraphicsScene):
     def _paste(self) -> None:
         if self._config is None or self._clipboard is None:
             return
+        self._pre_edit("Paste")
+        self._in_structural_edit = True
         states_data, transitions_data = self._clipboard
         self._paste_count += 1
         offset = _PASTE_OFFSET * self._paste_count
@@ -700,6 +711,7 @@ class EditScene(QGraphicsScene):
                 self._node_items[new_id].setSelected(True)
 
         self._update_scene_rect()
+        self._in_structural_edit = False
         self.graph_changed.emit()
 
     def _flip_node(self, state_id: str) -> None:
@@ -708,6 +720,7 @@ class EditScene(QGraphicsScene):
         node = self._node_items.get(state_id)
         if node is None:
             return
+        self._pre_edit("Flip Node")
         new_flipped = not node._flipped
         node.set_flipped(new_flipped)
         state = next((s for s in self._config.states if s.id == state_id), None)
@@ -718,6 +731,9 @@ class EditScene(QGraphicsScene):
     def _flip_selected_nodes(self) -> None:
         if self._config is None:
             return
+        if not any(isinstance(item, NodeItem) for item in self.selectedItems()):
+            return
+        self._pre_edit("Flip Node")
         changed = False
         for item in self.selectedItems():
             if isinstance(item, NodeItem):
@@ -777,10 +793,13 @@ class EditScene(QGraphicsScene):
         if answer != QMessageBox.StandardButton.Yes:
             return
 
+        self._pre_edit("Delete Selection")
+        self._in_structural_edit = True
         for node in nodes:
             self._delete_node(node.state_id, confirm=False)
         for edge in standalone_edges:
             self._delete_edge_item(edge, confirm=False)
+        self._in_structural_edit = False
 
     def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state and all its edges.  Returns False if the user cancels."""
@@ -800,6 +819,9 @@ class EditScene(QGraphicsScene):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return False
+        self._pre_edit("Delete Node")
+        prev_in_structural = self._in_structural_edit
+        self._in_structural_edit = True
         self._config.transitions = [t for t in self._config.transitions if t.source != state_id and t.dest != state_id]
         remaining = []
         for s, w, d, edge_item in self._edge_items:
@@ -820,6 +842,7 @@ class EditScene(QGraphicsScene):
         self.refresh_terminal()
         self.refresh_errors()
         self._flush_regions()
+        self._in_structural_edit = prev_in_structural
         self._update_scene_rect()
         self.graph_changed.emit()
         return True
@@ -843,6 +866,7 @@ class EditScene(QGraphicsScene):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return False
+        self._pre_edit("Delete Edge")
         remaining = []
         for s, w, d, ei in self._edge_items:
             if ei is edge_item:
@@ -879,6 +903,7 @@ class EditScene(QGraphicsScene):
         """
         if self._config is None:
             return
+        self._pre_edit("Rewire Edge")
         old_when_str: str | None = old_when  # type: ignore[assignment]
         # Locate the edge record
         record_idx: int | None = None
@@ -974,6 +999,9 @@ class EditScene(QGraphicsScene):
             return
         node_type = dlg.selected_node_type
 
+        self._pre_edit("Insert State on Edge")
+        self._in_structural_edit = True
+
         # Create a new state at the midpoint with the chosen type
         new_id = _unique_id([st.id for st in self._config.states])
         state = StateModel(
@@ -1003,12 +1031,15 @@ class EditScene(QGraphicsScene):
         self._delete_edge_item(edge_item, confirm=False)
         self._create_transition(src_node, new_node, w)
         self._create_transition(new_node, dst_node, None)
+        self._in_structural_edit = False
         self._update_scene_rect()
 
     def _flush_positions(self) -> None:
         if self._config is None:
             return
-        changed = False
+        # Compute all position changes before mutating so about_to_change fires
+        # against the unmodified config (snapshot captures current positions).
+        updates: dict[str, dict] = {}
         for state in self._config.states:
             node = self._node_items.get(state.id)
             if node is None:
@@ -1018,9 +1049,12 @@ class EditScene(QGraphicsScene):
                 "y": node.scenePos().y() + node._height / 2,
             }
             if state.position != new_pos:
-                state.position = new_pos
-                changed = True
-        if changed:
+                updates[state.id] = new_pos
+        if updates:
+            self._pre_edit("Move Node")
+            for state in self._config.states:
+                if state.id in updates:
+                    state.position = updates[state.id]
             self.graph_changed.emit()
 
     def _flush_regions(self) -> None:
@@ -1045,6 +1079,7 @@ class EditScene(QGraphicsScene):
         label, ok = QInputDialog.getText(self.views()[0] if self.views() else None, "Create Region", "Region name:")
         if not ok or not label.strip():
             return
+        self._pre_edit("Create Region")
         region = RegionModel(
             id=uuid.uuid4().hex[:8],
             label=label.strip(),
@@ -1063,6 +1098,7 @@ class EditScene(QGraphicsScene):
     def _delete_region(self, region_id: str) -> None:
         if self._config is None:
             return
+        self._pre_edit("Delete Region")
         ri = self._region_items.pop(region_id, None)
         if ri is not None:
             try:
@@ -1086,6 +1122,7 @@ class EditScene(QGraphicsScene):
         )
         if not ok or not label.strip():
             return
+        self._pre_edit("Rename Region")
         region.label = label.strip()
         ri = self._region_items.get(region_id)
         if ri is not None:
@@ -1103,6 +1140,7 @@ class EditScene(QGraphicsScene):
         dlg = _ColorPickerDialog(current_key=region.color, parent=self.views()[0] if self.views() else None)
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
+        self._pre_edit("Change Region Color")
         region.color = dlg.selected_color()
         ri = self._region_items.get(region_id)
         if ri is not None:
@@ -1115,6 +1153,7 @@ class EditScene(QGraphicsScene):
         region = next((r for r in self._config.regions if r.id == region_id), None)
         if region is None or state_id in region.members:
             return
+        self._pre_edit("Edit Region")
         region.members.append(state_id)
         ri = self._region_items.get(region_id)
         if ri is not None:
@@ -1128,9 +1167,13 @@ class EditScene(QGraphicsScene):
         region = next((r for r in self._config.regions if r.id == region_id), None)
         if region is None or state_id not in region.members:
             return
+        self._pre_edit("Edit Region")
         region.members.remove(state_id)
         if len(region.members) < 2:
+            self._in_structural_edit = True
             self._delete_region(region_id)
+            self._in_structural_edit = False
+            self.graph_changed.emit()
             return
         ri = self._region_items.get(region_id)
         if ri is not None:
