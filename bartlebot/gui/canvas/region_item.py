@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-_PADDING = 40
+_PADDING = 20
 _HANDLE_SIZE = 16
 _REGION_RADIUS = 12
 _FILL_ALPHA = 40  # ~16% opacity for the region fill
@@ -128,6 +128,7 @@ class RegionItem(QGraphicsItem):
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
         self.setPos(0.0, 0.0)
         self.setZValue(-1)
+        self.fit_exclude = True  # excluded from fit_scene() bounds to avoid pill top-margin inflation
 
         self._handle = _RegionHandle(
             color_key=self._color_key,

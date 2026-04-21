@@ -25,7 +25,7 @@ async def test_success_all_collected():
     client = FakeClient()
     client.is_in_npc_range.return_value = True
 
-    with patch.object(cr, "POLL_INTERVAL", 0), patch.object(cr, "REAGENT_COLLECT_DELAY", 0):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [client], _PARAMS_ONE)
 
     assert result == "SUCCESS"
@@ -61,10 +61,7 @@ async def test_success_partial_collection():
 
     client.is_in_npc_range.side_effect = npc_range
 
-    with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "REAGENT_COLLECT_DELAY", 0),
-    ):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [client], _PARAMS_TWO)
 
     assert result == "SUCCESS"
@@ -94,7 +91,7 @@ async def test_success_blank_lines_ignored():
     spawns_text = "\n".join(["", json.dumps(_SPAWN_A), "", json.dumps(_SPAWN_B), ""])
     params = {"zone": "TestZone", "spawns": spawns_text}
 
-    with patch.object(cr, "POLL_INTERVAL", 0), patch.object(cr, "REAGENT_COLLECT_DELAY", 0):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
@@ -119,7 +116,7 @@ async def test_multiple_clients_different_servers():
     c1.is_in_npc_range.return_value = True
     c2.is_in_npc_range.return_value = True
 
-    with patch.object(cr, "POLL_INTERVAL", 0), patch.object(cr, "REAGENT_COLLECT_DELAY", 0):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [c1, c2], _PARAMS_ONE)
 
     assert result == "SUCCESS"
@@ -137,10 +134,7 @@ async def test_multiple_clients_same_server():
     c1.is_in_npc_range.return_value = True
     c2.is_in_npc_range.return_value = False  # Same server — reagent already taken by c1
 
-    with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "REAGENT_COLLECT_DELAY", 0),
-    ):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [c1, c2], _PARAMS_ONE)
 
     assert result == "SUCCESS"
@@ -162,10 +156,7 @@ async def test_prompt_appears_after_poll():
 
     client.is_in_npc_range.side_effect = npc_range
 
-    with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "REAGENT_COLLECT_DELAY", 0),
-    ):
+    with patch.object(cr, "POLL_INTERVAL", 0):
         result = await cr.run(FakeMachine(), [client], _PARAMS_ONE)
 
     assert result == "SUCCESS"

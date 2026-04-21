@@ -10,9 +10,11 @@ these tests exercise the same path real bots use at runtime.
 
 import asyncio
 import logging
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
+import bartlebot.bot.machine as machine_module
 from bartlebot.bot.machine import BotMachine
 
 # ---------------------------------------------------------------------------
@@ -426,6 +428,78 @@ async def test_node_exception_results_in_failure():
     # First call raised → FAILURE → self-loop back to state_a
     # Second call returned SUCCESS → would advance, but stop was set first
     assert calls[0] == 2
+
+
+# ---------------------------------------------------------------------------
+# Loading screen watcher
+# ---------------------------------------------------------------------------
+
+
+async def test_loading_screen_watcher_fires_on_timeout():
+    """_loading_screen_watcher calls on_client_disconnected and pauses the machine
+    when a client reports is_loading() for longer than LOADING_SCREEN_TIMEOUT."""
+    fake_hwnd = 12345
+    fake_client = AsyncMock()
+    fake_client.window_handle = fake_hwnd
+    fake_client.is_loading.return_value = True
+
+    disconnected: list[int] = []
+
+    m = BotMachine(
+        clients=[fake_client],
+        config=TWO_STATE_CONFIG,
+        node_registry={"mock": AsyncMock(return_value="SUCCESS")},
+        on_client_disconnected=lambda hwnd: disconnected.append(hwnd),
+    )
+
+    with (
+        patch.object(machine_module, "LOADING_SCREEN_TIMEOUT", 0.0),
+        patch.object(machine_module, "POLL_INTERVAL", 0.0),
+    ):
+        task = asyncio.create_task(m._loading_screen_watcher())
+        await asyncio.sleep(0.05)  # let the watcher fire at least once
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    assert disconnected == [fake_hwnd], "on_client_disconnected should be called with the stuck client's hwnd"
+    assert not m._resume_event.is_set(), "machine should be paused after loading screen timeout"
+    assert fake_hwnd in m._status_check_flagged, "hwnd should be flagged to prevent duplicate callbacks"
+
+
+async def test_loading_screen_watcher_resets_when_loading_clears():
+    """_loading_screen_watcher does not fire if loading clears before the timeout."""
+    fake_hwnd = 99999
+    fake_client = AsyncMock()
+    fake_client.window_handle = fake_hwnd
+    # Returns True once, then False — loading clears before timeout
+    fake_client.is_loading.side_effect = [True, False]
+
+    disconnected: list[int] = []
+
+    m = BotMachine(
+        clients=[fake_client],
+        config=TWO_STATE_CONFIG,
+        node_registry={"mock": AsyncMock(return_value="SUCCESS")},
+        on_client_disconnected=lambda hwnd: disconnected.append(hwnd),
+    )
+
+    # Timeout is generous; loading clears after one tick, watcher should not fire.
+    with (
+        patch.object(machine_module, "LOADING_SCREEN_TIMEOUT", 999.0),
+        patch.object(machine_module, "POLL_INTERVAL", 0.0),
+    ):
+        task = asyncio.create_task(m._loading_screen_watcher())
+        await asyncio.sleep(0.05)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+    assert disconnected == [], "on_client_disconnected must not fire when loading clears in time"
 
 
 # ---------------------------------------------------------------------------

@@ -15,6 +15,11 @@ ZONE_CHANGE_TIMEOUT = 30.0
 # Seconds to wait for a zone transition to complete (clients leave the source
 # zone and arrive in the destination zone).
 
+LOADING_SCREEN_TIMEOUT = 60.0
+# Seconds a client may remain on a loading screen before it is treated as an
+# infinite-load crash. Normal Wizard101 loading screens complete in 5–10 s;
+# 60 s provides a generous safety margin.
+
 MAX_RETRIES = 3
 # Default number of attempts for recoverable operations (teleport-and-check loops).
 

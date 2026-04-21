@@ -1,0 +1,293 @@
+{
+  "name": "Guillermo Shatterer",
+  "description": "Endlessly farms Guillermo Shatterer in Ruined Mine, Azteca",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic]\n\n### p2\nfeint[potent]@boss | feint@boss | bunyip[epic] | tempest[epic]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Azteca",
+  "drops": [
+    "Potent Trap TC",
+    "Sharpened Blade TC"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        2,
+        1
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Zocalo",
+      "position": {
+        "x": 150.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Three Points",
+      "position": {
+        "x": 450.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Azteca/AZ_Z00_Zocalo",
+        "to_zone": "Azteca/AZ_Z01_ThreePoints",
+        "xyz": {
+          "x": -4.02,
+          "y": 9677.68,
+          "z": 276.01
+        },
+        "reset_xyz": {
+          "x": -35.86,
+          "y": 8740.77,
+          "z": 276.01
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Cenote",
+      "position": {
+        "x": 750.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Azteca/AZ_Z01_ThreePoints",
+        "to_zone": "Azteca/AZ_Z02_Cenote",
+        "xyz": {
+          "x": -5288.87,
+          "y": 7371.07,
+          "z": 100.34
+        },
+        "reset_xyz": {
+          "x": -5281.35,
+          "y": 6347.6,
+          "z": 3.24
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_dungeon",
+      "label": "Enter Ruined Mine",
+      "position": {
+        "x": 1050.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Azteca/AZ_Z02_Cenote",
+        "dungeon_zone": "Azteca/Interiors/AZ_Z02_Mine03",
+        "sigil_xyz": {
+          "x": -8226.21,
+          "y": 736.95,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -8113.17,
+          "y": 1983.34,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat Guillermo Shatterer",
+      "position": {
+        "x": 1350.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AZ-Tritops-Undead-F",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1650.0,
+        "y": 0.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Exit Ruined Mine",
+      "position": {
+        "x": 1950.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Azteca/Interiors/AZ_Z02_Mine03",
+        "to_zone": "Azteca/AZ_Z02_Cenote",
+        "xyz": {
+          "x": 89.24,
+          "y": 645.13,
+          "z": 100.2
+        },
+        "reset_xyz": {
+          "x": -122.91,
+          "y": -620.0,
+          "z": 91.05
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

@@ -166,7 +166,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
     machine.log("Checking for dungeon exit warning…", logging.DEBUG)
-    await asyncio.gather(*[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay) for c in clients])
+    await asyncio.gather(
+        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
+    )
 
     # 5. Re-press X for any client that hasn't entered a loading screen yet.
     #    Track which clients have *ever* been seen loading rather than requiring
@@ -191,6 +193,7 @@ async def run(machine, clients: list, params: dict) -> str:
         check_fn=_loading_or_arrived,
         action_fn=lambda c: c.send_key(Keycode.X, 0.1),
         timeout=TRIGGER_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
     )
     if len(seen_loading) < len(clients):
         not_triggered = [i for i in range(len(clients)) if i not in seen_loading]

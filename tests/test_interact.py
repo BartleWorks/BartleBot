@@ -1,6 +1,7 @@
 """Unit tests for the interact node."""
 
 import asyncio
+from itertools import chain, repeat
 from unittest.mock import patch
 
 import bartlebot.nodes.interaction.interact as ix
@@ -17,8 +18,9 @@ def _ready_client() -> FakeClient:
     """Client with no stale prompt and interact prompt showing immediately at interact_xyz."""
     c = FakeClient()
     # First call: stale-prompt check on node entry → no stale prompt.
-    # Second call onward: prompt is present at interact_xyz.
-    c.is_in_npc_range.side_effect = [False, True]
+    # Second call onward: prompt is present at interact_xyz (infinite Trues via repeat so
+    # the mock never exhausts if the node retries due to any scheduling variance).
+    c.is_in_npc_range.side_effect = chain([False], repeat(True))
     return c
 
 
@@ -264,8 +266,7 @@ async def test_late_dialog_caught_within_safety_window():
 
     client.is_in_dialog.side_effect = late_dialog
 
-    machine = FakeMachine()
-    machine.get_option = lambda name, default=None: 0.1 if name == "Safety Delay" else 0
+    machine = FakeMachine(options={"Safety Delay": 0.05})
 
     with patch.object(ix, "POLL_INTERVAL", 0):
         result = await ix.run(machine, [client], _PARAMS)

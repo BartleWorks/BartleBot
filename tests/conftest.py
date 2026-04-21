@@ -68,10 +68,14 @@ class FakeMachine:
         self.drops.append((item, qty, client_index))
 
     def get_option(self, name: str, default=None):
-        """Return configured option value, or a short non-zero timeout for Safety Delay (avoids
-        real delays while still allowing poll_until to check conditions), or 0 for other options."""
-        if name in self._options:
-            return self._options[name]
-        if name == "Safety Delay":
-            return 0.1  # Short but non-zero so poll_until can run at least one condition check.
-        return 0
+        """Return configured option value, or a sensible test default.
+
+        Safety Delay uses 0.01s (10ms): small enough to be negligible but reliable.
+        timeout=0 and timeout=0.001 can race against asyncio.wait_for's own scheduling
+        overhead in Python 3.12+ and fire before the condition coroutine runs even once.
+        10ms gives the event loop plenty of room while still being 10× faster than the
+        original 0.1s default.
+        Tests that need a longer window (e.g. late-appearing dialog tests) should pass
+        options={"Safety Delay": <value>} to the constructor.
+        """
+        return self._options.get(name, 0.01 if name == "Safety Delay" else 0)

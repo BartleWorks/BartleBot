@@ -213,8 +213,7 @@ async def test_dungeon_warning_dialog_appears_late():
         await asyncio.sleep(0.007)
         return call_count >= 3
 
-    machine = FakeMachine()
-    machine.get_option = lambda name, default=None: 0.1 if name == "Safety Delay" else 0
+    machine = FakeMachine(options={"Safety Delay": 0.05})
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),

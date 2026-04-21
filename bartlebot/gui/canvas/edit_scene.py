@@ -731,11 +731,56 @@ class EditScene(QGraphicsScene):
             self.graph_changed.emit()
 
     def _delete_selected(self) -> None:
-        for item in list(self.selectedItems()):
-            if isinstance(item, NodeItem):
-                self._delete_node(item.state_id)
-            elif isinstance(item, EdgeItem):
-                self._delete_edge_item(item)
+        if self._config is None:
+            return
+        selected = list(self.selectedItems())
+        if not selected:
+            return
+        nodes = [item for item in selected if isinstance(item, NodeItem)]
+        edges = [item for item in selected if isinstance(item, EdgeItem)]
+
+        # Single item — keep the original per-item dialogs (show node label / edge endpoints).
+        if len(selected) == 1:
+            if nodes:
+                self._delete_node(nodes[0].state_id)
+            elif edges:
+                self._delete_edge_item(edges[0])
+            return
+
+        # Multiple items — one bulk confirmation.
+        selected_node_ids = {n.state_id for n in nodes}
+        implicit_transition_count = sum(
+            1 for t in self._config.transitions if t.source in selected_node_ids or t.dest in selected_node_ids
+        )
+        # Edges whose endpoints are not being deleted need separate confirmation in the count.
+        standalone_edges = [
+            e
+            for e in edges
+            if not any(s in selected_node_ids or d in selected_node_ids for s, _w, d, ei in self._edge_items if ei is e)
+        ]
+        total_transitions = implicit_transition_count + len(standalone_edges)
+
+        parts = []
+        if nodes:
+            parts.append(f"{len(nodes)} state{'s' if len(nodes) != 1 else ''}")
+        if total_transitions:
+            parts.append(f"{total_transitions} transition{'s' if total_transitions != 1 else ''}")
+        summary = " and ".join(parts) if parts else "selection"
+
+        answer = QMessageBox.question(
+            self.views()[0] if self.views() else None,
+            "Delete Selection",
+            f"Delete {summary}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        for node in nodes:
+            self._delete_node(node.state_id, confirm=False)
+        for edge in standalone_edges:
+            self._delete_edge_item(edge, confirm=False)
 
     def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state and all its edges.  Returns False if the user cancels."""

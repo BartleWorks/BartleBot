@@ -258,5 +258,5 @@ display_name = toZoneDisplayName(zone_id)
 ## Notes
 
 - `SprintyClient` dynamically replaces the `__class__` attribute of existing `Client` objects — no re-instantiation needed.
-- `find_safe_entities_from` uses a default `safe_distance=600.0` game units.
+- `find_safe_entities_from` uses a default `safe_distance=700.0` game units.
 - The combat backend system is pluggable — you can write your own by subclassing `BaseCombatBackend`.

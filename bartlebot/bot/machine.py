@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, MemoryReadError
 
+from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
+
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
@@ -176,11 +178,17 @@ class BotMachine:
         """
         return self._stop_flag
 
+    def _fmt_state(self, state_id: str) -> str:
+        """Format a state ID with its label for log messages, e.g. 'state_1' (Go to Zone)."""
+        label = self._state_map.get(state_id, {}).get("label")
+        return f"{state_id!r} ({label})" if label else f"{state_id!r}"
+
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         status_watcher = asyncio.create_task(self._client_status_watcher())
+        loading_watcher = asyncio.create_task(self._loading_screen_watcher())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -193,10 +201,10 @@ class BotMachine:
                     try:
                         self._on_state_change(state_id)
                     except Exception:
-                        logger.exception("on_state_change callback raised in state %r", state_id)
+                        logger.exception("on_state_change callback raised in state %s", self._fmt_state(state_id))
 
                 node_type = state_def["node_type"]
-                self.log(f"Executing state {state_id!r} (node_type={node_type})", logging.DEBUG)
+                self.log(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
                 self._current_node_task = asyncio.create_task(node_fn(self, self.clients, state_def.get("params", {})))
@@ -218,22 +226,22 @@ class BotMachine:
                     # process dies before WizWalker's ClientClosedError fires; both indicate
                     # a dead game process and need the same recovery path.
                     logger.warning(
-                        "%s in state %r — client may have died, pausing for recovery",
+                        "%s in state %s — client may have died, pausing for recovery",
                         type(exc).__name__,
-                        state_id,
+                        self._fmt_state(state_id),
                     )
                     self._no_match_count = 0
                     self._consecutive_same_state_count = 0
                     self.pause()
                     continue
                 except Exception:
-                    logger.exception("Node execution failed in state %r", state_id)
+                    logger.exception("Node execution failed in state %s", self._fmt_state(state_id))
                     self.last_result = "FAILURE"
                 finally:
                     self._current_node_task = None
                 _duration = time.monotonic() - _tick_start
                 self.log(
-                    f"State {state_id!r} returned {self.last_result!r} in {_duration:.1f}s",
+                    f"State {self._fmt_state(state_id)} returned {self.last_result!r} in {_duration:.1f}s",
                     logging.DEBUG,
                 )
 
@@ -242,7 +250,7 @@ class BotMachine:
                     # A state with no outgoing transitions is a terminal state — stop cleanly.
                     has_exit = any(t["source"] == state_id for t in self._config["transitions"])
                     if not has_exit:
-                        self.log(f"Reached terminal state {state_id!r}; stopping.", logging.INFO)
+                        self.log(f"Reached terminal state {self._fmt_state(state_id)}; stopping.", logging.INFO)
                         self.stop()
                     else:
                         fired = await self.advance()
@@ -250,12 +258,12 @@ class BotMachine:
                             self._no_match_count += 1
                             self.log(
                                 f"No transition matched for result {self.last_result!r} in state"
-                                f" {state_id!r} (consecutive: {self._no_match_count})",
+                                f" {self._fmt_state(state_id)} (consecutive: {self._no_match_count})",
                                 logging.WARNING,
                             )
                             if self._no_match_count >= 10:
                                 self.log(
-                                    f"State {state_id!r} stuck after {self._no_match_count}"
+                                    f"State {self._fmt_state(state_id)} stuck after {self._no_match_count}"
                                     " consecutive no-match advances; stopping.",
                                     logging.ERROR,
                                 )
@@ -263,7 +271,7 @@ class BotMachine:
                         else:
                             self._no_match_count = 0
                             self.log(
-                                f"Transition: {prev_state!r} --{self.last_result}--> {self.state!r}",
+                                f"Transition: {self._fmt_state(prev_state)} --{self.last_result}--> {self._fmt_state(self.state)}",
                                 logging.INFO,
                             )
                         if self._on_transition:
@@ -287,7 +295,7 @@ class BotMachine:
                         self._consecutive_same_state_count += 1
                         if effective_limit is not None and self._consecutive_same_state_count >= effective_limit:
                             self.log(
-                                f"State {state_id!r} active for"
+                                f"State {self._fmt_state(state_id)} active for"
                                 f" {self._consecutive_same_state_count} consecutive ticks"
                                 " without advancing; stopping.",
                                 logging.WARNING,
@@ -299,7 +307,8 @@ class BotMachine:
             watcher.cancel()
             combat_watcher.cancel()
             status_watcher.cancel()
-            for t in (watcher, combat_watcher, status_watcher):
+            loading_watcher.cancel()
+            for t in (watcher, combat_watcher, status_watcher, loading_watcher):
                 try:
                     await t
                 except asyncio.CancelledError:
@@ -350,6 +359,55 @@ class BotMachine:
                                 self._on_client_disconnected(hwnd)
                             except Exception:
                                 logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
+
+    async def _loading_screen_watcher(self) -> None:
+        """Background task: detect clients stuck in an infinite loading screen.
+
+        Tracks when each client first enters a loading state. If any client remains
+        loading for longer than LOADING_SCREEN_TIMEOUT seconds, it is treated as a
+        crash: the machine is paused and on_client_disconnected is called so
+        AppController can force-close and relaunch the game via the standard
+        crash-recovery path.
+        """
+        loading_since: dict[int, float] = {}  # hwnd -> monotonic time loading started
+
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(POLL_INTERVAL)
+            for client in list(self.clients):
+                hwnd = client.window_handle
+                if hwnd in self._status_check_flagged:
+                    loading_since.pop(hwnd, None)
+                    continue
+                try:
+                    is_loading = await client.is_loading()
+                except Exception:
+                    loading_since.pop(hwnd, None)
+                    continue  # let _client_status_watcher handle dead clients
+
+                if is_loading:
+                    now = time.monotonic()
+                    start = loading_since.setdefault(hwnd, now)
+                    elapsed = now - start
+                    if elapsed >= LOADING_SCREEN_TIMEOUT:
+                        logger.warning(
+                            "Client hwnd=%d stuck in loading screen for %.0fs — "
+                            "treating as crash and triggering recovery",
+                            hwnd,
+                            elapsed,
+                        )
+                        loading_since.pop(hwnd)
+                        self._status_check_flagged.add(hwnd)
+                        self.pause()
+                        if self._on_client_disconnected:
+                            try:
+                                self._on_client_disconnected(hwnd)
+                            except Exception:
+                                logger.exception(
+                                    "on_client_disconnected callback raised for hwnd=%d (loading timeout)",
+                                    hwnd,
+                                )
+                else:
+                    loading_since.pop(hwnd, None)
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
@@ -506,4 +564,4 @@ class BotMachine:
         self.machine.set_state(state_id)  # sets self.state via the transitions machine
         self._consecutive_same_state_count = 0
         self._no_match_count = 0
-        logger.info("FSM state forced to %r (recovery)", state_id)
+        logger.info("FSM state forced to %s (recovery)", self._fmt_state(state_id))

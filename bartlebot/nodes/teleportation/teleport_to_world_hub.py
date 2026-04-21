@@ -94,6 +94,7 @@ async def run(machine, clients: list, params: dict) -> str:
         check_fn=lambda c: c.is_loading(),
         action_fn=lambda c: node_helpers.click_by_path(c, HUB_BUTTON_PATH),
         timeout=TRIGGER_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
     )
     if len(seen_loading) < len(clients_to_move):
         not_loading_idx = [i for i in range(len(clients_to_move)) if i not in seen_loading]

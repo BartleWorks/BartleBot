@@ -1,0 +1,361 @@
+{
+  "name": "Prince Viggor",
+  "description": "Endlessly farms Prince Viggor in Wizard City Catacombs",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "### p1\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | scarecrow[epic]\n\n### p2\nany<blade>[sharp] @ ally(0) | any<blade> @ ally(0) | purge @ ally(0) | lord[epic]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [
+    "Alchemical reagents",
+    "Vanguard's helms"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        2,
+        1
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Commons",
+      "position": {
+        "x": 150.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Golem Court",
+      "position": {
+        "x": 750.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Golem_Tower",
+        "xyz": {
+          "x": -6315.71,
+          "y": 2686.3,
+          "z": 229.0
+        },
+        "reset_xyz": {
+          "x": -5665.99,
+          "y": 2382.29,
+          "z": 229.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 450.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.75,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_via_object",
+      "label": "Enter the Drains",
+      "position": {
+        "x": 1350.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Golem_Tower",
+        "to_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
+        "interact_xyz": {
+          "x": -3505.13,
+          "y": 2142.83,
+          "z": 30.1
+        },
+        "reset_xyz": {
+          "x": -2586.28,
+          "y": 2355.38,
+          "z": 0.1
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Enter the Catacombs",
+      "position": {
+        "x": 1650.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
+        "to_zone": "WizardCity/WC_Streets/WC_Catacombs",
+        "xyz": {
+          "x": 17384.19,
+          "y": -11714.35,
+          "z": -768.39
+        },
+        "reset_xyz": {
+          "x": 17351.6,
+          "y": -12495.84,
+          "z": -569.87
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1050.0,
+        "y": 0.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter Viggor's Tomb",
+      "position": {
+        "x": 1950.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Catacombs",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Catacombs_ViggorsTomb",
+        "sigil_xyz": {
+          "x": 9312.77,
+          "y": -4867.95,
+          "z": 15.3
+        },
+        "reset_xyz": {
+          "x": 9338.55,
+          "y": -4330.98,
+          "z": 14.61
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Skip to Prince Viggor",
+      "position": {
+        "x": 2250.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/Interiors/WC_Catacombs_ViggorsTomb",
+        "xyz": {
+          "x": 5469.55,
+          "y": 32538.36,
+          "z": -3786.53
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "handle_combat",
+      "label": "Defeat Prince Viggor",
+      "position": {
+        "x": 2550.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "CC_Human_DSWarPrince_A_01",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 1200.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}
