@@ -40,7 +40,7 @@
       "label": "Teleport to Aeriel Shore",
       "position": {
         "x": 150.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
@@ -54,7 +54,7 @@
       "label": "Enter Aeriel Jungle",
       "position": {
         "x": 1050.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "Empyrea/EM_Z00_Aeriel_HUB",
@@ -79,7 +79,7 @@
       "label": "Collect health wisps",
       "position": {
         "x": 1650.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -96,7 +96,7 @@
       "label": "Trigger Gannon dialogue",
       "position": {
         "x": 2250.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -115,7 +115,7 @@
       "label": "Defeat Gannon",
       "position": {
         "x": 2550.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "enemy": "EM_Kalamar_Raider_C_Boss_01",
@@ -132,7 +132,7 @@
       "label": "Trigger Madd'n Dialogue",
       "position": {
         "x": 2850.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -165,7 +165,7 @@
       "label": "Defeat Madd'n",
       "position": {
         "x": 3450.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "enemy": "EM_Kalamar_Raider_D_Boss_01",
@@ -182,7 +182,7 @@
       "label": "Enter Raider Tower",
       "position": {
         "x": 3750.0,
-        "y": -83.0
+        "y": -76.0
       },
       "params": {
         "from_zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -207,7 +207,7 @@
       "label": "Deafeat D'Viss",
       "position": {
         "x": 4050.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "enemy": "EM_Kalamar_Raider_B_Boss_01",
@@ -224,7 +224,7 @@
       "label": "Exit dungeon",
       "position": {
         "x": 4350.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "Empyrea/Interiors/EM_Z01_RaiderTower01",
@@ -249,7 +249,7 @@
       "label": "Mark location",
       "position": {
         "x": 1350.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -268,7 +268,7 @@
       "label": "Teleport to marked location",
       "position": {
         "x": 3750.0,
-        "y": 97.0
+        "y": 104.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -287,7 +287,7 @@
       "label": "Enter Secret Tunnel",
       "position": {
         "x": 1950.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "Empyrea/EM_Z01_Jungle",
@@ -312,7 +312,7 @@
       "label": "Collect mana wisps",
       "position": {
         "x": 450.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {},
       "option_overrides": {},
@@ -324,7 +324,7 @@
       "label": "Wait for health",
       "position": {
         "x": 750.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "threshold": 0.8,
@@ -619,6 +619,16 @@
         "state_8"
       ],
       "color": 5
+    },
+    {
+      "id": "53d260da",
+      "label": "Defeat boss",
+      "members": [
+        "state_12",
+        "state_10",
+        "state_9"
+      ],
+      "color": 4
     }
   ]
 }
