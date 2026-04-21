@@ -84,6 +84,19 @@ class MainWindow(QMainWindow):
         quit_action.triggered.connect(self.close)
         file_menu.addAction(quit_action)
 
+        # Edit menu
+        edit_menu = menu_bar.addMenu("Edit")
+
+        self.action_undo = QAction("Undo", self)
+        self.action_undo.setShortcut(QKeySequence("Ctrl+Z"))
+        self.action_undo.setEnabled(False)
+        edit_menu.addAction(self.action_undo)
+
+        self.action_redo = QAction("Redo", self)
+        self.action_redo.setShortcut(QKeySequence("Ctrl+Shift+Z"))
+        self.action_redo.setEnabled(False)
+        edit_menu.addAction(self.action_redo)
+
         # View menu
         view_menu = menu_bar.addMenu("View")
         self.action_toggle_game_view = QAction("Toggle Game View", self)
@@ -152,6 +165,10 @@ class MainWindow(QMainWindow):
         self.bot_canvas.new_bot_requested.connect(self.action_new.trigger)
         self.bot_canvas.open_bot_requested.connect(self.action_open.trigger)
         self.bot_canvas.open_recent_requested.connect(self.open_recent_requested)
+        # Wire undo/redo
+        self.action_undo.triggered.connect(self.bot_canvas._on_undo)
+        self.action_redo.triggered.connect(self.bot_canvas._on_redo)
+        self.bot_canvas.undo_state_changed.connect(self._on_undo_state_changed)
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
@@ -300,6 +317,12 @@ class MainWindow(QMainWindow):
         self.action_run_pause.setEnabled(not editing)
         self.action_stop_bot.setEnabled(running_or_paused)
         self.action_validate_bot.setEnabled(idle)
+
+    def _on_undo_state_changed(self, can_undo: bool, can_redo: bool, undo_desc: str, redo_desc: str) -> None:
+        self.action_undo.setEnabled(can_undo)
+        self.action_undo.setText(f"Undo: {undo_desc}" if undo_desc else "Undo")
+        self.action_redo.setEnabled(can_redo)
+        self.action_redo.setText(f"Redo: {redo_desc}" if redo_desc else "Redo")
 
     def _rebuild_launch_menu(self) -> None:
         """Rebuild Launch menu from current accounts and profiles."""

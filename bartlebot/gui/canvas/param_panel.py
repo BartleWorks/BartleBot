@@ -654,6 +654,9 @@ class _NodeTypeDelegate(QStyledItemDelegate):
 
 class _ParamPanel(QWidget):
     properties_changed = pyqtSignal()
+    # Emitted for discrete structural property changes (node type switch) that need
+    # an immediate undo snapshot rather than the debounced param-edit path.
+    structural_property_changed = pyqtSignal(str)
     # Emitted when the user changes source or dest via the dropdowns.
     # Args: old_source, old_when (str|None), old_dest, new_source, new_dest
     edge_endpoints_changed = pyqtSignal(str, object, str, str, str)
@@ -953,6 +956,7 @@ class _ParamPanel(QWidget):
         node_type: str = self._node_type_combo.currentData(Qt.ItemDataRole.UserRole)
         if self._suppress or self._state is None or node_type not in NODE_REGISTRY:
             return
+        self.structural_property_changed.emit("Change Node Type")
         self._cancel_record()
         self._state.node_type = node_type
         self._state.params = {}
