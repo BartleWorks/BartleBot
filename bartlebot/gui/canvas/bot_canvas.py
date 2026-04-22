@@ -132,9 +132,10 @@ class _BotCard(QWidget):
 
     open_requested = pyqtSignal(str)  # emits path string
 
-    def __init__(self, meta: "_BotMeta", parent=None) -> None:
+    def __init__(self, meta: "_BotMeta", matched_drops: "list[str] | None" = None, parent=None) -> None:
         super().__init__(parent)
         self._meta = meta
+        self._matched_drops = matched_drops
         self.setObjectName("BotCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._set_normal_style()
@@ -172,6 +173,16 @@ class _BotCard(QWidget):
             meta_lbl = QLabel("  ·  ".join(parts))
             meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px;")
             layout.addWidget(meta_lbl)
+
+        if self._matched_drops:
+            shown = self._matched_drops[:3]
+            text = ", ".join(shown)
+            if len(self._matched_drops) > 3:
+                text += f" +{len(self._matched_drops) - 3} more"
+            match_lbl = QLabel(f"Drops: {text}")
+            match_lbl.setWordWrap(True)
+            match_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 10px;")
+            layout.addWidget(match_lbl)
 
     def _set_normal_style(self) -> None:
         # Use #BotCard selector so border/background don't bleed into child labels
@@ -360,17 +371,17 @@ class _BotLibraryPanel(QWidget):
             self._on_category_row_changed(self._cat_list.currentRow())
             return
         q = text.casefold()
-        results = [
-            m
-            for m in self._all_metas
-            if q in m.name.casefold()
-            or q in m.description.casefold()
-            or q in m.authors.casefold()
-            or any(q in d.casefold() for d in m.drops)
-        ]
-        self._show_cards(results)
+        results: list[_BotMeta] = []
+        matched_drops: dict[Path, list[str]] = {}
+        for m in self._all_metas:
+            drop_matches = [d for d in m.drops if q in d.casefold()]
+            if q in m.name.casefold() or q in m.description.casefold() or q in m.authors.casefold() or drop_matches:
+                results.append(m)
+                if drop_matches:
+                    matched_drops[m.path] = drop_matches
+        self._show_cards(results, matched_drops)
 
-    def _show_cards(self, metas: "list[_BotMeta]") -> None:
+    def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
         layout = self._cards_layout
         # Remove all widgets, keep the trailing stretch (last item)
         while layout.count() > 1:
@@ -386,7 +397,8 @@ class _BotLibraryPanel(QWidget):
             return
 
         for i, meta in enumerate(metas):
-            card = _BotCard(meta)
+            drops = (matched_drops or {}).get(meta.path)
+            card = _BotCard(meta, matched_drops=drops)
             card.open_requested.connect(self.open_recent_requested)
             layout.insertWidget(i, card)
 

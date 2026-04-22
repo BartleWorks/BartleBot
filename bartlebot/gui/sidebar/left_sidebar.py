@@ -50,12 +50,7 @@ class LeftSidebar(QTabWidget):
         bot_vbox.setContentsMargins(8, 8, 8, 8)
         bot_vbox.setSpacing(4)
         bot_vbox.addWidget(self.bot_info)
-        bot_vbox.addWidget(self.possible_drops)
-        bot_vbox.addStretch()
-
-        bot_scroll = QScrollArea()
-        bot_scroll.setWidget(bot_content)
-        bot_scroll.setWidgetResizable(True)
+        bot_vbox.addWidget(self.possible_drops, 1)
 
         # ── Config tab ──────────────────────────────────────────
         self.options = OptionsSection()
@@ -75,7 +70,7 @@ class LeftSidebar(QTabWidget):
 
         self.log_panel = LogPanel()
 
-        self.addTab(bot_scroll, "Bot")  # _BOT_TAB        = 0
+        self.addTab(bot_content, "Bot")  # _BOT_TAB        = 0
         self.addTab(config_scroll, "Config")  # _CONFIG_TAB     = 1
         self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 2
         self.addTab(self.log_panel, "Log")  # _LOG_TAB        = 3

@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QInputDialog,
     QListWidget,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -20,6 +21,8 @@ from bartlebot.gui.theme import THEME
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+
+_BASE_TITLE = "Possible Drops"
 
 
 class _DropsListWidget(QWidget):
@@ -35,15 +38,18 @@ class _DropsListWidget(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
         self._list = QListWidget()
-        self._list.setFixedHeight(100)
+        self._list.setMinimumHeight(120)
+        self._list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        layout.addWidget(self._list)
+        layout.addWidget(self._list, 1)
 
         # Button row — shown only in edit mode
         self._btn_row = QWidget()
@@ -122,7 +128,10 @@ class PossibleDropsSection(SidebarSection):
     drops_changed = pyqtSignal()
 
     def __init__(self, parent=None):
-        super().__init__("Possible Drops", parent)
+        super().__init__(_BASE_TITLE, parent)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self._body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+
         self._config: BotConfig | None = None
 
         self._drops_widget = _DropsListWidget()
@@ -130,7 +139,7 @@ class PossibleDropsSection(SidebarSection):
         vbox = QVBoxLayout()
         vbox.setSpacing(0)
         vbox.setContentsMargins(0, 0, 0, 0)
-        vbox.addWidget(self._drops_widget)
+        vbox.addWidget(self._drops_widget, 1)
         self.set_content_layout(vbox)
 
         self._drops_widget.changed.connect(self._on_drops_changed)
@@ -139,6 +148,7 @@ class PossibleDropsSection(SidebarSection):
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
         self._drops_widget.set_items(config.drops if config is not None else [])
+        self._update_header(config.drops if config is not None else [])
 
     def set_editable(self, editable: bool) -> None:
         self._drops_widget.set_editable(editable)
@@ -153,6 +163,7 @@ class PossibleDropsSection(SidebarSection):
         if self._config is None:
             return
         self._config.drops = items
+        self._update_header(items)
         self.drops_changed.emit()
 
     def _on_import_requested(self) -> None:
@@ -161,3 +172,8 @@ class PossibleDropsSection(SidebarSection):
         dialog = WikiImportDialog(parent=self.window())
         if dialog.exec():
             self._drops_widget.add_items(dialog.selected_items())
+
+    def _update_header(self, items: list[str]) -> None:
+        n = len(items)
+        title = f"{_BASE_TITLE} ({n})" if n else _BASE_TITLE
+        self._header.label.setText(title)
