@@ -1,5 +1,5 @@
 {
-  "name": "Do-Daga Farmer",
+  "name": "Do-Daga",
   "description": "Endlessly farms Do-Daga.",
   "version": "3.0",
   "clients": "all",
@@ -534,7 +534,7 @@
         "state_6",
         "state_3"
       ],
-      "color": "amber"
+      "color": 1
     },
     {
       "id": "4b9e460f",
@@ -547,7 +547,7 @@
         "state_9",
         "state_12"
       ],
-      "color": "green"
+      "color": 6
     },
     {
       "id": "088daf63",
@@ -558,7 +558,7 @@
         "state_2",
         "state_1"
       ],
-      "color": "blue"
+      "color": 5
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "name": "Jade Oni Farmer",
+  "name": "Jade Oni",
   "description": "Endlessly farms the Jade Oni",
   "version": "1.0",
   "clients": "all",
@@ -21,7 +21,7 @@
     {
       "name": "Safety Delay",
       "type": "float",
-      "default": 3,
+      "default": 3.0,
       "description": "Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open."
     },
     {
@@ -467,7 +467,7 @@
         "state_5",
         "state_7"
       ],
-      "color": "green"
+      "color": 6
     }
   ]
 }
