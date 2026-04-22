@@ -17,7 +17,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.theme import THEME
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -78,13 +77,7 @@ class _DropsListWidget(QWidget):
 
     @staticmethod
     def _make_btn(text: str) -> QPushButton:
-        btn = QPushButton(text)
-        btn.setFlat(True)
-        btn.setStyleSheet(
-            f"QPushButton {{ color: {THEME.text_muted}; font-size: 10px; padding: 2px 4px; }}"
-            f"QPushButton:hover {{ color: {THEME.text}; }}"
-        )
-        return btn
+        return QPushButton(text)
 
     def set_editable(self, editable: bool) -> None:
         self._btn_row.setVisible(editable)
