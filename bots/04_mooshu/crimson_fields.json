@@ -1,5 +1,5 @@
 {
-  "name": "Crimson Fields Farmer",
+  "name": "Crimson Fields (Yakedo + War Oni)",
   "description": "Completes the entire Crimson Fields dungeon, optionally defeating Yakedo.",
   "version": "2.0",
   "clients": "all",
@@ -9,8 +9,160 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Mooshu",
   "drops": [
+    "Abstract Shroud",
+    "Abstract Vestment",
+    "Accurate",
+    "Ape Grapes",
+    "Balefrost",
+    "Bell Pagoda",
+    "Benign Slippers",
+    "Blemished Damage Onyx +11",
+    "Blemished Damage Ruby +11",
+    "Blemished Defense Opal +11",
+    "Blemished Health Opal +40",
+    "Blemished Mana Opal +17",
+    "Blended Wool Cap",
+    "Blight Hound",
+    "Bodkin of the Hearty",
+    "Bone",
+    "Boots of the Lithe",
+    "Brass",
+    "Bronze Gear",
+    "Cap of Consideration",
+    "Cap of the Verse",
+    "Cloak of Deliberation",
+    "Cobalt",
+    "Cowl of Fiction",
+    "Cowl of Tact",
+    "Cowl of Watchfulness",
+    "Crossed Naginata Spears",
+    "Crunch Apple",
+    "Deadly Ninja Fig",
+    "Death Ninja",
+    "Deck of the Lotus",
+    "Diseased Wildclaw",
+    "Ectoplasm",
+    "Evil Snowman",
+    "Fancy Bench",
+    "Fancy Lantern",
+    "Fiery Boom Shroom",
+    "Fire Cat",
+    "Fire Cracker",
+    "Fire Elf",
+    "Fire-Giver Ruby",
+    "Firewing",
+    "Flawed Accurate Jade +4%",
+    "Flawed Defense Sapphire +18",
+    "Flawed Health Opal +32",
+    "Flawed Mending Opal +2%",
+    "Footwraps of Generations",
+    "Footwraps of Predicament",
+    "Friendly Garments",
+    "Friendly Helm",
+    "Frost Beetle",
+    "Garment of Dilemma",
+    "Garment of Sandcastles",
+    "Garments of Predicament",
+    "Gearhead Destroyer",
+    "Golden Peanut",
+    "Golden Squash",
+    "Grand Imperial Banner",
+    "Green Sword Display",
+    "Gripping Boots",
+    "Hanging Naginata Spear",
+    "Haskarr's Barbarish Cap",
+    "Hat of the Observant",
+    "Heedful Headwraps",
+    "Humongofrog Peridot",
+    "Hydra",
+    "Ice Wyvern",
+    "Ice Wyvern Sapphire",
+    "Immolate",
+    "Indoor Shrine",
+    "Indulgent Boots",
+    "Indulgent Vestment",
+    "Invigorating Signet",
+    "Kraken",
+    "Large Fish",
+    "Large Watermelon",
+    "Lead",
+    "Leather Straps",
+    "Light-As-Air Cloak",
+    "Light-As-Air Slippers",
+    "Lightning Bats",
+    "Lyrical Footwraps",
+    "Lyrical Garments",
+    "Maelstrom Snap Dragon",
+    "Magma Spider",
+    "Minotaur",
+    "Moodha Bust",
+    "MooShu Battle Theme",
+    "MooShu Haunted Theme",
+    "MooShu Mystical Theme",
+    "MooShu War Theme",
+    "Nickel",
+    "Ninja Pigs",
+    "Nunu's Mask of the Twisted",
+    "Pagoda Brazier",
+    "Pest Zapper",
+    "Phoenix",
+    "Pink Dandelion",
+    "Problematic Headwraps",
+    "Professor Wu",
+    "Proficient Shoes",
+    "Pyrite",
+    "rank 1-5 elemental spellements",
+    "Red Samoorai Armor",
+    "Robe of Hinderance",
+    "Robe of the Verse",
+    "Ruby Ring of Focus",
+    "Samoorai",
+    "Sanctuary",
+    "Sandals of the Determined",
+    "Scarab",
+    "Scarecrow",
     "School design gear",
-    "rank 1-5 elemental spellements"
+    "Seraph Jade",
+    "Small Woodpile",
+    "Snow Serpent",
+    "Soji Screen Art",
+    "Spectral Blast",
+    "Square Root",
+    "Stone Base",
+    "Stone Dog Statue",
+    "Stone Pedestal Base",
+    "Storm Shark",
+    "Stormzilla",
+    "Sunbird",
+    "Tall Boulder",
+    "Thunder Snake",
+    "Tin",
+    "Tormented Cloak",
+    "Tunic of Impression",
+    "Vestment of Fiction",
+    "Vestment of the Eager",
+    "Vigilant Sandals",
+    "War Oni's Astute Tunic",
+    "War Oni's Disillusioned Hat",
+    "War Oni's Footwraps",
+    "War Oni's Gripping Garments",
+    "War Oni's Gripping Helm",
+    "War Oni's Tempestial Circle",
+    "War Torn Cowl of Awareness",
+    "White Laugh-O-Dil",
+    "Wooden Skeleton Key",
+    "Wyldfire",
+    "Yakedo's Abstract Shoes",
+    "Yakedo's Boots",
+    "Yakedo's Brainstorming Robe",
+    "Yakedo's Cap of Premise",
+    "Yakedo's Hypothetical Helm",
+    "Yakedo's Hypothetical Robe",
+    "Yakedo's Rational Cloak",
+    "Yakedo's Sandals of Belief",
+    "Yakedo's Shroud",
+    "Yakedo's Slippers",
+    "Zippy Tunic"
   ],
   "authors": "BartleBot",
   "options": [
@@ -45,7 +197,7 @@
       "label": "Go to Jade Palace",
       "position": {
         "x": 150.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -59,7 +211,7 @@
       "label": "Go to Hametsu Village",
       "position": {
         "x": 1050.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -84,7 +236,7 @@
       "label": "Enter Crimson Fields",
       "position": {
         "x": 1350.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
@@ -109,7 +261,7 @@
       "label": "Talk to Hoi Mang",
       "position": {
         "x": 1650.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -136,7 +288,7 @@
       "label": "Raise first flag",
       "position": {
         "x": 1944.6056345371194,
-        "y": 251.35208036675482
+        "y": 258.3520803667548
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -165,7 +317,7 @@
       "label": "Raise second flag",
       "position": {
         "x": 2244.6056345371194,
-        "y": 251.35208036675482
+        "y": 258.3520803667548
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -194,7 +346,7 @@
       "label": "Raise third flag",
       "position": {
         "x": 2544.6056345371194,
-        "y": 251.35208036675482
+        "y": 258.3520803667548
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -223,7 +375,7 @@
       "label": "Raise fourth flag",
       "position": {
         "x": 2844.6056345371194,
-        "y": 251.35208036675482
+        "y": 258.3520803667548
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -252,7 +404,7 @@
       "label": "Talk to Rikugun Mikawa",
       "position": {
         "x": 3150.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -279,7 +431,7 @@
       "label": "Gather first wood pile",
       "position": {
         "x": 3450.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -308,7 +460,7 @@
       "label": "Gather second wood pile",
       "position": {
         "x": 3750.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -337,7 +489,7 @@
       "label": "Gather third wood pile",
       "position": {
         "x": 4050.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -366,7 +518,7 @@
       "label": "Gather fourth wood pile",
       "position": {
         "x": 4350.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -395,7 +547,7 @@
       "label": "Talk to Rikugun Mikawa",
       "position": {
         "x": 4650.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -422,7 +574,7 @@
       "label": "Construct first barricade",
       "position": {
         "x": 4950.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -441,7 +593,7 @@
       "label": "Construct second barricade",
       "position": {
         "x": 5250.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -460,7 +612,7 @@
       "label": "Construct third barricade",
       "position": {
         "x": 5550.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -479,7 +631,7 @@
       "label": "Talk to Rikugun Mikawa",
       "position": {
         "x": 5850.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -506,7 +658,7 @@
       "label": "Talk to Ahn Nao",
       "position": {
         "x": 6150.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -533,7 +685,7 @@
       "label": "Talk to Sekou Leong",
       "position": {
         "x": 6450.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -560,7 +712,7 @@
       "label": "Talk to Rikugun Mikawa",
       "position": {
         "x": 6750.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -587,7 +739,7 @@
       "label": "Talk to Bricktop",
       "position": {
         "x": 7050.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -614,7 +766,7 @@
       "label": "Enter Grum Foultooth's tower",
       "position": {
         "x": 7350.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -639,7 +791,7 @@
       "label": "Defeat Grum Foultooth",
       "position": {
         "x": 7650.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "enemy": "Troll-Yellow-MSBoss-L42",
@@ -655,7 +807,7 @@
       "label": "Exit Grum Foultooth's tower",
       "position": {
         "x": 7950.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/Interiors/MS_War2_T2",
@@ -680,7 +832,7 @@
       "label": "Talk to Bricktop",
       "position": {
         "x": 8250.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -707,7 +859,7 @@
       "label": "Use first cairn",
       "position": {
         "x": 8550.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -736,7 +888,7 @@
       "label": "Use second cairn",
       "position": {
         "x": 8850.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -763,7 +915,7 @@
       "label": "Talk to Bricktop",
       "position": {
         "x": 9150.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -790,7 +942,7 @@
       "label": "Talk to Rikugun Mikawa",
       "position": {
         "x": 9450.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -817,7 +969,7 @@
       "label": "Go to Yakedo",
       "position": {
         "x": 9750.0,
-        "y": -196.47416200433776
+        "y": -189.47416200433776
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -836,7 +988,7 @@
       "label": "Defeat Yakedo",
       "position": {
         "x": 10350.0,
-        "y": -106.47416200433776
+        "y": -99.47416200433776
       },
       "params": {
         "enemy": "Pig-War-Warrior-LXX",
@@ -852,7 +1004,7 @@
       "label": "Defeat mobs",
       "position": {
         "x": 10050.0,
-        "y": 104.0
+        "y": 111.0
       },
       "params": {
         "enemy": "",
@@ -870,7 +1022,7 @@
       "label": "Go to Mobs",
       "position": {
         "x": 9750.0,
-        "y": 104.0
+        "y": 111.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -889,7 +1041,7 @@
       "label": "Defeat mobs",
       "position": {
         "x": 11539.21126907424,
-        "y": 269.4272075283443
+        "y": 276.4272075283443
       },
       "params": {
         "enemy": "",
@@ -907,7 +1059,7 @@
       "label": "Go to Mobs",
       "position": {
         "x": 10939.21126907424,
-        "y": 269.4272075283443
+        "y": 276.4272075283443
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -940,7 +1092,7 @@
       "label": "Talk to Rikugun Mikawa",
       "position": {
         "x": 10650.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -967,7 +1119,7 @@
       "label": "Enter Katsumori's Dojo",
       "position": {
         "x": 10948.201878179036,
-        "y": -198.27228382529796
+        "y": -191.27228382529796
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -992,7 +1144,7 @@
       "label": "Defeat Katsumori",
       "position": {
         "x": 11248.201878179036,
-        "y": -198.27228382529796
+        "y": -191.27228382529796
       },
       "params": {
         "enemy": "Pig-War-Lord-MSBoss-L43",
@@ -1008,7 +1160,7 @@
       "label": "Cancel invulnerability",
       "position": {
         "x": 11548.201878179036,
-        "y": -198.27228382529796
+        "y": -191.27228382529796
       },
       "params": {
         "zone": "MooShu/MS_War/Interiors/MS_War2_T1",
@@ -1041,7 +1193,7 @@
       "label": "Defeat War Oni",
       "position": {
         "x": 12155.394365462877,
-        "y": -198.17837487331116
+        "y": -191.17837487331116
       },
       "params": {
         "enemy": "Oni-War-MSBoss-L50",
@@ -1057,7 +1209,7 @@
       "label": "Collect health wisps",
       "position": {
         "x": 12432.018781790399,
-        "y": 19.394365462880792
+        "y": 26.394365462880792
       },
       "params": {
         "if_health_below": 1.0,
@@ -1074,7 +1226,7 @@
       "label": "Leave battlefield",
       "position": {
         "x": 11839.21126907424,
-        "y": 269.4272075283443
+        "y": 276.4272075283443
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1093,7 +1245,7 @@
       "label": "Collect mana wisps",
       "position": {
         "x": 450.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1110,7 +1262,7 @@
       "label": "Handle potions",
       "position": {
         "x": 750.0,
-        "y": 14.0
+        "y": 21.0
       },
       "params": {
         "if_health_below": 0.5,

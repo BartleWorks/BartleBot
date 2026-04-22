@@ -4,9 +4,12 @@ BotCanvas  — top-level widget; owns the scene, toolbars, and properties panel.
 """
 
 import enum
+import json
 import logging
+import re
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 
 from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
@@ -19,9 +22,9 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -88,22 +91,146 @@ class BotMode(enum.Enum):
 
 
 # ---------------------------------------------------------------------------
-# _BotCanvasPlaceholder — shown when no bot file is open
+# Bot library helpers — used by _BotLibraryPanel
 # ---------------------------------------------------------------------------
 
 
-class _BotCanvasPlaceholder(QWidget):
-    """Placeholder shown in BotCanvas when no bot file is open.
+@dataclass
+class _BotMeta:
+    name: str
+    description: str
+    authors: str
+    drops: list[str]
+    start_location: str
+    path: Path
 
-    Centered layout: title, recent files list, New Bot / Open Bot links.
+
+def _read_bot_meta(path: Path) -> "_BotMeta | None":
+    try:
+        with path.open(encoding="utf-8") as f:
+            data = json.load(f)
+        return _BotMeta(
+            name=data.get("name") or path.stem,
+            description=data.get("description") or "",
+            authors=data.get("authors") or "",
+            drops=data.get("drops") or [],
+            start_location=data.get("start_location") or "",
+            path=path,
+        )
+    except Exception:
+        return None
+
+
+def _format_category(dir_name: str) -> str:
+    """'01_wizard_city' → 'Wizard City'."""
+    name = re.sub(r"^\d+_", "", dir_name)
+    return name.replace("_", " ").title()
+
+
+class _BotCard(QWidget):
+    """Single clickable bot entry shown in the library's right panel."""
+
+    open_requested = pyqtSignal(str)  # emits path string
+
+    def __init__(self, meta: "_BotMeta", matched_drops: "list[str] | None" = None, parent=None) -> None:
+        super().__init__(parent)
+        self._meta = meta
+        self._matched_drops = matched_drops
+        self.setObjectName("BotCard")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._set_normal_style()
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._build()
+
+    def _build(self) -> None:
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 7, 10, 7)
+        layout.setSpacing(2)
+
+        name_lbl = QLabel(self._meta.name or "(untitled)")
+        f = name_lbl.font()
+        f.setBold(True)
+        name_lbl.setFont(f)
+        name_lbl.setStyleSheet(f"color: {THEME.text};")
+        layout.addWidget(name_lbl)
+
+        if self._meta.description:
+            desc = self._meta.description
+            if len(desc) > 120:
+                desc = desc[:120] + "…"
+            desc_lbl = QLabel(desc)
+            desc_lbl.setWordWrap(True)
+            desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            layout.addWidget(desc_lbl)
+
+        parts: list[str] = []
+        if self._meta.authors:
+            parts.append(f"by {self._meta.authors}")
+        n = len(self._meta.drops)
+        if n:
+            parts.append(f"{n} drop{'s' if n != 1 else ''}")
+        if parts:
+            meta_lbl = QLabel("  ·  ".join(parts))
+            meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px;")
+            layout.addWidget(meta_lbl)
+
+        if self._matched_drops:
+            shown = self._matched_drops[:3]
+            text = ", ".join(shown)
+            if len(self._matched_drops) > 3:
+                text += f" +{len(self._matched_drops) - 3} more"
+            match_lbl = QLabel(f"Drops: {text}")
+            match_lbl.setWordWrap(True)
+            match_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 10px;")
+            layout.addWidget(match_lbl)
+
+    def _set_normal_style(self) -> None:
+        # Use #BotCard selector so border/background don't bleed into child labels
+        self.setStyleSheet(
+            f"#BotCard {{ background: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 4px; }}"
+        )
+
+    def _set_hover_style(self) -> None:
+        self.setStyleSheet(
+            f"#BotCard {{ background: {THEME.node_fill}; border: 1px solid {THEME.accent}; border-radius: 4px; }}"
+        )
+
+    def enterEvent(self, event) -> None:
+        self._set_hover_style()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._set_normal_style()
+        super().leaveEvent(event)
+
+    def mousePressEvent(self, event) -> None:
+        self.open_requested.emit(str(self._meta.path))
+        super().mousePressEvent(event)
+
+
+# ---------------------------------------------------------------------------
+# _BotLibraryPanel — shown when no bot file is open
+# ---------------------------------------------------------------------------
+
+
+class _BotLibraryPanel(QWidget):
+    """Bot library panel shown in BotCanvas when no bot file is open.
+
+    Two-panel layout: left category list (Recent + world subdirs from bots/),
+    right scrollable bot cards. Search bar filters across all categories.
     """
 
     new_bot_requested = pyqtSignal()
     open_bot_requested = pyqtSignal()
     open_recent_requested = pyqtSignal(str)  # path
 
+    _RECENT = "Recent"
+
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        self._all_metas: list[_BotMeta] = []
+        self._category_map: dict[str, list[_BotMeta]] = {}
+        self._recent_metas: list[_BotMeta] = []
         self._build_ui()
         self.refresh()
 
@@ -112,127 +239,168 @@ class _BotCanvasPlaceholder(QWidget):
     # ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(24, 16, 24, 16)
-        outer.setSpacing(12)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        # Centered content column
-        content_row = QHBoxLayout()
-        content_row.setSpacing(0)
-        content_row.addStretch(1)
+        # ── Top bar: search + action buttons ────────────────────────────
+        top = QWidget()
+        top.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        top.setStyleSheet(f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};")
+        top_layout = QHBoxLayout(top)
+        top_layout.setContentsMargins(8, 6, 8, 6)
+        top_layout.setSpacing(6)
 
-        content = QWidget()
-        content.setMaximumWidth(400)
-        inner = QVBoxLayout(content)
-        inner.setContentsMargins(0, 0, 0, 0)
-        inner.setSpacing(6)
+        self._search = QLineEdit()
+        self._search.setPlaceholderText("Search bots by name, author, or drop…")
+        self._search.setClearButtonEnabled(True)
+        top_layout.addWidget(self._search, 1)
 
-        recent_hdr = QLabel("Recent Files")
-        recent_hdr_font = recent_hdr.font()
-        recent_hdr_font.setBold(True)
-        recent_hdr.setFont(recent_hdr_font)
-        recent_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        recent_hdr.setStyleSheet(f"color: {THEME.text_muted};")
-        inner.addWidget(recent_hdr)
+        for label, signal_name in (("New Bot", "new_bot_requested"), ("Open…", "open_bot_requested")):
+            btn = QPushButton(label)
+            btn.setFlat(True)
+            btn.setStyleSheet(
+                f"QPushButton {{ color: {THEME.text_muted}; border: none; padding: 4px 8px; }}"
+                f"QPushButton:hover {{ color: {THEME.text}; }}"
+            )
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(getattr(self, signal_name))
+            top_layout.addWidget(btn)
 
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setFrameShadow(QFrame.Shadow.Sunken)
-        inner.addWidget(sep)
+        root.addWidget(top)
 
-        self._recent_area = self._make_scroll_area()
-        inner.addWidget(self._recent_area, stretch=1)
+        # ── Body: left category list + right card area ───────────────────
+        body = QHBoxLayout()
+        body.setContentsMargins(0, 0, 0, 0)
+        body.setSpacing(0)
 
-        btn_row = QHBoxLayout()
-        btn_row.setSpacing(16)
-        btn_row.addStretch(1)
-
-        self._new_btn = QPushButton("New Bot")
-        self._new_btn.setFlat(True)
-        self._new_btn.setStyleSheet(
-            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
+        # Left: category list
+        self._cat_list = QListWidget()
+        self._cat_list.setFixedWidth(155)
+        self._cat_list.setStyleSheet(
+            f"QListWidget {{ background: {THEME.surface}; border: none;"
+            f"  border-right: 1px solid {THEME.border}; font-size: 11px; }}"
+            f"QListWidget::item {{ padding: 5px 10px; color: {THEME.text_muted}; }}"
+            f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
         )
-        self._new_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._new_btn.clicked.connect(self.new_bot_requested)
-        btn_row.addWidget(self._new_btn)
+        body.addWidget(self._cat_list)
 
-        self._open_btn = QPushButton("Open Bot")
-        self._open_btn.setFlat(True)
-        self._open_btn.setStyleSheet(
-            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
-        )
-        self._open_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._open_btn.clicked.connect(self.open_bot_requested)
-        btn_row.addWidget(self._open_btn)
+        # Right: scrollable bot cards
+        self._cards_area = QScrollArea()
+        self._cards_area.setWidgetResizable(True)
+        self._cards_area.setFrameShape(QFrame.Shape.NoFrame)
+        self._cards_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._cards_container = QWidget()
+        self._cards_layout = QVBoxLayout(self._cards_container)
+        self._cards_layout.setContentsMargins(10, 10, 10, 10)
+        self._cards_layout.setSpacing(6)
+        self._cards_layout.addStretch()
+        self._cards_area.setWidget(self._cards_container)
+        body.addWidget(self._cards_area, 1)
 
-        btn_row.addStretch(1)
-        inner.addLayout(btn_row)
+        body_w = QWidget()
+        body_w.setLayout(body)
+        root.addWidget(body_w, 1)
 
-        content_row.addWidget(content, stretch=2)
-        content_row.addStretch(1)
-        outer.addLayout(content_row, stretch=1)
-
-    @staticmethod
-    def _make_scroll_area() -> QScrollArea:
-        area = QScrollArea()
-        area.setWidgetResizable(True)
-        area.setFrameShape(QFrame.Shape.NoFrame)
-        area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        layout.addStretch()
-        area.setWidget(container)
-        return area
+        self._search.textChanged.connect(self._on_search_changed)
+        self._cat_list.currentRowChanged.connect(self._on_category_row_changed)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def refresh(self) -> None:
-        """Rebuild recent files list from current settings."""
-        paths = SettingsManager.instance().recent_bot_files
-        self._rebuild_list(
-            self._recent_area,
-            items=[(Path(p).name, p, lambda *_, path=p: self.open_recent_requested.emit(path)) for p in paths],
-            empty_hint="(No recent files)",
-        )
+        """Rescan recent files and bots/ directory, rebuild UI."""
+        sm = SettingsManager.instance()
+        recent_paths = sm.recent_bot_files
+
+        # Scan bots/ subdirectories
+        self._all_metas = []
+        self._category_map = {}
+
+        bots_dir = Path(sm.get("canvas", "bot_library_path", default="bots"))
+        if bots_dir.is_dir():
+            for subdir in sorted(bots_dir.iterdir()):
+                if not subdir.is_dir():
+                    continue
+                cat_name = _format_category(subdir.name)
+                metas = [m for f in sorted(subdir.glob("*.json")) if (m := _read_bot_meta(f))]
+                if metas:
+                    self._category_map[cat_name] = metas
+                    self._all_metas.extend(metas)
+            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := _read_bot_meta(f))]
+            if root_metas:
+                self._category_map.setdefault("Other", []).extend(root_metas)
+                self._all_metas.extend(root_metas)
+
+        # Recent files
+        self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
+
+        # Rebuild category list
+        self._cat_list.blockSignals(True)
+        self._cat_list.clear()
+        if self._recent_metas:
+            self._cat_list.addItem(self._RECENT)
+        for cat in self._category_map:
+            self._cat_list.addItem(cat)
+        self._cat_list.blockSignals(False)
+
+        # Select first category (triggers card refresh)
+        if self._cat_list.count() > 0:
+            self._cat_list.setCurrentRow(0)
+            self._on_category_row_changed(0)
+        else:
+            self._show_cards([])
 
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _rebuild_list(
-        area: QScrollArea,
-        items: list[tuple[str, str, object]],
-        empty_hint: str,
-    ) -> None:
-        container = area.widget()
-        layout = container.layout()
+    def _on_category_row_changed(self, row: int) -> None:
+        if row < 0:
+            return
+        self._search.blockSignals(True)
+        self._search.clear()
+        self._search.blockSignals(False)
+        cat = self._cat_list.item(row).text()
+        metas = self._recent_metas if cat == self._RECENT else self._category_map.get(cat, [])
+        self._show_cards(metas)
 
-        # Remove all existing widgets
-        while layout.count() > 0:
+    def _on_search_changed(self, text: str) -> None:
+        if not text.strip():
+            self._on_category_row_changed(self._cat_list.currentRow())
+            return
+        q = text.casefold()
+        results: list[_BotMeta] = []
+        matched_drops: dict[Path, list[str]] = {}
+        for m in self._all_metas:
+            drop_matches = [d for d in m.drops if q in d.casefold()]
+            if q in m.name.casefold() or q in m.description.casefold() or q in m.authors.casefold() or drop_matches:
+                results.append(m)
+                if drop_matches:
+                    matched_drops[m.path] = drop_matches
+        self._show_cards(results, matched_drops)
+
+    def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
+        layout = self._cards_layout
+        # Remove all widgets, keep the trailing stretch (last item)
+        while layout.count() > 1:
             item = layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
-        if not items:
-            hint = QLabel(empty_hint)
-            hint.setWordWrap(True)
+        if not metas:
+            hint = QLabel("No bots found." if self._cat_list.count() else "No bots found in bots/ directory.")
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
-            layout.addWidget(hint)
-        else:
-            for label, tooltip, callback in items:
-                btn = QPushButton(label)
-                btn.setToolTip(tooltip)
-                btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-                btn.clicked.connect(callback)
-                layout.addWidget(btn)
+            layout.insertWidget(0, hint)
+            return
 
-        layout.addStretch()
+        for i, meta in enumerate(metas):
+            drops = (matched_drops or {}).get(meta.path)
+            card = _BotCard(meta, matched_drops=drops)
+            card.open_requested.connect(self.open_recent_requested)
+            layout.insertWidget(i, card)
 
 
 # ---------------------------------------------------------------------------
@@ -554,7 +722,7 @@ class BotCanvas(QWidget):
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
         # ── Placeholder — shown until the first bot is loaded ────────
-        self._placeholder = _BotCanvasPlaceholder(self)
+        self._placeholder = _BotLibraryPanel(self)
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
@@ -616,6 +784,25 @@ class BotCanvas(QWidget):
     def refresh_placeholder(self) -> None:
         """Rebuild the recent files list in the placeholder."""
         self._placeholder.refresh()
+
+    def open_library_dialog(self) -> None:
+        """Open the bot library as a modal dialog (useful when a bot is already loaded)."""
+        from PyQt6.QtWidgets import QDialog, QVBoxLayout
+
+        dlg = QDialog(self.window())
+        dlg.setWindowTitle("Bot Library")
+        dlg.resize(720, 520)
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(0, 0, 0, 0)
+        panel = _BotLibraryPanel(dlg)
+        panel.new_bot_requested.connect(dlg.reject)
+        panel.new_bot_requested.connect(self.new_bot_requested)
+        panel.open_bot_requested.connect(dlg.reject)
+        panel.open_bot_requested.connect(self.open_bot_requested)
+        panel.open_recent_requested.connect(dlg.accept)
+        panel.open_recent_requested.connect(self.open_recent_requested)
+        lay.addWidget(panel)
+        dlg.exec()
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)

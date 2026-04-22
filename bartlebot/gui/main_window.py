@@ -53,6 +53,9 @@ class MainWindow(QMainWindow):
         file_menu.addMenu(self._recent_menu)
         self._update_recent_placeholder()
 
+        self.action_browse_library = QAction("Browse Bot Library…", self)
+        file_menu.addAction(self.action_browse_library)
+
         self.action_close = QAction("Close Bot", self)
         self.action_close.setShortcut(QKeySequence("Ctrl+W"))
         self.action_close.setEnabled(False)
@@ -157,6 +160,10 @@ class MainWindow(QMainWindow):
             lambda: self.right_sidebar.setVisible(not self.right_sidebar.isVisible())
         )
 
+        # Wire wiki import from handle_combat node panel → possible drops list
+        self.bot_canvas.param_panel.wiki_import_completed.connect(self.left_sidebar.possible_drops.add_drops)
+        # Wire Browse Bot Library menu action
+        self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
         # Wire bot status to game view panel title bar

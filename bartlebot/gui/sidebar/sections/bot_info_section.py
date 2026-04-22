@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QComboBox, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import (
+    QComboBox,
+    QVBoxLayout,
+    QWidget,
+)
 
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarField,
@@ -73,25 +77,19 @@ class BotInfoSection(SidebarSection):
         self._authors_edit = value_edit()
         self._authors_edit.setReadOnly(False)
 
-        self._drops_lbl = value_label()
-        self._drops_edit = value_edit()
-        self._drops_edit.setReadOnly(False)
-        self._drops_edit.setToolTip("Comma-separated list of expected drop items")
-
         self._initial_lbl = value_label()
         self._initial_combo = QComboBox()
 
         self._recovery_lbl = value_label()
         self._recovery_combo = QComboBox()
 
-        # Ordered list of (label, edit) pairs for bulk visibility switching
+        # Ordered list of (label, edit) pairs for bulk visibility switching.
         self._switchable_pairs: list[tuple[QWidget, QWidget]] = [
             (self._name_lbl, self._name_edit),
             (self._version_lbl, self._version_edit),
             (self._desc_lbl, self._desc_edit),
             (self._start_lbl, self._start_edit),
             (self._authors_lbl, self._authors_edit),
-            (self._drops_lbl, self._drops_edit),
             (self._initial_lbl, self._initial_combo),
             (self._recovery_lbl, self._recovery_combo),
         ]
@@ -104,7 +102,6 @@ class BotInfoSection(SidebarSection):
         vbox.addWidget(SidebarField("Description", _swappable(self._desc_lbl, self._desc_edit)))
         vbox.addWidget(SidebarField("Start", _swappable(self._start_lbl, self._start_edit)))
         vbox.addWidget(SidebarField("Author(s)", _swappable(self._authors_lbl, self._authors_edit)))
-        vbox.addWidget(SidebarField("Drops", _swappable(self._drops_lbl, self._drops_edit)))
         vbox.addWidget(SidebarField("Initial State", _swappable(self._initial_lbl, self._initial_combo)))
         vbox.addWidget(SidebarField("Recovery State", _swappable(self._recovery_lbl, self._recovery_combo)))
 
@@ -115,7 +112,6 @@ class BotInfoSection(SidebarSection):
         self._desc_edit.textChanged.connect(self._on_desc_changed)
         self._start_edit.textChanged.connect(self._on_start_changed)
         self._authors_edit.textChanged.connect(self._on_authors_changed)
-        self._drops_edit.textChanged.connect(self._on_drops_changed)
         self._initial_combo.currentTextChanged.connect(self._on_initial_changed)
         self._recovery_combo.currentTextChanged.connect(self._on_recovery_changed)
 
@@ -138,7 +134,6 @@ class BotInfoSection(SidebarSection):
                 self._desc_lbl,
                 self._start_lbl,
                 self._authors_lbl,
-                self._drops_lbl,
                 self._initial_lbl,
             ):
                 lbl.setText(_PLACEHOLDER)
@@ -147,7 +142,6 @@ class BotInfoSection(SidebarSection):
                 self._version_edit,
                 self._start_edit,
                 self._authors_edit,
-                self._drops_edit,
             ):
                 w.setText("")
             self._desc_edit.setPlainText("")
@@ -156,21 +150,16 @@ class BotInfoSection(SidebarSection):
             self._recovery_lbl.setText(_PLACEHOLDER)
             self._set_label_mode(True)
         else:
-            drops_str = ", ".join(config.drops) if config.drops else ""
-            # Populate display labels
             self._name_lbl.setText(config.name or _PLACEHOLDER)
             self._version_lbl.setText(config.version or _PLACEHOLDER)
             self._desc_lbl.setText(config.description or _PLACEHOLDER)
             self._start_lbl.setText(config.start_location or _PLACEHOLDER)
             self._authors_lbl.setText(config.authors or _PLACEHOLDER)
-            self._drops_lbl.setText(drops_str or _PLACEHOLDER)
-            # Populate edit widgets
             self._name_edit.setText(config.name or "")
             self._version_edit.setText(config.version or "")
             self._desc_edit.setPlainText(config.description or "")
             self._start_edit.setText(config.start_location or "")
             self._authors_edit.setText(config.authors or "")
-            self._drops_edit.setText(drops_str)
             self._populate_initial_combo(config.states, config.initial)
             self._populate_recovery_combo(config.states, config.recovery_state)
         self._suppress = False
@@ -224,13 +213,6 @@ class BotInfoSection(SidebarSection):
             return
         self._config.authors = text or None
         self._authors_lbl.setText(text or _PLACEHOLDER)
-        self.metadata_changed.emit()
-
-    def _on_drops_changed(self, text: str) -> None:
-        if self._suppress or self._config is None:
-            return
-        self._config.drops = [x.strip() for x in text.split(",") if x.strip()]
-        self._drops_lbl.setText(text or _PLACEHOLDER)
         self.metadata_changed.emit()
 
     def _on_initial_changed(self, text: str) -> None:

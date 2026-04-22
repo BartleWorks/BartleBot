@@ -9,8 +9,58 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Wizard City",
   "drops": [
+    "Alchemical Crystals",
+    "Alchemical Extract",
     "Alchemical reagents",
-    "Vanguard's helms"
+    "Alchemical Salts",
+    "Antique Coins",
+    "Beast Wellington",
+    "Black Pearl",
+    "Blood Moss",
+    "Boom Shroom",
+    "Brain Jar",
+    "Bread Fruit Bush",
+    "Bronze Gear",
+    "Cobalt",
+    "Crab Alley Chaise",
+    "Daybreaker",
+    "Deadly Ninja Fig",
+    "Decimatoes",
+    "Discord Grape Jelly",
+    "Dragonspyre Vanguard's Boots",
+    "Ectoplasm",
+    "Evil Magma Peas",
+    "Face Palm",
+    "Fish",
+    "Frozen Fly Trap",
+    "Ginormous Apple",
+    "Mystic Pizza",
+    "Nickel",
+    "Nightbringer",
+    "Pizza",
+    "Red Bell Pepper",
+    "Rock and Roll Candy",
+    "Satyr Chow",
+    "Scales",
+    "Snow Apples",
+    "Spider Silk",
+    "Spring",
+    "Squash",
+    "Tin",
+    "Vanguard's Balanced Boots",
+    "Vanguard's Deadly Boots",
+    "Vanguard's Fiery Boots",
+    "Vanguard's helms",
+    "Vanguard's Icy Boots",
+    "Vanguard's Mythic Boots",
+    "Vanguard's Shocking Boots",
+    "Vanguard's Vibrant Boots",
+    "Veggie Juice",
+    "Watermelon Slice",
+    "WC Catacombs Combat Theme",
+    "WC Catacombs Theme",
+    "WC Drains Combat Theme",
+    "White Desparagus"
   ],
   "authors": "BartleBot",
   "options": [
@@ -37,7 +87,7 @@
       "label": "Teleport to The Commons",
       "position": {
         "x": 150.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -51,7 +101,7 @@
       "label": "Enter Golem Court",
       "position": {
         "x": 750.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -76,7 +126,7 @@
       "label": "Handle potions",
       "position": {
         "x": 450.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -93,7 +143,7 @@
       "label": "Enter the Drains",
       "position": {
         "x": 1350.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -118,7 +168,7 @@
       "label": "Enter the Catacombs",
       "position": {
         "x": 1650.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
@@ -143,7 +193,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 1050.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -155,7 +205,7 @@
       "label": "Enter Viggor's Tomb",
       "position": {
         "x": 1950.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Catacombs",
@@ -180,7 +230,7 @@
       "label": "Skip to Prince Viggor",
       "position": {
         "x": 2250.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/Interiors/WC_Catacombs_ViggorsTomb",
@@ -199,7 +249,7 @@
       "label": "Defeat Prince Viggor",
       "position": {
         "x": 2550.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "enemy": "CC_Human_DSWarPrince_A_01",
