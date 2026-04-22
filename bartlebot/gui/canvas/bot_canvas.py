@@ -135,6 +135,7 @@ class _BotCard(QWidget):
     def __init__(self, meta: "_BotMeta", parent=None) -> None:
         super().__init__(parent)
         self._meta = meta
+        self.setObjectName("BotCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._set_normal_style()
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -149,7 +150,7 @@ class _BotCard(QWidget):
         f = name_lbl.font()
         f.setBold(True)
         name_lbl.setFont(f)
-        name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
+        name_lbl.setStyleSheet(f"color: {THEME.text};")
         layout.addWidget(name_lbl)
 
         if self._meta.description:
@@ -158,7 +159,7 @@ class _BotCard(QWidget):
                 desc = desc[:120] + "…"
             desc_lbl = QLabel(desc)
             desc_lbl.setWordWrap(True)
-            desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
+            desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
             layout.addWidget(desc_lbl)
 
         parts: list[str] = []
@@ -169,15 +170,18 @@ class _BotCard(QWidget):
             parts.append(f"{n} drop{'s' if n != 1 else ''}")
         if parts:
             meta_lbl = QLabel("  ·  ".join(parts))
-            meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px; background: transparent;")
+            meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px;")
             layout.addWidget(meta_lbl)
 
     def _set_normal_style(self) -> None:
-        self.setStyleSheet(f"background: {THEME.node_fill}; border: 1px solid {THEME.border}; border-radius: 4px;")
+        # Use #BotCard selector so border/background don't bleed into child labels
+        self.setStyleSheet(
+            f"#BotCard {{ background: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 4px; }}"
+        )
 
     def _set_hover_style(self) -> None:
         self.setStyleSheet(
-            f"background: {THEME.node_fill_hover}; border: 1px solid {THEME.accent}; border-radius: 4px;"
+            f"#BotCard {{ background: {THEME.node_fill}; border: 1px solid {THEME.accent}; border-radius: 4px; }}"
         )
 
     def enterEvent(self, event) -> None:
