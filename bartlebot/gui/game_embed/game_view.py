@@ -5,8 +5,10 @@ from __future__ import annotations
 import ctypes
 import ctypes.wintypes
 
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -265,11 +267,13 @@ class GameView(QWidget):
         self._overlay_btn.setVisible(False)
         self._overlay_btn.raise_()
 
-        # Poll focus every 250 ms to update tile borders
+        # Poll every 50 ms: grant focus to the game HWND on click, update tile borders
         self._focus_timer = QTimer(self)
-        self._focus_timer.setInterval(250)
+        self._focus_timer.setInterval(50)
         self._focus_timer.timeout.connect(self._poll_focus)
         self._focus_timer.start()
+
+        QApplication.instance().installEventFilter(self)
 
     # ------------------------------------------------------------------
     # Public API
@@ -496,16 +500,34 @@ class GameView(QWidget):
     # Focus polling
     # ------------------------------------------------------------------
 
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() == QEvent.Type.MouseButtonPress:
+            widget = obj if isinstance(obj, QWidget) else None
+            while widget is not None:
+                if isinstance(widget, ClientTile):
+                    return False  # click is on or inside a game tile; focus polling handles it
+                widget = widget.parent() if isinstance(widget, QWidget) else None
+            # Click landed on a non-game Qt widget; revoke game focus if any tile has it.
+            for tile in self._tiles.values():
+                if tile.is_game_focused():
+                    _user32.SetFocus(int(self.window().winId()))
+                    break
+        return False
+
     def _poll_focus(self) -> None:
         if _user32.GetAsyncKeyState(_VK_LBUTTON) & 0x0001:
-            pt = ctypes.wintypes.POINT()
-            _user32.GetCursorPos(ctypes.byref(pt))
-            for tile in self._tiles.values():
-                rect = ctypes.wintypes.RECT()
-                _user32.GetWindowRect(tile._hwnd, ctypes.byref(rect))
-                if rect.left <= pt.x < rect.right and rect.top <= pt.y < rect.bottom:
-                    _user32.SetFocus(tile._hwnd)
-                    break
+            # Skip focus grant when a non-tile Qt widget (dialog, popup, overlay button)
+            # is on top of the game area at the cursor position.
+            top_widget = QApplication.widgetAt(QCursor.pos())
+            if top_widget is None or isinstance(top_widget, ClientTile):
+                pt = ctypes.wintypes.POINT()
+                _user32.GetCursorPos(ctypes.byref(pt))
+                for tile in self._tiles.values():
+                    rect = ctypes.wintypes.RECT()
+                    _user32.GetWindowRect(tile._hwnd, ctypes.byref(rect))
+                    if rect.left <= pt.x < rect.right and rect.top <= pt.y < rect.bottom:
+                        _user32.SetFocus(tile._hwnd)
+                        break
 
         for tile in self._tiles.values():
             tile.set_focused(tile.is_game_focused())

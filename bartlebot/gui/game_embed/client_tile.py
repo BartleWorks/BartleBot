@@ -202,6 +202,8 @@ class ClientTile(QWidget):
         if event.button() == Qt.MouseButton.LeftButton and self._icon_rect.contains(event.pos()):
             self.detach_requested.emit()
         else:
+            if event.button() == Qt.MouseButton.LeftButton:
+                _user32.SetFocus(self._hwnd)
             super().mousePressEvent(event)
 
     def paintEvent(self, event) -> None:
