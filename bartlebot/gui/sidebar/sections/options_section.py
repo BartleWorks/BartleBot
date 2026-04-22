@@ -8,7 +8,6 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
-    QComboBox,
     QDialog,
     QDoubleSpinBox,
     QFormLayout,
@@ -18,7 +17,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QSpinBox,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -40,13 +38,11 @@ _PLACEHOLDER = "—"
 
 
 class _AddOptionDialog(QDialog):
-    """Dialog for adding or editing a bot-wide option.
+    """Dialog for adding or editing a bot-wide boolean option.
 
     Pass ``existing_option`` to open in edit mode (pre-populated fields,
     "Save" button, name uniqueness check excludes the original name).
     """
-
-    _TYPE_DEFAULTS = {"int": "0", "float": "0.0", "str": ""}
 
     def __init__(
         self,
@@ -68,36 +64,25 @@ class _AddOptionDialog(QDialog):
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("e.g. repeat")
 
-        self._type_combo = QComboBox()
-        self._type_combo.addItems(["bool", "int", "float", "str"])
-
         self._desc_edit = QLineEdit()
         self._desc_edit.setPlaceholderText("Optional description")
 
-        # Bool default: radio buttons
-        self._bool_widget = QWidget()
-        bool_layout = QHBoxLayout(self._bool_widget)
-        bool_layout.setContentsMargins(0, 0, 0, 0)
-        bool_layout.setSpacing(12)
+        default_widget = QWidget()
+        default_layout = QHBoxLayout(default_widget)
+        default_layout.setContentsMargins(0, 0, 0, 0)
+        default_layout.setSpacing(12)
         self._bool_true = QRadioButton("True")
         self._bool_false = QRadioButton("False")
         self._bool_group = QButtonGroup(self)
         self._bool_group.addButton(self._bool_true)
         self._bool_group.addButton(self._bool_false)
-        bool_layout.addWidget(self._bool_true)
-        bool_layout.addWidget(self._bool_false)
-        bool_layout.addStretch()
-
-        self._default_edit = QLineEdit()
-
-        self._default_stack = QStackedWidget()
-        self._default_stack.addWidget(self._bool_widget)  # index 0
-        self._default_stack.addWidget(self._default_edit)  # index 1
+        default_layout.addWidget(self._bool_true)
+        default_layout.addWidget(self._bool_false)
+        default_layout.addStretch()
 
         form.addRow("Name", self._name_edit)
-        form.addRow("Type", self._type_combo)
         form.addRow("Description", self._desc_edit)
-        form.addRow("Default", self._default_stack)
+        form.addRow("Default", default_widget)
 
         self._err_lbl = QLabel()
         self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
@@ -120,36 +105,19 @@ class _AddOptionDialog(QDialog):
         outer.addWidget(self._err_lbl)
         outer.addLayout(btn_row)
 
-        self._type_combo.currentTextChanged.connect(self._on_type_changed)
-
         if edit_mode:
             self._name_edit.setText(existing_option.name)
-            idx = self._type_combo.findText(existing_option.type)
-            if idx >= 0:
-                self._type_combo.setCurrentIndex(idx)
             self._desc_edit.setText(existing_option.description or "")
-            if existing_option.type == "bool":
-                if bool(existing_option.default):
-                    self._bool_true.setChecked(True)
-                else:
-                    self._bool_false.setChecked(True)
+            if bool(existing_option.default):
+                self._bool_true.setChecked(True)
             else:
-                self._default_edit.setText(str(existing_option.default))
+                self._bool_false.setChecked(True)
         else:
             self._bool_false.setChecked(True)
-
-        self._on_type_changed(self._type_combo.currentText())
 
     def get_option(self) -> BotOptionModel:
         assert self._result is not None
         return self._result
-
-    def _on_type_changed(self, type_str: str) -> None:
-        if type_str == "bool":
-            self._default_stack.setCurrentIndex(0)
-        else:
-            self._default_stack.setCurrentIndex(1)
-            self._default_edit.setPlaceholderText(self._TYPE_DEFAULTS.get(type_str, ""))
 
     def _on_ok(self) -> None:
         name = self._name_edit.text().strip()
@@ -159,36 +127,13 @@ class _AddOptionDialog(QDialog):
         if name in self._existing_names:
             self._show_error(f"An option named '{name}' already exists.")
             return
-        type_str = self._type_combo.currentText()
-        try:
-            if type_str == "bool":
-                default = self._bool_true.isChecked()
-            else:
-                default = self._parse_default(type_str, self._default_edit.text().strip())
-        except ValueError as exc:
-            self._show_error(str(exc))
-            return
         self._result = BotOptionModel(
             name=name,
-            type=type_str,
-            default=default,
+            type="bool",
+            default=self._bool_true.isChecked(),
             description=self._desc_edit.text().strip() or None,
         )
         self.accept()
-
-    @staticmethod
-    def _parse_default(type_str: str, text: str):
-        if type_str == "int":
-            try:
-                return int(text) if text else 0
-            except ValueError as err:
-                raise ValueError("Default must be an integer.") from err
-        if type_str == "float":
-            try:
-                return float(text) if text else 0.0
-            except ValueError as err:
-                raise ValueError("Default must be a number.") from err
-        return text
 
     def _show_error(self, msg: str) -> None:
         self._err_lbl.setText(msg)
@@ -276,49 +221,41 @@ class OptionsSection(SidebarSection):
                     for req in spec.required_bot_options:
                         required_names.add(req.name)
 
-        _SYSTEM_TOOLTIP = "This option is required by one or more nodes and cannot be edited or deleted."
-
         self._no_options_lbl.hide()
         for opt in options:
-            inner, widget = _build_option_row(opt)
+            inner, widget, desc_lbl = _build_option_parts(opt)
             self._connect_option_widget(widget, opt)
 
             is_system = opt.name in required_names
 
-            edit_btn = QPushButton("Edit")
             if is_system:
-                edit_btn.setEnabled(False)
-                edit_btn.setToolTip(_SYSTEM_TOOLTIP)
+                if desc_lbl is not None:
+                    inner.layout().addWidget(desc_lbl)
+                outer = inner
             else:
+                edit_btn = QPushButton("Edit")
                 edit_btn.setToolTip(f"Edit option '{opt.name}'")
-            edit_btn.clicked.connect(lambda _checked, name=opt.name: self._on_edit_option(name))
+                edit_btn.clicked.connect(lambda _checked, name=opt.name: self._on_edit_option(name))
 
-            del_btn = QPushButton("Delete")
-            if is_system:
-                del_btn.setEnabled(False)
-                del_btn.setToolTip(_SYSTEM_TOOLTIP)
-            else:
+                del_btn = QPushButton("Delete")
                 del_btn.setToolTip(f"Remove option '{opt.name}'")
-            del_btn.clicked.connect(lambda _checked, name=opt.name: self._on_delete_option(name))
+                del_btn.clicked.connect(lambda _checked, name=opt.name: self._on_delete_option(name))
 
-            outer = QWidget()
-            outer_layout = QHBoxLayout(outer)
-            outer_layout.setContentsMargins(0, 0, 0, 0)
-            outer_layout.setSpacing(4)
-            outer_layout.addWidget(inner, 1)
-            outer_layout.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignBottom)
-            outer_layout.addWidget(del_btn, 0, Qt.AlignmentFlag.AlignBottom)
-
-            # Set visibility AFTER parenting — calling setVisible on a parentless
-            # widget makes Qt show it as a top-level window (causes a visible flash).
-            edit_btn.setVisible(self._editable)
-            del_btn.setVisible(self._editable)
+                # Buttons are injected into the value row so they sit on the same
+                # horizontal line as the value widget, not beside the description text.
+                # Set visibility AFTER parenting — calling setVisible on a parentless
+                # widget makes Qt show it as a top-level window (causes a visible flash).
+                outer = _build_option_row_with_buttons(inner, widget, edit_btn, del_btn)
+                if desc_lbl is not None:
+                    inner.layout().addWidget(desc_lbl)
+                edit_btn.setVisible(self._editable)
+                del_btn.setVisible(self._editable)
+                self._edit_btns.append(edit_btn)
+                self._delete_btns.append(del_btn)
 
             self._options_layout.addWidget(outer)
             self._option_rows.append(outer)
             self._option_widgets[opt.name] = widget
-            self._edit_btns.append(edit_btn)
-            self._delete_btns.append(del_btn)
 
     def _on_add_option(self) -> None:
         if self._config is None:
@@ -391,6 +328,17 @@ class OptionsSection(SidebarSection):
 
 def _build_option_row(opt) -> tuple[QWidget, QWidget]:
     """Return (container_widget, input_widget) for a single BotOptionModel."""
+    row, widget, _desc = _build_option_parts(opt)
+    return row, widget
+
+
+def _build_option_parts(opt) -> tuple[QWidget, QWidget, QLabel | None]:
+    """Return (container_widget, input_widget, description_label) for a BotOptionModel.
+
+    The container holds the label and value widget only (no description). The
+    description label is returned separately so callers can place it after
+    injecting buttons into the value row.
+    """
     row = QWidget()
     layout = QVBoxLayout(row)
     layout.setContentsMargins(0, 0, 0, 0)
@@ -430,10 +378,44 @@ def _build_option_row(opt) -> tuple[QWidget, QWidget]:
             widget.setToolTip(tooltip)
         layout.addWidget(widget)
 
+    desc_lbl: QLabel | None = None
     if opt.description:
         desc_lbl = QLabel(opt.description)
         desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9px;")
         desc_lbl.setWordWrap(True)
-        layout.addWidget(desc_lbl)
 
-    return row, widget
+    return row, widget, desc_lbl
+
+
+def _build_option_row_with_buttons(
+    inner: QWidget,
+    value_widget: QWidget,
+    edit_btn: QPushButton,
+    del_btn: QPushButton,
+) -> QWidget:
+    """Wrap *inner* so Edit/Delete sit on the same row as the value widget.
+
+    *inner* already contains the label and value widget stacked vertically
+    (produced by ``_build_option_parts``).  We pull the value widget out of
+    that container, replace it with an HBox (value + buttons), then re-attach
+    the description label (if any) below.
+    """
+    inner_layout = inner.layout()
+
+    # Find and remove the value widget from inner's layout so we can re-host it.
+    value_index = inner_layout.indexOf(value_widget)
+    inner_layout.removeWidget(value_widget)
+    value_widget.setParent(None)  # type: ignore[arg-type]
+
+    # Build the replacement row: value widget + Edit + Delete.
+    value_row = QWidget()
+    value_row_layout = QHBoxLayout(value_row)
+    value_row_layout.setContentsMargins(0, 0, 0, 0)
+    value_row_layout.setSpacing(4)
+    value_row_layout.addWidget(value_widget, 1)
+    value_row_layout.addWidget(edit_btn, 0)
+    value_row_layout.addWidget(del_btn, 0)
+
+    inner_layout.insertWidget(value_index, value_row)
+
+    return inner
