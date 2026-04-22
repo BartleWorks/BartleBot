@@ -160,8 +160,8 @@ class MainWindow(QMainWindow):
             lambda: self.right_sidebar.setVisible(not self.right_sidebar.isVisible())
         )
 
-        # Wire wiki import from handle_combat node panel → bot info drops list
-        self.bot_canvas.param_panel.wiki_import_completed.connect(self.left_sidebar.bot_info.add_drops)
+        # Wire wiki import from handle_combat node panel → possible drops list
+        self.bot_canvas.param_panel.wiki_import_completed.connect(self.left_sidebar.possible_drops.add_drops)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # Wire sidebar tab switching from canvas
