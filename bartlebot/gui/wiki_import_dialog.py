@@ -25,8 +25,11 @@ logger = logging.getLogger(__name__)
 _WIKI_HOST = "wiki.wizard101central.com"
 _WIKI_PREFIX = f"https://{_WIKI_HOST}/wiki/"
 
-# Wiki namespaces that represent obtainable in-game items
+# Wiki namespaces that represent obtainable in-game items.
+# "Item" covers most gear on Wizard101 Central (hats, robes, boots, athames, rings, wands…).
+# "Jewel" covers socket jewels. "House" covers housing items and plantable seeds.
 _ITEM_NAMESPACES = {
+    "Item",
     "Hat",
     "Robe",
     "Boot",
@@ -38,7 +41,9 @@ _ITEM_NAMESPACES = {
     "Deck",
     "Pet",
     "Mount",
+    "House",
     "Housing",
+    "Jewel",
     "Reagent",
     "Snack",
     "TreasureCard",
@@ -66,19 +71,10 @@ class _FetchWorker(QThread):
 
     def run(self) -> None:
         try:
-            import requests
             from bs4 import BeautifulSoup  # noqa: F401 — confirm dep available
+            from curl_cffi import requests as cf_requests
 
-            headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/124.0.0.0 Safari/537.36"
-                ),
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                "Accept-Language": "en-US,en;q=0.5",
-            }
-            resp = requests.get(self._url, timeout=15, headers=headers)
+            resp = cf_requests.get(self._url, timeout=15, impersonate="chrome124")
             resp.raise_for_status()
             drops = _parse_drops(resp.text)
             self.finished.emit(drops)
@@ -110,38 +106,65 @@ def _is_item_link(href: str) -> bool:
     return ns in _ITEM_NAMESPACES
 
 
-def _parse_drops(html: str) -> dict[str, list[str]]:
-    """Parse a wiki creature page; return drops grouped by nearest heading.
+def _text_before_first_link(tag) -> str:
+    """Return the text content of *tag* up to (not including) its first <a> child."""
+    if tag is None:
+        return ""
+    from bs4 import NavigableString
 
-    Walks the MediaWiki content area collecting item links (detected by
-    wiki namespace prefix) and groups them under the nearest preceding heading.
-    Headings outside the Drops section that precede any items are kept;
-    the caller's checklist lets the user filter unwanted groups.
+    text = ""
+    for child in tag.children:
+        if hasattr(child, "name") and child.name == "a":
+            break
+        text += str(child) if isinstance(child, NavigableString) else child.get_text()
+    return text.strip()
+
+
+def _parse_drops(html: str) -> dict[str, list[str]]:
+    """Parse a wiki creature page; return drops grouped by category.
+
+    Tries the Wizard101 Central ``div.drop-category`` template first (where the
+    category label sits in the next-sibling of the *preceding* drop-category div).
+    Falls back to grouping items under the nearest preceding h2/h3/h4 heading for
+    other wiki page formats.
     """
     from bs4 import BeautifulSoup, NavigableString, Tag
 
     soup = BeautifulSoup(html, "html.parser")
     content = soup.find("div", id="mw-content-text") or soup
-
     result: dict[str, list[str]] = {}
+
+    # --- Primary: Wizard101 Central drop-category template ---
+    drop_divs = content.find_all("div", class_="drop-category")
+    if drop_divs:
+        for i, div in enumerate(drop_divs):
+            # The category label is the text-before-first-link in the next sibling
+            # of the *previous* drop-category div (offset-by-one pattern in the wiki template).
+            # For the first div use its own previous sibling as the label source.
+            label_source = drop_divs[i - 1].find_next_sibling() if i > 0 else div.find_previous_sibling()
+            cat_name = _text_before_first_link(label_source) or "Other"
+
+            for a in div.find_all("a", href=True):
+                name = a.get_text(strip=True)
+                if name and _is_item_link(a.get("href", "")):
+                    bucket = result.setdefault(cat_name, [])
+                    if name not in bucket:
+                        bucket.append(name)
+
+        return {k: v for k, v in result.items() if v}
+
+    # --- Fallback: heading-based traversal ---
     current_category = "Other"
-
     for elem in content.descendants:
-        if isinstance(elem, NavigableString):
+        if isinstance(elem, NavigableString) or not isinstance(elem, Tag):
             continue
-        if not isinstance(elem, Tag):
-            continue
-
         if elem.name in ("h2", "h3", "h4", "h5"):
-            text = elem.get_text(" ", strip=True)
-            # Strip MediaWiki edit-section links
-            text = text.replace("[edit]", "").replace("[edit source]", "").strip()
+            text = elem.get_text(" ", strip=True).replace("[edit]", "").replace("[edit source]", "").strip()
             if text:
                 current_category = text
         elif elem.name == "a":
-            href = elem.get("href", "")
             name = elem.get_text(strip=True)
-            if name and _is_item_link(href):
+            if name and _is_item_link(elem.get("href", "")):
                 bucket = result.setdefault(current_category, [])
                 if name not in bucket:
                     bucket.append(name)

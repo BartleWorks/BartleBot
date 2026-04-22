@@ -9,7 +9,100 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Alchemical reagents"
+    "Alchemical Crystals",
+    "Alchemical Extract",
+    "Alchemical Salts",
+    "Alligator Pear Tree",
+    "Ancient Scroll",
+    "Angora Bunny Ears",
+    "Antheneum Delight",
+    "Antique Coins",
+    "Aztecan  Hot Chocolate",
+    "Baby Carrots",
+    "BBQ Drumstick",
+    "Beast Wellington",
+    "Black Pearl",
+    "Blood Moss",
+    "Blue Huckleberries",
+    "Brain Jar",
+    "Brass",
+    "Bread Fruit Fruit",
+    "Bronze Gear",
+    "Cherry Pie",
+    "Cobalt",
+    "Crab Alley Chaise",
+    "Daybreaker",
+    "Deadly Ninja Fig",
+    "Decimatoes",
+    "Desparagus (Seed)",
+    "Discord Grape Jelly",
+    "Dragonspyre Soldier Cleaver",
+    "Dragonspyre Soldier's Helm",
+    "Dragonspyre Vanguard's Helm",
+    "Drumstick",
+    "Ectoplasm",
+    "Evil Magma Peas",
+    "Eye Candy",
+    "Feathered Tabby",
+    "Fern Jelly",
+    "Fiery Boom Shroom",
+    "Fish",
+    "Fish on a Vine",
+    "Ginormous Apple",
+    "Glowing Taffy",
+    "Hot Cross Buns",
+    "Lustrous Blocking Citrine +14",
+    "Maelstrom Snap Dragon",
+    "Mystic Pizza",
+    "Nickel",
+    "Nightbringer",
+    "Pink Huckleberries",
+    "Pizza",
+    "Polished Resilient Opal +5%",
+    "Prickly Bear Cactus",
+    "Purple Grapes of Wrath",
+    "Purple Snow Apples",
+    "Queen Crape Myrtle",
+    "Red Bell Pepper",
+    "Roasted Drumstick",
+    "Rock and Roll Candy",
+    "Rye Bread Fruit Bush",
+    "Satyr Chow",
+    "Saw Palmetto",
+    "Scales",
+    "Soldier's Balanced Helm",
+    "Soldier's Deadly Helm",
+    "Soldier's Deadly Longsword",
+    "Soldier's Fiery Blade",
+    "Soldier's Fiery Helm",
+    "Soldier's Icy Battle Axe",
+    "Soldier's Icy Helm",
+    "Soldier's Mythic Helm",
+    "Soldier's Shocking Helm",
+    "Soldier's Vibrant Helm",
+    "Soldier's Vibrant Saber",
+    "Spider Silk",
+    "Spring",
+    "Sprinkle Cupcake",
+    "Sugar Khrystal",
+    "Tin",
+    "Trumpet Vine",
+    "Vanguard's Balanced Helm",
+    "Vanguard's Deadly Helm",
+    "Vanguard's Fiery Helm",
+    "Vanguard's Icy Helm",
+    "Vanguard's Mythic Helm",
+    "Vanguard's Shocking Helm",
+    "Vanguard's Vibrant Helm",
+    "Veggie Juice",
+    "Watermelon Slice",
+    "WC Catacombs Combat Theme",
+    "WC Catacombs Theme",
+    "WC Drains Combat Theme",
+    "WC Drains Theme",
+    "WC Elsewhere Combat Theme",
+    "White Tiger Lily",
+    "Yellow Bell Pepper"
   ],
   "authors": "BartleBot",
   "options": [
@@ -36,7 +129,7 @@
       "label": "Teleport to The Commons",
       "position": {
         "x": 150.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -50,7 +143,7 @@
       "label": "Enter Golem Court",
       "position": {
         "x": 750.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -75,7 +168,7 @@
       "label": "Handle potions",
       "position": {
         "x": 450.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -92,7 +185,7 @@
       "label": "Enter the Drains",
       "position": {
         "x": 1350.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -117,7 +210,7 @@
       "label": "Enter Abandoned House",
       "position": {
         "x": 1650.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
@@ -142,7 +235,7 @@
       "label": "Trigger first dialogue",
       "position": {
         "x": 1950.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -161,7 +254,7 @@
       "label": "Defeat first set of mobs",
       "position": {
         "x": 2250.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -173,7 +266,7 @@
       "label": "Trigger second dialogue",
       "position": {
         "x": 2550.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -192,7 +285,7 @@
       "label": "Defeat second set of mobs",
       "position": {
         "x": 2850.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -204,7 +297,7 @@
       "label": "Talk to Belgrim SparklePants",
       "position": {
         "x": 3750.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -231,7 +324,7 @@
       "label": "Enter Abandoned Backyard",
       "position": {
         "x": 4050.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -256,7 +349,7 @@
       "label": "Defeat King Detritus",
       "position": {
         "x": 4950.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "enemy": "CC_Trash_Boss_A_01",
@@ -273,7 +366,7 @@
       "label": "Trigger boss dialogue",
       "position": {
         "x": 4350.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubBackyard",
@@ -292,7 +385,7 @@
       "label": "Dismiss dialogue",
       "position": {
         "x": 3150.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -304,7 +397,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 1050.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -316,7 +409,7 @@
       "label": "Wait for boss dialogue",
       "position": {
         "x": 4650.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {},
       "option_overrides": {},
@@ -328,7 +421,7 @@
       "label": "Quicksell",
       "position": {
         "x": 5250.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "keep_list": [
