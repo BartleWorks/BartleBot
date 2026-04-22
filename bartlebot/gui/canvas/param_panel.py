@@ -660,6 +660,9 @@ class _ParamPanel(QWidget):
     # Emitted when the user changes source or dest via the dropdowns.
     # Args: old_source, old_when (str|None), old_dest, new_source, new_dest
     edge_endpoints_changed = pyqtSignal(str, object, str, str, str)
+    # Emitted when the user completes a wiki import from the handle_combat node panel.
+    # Carries the list of selected item name strings to be added to the bot's drops.
+    wiki_import_completed = pyqtSignal(list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -782,6 +785,19 @@ class _ParamPanel(QWidget):
         self._record_row.setVisible(False)
         self._record_btn.clicked.connect(self._on_record_clicked)
 
+        # Wiki import row — shown only for handle_combat nodes
+        self._wiki_import_row = QWidget()
+        _wi_layout = QHBoxLayout(self._wiki_import_row)
+        _wi_layout.setContentsMargins(6, 0, 6, 4)
+        _wi_layout.setSpacing(6)
+        self._wiki_import_btn = QPushButton("Import drops from wiki…")
+        self._wiki_import_btn.setToolTip(
+            "Fetch drop data from a Wizard101 wiki creature page and add selected items to the bot's drop list."
+        )
+        _wi_layout.addWidget(self._wiki_import_btn)
+        self._wiki_import_row.setVisible(False)
+        self._wiki_import_btn.clicked.connect(self._on_wiki_import)
+
         # Notes section — freeform per-node annotation
         self._notes_section = QWidget()
         _notes_vbox = QVBoxLayout(self._notes_section)
@@ -806,6 +822,7 @@ class _ParamPanel(QWidget):
         node_vbox.addWidget(node_w)
         node_vbox.addWidget(self._record_row)
         node_vbox.addWidget(scroll, 1)
+        node_vbox.addWidget(self._wiki_import_row)
         node_vbox.addWidget(self._overrides_section)
         node_vbox.addWidget(self._returns_section)
         node_vbox.addWidget(self._notes_section)
@@ -884,6 +901,7 @@ class _ParamPanel(QWidget):
         self._notes_edit.blockSignals(False)
         self._suppress = False
         self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES)
+        self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
 
     def show_transition(
@@ -967,6 +985,7 @@ class _ParamPanel(QWidget):
         self._rebuild_overrides(self._state)
         self._rebuild_returns(node_type)
         self._record_row.setVisible(node_type in recording.RECORDABLE_NODES)
+        self._wiki_import_row.setVisible(node_type == "handle_combat")
         self.properties_changed.emit()
 
     def _on_param_form_changed(self) -> None:
@@ -1047,6 +1066,19 @@ class _ParamPanel(QWidget):
         self._transition.flags = flags
         self._transition.flag_op = flag_op
         self.properties_changed.emit()
+
+    # ------------------------------------------------------------------
+    # Wiki import
+    # ------------------------------------------------------------------
+
+    def _on_wiki_import(self) -> None:
+        from bartlebot.gui.wiki_import_dialog import WikiImportDialog
+
+        dialog = WikiImportDialog(parent=self.window())
+        if dialog.exec():
+            items = dialog.selected_items()
+            if items:
+                self.wiki_import_completed.emit(items)
 
     # ------------------------------------------------------------------
     # Recording

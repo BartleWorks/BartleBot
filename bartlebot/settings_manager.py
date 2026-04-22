@@ -80,6 +80,7 @@ _DEFAULTS: dict[str, Any] = {
         "minimap_visible": True,
         "auto_layout_on_load": True,
         "lod_compact_threshold": 0.6,
+        "bot_library_path": "bots",
     },
     "accounts": [],
     "launch_profiles": [],
