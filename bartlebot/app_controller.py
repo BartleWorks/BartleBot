@@ -813,6 +813,7 @@ class AppController(QObject):
             self._window.left_sidebar.set_config(config)
             self._window.bot_canvas.enter_edit_mode()
             self._window.set_save_enabled(True)
+            self._window.set_close_enabled(True)
             self._window.set_start_enabled(self._start_enabled())
             # Mark dirty so the user is reminded to save and autosave continues.
             self._has_unsaved_changes = True
