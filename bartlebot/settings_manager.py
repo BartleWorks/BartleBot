@@ -281,8 +281,9 @@ class SettingsManager:
 
     def add_recent_bot_file(self, path: str) -> list[str]:
         """Prepend path to recent_bot_files, deduplicating and capping at 8. Returns updated list."""
-        recent = [p for p in self.recent_bot_files if p != path]
-        recent.insert(0, path)
+        norm = str(Path(path))
+        recent = [p for p in self.recent_bot_files if str(Path(p)) != norm]
+        recent.insert(0, norm)
         self.set("recent_bot_files", value=recent[:8])
         self.save()
         return list(self.get("recent_bot_files", default=[]))
