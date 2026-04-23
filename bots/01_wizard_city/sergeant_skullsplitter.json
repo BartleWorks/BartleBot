@@ -122,7 +122,7 @@
       "label": "Teleport to the Commons",
       "position": {
         "x": 150.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -136,7 +136,7 @@
       "label": "Enter Shopping District",
       "position": {
         "x": 750.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -161,7 +161,7 @@
       "label": "Enter Olde Town",
       "position": {
         "x": 1050.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -186,7 +186,7 @@
       "label": "Enter Triton Avenue",
       "position": {
         "x": 1350.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -211,7 +211,7 @@
       "label": "Enter Skull Fort",
       "position": {
         "x": 1650.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
@@ -236,7 +236,7 @@
       "label": "Defeat Sergeant Skullsplitter",
       "position": {
         "x": 1950.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "enemy": "Skeleton-Gold-WCBoss-L03",
@@ -253,7 +253,7 @@
       "label": "Exit Skull Fort",
       "position": {
         "x": 2250.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
@@ -278,7 +278,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 2550.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {},
       "option_overrides": {},
@@ -290,7 +290,7 @@
       "label": "Handle potions",
       "position": {
         "x": 450.0,
-        "y": 21.0
+        "y": 28.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -458,7 +458,7 @@
         "state_1",
         "state_4"
       ],
-      "color": 1
+      "color": 3
     },
     {
       "id": "af18e22e",
@@ -469,7 +469,7 @@
         "state_5",
         "state_7"
       ],
-      "color": 5
+      "color": 1
     }
   ]
 }
