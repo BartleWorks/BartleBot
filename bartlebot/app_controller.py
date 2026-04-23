@@ -19,7 +19,10 @@ from bartlebot.credentials import CredentialStore
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
+from bartlebot.nodes.node_helpers import click_by_path, is_enabled_by_path, poll_until
+from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH, CROWNS_SHOP_PATH
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
+from bartlebot.nodes.timing import TRIGGER_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -661,6 +664,26 @@ class AppController(QObject):
             return
 
         logger.info("Client '%s' recovered and in-game, slot %d restored", display_name, orig_pos)
+
+        # Dismiss the crowns shop if it opened automatically on login.
+        _VK_ESCAPE = 0x1B
+        for _ in range(5):
+            if not await is_enabled_by_path(new_client, CROWNS_SHOP_PATH):
+                break
+            hwnd = new_client.window_handle
+            ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_ESCAPE, 0)
+            await asyncio.sleep(0.05)
+            ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_ESCAPE, 0)
+            if not await poll_until(
+                lambda: is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH),
+                timeout=TRIGGER_TIMEOUT,
+            ):
+                continue
+            await click_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH)
+            await poll_until(
+                lambda: not is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH),
+                timeout=TRIGGER_TIMEOUT,
+            )
 
         # Restore the slot so the next _client_loop rebuild puts the client back in order.
         # machine.clients is kept in sync by _client_loop automatically.

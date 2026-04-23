@@ -141,6 +141,9 @@ def realm_button_path(row: int) -> list[str]:
     ]
 
 
+# Crowns shop modal (sometimes opens automatically on login)
+CROWNS_SHOP_PATH = ["WorldView", "PermanentShopModalWindow", "permanentShop"]
+
 # Backpack / Quicksell UI
 BACKPACK_CLOSE_BUTTON_PATH = ["WorldView", "DeckConfiguration", "Close_Button"]
 
