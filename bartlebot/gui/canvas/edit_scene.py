@@ -384,10 +384,12 @@ class EditScene(QGraphicsScene):
             return
         self._pre_edit("Create Node")
         state_id = _unique_id([s.id for s in self._config.states])
+        default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
         state = StateModel(
             id=state_id,
             node_type=node_type,
             position={"x": pos.x() + NODE_W / 2, "y": pos.y() + NODE_H / 2},
+            params=default_params,
         )
         self._config.states.append(state)
         returns = _node_returns(node_type)
@@ -1004,10 +1006,12 @@ class EditScene(QGraphicsScene):
 
         # Create a new state at the midpoint with the chosen type
         new_id = _unique_id([st.id for st in self._config.states])
+        default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
         state = StateModel(
             id=new_id,
             node_type=node_type,
             position={"x": mid.x() + NODE_W / 2, "y": mid.y() + NODE_H / 2},
+            params=default_params,
         )
         self._config.states.append(state)
         returns = _node_returns(node_type)
