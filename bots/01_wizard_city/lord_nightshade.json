@@ -320,7 +320,7 @@
       "label": "Teleport to the Commons",
       "position": {
         "x": 150.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -334,7 +334,7 @@
       "label": "Enter Shopping District",
       "position": {
         "x": 750.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -359,7 +359,7 @@
       "label": "Enter Olde Town",
       "position": {
         "x": 1050.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -384,7 +384,7 @@
       "label": "Enter Triton Avenue",
       "position": {
         "x": 1350.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -409,7 +409,7 @@
       "label": "Enter Haunted Cave",
       "position": {
         "x": 1650.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
@@ -434,7 +434,7 @@
       "label": "Enter Stormdrain Tower",
       "position": {
         "x": 1950.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_HauntedCave",
@@ -459,7 +459,7 @@
       "label": "Defeat Lord Nightshade",
       "position": {
         "x": 2250.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "enemy": "Wraith-WCBoss-L05",
@@ -476,7 +476,7 @@
       "label": "Exit Stormdrain Tower",
       "position": {
         "x": 2550.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
@@ -501,7 +501,7 @@
       "label": "Go to wisp spawns",
       "position": {
         "x": 2850.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_HauntedCave",
@@ -520,7 +520,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 3150.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {},
       "option_overrides": {},
@@ -532,7 +532,7 @@
       "label": "Handle potions",
       "position": {
         "x": 450.0,
-        "y": 7.0
+        "y": 14.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -722,5 +722,31 @@
       "flag_op": "AND"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "5bb110e7",
+      "label": "Go to Haunted Cave",
+      "members": [
+        "state_11",
+        "state_2",
+        "state_3",
+        "state_4",
+        "state_1",
+        "state_5"
+      ],
+      "color": 1
+    },
+    {
+      "id": "f33ebf45",
+      "label": "Defeat Lord Nightshade",
+      "members": [
+        "state_6",
+        "state_8",
+        "state_7",
+        "state_9",
+        "state_10"
+      ],
+      "color": 5
+    }
+  ]
 }

@@ -101,7 +101,7 @@
       "label": "Teleport to the Commons",
       "position": {
         "x": 150.0,
-        "y": 7.0
+        "y": 21.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -115,7 +115,7 @@
       "label": "Enter Shopping District",
       "position": {
         "x": 750.0,
-        "y": 7.0
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -139,8 +139,8 @@
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1050.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -164,8 +164,8 @@
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1350.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -189,8 +189,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Galvanost Tower",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 1650.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
@@ -214,8 +214,8 @@
       "node_type": "handle_combat",
       "label": "Defeat The Harvest Lord",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 1950.0,
+        "y": 21.0
       },
       "params": {
         "enemy": "Scarecrow-WCBoss-L03",
@@ -231,8 +231,8 @@
       "node_type": "enter_zone",
       "label": "Exit Galvanost Tower",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 2250.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T1",
@@ -252,58 +252,31 @@
       "flipped": false
     },
     {
+      "id": "state_11",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2550.0,
+        "y": 21.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
       "id": "state_8",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 450.0,
+        "y": 21.0
       },
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
         "refill_potions": true,
-        "mark_zone": "WizardCity/WC_Streets/WC_Triton"
+        "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_9",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
-      "position": {
-        "x": 1050.0,
-        "y": 7.0
-      },
-      "params": {},
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_10",
-      "node_type": "wait_for_health",
-      "label": "Wait for full health",
-      "position": {
-        "x": 450.0,
-        "y": 7.0
-      },
-      "params": {
-        "threshold": 1.0,
-        "timeout": 120.0
-      },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_11",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 3150.0,
-        "y": 7.0
-      },
-      "params": {},
       "option_overrides": {},
       "flipped": false
     }
@@ -391,78 +364,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_7",
       "dest": "state_11",
       "when": "SUCCESS",
@@ -479,8 +380,48 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
       "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
@@ -493,12 +434,21 @@
       "members": [
         "state_2",
         "state_3",
-        "state_10",
         "state_1",
-        "state_4",
-        "state_9"
+        "state_4"
       ],
       "color": 1
+    },
+    {
+      "id": "6e22c02d",
+      "label": "Defeat The Harvest Lord",
+      "members": [
+        "state_6",
+        "state_5",
+        "state_7",
+        "state_11"
+      ],
+      "color": 5
     }
   ]
 }

@@ -122,7 +122,7 @@
       "label": "Teleport to the Commons",
       "position": {
         "x": 150.0,
-        "y": 7.0
+        "y": 21.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -136,7 +136,7 @@
       "label": "Enter Shopping District",
       "position": {
         "x": 750.0,
-        "y": 7.0
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -160,8 +160,8 @@
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1050.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -185,8 +185,8 @@
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1350.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -208,23 +208,23 @@
     {
       "id": "state_5",
       "node_type": "enter_dungeon",
-      "label": "Enter Galvanost Tower",
+      "label": "Enter Skull Fort",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 1650.0,
+        "y": 21.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
-        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T1",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
         "sigil_xyz": {
-          "x": -36814.59,
-          "y": -7190.39,
-          "z": 44.7
+          "x": 5420.85,
+          "y": -7541.99,
+          "z": 45.28
         },
         "reset_xyz": {
-          "x": -37784.37,
-          "y": -7045.31,
-          "z": 63.34
+          "x": 5209.13,
+          "y": -7059.6,
+          "z": 59.12
         }
       },
       "option_overrides": {},
@@ -233,13 +233,13 @@
     {
       "id": "state_6",
       "node_type": "handle_combat",
-      "label": "Defeat The Harvest Lord",
+      "label": "Defeat Sergeant Skullsplitter",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 1950.0,
+        "y": 21.0
       },
       "params": {
-        "enemy": "Scarecrow-WCBoss-L03",
+        "enemy": "Skeleton-Gold-WCBoss-L03",
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
@@ -250,68 +250,24 @@
     {
       "id": "state_7",
       "node_type": "enter_zone",
-      "label": "Exit Galvanost Tower",
+      "label": "Exit Skull Fort",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 2250.0,
+        "y": 21.0
       },
       "params": {
-        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T1",
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
         "to_zone": "WizardCity/WC_Streets/WC_Triton",
         "xyz": {
-          "x": 15.55,
-          "y": -1207.74,
-          "z": 1.82
+          "x": 20.79,
+          "y": -1219.98,
+          "z": 1.62
         },
         "reset_xyz": {
-          "x": 11.55,
-          "y": -996.55,
-          "z": 1.81
+          "x": 18.28,
+          "y": -1021.99,
+          "z": 1.61
         }
-      },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_8",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 1950.0,
-        "y": 7.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": "WizardCity/WC_Streets/WC_Triton"
-      },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_9",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
-      "position": {
-        "x": 1050.0,
-        "y": 7.0
-      },
-      "params": {},
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_10",
-      "node_type": "wait_for_health",
-      "label": "Wait for full health",
-      "position": {
-        "x": 450.0,
-        "y": 7.0
-      },
-      "params": {
-        "threshold": 1.0,
-        "timeout": 120.0
       },
       "option_overrides": {},
       "flipped": false
@@ -321,10 +277,27 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 2550.0,
+        "y": 21.0
       },
       "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 450.0,
+        "y": 21.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
       "option_overrides": {},
       "flipped": false
     }
@@ -412,78 +385,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_7",
       "dest": "state_11",
       "when": "SUCCESS",
@@ -500,8 +401,48 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
+      "source": "state_1",
       "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
@@ -514,12 +455,21 @@
       "members": [
         "state_2",
         "state_3",
-        "state_10",
         "state_1",
-        "state_4",
-        "state_9"
+        "state_4"
       ],
       "color": 1
+    },
+    {
+      "id": "af18e22e",
+      "label": "Defeat Sergeant Skullsplitter",
+      "members": [
+        "state_11",
+        "state_6",
+        "state_5",
+        "state_7"
+      ],
+      "color": 5
     }
   ]
 }

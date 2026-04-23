@@ -204,7 +204,7 @@ class _BotCard(QWidget):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        self.open_requested.emit(str(self._meta.path))
+        self.open_requested.emit(str(self._meta.path.resolve()))
         super().mousePressEvent(event)
 
 
