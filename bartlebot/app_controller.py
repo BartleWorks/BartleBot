@@ -589,6 +589,7 @@ class AppController(QObject):
         implying the character is now in a game zone).
         """
         import ctypes  # noqa: PLC0415
+        import ctypes.wintypes  # noqa: PLC0415
 
         from bartlebot.launcher.launch_profile import launch_account  # noqa: PLC0415
 
@@ -608,9 +609,21 @@ class AppController(QObject):
         display_name = CredentialStore.display_name(username, alias)
         expected_title = f"[{display_name}] Wizard101"
 
+        # Read the crashed window's resolution before relaunching so the new instance
+        # opens at the same size. Falls back to None (settings default) if the window
+        # is already gone.
+        crashed_resolution: tuple[int, int] | None = None
+        old_hwnd = ctypes.windll.user32.FindWindowW(None, expected_title)
+        if old_hwnd:
+            rect = ctypes.wintypes.RECT()
+            ctypes.windll.user32.GetClientRect(old_hwnd, ctypes.byref(rect))
+            w_old, h_old = rect.right - rect.left, rect.bottom - rect.top
+            if w_old > 0 and h_old > 0:
+                crashed_resolution = (w_old, h_old)
+
         logger.info("Relaunching '%s' for recovery at slot %d", display_name, orig_pos)
         try:
-            await launch_account(username, password, display_name)
+            await launch_account(username, password, display_name, resolution=crashed_resolution)
         except Exception:
             logger.exception("Failed to launch account '%s' — stopping bot", display_name)
             machine.stop()
