@@ -102,6 +102,7 @@ class _BotMeta:
     authors: str
     drops: list[str]
     start_location: str
+    version: str
     path: Path
 
 
@@ -115,6 +116,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             authors=data.get("authors") or "",
             drops=data.get("drops") or [],
             start_location=data.get("start_location") or "",
+            version=data.get("version") or "",
             path=path,
         )
     except Exception:
@@ -147,12 +149,29 @@ class _BotCard(QWidget):
         layout.setContentsMargins(10, 7, 10, 7)
         layout.setSpacing(2)
 
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(6)
+
         name_lbl = QLabel(self._meta.name or "(untitled)")
         f = name_lbl.font()
         f.setBold(True)
         name_lbl.setFont(f)
         name_lbl.setStyleSheet(f"color: {THEME.text};")
-        layout.addWidget(name_lbl)
+        header.addWidget(name_lbl, 0)
+
+        if self._meta.version:
+            version_pill = QLabel(f"v{self._meta.version}")
+            version_pill.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            version_pill.setStyleSheet(
+                f"background: {THEME.accent}; color: {THEME.pill_text};"
+                f"font-size: 9px; font-weight: bold; border-radius: 7px; padding: 1px 6px;"
+            )
+            version_pill.setFixedHeight(14)
+            header.addWidget(version_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        header.addStretch()
+        layout.addLayout(header)
 
         if self._meta.description:
             desc = self._meta.description
