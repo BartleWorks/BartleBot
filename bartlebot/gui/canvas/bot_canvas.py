@@ -102,6 +102,7 @@ class _BotMeta:
     authors: str
     drops: list[str]
     start_location: str
+    version: str
     path: Path
 
 
@@ -115,6 +116,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             authors=data.get("authors") or "",
             drops=data.get("drops") or [],
             start_location=data.get("start_location") or "",
+            version=data.get("version") or "",
             path=path,
         )
     except Exception:
@@ -147,12 +149,29 @@ class _BotCard(QWidget):
         layout.setContentsMargins(10, 7, 10, 7)
         layout.setSpacing(2)
 
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(6)
+
         name_lbl = QLabel(self._meta.name or "(untitled)")
         f = name_lbl.font()
         f.setBold(True)
         name_lbl.setFont(f)
-        name_lbl.setStyleSheet(f"color: {THEME.text};")
-        layout.addWidget(name_lbl)
+        name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
+        header.addWidget(name_lbl, 0)
+
+        if self._meta.version:
+            version_pill = QLabel(f"v{self._meta.version}")
+            version_pill.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            version_pill.setStyleSheet(
+                f"background: {THEME.accent}; color: {THEME.pill_text};"
+                f"font-size: 9px; font-weight: bold; border-radius: 7px; padding: 1px 6px;"
+            )
+            version_pill.setFixedHeight(14)
+            header.addWidget(version_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        header.addStretch()
+        layout.addLayout(header)
 
         if self._meta.description:
             desc = self._meta.description
@@ -160,7 +179,7 @@ class _BotCard(QWidget):
                 desc = desc[:120] + "…"
             desc_lbl = QLabel(desc)
             desc_lbl.setWordWrap(True)
-            desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
             layout.addWidget(desc_lbl)
 
         parts: list[str] = []
@@ -171,7 +190,7 @@ class _BotCard(QWidget):
             parts.append(f"{n} drop{'s' if n != 1 else ''}")
         if parts:
             meta_lbl = QLabel("  ·  ".join(parts))
-            meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px;")
+            meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px; background: transparent;")
             layout.addWidget(meta_lbl)
 
         if self._matched_drops:
@@ -181,7 +200,7 @@ class _BotCard(QWidget):
                 text += f" +{len(self._matched_drops) - 3} more"
             match_lbl = QLabel(f"Drops: {text}")
             match_lbl.setWordWrap(True)
-            match_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 10px;")
+            match_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 10px; background: transparent;")
             layout.addWidget(match_lbl)
 
     def _set_normal_style(self) -> None:
@@ -204,7 +223,7 @@ class _BotCard(QWidget):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        self.open_requested.emit(str(self._meta.path))
+        self.open_requested.emit(str(self._meta.path.resolve()))
         super().mousePressEvent(event)
 
 
@@ -290,7 +309,10 @@ class _BotLibraryPanel(QWidget):
         self._cards_area.setWidgetResizable(True)
         self._cards_area.setFrameShape(QFrame.Shape.NoFrame)
         self._cards_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._cards_area.setStyleSheet(f"background: {THEME.bg};")
         self._cards_container = QWidget()
+        self._cards_container.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._cards_container.setStyleSheet(f"background: {THEME.bg};")
         self._cards_layout = QVBoxLayout(self._cards_container)
         self._cards_layout.setContentsMargins(10, 10, 10, 10)
         self._cards_layout.setSpacing(6)
@@ -383,11 +405,14 @@ class _BotLibraryPanel(QWidget):
 
     def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
         layout = self._cards_layout
-        # Remove all widgets, keep the trailing stretch (last item)
+        # Remove all widgets, keep the trailing stretch (last item).
+        # hide() is called before deleteLater() so the widget disappears immediately
+        # rather than remaining visible until the next event loop cycle.
         while layout.count() > 1:
             item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if w := item.widget():
+                w.hide()
+                w.deleteLater()
 
         if not metas:
             hint = QLabel("No bots found." if self._cat_list.count() else "No bots found in bots/ directory.")

@@ -155,9 +155,9 @@ async def run(machine, clients: list, params: dict) -> str:
     mark_location failed; could not reach dorm; navigation step failed; potion shop did not
     open after retries; teleport_to_marked_location failed.
     """
-    health_threshold: float = params["if_health_below"]
-    mana_threshold: float = params["if_mana_below"]
-    refill: bool = params["refill_potions"]
+    health_threshold: float = params.get("if_health_below", 0.5)
+    mana_threshold: float = params.get("if_mana_below", 0.15)
+    refill: bool = params.get("refill_potions", True)
     mark_zone: str = params.get("mark_zone", "") or ""
 
     machine.log(

@@ -1,0 +1,752 @@
+{
+  "name": "Lord Nightshade",
+  "description": "Endlessly defeats Lord Nightshade in Haunted Cave, Wizard City",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [
+    "Adventurer's Robe",
+    "Alphyn",
+    "Ancient Koi",
+    "Ankylosaurus",
+    "Antiquated Knife",
+    "Antiquated Wand",
+    "Antique Deck",
+    "Antique Footguards",
+    "Antique Helm",
+    "Augmented Mantle",
+    "Auroch",
+    "Autumn Wand",
+    "Bat Wings",
+    "Bengal Tiger",
+    "Big Holiday Tree",
+    "Black Cat",
+    "Black Stallion",
+    "Blightshroud",
+    "Blonde Strawberry",
+    "Blood Bat",
+    "Blue Banshee",
+    "Blue Dragon",
+    "Blue Fairy Wings",
+    "Blue Holiday Ornament",
+    "Boo Pumpkin Mask",
+    "Boon Tree",
+    "Boots of Embers",
+    "Boots of Obstruction",
+    "Branded Dagger",
+    "Branded Footguards",
+    "Branded Wand",
+    "Brown Warg",
+    "Bruin Ram",
+    "Bunny Feet",
+    "Bunny Hood",
+    "Bunny Suit",
+    "Camel",
+    "Candle Wand",
+    "Candy Wand",
+    "Canvas Cloak",
+    "Carbonshroud",
+    "Carol of the Bells Theme",
+    "Charged Coat",
+    "Charged Cover",
+    "Charged Kris",
+    "Charged Wand",
+    "Cheese Broccoli",
+    "Chestnut Pony",
+    "Chillcloak",
+    "Chocolate Strawberry",
+    "Christmas Elf",
+    "Cloudburst Helm",
+    "Cloudburst Wraps",
+    "Clover Wand",
+    "Color Light Strand",
+    "Cool Pumpkin Mask",
+    "Corny Wand",
+    "Crokagator",
+    "Cupig",
+    "Cyclops Pumpkin Mask",
+    "Dagger of Repose",
+    "Dark Redwing",
+    "Dark Sprite",
+    "Dark Wood Crate",
+    "Death Trap",
+    "Deck the Halls Theme",
+    "Dulled Athame",
+    "Ectoplasm",
+    "Elven Pendant",
+    "Embershroud",
+    "Enchanted Broom",
+    "Fairy's Athame",
+    "Faithful Dragoness",
+    "Fall Wand",
+    "Fine Dagger",
+    "Fine Jade Ring",
+    "Fire Cat",
+    "Fire Elf",
+    "Fire Shield",
+    "Fireguard Robe",
+    "Floppy-Eared Wand",
+    "Frost Beetle",
+    "Frost Wolf Cloak",
+    "Frostman",
+    "Frozen Pedestal",
+    "Fur-Lined Hood",
+    "Ghost Dragon",
+    "Ghoul",
+    "Gingerbread House",
+    "Gingerbread Wand",
+    "Gold-Stringed Harp",
+    "Golden Goose",
+    "Goldleaf Shoes",
+    "Goofy Pumpkin Mask",
+    "Green Holiday Ornament",
+    "Grey Warg",
+    "Guiding Light",
+    "Gummy Firecat",
+    "Hallowe'en Hat",
+    "Hallowe'en Robe",
+    "Hallowe'en Shoes",
+    "Hallowed Band",
+    "Hallowed Robes",
+    "Happy Holidaisy",
+    "Happy Pumpkin Mask",
+    "Hardened Boots",
+    "Hardened Cap",
+    "Hatchling Wand",
+    "Headdress",
+    "Healer's Vestment",
+    "Heartbow Scepter",
+    "Helm of Nightmares",
+    "Helm of Supremacy",
+    "Helm of Tales",
+    "Hippogriff",
+    "Holiday Fireplace",
+    "Holiday Wreath",
+    "Honed Athame",
+    "Honey Sickle",
+    "Hood of Storms",
+    "Horned Sweeper",
+    "Imp",
+    "Imp Lord's Helm",
+    "Insulated Dirk",
+    "Jacket of Withstanding",
+    "Jaguar",
+    "Jingle Bells Theme",
+    "Keen Eyes",
+    "Kitty Pumpkin Mask",
+    "Large Cypress Tree",
+    "Large Snowflake",
+    "Leather Straps",
+    "Lightning Bats",
+    "Locust Swarm",
+    "Lollipop Wand",
+    "Lord Nightshade (Attack)",
+    "Lord Nightshade's Boots",
+    "Lord Nightshade's Cloak",
+    "Lord Nightshade's Robe",
+    "Lovely Ladybug",
+    "Lovely Leopard",
+    "Low Wooden Table",
+    "Lucky Leprechaun",
+    "Lump of Coal",
+    "Manta Ray",
+    "Maple Moose",
+    "Martyr's Raiment",
+    "Mean Pumpkin Staff",
+    "Midnight Sprite",
+    "Midsummer's Cowl",
+    "Milk and Cookies",
+    "Mint Staff",
+    "Mint Standee",
+    "Mint Swirl",
+    "Moonlight Pony",
+    "Mummy Costume Bodywraps",
+    "Mummy Costume Footwraps",
+    "Mummy Costume Headwraps",
+    "Myth Shield",
+    "Nightflame Pegasus",
+    "Nightmare",
+    "Nightshade's Bones",
+    "Nightshade's Choker",
+    "Nightshade's Cowl",
+    "Nightshade's Hood",
+    "Nightshade's Shoes",
+    "Ninja Pig Hat",
+    "Ninja Pig Robe",
+    "Ninja Pig Shoes",
+    "Novitiate Boots",
+    "Novitiate Hat",
+    "Novitiate Robe",
+    "Nutcracker",
+    "Nutcracker",
+    "Nutcracker Wand",
+    "Orange Fairy Wings",
+    "Ornamental Paper Staff",
+    "Ostrich",
+    "Owl",
+    "Panther",
+    "Pet Egg",
+    "Pilgrim Boots",
+    "Pilgrim Hat",
+    "Pilgrim Robe",
+    "Pirate Pumpkin Mask",
+    "Pixie",
+    "Plain Pumpkin Mask",
+    "Polka Dot Wrapped Gift",
+    "Polka Dot Wrapped Long Gift",
+    "Pot o' Gold Wand",
+    "Prop House 2",
+    "Prop Mountains 2",
+    "Purple Fairy Wings",
+    "Purple Glider",
+    "Reaper's Athame",
+    "Red Holiday Ornament",
+    "Regular Small Fry Aquarium",
+    "Renaissance Wings",
+    "Rescue Rover",
+    "Robe of Embers",
+    "Robe of Horror",
+    "Robe of Savvy",
+    "Robe of the Lifeblood",
+    "Rod of Unity",
+    "Roseate Wand",
+    "Roughspun Robe",
+    "Royal Sofa",
+    "Rugged Seahorse",
+    "Sad Pumpkin Staff",
+    "Santa Boots",
+    "Santa Hat",
+    "Santa Robe",
+    "Sapphyra's Vestment",
+    "Scarab",
+    "Scary Pumpkin Mask",
+    "Scepter of the Shield",
+    "Scholarly Robes",
+    "Sea Turtle",
+    "Senior Novice's Robe",
+    "Seraph Wings",
+    "Shoes of the Troll King",
+    "Silly Pumpkin Staff",
+    "Skyracer Pegasus",
+    "Small Color Light Strand",
+    "Small Snowflake",
+    "Snappy Lobster",
+    "Snow Ram",
+    "Snow Serpent",
+    "Snow Shield",
+    "Snowball",
+    "Snowflake Wrapped Gift",
+    "Snowglobe",
+    "Snowman",
+    "Snowman Wrapped Gift",
+    "Soot Stained Tunic",
+    "Spiral Wrapped Gift",
+    "Spooky Bob",
+    "Spring Egg Wand",
+    "Spritely Seahorse",
+    "Star Staff",
+    "Star Wrapped Gift",
+    "Starlight Pony",
+    "Starshine Pony",
+    "Storm Shield",
+    "Stormcaller's Robe",
+    "Stormforged Boots",
+    "Stormforged Mantle",
+    "Stormrider Hare",
+    "Sturdy Blade",
+    "Sugar Donut",
+    "Sundae (Wizard City)",
+    "Sunshine Pony",
+    "Sweet Staff",
+    "Swift Gryphon",
+    "Swift Shark",
+    "Swiftshadow Wings",
+    "Symmetrical Dirk",
+    "Symmetrical Shoes",
+    "Tawny Ram",
+    "Thunder Snake",
+    "Time of Legend",
+    "To The Commons",
+    "Tough",
+    "Tree Wrapped Gift",
+    "Triceratops",
+    "Troll",
+    "Trollskin Boots",
+    "Trollskin Cloak",
+    "Trollskin Hat",
+    "Tunic of Disturbance",
+    "Turkey Hat",
+    "Valentine Pig",
+    "Vampire Costume Boots",
+    "Vampire Costume Coat",
+    "Vampire Costume Wig",
+    "Veil of Sparks",
+    "Venomous Cowl",
+    "Vestment of Essence",
+    "Vestment of Tremors",
+    "Vrixx's Verdant Cowl",
+    "Wand of Veneration",
+    "Watchtower Boots",
+    "White Mare",
+    "Windrunners",
+    "Witch's Broom",
+    "Wooden Skeleton Key",
+    "Yuletide Lg. Small Fry Aquarium",
+    "Yuletide Spirit",
+    "Yuletide Tall Small Fry Aquarium"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Commons",
+      "position": {
+        "x": 150.0,
+        "y": 14.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 750.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1373.34,
+          "y": -3590.64,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1311.11,
+          "y": -2802.26,
+          "z": -27.99
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 1050.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -6054.32,
+          "y": -3302.17,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5251.57,
+          "y": -3295.22,
+          "z": -29.36
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Triton Avenue",
+      "position": {
+        "x": 1350.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "to_zone": "WizardCity/WC_Streets/WC_Triton",
+        "xyz": {
+          "x": -7423.81,
+          "y": -422.95,
+          "z": -1397.84
+        },
+        "reset_xyz": {
+          "x": -6662.58,
+          "y": -616.32,
+          "z": -1397.84
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Enter Haunted Cave",
+      "position": {
+        "x": 1650.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Triton",
+        "to_zone": "WizardCity/WC_Streets/WC_HauntedCave",
+        "xyz": {
+          "x": -36956.09,
+          "y": 3215.86,
+          "z": 1.23
+        },
+        "reset_xyz": {
+          "x": -36953.13,
+          "y": 2171.75,
+          "z": 1.23
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_dungeon",
+      "label": "Enter Stormdrain Tower",
+      "position": {
+        "x": 1950.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_HauntedCave",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
+        "sigil_xyz": {
+          "x": 9114.01,
+          "y": 11285.26,
+          "z": -133.61
+        },
+        "reset_xyz": {
+          "x": 9733.42,
+          "y": 10985.67,
+          "z": -133.66
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat Lord Nightshade",
+      "position": {
+        "x": 2250.0,
+        "y": 14.0
+      },
+      "params": {
+        "enemy": "Wraith-WCBoss-L05",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_zone",
+      "label": "Exit Stormdrain Tower",
+      "position": {
+        "x": 2550.0,
+        "y": 14.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
+        "to_zone": "WizardCity/WC_Streets/WC_HauntedCave",
+        "xyz": {
+          "x": -1246.19,
+          "y": -4.6,
+          "z": 4.5
+        },
+        "reset_xyz": {
+          "x": -1011.76,
+          "y": 4.42,
+          "z": 4.5
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to wisp spawns",
+      "position": {
+        "x": 2850.0,
+        "y": 14.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_HauntedCave",
+        "xyz": {
+          "x": 10872.15,
+          "y": 5526.99,
+          "z": 30.01
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3150.0,
+        "y": 14.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 450.0,
+        "y": 14.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": [
+    {
+      "id": "5bb110e7",
+      "label": "Go to Haunted Cave",
+      "members": [
+        "state_11",
+        "state_2",
+        "state_3",
+        "state_4",
+        "state_1",
+        "state_5"
+      ],
+      "color": 1
+    },
+    {
+      "id": "f33ebf45",
+      "label": "Defeat Lord Nightshade",
+      "members": [
+        "state_6",
+        "state_8",
+        "state_7",
+        "state_9",
+        "state_10"
+      ],
+      "color": 5
+    }
+  ]
+}

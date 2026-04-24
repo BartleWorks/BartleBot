@@ -271,18 +271,24 @@ class SettingsManager:
 
     @property
     def recent_bot_files(self) -> list[str]:
-        """List of recently opened bot file paths, newest first. Non-existent paths are pruned."""
+        """List of recently opened bot file paths (absolute), newest first. Non-existent paths are pruned."""
         raw: list[str] = list(self.get("recent_bot_files", default=[]))
-        pruned = [p for p in raw if Path(p).exists()]
-        if len(pruned) != len(raw):
-            self.set("recent_bot_files", value=pruned)
+        seen: set[str] = set()
+        resolved: list[str] = []
+        for p in raw:
+            abs_p = str(Path(p).resolve())
+            if Path(abs_p).exists() and abs_p not in seen:
+                seen.add(abs_p)
+                resolved.append(abs_p)
+        if resolved != raw:
+            self.set("recent_bot_files", value=resolved)
             self.save()
-        return pruned
+        return resolved
 
     def add_recent_bot_file(self, path: str) -> list[str]:
         """Prepend path to recent_bot_files, deduplicating and capping at 8. Returns updated list."""
-        norm = str(Path(path))
-        recent = [p for p in self.recent_bot_files if str(Path(p)) != norm]
+        norm = str(Path(path).resolve())
+        recent = [p for p in self.recent_bot_files if p != norm]
         recent.insert(0, norm)
         self.set("recent_bot_files", value=recent[:8])
         self.save()

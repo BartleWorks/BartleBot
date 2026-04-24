@@ -1,0 +1,1050 @@
+{
+  "name": "Biti Nirini",
+  "description": "Endlessly defeats Biti Nirini in Royal Hall, Krokotopia",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_21",
+  "recovery_state": "state_21",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Krokotopia",
+  "drops": [
+    "Ancient Circlet",
+    "Ancient Cloak",
+    "Ancient Sandals",
+    "Balance-Eye Citrine",
+    "Band of the Skies",
+    "Biti Nirini's Citrine Deck",
+    "Biti Nirini's Hood",
+    "Biti Nirini's Torrid Boots",
+    "Biti's Flamelicked Staff",
+    "Blazing Boots",
+    "Blazing Vest",
+    "Blood Bat Peridot",
+    "Boots of the Cyclone",
+    "Canny Opal",
+    "Cap of the Oasis",
+    "Charred Cowl",
+    "Chipped Mana Opal +10",
+    "Chipped Mana Opal +11",
+    "Chipped PIP Opal +1%",
+    "Cloak of Prediction",
+    "Copper",
+    "Cowl of Summertime",
+    "Cracked Accurate Amethyst +2%",
+    "Cracked Accurate Sapphire +2%",
+    "Cracked Damage Amethyst +2",
+    "Cracked Damage Citrine +2",
+    "Cracked Damage Peridot +2",
+    "Cracked Damage Ruby +2",
+    "Cracked Defense Amethyst +12",
+    "Cracked Defense Amethyst +7",
+    "Cracked Defense Citrine +11",
+    "Cracked Defense Citrine +12",
+    "Cracked Defense Citrine +7",
+    "Cracked Defense Citrine +8",
+    "Cracked Defense Jade +12",
+    "Cracked Defense Jade +8",
+    "Cracked Defense Onyx +12",
+    "Cracked Defense Onyx +7",
+    "Cracked Defense Onyx +8",
+    "Cracked Defense Opal +3",
+    "Cracked Defense Opal +4",
+    "Cracked Defense Peridot +12",
+    "Cracked Defense Peridot +8",
+    "Cracked Defense Ruby +12",
+    "Cracked Defense Ruby +8",
+    "Cracked Healing Opal +1%",
+    "Cracked Health Opal +11",
+    "Cracked Health Opal +12",
+    "Cracked Mana Opal +8",
+    "Cracked Mending Opal +1%",
+    "Cracked Resilient Opal +1%",
+    "Cracker",
+    "Cryptkeeper's Band",
+    "Cryptkeeper's Cloak",
+    "Cryptkeeper's Shoes",
+    "Crystalline Helm",
+    "Crystalline Vest",
+    "Cyclops",
+    "Dagger of Talent",
+    "Dark Sprite Onyx",
+    "Dead End Opal",
+    "Death Trap",
+    "Death-Away Onyx",
+    "Death-Boon Onyx",
+    "Death-Shot Onyx",
+    "Dirt Post Opal",
+    "Durable Boots",
+    "Durable Hood",
+    "Effervescent Opal",
+    "Evil Snowman",
+    "Evil Snowman (Tier 2b)",
+    "Fire Cat",
+    "Fire Cat (Tier 2b)",
+    "Fire Cat Ruby",
+    "Fire Elf",
+    "Fire Elf",
+    "Fire Elf (Tier 2b)",
+    "Fire Trap",
+    "Flowering Band",
+    "Flowering Mantle",
+    "Forceful Opal",
+    "Frigid Vestment",
+    "Frost Beetle",
+    "Frost Beetle (Tier 2b)",
+    "Frost Beetle Sapphire",
+    "Ghoul",
+    "Giant",
+    "Glacial Slippers",
+    "Glittering Dagger",
+    "Green Grapes",
+    "Hat of Figments",
+    "Healthy Opal",
+    "Helm of Ingenuity",
+    "Helm of Refuge",
+    "Helm of the Cyclone",
+    "Hood of the Phantom",
+    "Ice-Away Sapphire",
+    "Ice-Boon Sapphire",
+    "Ice-Giver Sapphire",
+    "Imp Jade",
+    "Initiate's Uniform",
+    "Iron",
+    "Krok Fire Tablet",
+    "Krok Hourglass Pillar",
+    "Krokotillian",
+    "Krokotopia Dance Theme",
+    "Leather Straps",
+    "Lightning Bats",
+    "Lightning Bats",
+    "Lightning Bats (Tier 2b)",
+    "Locust Swarm",
+    "Locust Swarm (Tier 2b)",
+    "Mana Boost Opal",
+    "Mutate Cat (Storm)",
+    "Myth-Boon Peridot",
+    "Nettle Root",
+    "Nickel",
+    "Novitiate Hat",
+    "Pacify",
+    "Pink Dandelion",
+    "Pixie",
+    "Power Play",
+    "Pyrite",
+    "Rally Opal",
+    "Rugged Opal",
+    "Sandstorm",
+    "Scarab",
+    "Scarab (Tier 2b)",
+    "Scarab Citrine",
+    "Scorpion",
+    "Scorpion (Tier 2b)",
+    "Shoes of Adaptation",
+    "Slippers of Burning Sands",
+    "Slippers of the Badlands",
+    "Sniper",
+    "Snow Serpent",
+    "Snow Serpent",
+    "Snow Serpent (Tier 2b)",
+    "Snowflake Cowl",
+    "Soothsayer's Sandals",
+    "Sphinx's Footwraps",
+    "Spirit Armor",
+    "Storm Shark",
+    "Storm Shark (Tier 2b)",
+    "Storm Trap",
+    "Storm-Giver Amethyst",
+    "Storm-Shot Amethyst",
+    "Sunbird",
+    "Sunbird (Tier 2b)",
+    "Superstitious Band",
+    "Sweltering Helm",
+    "Tempest Cowl",
+    "Threadbare Boots",
+    "Thunder Snake",
+    "Thunder Snake (Tier 2b)",
+    "Thunder Snake Amethyst",
+    "Time of Legend",
+    "Tiny Fish",
+    "Troll",
+    "Tunic of Tall Tales",
+    "Ultra Energy Opal",
+    "Vampire",
+    "Vest of the Cyclone"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Level Scaling Clients",
+      "type": "int_list",
+      "default": [
+        2,
+        3,
+        4
+      ],
+      "description": "1-based client numbers to check/apply level scaling (e.g. '2, 3'). Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Oasis",
+      "position": {
+        "x": 150.0,
+        "y": 21.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Pyramid of the Sun",
+      "position": {
+        "x": 450.0,
+        "y": 21.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Hub",
+        "to_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
+        "xyz": {
+          "x": -26.12,
+          "y": 8033.94,
+          "z": 496.31
+        },
+        "reset_xyz": {
+          "x": -23.02,
+          "y": 7298.94,
+          "z": 496.29
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Royal Hall",
+      "position": {
+        "x": 750.0,
+        "y": 21.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
+        "to_zone": "Krokotopia/KT_Pyramid/KT_Hall",
+        "xyz": {
+          "x": 1622.71,
+          "y": 2071.46,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 536.43,
+          "y": 2143.9,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisp area",
+      "position": {
+        "x": 1050.0,
+        "y": 21.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Pyramid/KT_Hall",
+        "xyz": {
+          "x": 33518.6,
+          "y": -26990.78,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1350.0,
+        "y": 21.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_dungeon",
+      "label": "Enter Biti's Chamber",
+      "position": {
+        "x": 2167.620791366906,
+        "y": 19.293525179856104
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Pyramid/KT_Hall",
+        "dungeon_zone": "Krokotopia/KT_Pyramid/Interiors/KT_Hall_T1",
+        "sigil_xyz": {
+          "x": 38155.3,
+          "y": -26780.08,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 37457.73,
+          "y": -26997.28,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat Biti Nirini",
+      "position": {
+        "x": 2467.620791366907,
+        "y": 19.293525179856104
+      },
+      "params": {
+        "enemy": "KrokPharaoh-FireHair-KTBoss-L03",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1906.9569064748202,
+        "y": 151.83575539568344
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "enter_zone",
+      "label": "Exit Biti's Chamber",
+      "position": {
+        "x": 3017.8439846513766,
+        "y": 20.651497878207266
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Pyramid/Interiors/KT_Hall_T1",
+        "to_zone": "Krokotopia/KT_Pyramid/KT_Hall",
+        "xyz": {
+          "x": 6.0,
+          "y": -3198.67,
+          "z": 100.0
+        },
+        "reset_xyz": {
+          "x": 6.97,
+          "y": -2631.07,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisp area",
+      "position": {
+        "x": 1606.9569064748202,
+        "y": 151.83575539568344
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Pyramid/KT_Hall",
+        "xyz": {
+          "x": 33518.6,
+          "y": -26990.78,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Oasis",
+      "position": {
+        "x": 152.12250452362682,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Enter Tomb of Storms",
+      "position": {
+        "x": 1652.1225045236265,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Hub",
+        "to_zone": "Krokotopia/KT_Hub_Crypt",
+        "xyz": {
+          "x": -3350.5,
+          "y": -1806.1,
+          "z": -35.35
+        },
+        "reset_xyz": {
+          "x": -2732.08,
+          "y": -1408.83,
+          "z": -117.74
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact",
+      "label": "Activate first pillar",
+      "position": {
+        "x": 452.12250452362684,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub",
+        "interact_xyz": {
+          "x": -3292.71,
+          "y": -2826.11,
+          "z": -35.35
+        },
+        "reset_xyz": {
+          "x": -2941.24,
+          "y": -2366.05,
+          "z": -35.35
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Activate second pillar",
+      "position": {
+        "x": 752.1225045236267,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub",
+        "interact_xyz": {
+          "x": -4487.85,
+          "y": -2658.67,
+          "z": -35.35
+        },
+        "reset_xyz": {
+          "x": -3915.6,
+          "y": -2979.07,
+          "z": -35.35
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Activate third pillar",
+      "position": {
+        "x": 1052.1225045236267,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub",
+        "interact_xyz": {
+          "x": -4330.95,
+          "y": -1446.72,
+          "z": -35.35
+        },
+        "reset_xyz": {
+          "x": -4661.24,
+          "y": -2030.25,
+          "z": -35.35
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_16",
+      "node_type": "sleep",
+      "label": "Wait for portal to open",
+      "position": {
+        "x": 1352.1225045236265,
+        "y": 380.9398199533157
+      },
+      "params": {
+        "duration": 15.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone",
+      "label": "Enter Well of Spirits",
+      "position": {
+        "x": 1952.1225045236265,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Hub_Crypt",
+        "to_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+        "xyz": {
+          "x": -10677.8,
+          "y": -8573.19,
+          "z": -373.0
+        },
+        "reset_xyz": {
+          "x": -10197.39,
+          "y": -8112.82,
+          "z": -373.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_18",
+      "node_type": "enter_dungeon",
+      "label": "Enter Temple of Storms",
+      "position": {
+        "x": 2252.122504523626,
+        "y": 401.9398199533157
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+        "dungeon_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+        "sigil_xyz": {
+          "x": -220.43,
+          "y": 6449.81,
+          "z": -505.0
+        },
+        "reset_xyz": {
+          "x": -9.07,
+          "y": 5821.56,
+          "z": -501.58
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_19",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 2568.1915543266873,
+        "y": 400.9305931180072
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+        "interact_xyz": {
+          "x": -690.89,
+          "y": 625.23,
+          "z": 0.98
+        },
+        "reset_xyz": {
+          "x": -4.77,
+          "y": 521.6,
+          "z": 1.46
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_20",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 3304.2180009679078,
+        "y": 19.538187636073154
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_21",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": -183.5046794468251,
+        "y": 22.17450905796848
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_22",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2740.7039453958437,
+        "y": 20.376740168816667
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_4",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_11",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_11",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": [
+    {
+      "id": "8916b411",
+      "label": "Go to Royal Hall",
+      "members": [
+        "state_1",
+        "state_2",
+        "state_3"
+      ],
+      "color": 5
+    },
+    {
+      "id": "5e23eb5f",
+      "label": "Defeat Biti Nirini",
+      "members": [
+        "state_6",
+        "state_4",
+        "state_10",
+        "state_5",
+        "state_8",
+        "state_7",
+        "state_9",
+        "state_20"
+      ],
+      "color": 1
+    },
+    {
+      "id": "340cc1cb",
+      "label": "Level scaling",
+      "members": [
+        "state_18",
+        "state_19",
+        "state_11",
+        "state_15",
+        "state_14",
+        "state_16",
+        "state_17",
+        "state_13",
+        "state_12"
+      ],
+      "color": 4
+    }
+  ]
+}

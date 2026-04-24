@@ -80,13 +80,16 @@ async def launch_account(
     username: str,
     password: str,
     display_name: str,
+    resolution: tuple[int, int] | None = None,
 ) -> None:
     """Start one Wizard101 instance and auto-login with *username*/*password*.
 
     Sets the window title to *display_name* once the login screen is ready.
+    If *resolution* is provided it is used instead of the global setting — pass the
+    crashed client's measured size here so reconnects preserve the original resolution.
     """
     patch_open_browser()
-    w, h = SettingsManager.instance().game_resolution
+    w, h = resolution if resolution is not None else SettingsManager.instance().game_resolution
     _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
     await _wait_for_login_screen(handle)

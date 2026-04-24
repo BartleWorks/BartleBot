@@ -1,0 +1,502 @@
+{
+  "name": "Alicane Swiftarrow",
+  "description": "Endlessly defeats Alicane Swiftarrow in Firecat Alley",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [
+    "Adventurer's Boots",
+    "Alicane's Band",
+    "Alicane's Cowl",
+    "Alicane's Dirk",
+    "Alicane's Flame Staff",
+    "Alicane's Helm",
+    "Ancient Koi",
+    "Ankylosaurus",
+    "Auroch",
+    "Barkskin Boots",
+    "Barkskin Tunic",
+    "Bat Wings",
+    "Bengal Tiger",
+    "Black Stallion",
+    "Blonde Strawberry",
+    "Blood Bat",
+    "Boots of the Adverse",
+    "Branded Footguards",
+    "Canvas Wraps",
+    "Cheese Broccoli",
+    "Chestnut Pony",
+    "Chillcloak",
+    "Chocolate Strawberry",
+    "Cloak of Calamity",
+    "Cloak of Foresight",
+    "Crokagator",
+    "Dark Redwing",
+    "Death Trap",
+    "Elven Fire Robe",
+    "Enchanted Broom",
+    "Evil Snowman",
+    "Explorer Boots",
+    "Fairy Cloak",
+    "Fairy Shoes",
+    "Faithful Dragoness",
+    "Fire Bush",
+    "Fire Cat",
+    "Fire Elf",
+    "Fire Shield",
+    "Firecat Statue",
+    "Firestorm Cap",
+    "Firestorm Wraps",
+    "Flawed Opal Band",
+    "Flawed Pearl Ring",
+    "Frost Beetle",
+    "Ghoul",
+    "Guiding Light",
+    "Gummy Firecat",
+    "Hallowed Band",
+    "Hardened Boots",
+    "Healer's Cowl",
+    "Helm of Stability",
+    "Helm of Supremacy",
+    "Hippogriff",
+    "Hood of Storms",
+    "Horned Sweeper",
+    "Imp",
+    "Imp Lord's Helm",
+    "Jeweled Dagger",
+    "Keen Eyes",
+    "Leather Straps",
+    "Lightning Bats",
+    "Locust Swarm",
+    "Martyr's Wraps",
+    "Moonlight Pony",
+    "Myth Shield",
+    "Nightflame Pegasus",
+    "Novice's Hat",
+    "Novice's Robe",
+    "Novice's Shoes",
+    "Orange Fairy Wings",
+    "Panther",
+    "Pixie",
+    "Plated Boots",
+    "Prop House 2",
+    "Prop Mountains 1",
+    "Prop Mountains 2",
+    "Renaissance Wings",
+    "Ritual Athame",
+    "Robe of Antiquities",
+    "Roughspun Hat",
+    "Rugged Seahorse",
+    "Scarab",
+    "Sea Turtle",
+    "Senior Novice's Robe",
+    "Seraph Wings",
+    "Shortblade of the Quick",
+    "Simple Dirk",
+    "Slippers of Rites",
+    "Small Fern",
+    "Snappy Lobster",
+    "Snow Ram",
+    "Snow Shield",
+    "Soft Hood",
+    "Soldiers Wraps",
+    "Spider Silk",
+    "Sprite",
+    "Spritely Seahorse",
+    "Starlight Pony",
+    "Sturdy Boots",
+    "Sturdy Coat",
+    "Sugar Donut",
+    "Sunshine Pony",
+    "Swift Gryphon",
+    "Swift Shark",
+    "Swiftarrow's Boots",
+    "Swiftarrow's Mantle",
+    "Swiftarrow's Necklace",
+    "Swiftarrow's Signet",
+    "Swiftarrow's Staff",
+    "Swiftarrow's Windmane",
+    "Swiftshadow Wings",
+    "Time of Legend",
+    "Tough",
+    "Twice Stitched Robe",
+    "Vestment of the Adverse",
+    "White Mare",
+    "Wizard101 Theme"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Commons",
+      "position": {
+        "x": 150.0,
+        "y": 28.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 750.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1373.34,
+          "y": -3590.64,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1311.11,
+          "y": -2802.26,
+          "z": -27.99
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 1050.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -6054.32,
+          "y": -3302.17,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5251.57,
+          "y": -3295.22,
+          "z": -29.36
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Firecat Alley",
+      "position": {
+        "x": 1350.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "to_zone": "WizardCity/WC_Streets/WC_Firecat",
+        "xyz": {
+          "x": -12210.84,
+          "y": -1878.86,
+          "z": -2195.94
+        },
+        "reset_xyz": {
+          "x": -11632.71,
+          "y": -2368.96,
+          "z": -2198.57
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Fireglobe Theatre",
+      "position": {
+        "x": 1650.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Firecat",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Firecat_Theatre",
+        "sigil_xyz": {
+          "x": -24675.15,
+          "y": -6214.91,
+          "z": 162.34
+        },
+        "reset_xyz": {
+          "x": -23931.01,
+          "y": -5992.02,
+          "z": 31.03
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "handle_combat",
+      "label": "Defeat Alicane Swiftarrow",
+      "position": {
+        "x": 1950.0,
+        "y": 28.0
+      },
+      "params": {
+        "enemy": "FireElf-Prince-WCBoss-L04",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Exit Fireglobe Theatre",
+      "position": {
+        "x": 2250.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Firecat_Theatre",
+        "to_zone": "WizardCity/WC_Streets/WC_Firecat",
+        "xyz": {
+          "x": 19.28,
+          "y": -2882.36,
+          "z": 2.02
+        },
+        "reset_xyz": {
+          "x": 22.18,
+          "y": -2209.76,
+          "z": 2.01
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2550.0,
+        "y": 28.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 450.0,
+        "y": 28.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": [
+    {
+      "id": "af7a2f79",
+      "label": "Go to Fireglobe Theatre",
+      "members": [
+        "state_2",
+        "state_3",
+        "state_1",
+        "state_4"
+      ],
+      "color": 4
+    },
+    {
+      "id": "af18e22e",
+      "label": "Defeat Alicane Swiftarrow",
+      "members": [
+        "state_11",
+        "state_6",
+        "state_5",
+        "state_7"
+      ],
+      "color": 1
+    }
+  ]
+}

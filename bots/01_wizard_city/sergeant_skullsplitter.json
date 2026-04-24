@@ -1,0 +1,475 @@
+{
+  "name": "Sergeant Skullsplitter",
+  "description": "Endlessly defeats Sergeant Skullsplitter in Triton Avenue",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [
+    "Antique Footguards",
+    "Antique Overshirt",
+    "Armored Tunic",
+    "Ashen Cloak",
+    "Banshee",
+    "Blonde Strawberry",
+    "Bloomshroud",
+    "Bone",
+    "Boots of Embers",
+    "Cap of Advantages",
+    "Charged Cover",
+    "Cheese Broccoli",
+    "Chillcloak",
+    "Chipped Knife",
+    "Chocolate Strawberry",
+    "Cloak of Vigilance",
+    "Cowl of the Discreet",
+    "Cowl of Wisdom",
+    "Dark Stone Tower",
+    "Death Trap",
+    "Double Sided Hat",
+    "Dulled Athame",
+    "Ectoplasm",
+    "Elven Storm Cap",
+    "Engraved Amethyst Ring",
+    "Engraved Citrine Ring",
+    "Engraved Jade Ring",
+    "Engraved Onyx Ring",
+    "Engraved Peridot Ring",
+    "Engraved Ruby Ring",
+    "Fairy Cap",
+    "Fairy's Wand",
+    "Fire Cat",
+    "Fire Shield",
+    "Fireguard Slippers",
+    "Firestorm Vestment",
+    "Flametouched Hat",
+    "Flash Frozen Choker",
+    "Footwraps of Seasons",
+    "Frost Beetle",
+    "Frostshroud",
+    "Frostshroud",
+    "Fur-Lined Hood",
+    "Guiding Light",
+    "Gummy Firecat",
+    "Hardened Boots",
+    "Hardened Cap",
+    "Hat of Eradication",
+    "Helm of Audacity",
+    "Honey Sickle",
+    "Hood of Storms",
+    "Hood of Tension",
+    "Imp",
+    "Imp Lord's Helm",
+    "Insulated Wand",
+    "Keen Eyes",
+    "Knife of Winter",
+    "Lightning Bats",
+    "Locust Swarm",
+    "Lord's Signet",
+    "Pixie",
+    "Prop House 1",
+    "Raiment of Storms",
+    "Robe of All Trades",
+    "Robe of Embers",
+    "Robe of the Blizzard",
+    "Roughspun Robe",
+    "Sapphyra's Studded Boots",
+    "Senior Novice's Robe",
+    "Senior Novice's Shoes",
+    "Shimmering Cloak",
+    "Skullsplitter's Signet",
+    "Slippers of Excitement",
+    "Small Orange Symbol Rug",
+    "Snow Serpent",
+    "Snow Shield",
+    "Storm Shield",
+    "Stormcaller's Boots",
+    "Stormcaller's Robe",
+    "Studded Knife",
+    "Sugar Donut",
+    "Symmetrical Shoes",
+    "Thunder Snake",
+    "Time of Legend",
+    "Tough",
+    "Triton Statue",
+    "Troll",
+    "Venomous Cowl",
+    "Vestment of Panic",
+    "Vrixx's Verdant Robes",
+    "Wondershroud"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Commons",
+      "position": {
+        "x": 150.0,
+        "y": 28.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 750.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1373.34,
+          "y": -3590.64,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1311.11,
+          "y": -2802.26,
+          "z": -27.99
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 1050.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -6054.32,
+          "y": -3302.17,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5251.57,
+          "y": -3295.22,
+          "z": -29.36
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Triton Avenue",
+      "position": {
+        "x": 1350.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "to_zone": "WizardCity/WC_Streets/WC_Triton",
+        "xyz": {
+          "x": -7423.81,
+          "y": -422.95,
+          "z": -1397.84
+        },
+        "reset_xyz": {
+          "x": -6662.58,
+          "y": -616.32,
+          "z": -1397.84
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Skull Fort",
+      "position": {
+        "x": 1650.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Triton",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
+        "sigil_xyz": {
+          "x": 5420.85,
+          "y": -7541.99,
+          "z": 45.28
+        },
+        "reset_xyz": {
+          "x": 5209.13,
+          "y": -7059.6,
+          "z": 59.12
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "handle_combat",
+      "label": "Defeat Sergeant Skullsplitter",
+      "position": {
+        "x": 1950.0,
+        "y": 28.0
+      },
+      "params": {
+        "enemy": "Skeleton-Gold-WCBoss-L03",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Exit Skull Fort",
+      "position": {
+        "x": 2250.0,
+        "y": 28.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
+        "to_zone": "WizardCity/WC_Streets/WC_Triton",
+        "xyz": {
+          "x": 20.79,
+          "y": -1219.98,
+          "z": 1.62
+        },
+        "reset_xyz": {
+          "x": 18.28,
+          "y": -1021.99,
+          "z": 1.61
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2550.0,
+        "y": 28.0
+      },
+      "params": {},
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 450.0,
+        "y": 28.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": [
+    {
+      "id": "af7a2f79",
+      "label": "Go to Triton Avenue",
+      "members": [
+        "state_2",
+        "state_3",
+        "state_1",
+        "state_4"
+      ],
+      "color": 3
+    },
+    {
+      "id": "af18e22e",
+      "label": "Defeat Sergeant Skullsplitter",
+      "members": [
+        "state_11",
+        "state_6",
+        "state_5",
+        "state_7"
+      ],
+      "color": 1
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -256,8 +257,13 @@ class MainWindow(QMainWindow):
         if not paths:
             self._update_recent_placeholder()
             return
+        cwd = Path.cwd()
         for path in paths:
-            action = QAction(path, self)
+            try:
+                label = str(Path(path).relative_to(cwd))
+            except ValueError:
+                label = path
+            action = QAction(label, self)
             action.triggered.connect(lambda _checked, p=path: self.open_recent_requested.emit(p))
             self._recent_menu.addAction(action)
 
