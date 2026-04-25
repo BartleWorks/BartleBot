@@ -28,7 +28,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="confirm_path",
         type="str_list",
-        label="Confirm Path (optional)",
+        label="Confirm Path",
         help=(
             "If set, polls this path after clicking to confirm the action triggered. "
             "Leave empty to skip the post-click check."
