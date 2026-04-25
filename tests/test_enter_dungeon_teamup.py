@@ -224,7 +224,7 @@ async def test_antifk_sent_during_wait():
 
     with (
         patch.object(edt, "POLL_INTERVAL", 0),
-        patch.object(edt, "TEAMUP_AFK_INTERVAL", 0.0),  # trigger immediately
+        patch.object(edt, "AFK_INTERVAL", 0.0),  # trigger immediately
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
         patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),

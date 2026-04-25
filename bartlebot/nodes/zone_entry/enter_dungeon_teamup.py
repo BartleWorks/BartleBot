@@ -122,7 +122,7 @@ async def run(machine, clients: list, params: dict) -> str:
       6. Wait for the team-up confirmation window to appear on all clients. Return FAILURE if not.
       7. Select the minimum_team_size checkbox on all clients.
       8. Click the enter team-up button on all clients to join the queue.
-      9. Poll for zone change, sending a brief A keypress every TEAMUP_AFK_INTERVAL seconds
+      9. Poll for zone change, sending a brief A keypress every AFK_INTERVAL seconds
          to prevent idle disconnection. Timeout after TEAMUP_QUEUE_TIMEOUT (1 hour).
       10. Wait for all loading screens to finish.
       11. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
@@ -229,7 +229,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 8. Wait for zone change with periodic anti-AFK inputs.
     # Team-up matchmaking can take a long time; we send a brief A key press every
-    # TEAMUP_AFK_INTERVAL seconds to prevent the character from going idle.
+    # AFK_INTERVAL seconds to prevent the character from going idle.
     machine.log(f"Waiting for team-up zone change (timeout: {TEAMUP_QUEUE_TIMEOUT / 60:.0f}m)…", logging.DEBUG)
     loop_start = asyncio.get_event_loop().time()
     last_afk = loop_start
