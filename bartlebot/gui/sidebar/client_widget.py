@@ -138,7 +138,7 @@ class ClientWidget(QWidget):
         # Tool buttons
         tool_row = QHBoxLayout()
 
-        entity_btn = QPushButton("Entity Browser…")
+        entity_btn = QPushButton("Entity Browser")
         entity_btn.setToolTip("Inspect nearby entities for this client")
         entity_btn.clicked.connect(self._open_entity_browser)
         tool_row.addWidget(entity_btn)
