@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Literal
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtGui import QColor, QFont, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -38,6 +38,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
@@ -120,7 +121,7 @@ class _DetailPanel(QScrollArea):
         placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 13px;")
         self.setWidget(placeholder)
 
-    def show_node(self, node_type: str, spec: NodeSpec, on_see_also=None) -> None:
+    def show_node(self, node_type: str, spec: NodeSpec, on_see_also=None, on_favorite_toggled=None) -> None:
         """Replace the scroll area content with documentation for node_type."""
         self._node_type = node_type
 
@@ -148,6 +149,29 @@ class _DetailPanel(QScrollArea):
         else:
             badge = _Chip("Action", THEME.border, THEME.text)
         title_row.addWidget(badge)
+
+        # ── Favorite star button ────────────────────────────────────
+        sm = SettingsManager.instance()
+        is_fav = sm.is_favorite_node(node_type)
+        star_btn = QPushButton()
+        star_btn.setFixedSize(28, 28)
+        star_btn.setFlat(True)
+        star_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        star_btn.setStyleSheet("background: transparent; border: none; padding: 0;")
+        star_btn.setToolTip("Remove from favorites" if is_fav else "Add to favorites")
+        star_btn.setIcon(QIcon(svg_pixmap("star_filled" if is_fav else "star_outline", 18, tint=THEME.accent)))
+
+        def _on_star_clicked() -> None:
+            new_is_fav = SettingsManager.instance().toggle_favorite_node(node_type)
+            icon_name = "star_filled" if new_is_fav else "star_outline"
+            star_btn.setIcon(QIcon(svg_pixmap(icon_name, 18, tint=THEME.accent)))
+            star_btn.setToolTip("Remove from favorites" if new_is_fav else "Add to favorites")
+            if on_favorite_toggled:
+                on_favorite_toggled(node_type, new_is_fav)
+
+        star_btn.clicked.connect(_on_star_clicked)
+        title_row.addWidget(star_btn)
+
         self._layout.addLayout(title_row)
 
         # ── Node type key (muted) ───────────────────────────────────
@@ -411,10 +435,12 @@ class NodeBrowserDialog(QDialog):
         self._restore_geometry()
 
         # ── Build all tab entries ──────────────────────────────────
-        # Each entry: (tab_label, list[node_type]) — "All" and "Recent" are synthetic
+        # Each entry: (tab_label, list[node_type]) — "All", "Recent", and "Favorites" are synthetic
+        # Favorites is always at index 2.
         self._tabs_data: list[tuple[str, list[str]]] = [
             ("All", list(NODE_SPECS.keys())),
             ("Recent", SettingsManager.instance().recently_used_nodes),
+            ("Favorites", SettingsManager.instance().favorite_nodes),
             *NODE_CATEGORIES,
         ]
 
@@ -583,14 +609,19 @@ class NodeBrowserDialog(QDialog):
         _, node_types = self._tabs_data[index]
         self._populate_list(node_types)
 
-        if index == 1 and self._list.count() == 0:
-            # Recent tab is empty
-            self._empty_label.setText("Nodes you add will appear here.")
+        if self._list.count() == 0:
+            if index == 1:
+                self._empty_label.setText("Nodes you add will appear here.")
+            elif index == 2:
+                self._empty_label.setText(
+                    "No favorites yet — click the star button in a node's detail panel to add one."
+                )
+            else:
+                self._empty_label.setText("No nodes in this category.")
             self._list_stack.setCurrentIndex(1)
         else:
             self._list_stack.setCurrentIndex(0)
-            if self._list.count() > 0:
-                self._list.setCurrentRow(0)
+            self._list.setCurrentRow(0)
 
     # ------------------------------------------------------------------
     # Slot: search changed
@@ -663,7 +694,12 @@ class NodeBrowserDialog(QDialog):
 
         spec = NODE_SPECS.get(node_type)
         if spec:
-            self._detail.show_node(node_type, spec, on_see_also=self._on_see_also_clicked)
+            self._detail.show_node(
+                node_type,
+                spec,
+                on_see_also=self._on_see_also_clicked,
+                on_favorite_toggled=self._on_favorite_toggled,
+            )
 
     # ------------------------------------------------------------------
     # Slot: see-also link clicked
@@ -674,6 +710,36 @@ class NodeBrowserDialog(QDialog):
         # Switch to "All" tab so the target is always visible
         self._tab_bar.setCurrentIndex(0)
         self._select_node_type(node_type)
+
+    # ------------------------------------------------------------------
+    # Slot: favorite toggled
+    # ------------------------------------------------------------------
+
+    def _on_favorite_toggled(self, node_type: str, is_fav: bool) -> None:
+        """Update the Favorites tab and list item stars when a node is toggled."""
+        # Refresh Favorites tab data
+        self._tabs_data[2] = ("Favorites", SettingsManager.instance().favorite_nodes)
+
+        # If Favorites tab is active, surgically update the list without rebuilding
+        if self._tab_bar.currentIndex() == 2:
+            if not is_fav:
+                # Remove the un-favorited item
+                for i in range(self._list.count()):
+                    item = self._list.item(i)
+                    if isinstance(item, _NodeListItem) and item.node_type == node_type:
+                        self._list.takeItem(i)
+                        break
+                if self._list.count() == 0:
+                    self._empty_label.setText(
+                        "No favorites yet — click the star button in a node's detail panel to add one."
+                    )
+                    self._list_stack.setCurrentIndex(1)
+            else:
+                # Add the newly-favorited item
+                new_item = _NodeListItem(node_type)
+                new_item.update_star(True)
+                self._list.addItem(new_item)
+                self._list_stack.setCurrentIndex(0)
 
     # ------------------------------------------------------------------
     # Slot: double-click (add mode only)

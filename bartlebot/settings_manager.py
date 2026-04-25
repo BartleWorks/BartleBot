@@ -87,6 +87,7 @@ _DEFAULTS: dict[str, Any] = {
     "recent_launches": [],
     "recent_bot_files": [],
     "recently_used_nodes": [],
+    "favorite_nodes": [],
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
 }
 
@@ -305,6 +306,27 @@ class SettingsManager:
         recent.insert(0, node_type)
         self.set("recently_used_nodes", value=recent[:10])
         self.save()
+
+    @property
+    def favorite_nodes(self) -> list[str]:
+        """List of favorited node_type keys, in insertion order."""
+        return list(self.get("favorite_nodes", default=[]))
+
+    def is_favorite_node(self, node_type: str) -> bool:
+        return node_type in self.favorite_nodes
+
+    def toggle_favorite_node(self, node_type: str) -> bool:
+        """Toggle node_type in favorites. Returns True if now favorited."""
+        favs = list(self.favorite_nodes)
+        if node_type in favs:
+            favs.remove(node_type)
+            is_fav = False
+        else:
+            favs.append(node_type)
+            is_fav = True
+        self.set("favorite_nodes", value=favs)
+        self.save()
+        return is_fav
 
     # ------------------------------------------------------------------
     # Window sizing helper
