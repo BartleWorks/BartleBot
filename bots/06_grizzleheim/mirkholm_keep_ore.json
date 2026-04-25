@@ -32,7 +32,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1050.0,
+        "x": 1350.0,
         "y": 7.0
       },
       "params": {
@@ -47,7 +47,7 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 4050.0,
+        "x": 4350.0,
         "y": 7.0
       },
       "params": {
@@ -120,7 +120,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second spawn area",
       "position": {
-        "x": 1350.0,
+        "x": 1650.0,
         "y": 7.0
       },
       "params": {
@@ -139,7 +139,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1650.0,
+        "x": 1950.0,
         "y": 7.0
       },
       "params": {
@@ -154,7 +154,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to third spawn area",
       "position": {
-        "x": 1950.0,
+        "x": 2250.0,
         "y": 7.0
       },
       "params": {
@@ -173,7 +173,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 2250.0,
+        "x": 2550.0,
         "y": 7.0
       },
       "params": {
@@ -188,7 +188,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fourth spawn area",
       "position": {
-        "x": 2550.0,
+        "x": 2850.0,
         "y": 7.0
       },
       "params": {
@@ -207,7 +207,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 2850.0,
+        "x": 3150.0,
         "y": 7.0
       },
       "params": {
@@ -222,7 +222,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fifth spawn area",
       "position": {
-        "x": 3150.0,
+        "x": 3450.0,
         "y": 7.0
       },
       "params": {
@@ -241,7 +241,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3450.0,
+        "x": 3750.0,
         "y": 7.0
       },
       "params": {
@@ -256,7 +256,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to safety",
       "position": {
-        "x": 3750.0,
+        "x": 4050.0,
         "y": 7.0
       },
       "params": {
@@ -266,6 +266,24 @@
           "y": 21699.6,
           "z": -123.09
         }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1050.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       },
       "option_overrides": {},
       "flipped": false
@@ -307,14 +325,6 @@
     {
       "trigger": "advance",
       "source": "state_5",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
       "dest": "state_5",
       "when": "FAILURE",
       "flags": [],
@@ -323,14 +333,6 @@
     {
       "trigger": "advance",
       "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
@@ -492,6 +494,38 @@
       "trigger": "advance",
       "source": "state_14",
       "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
