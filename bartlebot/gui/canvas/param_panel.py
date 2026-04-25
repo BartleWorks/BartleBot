@@ -182,7 +182,9 @@ class _DynamicParamForm(QWidget):
             elif isinstance(w, _IntListLineEdit):
                 result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
-                result[key] = [x.strip() for x in w.text().split(",") if x.strip()]
+                result[key] = [
+                    x.strip().strip("'\"") for x in w.text().strip("[] ").split(",") if x.strip().strip("'\"")
+                ]
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):

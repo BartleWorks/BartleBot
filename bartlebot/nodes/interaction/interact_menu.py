@@ -195,6 +195,13 @@ async def run(machine, clients: list, params: dict) -> str:
             f"FAILURE: menu path not visible within {menu_timeout}s",
             logging.WARNING,
         )
+        for i, (client, visible) in enumerate(zip(active_clients, menu_visible)):
+            if not visible:
+                diag = await node_helpers.diagnose_path(client, menu_path)
+                machine.log(
+                    f"  client {interact_indices[i] + 1}: looking for {'→'.join(menu_path)!r} — {diag}",
+                    logging.DEBUG,
+                )
         return "FAILURE"
 
     machine.log("interact_menu: SUCCESS")
