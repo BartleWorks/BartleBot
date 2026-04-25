@@ -54,7 +54,10 @@ class ClientSection(SidebarSection):
 
     def _schedule_refresh(self) -> None:
         if self._widgets:
-            asyncio.ensure_future(self._refresh_all())
+            try:
+                asyncio.get_running_loop().create_task(self._refresh_all())
+            except RuntimeError:
+                pass  # event loop not yet running; skip this tick
 
     async def _refresh_all(self) -> None:
         if self._widgets:
