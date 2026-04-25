@@ -94,7 +94,7 @@ async def test_success_prompt_appears_after_polling():
         patch(_SNAP, new=AsyncMock(return_value="")),
         patch(_EXTRACT, return_value=[]),
     ):
-        result = await cr.run(FakeMachine(options={"Safety Delay": 0.5}), [client], _PARAMS)
+        result = await cr.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
