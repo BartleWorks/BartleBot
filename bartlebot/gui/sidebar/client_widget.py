@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 
 import pyperclip
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -18,6 +19,8 @@ from wizwalker import XYZ
 
 from bartlebot.gui.sidebar.sidebar_section import field_label
 
+_MOB_INTERVAL = 5.0  # seconds between closest-mob refreshes
+
 
 class ClientWidget(QWidget):
     """Displays live zone/XYZ info and freecam controls for a single client."""
@@ -32,9 +35,7 @@ class ClientWidget(QWidget):
         self._last_zone = "—"
         self._last_xyz = "—"
         self._last_mob = "—"
-        self._mob_tick = 0
-        self._last_entity = "—"
-        self._entity_tick = 25  # offset from mob tick (also 50-tick cycle) to avoid simultaneous heavy reads
+        self._last_mob_time: float = 0.0
         self._build_ui(index, total)
 
     # ------------------------------------------------------------------
@@ -134,24 +135,20 @@ class ClientWidget(QWidget):
         mob_row.addWidget(copy_mob_btn)
         layout.addLayout(mob_row)
 
-        # Nearest entity row
-        layout.addWidget(field_label("Nearest Entity"))
-        self._entity_label = QLabel("—")
-        self._entity_label.setWordWrap(True)
-        self._entity_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        copy_entity_btn = QPushButton("Copy Entity")
-        copy_entity_btn.setFixedWidth(80)
-        copy_entity_btn.clicked.connect(self._copy_entity)
-        entity_row = QHBoxLayout()
-        entity_row.addWidget(self._entity_label, 1)
-        entity_row.addWidget(copy_entity_btn)
-        layout.addLayout(entity_row)
+        # Tool buttons
+        tool_row = QHBoxLayout()
 
-        # UI tree browser
+        entity_btn = QPushButton("Entity Browser…")
+        entity_btn.setToolTip("Inspect nearby entities for this client")
+        entity_btn.clicked.connect(self._open_entity_browser)
+        tool_row.addWidget(entity_btn)
+
         ui_tree_btn = QPushButton("UI Tree Browser")
         ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this client")
-        ui_tree_btn.clicked.connect(lambda: asyncio.ensure_future(self._open_ui_tree()))
-        layout.addWidget(ui_tree_btn)
+        ui_tree_btn.clicked.connect(self._open_ui_tree)
+        tool_row.addWidget(ui_tree_btn)
+
+        layout.addLayout(tool_row)
 
         # Separator
         line = QFrame()
@@ -172,8 +169,21 @@ class ClientWidget(QWidget):
     def _copy_mob(self) -> None:
         pyperclip.copy(self._last_mob)
 
-    def _copy_entity(self) -> None:
-        pyperclip.copy(self._last_entity)
+    # ------------------------------------------------------------------
+    # Tool button actions
+    # ------------------------------------------------------------------
+
+    def _open_entity_browser(self) -> None:
+        from bartlebot.gui.entity_browser import EntityBrowserDialog
+
+        dlg = EntityBrowserDialog(self._client, parent=self)
+        dlg.show()
+
+    def _open_ui_tree(self) -> None:
+        from bartlebot.gui.ui_tree_browser import UITreeBrowserDialog
+
+        dlg = UITreeBrowserDialog(self._client, parent=self)
+        dlg.show()
 
     # ------------------------------------------------------------------
     # Async actions
@@ -201,12 +211,6 @@ class ClientWidget(QWidget):
         except Exception:
             pass  # client may have disconnected
 
-    async def _open_ui_tree(self) -> None:
-        from bartlebot.gui.ui_tree_browser import UITreeBrowserDialog
-
-        dlg = UITreeBrowserDialog(self._client, parent=self)
-        dlg.show()
-
     async def _tp_to_freecam(self) -> None:
         """Teleport client to current freecam position, then exit freecam."""
         try:
@@ -222,7 +226,7 @@ class ClientWidget(QWidget):
             pass
 
     # ------------------------------------------------------------------
-    # Periodic refresh (called by sidebar timer)
+    # Periodic refresh (called by ClientSection._refresh_loop)
     # ------------------------------------------------------------------
 
     async def refresh(self) -> None:
@@ -259,10 +263,10 @@ class ClientWidget(QWidget):
             self._y_label.setText("Y=—")
             self._z_label.setText("Z=—")
 
-        # Closest mob — updated every 50 ticks (~5 s)
-        self._mob_tick += 1
-        if self._mob_tick >= 50:
-            self._mob_tick = 0
+        # Closest mob — throttled to once every _MOB_INTERVAL seconds
+        now = time.monotonic()
+        if now - self._last_mob_time >= _MOB_INTERVAL:
+            self._last_mob_time = now
             try:
                 mob = await self._client.find_closest_mob()
                 name = await mob.object_name() if mob else "—"
@@ -270,33 +274,3 @@ class ClientWidget(QWidget):
             except Exception:
                 self._last_mob = "—"
             self._mob_label.setText(self._last_mob)
-
-        # Nearest non-mob entity — updated every 50 ticks (~5 s)
-        self._entity_tick += 1
-        if self._entity_tick >= 50:
-            self._entity_tick = 0
-            try:
-                pos = await self._client.body.position()
-                entities = await self._client.get_base_entity_list()
-                closest = None
-                closest_dist_sq = float("inf")
-                for e in entities:
-                    if await e.search_behavior_by_name("NPCBehavior") is not None:
-                        continue
-                    loc = await e.location()
-                    dist_sq = (loc.x - pos.x) ** 2 + (loc.y - pos.y) ** 2 + (loc.z - pos.z) ** 2
-                    if dist_sq < 25.0:  # < 5 units
-                        continue
-                    if dist_sq < closest_dist_sq:
-                        closest_dist_sq = dist_sq
-                        closest = e
-                if closest:
-                    obj_name = await closest.object_name() or "—"
-                    self._last_entity = obj_name
-                    self._entity_label.setText(obj_name)
-                else:
-                    self._last_entity = "—"
-                    self._entity_label.setText("—")
-            except Exception:
-                self._last_entity = "—"
-                self._entity_label.setText("—")
