@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 
 import pyperclip
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -18,6 +19,8 @@ from wizwalker import XYZ
 
 from bartlebot.gui.sidebar.sidebar_section import field_label
 
+_MOB_INTERVAL = 5.0  # seconds between closest-mob refreshes
+
 
 class ClientWidget(QWidget):
     """Displays live zone/XYZ info and freecam controls for a single client."""
@@ -32,7 +35,7 @@ class ClientWidget(QWidget):
         self._last_zone = "—"
         self._last_xyz = "—"
         self._last_mob = "—"
-        self._mob_tick = 0
+        self._last_mob_time: float = 0.0
         self._build_ui(index, total)
 
     # ------------------------------------------------------------------
@@ -132,11 +135,20 @@ class ClientWidget(QWidget):
         mob_row.addWidget(copy_mob_btn)
         layout.addLayout(mob_row)
 
-        # UI tree browser
+        # Tool buttons
+        tool_row = QHBoxLayout()
+
+        entity_btn = QPushButton("Entity Browser")
+        entity_btn.setToolTip("Inspect nearby entities for this client")
+        entity_btn.clicked.connect(self._open_entity_browser)
+        tool_row.addWidget(entity_btn)
+
         ui_tree_btn = QPushButton("UI Tree Browser")
         ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this client")
-        ui_tree_btn.clicked.connect(lambda: asyncio.ensure_future(self._open_ui_tree()))
-        layout.addWidget(ui_tree_btn)
+        ui_tree_btn.clicked.connect(self._open_ui_tree)
+        tool_row.addWidget(ui_tree_btn)
+
+        layout.addLayout(tool_row)
 
         # Separator
         line = QFrame()
@@ -156,6 +168,22 @@ class ClientWidget(QWidget):
 
     def _copy_mob(self) -> None:
         pyperclip.copy(self._last_mob)
+
+    # ------------------------------------------------------------------
+    # Tool button actions
+    # ------------------------------------------------------------------
+
+    def _open_entity_browser(self) -> None:
+        from bartlebot.gui.entity_browser import EntityBrowserDialog
+
+        dlg = EntityBrowserDialog(self._client, parent=self)
+        dlg.show()
+
+    def _open_ui_tree(self) -> None:
+        from bartlebot.gui.ui_tree_browser import UITreeBrowserDialog
+
+        dlg = UITreeBrowserDialog(self._client, parent=self)
+        dlg.show()
 
     # ------------------------------------------------------------------
     # Async actions
@@ -183,12 +211,6 @@ class ClientWidget(QWidget):
         except Exception:
             pass  # client may have disconnected
 
-    async def _open_ui_tree(self) -> None:
-        from bartlebot.gui.ui_tree_browser import UITreeBrowserDialog
-
-        dlg = UITreeBrowserDialog(self._client, parent=self)
-        dlg.show()
-
     async def _tp_to_freecam(self) -> None:
         """Teleport client to current freecam position, then exit freecam."""
         try:
@@ -204,7 +226,7 @@ class ClientWidget(QWidget):
             pass
 
     # ------------------------------------------------------------------
-    # Periodic refresh (called by sidebar timer)
+    # Periodic refresh (called by ClientSection._refresh_loop)
     # ------------------------------------------------------------------
 
     async def refresh(self) -> None:
@@ -241,10 +263,10 @@ class ClientWidget(QWidget):
             self._y_label.setText("Y=—")
             self._z_label.setText("Z=—")
 
-        # Closest mob — updated every 20 ticks (~2 s)
-        self._mob_tick += 1
-        if self._mob_tick >= 20:
-            self._mob_tick = 0
+        # Closest mob — throttled to once every _MOB_INTERVAL seconds
+        now = time.monotonic()
+        if now - self._last_mob_time >= _MOB_INTERVAL:
+            self._last_mob_time = now
             try:
                 mob = await self._client.find_closest_mob()
                 name = await mob.object_name() if mob else "—"

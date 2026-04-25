@@ -43,13 +43,15 @@ class FakeClient:
         self.mouse_handler.__aenter__ = AsyncMock(return_value=None)
         self.mouse_handler.__aexit__ = AsyncMock(return_value=False)
         self.mouse_handler.click_window = AsyncMock()
+        self.get_base_entities_with_vague_name = AsyncMock(return_value=[])
 
 
 class FakeEntity:
-    """Minimal stub for a WizWalker entity (mob / NPC)."""
+    """Minimal stub for a WizWalker entity (mob / NPC / reagent)."""
 
     def __init__(self, name: str = "TestEnemy/TestEnemy"):
         self.object_name = AsyncMock(return_value=name)
+        self.location = AsyncMock(return_value=XYZ(100.0, 200.0, 0.0))
 
 
 class FakeMachine:

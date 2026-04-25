@@ -64,6 +64,27 @@ async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interv
         await asyncio.sleep(poll_interval)
 
 
+async def diagnose_path(client, path: list[str]) -> str:
+    """Walk path step-by-step and return a diagnostic string.
+
+    If a segment is missing, reports the name that was expected, the names of the
+    children that actually exist at that level, and how far traversal got.
+    If the full path exists, reports whether is_visible() is True or False.
+    Intended for DEBUG logging when is_visible_by_path unexpectedly returns False.
+    """
+    node = client.root_window
+    for i, segment in enumerate(path):
+        children = await node.children()
+        names = [await c.name() for c in children]
+        match = next((c for c, n in zip(children, names) if n == segment), None)
+        if match is None:
+            prefix = "→".join(path[:i]) if i > 0 else "(root)"
+            return f"missing {segment!r} under {prefix!r}; actual children: {names}"
+        node = match
+    visible = await node.is_visible()
+    return f"path found, is_visible()={visible}"
+
+
 async def is_visible_by_path(client, path: list[str]) -> bool:
     """Return True if the UI window at path exists and is currently visible."""
     window = await _get_window_from_path(client.root_window, path)

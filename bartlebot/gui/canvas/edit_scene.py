@@ -1031,10 +1031,13 @@ class EditScene(QGraphicsScene):
 
         SettingsManager.instance().add_recently_used_node(node_type)
 
-        # Remove original edge (src --w--> dst), then wire src --w--> new --∅--> dst
+        # Remove original edge (src --w--> dst), then wire src --w--> new --w'--> dst.
+        # Carry the original when value to the outgoing edge only if the new node actually
+        # returns that value; otherwise fall back to unconditional so the edge is never dead.
+        outgoing_when = w if (w is not None and w in new_node._returns) else None
         self._delete_edge_item(edge_item, confirm=False)
         self._create_transition(src_node, new_node, w)
-        self._create_transition(new_node, dst_node, None)
+        self._create_transition(new_node, dst_node, outgoing_when)
         self._in_structural_edit = False
         self._update_scene_rect()
 

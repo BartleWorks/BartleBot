@@ -113,3 +113,47 @@ async def test_exit_dungeon_dialog_dismissed():
     # confirm button clicked; no keypresses
     client.send_key.assert_not_called()
     assert click_by_path_mock.called
+
+
+# ---------------------------------------------------------------------------
+# Recording helpers
+# ---------------------------------------------------------------------------
+
+from bartlebot.gui.canvas.recording import _wait_for_zone_name, _zone_display  # noqa: E402
+
+
+def test_zone_display_none_returns_unknown():
+    """_zone_display(None) must not raise and must return a readable fallback."""
+    assert _zone_display(None) == "(unknown zone)"
+
+
+async def test_wait_for_zone_name_returns_immediately_when_not_none():
+    """If zone_name() is already non-None, the result is returned on the first call."""
+    client = FakeClient()
+    client.zone_name.return_value = "Dst"
+
+    zone = await _wait_for_zone_name(client, poll=0)
+
+    assert zone == "Dst"
+    assert client.zone_name.call_count == 1
+
+
+async def test_wait_for_zone_name_retries_on_none():
+    """If zone_name() returns None initially, polling continues until a valid zone is read."""
+    client = FakeClient()
+    client.zone_name.side_effect = [None, None, "Dst"]
+
+    zone = await _wait_for_zone_name(client, poll=0)
+
+    assert zone == "Dst"
+    assert client.zone_name.call_count == 3
+
+
+async def test_wait_for_zone_name_timeout_returns_none():
+    """If zone_name() never returns a non-None value, None is returned after the timeout."""
+    client = FakeClient()
+    client.zone_name.return_value = None
+
+    zone = await _wait_for_zone_name(client, poll=0, timeout=0)
+
+    assert zone is None

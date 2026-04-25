@@ -3,7 +3,7 @@
   "description": "Farms Ore and Diamonds in Mirkholm Keep in Grizzleheim",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
+  "initial": "state_3",
   "recovery_state": "state_3",
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Grizzleheim",
@@ -32,12 +32,12 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 450.0,
-        "y": 42.0
+        "x": 1350.0,
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
-        "spawns": "{\"x\": -7128.45, \"y\": 4746.83, \"z\": -470.0}\n{\"x\": -10611.16, \"y\": 6624.97, \"z\": -470.0}\n{\"x\": -10884.97, \"y\": 3368.47, \"z\": -670.0}\n{\"x\": -6415.49, \"y\": 10056.31, \"z\": -870.0}\n{\"x\": -8767.97, \"y\": 11897.81, \"z\": -870.01}\n{\"x\": -8134.89, \"y\": 7405.37, \"z\": -470.0}\n{\"x\": -12408.04, \"y\": 12252.97, \"z\": -670.0}\n{\"x\": -11139.5, \"y\": 15196.68, \"z\": -670.0}\n{\"x\": -6360.44, \"y\": 10020.77, \"z\": -870.0}\n{\"x\": -7432.74, \"y\": 21090.18, \"z\": -200.0}\n{\"x\": -7148.52, \"y\": 23026.04, \"z\": -200.0}\n\n\n\n"
+        "entity_name": "Ore"
       },
       "option_overrides": {},
       "flipped": false
@@ -47,8 +47,8 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 150.0,
-        "y": 42.0
+        "x": 4350.0,
+        "y": 7.0
       },
       "params": {
         "start_realm_page": 3,
@@ -62,8 +62,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Northguard",
       "position": {
-        "x": 1073.6483516483518,
-        "y": 41.65934065934066
+        "x": 150.0,
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_MainHub"
@@ -76,8 +76,8 @@
       "node_type": "enter_zone",
       "label": "Enter Mirkholm Keep",
       "position": {
-        "x": 1350.3223443223444,
-        "y": 38.35531135531136
+        "x": 450.0,
+        "y": 7.0
       },
       "params": {
         "from_zone": "Grizzleheim/GH_MainHub",
@@ -98,42 +98,198 @@
     },
     {
       "id": "state_5",
-      "node_type": "collect_reagent",
-      "label": "Collect Frost Flowers and Cat Tails",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to first spawn area",
       "position": {
-        "x": 752.1868131868133,
-        "y": -19.61904761904762
+        "x": 750.0,
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
-        "spawns": "{\"x\": 26051.88, \"y\": 35772.14, \"z\": -1194.84}\n{\"x\": 26852.54, \"y\": 34872.85, \"z\": -1194.84}\n{\"x\": 28758.85, \"y\": 34314.32, \"z\": -1194.85}\n{\"x\": 28922.18, \"y\": 32925.48, \"z\": -1194.85}\n{\"x\": 26508.44, \"y\": 34006.8, \"z\": -1194.81}\n{\"x\": 26943.6, \"y\": 33088.92, \"z\": -1194.79}\n{\"x\": 24515.16, \"y\": 35048.15, \"z\": -1194.78}\n{\"x\": 25067.67, \"y\": 35705.53, \"z\": -1194.82}\n{\"x\": 25633.96, \"y\": 33701.18, \"z\": -1194.83}\n{\"x\": -8792.48, \"y\": 11954.63, \"z\": -870.02}\n{\"x\": 27913.71, \"y\": 33365.08, \"z\": -1194.85}\n{\"x\": 28251.33, \"y\": 31909.38, \"z\": -1194.85}\n{\"x\": 25629.09, \"y\": 34709.23, \"z\": -1194.81}"
+        "xyz": {
+          "x": -10158.71,
+          "y": 5787.82,
+          "z": -470.05
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to second spawn area",
+      "position": {
+        "x": 1650.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "xyz": {
+          "x": -11522.34,
+          "y": 4606.54,
+          "z": -700.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_7",
+      "node_type": "collect_reagent",
+      "label": "Collect Ore",
+      "position": {
+        "x": 1950.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "entity_name": "Ore"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_8",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to third spawn area",
+      "position": {
+        "x": 2250.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "xyz": {
+          "x": -11717.84,
+          "y": 14869.37,
+          "z": -670.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_9",
+      "node_type": "collect_reagent",
+      "label": "Collect Ore",
+      "position": {
+        "x": 2550.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "entity_name": "Ore"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to fourth spawn area",
+      "position": {
+        "x": 2850.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "xyz": {
+          "x": -8169.28,
+          "y": 12734.95,
+          "z": -900.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_11",
+      "node_type": "collect_reagent",
+      "label": "Collect Ore",
+      "position": {
+        "x": 3150.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "entity_name": "Ore"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_12",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to fifth spawn area",
+      "position": {
+        "x": 3450.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "xyz": {
+          "x": -7959.48,
+          "y": 21699.6,
+          "z": -123.09
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_13",
+      "node_type": "collect_reagent",
+      "label": "Collect Ore",
+      "position": {
+        "x": 3750.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "entity_name": "Ore"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safety",
+      "position": {
+        "x": 4050.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "xyz": {
+          "x": -7959.48,
+          "y": 21699.6,
+          "z": -123.09
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1050.0,
+        "y": 7.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       },
       "option_overrides": {},
       "flipped": false
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Collect extra reagents",
-          "negate": true
-        }
-      ],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
     {
       "trigger": "advance",
       "source": "state_2",
@@ -152,22 +308,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_3",
       "dest": "state_3",
       "when": "FAILURE",
@@ -184,20 +324,175 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
+      "source": "state_5",
       "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Collect extra reagents",
-          "negate": false
-        }
-      ],
+      "when": "FAILURE",
+      "flags": [],
       "flag_op": "AND"
     },
     {
       "trigger": "advance",
-      "source": "state_5",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
       "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
@@ -206,8 +501,32 @@
     {
       "trigger": "advance",
       "source": "state_5",
-      "dest": "state_3",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

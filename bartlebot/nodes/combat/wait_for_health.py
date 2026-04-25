@@ -1,10 +1,12 @@
 """Node: block until all clients' health is at or above a threshold."""
 
 import asyncio
+import logging
 
-from bartlebot.nodes.node_helpers import poll_until
+from wizwalker import Keycode
+
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL
+from bartlebot.nodes.timing import AFK_INTERVAL, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -58,11 +60,22 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log(f"wait_for_health: waiting for all clients to reach {threshold:.0%} health")
 
-    async def condition() -> bool:
+    loop_start = asyncio.get_event_loop().time()
+    last_afk = loop_start
+    met = False
+    while True:
+        now = asyncio.get_event_loop().time()
         ratios = await asyncio.gather(*[c.calc_health_ratio() for c in clients])
-        return all(r >= threshold for r in ratios)
-
-    met = await poll_until(condition, timeout_val, POLL_INTERVAL)
+        if all(r >= threshold for r in ratios):
+            met = True
+            break
+        if timeout_val is not None and now - loop_start > timeout_val:
+            break
+        if now - last_afk >= AFK_INTERVAL:
+            machine.log("Sending anti-AFK input during health wait", logging.DEBUG)
+            await asyncio.gather(*[c.send_key(Keycode.A, 0.1) for c in clients])
+            last_afk = now
+        await asyncio.sleep(POLL_INTERVAL)
     if met:
         machine.log("wait_for_health: SUCCESS — health threshold reached")
         return "SUCCESS"
