@@ -93,9 +93,9 @@ NODE_SPEC = NodeSpec(
 )
 
 from bartlebot.nodes.timing import (  # noqa: E402
+    AFK_INTERVAL,
     MAX_RETRIES,
     POLL_INTERVAL,
-    TEAMUP_AFK_INTERVAL,
     TEAMUP_QUEUE_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
 )
@@ -243,7 +243,7 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
-        if now - last_afk >= TEAMUP_AFK_INTERVAL:
+        if now - last_afk >= AFK_INTERVAL:
             machine.log("Sending anti-AFK input during team-up wait", logging.DEBUG)
             await asyncio.gather(*[c.send_key(Keycode.A, 0.1) for c in clients])
             last_afk = now

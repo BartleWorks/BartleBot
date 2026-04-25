@@ -55,7 +55,7 @@ TEAMUP_QUEUE_TIMEOUT = 3600.0
 # Team-up matchmaking can take well over 10 minutes in low-population instances,
 # so a 1-hour ceiling is used.
 
-TEAMUP_AFK_INTERVAL = 180.0
+AFK_INTERVAL = 180.0
 # Seconds between anti-AFK inputs (pressing A briefly) while waiting in the
 # team-up queue.  Wizard101 idles the character after a few minutes without input.
 
