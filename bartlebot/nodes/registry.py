@@ -10,6 +10,8 @@ from bartlebot.nodes.combat.handle_potions import NODE_SPEC as _handle_potions_s
 from bartlebot.nodes.combat.handle_potions import run as handle_potions_run
 from bartlebot.nodes.combat.wait_for_health import NODE_SPEC as _wait_for_health_spec
 from bartlebot.nodes.combat.wait_for_health import run as wait_for_health_run
+from bartlebot.nodes.interaction.click_path import NODE_SPEC as _click_path_spec
+from bartlebot.nodes.interaction.click_path import run as click_path_run
 from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_reagent_spec
 from bartlebot.nodes.interaction.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
@@ -57,6 +59,7 @@ from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_v
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
     "change_realm": change_realm_run,
+    "click_path": click_path_run,
     "enter_zone": enter_zone_run,
     "handle_potions": handle_potions_run,
     "teleport_to_world_hub": teleport_to_world_hub_run,
@@ -87,6 +90,7 @@ NODE_REGISTRY: dict = {
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
     "change_realm": _change_realm_spec,
+    "click_path": _click_path_spec,
     "enter_zone": _enter_zone_spec,
     "handle_potions": _handle_potions_spec,
     "teleport_to_world_hub": _teleport_to_world_hub_spec,
@@ -155,6 +159,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
     (
         "Interaction",
         [
+            "click_path",
             "collect_reagent",
             "interact",
             "wait_for_dialogue",

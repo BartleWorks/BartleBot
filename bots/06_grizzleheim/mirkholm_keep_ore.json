@@ -33,7 +33,7 @@
       "label": "Collect Ore",
       "position": {
         "x": 1050.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -47,8 +47,8 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 3750.0,
-        "y": 0.0
+        "x": 4050.0,
+        "y": 7.0
       },
       "params": {
         "start_realm_page": 3,
@@ -63,7 +63,7 @@
       "label": "Teleport to Northguard",
       "position": {
         "x": 150.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_MainHub"
@@ -77,7 +77,7 @@
       "label": "Enter Mirkholm Keep",
       "position": {
         "x": 450.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "from_zone": "Grizzleheim/GH_MainHub",
@@ -102,7 +102,7 @@
       "label": "Teleport to first spawn area",
       "position": {
         "x": 750.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -121,7 +121,7 @@
       "label": "Teleport to second spawn area",
       "position": {
         "x": 1350.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -140,7 +140,7 @@
       "label": "Collect Ore",
       "position": {
         "x": 1650.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -155,7 +155,7 @@
       "label": "Teleport to third spawn area",
       "position": {
         "x": 1950.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -174,7 +174,7 @@
       "label": "Collect Ore",
       "position": {
         "x": 2250.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -189,7 +189,7 @@
       "label": "Teleport to fourth spawn area",
       "position": {
         "x": 2550.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -208,7 +208,7 @@
       "label": "Collect Ore",
       "position": {
         "x": 2850.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -223,7 +223,7 @@
       "label": "Teleport to fifth spawn area",
       "position": {
         "x": 3150.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -242,11 +242,30 @@
       "label": "Collect Ore",
       "position": {
         "x": 3450.0,
-        "y": 0.0
+        "y": 7.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "entity_name": "Ore"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safety",
+      "position": {
+        "x": 3750.0,
+        "y": 7.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "xyz": {
+          "x": -7959.48,
+          "y": 21699.6,
+          "z": -123.09
+        }
       },
       "option_overrides": {},
       "flipped": false
@@ -447,8 +466,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
       "source": "state_13",
-      "dest": "state_2",
+      "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
@@ -456,8 +483,16 @@
     {
       "trigger": "advance",
       "source": "state_13",
-      "dest": "state_2",
+      "dest": "state_14",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_2",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }
