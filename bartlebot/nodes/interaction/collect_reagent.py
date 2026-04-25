@@ -57,6 +57,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
     ],
+    max_consecutive_retries=5,
 )
 
 
@@ -73,21 +74,25 @@ async def _collect_for_client(machine, client, client_idx: int, entity_name: str
     collected = 0
 
     for i, entity in enumerate(entities, start=1):
-        xyz = await entity.location()
+        try:
+            xyz = await entity.location()
+        except Exception as exc:
+            machine.log(
+                f"Client {client_idx + 1}: entity {i} — stale reference, skipping ({exc})",
+                logging.DEBUG,
+            )
+            continue
         machine.log(
             f"Client {client_idx + 1}: entity {i}/{len(entities)} at ({xyz.x:.1f}, {xyz.y:.1f}, {xyz.z:.1f})",
             logging.DEBUG,
         )
         await client.teleport(xyz)
 
-        prompted = await client.is_in_npc_range()
-        if not prompted:
-            await node_helpers.poll_until(
-                lambda: node_helpers.all_in_npc_range([client]),
-                safety_delay,
-                POLL_INTERVAL,
-            )
-            prompted = await client.is_in_npc_range()
+        prompted = await client.is_in_npc_range() or await node_helpers.poll_until(
+            lambda: node_helpers.all_in_npc_range([client]),
+            safety_delay,
+            POLL_INTERVAL,
+        )
 
         if prompted:
             chat_before = await snapshot_chat(client)

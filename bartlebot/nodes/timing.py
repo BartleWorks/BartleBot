@@ -60,11 +60,6 @@ TEAMUP_AFK_INTERVAL = 180.0
 # team-up queue.  Wizard101 idles the character after a few minutes without input.
 
 
-REAGENT_COLLECT_DELAY = 0.5
-# Seconds to wait after pressing X at a reagent spawn before moving to the next
-# location. Gives the game time to register the collection animation and item pickup.
-
-
 REALM_HOP_TIMEOUT = 65.0
 # Seconds to wait for the realm-hop cooldown to expire.
 # Wizard101 imposes a ~60-second timer between realm changes; this adds a 5-second margin.
