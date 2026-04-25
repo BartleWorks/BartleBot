@@ -33,6 +33,8 @@ class ClientWidget(QWidget):
         self._last_xyz = "—"
         self._last_mob = "—"
         self._mob_tick = 0
+        self._last_entity = "—"
+        self._entity_tick = 0
         self._build_ui(index, total)
 
     # ------------------------------------------------------------------
@@ -132,6 +134,19 @@ class ClientWidget(QWidget):
         mob_row.addWidget(copy_mob_btn)
         layout.addLayout(mob_row)
 
+        # Nearest entity row
+        layout.addWidget(field_label("Nearest Entity"))
+        self._entity_label = QLabel("—")
+        self._entity_label.setWordWrap(True)
+        self._entity_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        copy_entity_btn = QPushButton("Copy Entity")
+        copy_entity_btn.setFixedWidth(80)
+        copy_entity_btn.clicked.connect(self._copy_entity)
+        entity_row = QHBoxLayout()
+        entity_row.addWidget(self._entity_label, 1)
+        entity_row.addWidget(copy_entity_btn)
+        layout.addLayout(entity_row)
+
         # UI tree browser
         ui_tree_btn = QPushButton("UI Tree Browser")
         ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this client")
@@ -156,6 +171,9 @@ class ClientWidget(QWidget):
 
     def _copy_mob(self) -> None:
         pyperclip.copy(self._last_mob)
+
+    def _copy_entity(self) -> None:
+        pyperclip.copy(self._last_entity)
 
     # ------------------------------------------------------------------
     # Async actions
@@ -252,3 +270,33 @@ class ClientWidget(QWidget):
             except Exception:
                 self._last_mob = "—"
             self._mob_label.setText(self._last_mob)
+
+        # Nearest non-mob entity — updated every 20 ticks (~2 s)
+        self._entity_tick += 1
+        if self._entity_tick >= 20:
+            self._entity_tick = 0
+            try:
+                pos = await self._client.body.position()
+                entities = await self._client.get_base_entity_list()
+                closest = None
+                closest_dist_sq = float("inf")
+                for e in entities:
+                    if await e.search_behavior_by_name("NPCBehavior") is not None:
+                        continue
+                    loc = await e.location()
+                    dist_sq = (loc.x - pos.x) ** 2 + (loc.y - pos.y) ** 2 + (loc.z - pos.z) ** 2
+                    if dist_sq < 25.0:  # < 5 units
+                        continue
+                    if dist_sq < closest_dist_sq:
+                        closest_dist_sq = dist_sq
+                        closest = e
+                if closest:
+                    obj_name = await closest.object_name() or "—"
+                    self._last_entity = obj_name
+                    self._entity_label.setText(obj_name)
+                else:
+                    self._last_entity = "—"
+                    self._entity_label.setText("—")
+            except Exception:
+                self._last_entity = "—"
+                self._entity_label.setText("—")
