@@ -16,6 +16,8 @@ from bartlebot.nodes.interaction.collect_reagent import NODE_SPEC as _collect_re
 from bartlebot.nodes.interaction.collect_reagent import run as collect_reagent_run
 from bartlebot.nodes.interaction.interact import NODE_SPEC as _interact_spec
 from bartlebot.nodes.interaction.interact import run as interact_run
+from bartlebot.nodes.interaction.interact_menu import NODE_SPEC as _interact_menu_spec
+from bartlebot.nodes.interaction.interact_menu import run as interact_menu_run
 from bartlebot.nodes.interaction.wait_for_dialogue import NODE_SPEC as _wait_for_dialogue_spec
 from bartlebot.nodes.interaction.wait_for_dialogue import run as wait_for_dialogue_run
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
@@ -69,6 +71,7 @@ NODE_REGISTRY: dict = {
     "enter_gauntlet": enter_gauntlet_run,
     "enter_zone_via_list": enter_zone_via_list_run,
     "interact": interact_run,
+    "interact_menu": interact_menu_run,
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
     "handle_combat": handle_combat_run,
@@ -100,6 +103,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "enter_gauntlet": _enter_gauntlet_spec,
     "enter_zone_via_list": _enter_zone_via_list_spec,
     "interact": _interact_spec,
+    "interact_menu": _interact_menu_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
     "handle_combat": _handle_combat_spec,
@@ -162,6 +166,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "click_path",
             "collect_reagent",
             "interact",
+            "interact_menu",
             "wait_for_dialogue",
         ],
     ),
