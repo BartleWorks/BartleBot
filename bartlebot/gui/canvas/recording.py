@@ -39,14 +39,28 @@ async def run_recording(
 # ---------------------------------------------------------------------------
 
 
-def _zone_display(zone: str) -> str:
+def _zone_display(zone: str | None) -> str:
     """Return a human-friendly display name for a zone path like 'WizardCity/WC_Hub'."""
+    if zone is None:
+        return "(unknown zone)"
     try:
         from wizsprinter import toZone, toZoneDisplayName  # noqa: PLC0415
 
         return toZoneDisplayName(toZone(zone))
     except Exception:
         return zone.split("/")[-1] if "/" in zone else zone
+
+
+async def _wait_for_zone_name(client, poll: float, timeout: float = 10.0) -> str | None:
+    """Poll until zone_name() returns a non-None value after a loading screen."""
+    deadline = asyncio.get_event_loop().time() + timeout
+    while True:
+        zone = await client.zone_name()
+        if zone is not None:
+            return zone
+        if asyncio.get_event_loop().time() >= deadline:
+            return None
+        await asyncio.sleep(poll)
 
 
 # ---------------------------------------------------------------------------
@@ -79,10 +93,10 @@ async def _record_enter_zone_gateway(client, param_form, on_status, on_btn, try_
         while await client.is_loading():
             await asyncio.sleep(POLL)
 
-        to_zone = await client.zone_name()
+        to_zone = await _wait_for_zone_name(client, POLL)
         param_form.set_str("to_zone", to_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(to_zone)}")
-        on_status(f"Done — {to_zone.split('/')[-1]}")
+        on_status(f"Done — {_zone_display(to_zone)}")
         on_btn("Record")
 
     except asyncio.CancelledError:
@@ -134,10 +148,10 @@ async def _record_enter_dungeon(client, param_form, on_status, on_btn, try_set_l
         while await client.is_loading():
             await asyncio.sleep(POLL)
 
-        dungeon_zone = await client.zone_name()
+        dungeon_zone = await _wait_for_zone_name(client, POLL)
         param_form.set_str("dungeon_zone", dungeon_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}")
-        on_status(f"Done — {dungeon_zone.split('/')[-1]}")
+        on_status(f"Done — {_zone_display(dungeon_zone)}")
         on_btn("Record")
 
     except asyncio.CancelledError:
@@ -244,10 +258,10 @@ async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try
         while await client.is_loading():
             await asyncio.sleep(POLL)
 
-        to_zone = await client.zone_name()
+        to_zone = await _wait_for_zone_name(client, POLL)
         param_form.set_str("to_zone", to_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(to_zone)}")
-        on_status(f"Done — {to_zone.split('/')[-1]}")
+        on_status(f"Done — {_zone_display(to_zone)}")
         on_btn("Record")
 
     except asyncio.CancelledError:
@@ -283,10 +297,10 @@ async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, tr
         while await client.is_loading():
             await asyncio.sleep(POLL)
 
-        dungeon_zone = await client.zone_name()
+        dungeon_zone = await _wait_for_zone_name(client, POLL)
         param_form.set_str("dungeon_zone", dungeon_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}")
-        on_status(f"Done — {dungeon_zone.split('/')[-1]}")
+        on_status(f"Done — {_zone_display(dungeon_zone)}")
         on_btn("Record")
 
     except asyncio.CancelledError:
@@ -323,7 +337,7 @@ async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try
         while await client.is_loading():
             await asyncio.sleep(POLL)
 
-        to_zone = await client.zone_name()
+        to_zone = await _wait_for_zone_name(client, POLL)
         param_form.set_str("to_zone", to_zone)
         # WizWalker exposes no "selected item" state on list controls, so we derive
         # the list entry text from the destination zone's display name. The user
