@@ -34,7 +34,7 @@ class ClientWidget(QWidget):
         self._last_mob = "—"
         self._mob_tick = 0
         self._last_entity = "—"
-        self._entity_tick = 0
+        self._entity_tick = 25  # offset from mob tick (also 50-tick cycle) to avoid simultaneous heavy reads
         self._build_ui(index, total)
 
     # ------------------------------------------------------------------
@@ -259,9 +259,9 @@ class ClientWidget(QWidget):
             self._y_label.setText("Y=—")
             self._z_label.setText("Z=—")
 
-        # Closest mob — updated every 20 ticks (~2 s)
+        # Closest mob — updated every 50 ticks (~5 s)
         self._mob_tick += 1
-        if self._mob_tick >= 20:
+        if self._mob_tick >= 50:
             self._mob_tick = 0
             try:
                 mob = await self._client.find_closest_mob()
@@ -271,9 +271,9 @@ class ClientWidget(QWidget):
                 self._last_mob = "—"
             self._mob_label.setText(self._last_mob)
 
-        # Nearest non-mob entity — updated every 20 ticks (~2 s)
+        # Nearest non-mob entity — updated every 50 ticks (~5 s)
         self._entity_tick += 1
-        if self._entity_tick >= 20:
+        if self._entity_tick >= 50:
             self._entity_tick = 0
             try:
                 pos = await self._client.body.position()
