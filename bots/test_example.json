@@ -25,8 +25,8 @@
       "node_type": "enter_zone",
       "label": "Go to Ravenwood",
       "position": {
-        "x": 150.0,
-        "y": 0.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -45,8 +45,8 @@
       "node_type": "enter_zone",
       "label": "Go to The Commons",
       "position": {
-        "x": 450.0,
-        "y": 0.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Ravenwood",
@@ -65,8 +65,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 750.0,
-        "y": 0.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"

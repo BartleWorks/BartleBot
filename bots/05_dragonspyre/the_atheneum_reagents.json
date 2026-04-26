@@ -30,8 +30,8 @@
       "node_type": "collect_reagent",
       "label": "Collect reagents",
       "position": {
-        "x": 150.0,
-        "y": 21.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
@@ -45,8 +45,8 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 450.0,
-        "y": -69.0
+        "x": 370.0,
+        "y": -55.0
       },
       "params": {
         "start_realm_page": 3,
@@ -60,8 +60,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Basilica",
       "position": {
-        "x": 450.0,
-        "y": 111.0
+        "x": 370.0,
+        "y": 125.0
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
@@ -74,8 +74,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Atheneum",
       "position": {
-        "x": 750.0,
-        "y": 21.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_Hub_Cathedral",

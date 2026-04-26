@@ -196,8 +196,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
-        "x": 150.0,
-        "y": 21.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -210,8 +210,8 @@
       "node_type": "enter_zone",
       "label": "Go to Hametsu Village",
       "position": {
-        "x": 1050.0,
-        "y": 21.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -235,8 +235,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Crimson Fields",
       "position": {
-        "x": 1350.0,
-        "y": 21.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
@@ -260,8 +260,8 @@
       "node_type": "interact",
       "label": "Talk to Hoi Mang",
       "position": {
-        "x": 1650.0,
-        "y": 21.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -287,8 +287,8 @@
       "node_type": "interact",
       "label": "Raise first flag",
       "position": {
-        "x": 1944.6056345371194,
-        "y": 258.3520803667548
+        "x": 1930.0,
+        "y": 215.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -316,8 +316,8 @@
       "node_type": "interact",
       "label": "Raise second flag",
       "position": {
-        "x": 2244.6056345371194,
-        "y": 258.3520803667548
+        "x": 2190.0,
+        "y": 215.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -345,8 +345,8 @@
       "node_type": "interact",
       "label": "Raise third flag",
       "position": {
-        "x": 2544.6056345371194,
-        "y": 258.3520803667548
+        "x": 2450.0,
+        "y": 215.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -374,8 +374,8 @@
       "node_type": "interact",
       "label": "Raise fourth flag",
       "position": {
-        "x": 2844.6056345371194,
-        "y": 258.3520803667548
+        "x": 2970.0,
+        "y": 215.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -403,8 +403,8 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 3150.0,
-        "y": 21.0
+        "x": 3230.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -430,8 +430,8 @@
       "node_type": "interact",
       "label": "Gather first wood pile",
       "position": {
-        "x": 3450.0,
-        "y": 21.0
+        "x": 3490.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -460,7 +460,7 @@
       "label": "Gather second wood pile",
       "position": {
         "x": 3750.0,
-        "y": 21.0
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -488,8 +488,8 @@
       "node_type": "interact",
       "label": "Gather third wood pile",
       "position": {
-        "x": 4050.0,
-        "y": 21.0
+        "x": 4010.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -517,8 +517,8 @@
       "node_type": "interact",
       "label": "Gather fourth wood pile",
       "position": {
-        "x": 4350.0,
-        "y": 21.0
+        "x": 4270.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -546,8 +546,8 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 4650.0,
-        "y": 21.0
+        "x": 4530.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -573,8 +573,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Construct first barricade",
       "position": {
-        "x": 4950.0,
-        "y": 21.0
+        "x": 5050.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -592,8 +592,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Construct second barricade",
       "position": {
-        "x": 5250.0,
-        "y": 21.0
+        "x": 5310.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -611,8 +611,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Construct third barricade",
       "position": {
-        "x": 5550.0,
-        "y": 21.0
+        "x": 5570.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -630,8 +630,8 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 5850.0,
-        "y": 21.0
+        "x": 5830.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -657,8 +657,8 @@
       "node_type": "interact",
       "label": "Talk to Ahn Nao",
       "position": {
-        "x": 6150.0,
-        "y": 21.0
+        "x": 6090.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -684,8 +684,8 @@
       "node_type": "interact",
       "label": "Talk to Sekou Leong",
       "position": {
-        "x": 6450.0,
-        "y": 21.0
+        "x": 6350.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -711,8 +711,8 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 6750.0,
-        "y": 21.0
+        "x": 6870.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -738,8 +738,8 @@
       "node_type": "interact",
       "label": "Talk to Bricktop",
       "position": {
-        "x": 7050.0,
-        "y": 21.0
+        "x": 7130.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -765,8 +765,8 @@
       "node_type": "enter_zone",
       "label": "Enter Grum Foultooth's tower",
       "position": {
-        "x": 7350.0,
-        "y": 21.0
+        "x": 7390.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -791,7 +791,7 @@
       "label": "Defeat Grum Foultooth",
       "position": {
         "x": 7650.0,
-        "y": 21.0
+        "y": 35.0
       },
       "params": {
         "enemy": "Troll-Yellow-MSBoss-L42",
@@ -806,8 +806,8 @@
       "node_type": "enter_zone",
       "label": "Exit Grum Foultooth's tower",
       "position": {
-        "x": 7950.0,
-        "y": 21.0
+        "x": 7910.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/Interiors/MS_War2_T2",
@@ -831,8 +831,8 @@
       "node_type": "interact",
       "label": "Talk to Bricktop",
       "position": {
-        "x": 8250.0,
-        "y": 21.0
+        "x": 8170.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -858,8 +858,8 @@
       "node_type": "interact",
       "label": "Use first cairn",
       "position": {
-        "x": 8550.0,
-        "y": 21.0
+        "x": 8430.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -887,8 +887,8 @@
       "node_type": "interact",
       "label": "Use second cairn",
       "position": {
-        "x": 8850.0,
-        "y": 21.0
+        "x": 8950.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -914,8 +914,8 @@
       "node_type": "interact",
       "label": "Talk to Bricktop",
       "position": {
-        "x": 9150.0,
-        "y": 21.0
+        "x": 9210.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -941,8 +941,8 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 9450.0,
-        "y": 21.0
+        "x": 9470.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -968,8 +968,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Yakedo",
       "position": {
-        "x": 9750.0,
-        "y": -189.47416200433776
+        "x": 9730.0,
+        "y": -145.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -987,8 +987,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Yakedo",
       "position": {
-        "x": 10350.0,
-        "y": -99.47416200433776
+        "x": 10250.0,
+        "y": -55.0
       },
       "params": {
         "enemy": "Pig-War-Warrior-LXX",
@@ -1003,8 +1003,8 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 10050.0,
-        "y": 111.0
+        "x": 9990.0,
+        "y": 125.0
       },
       "params": {
         "enemy": "",
@@ -1021,8 +1021,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
-        "x": 9750.0,
-        "y": 111.0
+        "x": 9730.0,
+        "y": 125.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1040,8 +1040,8 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 11539.21126907424,
-        "y": 276.4272075283443
+        "x": 11550.0,
+        "y": 305.0
       },
       "params": {
         "enemy": "",
@@ -1058,8 +1058,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
-        "x": 10939.21126907424,
-        "y": 276.4272075283443
+        "x": 11030.0,
+        "y": 305.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1077,8 +1077,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 11239.21126907424,
-        "y": 255.4272075283443
+        "x": 11290.0,
+        "y": 215.0
       },
       "params": {
         "duration": 5.0
@@ -1091,8 +1091,8 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 10650.0,
-        "y": 21.0
+        "x": 10770.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1118,8 +1118,8 @@
       "node_type": "enter_zone",
       "label": "Enter Katsumori's Dojo",
       "position": {
-        "x": 10948.201878179036,
-        "y": -191.27228382529796
+        "x": 11030.0,
+        "y": -235.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1143,8 +1143,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Katsumori",
       "position": {
-        "x": 11248.201878179036,
-        "y": -191.27228382529796
+        "x": 11290.0,
+        "y": -235.0
       },
       "params": {
         "enemy": "Pig-War-Lord-MSBoss-L43",
@@ -1159,8 +1159,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Cancel invulnerability",
       "position": {
-        "x": 11548.201878179036,
-        "y": -191.27228382529796
+        "x": 11550.0,
+        "y": -235.0
       },
       "params": {
         "zone": "MooShu/MS_War/Interiors/MS_War2_T1",
@@ -1178,8 +1178,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 11848.201878179036,
-        "y": -212.27228382529796
+        "x": 11810.0,
+        "y": -235.0
       },
       "params": {
         "duration": 5.0
@@ -1192,8 +1192,8 @@
       "node_type": "handle_combat",
       "label": "Defeat War Oni",
       "position": {
-        "x": 12155.394365462877,
-        "y": -191.17837487331116
+        "x": 12070.0,
+        "y": -235.0
       },
       "params": {
         "enemy": "Oni-War-MSBoss-L50",
@@ -1208,8 +1208,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 12432.018781790399,
-        "y": 26.394365462880792
+        "x": 12330.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1225,8 +1225,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Leave battlefield",
       "position": {
-        "x": 11839.21126907424,
-        "y": 276.4272075283443
+        "x": 11810.0,
+        "y": 305.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_BattlefieldA",
@@ -1244,8 +1244,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 450.0,
-        "y": 21.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1261,8 +1261,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 750.0,
-        "y": 21.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -1278,8 +1278,8 @@
       "node_type": "sleep",
       "label": "Wait for Yakedo to spawn",
       "position": {
-        "x": 10050.0,
-        "y": -210.47416200433776
+        "x": 9990.0,
+        "y": -235.0
       },
       "params": {
         "duration": 3.0

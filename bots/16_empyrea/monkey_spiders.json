@@ -34,8 +34,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Aeriel Shore",
       "position": {
-        "x": -102.86069326357097,
-        "y": 7.0
+        "x": -150.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
@@ -48,8 +48,8 @@
       "node_type": "enter_zone",
       "label": "Enter Aeriel Jungle",
       "position": {
-        "x": 797.139306736429,
-        "y": 7.0
+        "x": 890.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Empyrea/EM_Z00_Aeriel_HUB",
@@ -73,8 +73,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 197.13930673642903,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -90,8 +90,8 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 497.13930673642903,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "threshold": 1.0,
@@ -105,8 +105,8 @@
       "node_type": "enter_zone",
       "label": "Enter Monkey Spider Cave",
       "position": {
-        "x": 1097.139306736429,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Empyrea/EM_Z01_Jungle",
@@ -130,8 +130,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Monkey Spiders",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "EM_MonkeySpider_Hunter_A_01",
@@ -147,8 +147,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -164,8 +164,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit battle area",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave",
@@ -183,8 +183,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 2550.0,
-        "y": 0.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "duration": 5.0
@@ -197,8 +197,8 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 2970.0,
+        "y": 35.0
       },
       "params": {
         "keep_list": [
@@ -222,8 +222,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 3230.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -239,8 +239,8 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 1368.7778286461737,
-        "y": 140.93714846304772
+        "x": 1410.0,
+        "y": 125.0
       },
       "params": {
         "friend_name": "Luke SkullHunter",

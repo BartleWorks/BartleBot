@@ -35,8 +35,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Celestia/CL_Hub"
@@ -49,8 +49,8 @@
       "node_type": "enter_zone",
       "label": "Go to Crustacean Empire",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Celestia/CL_Hub",
@@ -74,8 +74,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Calypso's Cavern",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -93,8 +93,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Calypso's Cavern",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -118,8 +118,8 @@
       "node_type": "interact",
       "label": "Spawn Queen Calypso",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -145,8 +145,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Queen Calypso",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 3230.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "CL-UndeadMaiden-Boss-R10",
@@ -161,8 +161,8 @@
       "node_type": "sleep",
       "label": "Wait for Queen Calypso to spawn",
       "position": {
-        "x": 2850.0,
-        "y": 0.0
+        "x": 2970.0,
+        "y": 35.0
       },
       "params": {
         "duration": 1.0
@@ -175,8 +175,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3450.0,
-        "y": 7.0
+        "x": 3490.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -192,8 +192,8 @@
       "node_type": "interact",
       "label": "Reset Queen Calypso",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -219,8 +219,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter render radius",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -238,8 +238,8 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "threshold": 1.0,
@@ -253,8 +253,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {},
       "option_overrides": {},

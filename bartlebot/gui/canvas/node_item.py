@@ -29,6 +29,10 @@ PORT_SPACING = 28  # vertical spacing between named output ports
 _HEADER_H = 28  # height reserved for text label when returns are present
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 
+# Grid constants — shared with EditScene for drawBackground and migration script
+GRID_W = 260  # horizontal snap interval; matches auto-layout column spacing
+GRID_H = 90  # vertical snap interval; one node height (70) + 20px breathing room
+
 # ---------------------------------------------------------------------------
 # Color helpers — read from THEME at paint time so theme switches take effect
 # ---------------------------------------------------------------------------
@@ -169,6 +173,7 @@ class NodeItem(QGraphicsItem):
         self._edges: list = []
         self._is_search_match: bool = False
         self._is_search_current: bool = False
+        self._snap_enabled: bool = False
         self.setZValue(1)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
@@ -322,7 +327,19 @@ class NodeItem(QGraphicsItem):
         if edge in self._edges:
             self._edges.remove(edge)
 
+    def set_snap_enabled(self, enabled: bool) -> None:
+        """Enable or disable grid snapping for this node."""
+        self._snap_enabled = enabled
+
     def itemChange(self, change, value):
+        if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
+            # Round the top-left position to the nearest grid cell.
+            # Using ItemPositionChange (not HasChanged) means we return the modified
+            # value directly — Qt applies it without re-triggering this handler.
+            return QPointF(
+                round(value.x() / GRID_W) * GRID_W,
+                round(value.y() / GRID_H) * GRID_H,
+            )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             for edge in list(self._edges):
                 try:

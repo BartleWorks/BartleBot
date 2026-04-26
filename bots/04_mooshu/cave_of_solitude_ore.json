@@ -26,8 +26,8 @@
       "node_type": "collect_reagent",
       "label": "Collect reagents",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave",
@@ -41,8 +41,8 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "start_realm_page": 3,
@@ -56,8 +56,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Jade Palace",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -70,8 +70,8 @@
       "node_type": "enter_zone",
       "label": "Enter Water Dojo",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -95,8 +95,8 @@
       "node_type": "enter_zone",
       "label": "Enter Shoshun Village",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/Interiors/MS_WaterDojot1_Common",
@@ -120,8 +120,8 @@
       "node_type": "enter_zone",
       "label": "Enter Cave of Solitude",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",

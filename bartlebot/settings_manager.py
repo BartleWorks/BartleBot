@@ -42,6 +42,7 @@ class _CanvasSettings(BaseModel):
     minimap_visible: bool = True
     auto_layout_on_load: bool = True
     lod_compact_threshold: float = 0.6
+    snap_to_grid: bool = False
 
 
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
@@ -80,6 +81,7 @@ _DEFAULTS: dict[str, Any] = {
         "minimap_visible": True,
         "auto_layout_on_load": True,
         "lod_compact_threshold": 0.6,
+        "snap_to_grid": False,
         "bot_library_path": "bots",
     },
     "accounts": [],

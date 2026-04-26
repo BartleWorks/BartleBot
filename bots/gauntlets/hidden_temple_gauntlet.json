@@ -37,8 +37,8 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "friend_name": "Alice StormBlade",
@@ -52,8 +52,8 @@
       "node_type": "interact",
       "label": "Talk to Fitzhume",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
@@ -79,8 +79,8 @@
       "node_type": "enter_zone",
       "label": "Enter Temple of Water",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
@@ -104,8 +104,8 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int02",
@@ -129,8 +129,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to final boss fight",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int03",
@@ -148,8 +148,8 @@
       "node_type": "handle_combat",
       "label": "Defeat final bosses",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "HG_Dino_Undead_C_L50",
@@ -165,8 +165,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 2970.0,
+        "y": 35.0
       },
       "params": {
         "timeout": 60.0
@@ -179,8 +179,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to The Commons",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -193,8 +193,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -210,8 +210,8 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "dungeon_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01"

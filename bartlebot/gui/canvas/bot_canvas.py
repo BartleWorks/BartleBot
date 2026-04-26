@@ -585,6 +585,12 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
+        snap_on = SettingsManager.instance().get("canvas", "snap_to_grid", default=False)
+        self._snap_btn = _icon_btn("snap", "Snap to grid")
+        self._snap_btn.setCheckable(True)
+        self._snap_btn.setChecked(snap_on)
+        self._snap_btn.toggled.connect(self._on_snap_toggled)
+
         # Track (button → current icon name) so changeEvent can re-tint on theme switch.
         # _run_pause_btn entry is updated by _set_run_icon() whenever the icon changes.
         self._btn_icons: dict[QPushButton, str] = {
@@ -594,6 +600,7 @@ class BotCanvas(QWidget):
             self._fit_btn: "fit",
             self._add_state_btn: "plus",
             self._layout_btn: "layout",
+            self._snap_btn: "snap",
             self._done_btn: "checkmark",
             self._save_done_btn: "save_done",
         }
@@ -612,6 +619,8 @@ class BotCanvas(QWidget):
         edit_center_row.addWidget(self._add_state_btn)
         edit_center_row.addSpacing(4)
         edit_center_row.addWidget(self._layout_btn)
+        edit_center_row.addSpacing(4)
+        edit_center_row.addWidget(self._snap_btn)
 
         self._center_stack = QStackedWidget()
         self._center_stack.addWidget(run_center)  # _TB_RUN  = 0
@@ -780,6 +789,7 @@ class BotCanvas(QWidget):
 
             auto_layout(config)
         self._scene.setup(config)
+        self._scene.set_snap_enabled(self._snap_btn.isChecked())
         self._param_panel.show_idle()
         self._view.fit_scene()
         self._minimap.fit_to_scene()
@@ -891,6 +901,10 @@ class BotCanvas(QWidget):
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.adjustSize()
             self._focus_crumb.move(vx + 8, vy + 8)
+
+    def _on_snap_toggled(self, enabled: bool) -> None:
+        SettingsManager.instance().set("canvas", "snap_to_grid", value=enabled)
+        self._scene.set_snap_enabled(enabled)
 
     def _apply_canvas_settings(self) -> None:
         """Re-read canvas settings and update live widgets. Called after Settings dialog OK."""

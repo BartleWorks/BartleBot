@@ -37,8 +37,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter dungeon",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Darkmoor/DM_Z01_Graveholm",
@@ -62,8 +62,8 @@
       "node_type": "handle_combat",
       "label": "Defeat sisters",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "DM_Scholomari_WitchF_B_02",
@@ -79,8 +79,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -96,8 +96,8 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Darkmoor/Interiors/DM_Z01I17_SandersonHouse",
@@ -121,8 +121,8 @@
       "node_type": "collect_wisps",
       "label": "Collect more wisps",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -138,8 +138,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -155,8 +155,8 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "keep_list": [
@@ -175,8 +175,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Outsiders Camp",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp"
@@ -189,8 +189,8 @@
       "node_type": "enter_zone_via_list",
       "label": "Take Demox to Graveholm",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp",

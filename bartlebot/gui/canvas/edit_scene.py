@@ -10,8 +10,8 @@ also exported here so BotCanvas can use them without circular imports.
 
 import math
 
-from PyQt6.QtCore import QPointF, Qt, pyqtSignal
-from PyQt6.QtGui import QAction, QKeyEvent, QMouseEvent, QPen
+from PyQt6.QtCore import QPointF, QRectF, Qt, pyqtSignal
+from PyQt6.QtGui import QAction, QBrush, QKeyEvent, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.graph_view import GraphView
-from bartlebot.gui.canvas.node_item import NODE_H, NODE_W, NodeItem
+from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -226,6 +226,33 @@ class EditScene(QGraphicsScene):
         self._clipboard: tuple[list[dict], list[dict]] | None = None
         self._paste_count: int = 0
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
+        self._snap_enabled: bool = False
+
+    # ------------------------------------------------------------------
+    # Grid / snap
+    # ------------------------------------------------------------------
+
+    def set_snap_enabled(self, enabled: bool) -> None:
+        """Toggle snap-to-grid for all nodes and repaint the background grid."""
+        self._snap_enabled = enabled
+        for node in self._node_items.values():
+            node.set_snap_enabled(enabled)
+        self.update()
+
+    def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
+        super().drawBackground(painter, rect)
+        if not self._snap_enabled:
+            return
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
+        dot_r = 1.5
+        x = math.floor(rect.left() / GRID_W) * GRID_W
+        while x <= rect.right():
+            y = math.floor(rect.top() / GRID_H) * GRID_H
+            while y <= rect.bottom():
+                painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
+                y += GRID_H
+            x += GRID_W
 
     # ------------------------------------------------------------------
     # Public API

@@ -32,8 +32,8 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -47,8 +47,8 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 4350.0,
-        "y": 7.0
+        "x": 4270.0,
+        "y": 35.0
       },
       "params": {
         "start_realm_page": 3,
@@ -62,8 +62,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Northguard",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_MainHub"
@@ -76,8 +76,8 @@
       "node_type": "enter_zone",
       "label": "Enter Mirkholm Keep",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Grizzleheim/GH_MainHub",
@@ -101,8 +101,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to first spawn area",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -120,8 +120,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second spawn area",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -139,8 +139,8 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -154,8 +154,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to third spawn area",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -173,8 +173,8 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -188,8 +188,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fourth spawn area",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 2970.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -207,8 +207,8 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 3230.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -222,8 +222,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fifth spawn area",
       "position": {
-        "x": 3450.0,
-        "y": 7.0
+        "x": 3490.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -242,7 +242,7 @@
       "label": "Collect Ore",
       "position": {
         "x": 3750.0,
-        "y": 7.0
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -256,8 +256,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to safety",
       "position": {
-        "x": 4050.0,
-        "y": 7.0
+        "x": 4010.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -275,8 +275,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,

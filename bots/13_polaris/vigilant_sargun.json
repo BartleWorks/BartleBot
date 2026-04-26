@@ -24,8 +24,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "TP to Walruskberg",
       "position": {
-        "x": -36.12252896888245,
-        "y": 123.01050767191484
+        "x": -150.0,
+        "y": 125.0
       },
       "params": {
         "zone": "Polaris/PL_Z00_Walruskberg"
@@ -37,7 +37,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Sunless Shrine",
       "position": {
-        "x": 495.2821471517917,
+        "x": 370.0,
         "y": 35.0
       },
       "params": {
@@ -61,8 +61,8 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 749.7191394274226,
-        "y": 35.70861922441155
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
@@ -80,8 +80,8 @@
       "node_type": "handle_combat",
       "label": "Fight Vigilant Jarilo",
       "position": {
-        "x": 1016.8685870305782,
-        "y": 35.70861922441155
+        "x": 890.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "PL_WolfGryphon_Warrior_C",
@@ -99,8 +99,8 @@
       "node_type": "enter_zone",
       "label": "Exit boss room",
       "position": {
-        "x": 1277.6404616140298,
-        "y": 35.70861922441154
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Polaris/Interiors/PL_Z03I03_SunlessTempleTop",
@@ -118,8 +118,8 @@
       "node_type": "enter_zone",
       "label": "Exit Sunless Shrine",
       "position": {
-        "x": 1791.249462994457,
-        "y": 36.73611709980831
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
@@ -137,8 +137,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Take snowglobe to River of Frozen Tears",
       "position": {
-        "x": 216.13606054726895,
-        "y": 123.46450277796447
+        "x": 110.0,
+        "y": 125.0
       },
       "params": {
         "from_zone": "Polaris/PL_Z00_Walruskberg",
@@ -161,8 +161,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 1539.8731121029089,
-        "y": 36.1273096167408
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,

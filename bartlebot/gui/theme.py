@@ -132,6 +132,11 @@ class _Theme:
     minimap_viewport: str = "#3c78d2"
 
     # ------------------------------------------------------------------
+    # Canvas grid (dot grid shown when snap-to-grid is enabled)
+    # ------------------------------------------------------------------
+    grid_dot: str = "#c8cdd6"
+
+    # ------------------------------------------------------------------
     # Region palette (numbered — users may customize to any color)
     # ------------------------------------------------------------------
     region_1: str = "#F59E0B"
@@ -412,6 +417,8 @@ DARK = _Theme(
     minimap_bg="rgba(45, 45, 48, 220)",
     minimap_border="rgba(80, 80, 85, 200)",
     minimap_viewport="#4488cc",
+    # Grid
+    grid_dot="#404044",
     # Regions (same vivid palette — works on both light and dark)
     region_1="#F59E0B",
     region_2="#14B8A6",

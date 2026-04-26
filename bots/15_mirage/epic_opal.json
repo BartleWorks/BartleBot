@@ -32,8 +32,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Caravan",
       "position": {
-        "x": 150.0,
-        "y": 0.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Mirage/MR_Z00_Hub"
@@ -46,8 +46,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 450.0,
-        "y": 0.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -63,8 +63,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Take Magic Carpet to Rubal Wastes",
       "position": {
-        "x": 1050.0,
-        "y": 0.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Mirage/MR_Z00_Hub",
@@ -88,8 +88,8 @@
       "node_type": "enter_zone",
       "label": "Enter House Calixco",
       "position": {
-        "x": 1350.0,
-        "y": 0.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Mirage/MR_Z04_RubalWastes",
@@ -113,8 +113,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Baron's Audience Chamber",
       "position": {
-        "x": 1650.0,
-        "y": 0.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Mirage/Interiors/MR_Z04_CalixcoManor",
@@ -138,8 +138,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Advisor Fancy Fries",
       "position": {
-        "x": 1950.0,
-        "y": 0.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "MR_Cat_SorcererF_D_Boss_01",
@@ -155,8 +155,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2250.0,
-        "y": 0.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -172,8 +172,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 750.0,
-        "y": 0.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -189,8 +189,8 @@
       "node_type": "enter_zone",
       "label": "Exit Baron's Audience Chamber",
       "position": {
-        "x": 2850.0,
-        "y": 0.0
+        "x": 2970.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Mirage/Interiors/MR_Z04_BaronsAudienceChamber",
@@ -214,8 +214,8 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 2550.0,
-        "y": 0.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "keep_list": [

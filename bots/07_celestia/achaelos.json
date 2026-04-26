@@ -37,8 +37,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Celestia/CL_Hub"
@@ -51,8 +51,8 @@
       "node_type": "enter_zone",
       "label": "Go to Crustacean Empire",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Celestia/CL_Hub",
@@ -76,8 +76,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Achaelos's Cloister",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -101,8 +101,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Achaelos",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "CL-AnglerBoss-R10-3",
@@ -117,8 +117,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -134,8 +134,8 @@
       "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
-        "x": 1055.2739621187275,
-        "y": 161.7866388979993
+        "x": 1150.0,
+        "y": 125.0
       },
       "params": {
         "from_zone": "Celestia/Interiors/CL_Z10i6_Kingdom_Of_The_Crabs",
@@ -159,8 +159,8 @@
       "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
-        "x": 1056.885685798622,
-        "y": 309.84520596917025
+        "x": 1150.0,
+        "y": 305.0
       },
       "params": {
         "from_zone": "Celestia/Interiors/CL_Z10i6_Kingdom_Of_The_Crabs",
@@ -184,8 +184,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 754.2963899639235,
-        "y": 259.1614957363068
+        "x": 630.0,
+        "y": 215.0
       },
       "params": {
         "if_health_below": 0.5,

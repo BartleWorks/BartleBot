@@ -240,8 +240,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
@@ -254,8 +254,8 @@
       "node_type": "enter_zone",
       "label": "Enter Tomb of Storms",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -279,8 +279,8 @@
       "node_type": "interact",
       "label": "Activate first pillar",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -306,8 +306,8 @@
       "node_type": "interact",
       "label": "Activate second pillar",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -333,8 +333,8 @@
       "node_type": "interact",
       "label": "Activate third pillar",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -360,8 +360,8 @@
       "node_type": "sleep",
       "label": "Wait for portal to open",
       "position": {
-        "x": 1350.0,
-        "y": 0.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "duration": 15.0
@@ -374,8 +374,8 @@
       "node_type": "enter_zone",
       "label": "Enter Well of Spirits",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub_Crypt",
@@ -399,8 +399,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Storms",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
@@ -424,8 +424,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2850.0,
-        "y": 143.3767168083715
+        "x": 2970.0,
+        "y": 125.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -448,8 +448,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Krokopatra",
       "position": {
-        "x": 3185.2374100719426,
-        "y": 7.103335513407465
+        "x": 3230.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -467,8 +467,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Krokopatra",
       "position": {
-        "x": 3485.237410071943,
-        "y": 8.325049051667762
+        "x": 3490.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "KrokTut-Storm-KTBoss-L05",
@@ -484,8 +484,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Teleport to Well of Spirits",
       "position": {
-        "x": 3785.237410071943,
-        "y": 8.325049051667762
+        "x": 3750.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -509,8 +509,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 4085.237410071943,
-        "y": 8.325049051667762
+        "x": 4010.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -526,8 +526,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {},
       "option_overrides": {},

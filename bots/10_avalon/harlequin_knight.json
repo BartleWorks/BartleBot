@@ -186,8 +186,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Caliburn",
       "position": {
-        "x": 150.0,
-        "y": 21.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Avalon/AV_Z00_Hub"
@@ -200,8 +200,8 @@
       "node_type": "enter_zone",
       "label": "Enter High Road",
       "position": {
-        "x": 450.0,
-        "y": 21.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z00_Hub",
@@ -225,8 +225,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Harlequin Knight's Tower",
       "position": {
-        "x": 1339.9856115107914,
-        "y": 21.705035971223012
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z02_HighRoad",
@@ -250,8 +250,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Harlequin Knight",
       "position": {
-        "x": 1639.9856115107914,
-        "y": 21.705035971223012
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "AV-DogKnight-Harlequin-R11-01",
@@ -267,8 +267,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1939.9856115107914,
-        "y": 21.705035971223012
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -284,8 +284,8 @@
       "node_type": "enter_zone",
       "label": "Exit Harlequin Knight's Tower",
       "position": {
-        "x": 2250.0,
-        "y": 21.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_Z02_TowerHarlequin",
@@ -309,8 +309,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1039.9856115107914,
-        "y": 21.705035971223012
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -326,8 +326,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 750.0,
-        "y": 21.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {},
       "option_overrides": {},
@@ -338,8 +338,8 @@
       "node_type": "enter_zone",
       "label": "Enter Caer Lyon",
       "position": {
-        "x": 1041.6546762589928,
-        "y": 245.61870503597115
+        "x": 1150.0,
+        "y": 215.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z02_HighRoad",
@@ -363,8 +363,8 @@
       "node_type": "enter_zone",
       "label": "Enter Outer Yard",
       "position": {
-        "x": 1341.6546762589928,
-        "y": 245.61870503597115
+        "x": 1410.0,
+        "y": 215.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z03_CaerLyon",
@@ -388,8 +388,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Keep of Ganelon",
       "position": {
-        "x": 1641.6546762589933,
-        "y": 245.61870503597115
+        "x": 1670.0,
+        "y": 215.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z07_OuterYard",
@@ -413,8 +413,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1941.6546762589933,
-        "y": 245.61870503597115
+        "x": 1930.0,
+        "y": 215.0
       },
       "params": {
         "zone": "Avalon/AV_Z13_KeepOfGanelon",

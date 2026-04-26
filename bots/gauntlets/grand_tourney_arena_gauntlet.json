@@ -32,8 +32,8 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 750.0,
-        "y": 0.0
+        "x": 630.0,
+        "y": 35.0
       },
       "params": {
         "friend_name": "Alice StormBlade",
@@ -47,8 +47,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to The Commons",
       "position": {
-        "x": 150.0,
-        "y": 0.0
+        "x": 110.0,
+        "y": 35.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -61,8 +61,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 0.0
+        "x": 370.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -78,8 +78,8 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1050.0,
-        "y": 0.0
+        "x": 1150.0,
+        "y": 35.0
       },
       "params": {
         "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01"
@@ -92,8 +92,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Lyonel LaughingStorm",
       "position": {
-        "x": 1350.0,
-        "y": 0.0
+        "x": 1410.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "DD-AV01-DeerKnight-80",
@@ -109,8 +109,8 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 1650.0,
-        "y": 0.0
+        "x": 1670.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
@@ -134,8 +134,8 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 1950.0,
-        "y": 0.0
+        "x": 1930.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_02",
@@ -161,8 +161,8 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 2250.0,
-        "y": 0.0
+        "x": 2190.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_02",
@@ -186,8 +186,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Lady Tanselle DreamingStar",
       "position": {
-        "x": 2550.0,
-        "y": 0.0
+        "x": 2450.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "DD-AV01-FoxKnight-80",
@@ -203,8 +203,8 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 2850.0,
-        "y": 0.0
+        "x": 2970.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
@@ -228,8 +228,8 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 3150.0,
-        "y": 0.0
+        "x": 3230.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_03",
@@ -255,8 +255,8 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 3450.0,
-        "y": 0.0
+        "x": 3490.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_03",
@@ -281,7 +281,7 @@
       "label": "Defeat Sir Dunc",
       "position": {
         "x": 3750.0,
-        "y": 0.0
+        "y": 35.0
       },
       "params": {
         "enemy": "DD-AV01-BadgerKnight-80",
@@ -297,8 +297,8 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 4050.0,
-        "y": 0.0
+        "x": 4010.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
@@ -322,8 +322,8 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 4350.0,
-        "y": 0.0
+        "x": 4270.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_04",
@@ -349,8 +349,8 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 4650.0,
-        "y": 0.0
+        "x": 4530.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_04",
@@ -374,8 +374,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Steffan BadApple",
       "position": {
-        "x": 4950.0,
-        "y": 0.0
+        "x": 5050.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "DD-AV01-DogKnight-80",
@@ -391,8 +391,8 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 5250.0,
-        "y": 0.0
+        "x": 5310.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
@@ -416,8 +416,8 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 5550.0,
-        "y": 0.0
+        "x": 5570.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_05",
@@ -443,8 +443,8 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 5850.0,
-        "y": 0.0
+        "x": 5830.0,
+        "y": 35.0
       },
       "params": {
         "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_05",
@@ -468,8 +468,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Claudus D'Agrodolce",
       "position": {
-        "x": 6150.0,
-        "y": 0.0
+        "x": 6090.0,
+        "y": 35.0
       },
       "params": {
         "enemy": "DD-AV01-CrabKnight-80",
@@ -485,8 +485,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Complete gauntlet",
       "position": {
-        "x": 6750.0,
-        "y": 0.0
+        "x": 6870.0,
+        "y": 35.0
       },
       "params": {
         "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
@@ -504,8 +504,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6450.0,
-        "y": 0.0
+        "x": 6350.0,
+        "y": 35.0
       },
       "params": {
         "if_health_below": 1.0,
