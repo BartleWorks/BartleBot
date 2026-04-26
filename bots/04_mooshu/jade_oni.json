@@ -238,7 +238,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 1440,
+        "x": 1440.0,
         "y": 0.0
       },
       "params": {},
@@ -250,8 +250,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1800,
-        "y": 0.0
+        "x": 1800.0,
+        "y": 180.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",

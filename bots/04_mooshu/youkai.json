@@ -148,7 +148,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter the Tree of Life",
       "position": {
-        "x": 2520,
+        "x": 3240.0,
         "y": 0.0
       },
       "params": {
@@ -173,7 +173,7 @@
       "node_type": "enter_zone",
       "label": "Go to Youkai's Dojo",
       "position": {
-        "x": 2880,
+        "x": 3600.0,
         "y": 0.0
       },
       "params": {
@@ -198,7 +198,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Youkai",
       "position": {
-        "x": 3240,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -215,8 +215,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
-        "x": 3600,
-        "y": 0.0
+        "x": 4320.0,
+        "y": 90.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
@@ -227,14 +227,14 @@
         }
       },
       "option_overrides": {},
-      "flipped": true
+      "flipped": false
     },
     {
       "id": "state_12",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3960,
+        "x": 2880.0,
         "y": 0.0
       },
       "params": {
@@ -244,7 +244,7 @@
         "mark_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple"
       },
       "option_overrides": {},
-      "flipped": true
+      "flipped": false
     },
     {
       "id": "state_10",
@@ -277,14 +277,6 @@
       "trigger": "advance",
       "source": "state_3",
       "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
@@ -445,6 +437,14 @@
       "trigger": "advance",
       "source": "state_10",
       "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
