@@ -358,8 +358,13 @@ class EditScene(QGraphicsScene):
                 _seen.add(key)
                 unique_edges.append(key)
 
-        below_groups: dict[tuple[str, str | None], list[tuple[str, str | None, str]]] = defaultdict(list)
-        above_groups: dict[tuple[str, str | None], list[tuple[str, str | None, str]]] = defaultdict(list)
+        # Group by (when, y_row) so all backward edges in the same horizontal band
+        # with the same when-label share a corridor, regardless of destination.
+        # Using destination as the grouping key caused edges to unique destinations
+        # to route independently via a port-midpoint heuristic, producing a different
+        # bridge Y than the node-bounds formula used for multi-destination groups.
+        below_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
+        above_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
         for s, w, d in unique_edges:
             if s == d or s not in self._node_items or d not in self._node_items:
                 continue
@@ -368,21 +373,18 @@ class EditScene(QGraphicsScene):
                 continue  # forward edge
             if abs(sn.pos().y() - dn.pos().y()) >= sn._height:
                 continue  # Y-band outlier — routes independently
+            y_row = round(sn.pos().y() / GRID_H)
             if _is_above_routed(sn, w):
-                above_groups[(d, w)].append((s, w, d))
+                above_groups[(w, y_row)].append((s, w, d))
             else:
-                below_groups[(d, w)].append((s, w, d))
+                below_groups[(w, y_row)].append((s, w, d))
 
         bridge_y_map: dict[tuple[str, str | None, str], float] = {}
         for group_edges in below_groups.values():
-            if len(group_edges) < 2:
-                continue
             shared_y = max(_below_limit(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
             for key in group_edges:
                 bridge_y_map[key] = shared_y
         for group_edges in above_groups.values():
-            if len(group_edges) < 2:
-                continue
             shared_y = min(_above_limit(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
             for key in group_edges:
                 bridge_y_map[key] = shared_y
