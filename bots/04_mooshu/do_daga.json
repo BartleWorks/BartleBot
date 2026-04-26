@@ -116,7 +116,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Do-Daga's Dojo",
       "position": {
-        "x": 1440,
+        "x": 1800.0,
         "y": 0.0
       },
       "params": {
@@ -141,7 +141,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Do-Daga",
       "position": {
-        "x": 1800,
+        "x": 2160.0,
         "y": 0.0
       },
       "params": {
@@ -157,7 +157,7 @@
       "node_type": "enter_zone",
       "label": "Exit Do-Daga's Dojo",
       "position": {
-        "x": 2520,
+        "x": 2880.0,
         "y": 0.0
       },
       "params": {
@@ -182,7 +182,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2160,
+        "x": 2520.0,
         "y": 0.0
       },
       "params": {
@@ -199,7 +199,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 2880,
+        "x": 3600.0,
         "y": 0.0
       },
       "params": {},
@@ -211,7 +211,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
-        "x": 3600,
+        "x": 4320.0,
         "y": 0.0
       },
       "params": {
@@ -225,7 +225,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Emperor's Throne Room",
       "position": {
-        "x": 3960,
+        "x": 4680.0,
         "y": 0.0
       },
       "params": {
@@ -250,7 +250,7 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 4320,
+        "x": 5040.0,
         "y": 0.0
       },
       "params": {
@@ -274,7 +274,7 @@
       "node_type": "mark_location",
       "label": "Mark location",
       "position": {
-        "x": 3240,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -293,7 +293,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to marked location",
       "position": {
-        "x": 4680,
+        "x": 5400.0,
         "y": 0.0
       },
       "params": {

@@ -225,8 +225,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Harlequin Knight's Tower",
       "position": {
-        "x": 1440,
-        "y": 90.0
+        "x": 1440.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z02_HighRoad",
@@ -250,8 +250,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Harlequin Knight",
       "position": {
-        "x": 1800,
-        "y": 90.0
+        "x": 1800.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "AV-DogKnight-Harlequin-R11-01",
@@ -267,8 +267,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2160,
-        "y": 90.0
+        "x": 2160.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -284,7 +284,7 @@
       "node_type": "enter_zone",
       "label": "Exit Harlequin Knight's Tower",
       "position": {
-        "x": 2520,
+        "x": 2520.0,
         "y": 0.0
       },
       "params": {
@@ -309,8 +309,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1080,
-        "y": 90.0
+        "x": 1080.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -338,8 +338,8 @@
       "node_type": "enter_zone",
       "label": "Enter Caer Lyon",
       "position": {
-        "x": 1080,
-        "y": -90.0
+        "x": 1080.0,
+        "y": -270.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z02_HighRoad",
@@ -363,8 +363,8 @@
       "node_type": "enter_zone",
       "label": "Enter Outer Yard",
       "position": {
-        "x": 1440,
-        "y": -90.0
+        "x": 1440.0,
+        "y": -270.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z03_CaerLyon",
@@ -388,8 +388,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Keep of Ganelon",
       "position": {
-        "x": 1800,
-        "y": -90.0
+        "x": 1800.0,
+        "y": -270.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z07_OuterYard",
@@ -413,8 +413,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2160,
-        "y": -90.0
+        "x": 2160.0,
+        "y": -270.0
       },
       "params": {
         "zone": "Avalon/AV_Z13_KeepOfGanelon",
