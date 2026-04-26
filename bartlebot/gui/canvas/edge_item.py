@@ -17,7 +17,8 @@ ARROW_SIZE = 13
 
 _CORNER_R = 8  # rounded-corner radius on orthogonal paths (px)
 _BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
-_SELF_LOOP_H_STEP = 16  # self-loop arm/bridge clearance — must exceed arrowhead back-reach (~11 px)
+_SELF_LOOP_H_STEP = 16  # vertical bridge clearance for self-loops — must exceed arrowhead back-reach (~11 px)
+_SELF_LOOP_ARM = 35  # horizontal arm length for self-loops (visual width)
 BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
 _BACK_PADDING = BACK_PADDING  # alias kept for internal use
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
@@ -136,7 +137,7 @@ class EdgeItem(QGraphicsPathItem):
         elif self._hovered:
             pen = QPen(_edge_hover(), 2.5)
         else:
-            pen = QPen(_when_edge_color(self._when), 1.5)
+            pen = QPen(_when_edge_color(self._when), 2.0)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -299,10 +300,10 @@ class EdgeItem(QGraphicsPathItem):
         dst_sign = 1 if flipped else -1
         waypoints = [
             src_pt,
-            QPointF(src_pt.x() + src_sign * _SELF_LOOP_H_STEP, src_pt.y()),
-            QPointF(src_pt.x() + src_sign * _SELF_LOOP_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_H_STEP, dst_pt.y()),
+            QPointF(src_pt.x() + src_sign * _SELF_LOOP_ARM, src_pt.y()),
+            QPointF(src_pt.x() + src_sign * _SELF_LOOP_ARM, bridge_y),
+            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_ARM, bridge_y),
+            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_ARM, dst_pt.y()),
             dst_pt,
         ]
         _draw_ortho_path(path, waypoints)

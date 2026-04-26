@@ -149,7 +149,7 @@
       "label": "Teleport to the Commons",
       "position": {
         "x": 110.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -163,7 +163,7 @@
       "label": "Enter Shopping District",
       "position": {
         "x": 710.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -188,7 +188,7 @@
       "label": "Enter Olde Town",
       "position": {
         "x": 1010.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -213,7 +213,7 @@
       "label": "Enter Firecat Alley",
       "position": {
         "x": 1310.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -238,7 +238,7 @@
       "label": "Enter Fireglobe Theatre",
       "position": {
         "x": 1610.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Firecat",
@@ -263,7 +263,7 @@
       "label": "Defeat Alicane Swiftarrow",
       "position": {
         "x": 1910.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "enemy": "FireElf-Prince-WCBoss-L04",
@@ -280,7 +280,7 @@
       "label": "Exit Fireglobe Theatre",
       "position": {
         "x": 2210.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Firecat_Theatre",
@@ -305,7 +305,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 2510.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {},
       "option_overrides": {},
@@ -317,7 +317,7 @@
       "label": "Handle potions",
       "position": {
         "x": 410.0,
-        "y": 35.0
+        "y": 42.0
       },
       "params": {
         "if_health_below": 0.5,
