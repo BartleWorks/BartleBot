@@ -16,10 +16,10 @@ from bartlebot.gui.theme import THEME
 ARROW_SIZE = 13
 
 _CORNER_R = 8  # rounded-corner radius on orthogonal paths (px)
-_BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
-_SELF_LOOP_H_STEP = 16  # vertical bridge clearance for self-loops — must exceed arrowhead back-reach (~11 px)
-_SELF_LOOP_ARM = 35  # horizontal arm length for self-loops (visual width)
-BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
+_BACK_H_STEP = 20  # how far backward edges extend horizontally beyond node edge
+_SELF_LOOP_H_STEP = -15  # vertical bridge clearance for self-loops — must exceed arrowhead back-reach (~11 px)
+_SELF_LOOP_ARM = 20  # horizontal arm length for self-loops (visual width)
+BACK_PADDING = 30  # minimum gap between backward-edge bridge and the node edges
 _BACK_PADDING = BACK_PADDING  # alias kept for internal use
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 

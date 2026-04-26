@@ -255,7 +255,7 @@
       "label": "Enter Tomb of Storms",
       "position": {
         "x": 1610.0,
-        "y": 42.0
+        "y": -48.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -280,7 +280,7 @@
       "label": "Activate first pillar",
       "position": {
         "x": 410.0,
-        "y": 42.0
+        "y": -48.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -307,7 +307,7 @@
       "label": "Activate second pillar",
       "position": {
         "x": 710.0,
-        "y": 42.0
+        "y": -48.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -334,7 +334,7 @@
       "label": "Activate third pillar",
       "position": {
         "x": 1010.0,
-        "y": 42.0
+        "y": -48.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -361,7 +361,7 @@
       "label": "Wait for portal to open",
       "position": {
         "x": 1310.0,
-        "y": 35.0
+        "y": -55.0
       },
       "params": {
         "duration": 15.0
@@ -399,7 +399,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Storms",
       "position": {
-        "x": 2210.0,
+        "x": 2510.0,
         "y": 42.0
       },
       "params": {
@@ -424,8 +424,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2810.0,
-        "y": 222.0
+        "x": 3110.0,
+        "y": 312.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -448,7 +448,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Krokopatra",
       "position": {
-        "x": 3110.0,
+        "x": 3410.0,
         "y": 42.0
       },
       "params": {
@@ -467,7 +467,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Krokopatra",
       "position": {
-        "x": 3410.0,
+        "x": 3710.0,
         "y": 42.0
       },
       "params": {
@@ -484,7 +484,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Teleport to Well of Spirits",
       "position": {
-        "x": 3710.0,
+        "x": 4010.0,
         "y": 42.0
       },
       "params": {
@@ -509,7 +509,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 4010.0,
+        "x": 4310.0,
         "y": 42.0
       },
       "params": {
@@ -526,7 +526,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 2510.0,
+        "x": 2810.0,
         "y": 42.0
       },
       "params": {},

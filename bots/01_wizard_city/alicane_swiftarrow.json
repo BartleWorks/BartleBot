@@ -237,7 +237,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Fireglobe Theatre",
       "position": {
-        "x": 1610.0,
+        "x": 1910.0,
         "y": 42.0
       },
       "params": {
@@ -262,7 +262,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Alicane Swiftarrow",
       "position": {
-        "x": 1910.0,
+        "x": 2210.0,
         "y": 42.0
       },
       "params": {
@@ -279,7 +279,7 @@
       "node_type": "enter_zone",
       "label": "Exit Fireglobe Theatre",
       "position": {
-        "x": 2210.0,
+        "x": 2510.0,
         "y": 42.0
       },
       "params": {
@@ -304,7 +304,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2510.0,
+        "x": 2810.0,
         "y": 42.0
       },
       "params": {},
