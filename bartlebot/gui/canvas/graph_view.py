@@ -81,11 +81,19 @@ class GraphView(QGraphicsView):
         self._fitting = False
 
     def smooth_center_on(self, item: QGraphicsItem, duration_ms: int = 300) -> None:
-        """Animate the viewport to center on item, but only if it isn't already fully visible."""
+        """Animate the viewport to center on item.
+
+        Skipped only when the node is fully visible AND the entire graph fits in the viewport.
+        When zoomed in past the point where all nodes fit, always re-centers on the active node.
+        """
         node_scene_rect = item.mapRectToScene(item.boundingRect())
         visible_scene_rect = self.mapToScene(self.viewport().rect()).boundingRect()
         if visible_scene_rect.contains(node_scene_rect):
-            return
+            scene = self.scene()
+            if scene is not None:
+                all_bounds = self._scene_fit_bounds(scene)
+                if all_bounds.isNull() or visible_scene_rect.contains(all_bounds):
+                    return
 
         center = node_scene_rect.center()
         vp = self.mapFromScene(center)
