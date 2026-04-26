@@ -7,6 +7,7 @@ from PyQt6.QtGui import (
     QBrush,
     QColor,
     QFont,
+    QFontMetrics,
     QPainter,
     QPen,
 )
@@ -21,13 +22,12 @@ from bartlebot.gui.theme import THEME
 # Geometry constants (also used by EdgeItem for port positions)
 # ---------------------------------------------------------------------------
 
-NODE_W = 220
-NODE_H = 70
+NODE_W = 220  # width of the left info section
+NODE_H = 70  # node height — always fixed regardless of return count
 NODE_RADIUS = 12
 PORT_R = 6  # radius of connection-port circles
-PORT_SPACING = 28  # vertical spacing between named output ports
-_HEADER_H = 28  # height reserved for text label when returns are present
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
+_RIGHT_PAD = 16  # horizontal padding inside the right returns section
 
 # Grid constants — shared with EditScene for drawBackground and migration script.
 # Padding values define the gap between adjacent node edges on the grid.
@@ -113,9 +113,9 @@ def _port_color() -> QColor:
     return THEME.qcolor("port_color")
 
 
-def node_height(n_returns: int) -> int:
-    """Compute the pixel height for a node with *n_returns* named output ports."""
-    return max(NODE_H, (max(n_returns, 1) + 1) * PORT_SPACING)
+def node_height(_n_returns: int) -> int:
+    """Node height — always NODE_H regardless of return count."""
+    return NODE_H
 
 
 # ---------------------------------------------------------------------------
@@ -124,7 +124,17 @@ def node_height(n_returns: int) -> int:
 
 
 class NodeItem(QGraphicsItem):
-    """Rounded-rect node showing a state's label."""
+    """Rounded-rect node showing a state's label.
+
+    Layout: a fixed-height left info section (NODE_W wide) containing the
+    label and state_id/node_type, plus an optional right section containing
+    named output port labels. The right section only takes the minimum width
+    needed to display the longest return label.
+
+    For flipped nodes the port section extends to the LEFT of the info
+    section (into negative local x), so the scenePos anchor always refers
+    to the top-left of the info section.
+    """
 
     def __init__(
         self,
@@ -173,6 +183,7 @@ class NodeItem(QGraphicsItem):
         self._is_warning = is_warning
         self._flipped: bool = flipped
         self._returns: list[str] = list(returns) if returns else []
+        self._right_w: int = self._compute_right_w()
         self._edges: list = []
         self._is_search_match: bool = False
         self._is_search_current: bool = False
@@ -185,16 +196,43 @@ class NodeItem(QGraphicsItem):
             self.setAcceptHoverEvents(True)
             self.setCursor(Qt.CursorShape.SizeAllCursor)
 
+    # ------------------------------------------------------------------
+    # Geometry helpers
+    # ------------------------------------------------------------------
+
+    def _compute_right_w(self) -> int:
+        """Minimum width for the right port-label section; 0 when no returns."""
+        if not self._returns:
+            return 0
+        fm = QFontMetrics(THEME.font_node_sub())
+        max_label_w = max(fm.horizontalAdvance(r) for r in self._returns)
+        return max_label_w + PORT_R * 2 + _RIGHT_PAD
+
+    @property
+    def _total_w(self) -> int:
+        """Total node width: info section + port section."""
+        return NODE_W + self._right_w
+
     @property
     def _height(self) -> int:
-        return node_height(len(self._returns))
+        return NODE_H
+
+    def _node_rect(self) -> QRectF:
+        """Local bounding rect of the node body (excluding margin)."""
+        if self._flipped and self._right_w:
+            return QRectF(-self._right_w, 0, self._total_w, NODE_H)
+        return QRectF(0, 0, self._total_w, NODE_H)
 
     def boundingRect(self) -> QRectF:
-        h = self._height
         margin = PORT_R + 1 if self._interactive else 0
         if self._is_search_match:
             margin = max(margin, 8)
-        return QRectF(-margin, -margin, NODE_W + margin * 2, h + margin * 2)
+        nr = self._node_rect()
+        return QRectF(nr.x() - margin, -margin, nr.width() + margin * 2, NODE_H + margin * 2)
+
+    # ------------------------------------------------------------------
+    # State setters
+    # ------------------------------------------------------------------
 
     def set_active(self, active: bool) -> None:
         self._active = active
@@ -212,36 +250,57 @@ class NodeItem(QGraphicsItem):
 
     def center(self) -> QPointF:
         """Scene-coordinate center of this node."""
-        return self.scenePos() + QPointF(NODE_W / 2, self._height / 2)
+        nr = self._node_rect()
+        return self.scenePos() + QPointF(nr.x() + nr.width() / 2, NODE_H / 2)
+
+    # ------------------------------------------------------------------
+    # Port positions
+    # ------------------------------------------------------------------
 
     def port_in(self) -> QPointF:
-        """Scene-coordinate input port (left center normally, right center when flipped)."""
+        """Scene-coordinate input port.
+
+        Non-flipped: left edge of info section (x=0).
+        Flipped: right edge of info section (x=NODE_W).
+        """
         x = NODE_W if self._flipped else 0
-        return self.scenePos() + QPointF(x, self._height / 2)
+        return self.scenePos() + QPointF(x, NODE_H / 2)
 
     def port_out(self) -> QPointF:
-        """Scene-coordinate output port (right center normally, left center when flipped)."""
-        x = 0 if self._flipped else NODE_W
-        return self.scenePos() + QPointF(x, self._height / 2)
+        """Scene-coordinate output port (center-edge fallback when no named returns).
+
+        Non-flipped: right edge of node (x=_total_w).
+        Flipped: left edge of node (x=-_right_w, which is 0 when no returns).
+        """
+        if self._flipped:
+            x = -self._right_w
+        else:
+            x = self._total_w
+        return self.scenePos() + QPointF(x, NODE_H / 2)
 
     def _port_y(self, idx: int) -> float:
-        """Y coordinate (local) for the idx-th named output port."""
+        """Y coordinate (local) for the idx-th named output port, evenly distributed over NODE_H."""
         n = len(self._returns)
-        h = self._height
-        usable = h - _HEADER_H
-        return _HEADER_H + (idx + 0.5) * usable / n
+        return (idx + 0.5) * NODE_H / n
 
     def port_out_for(self, return_name: str | None) -> QPointF:
         """Scene-coordinate output port for the given return value name.
 
-        Falls back to the center-right port when *return_name* is None or
+        Falls back to the center-edge port when *return_name* is None or
         not found in this node's returns list.
         """
         if return_name and return_name in self._returns:
             idx = self._returns.index(return_name)
-            x = 0 if self._flipped else NODE_W
+            if self._flipped:
+                x = -self._right_w
+            else:
+                x = self._total_w
             return self.scenePos() + QPointF(x, self._port_y(idx))
         return self.port_out()
+
+    # ------------------------------------------------------------------
+    # Public mutators
+    # ------------------------------------------------------------------
 
     def set_label(self, label: str | None) -> None:
         """Update the displayed label; falls back to state_id when None."""
@@ -256,6 +315,7 @@ class NodeItem(QGraphicsItem):
     def set_returns(self, returns: list[str]) -> None:
         """Update named output ports and redraw."""
         self._returns = list(returns)
+        self._right_w = self._compute_right_w()
         self.prepareGeometryChange()
         self.update()
 
@@ -287,6 +347,7 @@ class NodeItem(QGraphicsItem):
     def set_flipped(self, flipped: bool) -> None:
         """Swap input/output port sides: input moves to right, outputs to left."""
         self._flipped = flipped
+        self.prepareGeometryChange()
         for edge in self._edges:
             edge._rebuild()
         self.update()
@@ -368,16 +429,16 @@ class NodeItem(QGraphicsItem):
 
     def hoverMoveEvent(self, event) -> None:
         pos = event.pos()
-        h = self._height
-        port_x = 0 if self._flipped else NODE_W
         near_port = False
         if self._returns:
+            port_x = -self._right_w if self._flipped else self._total_w
             for i in range(len(self._returns)):
                 if math.hypot(pos.x() - port_x, pos.y() - self._port_y(i)) <= _PORT_HIT_R:
                     near_port = True
                     break
         else:
-            if math.hypot(pos.x() - port_x, pos.y() - h / 2) <= _PORT_HIT_R:
+            port_x = 0.0 if self._flipped else float(NODE_W)
+            if math.hypot(pos.x() - port_x, pos.y() - NODE_H / 2) <= _PORT_HIT_R:
                 near_port = True
         self.setCursor(Qt.CursorShape.CrossCursor if near_port else Qt.CursorShape.SizeAllCursor)
         super().hoverMoveEvent(event)
@@ -411,7 +472,7 @@ class NodeItem(QGraphicsItem):
         else:
             fill, border, border_w = _fill_normal(), _border_normal(), 1.5
 
-        h = self._height
+        nr = self._node_rect()
         lod = option.levelOfDetailFromTransform(painter.worldTransform())
 
         # Search match ring — drawn first as a solid filled rect so it sits
@@ -422,13 +483,17 @@ class NodeItem(QGraphicsItem):
             )
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QBrush(ring_color))
-            painter.drawRoundedRect(QRectF(-7, -7, NODE_W + 14, h + 14), NODE_RADIUS + 5, NODE_RADIUS + 5)
+            painter.drawRoundedRect(
+                QRectF(nr.x() - 7, -7, nr.width() + 14, NODE_H + 14),
+                NODE_RADIUS + 5,
+                NODE_RADIUS + 5,
+            )
 
         painter.setPen(QPen(border, border_w))
         painter.setBrush(QBrush(fill))
-        painter.drawRoundedRect(QRectF(0, 0, NODE_W, h), NODE_RADIUS, NODE_RADIUS)
+        painter.drawRoundedRect(nr, NODE_RADIUS, NODE_RADIUS)
 
-        # --- Compact LOD: label-only with word-wrap when zoomed out ---
+        # --- Compact LOD: label-only in info section when zoomed out ---
         from bartlebot.settings_manager import SettingsManager
 
         _lod_threshold = SettingsManager.instance().get("canvas", "lod_compact_threshold", default=0.6)
@@ -439,7 +504,7 @@ class NodeItem(QGraphicsItem):
             _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(
                 Qt.TextFlag.TextWordWrap
             )
-            painter.drawText(QRectF(6, 4, NODE_W - 12, h - 8), _wrap_flags, self._label)
+            painter.drawText(QRectF(6, 4, NODE_W - 12, NODE_H - 8), _wrap_flags, self._label)
             _BADGE_SIZE = 14
             _BADGE_MARGIN = 4
             _BADGE_GAP = 4
@@ -452,9 +517,9 @@ class NodeItem(QGraphicsItem):
                 badges.append((_badge_flipped(), "◀"))
             if badges:
                 n = len(badges)
-                total_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
-                x_start = (NODE_W - total_w) / 2
-                badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
+                total_badge_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
+                x_start = (NODE_W - total_badge_w) / 2
+                badge_y = NODE_H - _BADGE_SIZE - _BADGE_MARGIN
                 painter.setFont(THEME.font_node_sub())
                 for i, (color, icon) in enumerate(badges):
                     bx = x_start + i * (_BADGE_SIZE + _BADGE_GAP)
@@ -468,71 +533,69 @@ class NodeItem(QGraphicsItem):
                     painter.restore()
         else:
             # --- Full LOD ---
-            # Sub-label text uses black on colored fills for readability
             sub_label_color = QColor(THEME.text) if self._active else THEME.qcolor("text_muted")
 
+            # Info section: 2-line label layout in [0..NODE_W], always at full NODE_H height
+            painter.setFont(THEME.font_node_main())
+            fm = painter.fontMetrics()
+            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.setPen(THEME.qcolor("text"))
+            painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
+
+            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+            painter.setPen(sub_label_color)
+            painter.setFont(THEME.font_node_sub())
+            fm2 = painter.fontMetrics()
+            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
+            painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
+
             if self._returns:
-                # ----------------------------------------------------------
-                # Header: label + "state_id · node_type" crammed into _HEADER_H pixels
-                # ----------------------------------------------------------
-                painter.setFont(THEME.font_node_hdr())
-                fm = painter.fontMetrics()
-                label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.setPen(THEME.qcolor("text"))
-                painter.drawText(QRectF(8, 1, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, label_text)
+                # Port section: to the right of info for non-flipped, to the left for flipped.
+                n = len(self._returns)
+                row_h = NODE_H / n
 
-                sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
-                painter.setPen(sub_label_color)
-                painter.setFont(THEME.font_node_sub())
-                fm2 = painter.fontMetrics()
-                sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(8, 15, NODE_W - 16, 12), Qt.AlignmentFlag.AlignCenter, sub_elided)
+                if self._flipped:
+                    sect_left = float(-self._right_w)
+                    dot_x = float(-self._right_w)
+                    div_x = 0.0
+                else:
+                    sect_left = float(NODE_W)
+                    dot_x = float(self._total_w)
+                    div_x = float(NODE_W)
 
-                # Divider line between header and port area
+                # Vertical divider between info and port sections
                 painter.setPen(QPen(border, 0.5))
-                painter.drawLine(QPointF(4, _HEADER_H), QPointF(NODE_W - 4, _HEADER_H))
+                painter.drawLine(QPointF(div_x, 4), QPointF(div_x, NODE_H - 4))
 
-                # Named output ports + labels
-                port_x = 0 if self._flipped else NODE_W
+                # Port labels and dots
                 for i, name in enumerate(self._returns):
                     py = self._port_y(i)
+                    label_rect = QRectF(
+                        sect_left + PORT_R + 4,
+                        py - row_h / 2,
+                        self._right_w - PORT_R * 2 - 8,
+                        row_h,
+                    )
                     painter.setPen(THEME.qcolor("text_subtle"))
                     painter.setFont(THEME.font_node_sub())
-                    if self._flipped:
-                        label_rect = QRectF(PORT_R * 2 + 6, py - 8, NODE_W - PORT_R * 2 - 10, 16)
-                        align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-                    else:
-                        label_rect = QRectF(4, py - 8, NODE_W - PORT_R * 2 - 10, 16)
-                        align = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-                    painter.drawText(label_rect, align, name)
+                    painter.drawText(
+                        label_rect,
+                        Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+                        name,
+                    )
                     if self._interactive:
                         painter.setPen(QPen(_port_color(), 1.5))
                         painter.setBrush(QBrush(_port_color()))
-                        painter.drawEllipse(QPointF(port_x, py), PORT_R, PORT_R)
+                        painter.drawEllipse(QPointF(dot_x, py), PORT_R, PORT_R)
             else:
-                # ----------------------------------------------------------
-                # 2-line layout: main label + "state_id · node_type" sub-label
-                # ----------------------------------------------------------
-                painter.setFont(THEME.font_node_main())
-                fm = painter.fontMetrics()
-                label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.setPen(THEME.qcolor("text"))
-                painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
-
-                sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
-                painter.setPen(sub_label_color)
-                painter.setFont(THEME.font_node_sub())
-                fm2 = painter.fontMetrics()
-                sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
-                painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
-
+                # No named returns: single output port at the center edge of the info section
                 if self._interactive:
-                    port_x = 0 if self._flipped else NODE_W
+                    port_x = 0.0 if self._flipped else float(NODE_W)
                     painter.setPen(QPen(_port_color(), 1.5))
                     painter.setBrush(QBrush(_port_color()))
-                    painter.drawEllipse(QPointF(port_x, h / 2), PORT_R, PORT_R)
+                    painter.drawEllipse(QPointF(port_x, NODE_H / 2), PORT_R, PORT_R)
 
-            # Structural-role badges drawn at bottom center, auto-spaced for 1–3 badges.
+            # Structural-role badges centered in the info section
             _BADGE_SIZE = 14
             _BADGE_MARGIN = 4
             _BADGE_GAP = 4
@@ -545,9 +608,9 @@ class NodeItem(QGraphicsItem):
                 badges.append((_badge_flipped(), "◀"))
             if badges:
                 n = len(badges)
-                total_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
-                x_start = (NODE_W - total_w) / 2
-                badge_y = h - _BADGE_SIZE - _BADGE_MARGIN
+                total_badge_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
+                x_start = (NODE_W - total_badge_w) / 2
+                badge_y = NODE_H - _BADGE_SIZE - _BADGE_MARGIN
                 painter.setFont(THEME.font_node_sub())
                 for i, (color, icon) in enumerate(badges):
                     bx = x_start + i * (_BADGE_SIZE + _BADGE_GAP)
@@ -560,9 +623,9 @@ class NodeItem(QGraphicsItem):
                     painter.drawText(r, Qt.AlignmentFlag.AlignCenter, icon)
                     painter.restore()
 
-            # Input port (right when flipped, left otherwise)
+            # Input port dot (opposite side from outputs)
             if self._interactive:
-                in_x = NODE_W if self._flipped else 0
+                in_x = float(NODE_W) if self._flipped else 0.0
                 painter.setPen(QPen(_port_color(), 1.5))
                 painter.setBrush(QBrush(_port_color()))
-                painter.drawEllipse(QPointF(in_x, h / 2), PORT_R, PORT_R)
+                painter.drawEllipse(QPointF(in_x, NODE_H / 2), PORT_R, PORT_R)
