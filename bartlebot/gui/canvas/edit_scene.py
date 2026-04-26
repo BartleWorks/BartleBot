@@ -244,16 +244,13 @@ class EditScene(QGraphicsScene):
         super().drawBackground(painter, rect)
         if not self._snap_enabled:
             return
-        # Lines are offset by half a node so they pass through node centers.
-        # Nodes snap their top-left to (GRID_W*i, GRID_H*j), so centers land at
-        # (GRID_W*i + NODE_W/2, GRID_H*j + NODE_H/2) — exactly where lines cross.
+        # Dots sit at (GRID_W*i, GRID_H*j) — the positions that node visual
+        # centers snap to, so a snapped node's center lands exactly on a dot.
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
-        # Offset so dots land at node centers (top-left snaps to GRID_W*i,
-        # center lands at GRID_W*i + NODE_W/2 — draw dots there).
         dot_r = 2.0
-        x_off = NODE_W / 2
-        y_off = NODE_H / 2
+        x_off = 0.0
+        y_off = 0.0
         x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
         while x <= rect.right():
             y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off

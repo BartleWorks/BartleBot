@@ -31,9 +31,9 @@ _RIGHT_PAD = 16  # horizontal padding inside the right returns section
 
 # Grid constants — shared with EditScene for drawBackground and migration script.
 # Padding values define the gap between adjacent node edges on the grid.
-NODE_GRID_PAD_W = 80  # horizontal gap between adjacent node right/left edges
+NODE_GRID_PAD_W = 140  # horizontal gap between adjacent node right/left edges
 NODE_GRID_PAD_H = 20  # vertical gap between adjacent node bottom/top edges
-GRID_W = NODE_W + NODE_GRID_PAD_W  # = 300
+GRID_W = NODE_W + NODE_GRID_PAD_W  # = 360
 GRID_H = NODE_H + NODE_GRID_PAD_H  # = 90
 
 # ---------------------------------------------------------------------------
@@ -397,12 +397,14 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
-            # Round the top-left position to the nearest grid cell.
-            # Using ItemPositionChange (not HasChanged) means we return the modified
-            # value directly — Qt applies it without re-triggering this handler.
+            # Snap the visual center of the node (not the top-left) to grid positions.
+            # Grid dots are drawn at GRID_W*i, GRID_H*j — i.e. at the snap positions.
+            # Using ItemPositionChange means we return the corrected value directly.
+            nr = self._node_rect()
+            local_cx = nr.x() + nr.width() / 2
             return QPointF(
-                round(value.x() / GRID_W) * GRID_W,
-                round(value.y() / GRID_H) * GRID_H,
+                round((value.x() + local_cx) / GRID_W) * GRID_W - local_cx,
+                round((value.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2,
             )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             for edge in list(self._edges):
