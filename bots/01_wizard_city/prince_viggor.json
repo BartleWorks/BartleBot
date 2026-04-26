@@ -100,7 +100,7 @@
       "node_type": "enter_zone",
       "label": "Enter Golem Court",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -125,7 +125,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -142,7 +142,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Drains",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -167,7 +167,7 @@
       "node_type": "enter_zone",
       "label": "Enter the Catacombs",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -192,7 +192,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {},
@@ -204,7 +204,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Viggor's Tomb",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -229,7 +229,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Skip to Prince Viggor",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -248,7 +248,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Prince Viggor",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {

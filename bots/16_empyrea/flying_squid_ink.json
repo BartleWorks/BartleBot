@@ -53,7 +53,7 @@
       "node_type": "enter_zone",
       "label": "Enter Aeriel Jungle",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -78,7 +78,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -95,7 +95,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Gannon dialogue",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -114,7 +114,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Gannon",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {
@@ -131,7 +131,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Madd'n Dialogue",
       "position": {
-        "x": 2970.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -150,7 +150,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3230.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -164,7 +164,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Madd'n",
       "position": {
-        "x": 3490.0,
+        "x": 3410.0,
         "y": 35.0
       },
       "params": {
@@ -181,7 +181,7 @@
       "node_type": "enter_zone",
       "label": "Enter Raider Tower",
       "position": {
-        "x": 3750.0,
+        "x": 3710.0,
         "y": -55.0
       },
       "params": {
@@ -223,7 +223,7 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 4270.0,
+        "x": 4310.0,
         "y": 35.0
       },
       "params": {
@@ -248,7 +248,7 @@
       "node_type": "mark_location",
       "label": "Mark location",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -267,7 +267,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Teleport to marked location",
       "position": {
-        "x": 3750.0,
+        "x": 3710.0,
         "y": 125.0
       },
       "params": {
@@ -286,7 +286,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Secret Tunnel",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -311,7 +311,7 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {},
@@ -323,7 +323,7 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {

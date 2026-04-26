@@ -50,7 +50,7 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -67,7 +67,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -84,7 +84,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to corner",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -103,7 +103,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to expire",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -117,7 +117,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -134,7 +134,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {

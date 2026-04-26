@@ -45,7 +45,7 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": -55.0
       },
       "params": {
@@ -60,7 +60,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Basilica",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 125.0
       },
       "params": {
@@ -74,7 +74,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Atheneum",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {

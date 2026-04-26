@@ -135,7 +135,7 @@
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -160,7 +160,7 @@
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -185,7 +185,7 @@
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -210,7 +210,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Skull Fort",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -235,7 +235,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sergeant Skullsplitter",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -252,7 +252,7 @@
       "node_type": "enter_zone",
       "label": "Exit Skull Fort",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -277,7 +277,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {},
@@ -289,7 +289,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {

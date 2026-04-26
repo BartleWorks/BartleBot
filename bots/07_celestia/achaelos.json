@@ -51,7 +51,7 @@
       "node_type": "enter_zone",
       "label": "Go to Crustacean Empire",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -76,7 +76,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Achaelos's Cloister",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -101,7 +101,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Achaelos",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -117,7 +117,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -134,7 +134,7 @@
       "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 125.0
       },
       "params": {
@@ -159,7 +159,7 @@
       "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 305.0
       },
       "params": {
@@ -184,7 +184,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 215.0
       },
       "params": {

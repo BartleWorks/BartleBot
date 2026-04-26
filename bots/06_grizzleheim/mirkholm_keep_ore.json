@@ -32,7 +32,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -47,7 +47,7 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 4270.0,
+        "x": 4310.0,
         "y": 35.0
       },
       "params": {
@@ -76,7 +76,7 @@
       "node_type": "enter_zone",
       "label": "Enter Mirkholm Keep",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -101,7 +101,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to first spawn area",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -120,7 +120,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second spawn area",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -139,7 +139,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -154,7 +154,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to third spawn area",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -173,7 +173,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {
@@ -188,7 +188,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fourth spawn area",
       "position": {
-        "x": 2970.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -207,7 +207,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3230.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -222,7 +222,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fifth spawn area",
       "position": {
-        "x": 3490.0,
+        "x": 3410.0,
         "y": 35.0
       },
       "params": {
@@ -241,7 +241,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3750.0,
+        "x": 3710.0,
         "y": 35.0
       },
       "params": {
@@ -275,7 +275,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {

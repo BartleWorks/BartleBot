@@ -26,7 +26,7 @@
       "node_type": "collect_reagent",
       "label": "Collect reagents",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -56,7 +56,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Jade Palace",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -70,7 +70,7 @@
       "node_type": "enter_zone",
       "label": "Enter Water Dojo",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -95,7 +95,7 @@
       "node_type": "enter_zone",
       "label": "Enter Shoshun Village",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -120,7 +120,7 @@
       "node_type": "enter_zone",
       "label": "Enter Cave of Solitude",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {

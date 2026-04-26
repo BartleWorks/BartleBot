@@ -24,7 +24,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "TP to Walruskberg",
       "position": {
-        "x": -150.0,
+        "x": -190.0,
         "y": 125.0
       },
       "params": {
@@ -37,7 +37,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Sunless Shrine",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -61,7 +61,7 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -80,7 +80,7 @@
       "node_type": "handle_combat",
       "label": "Fight Vigilant Jarilo",
       "position": {
-        "x": 890.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -99,7 +99,7 @@
       "node_type": "enter_zone",
       "label": "Exit boss room",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -118,7 +118,7 @@
       "node_type": "enter_zone",
       "label": "Exit Sunless Shrine",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -161,7 +161,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {

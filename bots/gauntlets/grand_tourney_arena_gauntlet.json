@@ -32,7 +32,7 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -61,7 +61,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -78,7 +78,7 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -92,7 +92,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Lyonel LaughingStorm",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -109,7 +109,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -134,7 +134,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -161,7 +161,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -186,7 +186,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Lady Tanselle DreamingStar",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {
@@ -203,7 +203,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 2970.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -228,7 +228,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 3230.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -255,7 +255,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 3490.0,
+        "x": 3410.0,
         "y": 35.0
       },
       "params": {
@@ -280,7 +280,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Dunc",
       "position": {
-        "x": 3750.0,
+        "x": 3710.0,
         "y": 35.0
       },
       "params": {
@@ -322,7 +322,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 4270.0,
+        "x": 4310.0,
         "y": 35.0
       },
       "params": {
@@ -349,7 +349,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 4530.0,
+        "x": 4610.0,
         "y": 35.0
       },
       "params": {
@@ -374,7 +374,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Steffan BadApple",
       "position": {
-        "x": 5050.0,
+        "x": 4910.0,
         "y": 35.0
       },
       "params": {
@@ -391,7 +391,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 5310.0,
+        "x": 5210.0,
         "y": 35.0
       },
       "params": {
@@ -416,7 +416,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 5570.0,
+        "x": 5510.0,
         "y": 35.0
       },
       "params": {
@@ -443,7 +443,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 5830.0,
+        "x": 5810.0,
         "y": 35.0
       },
       "params": {
@@ -468,7 +468,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Claudus D'Agrodolce",
       "position": {
-        "x": 6090.0,
+        "x": 6110.0,
         "y": 35.0
       },
       "params": {
@@ -485,7 +485,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Complete gauntlet",
       "position": {
-        "x": 6870.0,
+        "x": 7010.0,
         "y": 35.0
       },
       "params": {
@@ -504,7 +504,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6350.0,
+        "x": 6410.0,
         "y": 35.0
       },
       "params": {

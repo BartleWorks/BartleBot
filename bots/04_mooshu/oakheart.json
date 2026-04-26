@@ -49,7 +49,7 @@
       "node_type": "enter_zone",
       "label": "Go to Rock Dojo",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -74,7 +74,7 @@
       "node_type": "enter_zone",
       "label": "Go to Yoshihito Temple",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -99,7 +99,7 @@
       "node_type": "enter_zone",
       "label": "Go to Village of Sorrow",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -124,7 +124,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Oakheart's Lair",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -149,7 +149,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Oakheart",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -165,7 +165,7 @@
       "node_type": "collect_wisps",
       "label": "Collect Wisps",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -182,7 +182,7 @@
       "node_type": "enter_zone",
       "label": "Exit Oakheart's Lair",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {

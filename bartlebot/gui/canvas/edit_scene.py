@@ -34,7 +34,7 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPE
 # ---------------------------------------------------------------------------
 
 _PORT_HIT_RADIUS = 16
-_AUTO_SPACING = 260
+_AUTO_SPACING = GRID_W  # auto-layout column stride matches grid width
 _PASTE_OFFSET = 40  # px shift per successive paste of the same clipboard
 
 _SCROLL_MARGIN = 40  # px from viewport edge at which auto-scroll activates during drag
@@ -243,12 +243,19 @@ class EditScene(QGraphicsScene):
         super().drawBackground(painter, rect)
         if not self._snap_enabled:
             return
+        # Lines are offset by half a node so they pass through node centers.
+        # Nodes snap their top-left to (GRID_W*i, GRID_H*j), so centers land at
+        # (GRID_W*i + NODE_W/2, GRID_H*j + NODE_H/2) — exactly where lines cross.
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
-        dot_r = 1.5
-        x = math.floor(rect.left() / GRID_W) * GRID_W
+        # Offset so dots land at node centers (top-left snaps to GRID_W*i,
+        # center lands at GRID_W*i + NODE_W/2 — draw dots there).
+        dot_r = 2.0
+        x_off = NODE_W / 2
+        y_off = NODE_H / 2
+        x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
         while x <= rect.right():
-            y = math.floor(rect.top() / GRID_H) * GRID_H
+            y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off
             while y <= rect.bottom():
                 painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
                 y += GRID_H

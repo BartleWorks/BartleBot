@@ -200,7 +200,7 @@
       "node_type": "enter_zone",
       "label": "Enter High Road",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -225,7 +225,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Harlequin Knight's Tower",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -250,7 +250,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Harlequin Knight",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -267,7 +267,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -284,7 +284,7 @@
       "node_type": "enter_zone",
       "label": "Exit Harlequin Knight's Tower",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -309,7 +309,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -326,7 +326,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {},
@@ -338,7 +338,7 @@
       "node_type": "enter_zone",
       "label": "Enter Caer Lyon",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 215.0
       },
       "params": {
@@ -363,7 +363,7 @@
       "node_type": "enter_zone",
       "label": "Enter Outer Yard",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 215.0
       },
       "params": {
@@ -388,7 +388,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Keep of Ganelon",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 215.0
       },
       "params": {
@@ -413,7 +413,7 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 215.0
       },
       "params": {

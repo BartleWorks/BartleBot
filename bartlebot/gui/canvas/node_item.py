@@ -29,9 +29,12 @@ PORT_SPACING = 28  # vertical spacing between named output ports
 _HEADER_H = 28  # height reserved for text label when returns are present
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 
-# Grid constants — shared with EditScene for drawBackground and migration script
-GRID_W = 260  # horizontal snap interval; matches auto-layout column spacing
-GRID_H = 90  # vertical snap interval; one node height (70) + 20px breathing room
+# Grid constants — shared with EditScene for drawBackground and migration script.
+# Padding values define the gap between adjacent node edges on the grid.
+NODE_GRID_PAD_W = 80  # horizontal gap between adjacent node right/left edges
+NODE_GRID_PAD_H = 20  # vertical gap between adjacent node bottom/top edges
+GRID_W = NODE_W + NODE_GRID_PAD_W  # = 300
+GRID_H = NODE_H + NODE_GRID_PAD_H  # = 90
 
 # ---------------------------------------------------------------------------
 # Color helpers — read from THEME at paint time so theme switches take effect

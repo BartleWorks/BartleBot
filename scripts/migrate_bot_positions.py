@@ -13,8 +13,10 @@ from pathlib import Path
 # Grid constants must match node_item.py
 NODE_W = 220
 NODE_H = 70
-GRID_W = 260
-GRID_H = 90
+NODE_GRID_PAD_W = 80
+NODE_GRID_PAD_H = 20
+GRID_W = NODE_W + NODE_GRID_PAD_W  # = 300
+GRID_H = NODE_H + NODE_GRID_PAD_H  # = 90
 
 BOTS_DIR = Path(__file__).parent.parent / "bots"
 

@@ -210,7 +210,7 @@
       "node_type": "enter_zone",
       "label": "Go to Hametsu Village",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -235,7 +235,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Crimson Fields",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -260,7 +260,7 @@
       "node_type": "interact",
       "label": "Talk to Hoi Mang",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -287,7 +287,7 @@
       "node_type": "interact",
       "label": "Raise first flag",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 215.0
       },
       "params": {
@@ -316,7 +316,7 @@
       "node_type": "interact",
       "label": "Raise second flag",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 215.0
       },
       "params": {
@@ -345,7 +345,7 @@
       "node_type": "interact",
       "label": "Raise third flag",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 215.0
       },
       "params": {
@@ -374,7 +374,7 @@
       "node_type": "interact",
       "label": "Raise fourth flag",
       "position": {
-        "x": 2970.0,
+        "x": 3110.0,
         "y": 215.0
       },
       "params": {
@@ -403,7 +403,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 3230.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -430,7 +430,7 @@
       "node_type": "interact",
       "label": "Gather first wood pile",
       "position": {
-        "x": 3490.0,
+        "x": 3410.0,
         "y": 35.0
       },
       "params": {
@@ -459,7 +459,7 @@
       "node_type": "interact",
       "label": "Gather second wood pile",
       "position": {
-        "x": 3750.0,
+        "x": 3710.0,
         "y": 35.0
       },
       "params": {
@@ -517,7 +517,7 @@
       "node_type": "interact",
       "label": "Gather fourth wood pile",
       "position": {
-        "x": 4270.0,
+        "x": 4310.0,
         "y": 35.0
       },
       "params": {
@@ -546,7 +546,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 4530.0,
+        "x": 4610.0,
         "y": 35.0
       },
       "params": {
@@ -573,7 +573,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Construct first barricade",
       "position": {
-        "x": 5050.0,
+        "x": 4910.0,
         "y": 35.0
       },
       "params": {
@@ -592,7 +592,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Construct second barricade",
       "position": {
-        "x": 5310.0,
+        "x": 5210.0,
         "y": 35.0
       },
       "params": {
@@ -611,7 +611,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Construct third barricade",
       "position": {
-        "x": 5570.0,
+        "x": 5510.0,
         "y": 35.0
       },
       "params": {
@@ -630,7 +630,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 5830.0,
+        "x": 5810.0,
         "y": 35.0
       },
       "params": {
@@ -657,7 +657,7 @@
       "node_type": "interact",
       "label": "Talk to Ahn Nao",
       "position": {
-        "x": 6090.0,
+        "x": 6110.0,
         "y": 35.0
       },
       "params": {
@@ -684,7 +684,7 @@
       "node_type": "interact",
       "label": "Talk to Sekou Leong",
       "position": {
-        "x": 6350.0,
+        "x": 6410.0,
         "y": 35.0
       },
       "params": {
@@ -711,7 +711,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 6870.0,
+        "x": 7010.0,
         "y": 35.0
       },
       "params": {
@@ -738,7 +738,7 @@
       "node_type": "interact",
       "label": "Talk to Bricktop",
       "position": {
-        "x": 7130.0,
+        "x": 7010.0,
         "y": 35.0
       },
       "params": {
@@ -765,7 +765,7 @@
       "node_type": "enter_zone",
       "label": "Enter Grum Foultooth's tower",
       "position": {
-        "x": 7390.0,
+        "x": 7310.0,
         "y": 35.0
       },
       "params": {
@@ -790,7 +790,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Grum Foultooth",
       "position": {
-        "x": 7650.0,
+        "x": 7610.0,
         "y": 35.0
       },
       "params": {
@@ -831,7 +831,7 @@
       "node_type": "interact",
       "label": "Talk to Bricktop",
       "position": {
-        "x": 8170.0,
+        "x": 8210.0,
         "y": 35.0
       },
       "params": {
@@ -858,7 +858,7 @@
       "node_type": "interact",
       "label": "Use first cairn",
       "position": {
-        "x": 8430.0,
+        "x": 8510.0,
         "y": 35.0
       },
       "params": {
@@ -887,7 +887,7 @@
       "node_type": "interact",
       "label": "Use second cairn",
       "position": {
-        "x": 8950.0,
+        "x": 8810.0,
         "y": 35.0
       },
       "params": {
@@ -914,7 +914,7 @@
       "node_type": "interact",
       "label": "Talk to Bricktop",
       "position": {
-        "x": 9210.0,
+        "x": 9110.0,
         "y": 35.0
       },
       "params": {
@@ -941,7 +941,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 9470.0,
+        "x": 9410.0,
         "y": 35.0
       },
       "params": {
@@ -968,7 +968,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Yakedo",
       "position": {
-        "x": 9730.0,
+        "x": 9710.0,
         "y": -145.0
       },
       "params": {
@@ -987,7 +987,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Yakedo",
       "position": {
-        "x": 10250.0,
+        "x": 10310.0,
         "y": -55.0
       },
       "params": {
@@ -1003,7 +1003,7 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 9990.0,
+        "x": 10010.0,
         "y": 125.0
       },
       "params": {
@@ -1021,7 +1021,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
-        "x": 9730.0,
+        "x": 9710.0,
         "y": 125.0
       },
       "params": {
@@ -1040,7 +1040,7 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 11550.0,
+        "x": 11510.0,
         "y": 305.0
       },
       "params": {
@@ -1058,7 +1058,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Mobs",
       "position": {
-        "x": 11030.0,
+        "x": 10910.0,
         "y": 305.0
       },
       "params": {
@@ -1077,7 +1077,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 11290.0,
+        "x": 11210.0,
         "y": 215.0
       },
       "params": {
@@ -1091,7 +1091,7 @@
       "node_type": "interact",
       "label": "Talk to Rikugun Mikawa",
       "position": {
-        "x": 10770.0,
+        "x": 10910.0,
         "y": 35.0
       },
       "params": {
@@ -1118,7 +1118,7 @@
       "node_type": "enter_zone",
       "label": "Enter Katsumori's Dojo",
       "position": {
-        "x": 11030.0,
+        "x": 10910.0,
         "y": -235.0
       },
       "params": {
@@ -1143,7 +1143,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Katsumori",
       "position": {
-        "x": 11290.0,
+        "x": 11210.0,
         "y": -235.0
       },
       "params": {
@@ -1159,7 +1159,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Cancel invulnerability",
       "position": {
-        "x": 11550.0,
+        "x": 11510.0,
         "y": -235.0
       },
       "params": {
@@ -1192,7 +1192,7 @@
       "node_type": "handle_combat",
       "label": "Defeat War Oni",
       "position": {
-        "x": 12070.0,
+        "x": 12110.0,
         "y": -235.0
       },
       "params": {
@@ -1208,7 +1208,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 12330.0,
+        "x": 12410.0,
         "y": 35.0
       },
       "params": {
@@ -1244,7 +1244,7 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -1261,7 +1261,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -1278,7 +1278,7 @@
       "node_type": "sleep",
       "label": "Wait for Yakedo to spawn",
       "position": {
-        "x": 9990.0,
+        "x": 10010.0,
         "y": -235.0
       },
       "params": {

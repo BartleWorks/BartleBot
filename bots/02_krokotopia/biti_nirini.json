@@ -222,7 +222,7 @@
       "node_type": "enter_zone",
       "label": "Enter Pyramid of the Sun",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -247,7 +247,7 @@
       "node_type": "enter_zone",
       "label": "Enter Royal Hall",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -272,7 +272,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
@@ -291,7 +291,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -309,7 +309,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Biti's Chamber",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -334,7 +334,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Biti Nirini",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {
@@ -351,7 +351,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 125.0
       },
       "params": {
@@ -368,7 +368,7 @@
       "node_type": "enter_zone",
       "label": "Exit Biti's Chamber",
       "position": {
-        "x": 2970.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -393,7 +393,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 125.0
       },
       "params": {
@@ -426,7 +426,7 @@
       "node_type": "enter_zone",
       "label": "Enter Tomb of Storms",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 395.0
       },
       "params": {
@@ -451,7 +451,7 @@
       "node_type": "interact",
       "label": "Activate first pillar",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 395.0
       },
       "params": {
@@ -478,7 +478,7 @@
       "node_type": "interact",
       "label": "Activate second pillar",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 395.0
       },
       "params": {
@@ -505,7 +505,7 @@
       "node_type": "interact",
       "label": "Activate third pillar",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 395.0
       },
       "params": {
@@ -532,7 +532,7 @@
       "node_type": "sleep",
       "label": "Wait for portal to open",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 395.0
       },
       "params": {
@@ -546,7 +546,7 @@
       "node_type": "enter_zone",
       "label": "Enter Well of Spirits",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 395.0
       },
       "params": {
@@ -571,7 +571,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Storms",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 395.0
       },
       "params": {
@@ -596,7 +596,7 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 395.0
       },
       "params": {
@@ -620,7 +620,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 3230.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {},
@@ -632,7 +632,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": -150.0,
+        "x": -190.0,
         "y": 35.0
       },
       "params": {},
@@ -644,7 +644,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2710.0,
+        "x": 2810.0,
         "y": 35.0
       },
       "params": {

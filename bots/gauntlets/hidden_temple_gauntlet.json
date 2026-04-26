@@ -37,7 +37,7 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 630.0,
+        "x": 710.0,
         "y": 35.0
       },
       "params": {
@@ -52,7 +52,7 @@
       "node_type": "interact",
       "label": "Talk to Fitzhume",
       "position": {
-        "x": 1410.0,
+        "x": 1310.0,
         "y": 35.0
       },
       "params": {
@@ -79,7 +79,7 @@
       "node_type": "enter_zone",
       "label": "Enter Temple of Water",
       "position": {
-        "x": 1670.0,
+        "x": 1610.0,
         "y": 35.0
       },
       "params": {
@@ -104,7 +104,7 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 1930.0,
+        "x": 1910.0,
         "y": 35.0
       },
       "params": {
@@ -129,7 +129,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to final boss fight",
       "position": {
-        "x": 2190.0,
+        "x": 2210.0,
         "y": 35.0
       },
       "params": {
@@ -148,7 +148,7 @@
       "node_type": "handle_combat",
       "label": "Defeat final bosses",
       "position": {
-        "x": 2450.0,
+        "x": 2510.0,
         "y": 35.0
       },
       "params": {
@@ -165,7 +165,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2970.0,
+        "x": 3110.0,
         "y": 35.0
       },
       "params": {
@@ -193,7 +193,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 370.0,
+        "x": 410.0,
         "y": 35.0
       },
       "params": {
@@ -210,7 +210,7 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1150.0,
+        "x": 1010.0,
         "y": 35.0
       },
       "params": {
