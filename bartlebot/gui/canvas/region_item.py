@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-_PADDING = 20
+_PADDING = 30
 _HANDLE_SIZE = 16
 _REGION_RADIUS = 12
 _FILL_ALPHA = 40  # ~16% opacity for the region fill
@@ -32,6 +32,7 @@ _PILL_H = 20  # pill height in px
 _PILL_PAD_X = 10  # horizontal padding inside pill
 _PILL_GAP = 4  # gap between pill bottom and region top
 _PILL_ALPHA = 80  # fill alpha for pill (~31% opacity)
+_BORDER_ALPHA = 100  # ~39% opacity for region border — recedes behind full-opacity edges
 
 
 class _RegionHandle(QGraphicsItem):
@@ -161,8 +162,9 @@ class RegionItem(QGraphicsItem):
         fill.setAlpha(_FILL_ALPHA)
         painter.setBrush(QBrush(fill))
 
-        # Full-opacity border
-        pen = QPen(color, 2.0)
+        border_color = QColor(color)
+        border_color.setAlpha(_BORDER_ALPHA)
+        pen = QPen(border_color, 2.0)
         painter.setPen(pen)
 
         path = QPainterPath()

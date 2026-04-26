@@ -17,7 +17,9 @@ ARROW_SIZE = 13
 
 _CORNER_R = 8  # rounded-corner radius on orthogonal paths (px)
 _BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
-_BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
+_SELF_LOOP_H_STEP = 16  # self-loop arm/bridge clearance — must exceed arrowhead back-reach (~11 px)
+BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
+_BACK_PADDING = BACK_PADDING  # alias kept for internal use
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
 
 
@@ -65,6 +67,7 @@ class EdgeItem(QGraphicsPathItem):
         dst_node: NodeItem,
         offset: float = 0.0,
         when: str | None = None,
+        bridge_y_override: float | None = None,
     ):
         super().__init__()
         self._src = src_node
@@ -73,11 +76,13 @@ class EdgeItem(QGraphicsPathItem):
         self._when = when
         self._is_self_loop = src_node is dst_node
         self._hovered = False
+        self._bridge_y_override = bridge_y_override
 
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
         self._rebuild()
+        self._bridge_y_override = None  # only applies to the initial build
 
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
@@ -86,6 +91,17 @@ class EdgeItem(QGraphicsPathItem):
         ps = QPainterPathStroker()
         ps.setWidth(12)
         return ps.createStroke(self.path())
+
+    def _should_route_above(self) -> bool:
+        """True when this backward edge exits from the topmost named port (index 0)
+        on a node with at least two named returns.
+
+        These edges are routed above the node row so success-path backward edges
+        (e.g. "loop back to the dungeon entrance") occupy a separate vertical band
+        from failure-path backward edges and do not cross them.
+        """
+        returns = self._src._returns
+        return self._when is not None and len(returns) >= 2 and self._when == returns[0]
 
     def _rebuild(self) -> None:
         path = QPainterPath()
@@ -220,16 +236,38 @@ class EdgeItem(QGraphicsPathItem):
             _draw_ortho_path(path, waypoints)
         else:
             # Ports face opposite directions: 6-point bridge path.
-            mid_y = (src_pt.y() + dst_pt.y()) / 2 + self._offset * 0.5
             src_h = self._src._height
             dst_h = self._dst._height
-            if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
-                above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
-                below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
-                if mid_y - above_limit > below_limit - mid_y:
-                    mid_y = above_limit
-                else:
-                    mid_y = below_limit
+            src_top = self._src.scenePos().y()
+            src_bot = src_top + src_h
+            dst_top = self._dst.scenePos().y()
+            dst_bot = dst_top + dst_h
+            if self._bridge_y_override is not None:
+                # Shared-corridor value pre-computed by the scene; use it as-is.
+                mid_y = self._bridge_y_override
+            elif self._should_route_above():
+                # Topmost-port backward edges route above both nodes so they occupy
+                # a separate vertical band from failure-path edges below.
+                mid_y = min(src_top, dst_top) - _BACK_PADDING
+            else:
+                mid_y = (src_pt.y() + dst_pt.y()) / 2 + self._offset * 0.5
+                if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
+                    above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
+                    below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
+                    if mid_y - above_limit > below_limit - mid_y:
+                        mid_y = above_limit
+                    else:
+                        mid_y = below_limit
+                # Secondary check: if mid_y passes through either node's actual body
+                # (the port-midpoint heuristic misses this when the port is near the
+                # node's edge, e.g. FAILURE port at 83% height on an offset node).
+                if src_top <= mid_y <= src_bot or dst_top <= mid_y <= dst_bot:
+                    actual_above = min(src_top, dst_top) - _BACK_PADDING
+                    actual_below = max(src_bot, dst_bot) + _BACK_PADDING
+                    if mid_y < (actual_above + actual_below) / 2:
+                        mid_y = actual_above
+                    else:
+                        mid_y = actual_below
             waypoints = [
                 src_pt,
                 QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),
@@ -253,18 +291,18 @@ class EdgeItem(QGraphicsPathItem):
         src_h = self._src._height
         src_center_y = node_top + src_h / 2
         if src_pt.y() <= src_center_y:
-            bridge_y = node_top - _BACK_PADDING - _BACK_H_STEP
+            bridge_y = node_top - _BACK_PADDING - _SELF_LOOP_H_STEP
         else:
-            bridge_y = node_top + src_h + _BACK_PADDING + _BACK_H_STEP
+            bridge_y = node_top + src_h + _BACK_PADDING + _SELF_LOOP_H_STEP
         flipped = self._src._flipped
         src_sign = -1 if flipped else 1
         dst_sign = 1 if flipped else -1
         waypoints = [
             src_pt,
-            QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),
-            QPointF(src_pt.x() + src_sign * _BACK_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, dst_pt.y()),
+            QPointF(src_pt.x() + src_sign * _SELF_LOOP_H_STEP, src_pt.y()),
+            QPointF(src_pt.x() + src_sign * _SELF_LOOP_H_STEP, bridge_y),
+            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_H_STEP, bridge_y),
+            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_H_STEP, dst_pt.y()),
             dst_pt,
         ]
         _draw_ortho_path(path, waypoints)

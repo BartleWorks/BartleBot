@@ -9,6 +9,7 @@ also exported here so BotCanvas can use them without circular imports.
 """
 
 import math
+from collections import defaultdict
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, pyqtSignal
 from PyQt6.QtGui import QAction, QBrush, QKeyEvent, QMouseEvent, QPainter, QPen
@@ -22,7 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
-from bartlebot.gui.canvas.edge_item import EdgeItem
+from bartlebot.gui.canvas.edge_item import BACK_PADDING, EdgeItem
 from bartlebot.gui.canvas.graph_view import GraphView
 from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.region_item import RegionItem
@@ -328,6 +329,67 @@ class EditScene(QGraphicsScene):
         non_loop = {(t.source, t.dest) for t in transitions if t.source != t.dest}
         bidi = {(s, d) for (s, d) in non_loop if (d, s) in non_loop}
 
+        # Pre-compute shared bridge_y for same-destination backward-edge groups.
+        # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
+        # to a common corridor so they overlap cleanly instead of forming a spaghetti
+        # bundle of nearly-identical slightly-offset paths.
+        #
+        # Two separate corridors are computed:
+        #   below — all backward edges except topmost-port edges (FAILURE, FALSE, etc.)
+        #   above — topmost-port (index-0) backward edges on nodes with ≥2 returns
+        #           (SUCCESS, TRUE, etc.) — routed above the node row so they occupy a
+        #           separate vertical band and do not cross the failure-path edges below.
+        #
+        # Y-band outliers (source Y differs from destination Y by ≥ one node height)
+        # are excluded from corridor grouping and route independently.
+        def _below_limit(sn, dn):
+            return max(sn.pos().y() + sn._height, dn.pos().y() + dn._height) + BACK_PADDING
+
+        def _above_limit(sn, dn):
+            return min(sn.pos().y(), dn.pos().y()) - BACK_PADDING
+
+        def _is_above_routed(sn, w):
+            returns = sn._returns
+            return w is not None and len(returns) >= 2 and w == returns[0]
+
+        # Collect unique (s, w, d) tuples from transitions (deduplicated).
+        unique_edges: list[tuple[str, str | None, str]] = []
+        _seen: set[tuple[str, str | None, str]] = set()
+        for t in transitions:
+            key = (t.source, t.when, t.dest)
+            if key not in _seen:
+                _seen.add(key)
+                unique_edges.append(key)
+
+        below_groups: dict[tuple[str, str | None], list[tuple[str, str | None, str]]] = defaultdict(list)
+        above_groups: dict[tuple[str, str | None], list[tuple[str, str | None, str]]] = defaultdict(list)
+        for s, w, d in unique_edges:
+            if s == d or s not in self._node_items or d not in self._node_items:
+                continue
+            sn, dn = self._node_items[s], self._node_items[d]
+            if dn.pos().x() >= sn.pos().x():
+                continue  # forward edge
+            if abs(sn.pos().y() - dn.pos().y()) >= sn._height:
+                continue  # Y-band outlier — routes independently
+            if _is_above_routed(sn, w):
+                above_groups[(d, w)].append((s, w, d))
+            else:
+                below_groups[(d, w)].append((s, w, d))
+
+        bridge_y_map: dict[tuple[str, str | None, str], float] = {}
+        for group_edges in below_groups.values():
+            if len(group_edges) < 2:
+                continue
+            shared_y = max(_below_limit(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            for key in group_edges:
+                bridge_y_map[key] = shared_y
+        for group_edges in above_groups.values():
+            if len(group_edges) < 2:
+                continue
+            shared_y = min(_above_limit(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            for key in group_edges:
+                bridge_y_map[key] = shared_y
+
         drawn: set[tuple[str, str | None, str]] = set()
         for t in transitions:
             s, d, w = t.source, t.dest, t.when
@@ -343,7 +405,7 @@ class EditScene(QGraphicsScene):
             else:
                 is_bidi = (s, d) in bidi
                 offset = 22.0 if (is_bidi and s < d) else (-22.0 if is_bidi else 0.0)
-                edge = EdgeItem(sn, dn, offset=offset, when=w)
+                edge = EdgeItem(sn, dn, offset=offset, when=w, bridge_y_override=bridge_y_map.get(key))
             self.addItem(edge)
             sn.add_edge(edge)
             if dn is not sn:
