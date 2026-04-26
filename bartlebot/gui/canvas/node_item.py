@@ -503,7 +503,7 @@ class NodeItem(QGraphicsItem):
             _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(
                 Qt.TextFlag.TextWordWrap
             )
-            painter.drawText(QRectF(6, 4, NODE_W - 12, NODE_H - 8), _wrap_flags, self._label)
+            painter.drawText(QRectF(nr.x() + 6, 4, nr.width() - 12, NODE_H - 8), _wrap_flags, self._label)
             _BADGE_SIZE = 14
             _BADGE_MARGIN = 4
             _BADGE_GAP = 4
@@ -517,7 +517,7 @@ class NodeItem(QGraphicsItem):
             if badges:
                 n = len(badges)
                 total_badge_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
-                x_start = (NODE_W - total_badge_w) / 2
+                x_start = nr.x() + (nr.width() - total_badge_w) / 2
                 badge_y = NODE_H - _BADGE_SIZE - _BADGE_MARGIN
                 painter.setFont(THEME.font_node_sub())
                 for i, (color, icon) in enumerate(badges):

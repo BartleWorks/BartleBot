@@ -3,7 +3,8 @@
   "description": "Completes the Great Spyre dungeon in Dragonspyre. Defeats both Gurtok demons as well as Malistaire.",
   "version": "2.0",
   "clients": "all",
-  "initial": "state_4",
+  "initial": "state_1",
+  "recovery_state": "state_1",
   "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint@boss",
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Basilica",
@@ -17,7 +18,7 @@
     {
       "name": "Safety Delay",
       "type": "float",
-      "default": 3,
+      "default": 3.0,
       "description": "Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open."
     },
     {
@@ -58,21 +59,22 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to the Basilica",
       "position": {
-        "x": 1080,
-        "y": 90.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_2",
       "node_type": "enter_zone_via_object",
       "label": "Take portal to Dragonspyre Academy",
       "position": {
-        "x": 1440,
-        "y": 180.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_Hub_Cathedral",
@@ -88,15 +90,16 @@
           "z": -0.04
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_3",
       "node_type": "enter_zone_via_object",
       "label": "Start dragon ride",
       "position": {
-        "x": 1800,
-        "y": 90.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
@@ -112,14 +115,15 @@
           "z": 1998.84
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_4",
       "node_type": "mark_location",
       "label": "Mark location outside dungeon entrance",
       "position": {
-        "x": 0,
+        "x": 1440,
         "y": 0.0
       },
       "params": {
@@ -130,14 +134,15 @@
           "z": -0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_6",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 360,
+        "x": 1800,
         "y": 0.0
       },
       "params": {
@@ -146,14 +151,15 @@
         "refill_potions": true,
         "mark_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone"
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_7",
       "node_type": "enter_dungeon",
       "label": "Enter the Great Spyre dungeon",
       "position": {
-        "x": 720,
+        "x": 2160,
         "y": 0.0
       },
       "params": {
@@ -170,15 +176,16 @@
           "z": -0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_8",
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1440,
-        "y": 0.0
+        "x": 2880,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
@@ -193,15 +200,16 @@
           "z": -274.89
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_10",
       "node_type": "interact",
       "label": "Skip dragon ride",
       "position": {
-        "x": 2160,
-        "y": 90.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
@@ -216,15 +224,16 @@
           "z": 16.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_11",
       "node_type": "enter_zone",
       "label": "Go to Path of Scales",
       "position": {
-        "x": 1440,
-        "y": -180.0
+        "x": 2880,
+        "y": -90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
@@ -240,15 +249,16 @@
           "z": 0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
       "label": "Go to the Great Spyre",
       "position": {
-        "x": 1800,
-        "y": -90.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
@@ -264,15 +274,16 @@
           "z": 0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_13",
       "node_type": "enter_zone_via_object",
       "label": "Activate elevator",
       "position": {
-        "x": 2160,
-        "y": -90.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
@@ -288,27 +299,29 @@
           "z": -5777.41
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_14",
       "node_type": "sleep",
       "label": "Wait for elevator",
       "position": {
-        "x": 2520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
         "duration": 25.0
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_15",
       "node_type": "enter_zone",
       "label": "Exit elevator",
       "position": {
-        "x": 2880,
+        "x": 4320,
         "y": 0.0
       },
       "params": {
@@ -325,25 +338,27 @@
           "z": 0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_16",
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 1080,
-        "y": -90.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_17",
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Firebender",
       "position": {
-        "x": 3240,
+        "x": 4680,
         "y": 0.0
       },
       "params": {
@@ -351,14 +366,15 @@
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_5",
       "node_type": "teleport_to_coordinates",
       "label": "Enter Gurtok Piercer render radius",
       "position": {
-        "x": 3600,
+        "x": 5040,
         "y": 0.0
       },
       "params": {
@@ -369,27 +385,29 @@
           "z": 4734.39
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_9",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3960,
+        "x": 5400,
         "y": 0.0
       },
       "params": {
         "duration": 4.0
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_18",
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Piercer",
       "position": {
-        "x": 4320,
+        "x": 5760,
         "y": 0.0
       },
       "params": {
@@ -397,14 +415,15 @@
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_19",
       "node_type": "interact",
       "label": "Activate crystal stand",
       "position": {
-        "x": 4680,
+        "x": 6120,
         "y": 0.0
       },
       "params": {
@@ -420,14 +439,15 @@
           "z": 4734.24
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_20",
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 5040,
+        "x": 6480,
         "y": 0.0
       },
       "params": {
@@ -436,14 +456,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_21",
       "node_type": "enter_zone",
       "label": "Go to the Crown of Fire",
       "position": {
-        "x": 5400,
+        "x": 6840,
         "y": 0.0
       },
       "params": {
@@ -460,14 +481,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_28",
       "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for mobs",
       "position": {
-        "x": 5760,
+        "x": 7200,
         "y": 0.0
       },
       "params": {
@@ -478,27 +500,29 @@
           "z": 410.58
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_29",
       "node_type": "sleep",
       "label": "Wait for mobs to render",
       "position": {
-        "x": 6120,
+        "x": 7560,
         "y": 0.0
       },
       "params": {
         "duration": 3.0
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_30",
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 6480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -511,27 +535,29 @@
           1,
           2
         ]
-      }
+      },
+      "flipped": false
     },
     {
       "id": "state_31",
       "node_type": "sleep",
       "label": "Wait for Malistaire to start dialogue",
       "position": {
-        "x": 6840,
+        "x": 8280,
         "y": 0.0
       },
       "params": {
         "duration": 8.0
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_32",
       "node_type": "teleport_to_coordinates",
       "label": "Activate Malistaire dialogue",
       "position": {
-        "x": 7200,
+        "x": 8640,
         "y": 0.0
       },
       "params": {
@@ -542,27 +568,29 @@
           "z": 626.36
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_33",
       "node_type": "sleep",
       "label": "Wait for Malistaire dialogue to end",
       "position": {
-        "x": 7560,
+        "x": 9000,
         "y": 0.0
       },
       "params": {
         "duration": 20.0
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_34",
       "node_type": "teleport_to_coordinates",
       "label": "Reset Malistaire dialogue",
       "position": {
-        "x": 8280,
+        "x": 9720,
         "y": 90.0
       },
       "params": {
@@ -573,14 +601,15 @@
           "z": 410.4
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_35",
       "node_type": "handle_combat",
       "label": "Defeat Malistaire",
       "position": {
-        "x": 7920,
+        "x": 9360,
         "y": 0.0
       },
       "params": {
@@ -588,14 +617,15 @@
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     },
     {
       "id": "state_36",
       "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
-        "x": 8280,
+        "x": 9720,
         "y": -90.0
       },
       "params": {
@@ -606,7 +636,8 @@
           "z": 0.0
         }
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "flipped": false
     }
   ],
   "transitions": [
@@ -614,67 +645,89 @@
       "trigger": "advance",
       "source": "state_1",
       "dest": "state_2",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_2",
       "dest": "state_3",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_3",
       "dest": "state_10",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_8",
       "dest": "state_11",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_11",
       "dest": "state_12",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_12",
       "dest": "state_13",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_13",
       "dest": "state_14",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_14",
       "dest": "state_15",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_7",
       "dest": "state_16",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_16",
       "dest": "state_11",
-      "when": "TRUE"
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_16",
       "dest": "state_8",
-      "when": "FALSE"
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
@@ -693,43 +746,57 @@
       "trigger": "advance",
       "source": "state_10",
       "dest": "state_4",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_6",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_6",
       "dest": "state_7",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_7",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_1",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_17",
       "dest": "state_5",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_15",
       "dest": "state_5",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
@@ -774,97 +841,129 @@
       "trigger": "advance",
       "source": "state_18",
       "dest": "state_19",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_5",
       "dest": "state_19",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_19",
       "dest": "state_20",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_20",
       "dest": "state_21",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_28",
       "dest": "state_29",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_29",
       "dest": "state_30",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_30",
       "dest": "state_31",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_31",
       "dest": "state_32",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_32",
       "dest": "state_33",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_32",
       "dest": "state_34",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_34",
       "dest": "state_32",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_33",
       "dest": "state_35",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_35",
       "dest": "state_36",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_35",
       "dest": "state_34",
-      "when": "FAILURE"
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_36",
       "dest": "state_6",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     },
     {
       "trigger": "advance",
       "source": "state_21",
       "dest": "state_28",
-      "when": "SUCCESS"
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     }
   ],
   "regions": [
@@ -877,7 +976,7 @@
         "state_10",
         "state_2"
       ],
-      "color": "red"
+      "color": 4
     }
   ]
 }

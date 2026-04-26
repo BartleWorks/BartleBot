@@ -324,6 +324,7 @@ class EditScene(QGraphicsScene):
             )
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
+            node.set_snap_enabled(self._snap_enabled)
             node.setPos(x, y)
             self.addItem(node)
             self._node_items[state.id] = node
@@ -516,6 +517,7 @@ class EditScene(QGraphicsScene):
         self._config.states.append(state)
         returns = _node_returns(node_type)
         node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True, node_type=node_type)
+        node.set_snap_enabled(self._snap_enabled)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -808,6 +810,7 @@ class EditScene(QGraphicsScene):
                 node_type=state.node_type,
                 flipped=state.flipped,
             )
+            node.set_snap_enabled(self._snap_enabled)
             if new_sd.get("position"):
                 node.setPos(
                     QPointF(
@@ -1145,6 +1148,7 @@ class EditScene(QGraphicsScene):
             is_terminal=True,
             node_type=node_type,
         )
+        new_node.set_snap_enabled(self._snap_enabled)
         new_node.setPos(insert_pos)
         self.addItem(new_node)
         self._node_items[new_id] = new_node
