@@ -319,8 +319,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Commons",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -333,8 +333,8 @@
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -358,8 +358,8 @@
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -383,8 +383,8 @@
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -408,8 +408,8 @@
       "node_type": "enter_zone",
       "label": "Enter Haunted Cave",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
@@ -433,8 +433,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Stormdrain Tower",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_HauntedCave",
@@ -458,8 +458,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Lord Nightshade",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "enemy": "Wraith-WCBoss-L05",
@@ -475,8 +475,8 @@
       "node_type": "enter_zone",
       "label": "Exit Stormdrain Tower",
       "position": {
-        "x": 2510.0,
-        "y": 35.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
@@ -500,8 +500,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to wisp spawns",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_HauntedCave",
@@ -519,8 +519,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -531,8 +531,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,

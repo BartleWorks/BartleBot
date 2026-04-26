@@ -32,8 +32,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Jade Palace",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -46,8 +46,8 @@
       "node_type": "enter_zone",
       "label": "Go to Rock Dojo",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -71,8 +71,8 @@
       "node_type": "enter_zone",
       "label": "Go to Shirataki Temple",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/Interiors/MS_RockDojoT2",
@@ -96,8 +96,8 @@
       "node_type": "mark_location",
       "label": "Mark spot",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
@@ -115,8 +115,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to sigil",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
@@ -134,8 +134,8 @@
       "node_type": "sleep",
       "label": "Sleep",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "duration": 3.0
@@ -148,8 +148,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter the Tree of Life",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
@@ -173,8 +173,8 @@
       "node_type": "enter_zone",
       "label": "Go to Youkai's Dojo",
       "position": {
-        "x": 2510.0,
-        "y": -55.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
@@ -198,8 +198,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Youkai",
       "position": {
-        "x": 3110.0,
-        "y": -55.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "enemy": "Imp-Dark-LXX",
@@ -215,8 +215,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
-        "x": 2510.0,
-        "y": 125.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
@@ -234,8 +234,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 2210.0,
-        "y": 125.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -251,8 +251,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,

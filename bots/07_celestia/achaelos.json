@@ -37,8 +37,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Hub"
@@ -51,8 +51,8 @@
       "node_type": "enter_zone",
       "label": "Go to Crustacean Empire",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Hub",
@@ -76,8 +76,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Achaelos's Cloister",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -101,8 +101,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Achaelos",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "enemy": "CL-AnglerBoss-R10-3",
@@ -117,8 +117,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -134,8 +134,8 @@
       "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
-        "x": 1010.0,
-        "y": 125.0
+        "x": 1800,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Celestia/Interiors/CL_Z10i6_Kingdom_Of_The_Crabs",
@@ -159,8 +159,8 @@
       "node_type": "enter_zone",
       "label": "Exit Achaelos's Cloister",
       "position": {
-        "x": 1010.0,
-        "y": 305.0
+        "x": 1800,
+        "y": 90.0
       },
       "params": {
         "from_zone": "Celestia/Interiors/CL_Z10i6_Kingdom_Of_The_Crabs",
@@ -184,8 +184,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 710.0,
-        "y": 215.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,

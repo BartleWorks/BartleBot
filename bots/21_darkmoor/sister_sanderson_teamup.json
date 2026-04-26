@@ -36,8 +36,8 @@
       "node_type": "mark_location",
       "label": "Mark sigil",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z01_Graveholm",
@@ -55,8 +55,8 @@
       "node_type": "enter_dungeon_teamup",
       "label": "Enter dungeon",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Darkmoor/DM_Z01_Graveholm",
@@ -81,8 +81,8 @@
       "node_type": "handle_combat",
       "label": "Defeat sisters",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "enemy": "DM_Scholomari_WitchF_B_02",
@@ -98,8 +98,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -115,8 +115,8 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Darkmoor/Interiors/DM_Z01I17_SandersonHouse",
@@ -140,8 +140,8 @@
       "node_type": "collect_wisps",
       "label": "Collect more wisps",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -157,8 +157,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Teleport to mark",
       "position": {
-        "x": 1310.0,
-        "y": 215.0
+        "x": 1440,
+        "y": -90.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z01_Graveholm",
@@ -176,8 +176,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -193,8 +193,8 @@
       "node_type": "sleep",
       "label": "Wait for everyone else to load in",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 90.0
       },
       "params": {
         "duration": 3.0

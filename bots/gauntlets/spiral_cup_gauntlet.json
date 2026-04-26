@@ -38,8 +38,8 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "friend_name": "Alice StormBlade",
@@ -53,8 +53,8 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01"
@@ -67,8 +67,8 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -94,8 +94,8 @@
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Hydra",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -119,8 +119,8 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -136,8 +136,8 @@
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Hydra",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02",
@@ -161,8 +161,8 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 2510.0,
-        "y": 35.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -188,8 +188,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Specter",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -213,8 +213,8 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -230,8 +230,8 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Specter",
       "position": {
-        "x": 3410.0,
-        "y": 35.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03",
@@ -255,8 +255,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -272,8 +272,8 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 4010.0,
-        "y": 35.0
+        "x": 4680,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -299,8 +299,8 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Harpy",
       "position": {
-        "x": 4310.0,
-        "y": 35.0
+        "x": 5040,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -324,8 +324,8 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 4610.0,
-        "y": 35.0
+        "x": 5400,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -341,8 +341,8 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Harpy",
       "position": {
-        "x": 4910.0,
-        "y": 35.0
+        "x": 5760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_04",
@@ -366,8 +366,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3710.0,
-        "y": 35.0
+        "x": 4320,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -383,8 +383,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 5210.0,
-        "y": 35.0
+        "x": 6120,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -400,8 +400,8 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 5510.0,
-        "y": 35.0
+        "x": 6480,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -427,8 +427,8 @@
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Basilisk",
       "position": {
-        "x": 5810.0,
-        "y": 35.0
+        "x": 6840,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -452,8 +452,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Tamworth Brickhouse",
       "position": {
-        "x": 6110.0,
-        "y": 35.0
+        "x": 7200,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -469,8 +469,8 @@
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Basilisk",
       "position": {
-        "x": 6410.0,
-        "y": 35.0
+        "x": 7560,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_05",
@@ -494,8 +494,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7010.0,
-        "y": 35.0
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -511,8 +511,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter final boss room",
       "position": {
-        "x": 7010.0,
-        "y": 35.0
+        "x": 8280,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -536,8 +536,8 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 7310.0,
-        "y": 35.0
+        "x": 8640,
+        "y": 0.0
       },
       "params": {
         "enemy": "SC-AV-Ogre-80",
@@ -553,8 +553,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat",
       "position": {
-        "x": 7610.0,
-        "y": 35.0
+        "x": 9000,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_06",
@@ -572,8 +572,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 7910.0,
-        "y": 35.0
+        "x": 9360,
+        "y": 0.0
       },
       "params": {
         "duration": 1.0
@@ -586,8 +586,8 @@
       "node_type": "handle_combat",
       "label": "Defeat final boss",
       "position": {
-        "x": 8210.0,
-        "y": 35.0
+        "x": 9720,
+        "y": 0.0
       },
       "params": {
         "enemy": "SC-AV-Giant-FormoriHandsome-80",
@@ -603,8 +603,8 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "threshold": 0.8,

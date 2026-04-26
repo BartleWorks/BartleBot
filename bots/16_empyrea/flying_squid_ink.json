@@ -39,8 +39,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Aeriel Shore",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
@@ -53,8 +53,8 @@
       "node_type": "enter_zone",
       "label": "Enter Aeriel Jungle",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Empyrea/EM_Z00_Aeriel_HUB",
@@ -78,8 +78,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -95,8 +95,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Gannon dialogue",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -114,8 +114,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Gannon",
       "position": {
-        "x": 2510.0,
-        "y": 35.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {
         "enemy": "EM_Kalamar_Raider_C_Boss_01",
@@ -131,8 +131,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Madd'n Dialogue",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -150,8 +150,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
@@ -164,8 +164,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Madd'n",
       "position": {
-        "x": 3410.0,
-        "y": 35.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "enemy": "EM_Kalamar_Raider_D_Boss_01",
@@ -181,8 +181,8 @@
       "node_type": "enter_zone",
       "label": "Enter Raider Tower",
       "position": {
-        "x": 3710.0,
-        "y": -55.0
+        "x": 4320,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -206,8 +206,8 @@
       "node_type": "handle_combat",
       "label": "Deafeat D'Viss",
       "position": {
-        "x": 4010.0,
-        "y": 35.0
+        "x": 4680,
+        "y": 0.0
       },
       "params": {
         "enemy": "EM_Kalamar_Raider_B_Boss_01",
@@ -223,8 +223,8 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 4310.0,
-        "y": 35.0
+        "x": 5040,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Empyrea/Interiors/EM_Z01_RaiderTower01",
@@ -248,8 +248,8 @@
       "node_type": "mark_location",
       "label": "Mark location",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -267,8 +267,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Teleport to marked location",
       "position": {
-        "x": 3710.0,
-        "y": 125.0
+        "x": 4320,
+        "y": 90.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -286,8 +286,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Secret Tunnel",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Empyrea/EM_Z01_Jungle",
@@ -311,8 +311,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -323,8 +323,8 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "threshold": 0.8,

@@ -24,8 +24,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "TP to Walruskberg",
       "position": {
-        "x": -190.0,
-        "y": 125.0
+        "x": 1440,
+        "y": -90.0
       },
       "params": {
         "zone": "Polaris/PL_Z00_Walruskberg"
@@ -37,8 +37,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Sunless Shrine",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Polaris/PL_Z03_IcefallPassage",
@@ -61,8 +61,8 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
@@ -80,8 +80,8 @@
       "node_type": "handle_combat",
       "label": "Fight Vigilant Jarilo",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "enemy": "PL_WolfGryphon_Warrior_C",
@@ -99,8 +99,8 @@
       "node_type": "enter_zone",
       "label": "Exit boss room",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Polaris/Interiors/PL_Z03I03_SunlessTempleTop",
@@ -118,8 +118,8 @@
       "node_type": "enter_zone",
       "label": "Exit Sunless Shrine",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 90.0
       },
       "params": {
         "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
@@ -137,8 +137,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Take snowglobe to River of Frozen Tears",
       "position": {
-        "x": 110.0,
-        "y": 125.0
+        "x": 1800,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Polaris/PL_Z00_Walruskberg",
@@ -161,8 +161,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 1.0,

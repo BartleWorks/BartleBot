@@ -293,7 +293,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
-        "x": -30.0,
+        "x": 0,
         "y": 0.0
       },
       "params": {
@@ -307,7 +307,7 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 330.0,
+        "x": 360,
         "y": 0.0
       },
       "params": {
@@ -324,7 +324,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of the Sun",
       "position": {
-        "x": 1050.0,
+        "x": 1080,
         "y": 0.0
       },
       "params": {
@@ -349,7 +349,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Big Salgio",
       "position": {
-        "x": 1410.0,
+        "x": 1440,
         "y": 0.0
       },
       "params": {
@@ -368,7 +368,7 @@
       "node_type": "sleep",
       "label": "Wait for Big Salgio to load",
       "position": {
-        "x": 1770.0,
+        "x": 1800,
         "y": 0.0
       },
       "params": {
@@ -382,7 +382,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Big Salgio",
       "position": {
-        "x": 2130.0,
+        "x": 2160,
         "y": 0.0
       },
       "params": {
@@ -398,7 +398,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 690.0,
+        "x": 720,
         "y": 0.0
       },
       "params": {

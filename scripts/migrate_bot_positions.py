@@ -1,6 +1,6 @@
-"""Snap all existing bot node positions to the nearest GRID_W x GRID_H grid point.
+"""Apply auto-layout to all existing bot files so positions fit the current node sizes.
 
-Run once after introducing snap-to-grid so existing bots don't jump on first drag.
+Run once after node sizes or grid constants change to give every bot a clean layout.
 
 Usage:
     poetry run python scripts/migrate_bot_positions.py
@@ -10,41 +10,28 @@ import json
 import sys
 from pathlib import Path
 
-# Grid constants must match node_item.py
-NODE_W = 220
-NODE_H = 70
-NODE_GRID_PAD_W = 80
-NODE_GRID_PAD_H = 20
-GRID_W = NODE_W + NODE_GRID_PAD_W  # = 300
-GRID_H = NODE_H + NODE_GRID_PAD_H  # = 90
+# These imports require the BartleBot package to be on sys.path (poetry run handles this).
+from bartlebot.bot.schema import BotConfig
+from bartlebot.gui.canvas.layout import auto_layout
 
 BOTS_DIR = Path(__file__).parent.parent / "bots"
 
 
-def snap(value: float, grid: int) -> float:
-    return round(value / grid) * grid
-
-
 def migrate_file(path: Path) -> bool:
-    """Snap all state positions in *path* to the grid. Returns True if the file changed."""
+    """Apply auto-layout to *path* and write updated positions. Returns True if changed."""
+    config = BotConfig.load(path)
+    auto_layout(config)
+
+    pos_map = {s.id: s.position for s in config.states}
+
     data = json.loads(path.read_text(encoding="utf-8"))
     changed = False
     for state in data.get("states", []):
-        pos = state.get("position")
-        if pos is None:
-            continue
-        # Positions are stored as node center coordinates.
-        # Convert to top-left, snap, convert back.
-        top_left_x = pos["x"] - NODE_W / 2
-        top_left_y = pos["y"] - NODE_H / 2
-        snapped_x = snap(top_left_x, GRID_W)
-        snapped_y = snap(top_left_y, GRID_H)
-        new_center_x = snapped_x + NODE_W / 2
-        new_center_y = snapped_y + NODE_H / 2
-        if new_center_x != pos["x"] or new_center_y != pos["y"]:
-            pos["x"] = new_center_x
-            pos["y"] = new_center_y
+        new_pos = pos_map.get(state["id"])
+        if new_pos is not None and state.get("position") != new_pos:
+            state["position"] = new_pos
             changed = True
+
     if changed:
         path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
     return changed

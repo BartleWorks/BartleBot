@@ -5,9 +5,10 @@ from __future__ import annotations
 from collections import deque
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
 
-H_SPACING = 300
-V_SPACING = 180
+H_SPACING = GRID_W  # one grid column width — keeps auto-layout positions on-grid
+V_SPACING = 2 * GRID_H  # two grid rows — enough vertical room for edges between stacked nodes
 
 
 def auto_layout(config: BotConfig, method: str = "dfs") -> None:
@@ -56,7 +57,7 @@ def auto_layout(config: BotConfig, method: str = "dfs") -> None:
         lay = layer[sid]
         c = col.get(sid, 0)
         n = layer_counts[lay]
-        x = lay * H_SPACING + H_SPACING / 2
+        x = lay * H_SPACING
         y = (c - (n - 1) / 2) * V_SPACING
         state.position = {"x": x, "y": y}
 

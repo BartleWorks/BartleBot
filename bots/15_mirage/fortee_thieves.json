@@ -31,8 +31,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to corner",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Mirage/MR_Z07_ThievesDen",
@@ -50,8 +50,8 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "enemy": "MR_Baboon_Thug_A_01",
@@ -67,8 +67,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -84,8 +84,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to corner",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "zone": "Mirage/MR_Z07_ThievesDen",
@@ -103,8 +103,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to expire",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
@@ -117,8 +117,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -134,8 +134,8 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "keep_list": [

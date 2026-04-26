@@ -43,8 +43,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -57,8 +57,8 @@
       "node_type": "enter_zone",
       "label": "Go to Hametsu Village",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -82,8 +82,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -99,8 +99,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -116,8 +116,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Do-Daga's Dojo",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
@@ -141,8 +141,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Do-Daga",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "enemy": "Pig-War-Warrior-MSBoss-L42",
@@ -157,8 +157,8 @@
       "node_type": "enter_zone",
       "label": "Exit Do-Daga's Dojo",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/Interiors/MS_WarHub_T4",
@@ -182,8 +182,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -199,8 +199,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 2510.0,
-        "y": 35.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -211,8 +211,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Jade Palace",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -225,8 +225,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Emperor's Throne Room",
       "position": {
-        "x": 3410.0,
-        "y": 35.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -250,8 +250,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 3710.0,
-        "y": 35.0
+        "x": 4320,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -274,8 +274,8 @@
       "node_type": "mark_location",
       "label": "Mark location",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
@@ -293,8 +293,8 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to marked location",
       "position": {
-        "x": 4010.0,
-        "y": 35.0
+        "x": 4680,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",

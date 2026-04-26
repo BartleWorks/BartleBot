@@ -148,8 +148,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Commons",
       "position": {
-        "x": 110.0,
-        "y": 42.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -162,8 +162,8 @@
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
       "position": {
-        "x": 710.0,
-        "y": 42.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -187,8 +187,8 @@
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1010.0,
-        "y": 42.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -212,8 +212,8 @@
       "node_type": "enter_zone",
       "label": "Enter Firecat Alley",
       "position": {
-        "x": 1310.0,
-        "y": 42.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -237,8 +237,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Fireglobe Theatre",
       "position": {
-        "x": 1910.0,
-        "y": 42.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Firecat",
@@ -262,8 +262,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Alicane Swiftarrow",
       "position": {
-        "x": 2210.0,
-        "y": 42.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "enemy": "FireElf-Prince-WCBoss-L04",
@@ -279,8 +279,8 @@
       "node_type": "enter_zone",
       "label": "Exit Fireglobe Theatre",
       "position": {
-        "x": 2510.0,
-        "y": 42.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Firecat_Theatre",
@@ -304,8 +304,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2810.0,
-        "y": 42.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -316,8 +316,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 410.0,
-        "y": 42.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,

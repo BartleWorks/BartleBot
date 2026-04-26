@@ -86,8 +86,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -100,8 +100,8 @@
       "node_type": "enter_zone",
       "label": "Enter Golem Court",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -125,8 +125,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -142,8 +142,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Drains",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -167,8 +167,8 @@
       "node_type": "enter_zone",
       "label": "Enter the Catacombs",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
@@ -192,8 +192,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -204,8 +204,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Viggor's Tomb",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Catacombs",
@@ -229,8 +229,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Skip to Prince Viggor",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/Interiors/WC_Catacombs_ViggorsTomb",
@@ -248,8 +248,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Prince Viggor",
       "position": {
-        "x": 2510.0,
-        "y": 35.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {
         "enemy": "CC_Human_DSWarPrince_A_01",

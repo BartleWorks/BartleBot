@@ -36,8 +36,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Zocalo",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo"
@@ -50,8 +50,8 @@
       "node_type": "enter_zone",
       "label": "Enter Three Points",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/AZ_Z00_Zocalo",
@@ -75,8 +75,8 @@
       "node_type": "enter_zone",
       "label": "Enter Cenote",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/AZ_Z01_ThreePoints",
@@ -100,8 +100,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Ruined Mine",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/AZ_Z02_Cenote",
@@ -125,8 +125,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Guillermo Shatterer",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {
         "enemy": "AZ-Tritops-Undead-F",
@@ -142,8 +142,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1610.0,
-        "y": 35.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -154,8 +154,8 @@
       "node_type": "enter_zone",
       "label": "Exit Ruined Mine",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/Interiors/AZ_Z02_Mine03",

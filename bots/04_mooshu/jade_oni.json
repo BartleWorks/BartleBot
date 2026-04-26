@@ -50,8 +50,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to the Jade Palace",
       "position": {
-        "x": 110.0,
-        "y": 35.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
@@ -64,8 +64,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 410.0,
-        "y": 35.0
+        "x": 360,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -81,8 +81,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter the Emperor's Throne Room",
       "position": {
-        "x": 1010.0,
-        "y": 35.0
+        "x": 1080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -106,8 +106,8 @@
       "node_type": "interact",
       "label": "Summon the Jade Oni",
       "position": {
-        "x": 1910.0,
-        "y": 35.0
+        "x": 2160,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -135,8 +135,8 @@
       "node_type": "handle_combat",
       "label": "Defeat the Jade Oni",
       "position": {
-        "x": 2510.0,
-        "y": 35.0
+        "x": 2880,
+        "y": 0.0
       },
       "params": {
         "enemy": "Oni-Jade-MSBoss-L76",
@@ -152,8 +152,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3240,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.8,
@@ -169,8 +169,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
       "position": {
-        "x": 3110.0,
-        "y": 35.0
+        "x": 3600,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -188,8 +188,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3410.0,
-        "y": 35.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
@@ -202,8 +202,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 710.0,
-        "y": 35.0
+        "x": 720,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -219,8 +219,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter Jade Oni's render radius",
       "position": {
-        "x": 2210.0,
-        "y": 35.0
+        "x": 2520,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -238,8 +238,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 1310.0,
-        "y": 35.0
+        "x": 1440,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {},
@@ -250,8 +250,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1610.0,
-        "y": -55.0
+        "x": 1800,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
