@@ -397,13 +397,10 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
-            # Snap the visual center of the node (not the top-left) to grid positions.
-            # Grid dots are drawn at GRID_W*i, GRID_H*j — i.e. at the snap positions.
-            # Using ItemPositionChange means we return the corrected value directly.
-            nr = self._node_rect()
-            local_cx = nr.x() + nr.width() / 2
+            # Snap the left edge (x) and vertical center (y) to grid positions.
+            # Grid dots are drawn at (GRID_W*i, GRID_H*j) and land at these same points.
             return QPointF(
-                round((value.x() + local_cx) / GRID_W) * GRID_W - local_cx,
+                round(value.x() / GRID_W) * GRID_W,
                 round((value.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2,
             )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:

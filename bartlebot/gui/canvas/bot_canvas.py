@@ -1050,6 +1050,7 @@ class BotCanvas(QWidget):
         self._undo_mgr.push(self._config, "Auto Layout")
         auto_layout(self._config)
         self._scene.setup(self._config)
+        self._scene.set_snap_enabled(SettingsManager.instance().get("canvas", "snap_to_grid", default=False))
         self._view.fit_scene()
         self._minimap.fit_to_scene()
         self.config_changed.emit()

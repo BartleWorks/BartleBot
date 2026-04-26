@@ -244,8 +244,7 @@ class EditScene(QGraphicsScene):
         super().drawBackground(painter, rect)
         if not self._snap_enabled:
             return
-        # Dots sit at (GRID_W*i, GRID_H*j) — the positions that node visual
-        # centers snap to, so a snapped node's center lands exactly on a dot.
+        # Dots sit at (GRID_W*i, GRID_H*j) — left edges and vertical centers of snapped nodes.
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
         dot_r = 2.0
@@ -295,7 +294,7 @@ class EditScene(QGraphicsScene):
         for i, state in enumerate(states):
             pos = state.position
             if pos and isinstance(pos, dict):
-                x = pos.get("x", 0) - NODE_W / 2
+                x = pos.get("x", 0)
                 y = pos.get("y", 0) - NODE_H / 2
             else:
                 total_w = (len(states) - 1) * _AUTO_SPACING
@@ -483,7 +482,7 @@ class EditScene(QGraphicsScene):
         state = StateModel(
             id=state_id,
             node_type=node_type,
-            position={"x": pos.x() + NODE_W / 2, "y": pos.y() + NODE_H / 2},
+            position={"x": pos.x(), "y": pos.y() + NODE_H / 2},
             params=default_params,
         )
         self._config.states.append(state)
@@ -784,7 +783,7 @@ class EditScene(QGraphicsScene):
             if new_sd.get("position"):
                 node.setPos(
                     QPointF(
-                        new_sd["position"]["x"] - NODE_W / 2,
+                        new_sd["position"]["x"],
                         new_sd["position"]["y"] - NODE_H / 2,
                     )
                 )
@@ -1105,7 +1104,7 @@ class EditScene(QGraphicsScene):
         state = StateModel(
             id=new_id,
             node_type=node_type,
-            position={"x": mid.x() + NODE_W / 2, "y": mid.y() + NODE_H / 2},
+            position={"x": insert_pos.x(), "y": mid.y() + NODE_H / 2},
             params=default_params,
         )
         self._config.states.append(state)
@@ -1147,7 +1146,7 @@ class EditScene(QGraphicsScene):
             if node is None:
                 continue
             new_pos = {
-                "x": node.scenePos().x() + NODE_W / 2,
+                "x": node.scenePos().x(),
                 "y": node.scenePos().y() + node._height / 2,
             }
             if state.position != new_pos:
