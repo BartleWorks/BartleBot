@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
-from bartlebot.gui.canvas.edge_item import BACK_PADDING, EdgeItem
+from bartlebot.gui.canvas.edge_item import EdgeItem, bridge_y_above, bridge_y_below, is_above_routed
 from bartlebot.gui.canvas.graph_view import GraphView
 from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.region_item import RegionItem
@@ -338,15 +338,8 @@ class EditScene(QGraphicsScene):
         #
         # Y-band outliers (source Y differs from destination Y by ≥ one node height)
         # are excluded from corridor grouping and route independently.
-        def _below_limit(sn, dn):
-            return max(sn.pos().y() + sn._height, dn.pos().y() + dn._height) + BACK_PADDING
-
-        def _above_limit(sn, dn):
-            return min(sn.pos().y(), dn.pos().y()) - BACK_PADDING
-
-        def _is_above_routed(sn, w):
-            returns = sn._returns
-            return w is not None and len(returns) >= 2 and w == returns[0]
+        # bridge_y_below / bridge_y_above / is_above_routed are imported from
+        # edge_item so the corridor geometry stays in one place.
 
         # Collect unique (s, w, d) tuples from transitions (deduplicated).
         unique_edges: list[tuple[str, str | None, str]] = []
@@ -373,18 +366,18 @@ class EditScene(QGraphicsScene):
             if abs(sn.pos().y() - dn.pos().y()) >= sn._height:
                 continue  # Y-band outlier — routes independently
             y_row = round(sn.pos().y() / GRID_H)
-            if _is_above_routed(sn, w):
+            if is_above_routed(sn, w):
                 above_groups[(w, y_row)].append((s, w, d))
             else:
                 below_groups[(w, y_row)].append((s, w, d))
 
         bridge_y_map: dict[tuple[str, str | None, str], float] = {}
         for group_edges in below_groups.values():
-            shared_y = max(_below_limit(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            shared_y = max(bridge_y_below(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
             for key in group_edges:
                 bridge_y_map[key] = shared_y
         for group_edges in above_groups.values():
-            shared_y = min(_above_limit(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            shared_y = min(bridge_y_above(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
             for key in group_edges:
                 bridge_y_map[key] = shared_y
 

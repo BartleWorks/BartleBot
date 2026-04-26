@@ -189,7 +189,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Galvanost Tower",
       "position": {
-        "x": 1800,
+        "x": 2160.0,
         "y": 0.0
       },
       "params": {
@@ -214,7 +214,7 @@
       "node_type": "handle_combat",
       "label": "Defeat The Harvest Lord",
       "position": {
-        "x": 2160,
+        "x": 2520.0,
         "y": 0.0
       },
       "params": {
@@ -231,7 +231,7 @@
       "node_type": "enter_zone",
       "label": "Exit Galvanost Tower",
       "position": {
-        "x": 2520,
+        "x": 2880.0,
         "y": 0.0
       },
       "params": {
@@ -256,7 +256,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2880,
+        "x": 3240.0,
         "y": 0.0
       },
       "params": {},

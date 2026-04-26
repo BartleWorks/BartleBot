@@ -433,7 +433,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Stormdrain Tower",
       "position": {
-        "x": 2160,
+        "x": 2520.0,
         "y": 0.0
       },
       "params": {
@@ -458,7 +458,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Lord Nightshade",
       "position": {
-        "x": 2520,
+        "x": 2880.0,
         "y": 0.0
       },
       "params": {
@@ -475,7 +475,7 @@
       "node_type": "enter_zone",
       "label": "Exit Stormdrain Tower",
       "position": {
-        "x": 2880,
+        "x": 3240.0,
         "y": 0.0
       },
       "params": {
@@ -500,7 +500,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to wisp spawns",
       "position": {
-        "x": 3240,
+        "x": 3600.0,
         "y": 0.0
       },
       "params": {
@@ -519,7 +519,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3600,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {},

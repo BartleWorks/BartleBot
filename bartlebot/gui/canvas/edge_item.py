@@ -48,6 +48,32 @@ def _when_edge_color(when: str | None):
 
 
 # ---------------------------------------------------------------------------
+# Shared bridge-Y geometry — single source of truth used by both EdgeItem
+# (dynamic rebuilds after node drags) and EditScene.setup() (corridor
+# pre-computation).  Keep these three functions in sync with each other.
+# ---------------------------------------------------------------------------
+
+
+def bridge_y_below(src_node: NodeItem, dst_node: NodeItem) -> float:
+    """Y for a below-corridor bridge: BACK_PADDING below the bottom of the lower node."""
+    src_bot = src_node.scenePos().y() + src_node._height
+    dst_bot = dst_node.scenePos().y() + dst_node._height
+    return max(src_bot, dst_bot) + BACK_PADDING
+
+
+def bridge_y_above(src_node: NodeItem, dst_node: NodeItem) -> float:
+    """Y for an above-corridor bridge: BACK_PADDING above the top of the higher node."""
+    return min(src_node.scenePos().y(), dst_node.scenePos().y()) - BACK_PADDING
+
+
+def is_above_routed(src_node: NodeItem, when: str | None) -> bool:
+    """True when a backward edge from src_node with the given return label should
+    route above the node row (topmost-port on a node with ≥ 2 named returns)."""
+    returns = src_node._returns
+    return when is not None and len(returns) >= 2 and when == returns[0]
+
+
+# ---------------------------------------------------------------------------
 # EdgeItem
 # ---------------------------------------------------------------------------
 
@@ -94,15 +120,7 @@ class EdgeItem(QGraphicsPathItem):
         return ps.createStroke(self.path())
 
     def _should_route_above(self) -> bool:
-        """True when this backward edge exits from the topmost named port (index 0)
-        on a node with at least two named returns.
-
-        These edges are routed above the node row so success-path backward edges
-        (e.g. "loop back to the dungeon entrance") occupy a separate vertical band
-        from failure-path backward edges and do not cross them.
-        """
-        returns = self._src._returns
-        return self._when is not None and len(returns) >= 2 and self._when == returns[0]
+        return is_above_routed(self._src, self._when)
 
     def _rebuild(self) -> None:
         path = QPainterPath()
@@ -237,38 +255,12 @@ class EdgeItem(QGraphicsPathItem):
             _draw_ortho_path(path, waypoints)
         else:
             # Ports face opposite directions: 6-point bridge path.
-            src_h = self._src._height
-            dst_h = self._dst._height
-            src_top = self._src.scenePos().y()
-            src_bot = src_top + src_h
-            dst_top = self._dst.scenePos().y()
-            dst_bot = dst_top + dst_h
             if self._bridge_y_override is not None:
-                # Shared-corridor value pre-computed by the scene; use it as-is.
                 mid_y = self._bridge_y_override
             elif self._should_route_above():
-                # Topmost-port backward edges route above both nodes so they occupy
-                # a separate vertical band from failure-path edges below.
-                mid_y = min(src_top, dst_top) - _BACK_PADDING
+                mid_y = bridge_y_above(self._src, self._dst)
             else:
-                mid_y = (src_pt.y() + dst_pt.y()) / 2 + self._offset * 0.5
-                if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
-                    above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
-                    below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
-                    if mid_y - above_limit > below_limit - mid_y:
-                        mid_y = above_limit
-                    else:
-                        mid_y = below_limit
-                # Secondary check: if mid_y passes through either node's actual body
-                # (the port-midpoint heuristic misses this when the port is near the
-                # node's edge, e.g. FAILURE port at 83% height on an offset node).
-                if src_top <= mid_y <= src_bot or dst_top <= mid_y <= dst_bot:
-                    actual_above = min(src_top, dst_top) - _BACK_PADDING
-                    actual_below = max(src_bot, dst_bot) + _BACK_PADDING
-                    if mid_y < (actual_above + actual_below) / 2:
-                        mid_y = actual_above
-                    else:
-                        mid_y = actual_below
+                mid_y = bridge_y_below(self._src, self._dst)
             waypoints = [
                 src_pt,
                 QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),

@@ -445,6 +445,14 @@
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
     }
   ],
   "regions": [
