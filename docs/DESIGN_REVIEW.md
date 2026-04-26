@@ -560,7 +560,9 @@ The transitions library offers significantly more capability than BartleBot curr
 
 ## Stage 3: UI/UX Layer
 
-Scope: The PyQt6 GUI — main window layout, node graph canvas, sidebars, game window embedding, theme system, user interaction patterns, and visual feedback. Files reviewed: ~30 files across `bartlebot/gui/`, totaling ~6000+ lines.
+Scope: The PyQt6 GUI — main window layout, node graph canvas, sidebars, game window embedding, theme system, user interaction patterns, and visual feedback. Files reviewed: ~40 files across `bartlebot/gui/`, totaling ~9000+ lines.
+
+*This stage was reviewed against the codebase as of the `bot-canvas-upgrades-04252026` branch. Many issues from the original review have since been resolved.*
 
 ### Understanding the UI Architecture
 
@@ -592,15 +594,17 @@ MainWindow (QMainWindow)
 - `SidebarSection` base class provides consistent collapsible section pattern — all sections inherit the same header toggle, padding, and size policy.
 - `Sidebar` base class provides scrollable container with consistent margins (8px) and minimum width.
 - Theme is a frozen dataclass singleton (`THEME`) — all colors, fonts, and sizes centralized. Swapping the singleton enables full theme replacement.
-- Canvas components separated by concern: `bot_canvas.py` (mode/toolbar), `graph_items.py` (rendering), `region_item.py` (grouping), `param_panel.py` (property editing), `layout.py` (auto-layout algorithm), `recording.py` (action recording).
+- Canvas components separated by concern: `bot_canvas.py` (mode/toolbar), `node_item.py` + `edge_item.py` + `graph_view.py` (rendering), `region_item.py` (grouping), `edit_scene.py` (scene interaction), `param_panel.py` (property editing), `layout.py` (auto-layout algorithm), `recording.py` (action recording), `undo_manager.py` (undo/redo).
 - Game embedding isolated in `game_embed/` — `ClientTile` wraps Win32 `SetParent`, `GameView` manages tiling, `GameViewPanel` adds status header.
 - Icon system uses SVG with runtime tinting — one icon asset serves all color contexts.
 
 **Concerns:**
-- `bot_canvas.py` is a ~1965-line file that handles mode management, toolbar construction, validation, search bar, focus mode, logging, status updates, option injection, and recording delegation. It's the god-file of the GUI.
-- `graph_items.py` is ~1000+ lines combining `NodeItem`, `EdgeItem`, `GraphView`, and `_MinimapView` in one file. These are distinct responsibilities that should be separate files.
-- `_ParamPanel` is owned by `BotCanvas` but displayed in the left sidebar's Properties tab — the ownership and display location are disconnected, making the signal routing non-obvious.
-- Log widget is similarly owned by `BotCanvas` but parented into the left sidebar's Log tab.
+- `bot_canvas.py` (~1,438 lines) still handles mode management, toolbar construction, validation, search bar, focus mode, status updates, option injection, and recording delegation. Reduced from ~1,965 lines but still multi-concern.
+- `_ParamPanel` is owned by `BotCanvas` but passed into the left sidebar's Properties tab as a constructor parameter — the ownership and display location are disconnected, making the signal routing non-obvious.
+
+**Resolved since original review:**
+- ~~`graph_items.py` (~1000+ lines) combining `NodeItem`, `EdgeItem`, `GraphView`, and `_MinimapView`~~ → split into `node_item.py`, `edge_item.py`, `graph_view.py`, `region_item.py`, each focused on a single responsibility.
+- ~~Log widget owned by `BotCanvas` but parented into the left sidebar's Log tab~~ → `log_panel.py` is now in `bartlebot/gui/sidebar/` with its own ownership.
 
 #### 2. Reliable Execution — GOOD
 
@@ -614,8 +618,10 @@ MainWindow (QMainWindow)
 
 **Concerns:**
 - `ClientSection` refreshes every 100ms via async gather. If a WizWalker memory read blocks or raises, the entire refresh stalls. No per-client timeout.
-- No undo/redo system. Edit mode changes (node creation, deletion, edge creation, copy/paste) are immediately applied to the config. An accidental delete of a complex subgraph is unrecoverable except by reloading from disk.
 - Copy/paste generates new state IDs deterministically — pasting the same clipboard multiple times could interact unexpectedly with validation if IDs collide with existing states (though the code likely handles this by appending `_copy_N`).
+
+**Resolved since original review:**
+- ~~No undo/redo system~~ → `undo_manager.py` implements snapshot-based undo/redo (50-step history, 500ms debounce for parameter edits, structural edits snapshot immediately).
 
 #### 3. Observability — GOOD
 
@@ -640,7 +646,7 @@ MainWindow (QMainWindow)
 - `_DynamicParamForm` generates parameter forms from `ParamField` schema — adding a new parameter type to a node automatically generates the correct widget. Supported types: text, string, int, float, bool, xyz, int_list, str_list.
 - Node registry drives the "Add State" dropdown — new node types appear automatically.
 - `required_bot_options` auto-injection: when a node type declares required options, the GUI adds them to the options panel automatically and removes them when the node is deleted.
-- Theme tokens make visual customization straightforward — adding a dark theme is a matter of creating an alternate `_Theme` instance.
+- Theme tokens make visual customization straightforward — a dark theme, system dark mode detection, and full per-token custom themes are all supported via `theme.py` (`LIGHT`/`DARK` instances, `build_custom_theme()`, `ThemeTab` in settings with import/export and WCAG AA contrast validation).
 - Region system is fully dynamic — create, rename, recolor, delete, add/remove members.
 - Settings dialog is tabbed and extensible — adding a new settings category is one new tab class.
 
@@ -659,10 +665,11 @@ MainWindow (QMainWindow)
 - Game view maximize (Ctrl+Alt+G) hides all editing UI — useful for monitoring-only sessions.
 
 **Concerns:**
-- No confirmation dialog before deleting nodes/edges — Delete key immediately removes selection.
-- No confirmation before "Done" (discard) — unsaved edit changes are silently lost.
-- No auto-save or crash recovery. If the application crashes during edit mode, all unsaved changes are lost.
 - The quick-launch placeholder in the game view exposes stored account credentials (clickable account list). No password masking or confirmation before launching.
+
+**Resolved since original review:**
+- ~~No confirmation dialog before deleting nodes/edges~~ → `edit_scene.py` uses `QMessageBox.question()` for single deletes (showing node label/edge endpoints) and a summary prompt for bulk deletes.
+- ~~No auto-save or crash recovery~~ → `app_controller.py` runs a configurable timer (default 5 min) writing `{stem}.autosave.json` to `%APPDATA%/BartleBot/autosave/`; `recovery_dialog.py` shown at startup if newer autosaves exist; configurable via general settings tab.
 
 #### 6. Testing — NOT EVALUATED
 
@@ -697,14 +704,9 @@ No GUI tests exist. PyQt6 testing is notoriously difficult (requires event loop,
 
 #### A. Architecture Audit
 
-**Widget hierarchy is clean** — `MainWindow` → splitters → panels → sections → widgets. Each level has clear responsibility. The main pain point is `bot_canvas.py` at ~1965 lines — it handles too many concerns. A natural split would be:
+**Widget hierarchy is clean** — `MainWindow` → splitters → panels → sections → widgets. Each level has clear responsibility. `bot_canvas.py` has been reduced from ~1,965 to ~1,438 lines; `edit_scene.py` is now its own file (~1,324 lines) handling scene interaction, drag-to-connect, and context menus. `_SearchBar` and focus mode remain inline in `bot_canvas.py` — natural candidates for extraction if the file grows again.
 
-- `bot_canvas.py` — mode management, toolbar, status
-- `edit_scene.py` — scene interaction, drag-to-connect, context menus
-- `search_bar.py` — floating search overlay
-- `focus_mode.py` — region focus with breadcrumb
-
-**10x complexity breaking point:** The current canvas renders up to ~40 nodes comfortably (as seen in the screenshot). At 100+ nodes, the QGraphicsScene will slow down, and the minimap will become too dense to be useful. No level-of-detail (LOD) culling exists beyond the compact label mode at <0.6 zoom — edges, ports, and badges are always rendered. A "collapse region to single node" feature would help.
+**10x complexity breaking point:** LOD rendering is now in place (`node_item.py`, configurable threshold default 0.6) — nodes switch to a compact label-only view when zoomed out, reducing visual clutter. At 100+ nodes the minimap will become dense and the layout algorithm will slow; a "collapse region to single node" feature would be the next scaling lever.
 
 #### B. Abstraction Quality
 
@@ -726,8 +728,8 @@ No GUI tests exist. PyQt6 testing is notoriously difficult (requires event loop,
 | Scenario | What happens | Assessment |
 |---|---|---|
 | **Game window crashes while embedded** | `ClientTile` still holds dead HWND; `client_loop` detects and removes | OK: graceful cleanup |
-| **Accidental node deletion** | Immediate, no undo | BAD: data loss risk |
-| **Application crash during edit** | All unsaved changes lost | BAD: no auto-save |
+| **Accidental node deletion** | QMessageBox confirmation, then undo available (50-step history) | OK: recoverable |
+| **Application crash during edit** | Auto-save runs every 5 min; recovery dialog on next launch | OK: recoverable |
 | **Very large bot file (100+ nodes)** | Scene renders all items, minimap dense, layout slow | MEDIUM: no LOD/culling |
 | **WizWalker raises during client refresh** | `MemoryReadError` caught, client list cleared | OK: handled |
 | **Rapid mode switches (edit→run→edit)** | Toolbar stacks swap correctly | OK: tested path |
@@ -735,21 +737,25 @@ No GUI tests exist. PyQt6 testing is notoriously difficult (requires event loop,
 
 #### E. Code Smells
 
-- **`bot_canvas.py` (~1965 lines)** — god-file handling mode management, toolbar, validation banner, search bar, focus mode, logging, status, option injection, recording, and parameter panel ownership. Should be decomposed.
-- **`graph_items.py` (~1000+ lines)** — combines `NodeItem`, `EdgeItem`, `GraphView`, `_MinimapView` in one file. Four distinct classes with different concerns.
-- **Cross-panel ownership:** Canvas creates widgets (log, params) that live in the sidebar. The sidebar doesn't own these widgets — it just provides a tab container. This inverts the natural ownership model and makes the code harder to follow.
-- **Signal name reuse:** `config_changed` emitted by 5+ different classes with no namespacing or documentation of which fires when.
+- **`bot_canvas.py` (~1,438 lines)** — still handles mode management, toolbar, validation banner, search bar, focus mode, status, option injection, and recording delegation. Reduced from ~1,965 but further decomposition is possible.
+- **Cross-panel ownership:** Canvas passes `_ParamPanel` into `LeftSidebar` as a constructor argument — better than direct parenting, but the canvas still creates a widget whose display home is the sidebar.
+- **Signal name reuse:** `config_changed` is emitted by `BotCanvas`, `EditScene`, and `LeftSidebar`; sidebar sections have been improved to use specific signal names (`metadata_changed`, `drops_changed`, etc.) but the top-level `config_changed` still flows from multiple sources with different semantics.
+
+**Resolved since original review:**
+- ~~`graph_items.py` (~1000+ lines) with four unrelated classes~~ → split into `node_item.py`, `edge_item.py`, `graph_view.py`, `region_item.py`.
 - **`_SectionHeader` arrow tint `#000000` hardcoded** — should use a theme token.
 - **Sidebar helper functions** (`field_label`, `value_label`, etc.) defined in `sidebar_section.py` rather than a shared utility module — these are widget factories, not section-specific logic.
 
 #### F. Long-term Maintainability
 
 **Will become painful:**
-- **No undo/redo** will frustrate users as bot complexity grows. Implementing undo after-the-fact requires either command pattern retrofit or QUndoStack integration across all edit operations.
-- **`bot_canvas.py` size** will continue growing as new features are added (undo, search improvements, drag-and-drop, subgraph nodes). At ~2000 lines it's already at the threshold.
-- **No dark theme** — the light theme is hardcoded. Adding dark mode will require auditing every widget for hardcoded colors and ensuring the theme token system covers all cases.
+- **`bot_canvas.py` size** will continue growing as new features are added. At ~1,438 lines it's manageable but `_SearchBar` and focus mode are natural extraction targets.
 - **No log rotation** — the QPlainTextEdit accumulates indefinitely. For multi-hour runs, memory usage and rendering performance will degrade.
 - **The 100ms client refresh timer** will become expensive with more clients (4+) and more data per client. Should be configurable or adaptive.
+
+**Resolved since original review:**
+- ~~No undo/redo~~ → `undo_manager.py` with 50-step snapshot history.
+- ~~No dark theme~~ → `LIGHT`/`DARK` theme instances, system dark mode detection, full custom theme editor in settings.
 
 ---
 
@@ -768,31 +774,48 @@ Cross-referencing the code analysis with the actual running application:
 **What could be improved:**
 - The left sidebar is quite narrow (~240px visible) — the "Bot Info" fields (Description, Drops) are truncated. Text wrapping helps but multi-line content is cramped.
 - The canvas at the bottom has limited vertical space (~25% of window height) — the node graph is compressed. With ~30 nodes, labels are small and edges are dense. The expand/collapse button helps but users may not discover it.
-- The minimap in the bottom-right is small (160×110px) and may be hard to read at the current canvas density.
 - No visible zoom indicator — users can't tell what zoom level they're at.
 - The pause/stop buttons are small and centered at the bottom of the canvas — they could be more prominent during run mode.
-- Region labels ("Gurtok Sequence", "Defeat Gurtok Piercer") are readable but the region fill is very subtle (~16% opacity). Some users might not notice regions at all.
+- Region labels are readable but the region fill is very subtle (~16% opacity). Some users might not notice regions at all.
+
+*Note: The minimap concern (hard to read, hidden toggle) and LOD concern (no zoom-based culling) from the original review have been resolved — the minimap is interactive and settings-backed, and LOD rendering is implemented in `node_item.py`.*
 
 ---
 
 ### Summary: Priority Issues
 
-| # | Issue | Severity | Axis |
-|---|---|---|---|
-| 1 | No undo/redo system for edit mode | High | Reliability, Safety |
-| 2 | `bot_canvas.py` is a ~1965-line god-file | High | Modular Architecture, Maintainability |
-| 3 | No auto-save or crash recovery | Medium | Safety, Reliability |
-| 4 | No delete confirmation for nodes/edges | Medium | Safety |
-| 5 | Log widget has no timestamps, no file export, no rotation | Medium | Observability |
-| 6 | `graph_items.py` combines 4 unrelated classes (~1000+ lines) | Medium | Modular Architecture |
-| 7 | Cross-panel widget ownership (canvas owns sidebar tab content) | Medium | Modular Architecture, Consistency |
-| 8 | No dark theme support (light theme only) | Medium | Extensibility |
-| 9 | `config_changed` signal emitted by 5+ classes with same name | Medium | Consistency, Observability |
-| 10 | 100ms client refresh timer with no per-client timeout | Low | Reliability |
-| 11 | No zoom level indicator | Low | Observability |
-| 12 | Sidebar font sizes not centralized in theme | Low | Consistency |
-| 13 | No GUI tests | Low | Testing |
-| 14 | No widget docstrings | Low | Documentation |
+| # | Issue | Severity | Axis | Status |
+|---|---|---|---|---|
+| 1 | No undo/redo system for edit mode | High | Reliability, Safety | **DONE** — `undo_manager.py`, 50-step snapshots |
+| 2 | `bot_canvas.py` is a ~1965-line god-file | High | Modular Architecture, Maintainability | **PARTIAL** — reduced to ~1,438; `edit_scene.py` extracted |
+| 3 | No auto-save or crash recovery | Medium | Safety, Reliability | **DONE** — 5-min timer + `recovery_dialog.py` |
+| 4 | No delete confirmation for nodes/edges | Medium | Safety | **DONE** — `QMessageBox` in `edit_scene.py` |
+| 5 | Log widget has no timestamps, no file export, no rotation | Medium | Observability | **PARTIAL** — file logging added in Stage 4 item 1; GUI widget rotation still open |
+| 6 | `graph_items.py` combines 4 unrelated classes (~1000+ lines) | Medium | Modular Architecture | **DONE** — split into `node_item.py`, `edge_item.py`, `graph_view.py`, `region_item.py` |
+| 7 | Cross-panel widget ownership (canvas owns sidebar tab content) | Medium | Modular Architecture, Consistency | **PARTIAL** — `_ParamPanel` passed as parameter; `log_panel.py` has own ownership |
+| 8 | No dark theme support (light theme only) | Medium | Extensibility | **DONE** — `LIGHT`/`DARK` themes, system detection, custom theme editor |
+| 9 | `config_changed` signal emitted by 5+ classes with same name | Medium | Consistency, Observability | **PARTIAL** — sidebar sections now use specific signal names; top-level still shared |
+| 10 | 100ms client refresh timer with no per-client timeout | Low | Reliability | Open |
+| 11 | No zoom level indicator | Low | Observability | Open |
+| 12 | Sidebar font sizes not centralized in theme | Low | Consistency | Open |
+| 13 | No GUI tests | Low | Testing | Open |
+| 14 | No widget docstrings | Low | Documentation | Open |
+
+### New Features Added Since Original Review
+
+| Feature | Location | Notes |
+|---|---|---|
+| Grid / snap-to-grid | `edit_scene.py` `drawBackground()`, `node_item.py` `GRID_W/H` | Settings-backed toggle |
+| LOD rendering | `node_item.py` | Configurable threshold (default 0.6); compact vs. full modes |
+| Recording system | `canvas/recording.py` (448 lines) | Coroutine-based node parameter capture from live game |
+| `node_browser_dialog.py` | `canvas/node_browser_dialog.py` (797 lines) | Node type selection dialog replacing simple dropdown |
+| Dark / custom themes | `gui/theme.py`, `gui/settings/theme_tab.py` | System dark mode, per-token overrides, WCAG AA validation |
+| Auto-save + recovery | `app_controller.py`, `gui/recovery_dialog.py` | 5-min default, configurable, startup recovery prompt |
+| Undo/redo | `canvas/undo_manager.py` | 50-step snapshot-based; debounced for param edits |
+| Wiki import dialog | `gui/wiki_import_dialog.py` | — |
+| UI tree browser | `gui/ui_tree_browser.py` | — |
+| Entity browser | `gui/entity_browser.py` | — |
+| Safety warning dialog | `gui/safety_warning_dialog.py` | — |
 
 ---
 
