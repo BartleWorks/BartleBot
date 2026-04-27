@@ -6,7 +6,7 @@ from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtGui import QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphicsItem
 
-from bartlebot.gui.canvas.node_item import NodeItem
+from bartlebot.gui.canvas.node_item import NODE_W, NodeItem
 from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ def bridge_y_above(src_node: NodeItem, dst_node: NodeItem) -> float:
 
 def channel_x_after_src(src_node: NodeItem) -> float:
     """X for a forward-edge vertical channel: FORWARD_PADDING right of src_node's right edge."""
-    return src_node.scenePos().x() + src_node._total_w + FORWARD_PADDING
+    return src_node.scenePos().x() + NODE_W + FORWARD_PADDING
 
 
 def is_above_routed(src_node: NodeItem, when: str | None) -> bool:

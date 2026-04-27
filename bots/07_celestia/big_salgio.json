@@ -307,7 +307,7 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -324,7 +324,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of the Sun",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -349,7 +349,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Big Salgio",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -368,7 +368,7 @@
       "node_type": "sleep",
       "label": "Wait for Big Salgio to load",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -382,7 +382,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Big Salgio",
       "position": {
-        "x": 2160,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -398,7 +398,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {

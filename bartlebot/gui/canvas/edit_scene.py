@@ -251,7 +251,8 @@ class EditScene(QGraphicsScene):
         super().drawBackground(painter, rect)
         if not self._snap_enabled:
             return
-        # Dots sit at (GRID_W*i, GRID_H*j) — left edges and vertical centers of snapped nodes.
+        # Dots sit at (GRID_W*i, GRID_H*j) — info-section left edges and vertical centers of
+        # snapped nodes. For flipped nodes the port section extends left of the grid dot.
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
         dot_r = 2.0
