@@ -1414,12 +1414,11 @@ class BotCanvas(QWidget):
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
                         option_names = [opt.name for opt in self._scene._config.options]
-                        state_ids = [st.id for st in self._scene._config.states]
                         self._param_panel.show_transition(
                             trans,
                             src_returns,
                             option_names,
-                            state_ids=state_ids,
+                            states=list(self._scene._config.states),
                             all_transitions=self._scene._config.transitions,
                         )
                         self.tab_switch.emit("properties")

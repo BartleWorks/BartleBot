@@ -673,8 +673,8 @@ class _ParamPanel(QWidget):
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
         self._record_task: asyncio.Task | None = None
-        # All state IDs for the source/dest dropdowns; populated by show_transition()
-        self._all_state_ids: list[str] = []
+        # All states for the source/dest dropdowns; populated by show_transition()
+        self._all_states: list = []
         # Other transitions in the config — for duplicate-check in endpoint change
         self._all_transitions: list[TransitionModel] = []
 
@@ -911,24 +911,26 @@ class _ParamPanel(QWidget):
         transition: TransitionModel,
         src_returns: list[str] | None = None,
         option_names: list[str] | None = None,
-        state_ids: list[str] | None = None,
+        states: list | None = None,
         all_transitions: list[TransitionModel] | None = None,
     ) -> None:
         self._transition = transition
         self._state = None
-        self._all_state_ids = list(state_ids or [])
+        self._all_states = list(states or [])
         self._all_transitions = list(all_transitions or [])
         self._suppress = True
 
-        # Source / dest dropdowns
+        # Source / dest dropdowns — display label (or ID as fallback), store ID as item data
         self._edge_src_combo.clear()
-        self._edge_src_combo.addItems(self._all_state_ids)
-        src_idx = self._edge_src_combo.findText(transition.source)
+        for st in self._all_states:
+            self._edge_src_combo.addItem(st.label or st.id, st.id)
+        src_idx = self._edge_src_combo.findData(transition.source)
         self._edge_src_combo.setCurrentIndex(src_idx if src_idx >= 0 else 0)
 
         self._edge_dst_combo.clear()
-        self._edge_dst_combo.addItems(self._all_state_ids)
-        dst_idx = self._edge_dst_combo.findText(transition.dest)
+        for st in self._all_states:
+            self._edge_dst_combo.addItem(st.label or st.id, st.id)
+        dst_idx = self._edge_dst_combo.findData(transition.dest)
         self._edge_dst_combo.setCurrentIndex(dst_idx if dst_idx >= 0 else 0)
 
         # When combo from source node's possible return values
@@ -1009,56 +1011,62 @@ class _ParamPanel(QWidget):
         self._transition.when = None if text == "(none)" else text
         self.properties_changed.emit()
 
-    def _on_edge_src_changed(self, new_src: str) -> None:
-        if self._suppress or self._transition is None or not new_src:
+    def _on_edge_src_changed(self, _text: str) -> None:
+        if self._suppress or self._transition is None:
+            return
+        new_src_id = self._edge_src_combo.currentData()
+        if not new_src_id:
             return
         old_src = self._transition.source
-        if new_src == old_src:
+        if new_src_id == old_src:
             return
         old_when = self._transition.when
         old_dst = self._transition.dest
         # Duplicate check: another transition with the same (new_src, dest, when) must not exist
         if any(
-            t is not self._transition and t.source == new_src and t.dest == old_dst and t.when == old_when
+            t is not self._transition and t.source == new_src_id and t.dest == old_dst and t.when == old_when
             for t in self._all_transitions
         ):
             QMessageBox.warning(
                 self,
                 "Duplicate Transition",
-                f"A transition from '{new_src}' to '{old_dst}' with the same When condition already exists.",
+                f"A transition from '{new_src_id}' to '{old_dst}' with the same When condition already exists.",
             )
             self._suppress = True
-            self._edge_src_combo.setCurrentText(old_src)
+            self._edge_src_combo.setCurrentIndex(self._edge_src_combo.findData(old_src))
             self._suppress = False
             return
-        self._transition.source = new_src
-        self.edge_endpoints_changed.emit(old_src, old_when, old_dst, new_src, old_dst)
+        self._transition.source = new_src_id
+        self.edge_endpoints_changed.emit(old_src, old_when, old_dst, new_src_id, old_dst)
         self.properties_changed.emit()
 
-    def _on_edge_dst_changed(self, new_dst: str) -> None:
-        if self._suppress or self._transition is None or not new_dst:
+    def _on_edge_dst_changed(self, _text: str) -> None:
+        if self._suppress or self._transition is None:
+            return
+        new_dst_id = self._edge_dst_combo.currentData()
+        if not new_dst_id:
             return
         old_dst = self._transition.dest
-        if new_dst == old_dst:
+        if new_dst_id == old_dst:
             return
         old_src = self._transition.source
         old_when = self._transition.when
         # Duplicate check
         if any(
-            t is not self._transition and t.source == old_src and t.dest == new_dst and t.when == old_when
+            t is not self._transition and t.source == old_src and t.dest == new_dst_id and t.when == old_when
             for t in self._all_transitions
         ):
             QMessageBox.warning(
                 self,
                 "Duplicate Transition",
-                f"A transition from '{old_src}' to '{new_dst}' with the same When condition already exists.",
+                f"A transition from '{old_src}' to '{new_dst_id}' with the same When condition already exists.",
             )
             self._suppress = True
-            self._edge_dst_combo.setCurrentText(old_dst)
+            self._edge_dst_combo.setCurrentIndex(self._edge_dst_combo.findData(old_dst))
             self._suppress = False
             return
-        self._transition.dest = new_dst
-        self.edge_endpoints_changed.emit(old_src, old_when, old_dst, old_src, new_dst)
+        self._transition.dest = new_dst_id
+        self.edge_endpoints_changed.emit(old_src, old_when, old_dst, old_src, new_dst_id)
         self.properties_changed.emit()
 
     def _on_flag_conditions_changed(self) -> None:
