@@ -4,6 +4,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
+  "recovery_state": "state_1",
   "default_combat_config": "bunyip[epic] | tempest[epic]",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Empyrea",
@@ -95,7 +96,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Gannon dialogue",
       "position": {
-        "x": 2520,
+        "x": 2880.0,
         "y": 0.0
       },
       "params": {
@@ -114,7 +115,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Gannon",
       "position": {
-        "x": 2880,
+        "x": 3240.0,
         "y": 0.0
       },
       "params": {
@@ -131,7 +132,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Madd'n Dialogue",
       "position": {
-        "x": 3240,
+        "x": 3600.0,
         "y": 0.0
       },
       "params": {
@@ -150,7 +151,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3600,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -164,7 +165,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Madd'n",
       "position": {
-        "x": 3960,
+        "x": 4320.0,
         "y": 0.0
       },
       "params": {
@@ -181,7 +182,7 @@
       "node_type": "enter_zone",
       "label": "Enter Raider Tower",
       "position": {
-        "x": 4320,
+        "x": 5040.0,
         "y": -90.0
       },
       "params": {
@@ -206,7 +207,7 @@
       "node_type": "handle_combat",
       "label": "Deafeat D'Viss",
       "position": {
-        "x": 4680,
+        "x": 5400.0,
         "y": 0.0
       },
       "params": {
@@ -223,7 +224,7 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 5040,
+        "x": 5760.0,
         "y": 0.0
       },
       "params": {
@@ -248,8 +249,8 @@
       "node_type": "mark_location",
       "label": "Mark location",
       "position": {
-        "x": 1440,
-        "y": 0.0
+        "x": 1440.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -329,6 +330,22 @@
       "params": {
         "threshold": 0.8,
         "timeout": 600.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_17",
+      "node_type": "handle_combat",
+      "position": {
+        "x": 1477.0962911840093,
+        "y": 34.972926376577504
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
       },
       "option_overrides": {},
       "flipped": false
@@ -491,26 +508,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_3",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Defeat D'Viss",
-          "negate": true
-        }
-      ],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_8",
       "dest": "state_14",
       "when": "SUCCESS",
@@ -582,6 +579,7 @@
       "trigger": "advance",
       "source": "state_11",
       "dest": "state_16",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     },
@@ -589,6 +587,47 @@
       "trigger": "advance",
       "source": "state_16",
       "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_3",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

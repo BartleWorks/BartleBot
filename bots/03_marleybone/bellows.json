@@ -1,0 +1,429 @@
+{
+  "name": "Bellows",
+  "description": "Endlessly defeats Bellows in Counterweight West, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "tempest[epic]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Marleybone",
+  "drops": [
+    "Alluring Robes",
+    "Altar with Candles",
+    "Angled Gravemarker",
+    "Artificial Robe",
+    "Balance-Boon Citrine",
+    "Bellows' Aristocratic Hat",
+    "Bellows' Bitter Cold Amulet",
+    "Bellows' Boots of Accuracy",
+    "Bellows' Confined Robe",
+    "Bellows' Dirk of Restoration",
+    "Bellows' Famous Vest",
+    "Bellows' Graceful Cap",
+    "Bellows' Helm of Civility",
+    "Bellows' Intolerant Robe",
+    "Bellows' Polished Hat",
+    "Bellows' Pompous Hat",
+    "Bellows' Robe of Courtesy",
+    "Bellows' Shoes of Disposition",
+    "Bellows' Shoes of the Bubble",
+    "Bellows' Shoes of the Hushed",
+    "Bellows' Stiletto of Tragedy",
+    "Bellows's Band of Numbness",
+    "Bewitching Shoes",
+    "Black Mantle",
+    "Bronze Gear",
+    "Calculating Opal",
+    "Cap of the Banshee",
+    "Cap of the Inventor",
+    "Cap of the Unicorn",
+    "Caramel Popcorn",
+    "Cat Burglar's Cap",
+    "Chipped Accurate Jade +3%",
+    "Chipped Accurate Peridot +3%",
+    "Chipped Accurate Ruby +3%",
+    "Chipped Damage Ruby +8",
+    "Chipped Defense Amethyst +14",
+    "Chipped Defense Citrine +14",
+    "Chipped Defense Peridot +14",
+    "Chipped Defense Sapphire +15",
+    "Chipped Mana Opal +12",
+    "Cloak",
+    "Cloak of Clarity",
+    "Cloak of Fascination",
+    "Clockwork Golem",
+    "Comedian's Ring",
+    "Copper",
+    "Cosmopolitan Robe",
+    "Cracked Damage Opal +3",
+    "Crossbone Gravestone",
+    "Cyclops",
+    "Deck of Chivalry",
+    "Deer Knight Onyx",
+    "Dexterous Vest",
+    "Distinguished Slippers",
+    "Distract Opal",
+    "Dryad",
+    "Exacting Boots",
+    "Exclusive Boots",
+    "Exclusive Cap",
+    "Exquisite Slippers",
+    "Fancy Garments",
+    "Feline's Charged Hat",
+    "Feline's Fiery Hat",
+    "Feline's Invigorating Robe",
+    "Feline's Somber Hat",
+    "Feline's Somber Robe",
+    "Feline's Whimsical Robe",
+    "Fire-Eye Ruby",
+    "Flawed Damage Amethyst +10",
+    "Flawed Damage Onyx +10",
+    "Flawed Damage Peridot +10",
+    "Flawed Defense Amethyst +17",
+    "Flawed Defense Citrine +17",
+    "Flawed Defense Onyx +17",
+    "Flawed Defense Opal +10",
+    "Flawed Defense Opal +9",
+    "Flawed Defense Sapphire +17",
+    "Flawed Healing Opal +2%",
+    "Flawed Resilient Opal +2%",
+    "Garment of the Supreme",
+    "Giant",
+    "Glowing Canine Hat",
+    "Gummy Bloodbat",
+    "Heck Hound",
+    "High Quality Boots",
+    "High Quality Cloak",
+    "Ice Trap",
+    "Ice Wyvern",
+    "Informant's Dirk",
+    "Iron",
+    "Lead",
+    "Magnificent Boots",
+    "Marleybone Theme 4",
+    "Marvelous Shroud",
+    "Mechanical Ring",
+    "Medium Fish",
+    "Medium Magenta Rug",
+    "Monstrous",
+    "Move It! Opal",
+    "Newspaper Page",
+    "Nickel",
+    "Noteworthy Slippers",
+    "Opportunists' Sandals",
+    "Polished Garments",
+    "Precious Cloak",
+    "Premium Footwraps",
+    "Redskin Peanut",
+    "Remarkable Sandals",
+    "Ring of Effect",
+    "Ring of the Unicorn",
+    "Ringlet of Fire",
+    "Robe of Excellence",
+    "Robe of Ideals",
+    "Robe of the Bubble",
+    "Sandals of Delusion",
+    "Sandstorm",
+    "Satyr",
+    "Savvy Vestment",
+    "Shaman's Hat",
+    "Shaman's Uniform",
+    "Sharp Opal",
+    "Shoes of Preference",
+    "Shoes of Sentiments",
+    "Shoes of the Chimera",
+    "Shoes of the Devoted",
+    "Shoes of the Exceptional",
+    "Shoes of the Windless",
+    "Short Metal Fence",
+    "Shortblade of Flowers",
+    "Silent Canine Cowl",
+    "Skeletal Pirate",
+    "Slippers of Gusto",
+    "Slippers of Predominance",
+    "Slippers of the Worrier",
+    "Sniper",
+    "Spectral Blast Citrine",
+    "Spider Silk",
+    "Spirit Armor",
+    "Square Watermelon",
+    "Stable Salacot",
+    "Steamer Trunk",
+    "Stein",
+    "Stinky Cheese",
+    "Storm Trap",
+    "Stylish Garments",
+    "Superstitious Canine Cowl",
+    "Superstitious Canine Hat",
+    "Tall Roof Vent",
+    "Thinker's Ring",
+    "Time of Legend",
+    "Tin Can",
+    "Tough",
+    "Tunic of Chivalry",
+    "Tunic of Symmetry",
+    "Tunic of the Clever",
+    "Vampire",
+    "Vest of Predominance",
+    "Vestment of Expertise",
+    "Vestment of Stability",
+    "Vestment of the Enigma",
+    "Visor of Invention",
+    "Watchman's Athame",
+    "Wheat Cracker",
+    "Windstorm Amethyst",
+    "Winter Canine Cowl"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Skip to boss",
+      "type": "bool",
+      "default": true
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": -360.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Royal Museum",
+      "position": {
+        "x": 0.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -205.62,
+          "y": 9124.3,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -191.04,
+          "y": 8491.09,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Counterweight West",
+      "position": {
+        "x": 360.0,
+        "y": -270.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "dungeon_zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "sigil_xyz": {
+          "x": -869.31,
+          "y": 6168.7,
+          "z": 250.0
+        },
+        "reset_xyz": {
+          "x": -1495.66,
+          "y": 5935.4,
+          "z": 249.97
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_13",
+      "node_type": "handle_combat",
+      "label": "Defeat Bellows",
+      "position": {
+        "x": 1080.0,
+        "y": -270.0
+      },
+      "params": {
+        "enemy": "Golem-Steel-MBBoss-L50",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Exit Counterweight West",
+      "position": {
+        "x": 1440.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": 17.47,
+          "y": -5275.13,
+          "z": 10.01
+        },
+        "reset_xyz": {
+          "x": 7.62,
+          "y": -4866.65,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_coordinates",
+      "label": "Spawn Bellows",
+      "position": {
+        "x": 720.0,
+        "y": -270.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "xyz": {
+          "x": 1312.93,
+          "y": -1691.39,
+          "z": 3850.0
+        }
+      },
+      "option_overrides": {},
+      "flipped": false
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Skip to boss",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}
