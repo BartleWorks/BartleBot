@@ -11,6 +11,7 @@ from PyQt6.QtGui import (
     QPainter,
     QPen,
 )
+from PyQt6.QtSvg import QSvgRenderer
 from PyQt6.QtWidgets import (
     QGraphicsItem,
     QStyleOptionGraphicsItem,
@@ -28,6 +29,55 @@ NODE_RADIUS = 12
 PORT_R = 6  # radius of connection-port circles
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 _RIGHT_PAD = 16  # horizontal padding inside the right returns section
+_BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal / flipped)
+_BADGE_GAP = 4  # gap between adjacent badge circles
+_BADGE_FONT_PT = 6  # point size for text glyphs drawn inside badges
+_BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
+
+_PLAY_RENDERER: QSvgRenderer | None = None
+_STOP_RENDERER: QSvgRenderer | None = None
+_PLAY_REVERSED_RENDERER: QSvgRenderer | None = None
+
+
+def _play_badge_renderer() -> QSvgRenderer:
+    """Lazily parse play.svg with white fill. Cached after first call; renders as vector."""
+    global _PLAY_RENDERER
+    if _PLAY_RENDERER is None:
+        from pathlib import Path
+
+        from PyQt6.QtCore import QByteArray
+
+        svg_path = Path(__file__).parent.parent / "icons" / "play.svg"
+        svg_bytes = svg_path.read_bytes().replace(b'fill="#404040"', b'fill="#ffffff"')
+        _PLAY_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
+    return _PLAY_RENDERER
+
+
+def _stop_badge_renderer() -> QSvgRenderer:
+    """Lazily parse stop.svg with white fill. Cached after first call; renders as vector."""
+    global _STOP_RENDERER
+    if _STOP_RENDERER is None:
+        from pathlib import Path
+
+        from PyQt6.QtCore import QByteArray
+
+        svg_path = Path(__file__).parent.parent / "icons" / "stop.svg"
+        svg_bytes = svg_path.read_bytes().replace(b'fill="#404040"', b'fill="#ffffff"')
+        _STOP_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
+    return _STOP_RENDERER
+
+
+def _play_reversed_badge_renderer() -> QSvgRenderer:
+    """Lazily build a horizontally-mirrored play triangle (points left). Cached."""
+    global _PLAY_REVERSED_RENDERER
+    if _PLAY_REVERSED_RENDERER is None:
+        from PyQt6.QtCore import QByteArray
+
+        # play.svg polygon "5,3 21,12 5,21" mirrored around x=12 → "19,3 3,12 19,21"
+        svg_bytes = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="19,3 3,12 19,21" fill="#ffffff"/></svg>'
+        _PLAY_REVERSED_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
+    return _PLAY_REVERSED_RENDERER
+
 
 # Grid constants — shared with EditScene for drawBackground and migration script.
 # Padding values define the gap between adjacent node edges on the grid.
@@ -228,7 +278,8 @@ class NodeItem(QGraphicsItem):
         if self._is_search_match:
             margin = max(margin, 8)
         nr = self._node_rect()
-        return QRectF(nr.x() - margin, -margin, nr.width() + margin * 2, NODE_H + margin * 2)
+        top_extra = _BADGE_R if (self._is_initial or self._is_terminal or self._flipped) else 0
+        return QRectF(nr.x() - margin, -(margin + top_extra), nr.width() + margin * 2, NODE_H + margin * 2 + top_extra)
 
     # ------------------------------------------------------------------
     # State setters
@@ -336,11 +387,17 @@ class NodeItem(QGraphicsItem):
 
     def set_initial(self, is_initial: bool) -> None:
         """Mark this node as the FSM initial state (draws a purple border)."""
+        if self._is_initial == is_initial:
+            return
+        self.prepareGeometryChange()
         self._is_initial = is_initial
         self.update()
 
     def set_terminal(self, is_terminal: bool) -> None:
         """Mark this node as a terminal state with no exit transitions (draws a ■ badge)."""
+        if self._is_terminal == is_terminal:
+            return
+        self.prepareGeometryChange()
         self._is_terminal = is_terminal
         self.update()
 
@@ -397,10 +454,12 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
-            # Snap the left edge (x) and vertical center (y) to grid positions.
-            # Grid dots are drawn at (GRID_W*i, GRID_H*j) and land at these same points.
+            # Snap the left edge of the node body and the vertical center to grid positions.
+            # For flipped nodes the item origin is not the left edge — it's offset by _right_w.
+            left_offset = self._right_w if self._flipped else 0
+            snapped_x = round((value.x() - left_offset) / GRID_W) * GRID_W + left_offset
             return QPointF(
-                round(value.x() / GRID_W) * GRID_W,
+                snapped_x,
                 round((value.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2,
             )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
@@ -504,32 +563,28 @@ class NodeItem(QGraphicsItem):
                 Qt.TextFlag.TextWordWrap
             )
             painter.drawText(QRectF(nr.x() + 6, 4, nr.width() - 12, NODE_H - 8), _wrap_flags, self._label)
-            _BADGE_SIZE = 14
-            _BADGE_MARGIN = 4
-            _BADGE_GAP = 4
-            badges = []
+            badges: list[tuple[QColor, QSvgRenderer | str]] = []
             if self._is_initial:
-                badges.append((_badge_initial(), "▶"))
+                badges.append((_badge_initial(), _play_badge_renderer()))
             if self._is_terminal:
-                badges.append((_badge_terminal(), "■"))
+                badges.append((_badge_terminal(), _stop_badge_renderer()))
             if self._flipped:
-                badges.append((_badge_flipped(), "◀"))
-            if badges:
-                n = len(badges)
-                total_badge_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
-                x_start = nr.x() + (nr.width() - total_badge_w) / 2
-                badge_y = NODE_H - _BADGE_SIZE - _BADGE_MARGIN
-                painter.setFont(THEME.font_node_sub())
-                for i, (color, icon) in enumerate(badges):
-                    bx = x_start + i * (_BADGE_SIZE + _BADGE_GAP)
-                    r = QRectF(bx, badge_y, _BADGE_SIZE, _BADGE_SIZE)
-                    painter.save()
-                    painter.setPen(QPen(Qt.GlobalColor.black, 1.0))
-                    painter.setBrush(QBrush(color))
-                    painter.drawRoundedRect(r, 3, 3)
+                badges.append((_badge_flipped(), _play_reversed_badge_renderer()))
+            for i, (color, icon) in enumerate(badges):
+                cx = float(i * (_BADGE_R * 2 + _BADGE_GAP))
+                badge_rect = QRectF(cx - _BADGE_R, -_BADGE_R, _BADGE_R * 2, _BADGE_R * 2)
+                icon_rect = badge_rect.adjusted(_BADGE_ICON_PAD, _BADGE_ICON_PAD, -_BADGE_ICON_PAD, -_BADGE_ICON_PAD)
+                painter.save()
+                painter.setPen(QPen(color.darker(140), 1.0))
+                painter.setBrush(QBrush(color))
+                painter.drawEllipse(QPointF(cx, 0.0), _BADGE_R, _BADGE_R)
+                if isinstance(icon, QSvgRenderer):
+                    icon.render(painter, icon_rect)
+                else:
+                    painter.setFont(QFont(THEME.font_ui_family, _BADGE_FONT_PT))
                     painter.setPen(Qt.GlobalColor.white)
-                    painter.drawText(r, Qt.AlignmentFlag.AlignCenter, icon)
-                    painter.restore()
+                    painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
+                painter.restore()
         else:
             # --- Full LOD ---
             sub_label_color = QColor(THEME.text) if self._active else THEME.qcolor("text_muted")
@@ -539,14 +594,14 @@ class NodeItem(QGraphicsItem):
             fm = painter.fontMetrics()
             label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_W - 16)
             painter.setPen(THEME.qcolor("text"))
-            painter.drawText(QRectF(8, 6, NODE_W - 16, 26), Qt.AlignmentFlag.AlignCenter, label_text)
+            painter.drawText(QRectF(8, 5, NODE_W - 16, 30), Qt.AlignmentFlag.AlignCenter, label_text)
 
-            sub_text = f"{self.state_id}  ·  {self._node_type}" if self._node_type else self.state_id
+            sub_text = self._node_type
             painter.setPen(sub_label_color)
             painter.setFont(THEME.font_node_sub())
             fm2 = painter.fontMetrics()
             sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_W - 16)
-            painter.drawText(QRectF(8, 34, NODE_W - 16, 14), Qt.AlignmentFlag.AlignCenter, sub_elided)
+            painter.drawText(QRectF(8, 37, NODE_W - 16, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
 
             if self._returns:
                 # Port section: to the right of info for non-flipped, to the left for flipped.
@@ -594,33 +649,29 @@ class NodeItem(QGraphicsItem):
                     painter.setBrush(QBrush(_port_color()))
                     painter.drawEllipse(QPointF(port_x, NODE_H / 2), PORT_R, PORT_R)
 
-            # Structural-role badges centered in the info section
-            _BADGE_SIZE = 14
-            _BADGE_MARGIN = 4
-            _BADGE_GAP = 4
-            badges = []
+            # Structural-role badges: small circles overlapping the top-left border
+            badges: list[tuple[QColor, QSvgRenderer | str]] = []
             if self._is_initial:
-                badges.append((_badge_initial(), "▶"))
+                badges.append((_badge_initial(), _play_badge_renderer()))
             if self._is_terminal:
-                badges.append((_badge_terminal(), "■"))
+                badges.append((_badge_terminal(), _stop_badge_renderer()))
             if self._flipped:
-                badges.append((_badge_flipped(), "◀"))
-            if badges:
-                n = len(badges)
-                total_badge_w = n * _BADGE_SIZE + (n - 1) * _BADGE_GAP
-                x_start = (NODE_W - total_badge_w) / 2
-                badge_y = NODE_H - _BADGE_SIZE - _BADGE_MARGIN
-                painter.setFont(THEME.font_node_sub())
-                for i, (color, icon) in enumerate(badges):
-                    bx = x_start + i * (_BADGE_SIZE + _BADGE_GAP)
-                    r = QRectF(bx, badge_y, _BADGE_SIZE, _BADGE_SIZE)
-                    painter.save()
-                    painter.setPen(QPen(Qt.GlobalColor.black, 1.0))
-                    painter.setBrush(QBrush(color))
-                    painter.drawRoundedRect(r, 3, 3)
+                badges.append((_badge_flipped(), _play_reversed_badge_renderer()))
+            for i, (color, icon) in enumerate(badges):
+                cx = float(i * (_BADGE_R * 2 + _BADGE_GAP))
+                badge_rect = QRectF(cx - _BADGE_R, -_BADGE_R, _BADGE_R * 2, _BADGE_R * 2)
+                icon_rect = badge_rect.adjusted(_BADGE_ICON_PAD, _BADGE_ICON_PAD, -_BADGE_ICON_PAD, -_BADGE_ICON_PAD)
+                painter.save()
+                painter.setPen(QPen(color.darker(140), 1.0))
+                painter.setBrush(QBrush(color))
+                painter.drawEllipse(QPointF(cx, 0.0), _BADGE_R, _BADGE_R)
+                if isinstance(icon, QSvgRenderer):
+                    icon.render(painter, icon_rect)
+                else:
+                    painter.setFont(QFont(THEME.font_ui_family, _BADGE_FONT_PT))
                     painter.setPen(Qt.GlobalColor.white)
-                    painter.drawText(r, Qt.AlignmentFlag.AlignCenter, icon)
-                    painter.restore()
+                    painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
+                painter.restore()
 
             # Input port dot (opposite side from outputs)
             if self._interactive:

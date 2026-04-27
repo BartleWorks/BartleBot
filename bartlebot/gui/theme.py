@@ -164,8 +164,8 @@ class _Theme:
     font_mono_family: str = "Consolas"
 
     font_mono_size: int = 9
-    font_node_main_size: int = 9
-    font_node_sub_size: int = 6
+    font_node_main_size: int = 11
+    font_node_sub_size: int = 8
     font_node_hdr_size: int = 7
 
     # ------------------------------------------------------------------
