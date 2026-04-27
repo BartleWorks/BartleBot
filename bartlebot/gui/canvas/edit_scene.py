@@ -228,6 +228,7 @@ class EditScene(QGraphicsScene):
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
+        self._drag_snap_edge: EdgeItem | None = None
         self._auto_scrolling: bool = False
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
@@ -282,6 +283,7 @@ class EditScene(QGraphicsScene):
         self._drag_src = None
         self._drag_when = None
         self._temp_edge = None
+        self._drag_snap_edge = None
         self._config = None
 
     def _pre_edit(self, desc: str) -> None:
@@ -550,7 +552,20 @@ class EditScene(QGraphicsScene):
         if self._drag_src is not None and self._temp_edge is not None:
             src_pt = self._drag_src.port_out_for(self._drag_when)
             cur = event.scenePos()
-            self._temp_edge.setLine(src_pt.x(), src_pt.y(), cur.x(), cur.y())
+
+            snap_edge = self._edge_near(cur)
+            if snap_edge is not None and snap_edge._src is self._drag_src and snap_edge._when == self._drag_when:
+                snap_edge = None
+            if snap_edge is not self._drag_snap_edge:
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(False)
+                self._drag_snap_edge = snap_edge
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(True)
+
+            end_pt = self._drag_snap_edge._dst.port_in() if self._drag_snap_edge else cur
+            self._temp_edge.setLine(src_pt.x(), src_pt.y(), end_pt.x(), end_pt.y())
+
             views = self.views()
             if views and not self._auto_scrolling:
                 self._auto_scrolling = True
@@ -566,9 +581,21 @@ class EditScene(QGraphicsScene):
                 self.removeItem(self._temp_edge)
                 self._temp_edge = None
             if event.button() == Qt.MouseButton.LeftButton:
-                dst = self._node_near_port_in(event.scenePos())
-                if dst is not None:
-                    self._create_transition(self._drag_src, dst, self._drag_when)
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(False)
+                snap = self._drag_snap_edge
+                self._drag_snap_edge = None
+
+                if snap is not None:
+                    self._create_transition(self._drag_src, snap._dst, self._drag_when)
+                else:
+                    dst = self._node_near_port_in(event.scenePos())
+                    if dst is not None:
+                        self._create_transition(self._drag_src, dst, self._drag_when)
+            else:
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(False)
+                self._drag_snap_edge = None
             self._drag_src = None
             self._drag_when = None
             event.accept()
@@ -726,6 +753,13 @@ class EditScene(QGraphicsScene):
         for node in self._node_items.values():
             if _dist(pos, node.port_in()) <= _PORT_HIT_RADIUS:
                 return node
+        return None
+
+    def _edge_near(self, pos: QPointF) -> EdgeItem | None:
+        """Return the first EdgeItem whose hit-shape (12 px stroke) contains pos."""
+        for item in self.items(pos):
+            if isinstance(item, EdgeItem):
+                return item
         return None
 
     def _create_transition(self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None) -> None:

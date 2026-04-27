@@ -110,6 +110,7 @@ class EdgeItem(QGraphicsPathItem):
         self._when = when
         self._is_self_loop = src_node is dst_node
         self._hovered = False
+        self._snap_target = False
         self._bridge_y_override = bridge_y_override
         self._channel_x_override = channel_x_override
 
@@ -153,12 +154,25 @@ class EdgeItem(QGraphicsPathItem):
         self.update()
         super().hoverLeaveEvent(event)
 
+    def set_snap_target(self, active: bool) -> None:
+        if self._snap_target != active:
+            self._snap_target = active
+            self.update()
+
     # ------------------------------------------------------------------
     # Paint
     # ------------------------------------------------------------------
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self._snap_target:
+            pen = QPen(THEME.qcolor("port_color"), 3.0, Qt.PenStyle.SolidLine)
+            pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(self.path())
+            return
         if self.isSelected():
             pen = QPen(_edge_selected(), 2.5, Qt.PenStyle.DashLine)
         elif self._hovered:
