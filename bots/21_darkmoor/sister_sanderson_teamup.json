@@ -1,16 +1,144 @@
 {
   "name": "Sister Sanderson",
   "description": "2-person endless Sister Sanderson farmer, ~5 min per run",
-  "version": "1.0",
+  "version": "2.0",
   "clients": "all",
-  "initial": "state_1",
-  "default_combat_config": "### p1\nany<aoe>[epic] | any<blade>[sharp] @ ally(0) | feint mass\n\n### p2\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | tempest[epic]",
+  "initial": "state_10",
+  "recovery_state": "state_10",
+  "default_combat_config": "### p1\nany<aoe>[epic] | any<blade>[sharp]@ally(0) | any<blade>@ally(0)\n\n### p2\nany<blade>[sharp]@self | any<blade>@self | lord[epic] | bunyip[epic]",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Graveholm",
   "drops": [
-    "Legendary Socket Wrenches",
-    "lvl 180 Abomination rings",
-    "Outsider Relic"
+    "2 Outsider Relic",
+    "Ammut",
+    "Anubis",
+    "Balance Blocking Pin (150, Death)",
+    "Balance Blocking Pin (150, Fire)",
+    "Balance Blocking Pin (150, Ice)",
+    "Balance Blocking Pin (150, Life)",
+    "Balance Blocking Pin (150, Myth)",
+    "Balance Blocking Pin (150, Storm)",
+    "Balance Blocking Pin (160, Death)",
+    "Balance Blocking Pin (160, Fire)",
+    "Balance Blocking Pin (160, Ice)",
+    "Balance Blocking Pin (160, Life)",
+    "Balance Blocking Pin (160, Myth)",
+    "Balance Blocking Pin (160, Storm)",
+    "Balance Mending Pin (170)",
+    "Balance Mending Pin (180)",
+    "Balance Resist Pin (140, Death)",
+    "Balance Resist Pin (140, Fire)",
+    "Balance Resist Pin (140, Ice)",
+    "Balance Resist Pin (140, Life)",
+    "Balance Resist Pin (140, Myth)",
+    "Balance Resist Pin (140, Storm)",
+    "Barbarian's Saga",
+    "Blast Off!",
+    "Bunyip's Rage",
+    "Chameleon Clash",
+    "Chilling Abomination Ring",
+    "Count Croakula",
+    "Dark & Stormy",
+    "Death Blocking Pin (150, Ice)",
+    "Death Blocking Pin (150, Myth)",
+    "Death Blocking Pin (160, Balance)",
+    "Death Blocking Pin (160, Ice)",
+    "Death Blocking Pin (160, Myth)",
+    "Death Resist Pin (150, Balance)",
+    "Death Resist Pin (150, Ice)",
+    "Death Resist Pin (150, Myth)",
+    "Deathly Depths",
+    "Doomed Abomination Ring",
+    "Drop Bear Fury",
+    "Fire Blocking Pin (150, Life)",
+    "Fire Blocking Pin (150, Storm)",
+    "Fire Blocking Pin (160, Balance)",
+    "Fire Blocking Pin (160, Life)",
+    "Fire Blocking Pin (160, Storm)",
+    "Fire Mending Pin (170)",
+    "Fire Mending Pin (180)",
+    "Fire Resist Pin (140, Balance)",
+    "Fire Resist Pin (140, Life)",
+    "Fire Resist Pin (140, Storm)",
+    "Freeze Ray",
+    "Glimpse of Infinity",
+    "Gravestorm",
+    "Grim Reader",
+    "Heqet",
+    "Ice Blocking Pin (150, Fire)",
+    "Ice Blocking Pin (150, Myth)",
+    "Ice Blocking Pin (160, Balance)",
+    "Ice Blocking Pin (160, Fire)",
+    "Ice Blocking Pin (160, Myth)",
+    "Ice Resist Pin (140, Balance)",
+    "Ice Resist Pin (140, Fire)",
+    "Ice Resist Pin (140, Myth)",
+    "Improbable Gaze",
+    "Legendary Socket Wrench",
+    "Life Blocking Pin (150, Death)",
+    "Life Blocking Pin (150, Storm)",
+    "Life Blocking Pin (160, Balance)",
+    "Life Blocking Pin (160, Death)",
+    "Life Blocking Pin (160, Storm)",
+    "Life Mending Pin (170)",
+    "Life Mending Pin (180)",
+    "Life Resist Pin (140, Balance)",
+    "Life Resist Pin (140, Death)",
+    "Life Resist Pin (140, Storm)",
+    "Lord of the Jungle",
+    "Mortality",
+    "Myth Blocking Pin (150, Fire)",
+    "Myth Blocking Pin (150, Life)",
+    "Myth Blocking Pin (160, Balance)",
+    "Myth Blocking Pin (160, Fire)",
+    "Myth Blocking Pin (160, Life)",
+    "Myth Mending Pin (170)",
+    "Myth Mending Pin (180)",
+    "Myth Resist Pin (140, Balance)",
+    "Myth Resist Pin (140, Fire)",
+    "Myth Resist Pin (140, Life)",
+    "Mythic Abomination Ring",
+    "Old One's Endgame",
+    "Outsider Relic",
+    "Phantasmania!",
+    "Rainbow Serpent",
+    "Sanguine Abomination Ring",
+    "Scales of Destiny",
+    "Scary Abomination Ring",
+    "Scholomantic Death Ring",
+    "Scholomantic Destructive Ring",
+    "Scholomantic Devilish Ring",
+    "Scholomantic Fortune Ring",
+    "Scholomantic Justice Ring",
+    "Scholomantic Strength Ring",
+    "Scholomantic Worldly Ring",
+    "Shocking Abomination Ring",
+    "Shu",
+    "Starspawn",
+    "Storm Blocking Pin (150, Death)",
+    "Storm Blocking Pin (150, Ice)",
+    "Storm Blocking Pin (160, Balance)",
+    "Storm Blocking Pin (160, Death)",
+    "Storm Blocking Pin (160, Ice)",
+    "Storm Mending Pin (160)",
+    "Storm Mending Pin (170)",
+    "Storm Resist Pin (130, Death)",
+    "Storm Resist Pin (130, Ice)",
+    "Storm Resist Pin (160, Balance)",
+    "Storm Resist Pin (160, Death)",
+    "Storm Resist Pin (160, Ice)",
+    "Taweret",
+    "Tense Abomination Ring",
+    "The Chariot",
+    "The Emperor",
+    "The Hierophant",
+    "The Tower",
+    "The World",
+    "Thoth",
+    "Tree of Strife",
+    "Wheel of Fortune",
+    "Wobbegong Frenzy",
+    "Zand the Bandit"
   ],
   "authors": "BartleBot",
   "options": [
@@ -32,43 +160,25 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "mark_location",
-      "label": "Mark sigil",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Darkmoor/DM_Z01_Graveholm",
-        "xyz": {
-          "x": 6157.12,
-          "y": 3635.8,
-          "z": 2.0
-        }
-      },
-      "option_overrides": {}
-    },
-    {
       "id": "state_2",
       "node_type": "enter_dungeon_teamup",
       "label": "Enter dungeon",
       "position": {
-        "x": 720,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Darkmoor/DM_Z01_Graveholm",
-        "dungeon_zone": "Darkmoor/Interiors/DM_Z01I17_SandersonHouse",
+        "from_zone": "",
+        "dungeon_zone": "",
         "sigil_xyz": {
-          "x": 6630.18,
-          "y": 3196.74,
-          "z": 32.0
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
         },
         "reset_xyz": {
-          "x": 6229.21,
-          "y": 3496.25,
-          "z": 2.0
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
         },
         "minimum_team_size": 2
       },
@@ -79,7 +189,7 @@
       "node_type": "handle_combat",
       "label": "Defeat sisters",
       "position": {
-        "x": 1080,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -95,7 +205,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1800,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -111,7 +221,7 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 2160,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -135,7 +245,7 @@
       "node_type": "collect_wisps",
       "label": "Collect more wisps",
       "position": {
-        "x": 2520,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -147,29 +257,11 @@
       "option_overrides": {}
     },
     {
-      "id": "state_7",
-      "node_type": "teleport_to_marked_location",
-      "label": "Teleport to mark",
-      "position": {
-        "x": 1440,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Darkmoor/DM_Z01_Graveholm",
-        "xyz": {
-          "x": 6156.0,
-          "y": 3632.0,
-          "z": 0.0
-        }
-      },
-      "option_overrides": {}
-    },
-    {
       "id": "state_8",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 360,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -182,14 +274,58 @@
     },
     {
       "id": "state_9",
-      "node_type": "sleep",
-      "label": "Wait for everyone else to load in",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 1440,
-        "y": 90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
-        "duration": 3.0
+        "keep_list": [
+          "Abomination"
+        ],
+        "sell_crowns": true,
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Outsiders Camp",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z00_OutsidersCamp"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone_via_list",
+      "label": "Take Demox to Graveholm",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z00_OutsidersCamp",
+        "to_zone": "Darkmoor/DM_Z01_Graveholm",
+        "interact_xyz": {
+          "x": 1887.52,
+          "y": 1506.81,
+          "z": 0.3
+        },
+        "reset_xyz": {
+          "x": 1380.0,
+          "y": 1456.0,
+          "z": 0.3
+        },
+        "zone_list_entry": "DM_Z01_Graveholm"
       },
       "option_overrides": {}
     }
@@ -205,40 +341,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
       "source": "state_4",
       "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
@@ -253,14 +365,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_6",
       "dest": "state_8",
       "when": "SUCCESS",
@@ -277,14 +381,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_6",
       "dest": "state_8",
       "when": "FAILURE",
@@ -293,31 +389,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
+      "source": "state_5",
       "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
@@ -326,7 +398,80 @@
     {
       "trigger": "advance",
       "source": "state_9",
-      "dest": "state_4",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_10",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
     }

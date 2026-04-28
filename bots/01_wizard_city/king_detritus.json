@@ -141,7 +141,7 @@
       "node_type": "enter_zone",
       "label": "Enter Golem Court",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -165,7 +165,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -181,7 +181,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Drains",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -205,7 +205,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Abandoned House",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -229,7 +229,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger first dialogue",
       "position": {
-        "x": 2520.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -247,7 +247,7 @@
       "node_type": "handle_combat",
       "label": "Defeat first set of mobs",
       "position": {
-        "x": 2880.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {},
@@ -258,7 +258,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger second dialogue",
       "position": {
-        "x": 3240.0,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -276,7 +276,7 @@
       "node_type": "handle_combat",
       "label": "Defeat second set of mobs",
       "position": {
-        "x": 3600.0,
+        "x": 3960,
         "y": 0.0
       },
       "params": {},
@@ -287,7 +287,7 @@
       "node_type": "interact",
       "label": "Talk to Belgrim SparklePants",
       "position": {
-        "x": 4680.0,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -313,7 +313,7 @@
       "node_type": "enter_zone",
       "label": "Enter Abandoned Backyard",
       "position": {
-        "x": 5400.0,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -337,7 +337,7 @@
       "node_type": "handle_combat",
       "label": "Defeat King Detritus",
       "position": {
-        "x": 6480.0,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -353,7 +353,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger boss dialogue",
       "position": {
-        "x": 5760.0,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -371,7 +371,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Dismiss dialogue",
       "position": {
-        "x": 3960.0,
+        "x": 4400,
         "y": 0.0
       },
       "params": {},
@@ -382,7 +382,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {},
@@ -393,7 +393,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for boss dialogue",
       "position": {
-        "x": 6120.0,
+        "x": 6600,
         "y": 0.0
       },
       "params": {},
@@ -404,7 +404,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 6840.0,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -423,7 +423,7 @@
       "node_type": "sleep",
       "label": "Give Belgrim a moment to get ready",
       "position": {
-        "x": 4320.0,
+        "x": 4840,
         "y": 0.0
       },
       "params": {

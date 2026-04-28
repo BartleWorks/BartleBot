@@ -208,8 +208,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 360.0,
-        "y": -90.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
@@ -221,8 +221,8 @@
       "node_type": "enter_zone",
       "label": "Enter Pyramid of the Sun",
       "position": {
-        "x": 720.0,
-        "y": -90.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -245,8 +245,8 @@
       "node_type": "enter_zone",
       "label": "Enter Royal Hall",
       "position": {
-        "x": 1080.0,
-        "y": -90.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
@@ -269,8 +269,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 1800.0,
-        "y": -90.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -287,8 +287,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2160.0,
-        "y": -90.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -304,7 +304,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Biti's Chamber",
       "position": {
-        "x": 3240.0,
+        "x": 2640,
         "y": -90.0
       },
       "params": {
@@ -328,7 +328,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Biti Nirini",
       "position": {
-        "x": 3600.0,
+        "x": 3080,
         "y": -90.0
       },
       "params": {
@@ -344,7 +344,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 2880.0,
+        "x": 3080,
         "y": 90.0
       },
       "params": {
@@ -360,8 +360,8 @@
       "node_type": "enter_zone",
       "label": "Exit Biti's Chamber",
       "position": {
-        "x": 4320.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/Interiors/KT_Hall_T1",
@@ -384,7 +384,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 2520.0,
+        "x": 2640,
         "y": 90.0
       },
       "params": {
@@ -402,8 +402,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 360.0,
-        "y": 360.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
@@ -415,8 +415,8 @@
       "node_type": "enter_zone",
       "label": "Enter Tomb of Storms",
       "position": {
-        "x": 2160.0,
-        "y": 360.0
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -439,8 +439,8 @@
       "node_type": "interact",
       "label": "Activate first pillar",
       "position": {
-        "x": 720.0,
-        "y": 360.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -465,8 +465,8 @@
       "node_type": "interact",
       "label": "Activate second pillar",
       "position": {
-        "x": 1080.0,
-        "y": 360.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -491,8 +491,8 @@
       "node_type": "interact",
       "label": "Activate third pillar",
       "position": {
-        "x": 1440.0,
-        "y": 360.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -517,8 +517,8 @@
       "node_type": "sleep",
       "label": "Wait for portal to open",
       "position": {
-        "x": 1800.0,
-        "y": 360.0
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "duration": 15.0
@@ -530,8 +530,8 @@
       "node_type": "enter_zone",
       "label": "Enter Well of Spirits",
       "position": {
-        "x": 2520.0,
-        "y": 360.0
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub_Crypt",
@@ -554,8 +554,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Storms",
       "position": {
-        "x": 2880.0,
-        "y": 360.0
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
@@ -578,8 +578,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 3240.0,
-        "y": 360.0
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -601,8 +601,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 4680.0,
-        "y": -90.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {},
       "option_overrides": {}
@@ -623,8 +623,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,

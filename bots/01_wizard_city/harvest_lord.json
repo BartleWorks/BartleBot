@@ -113,7 +113,7 @@
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -137,7 +137,7 @@
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -161,7 +161,7 @@
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -185,7 +185,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Galvanost Tower",
       "position": {
-        "x": 2160.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -209,7 +209,7 @@
       "node_type": "handle_combat",
       "label": "Defeat The Harvest Lord",
       "position": {
-        "x": 2520.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -225,7 +225,7 @@
       "node_type": "enter_zone",
       "label": "Exit Galvanost Tower",
       "position": {
-        "x": 2880.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -249,7 +249,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3240.0,
+        "x": 3520,
         "y": 0.0
       },
       "params": {},
@@ -260,7 +260,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {

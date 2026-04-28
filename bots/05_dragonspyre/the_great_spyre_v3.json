@@ -72,7 +72,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Take portal to Dragonspyre Academy",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -96,7 +96,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Start dragon ride",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -120,7 +120,7 @@
       "node_type": "mark_location",
       "label": "Mark location outside dungeon entrance",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -138,7 +138,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -154,7 +154,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter the Great Spyre dungeon",
       "position": {
-        "x": 2160,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -178,7 +178,7 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2880,
+        "x": 3520,
         "y": 90.0
       },
       "params": {
@@ -201,7 +201,7 @@
       "node_type": "interact",
       "label": "Skip dragon ride",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -224,7 +224,7 @@
       "node_type": "enter_zone",
       "label": "Go to Path of Scales",
       "position": {
-        "x": 2880,
+        "x": 3520,
         "y": -90.0
       },
       "params": {
@@ -248,7 +248,7 @@
       "node_type": "enter_zone",
       "label": "Go to the Great Spyre",
       "position": {
-        "x": 3240,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -272,7 +272,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Activate elevator",
       "position": {
-        "x": 3600,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -296,7 +296,7 @@
       "node_type": "sleep",
       "label": "Wait for elevator",
       "position": {
-        "x": 3960,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -309,7 +309,7 @@
       "node_type": "enter_zone",
       "label": "Exit elevator",
       "position": {
-        "x": 4320,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -333,7 +333,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 2520,
+        "x": 3080,
         "y": 0.0
       },
       "params": {},
@@ -344,7 +344,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Firebender",
       "position": {
-        "x": 4680,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -359,7 +359,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter Gurtok Piercer render radius",
       "position": {
-        "x": 5040,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -377,7 +377,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 5400,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -390,7 +390,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Piercer",
       "position": {
-        "x": 5760,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -405,7 +405,7 @@
       "node_type": "interact",
       "label": "Activate crystal stand",
       "position": {
-        "x": 6120,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -428,7 +428,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 6480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -444,7 +444,7 @@
       "node_type": "enter_zone",
       "label": "Go to the Crown of Fire",
       "position": {
-        "x": 6840,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -468,7 +468,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for mobs",
       "position": {
-        "x": 7200,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -486,7 +486,7 @@
       "node_type": "sleep",
       "label": "Wait for mobs to render",
       "position": {
-        "x": 7560,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -499,7 +499,7 @@
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 7920,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -519,7 +519,7 @@
       "node_type": "sleep",
       "label": "Wait for Malistaire to start dialogue",
       "position": {
-        "x": 8280,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -532,7 +532,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Activate Malistaire dialogue",
       "position": {
-        "x": 8640,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -550,7 +550,7 @@
       "node_type": "sleep",
       "label": "Wait for Malistaire dialogue to end",
       "position": {
-        "x": 9000,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -563,7 +563,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Reset Malistaire dialogue",
       "position": {
-        "x": 9720,
+        "x": 11880,
         "y": 90.0
       },
       "params": {
@@ -581,7 +581,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Malistaire",
       "position": {
-        "x": 9360,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -596,7 +596,7 @@
       "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
-        "x": 9720,
+        "x": 11880,
         "y": -90.0
       },
       "params": {

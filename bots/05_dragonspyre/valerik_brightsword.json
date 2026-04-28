@@ -1,5 +1,5 @@
 {
-  "name": "Valerik Brightsword Farmer",
+  "name": "Valerik Brightsword",
   "description": "Endlessly farms Valerik Brightsword in The Crucible, Dragonspyre.",
   "version": "1.0",
   "clients": "all",
@@ -9,8 +9,41 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Dragonspyre",
   "drops": [
+    "Brass",
+    "Cloak of the Seasons",
+    "Cobalt",
+    "Cowl of Blazes",
+    "Deadly Fly Trap",
+    "Deck of Perfect Harmony",
+    "Drake Marker",
+    "Drape of Symmetry",
+    "Dull Blocking Onyx +4",
+    "Dull Damage Citrine +13",
+    "Dull Damage Jade +13",
+    "Fiery Boom Shroom",
+    "Footgear of Craftsmanship",
+    "Headgear of the Ice Pilot",
+    "Hood of the Historian",
     "King Parsley",
-    "Pink Dandelion"
+    "Leather Straps",
+    "Maelstrom Snap Dragon",
+    "Monsoon Mocassins",
+    "Nickel",
+    "Ozone Shroud",
+    "Pink Dandelion",
+    "Sandals of the Prophet",
+    "Shoes of Gloom",
+    "Signet of the Reaper",
+    "Slippers of the Ice Flow",
+    "Slippers of the Slipstream",
+    "Snowflake Plaque",
+    "Soothing Steel",
+    "Stonecutter",
+    "Tin",
+    "Tunic of Effervescence",
+    "Valerik's Chilled Vestment",
+    "Valerik's Sandals of Destiny",
+    "White Laugh-O-Dil"
   ],
   "authors": "BartleBot",
   "options": [
@@ -49,7 +82,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Necropolis",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -73,7 +106,7 @@
       "node_type": "enter_zone",
       "label": "Enter The Crucible",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -97,8 +130,8 @@
       "node_type": "interact",
       "label": "Summon Valerik Brightsword",
       "position": {
-        "x": 2160.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
@@ -123,7 +156,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Valerik Brightsword",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -141,8 +174,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Valerik Brightsword",
       "position": {
-        "x": 2520.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "enemy": "Warrior-Male-Armor-Purple-Boss-R8",
@@ -157,8 +190,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
       "position": {
-        "x": 3240.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
@@ -175,8 +208,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3600.0,
-        "y": -90.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
@@ -188,7 +221,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3960,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -204,8 +237,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2880.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -220,7 +253,7 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -236,7 +269,7 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {

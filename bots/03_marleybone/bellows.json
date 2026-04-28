@@ -201,8 +201,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Regent's Square",
       "position": {
-        "x": -360.0,
-        "y": -180.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
@@ -214,8 +214,8 @@
       "node_type": "enter_zone",
       "label": "Enter Royal Museum",
       "position": {
-        "x": 0.0,
-        "y": -180.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_Hub",
@@ -238,8 +238,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Counterweight West",
       "position": {
-        "x": 360.0,
-        "y": -270.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_Museum",
@@ -262,8 +262,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Bellows",
       "position": {
-        "x": 1080.0,
-        "y": -270.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "enemy": "Golem-Steel-MBBoss-L50",
@@ -278,8 +278,8 @@
       "node_type": "enter_zone",
       "label": "Exit Counterweight West",
       "position": {
-        "x": 1440.0,
-        "y": -180.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
@@ -302,8 +302,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Spawn Bellows",
       "position": {
-        "x": 720.0,
-        "y": -270.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_CounterweightWest",

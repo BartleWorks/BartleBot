@@ -9,7 +9,97 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Greenwarden's Energetic gear set"
+    "Angora Bunny Ears",
+    "Ape Grapes",
+    "Avalon Abbey Road Theme",
+    "Avalon Combat Theme",
+    "Avalon Glorious Theme",
+    "Avalon Haunting Theme",
+    "Avalon Main Theme",
+    "Avalon Tense Theme",
+    "Avalon Wyrd Theme",
+    "Black Lotus",
+    "Blizzard Lizard Sapphire",
+    "Blue Huckleberries",
+    "Blue Vine Wallpaper",
+    "Bowl of Tomatoes",
+    "Brass",
+    "Broken Palm Tree",
+    "Broken Stump",
+    "Bronze",
+    "Bronze Gear",
+    "Caramel Popcorn",
+    "Cauliflowers",
+    "Celestian Tree Sprig",
+    "Clear Accurate Sapphire +9%",
+    "Clear Blocking Ruby +9",
+    "Clear Critical Citrine +10",
+    "Clear Damage Onyx +19",
+    "Cobalt",
+    "Cross Section Floor Tile",
+    "Crunch Apple",
+    "Deadly Helephant Ears",
+    "Death-Away Onyx",
+    "Delicious Cookie",
+    "Elm Tree",
+    "Fire Bush",
+    "Fire Cracker",
+    "Flapjacks",
+    "Flowering Celestian Tree",
+    "Frost Flower",
+    "Glowing Rock Candy",
+    "Green Foodcart",
+    "Greenwarden's Energetic Boots (Level 100+)",
+    "Greenwarden's Energetic Mask (Level 100+)",
+    "Greenwarden's Energetic Shroud (Level 100+)",
+    "Greenwarden's Energetic Staff (Level 100+)",
+    "Greenwarden's Energetic Staff (Level 90+)",
+    "Gummy Bloodbat",
+    "Ice Trap Sapphire (Triangle)",
+    "Large Cypress Tree",
+    "Large Evergreen Tree",
+    "Large Fir Tree",
+    "Large Fish",
+    "Large Willow Tree",
+    "Leaning Palm Tree",
+    "Maple Tree",
+    "Mass Infection Onyx",
+    "Meat Soup",
+    "Medium Evergreen Tree",
+    "Medium Fir Tree",
+    "Medium Pine Tree",
+    "Nickel",
+    "Ninja Fig",
+    "Ninja Pig Opal",
+    "Red Huckleberries",
+    "Red Leaf Tree",
+    "Red Mandrake",
+    "Redskin Peanut",
+    "Rude Goblin",
+    "Shh! Opal",
+    "Small Bush",
+    "Small Cypress Tree",
+    "Small Maple Tree",
+    "Spicy Drumstick",
+    "Square Root",
+    "Stone Block Wallpaper",
+    "Strawberry Cupcake",
+    "Stucco Wallpaper",
+    "Submarine Sandwich",
+    "Sunflower",
+    "Tall Palm Tree",
+    "Tall Pumpkin",
+    "Tasty Biscuit",
+    "Tree Fountain",
+    "Unstoppable Talent Opal",
+    "Vestment of Chaos",
+    "Vestment of Earth",
+    "Vestment of Ember",
+    "Vestment of Equilibrium",
+    "Vestment of Frost",
+    "Wheat Cracker",
+    "Wooden Well",
+    "Yellow Flowers Wallpaper"
   ],
   "authors": "BartleBot",
   "options": [
@@ -52,7 +142,7 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -65,7 +155,7 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -91,7 +181,7 @@
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Hydra",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -115,7 +205,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -131,7 +221,7 @@
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Hydra",
       "position": {
-        "x": 2160,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -155,7 +245,7 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 2880,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -181,7 +271,7 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Specter",
       "position": {
-        "x": 3240,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -205,7 +295,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 3600,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -221,7 +311,7 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Specter",
       "position": {
-        "x": 3960,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -245,7 +335,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2520,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -261,7 +351,7 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 4680,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -287,7 +377,7 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Harpy",
       "position": {
-        "x": 5040,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -311,7 +401,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 5400,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -327,7 +417,7 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Harpy",
       "position": {
-        "x": 5760,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -351,7 +441,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 4320,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -367,7 +457,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6120,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -383,7 +473,7 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 6480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -409,7 +499,7 @@
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Basilisk",
       "position": {
-        "x": 6840,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -433,7 +523,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Tamworth Brickhouse",
       "position": {
-        "x": 7200,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -449,7 +539,7 @@
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Basilisk",
       "position": {
-        "x": 7560,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -473,7 +563,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7920,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -489,7 +579,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter final boss room",
       "position": {
-        "x": 8280,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -513,7 +603,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 8640,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -529,7 +619,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat",
       "position": {
-        "x": 9000,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -547,7 +637,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 9360,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -560,7 +650,7 @@
       "node_type": "handle_combat",
       "label": "Defeat final boss",
       "position": {
-        "x": 9720,
+        "x": 11880,
         "y": 0.0
       },
       "params": {
@@ -576,7 +666,7 @@
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -653,13 +743,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_7",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_14",
       "dest": "state_15",
       "when": "SUCCESS",
@@ -687,13 +770,6 @@
       "source": "state_12",
       "dest": "state_18",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_14",
       "flags": [],
       "flag_op": "AND"
     },
@@ -1009,13 +1085,6 @@
     {
       "trigger": "advance",
       "source": "state_10",
-      "dest": "state_3",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
@@ -1039,6 +1108,30 @@
       "source": "state_1",
       "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_14",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

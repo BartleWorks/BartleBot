@@ -44,7 +44,7 @@
       "node_type": "enter_zone",
       "label": "Go to The Commons",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -63,7 +63,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {

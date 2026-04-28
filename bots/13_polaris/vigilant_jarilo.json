@@ -1,0 +1,519 @@
+{
+  "name": "Vigilant Jarilo",
+  "description": "Farms Vigilant Sargun in the Sunless Shrine, entered via the River of Frozen Tears in Polaris.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Polaris",
+  "drops": [
+    "Aether",
+    "Agave Leaves",
+    "Agave Nectar",
+    "Amber",
+    "Amber Dust",
+    "Angel Oak",
+    "Aquamarine",
+    "Arcanum Theme",
+    "Arcticzilla",
+    "Astral Shard",
+    "Astraphobia",
+    "Balefrost",
+    "Beast Wellington",
+    "Bleaks Band of Snowstorms",
+    "Bleaks Circle of Pyres",
+    "Bleaks Cutter of Despair",
+    "Bleaks Dagger of Vigor",
+    "Bleaks Dirk of Mischief",
+    "Bleaks Knife of Snowstorms",
+    "Bleaks Medallion of Vigor",
+    "Bleaks Pendant of Mischief",
+    "Bleaks Seal of Despair",
+    "Bleaks Signet of Mischief",
+    "Bleaks Torc of Snowstorms",
+    "Boiled Peanuts",
+    "Burning Snap Dragon",
+    "Chalupacabra",
+    "Cornbread Fruit Bush",
+    "Couch Potatoes",
+    "Counterforce",
+    "Deathspear",
+    "Deepwater Toffee",
+    "Dual Balanceblade Citrine",
+    "Dual Deathblade Onyx",
+    "Dual Fireblade Ruby",
+    "Dual Iceblade Sapphire",
+    "Dual Lifeblade Jade",
+    "Dual Mythblade Peridot",
+    "Dual Shadowblade Hematite",
+    "Dual Stormblade Amethyst",
+    "Efreet",
+    "Enchanter's Fervid Cloak",
+    "Enchanter's Set of Frostbite",
+    "Evil Snow Peas",
+    "Evoker's Boots of Squalls",
+    "Evoker's Brim of Acuity",
+    "Evoker's Brim of Squalls",
+    "Evoker's Ember Walkers",
+    "Evoker's Forlorn Robes",
+    "Evoker's Forlorn Stalkers",
+    "Evoker's Gallant Brim",
+    "Evoker's Gallant Drape",
+    "Evoker's Gallant Footwear",
+    "Evoker's Gelid Robes",
+    "Evoker's Stalwart Brim",
+    "Evoker's Stalwart Cloak",
+    "Evoker's Stalwart Footgear",
+    "Evoker's Wrap of Acuity",
+    "Eye Candy",
+    "Face Palm",
+    "Fiery Colossus",
+    "Fire Blossom",
+    "Fish Fin",
+    "Fish on a Vine",
+    "Frostfang",
+    "Frosty Sugar Cubes",
+    "Frozen Fly Trap",
+    "Glacier Dragon",
+    "Gnomes!",
+    "Golden Pearl",
+    "Goose Tree",
+    "Green Snow Apples",
+    "High Road Haggis",
+    "Hot Cross Buns",
+    "Icebird",
+    "Katabatic Wind",
+    "King Artorius (Balance)",
+    "King Artorius (Death)",
+    "King Artorius (Fire)",
+    "King Artorius (Ice)",
+    "King Artorius (Life)",
+    "King Artorius (Myth)",
+    "King Artorius (Storm)",
+    "King Parsley",
+    "Kossack Parcel of Redress",
+    "Kossack Saber of Chills",
+    "Kossack Spread of Chills",
+    "Kossack Stack of Purpose",
+    "Kossack Sword of Counsel",
+    "Kossack Sword of Travail",
+    "Large Keeper Aquarium",
+    "Large Small Fry Aquarium",
+    "Lustrous Accurate Jade +11%",
+    "Lustrous Damage Opal +12",
+    "Lustrous Damage Ruby +24",
+    "Lustrous Defense Jade +48",
+    "Maelstrom Snap Dragon",
+    "Medusa",
+    "Memento of the Bleaks",
+    "Mithril",
+    "Moon Flower",
+    "Mustachios",
+    "Mutate Colossus",
+    "Mythspear",
+    "Namaste",
+    "Noble Strand of the Bleaks",
+    "Nodori Winged Ram",
+    "Obsidian Colossus (420)",
+    "Orichalcum",
+    "Palladium",
+    "Penne Dreadful",
+    "Pink Huckleberries",
+    "Polar Bear Cub",
+    "Polarian Evoker's Boots",
+    "Polaris Baba Yaga Theme",
+    "Polaris Fries",
+    "Polaris Frozen Combat Theme",
+    "Polaris Frozen Forest Theme",
+    "Polaris Gulag Combat Theme",
+    "Polaris Gulag Theme",
+    "Polaris Ice Block Theme",
+    "Polaris Mine Combat Theme",
+    "Polaris Mine Theme",
+    "Polaris Opera Theme",
+    "Polaris Rasputin Combat Theme",
+    "Purple Snow Apples",
+    "Queen Crape Myrtle",
+    "Ra",
+    "Radiant Kossack Sword",
+    "Raging Bull",
+    "Rain of Fire",
+    "Red Huckleberries",
+    "Regular Keeper Aquarium",
+    "Regular Small Fry Aquarium",
+    "Rusalka's Wrath",
+    "Sabertooth",
+    "Sandstone Colossus",
+    "Satyr Chow",
+    "Scales",
+    "Ships 'n' Queso",
+    "Shock Colossus",
+    "Silver",
+    "Skeletal Dragon",
+    "Snap Dragon",
+    "Snow Angel",
+    "Snow Apples",
+    "Snowball Barrage",
+    "Spinysaur",
+    "Stardust",
+    "Steel",
+    "Stone Colossus",
+    "Storm Owl",
+    "Sunstone",
+    "Tayg Chisel of Leveling",
+    "Tayg Pendant of Vitality",
+    "The Goat Horns",
+    "The Kroktop",
+    "The Warlock",
+    "Titanium",
+    "Tundarian Iceblade",
+    "Tundarian Sword of Dread",
+    "Tungsten",
+    "Turquoise",
+    "Ultra Snap Dragon",
+    "Ultra Snow Apples",
+    "Veggie Juice",
+    "Vine",
+    "Walruskberg Combat Theme",
+    "Walruskberg Liberated Theme",
+    "Walruskberg Theme",
+    "Winged Sorrow",
+    "Winged Sorrow",
+    "Witch's House Call",
+    "Woolly Mammoth"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to wait after triggering an interaction or dialogue before checking for a response window."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "TP to Walruskberg",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Polaris/PL_Z00_Walruskberg"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Sunless Shrine",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Polaris/PL_Z03_IcefallPassage",
+        "dungeon_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "sigil_xyz": {
+          "x": 7289.76,
+          "y": -28522.47,
+          "z": 3990.03
+        },
+        "reset_xyz": {
+          "x": 6631.56,
+          "y": -28080.47,
+          "z": 3979.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter boss room",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "to_zone": "Polaris/Interiors/PL_Z03I03_SunlessTempleTop",
+        "xyz": {
+          "x": 3.37,
+          "y": -3900.85,
+          "z": -0.26
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Fight Vigilant Jarilo",
+      "position": {
+        "x": 2200,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "PL_WolfGryphon_Warrior_C",
+        "use_bot_default": false,
+        "combat_config": "### p1\nmass | feint[potent]@boss | feint@boss\n\n### p2\nany<aura & out_damage> | lord[epic] | tempest[epic]",
+        "combat_order": [
+          1,
+          2
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Exit boss room",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Polaris/Interiors/PL_Z03I03_SunlessTempleTop",
+        "to_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "xyz": {
+          "x": 39.81,
+          "y": 163.52,
+          "z": 2.28
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Exit Sunless Shrine",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "to_zone": "Polaris/PL_Z03_IcefallPassage",
+        "xyz": {
+          "x": -1.96,
+          "y": 168.13,
+          "z": -0.22
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone_via_object",
+      "label": "Take snowglobe to River of Frozen Tears",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Polaris/PL_Z00_Walruskberg",
+        "to_zone": "Polaris/PL_Z03_IcefallPassage",
+        "interact_xyz": {
+          "x": -1991.46,
+          "y": 2127.86,
+          "z": -129.34
+        },
+        "reset_xyz": {
+          "x": -1678.86,
+          "y": 2130.41,
+          "z": -129.34
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 3080,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "Polaris/PL_Z03_IcefallPassage"
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

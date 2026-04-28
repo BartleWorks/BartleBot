@@ -9,7 +9,90 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Pixie's energy gear"
+    "Accurate Talent Opal",
+    "Acorn",
+    "Aether",
+    "Aquamarine",
+    "Asparagus Spears",
+    "Basilisk",
+    "Bearberry",
+    "Black Cap Crisps",
+    "Black Spider",
+    "Blaze Beast",
+    "Blue Ghost",
+    "Bog Witch Beetroot",
+    "Brass",
+    "Bronze",
+    "Caliburnt Toast",
+    "Ceara Ashbury Bobblehead",
+    "Chimera",
+    "Chocolate Comet",
+    "Clear Critical Amethyst +10",
+    "Clear Critical Peridot +10",
+    "Clear Damage Ruby +19",
+    "Cobalt",
+    "Cornbread Fruit Bush",
+    "Crab Knight Cakes",
+    "Crystal Ball",
+    "Crystal Custard",
+    "Dark Sprite",
+    "Deepwater Toffee",
+    "Dimension Shift Peridot",
+    "Dryad",
+    "Efreet",
+    "Enfeeble Amethyst",
+    "Faerie Court Boots (Level 100+)",
+    "Faerie Court Steel Leaf (Level 100+)",
+    "Fire Blossom",
+    "Fire Dragon",
+    "Fire Elf",
+    "Forest Beast",
+    "Frost Giant",
+    "Giant Talent Opal",
+    "Grandfather Clock",
+    "Great Spiral Glyph",
+    "Grendelweed",
+    "Helephant Ears",
+    "High Road Haggis",
+    "King Artorius Bobblehead",
+    "Lady's Favor",
+    "Large Willow Tree",
+    "Lectern",
+    "Lemon Harts",
+    "Levee Breaking Lute (Level 100+)",
+    "Mandolin of Evermore (Level 100+)",
+    "Mask of the Faerie Court (Level 100+)",
+    "Mass Infection Onyx",
+    "Mass Triage Jade",
+    "Misty Mountain Mandolin (Level 100+)",
+    "Monstrous Talent Opal",
+    "Muscle Sprouts",
+    "Mythic Beast",
+    "Ogre Meanies",
+    "Pixie Parsnips",
+    "Pixie's Armor of Encanta (Level 100+)",
+    "Pixie's Enchanted Boots (Level 100+)",
+    "Pixie's Enchanted Boots (Level 90+)",
+    "Pixie's Mask of Encanta (Level 100+)",
+    "Pomegranite",
+    "Red Bell Pepper",
+    "Rye Bread Fruit Bush",
+    "Seraph Food Cake",
+    "Shadow Beast",
+    "Shepherd's Crook Pie",
+    "Sir Pike Del Lago Bobblehead",
+    "Snow Beast",
+    "Spark Beast",
+    "Spiral Shield",
+    "Spirit Trap Citrine (Triangle)",
+    "Spring",
+    "Steel",
+    "Toad in the Hole",
+    "Weirwood Cake",
+    "World's Fool Armor (Level 100+)",
+    "World's Fool Boots (Level 100+)",
+    "World's Fool Mask (Level 100+)",
+    "Wyrmy Apple"
   ],
   "authors": "BartleBot",
   "options": [
@@ -32,7 +115,7 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -59,7 +142,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -75,7 +158,7 @@
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -88,7 +171,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Lyonel LaughingStorm",
       "position": {
-        "x": 1440,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -104,7 +187,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -128,7 +211,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 2160,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -154,7 +237,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 2520,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -178,7 +261,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Lady Tanselle DreamingStar",
       "position": {
-        "x": 2880,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -194,7 +277,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 3240,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -218,7 +301,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 3600,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -244,7 +327,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 3960,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -268,7 +351,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Dunc",
       "position": {
-        "x": 4320,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -284,7 +367,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 4680,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -308,7 +391,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 5040,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -334,7 +417,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 5400,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -358,7 +441,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Steffan BadApple",
       "position": {
-        "x": 5760,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -374,7 +457,7 @@
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 6120,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -398,7 +481,7 @@
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 6480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -424,7 +507,7 @@
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 6840,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -448,7 +531,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sir Claudus D'Agrodolce",
       "position": {
-        "x": 7200,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -464,7 +547,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Complete gauntlet",
       "position": {
-        "x": 7920,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -482,7 +565,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7560,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -851,6 +934,7 @@
       "trigger": "advance",
       "source": "state_23",
       "dest": "state_22",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
     },
@@ -858,7 +942,7 @@
       "trigger": "advance",
       "source": "state_23",
       "dest": "state_22",
-      "when": "FAILURE",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }
