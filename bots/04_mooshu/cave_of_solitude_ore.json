@@ -33,8 +33,7 @@
         "zone": "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave",
         "spawns": "{\"x\": 24722.86, \"y\": 23939.32, \"z\": -2148.26}\n{\"x\": 26785.13, \"y\": 24321.14, \"z\": -2148.26}\n{\"x\": 31867.56, \"y\": 28143.3, \"z\": -1980.03}\n{\"x\": 33929.93, \"y\": 26827.05, \"z\": -1853.56}\n{\"x\": 29335.54, \"y\": 25782.7, \"z\": -1980.03}"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
@@ -48,8 +47,7 @@
         "start_realm_page": 3,
         "end_realm_page": 5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
@@ -62,8 +60,7 @@
       "params": {
         "zone": "MooShu/MS_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
@@ -87,8 +84,7 @@
           "z": 31.44
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
@@ -112,8 +108,7 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
@@ -137,8 +132,7 @@
           "z": 480.02
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

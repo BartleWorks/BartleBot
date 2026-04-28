@@ -134,8 +134,7 @@
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
@@ -159,8 +158,7 @@
           "z": 229.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
@@ -176,8 +174,7 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
@@ -201,8 +198,7 @@
           "z": 0.1
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
@@ -226,8 +222,7 @@
           "z": 4.74
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
@@ -245,8 +240,7 @@
           "z": 539.5
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
@@ -257,8 +251,7 @@
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
@@ -276,8 +269,7 @@
           "z": 539.5
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
@@ -288,8 +280,7 @@
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
@@ -315,8 +306,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
@@ -340,8 +330,7 @@
           "z": 0.4
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
@@ -357,8 +346,7 @@
         "combat_config": "### p1\n{1} feint @ boss\n{2} any<blade>[sharp] @ self\n{3} any<aura & out_damage>\n{4} lord[epic]\n{5} tempest\npass\n\n### p2\n{1} feint @ boss\n{2} any<blade>[sharp] @ ally(0)\n{3} any<blade> @ ally(0)\n{4} purge @ ally(0)\n{5} tempest[epic]\npass",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
@@ -376,8 +364,7 @@
           "z": 1.8
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
@@ -388,8 +375,7 @@
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
@@ -400,8 +386,7 @@
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
@@ -412,8 +397,7 @@
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
@@ -432,8 +416,7 @@
         "sell_socket_wrenches": false,
         "sell_skeleton_keys": false
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
@@ -446,8 +429,7 @@
       "params": {
         "duration": 3.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

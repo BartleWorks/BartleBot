@@ -40,8 +40,7 @@
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
@@ -65,8 +64,7 @@
           "z": -29.5
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
@@ -82,8 +80,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
@@ -97,8 +94,7 @@
         "threshold": 1.0,
         "timeout": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
@@ -122,8 +118,7 @@
           "z": -139.33
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
@@ -139,8 +134,7 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
@@ -156,8 +150,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
@@ -175,8 +168,7 @@
           "z": -5.33
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
@@ -189,8 +181,7 @@
       "params": {
         "duration": 5.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
@@ -214,8 +205,7 @@
         "sell_socket_wrenches": false,
         "sell_skeleton_keys": false
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
@@ -231,8 +221,7 @@
         "refill_potions": true,
         "mark_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
@@ -246,8 +235,7 @@
         "friend_name": "Luke SkullHunter",
         "to_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

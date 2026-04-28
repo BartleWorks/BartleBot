@@ -202,8 +202,7 @@
       "params": {
         "zone": "MooShu/MS_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
@@ -227,8 +226,7 @@
           "z": 1.1
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
@@ -252,8 +250,7 @@
           "z": 79.59
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
@@ -279,8 +276,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
@@ -308,8 +304,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_6",
@@ -337,8 +332,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_7",
@@ -366,8 +360,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_8",
@@ -395,8 +388,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_9",
@@ -422,8 +414,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
@@ -451,8 +442,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_11",
@@ -480,8 +470,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_12",
@@ -509,8 +498,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_13",
@@ -538,8 +526,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_14",
@@ -565,8 +552,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
@@ -584,8 +570,7 @@
           "z": 216.48
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
@@ -603,8 +588,7 @@
           "z": -149.74
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
@@ -622,8 +606,7 @@
           "z": -149.69
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
@@ -649,8 +632,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_19",
@@ -676,8 +658,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_20",
@@ -703,8 +684,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_21",
@@ -730,8 +710,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_22",
@@ -757,8 +736,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_23",
@@ -782,8 +760,7 @@
           "z": 53.96
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_24",
@@ -798,8 +775,7 @@
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_26",
@@ -823,8 +799,7 @@
           "z": -100.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_27",
@@ -850,8 +825,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_28",
@@ -879,8 +853,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_29",
@@ -906,8 +879,7 @@
       },
       "option_overrides": {
         "Safety Delay": 1.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_30",
@@ -933,8 +905,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_31",
@@ -960,8 +931,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_32",
@@ -979,8 +949,7 @@
           "z": -389.72
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_33",
@@ -995,8 +964,7 @@
         "use_bot_default": false,
         "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_35",
@@ -1013,8 +981,7 @@
       },
       "option_overrides": {
         "Default Combat Order": []
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_36",
@@ -1032,8 +999,7 @@
           "z": -149.72
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_34",
@@ -1050,8 +1016,7 @@
       },
       "option_overrides": {
         "Default Combat Order": []
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_37",
@@ -1069,8 +1034,7 @@
           "z": -149.72
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_38",
@@ -1083,8 +1047,7 @@
       "params": {
         "duration": 5.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_39",
@@ -1110,8 +1073,7 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_40",
@@ -1135,8 +1097,7 @@
           "z": 79.6
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_41",
@@ -1151,8 +1112,7 @@
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_42",
@@ -1170,8 +1130,7 @@
           "z": -0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_43",
@@ -1184,8 +1143,7 @@
       "params": {
         "duration": 5.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_44",
@@ -1200,8 +1158,7 @@
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_46",
@@ -1217,8 +1174,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_47",
@@ -1236,8 +1192,7 @@
           "z": -149.72
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_25",
@@ -1253,8 +1208,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_48",
@@ -1270,8 +1224,7 @@
         "refill_potions": true,
         "mark_zone": "MooShu/MS_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_45",
@@ -1284,8 +1237,7 @@
       "params": {
         "duration": 3.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

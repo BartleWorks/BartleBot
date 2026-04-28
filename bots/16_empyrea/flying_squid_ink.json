@@ -46,15 +46,14 @@
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Aeriel Jungle",
       "position": {
-        "x": 1080,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -71,15 +70,14 @@
           "z": -29.35
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 1800,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -88,15 +86,14 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Gannon dialogue",
       "position": {
-        "x": 2880.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -107,15 +104,14 @@
           "z": 0.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "handle_combat",
       "label": "Defeat Gannon",
       "position": {
-        "x": 3240.0,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -124,15 +120,14 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "teleport_to_coordinates",
       "label": "Trigger Madd'n Dialogue",
       "position": {
-        "x": 3600.0,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -143,29 +138,27 @@
           "z": 0.19
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3960.0,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
         "duration": 5.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "handle_combat",
       "label": "Defeat Madd'n",
       "position": {
-        "x": 4320.0,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -174,16 +167,15 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "enter_zone",
       "label": "Enter Raider Tower",
       "position": {
-        "x": 5040.0,
-        "y": -90.0
+        "x": 5280.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Empyrea/Interiors/EM_Z01_RaiderTunnels",
@@ -199,15 +191,14 @@
           "z": 0.19
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "handle_combat",
       "label": "Deafeat D'Viss",
       "position": {
-        "x": 5400.0,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -216,15 +207,14 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 5760.0,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -241,16 +231,15 @@
           "z": 1.81
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "mark_location",
       "label": "Mark location",
       "position": {
-        "x": 1440.0,
-        "y": 90.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -260,16 +249,15 @@
           "z": -10.01
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "teleport_to_marked_location",
       "label": "Teleport to marked location",
       "position": {
-        "x": 4320,
-        "y": 90.0
+        "x": 5280.0,
+        "y": -180.0
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
@@ -279,15 +267,14 @@
           "z": -10.01
         }
       },
-      "option_overrides": {},
-      "flipped": true
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "enter_dungeon",
       "label": "Enter Secret Tunnel",
       "position": {
-        "x": 2160,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -304,51 +291,32 @@
           "z": -10.01
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 360,
+        "x": 440,
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 720,
+        "x": 880,
         "y": 0.0
       },
       "params": {
         "threshold": 0.8,
         "timeout": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
-    },
-    {
-      "id": "state_17",
-      "node_type": "handle_combat",
-      "position": {
-        "x": 1477.0962911840093,
-        "y": 34.972926376577504
-      },
-      "params": {
-        "enemy": "",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 0.0
-      },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -617,17 +585,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_3",
-      "when": "SUCCESS",
+      "source": "state_13",
+      "dest": "state_13",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
     }

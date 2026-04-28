@@ -251,8 +251,7 @@ class EditScene(QGraphicsScene):
         super().drawBackground(painter, rect)
         if not self._snap_enabled:
             return
-        # Dots sit at (GRID_W*i, GRID_H*j) — info-section left edges and vertical centers of
-        # snapped nodes. For flipped nodes the port section extends left of the grid dot.
+        # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
         dot_r = 2.0
@@ -323,7 +322,6 @@ class EditScene(QGraphicsScene):
                 is_error=is_error,
                 is_warning=is_warning,
                 node_type=state.node_type,
-                flipped=getattr(state, "flipped", False),
             )
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
@@ -622,9 +620,6 @@ class EditScene(QGraphicsScene):
         if ctrl and event.key() == Qt.Key.Key_V:
             self._paste()
             return
-        if event.key() == Qt.Key.Key_F:
-            self._flip_selected_nodes()
-            return
         super().keyPressEvent(event)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -653,21 +648,16 @@ class EditScene(QGraphicsScene):
         )
         menu = QMenu()
         if isinstance(item, NodeItem):
+            sid = item.state_id
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
-            flip_label = "Unflip Node" if item._flipped else "Flip Node"
-            act_flip = QAction(flip_label, menu)
-            sid = item.state_id
-            act_flip.triggered.connect(lambda _=None, s=sid: self._flip_node(s))
-            menu.addAction(act_flip)
             act_help = QAction("Node Help", menu)
             act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
             menu.addAction(act_help)
             # Region membership actions
             if self._config and self._config.regions:
                 menu.addSeparator()
-                sid = item.state_id
                 for region in self._config.regions:
                     if sid not in region.members:
                         rid = region.id
@@ -843,7 +833,6 @@ class EditScene(QGraphicsScene):
                 returns=returns,
                 is_terminal=True,
                 node_type=state.node_type,
-                flipped=state.flipped,
             )
             node.set_snap_enabled(self._snap_enabled)
             if new_sd.get("position"):
@@ -875,38 +864,6 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
         self._in_structural_edit = False
         self.graph_changed.emit()
-
-    def _flip_node(self, state_id: str) -> None:
-        if self._config is None:
-            return
-        node = self._node_items.get(state_id)
-        if node is None:
-            return
-        self._pre_edit("Flip Node")
-        new_flipped = not node._flipped
-        node.set_flipped(new_flipped)
-        state = next((s for s in self._config.states if s.id == state_id), None)
-        if state is not None:
-            state.flipped = new_flipped
-        self.graph_changed.emit()
-
-    def _flip_selected_nodes(self) -> None:
-        if self._config is None:
-            return
-        if not any(isinstance(item, NodeItem) for item in self.selectedItems()):
-            return
-        self._pre_edit("Flip Node")
-        changed = False
-        for item in self.selectedItems():
-            if isinstance(item, NodeItem):
-                new_flipped = not item._flipped
-                item.set_flipped(new_flipped)
-                state = next((s for s in self._config.states if s.id == item.state_id), None)
-                if state is not None:
-                    state.flipped = new_flipped
-                changed = True
-        if changed:
-            self.graph_changed.emit()
 
     def _delete_selected(self) -> None:
         if self._config is None:

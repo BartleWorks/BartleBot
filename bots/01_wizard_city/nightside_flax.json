@@ -32,8 +32,7 @@
         "zone": "WizardCity/WC_NightSide",
         "entity_name": "FrostedFlax_01"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

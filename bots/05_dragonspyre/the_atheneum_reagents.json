@@ -37,8 +37,7 @@
         "zone": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
         "spawns": "{\"x\": 2755.75, \"y\": 2782.35, \"z\": 400.12}\n{\"x\": 3699.18, \"y\": 2196.08, \"z\": 400.14}\n{\"x\": 4818.44, \"y\": 1701.95, \"z\": 400.14}\n{\"x\": 4222.43, \"y\": 1908.44, \"z\": 400.14}\n{\"x\": 5427.5, \"y\": 3522.57, \"z\": 400.14}\n{\"x\": 5480.13, \"y\": 4691.15, \"z\": 400.14}\n{\"x\": 6263.43, \"y\": 9230.96, \"z\": 400.0}\n{\"x\": 4783.32, \"y\": 9097.44, \"z\": 400.0}\n{\"x\": 3130.67, \"y\": 1223.4, \"z\": -29.6}\n{\"x\": -975.28, \"y\": 3463.43, \"z\": -78.74}"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
@@ -52,8 +51,7 @@
         "start_realm_page": 3,
         "end_realm_page": 5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
@@ -66,8 +64,7 @@
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
@@ -91,8 +88,7 @@
           "z": -0.04
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

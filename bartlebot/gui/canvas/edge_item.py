@@ -193,24 +193,7 @@ class EdgeItem(QGraphicsPathItem):
         dst_pt = self._dst.port_in()
         if math.hypot(dst_pt.x() - src_pt.x(), dst_pt.y() - src_pt.y()) < 1:
             return
-        src_flipped = self._src._flipped
-        dst_flipped = self._dst._flipped
-        if src_flipped or dst_flipped:
-            # Flipped ports: use direction-aware routing so path extensions always
-            # go *outside* the node body regardless of which side the port is on.
-            # src exits left (-1) when flipped, right (+1) when normal.
-            # dst is approached from right (+1) when flipped, left (-1) when normal.
-            src_sign = -1 if src_flipped else 1
-            dst_sign = 1 if dst_flipped else -1
-            if src_flipped and dst_flipped and dst_pt.x() <= src_pt.x():
-                # Both ports face each other (src exits left, dst accepts from right)
-                # and dst is to the left — the natural forward direction for flipped
-                # nodes. Route as a simple Z-path through the horizontal midpoint;
-                # no node-clearing bridge needed.
-                self._build_forward_ortho(path, src_pt, dst_pt)
-            else:
-                self._build_directed_ortho(path, src_pt, dst_pt, src_sign, dst_sign)
-        elif dst_pt.x() > src_pt.x():
+        if dst_pt.x() > src_pt.x():
             self._build_forward_ortho(path, src_pt, dst_pt)
         else:
             self._build_backward_ortho(path, src_pt, dst_pt)
@@ -250,15 +233,11 @@ class EdgeItem(QGraphicsPathItem):
     ) -> None:
         """Orthogonal path with parameterized exit/approach directions.
 
-        *src_sign* (+1/-1): direction the departure arm extends from the source
-        port (+1 = rightward for normal output, -1 = leftward for flipped output).
+        *src_sign* (+1/-1): direction the departure arm extends from the source port.
+        *dst_sign* (+1/-1): direction the arrival arm extends from the destination port.
 
-        *dst_sign* (+1/-1): direction the arrival arm extends from the destination
-        port (-1 = leftward for normal input, +1 = rightward for flipped input).
-
-        When both signs are equal the departure and arrival arms are on the same
-        side, so a simple 4-point Z-path suffices — no horizontal bridge needed.
-        When the signs differ a 6-point bridge path is used instead.
+        When both signs are equal a 4-point Z-path suffices; when they differ a
+        6-point bridge path is used instead.
         """
         if src_sign == dst_sign:
             # Both ports face the same direction: 4-point Z-path.
@@ -313,15 +292,12 @@ class EdgeItem(QGraphicsPathItem):
             bridge_y = node_top - _BACK_PADDING - _SELF_LOOP_H_STEP
         else:
             bridge_y = node_top + src_h + _BACK_PADDING + _SELF_LOOP_H_STEP
-        flipped = self._src._flipped
-        src_sign = -1 if flipped else 1
-        dst_sign = 1 if flipped else -1
         waypoints = [
             src_pt,
-            QPointF(src_pt.x() + src_sign * _SELF_LOOP_ARM, src_pt.y()),
-            QPointF(src_pt.x() + src_sign * _SELF_LOOP_ARM, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_ARM, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _SELF_LOOP_ARM, dst_pt.y()),
+            QPointF(src_pt.x() + _SELF_LOOP_ARM, src_pt.y()),
+            QPointF(src_pt.x() + _SELF_LOOP_ARM, bridge_y),
+            QPointF(dst_pt.x() - _SELF_LOOP_ARM, bridge_y),
+            QPointF(dst_pt.x() - _SELF_LOOP_ARM, dst_pt.y()),
             dst_pt,
         ]
         _draw_ortho_path(path, waypoints)

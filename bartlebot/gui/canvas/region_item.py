@@ -153,7 +153,7 @@ class RegionItem(QGraphicsItem):
         for sid in self._member_ids:
             node = self._node_items.get(sid)
             if node is not None:
-                rects.append(node.mapRectToScene(node.boundingRect()))
+                rects.append(node.body_scene_rect())
 
         if not rects:
             new_rect = QRectF()

@@ -192,15 +192,14 @@
       "params": {
         "zone": "Avalon/AV_Z00_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter High Road",
       "position": {
-        "x": 360,
+        "x": 440.0,
         "y": 0.0
       },
       "params": {
@@ -217,15 +216,14 @@
           "z": -509.44
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_dungeon",
       "label": "Enter Harlequin Knight's Tower",
       "position": {
-        "x": 1440.0,
+        "x": 1760.0,
         "y": 0.0
       },
       "params": {
@@ -242,15 +240,14 @@
           "z": 2.49
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "handle_combat",
       "label": "Defeat Harlequin Knight",
       "position": {
-        "x": 1800.0,
+        "x": 2200.0,
         "y": 0.0
       },
       "params": {
@@ -259,15 +256,14 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2160.0,
+        "x": 2640.0,
         "y": 0.0
       },
       "params": {
@@ -276,15 +272,14 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Exit Harlequin Knight's Tower",
       "position": {
-        "x": 2520.0,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
@@ -301,15 +296,14 @@
           "z": -0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1080.0,
+        "x": 1320.0,
         "y": 0.0
       },
       "params": {
@@ -318,27 +312,25 @@
         "refill_potions": true,
         "mark_zone": "Avalon/AV_Z02_HighRoad"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 720,
+        "x": 880.0,
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "enter_zone",
       "label": "Enter Caer Lyon",
       "position": {
-        "x": 1080.0,
+        "x": 1320.0,
         "y": -270.0
       },
       "params": {
@@ -355,15 +347,14 @@
           "z": 13.15
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "enter_zone",
       "label": "Enter Outer Yard",
       "position": {
-        "x": 1440.0,
+        "x": 1760.0,
         "y": -270.0
       },
       "params": {
@@ -380,15 +371,14 @@
           "z": 1090.17
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "enter_dungeon",
       "label": "Enter Keep of Ganelon",
       "position": {
-        "x": 1800.0,
+        "x": 2200.0,
         "y": -270.0
       },
       "params": {
@@ -405,15 +395,14 @@
           "z": -180.82
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2160.0,
+        "x": 2640.0,
         "y": -270.0
       },
       "params": {
@@ -429,8 +418,7 @@
           "z": 2.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

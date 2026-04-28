@@ -29,14 +29,13 @@ NODE_H = 70  # node height — always fixed regardless of return count
 NODE_RADIUS = 12
 PORT_R = 6  # radius of connection-port circles
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
-_BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal / flipped)
+_BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal)
 _BADGE_GAP = 4  # gap between adjacent badge circles
 _BADGE_FONT_PT = 6  # point size for text glyphs drawn inside badges
 _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
 
 _PLAY_RENDERER: QSvgRenderer | None = None
 _STOP_RENDERER: QSvgRenderer | None = None
-_PLAY_REVERSED_RENDERER: QSvgRenderer | None = None
 
 
 def _play_badge_renderer() -> QSvgRenderer:
@@ -65,18 +64,6 @@ def _stop_badge_renderer() -> QSvgRenderer:
         svg_bytes = svg_path.read_bytes().replace(b'fill="#404040"', b'fill="#ffffff"')
         _STOP_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
     return _STOP_RENDERER
-
-
-def _play_reversed_badge_renderer() -> QSvgRenderer:
-    """Lazily build a horizontally-mirrored play triangle (points left). Cached."""
-    global _PLAY_REVERSED_RENDERER
-    if _PLAY_REVERSED_RENDERER is None:
-        from PyQt6.QtCore import QByteArray
-
-        # play.svg polygon "5,3 21,12 5,21" mirrored around x=12 → "19,3 3,12 19,21"
-        svg_bytes = b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><polygon points="19,3 3,12 19,21" fill="#ffffff"/></svg>'
-        _PLAY_REVERSED_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
-    return _PLAY_REVERSED_RENDERER
 
 
 # Grid constants — shared with EditScene for drawBackground and migration script.
@@ -155,10 +142,6 @@ def _badge_terminal() -> QColor:
     return THEME.qcolor("error")
 
 
-def _badge_flipped() -> QColor:
-    return THEME.qcolor("warning")
-
-
 def _port_color() -> QColor:
     return THEME.qcolor("port_color")
 
@@ -176,14 +159,9 @@ def node_height(_n_returns: int) -> int:
 class NodeItem(QGraphicsItem):
     """Rounded-rect node showing a state's label.
 
-    Layout: a fixed-height left info section (NODE_W wide) containing the
-    label and state_id/node_type, plus an optional right section containing
-    named output port labels. The right section only takes the minimum width
-    needed to display the longest return label.
-
-    For flipped nodes the port section extends to the LEFT of the info
-    section (into negative local x), so the scenePos anchor always refers
-    to the top-left of the info section.
+    Layout: a fixed-height left info section (NODE_INFO_W wide) containing the
+    label and node_type, plus a right port section (NODE_PORT_W wide) containing
+    named output port labels. Input port is on the left edge; output ports on the right.
     """
 
     def __init__(
@@ -197,7 +175,6 @@ class NodeItem(QGraphicsItem):
         is_error: bool = False,
         is_warning: bool = False,
         node_type: str = "",
-        flipped: bool = False,
     ):
         super().__init__()
         self.state_id = state_id
@@ -231,7 +208,6 @@ class NodeItem(QGraphicsItem):
         self._is_terminal = is_terminal
         self._is_error = is_error
         self._is_warning = is_warning
-        self._flipped: bool = flipped
         self._returns: list[str] = list(returns) if returns else []
         self._edges: list = []
         self._is_search_match: bool = False
@@ -255,16 +231,18 @@ class NodeItem(QGraphicsItem):
 
     def _node_rect(self) -> QRectF:
         """Local bounding rect of the node body (excluding margin)."""
-        if self._flipped and self._returns:
-            return QRectF(-NODE_PORT_W, 0, NODE_W, NODE_H)
         return QRectF(0, 0, NODE_W, NODE_H)
+
+    def body_scene_rect(self) -> QRectF:
+        """Scene-coordinate rect of the node body, excluding badges and hit-test margin."""
+        return self.mapRectToScene(self._node_rect())
 
     def boundingRect(self) -> QRectF:
         margin = PORT_R + 1 if self._interactive else 0
         if self._is_search_match:
             margin = max(margin, 8)
         nr = self._node_rect()
-        top_extra = _BADGE_R if (self._is_initial or self._is_terminal or self._flipped) else 0
+        top_extra = _BADGE_R if (self._is_initial or self._is_terminal) else 0
         return QRectF(nr.x() - margin, -(margin + top_extra), NODE_W + margin * 2, NODE_H + margin * 2 + top_extra)
 
     # ------------------------------------------------------------------
@@ -295,25 +273,12 @@ class NodeItem(QGraphicsItem):
     # ------------------------------------------------------------------
 
     def port_in(self) -> QPointF:
-        """Scene-coordinate input port.
-
-        Non-flipped: left edge of info section (x=0).
-        Flipped: right edge of info section (x=NODE_INFO_W).
-        """
-        x = NODE_INFO_W if self._flipped else 0
-        return self.scenePos() + QPointF(x, NODE_H / 2)
+        """Scene-coordinate input port — left edge of info section (x=0)."""
+        return self.scenePos() + QPointF(0, NODE_H / 2)
 
     def port_out(self) -> QPointF:
-        """Scene-coordinate output port (center-edge fallback when no named returns).
-
-        Non-flipped: right edge of node (x=NODE_W).
-        Flipped: left edge of node (x=-NODE_PORT_W when returns exist, else x=0).
-        """
-        if self._flipped:
-            x = -NODE_PORT_W if self._returns else 0
-        else:
-            x = NODE_W
-        return self.scenePos() + QPointF(x, NODE_H / 2)
+        """Scene-coordinate output port (center-edge fallback when no named returns)."""
+        return self.scenePos() + QPointF(NODE_W, NODE_H / 2)
 
     def _port_y(self, idx: int) -> float:
         """Y coordinate (local) for the idx-th named output port, evenly distributed over NODE_H."""
@@ -328,8 +293,7 @@ class NodeItem(QGraphicsItem):
         """
         if return_name and return_name in self._returns:
             idx = self._returns.index(return_name)
-            x = -NODE_PORT_W if self._flipped else NODE_W
-            return self.scenePos() + QPointF(x, self._port_y(idx))
+            return self.scenePos() + QPointF(NODE_W, self._port_y(idx))
         return self.port_out()
 
     # ------------------------------------------------------------------
@@ -383,14 +347,6 @@ class NodeItem(QGraphicsItem):
         self._is_terminal = is_terminal
         self.update()
 
-    def set_flipped(self, flipped: bool) -> None:
-        """Swap input/output port sides: input moves to right, outputs to left."""
-        self._flipped = flipped
-        self.prepareGeometryChange()
-        for edge in self._edges:
-            edge._rebuild()
-        self.update()
-
     def set_error(self, is_error: bool, reasons: list[str] | None = None) -> None:
         """Mark this node as having a configuration error (red tint + border + tooltip)."""
         self._is_error = is_error
@@ -436,12 +392,8 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
-            # Snap the full node's left edge and vertical center to grid positions.
-            # For flipped nodes (port section to the left) the item origin is NODE_PORT_W
-            # to the right of the node's left edge, so offset accordingly.
-            left_offset = NODE_PORT_W if (self._flipped and self._returns) else 0
             return QPointF(
-                round((value.x() - left_offset) / GRID_W) * GRID_W + left_offset,
+                round(value.x() / GRID_W) * GRID_W,
                 round((value.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2,
             )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
@@ -471,14 +423,12 @@ class NodeItem(QGraphicsItem):
         pos = event.pos()
         near_port = False
         if self._returns:
-            port_x = -NODE_PORT_W if self._flipped else float(NODE_W)
             for i in range(len(self._returns)):
-                if math.hypot(pos.x() - port_x, pos.y() - self._port_y(i)) <= _PORT_HIT_R:
+                if math.hypot(pos.x() - float(NODE_W), pos.y() - self._port_y(i)) <= _PORT_HIT_R:
                     near_port = True
                     break
         else:
-            port_x = 0.0 if self._flipped else float(NODE_INFO_W)
-            if math.hypot(pos.x() - port_x, pos.y() - NODE_H / 2) <= _PORT_HIT_R:
+            if math.hypot(pos.x() - float(NODE_INFO_W), pos.y() - NODE_H / 2) <= _PORT_HIT_R:
                 near_port = True
         self.setCursor(Qt.CursorShape.CrossCursor if near_port else Qt.CursorShape.SizeAllCursor)
         super().hoverMoveEvent(event)
@@ -550,8 +500,6 @@ class NodeItem(QGraphicsItem):
                 badges.append((_badge_initial(), _play_badge_renderer()))
             if self._is_terminal:
                 badges.append((_badge_terminal(), _stop_badge_renderer()))
-            if self._flipped:
-                badges.append((_badge_flipped(), _play_reversed_badge_renderer()))
             badge_x0 = nr.x()
             for i, (color, icon) in enumerate(badges):
                 cx = badge_x0 + float(i * (_BADGE_R * 2 + _BADGE_GAP))
@@ -587,22 +535,12 @@ class NodeItem(QGraphicsItem):
             painter.drawText(QRectF(8, 37, NODE_INFO_W - 16, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
 
             if self._returns:
-                # Port section: to the right of info for non-flipped, to the left for flipped.
                 n = len(self._returns)
                 row_h = NODE_H / n
 
-                if self._flipped:
-                    sect_left = float(-NODE_PORT_W)
-                    dot_x = float(-NODE_PORT_W)
-                    div_x = 0.0
-                else:
-                    sect_left = float(NODE_INFO_W)
-                    dot_x = float(NODE_W)
-                    div_x = float(NODE_INFO_W)
-
                 # Vertical divider between info and port sections
                 painter.setPen(QPen(border, 0.5))
-                painter.drawLine(QPointF(div_x, 4), QPointF(div_x, NODE_H - 4))
+                painter.drawLine(QPointF(float(NODE_INFO_W), 4), QPointF(float(NODE_INFO_W), NODE_H - 4))
 
                 # Port labels and dots
                 port_label_w = NODE_PORT_W - PORT_R * 2 - 8
@@ -611,7 +549,7 @@ class NodeItem(QGraphicsItem):
                 for i, name in enumerate(self._returns):
                     py = self._port_y(i)
                     label_rect = QRectF(
-                        sect_left + PORT_R + 4,
+                        float(NODE_INFO_W) + PORT_R + 4,
                         py - row_h / 2,
                         port_label_w,
                         row_h,
@@ -626,14 +564,13 @@ class NodeItem(QGraphicsItem):
                     if self._interactive:
                         painter.setPen(QPen(_port_color(), 1.5))
                         painter.setBrush(QBrush(_port_color()))
-                        painter.drawEllipse(QPointF(dot_x, py), PORT_R, PORT_R)
+                        painter.drawEllipse(QPointF(float(NODE_W), py), PORT_R, PORT_R)
             else:
-                # No named returns: single output port at the center edge of the info section
+                # No named returns: single output port at the right edge of the info section
                 if self._interactive:
-                    port_x = 0.0 if self._flipped else float(NODE_INFO_W)
                     painter.setPen(QPen(_port_color(), 1.5))
                     painter.setBrush(QBrush(_port_color()))
-                    painter.drawEllipse(QPointF(port_x, NODE_H / 2), PORT_R, PORT_R)
+                    painter.drawEllipse(QPointF(float(NODE_INFO_W), NODE_H / 2), PORT_R, PORT_R)
 
             # Structural-role badges: small circles overlapping the top-left corner of the node
             badges: list[tuple[QColor, QSvgRenderer | str]] = []
@@ -641,8 +578,6 @@ class NodeItem(QGraphicsItem):
                 badges.append((_badge_initial(), _play_badge_renderer()))
             if self._is_terminal:
                 badges.append((_badge_terminal(), _stop_badge_renderer()))
-            if self._flipped:
-                badges.append((_badge_flipped(), _play_reversed_badge_renderer()))
             badge_x0 = nr.x()
             for i, (color, icon) in enumerate(badges):
                 cx = badge_x0 + float(i * (_BADGE_R * 2 + _BADGE_GAP))
@@ -660,9 +595,8 @@ class NodeItem(QGraphicsItem):
                     painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
                 painter.restore()
 
-            # Input port dot (opposite side from outputs)
+            # Input port dot at the left edge
             if self._interactive:
-                in_x = float(NODE_INFO_W) if self._flipped else 0.0
                 painter.setPen(QPen(_port_color(), 1.5))
                 painter.setBrush(QBrush(_port_color()))
-                painter.drawEllipse(QPointF(in_x, NODE_H / 2), PORT_R, PORT_R)
+                painter.drawEllipse(QPointF(0.0, NODE_H / 2), PORT_R, PORT_R)
