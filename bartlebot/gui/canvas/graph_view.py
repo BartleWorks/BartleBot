@@ -29,7 +29,7 @@ class GraphView(QGraphicsView):
     def __init__(self, scene: QGraphicsScene, interactive: bool = False, parent=None):
         super().__init__(scene, parent)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self._user_zoomed = False
         self._pan_origin: QPointF | None = None
@@ -122,7 +122,12 @@ class GraphView(QGraphicsView):
     def wheelEvent(self, event: QWheelEvent) -> None:
         self._user_zoomed = True
         factor = self._ZOOM_FACTOR if event.angleDelta().y() > 0 else 1 / self._ZOOM_FACTOR
+        cursor_pos = event.position().toPoint()
+        scene_pos = self.mapToScene(cursor_pos)
         self.scale(factor, factor)
+        delta = self.mapFromScene(scene_pos) - cursor_pos
+        self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + delta.x())
+        self.verticalScrollBar().setValue(self.verticalScrollBar().value() + delta.y())
         self.view_changed.emit()
 
     def resizeEvent(self, event) -> None:
