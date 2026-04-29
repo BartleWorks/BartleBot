@@ -121,6 +121,10 @@ class EdgeItem(QGraphicsPathItem):
         self._bridge_y_override = None  # only applies to the initial build
         self._channel_x_override = None  # only applies to the initial build
 
+    @property
+    def when(self) -> str | None:
+        return self._when
+
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
         from PyQt6.QtGui import QPainterPathStroker

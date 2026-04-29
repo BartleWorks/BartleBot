@@ -573,6 +573,11 @@ class BotCanvas(QWidget):
         self._fit_btn = _icon_btn("fit", "Fit to Canvas (Ctrl+0)")
         self._fit_btn.clicked.connect(self._view.fit_scene)
 
+        self._failure_edges_btn = _icon_btn("failure_edges", "Toggle Failure/False Edges")
+        self._failure_edges_btn.setCheckable(True)
+        self._failure_edges_btn.setChecked(True)
+        self._failure_edges_btn.toggled.connect(self._on_failure_edges_toggled)
+
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
 
@@ -592,6 +597,7 @@ class BotCanvas(QWidget):
             self.stop_button: "stop",
             self._edit_btn: "pencil",
             self._fit_btn: "fit",
+            self._failure_edges_btn: "failure_edges",
             self._add_state_btn: "plus",
             self._layout_btn: "layout",
             self._done_btn: "checkmark",
@@ -617,14 +623,14 @@ class BotCanvas(QWidget):
         self._center_stack.addWidget(run_center)  # _TB_RUN  = 0
         self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
 
-        # ── Left section (68 px fixed: fit button) ─
+        # ── Left section (68 px fixed: fit + failure-edge toggle) ─
         left_section = QWidget()
         left_section.setFixedWidth(68)
         left_row = QHBoxLayout(left_section)
         left_row.setContentsMargins(0, 0, 0, 0)
-        left_row.setSpacing(0)
+        left_row.setSpacing(4)
         left_row.addWidget(self._fit_btn)
-        left_row.addStretch(1)
+        left_row.addWidget(self._failure_edges_btn)
 
         # ── Right mode-toggle zone (68 px fixed) ─────────────────────
         # Run mode page: single icon right-aligned inside 68 px
@@ -689,6 +695,7 @@ class BotCanvas(QWidget):
         # ── Minimap overlay — bottom-right corner of the graph view ──────
         self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
         self._minimap.setVisible(SettingsManager.instance().get("canvas", "minimap_visible", default=True))
+        self._failure_edges_btn.setChecked(SettingsManager.instance().get("canvas", "show_failure_edges", default=True))
 
         # ── Main layout: toolbar + validation banner + graph view ─────
         outer = QVBoxLayout(self)
@@ -732,6 +739,12 @@ class BotCanvas(QWidget):
         search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
         search_shortcut.activated.connect(self._show_search_bar)
 
+        failure_edges_shortcut = QShortcut(QKeySequence("F"), self._view)
+        failure_edges_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        failure_edges_shortcut.activated.connect(
+            lambda: self._failure_edges_btn.setChecked(not self._failure_edges_btn.isChecked())
+        )
+
         # ── Reposition banner overlay when the view or its viewport resizes ─
         self._view.installEventFilter(self)
         self._view.viewport().installEventFilter(self)
@@ -765,6 +778,8 @@ class BotCanvas(QWidget):
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         sm = SettingsManager.instance()
         self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
+        show_failure = sm.get("canvas", "show_failure_edges", default=True)
+        self._failure_edges_btn.setChecked(show_failure)
         self._exit_focus_mode()
         self._close_search()
         self._tab_idx = 0
@@ -781,6 +796,7 @@ class BotCanvas(QWidget):
             auto_layout(config)
         self._scene.setup(config)
         self._scene.set_snap_enabled(SettingsManager.instance().get("canvas", "snap_to_grid", default=False))
+        self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._param_panel.show_idle()
         self._view.fit_scene()
         self._minimap.fit_to_scene()
@@ -898,7 +914,19 @@ class BotCanvas(QWidget):
         sm = SettingsManager.instance()
         self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
         self._scene.set_snap_enabled(sm.get("canvas", "snap_to_grid", default=False))
+        show_failure = sm.get("canvas", "show_failure_edges", default=True)
+        self._failure_edges_btn.setChecked(show_failure)
+        self._apply_failure_edge_visibility(show_failure)
         self._reposition_banner()
+
+    def _apply_failure_edge_visibility(self, visible: bool) -> None:
+        for item in self._scene.items():
+            if isinstance(item, EdgeItem) and item.when in ("FAILURE", "FALSE"):
+                item.setVisible(visible)
+
+    def _on_failure_edges_toggled(self, checked: bool) -> None:
+        SettingsManager.instance().set("canvas", "show_failure_edges", value=checked)
+        self._apply_failure_edge_visibility(checked)
 
     def _active_state_label(self) -> str:
         """Return the display label for the current active state, falling back to its id."""
@@ -1051,6 +1079,7 @@ class BotCanvas(QWidget):
         auto_layout(self._config)
         self._scene.setup(self._config)
         self._scene.set_snap_enabled(SettingsManager.instance().get("canvas", "snap_to_grid", default=False))
+        self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
         self.config_changed.emit()
@@ -1281,6 +1310,7 @@ class BotCanvas(QWidget):
     def _restore(self, config: BotConfig) -> None:
         self._config = config
         self._scene.setup(config)
+        self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._param_panel.show_idle()
         _inject_required_options(config)
         self._on_scene_changed()
