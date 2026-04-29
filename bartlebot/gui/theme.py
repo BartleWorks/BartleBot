@@ -115,6 +115,7 @@ class _Theme:
     # ------------------------------------------------------------------
     chip_success_bg: str = "#2e7d32"  # SUCCESS / TRUE — dark green, readable against white text
     chip_failure_bg: str = "#b71c1c"  # FAILURE / FALSE — dark red, readable against white text
+    chip_failure_loop_bg: str = "#7f0000"  # FAILURE / FALSE self-loop — darker red for retry-in-place edges
     chip_neutral_bg: str = "#546e7a"  # any other return value — blue-grey
     chip_text: str = "#ffffff"  # label text on all chip variants
 
@@ -408,6 +409,7 @@ DARK = _Theme(
     # Node-browser chips (slightly lighter on dark bg for contrast)
     chip_success_bg="#388e3c",
     chip_failure_bg="#c62828",
+    chip_failure_loop_bg="#610000",
     chip_neutral_bg="#607d8b",
     chip_text="#ffffff",
     # Search
@@ -534,6 +536,7 @@ _COLOR_TOKENS: list[str] = [
         # node-browser chip colors — derived from semantic success/failure, not independently editable
         "chip_success_bg",
         "chip_failure_bg",
+        "chip_failure_loop_bg",
         "chip_neutral_bg",
         "chip_text",
     }
