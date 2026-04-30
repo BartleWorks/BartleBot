@@ -655,24 +655,42 @@ class EditScene(QGraphicsScene):
             act_help = QAction("Node Help", menu)
             act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
             menu.addAction(act_help)
+            # Determine target nodes: all selected if the clicked node is part of a multi-selection
+            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+            if len(selected_nodes) >= 2 and item in selected_nodes:
+                target_ids = [n.state_id for n in selected_nodes]
+            else:
+                target_ids = [sid]
+            is_multi = len(target_ids) > 1
             # Region membership actions
             if self._config and self._config.regions:
                 menu.addSeparator()
                 for region in self._config.regions:
-                    if sid not in region.members:
-                        rid = region.id
-                        rlabel = region.label
-                        act_add = QAction(f"Add to Region: {rlabel}", menu)
-                        act_add.triggered.connect(lambda _=None, s=sid, r=rid: self._add_to_region(s, r))
+                    not_members = [i for i in target_ids if i not in region.members]
+                    in_members = [i for i in target_ids if i in region.members]
+                    rid = region.id
+                    rlabel = region.label
+                    if not_members:
+                        label = (
+                            f"Add {len(not_members)} nodes to Region: {rlabel}"
+                            if is_multi
+                            else f"Add to Region: {rlabel}"
+                        )
+                        act_add = QAction(label, menu)
+                        act_add.triggered.connect(lambda _=None, ids=not_members, r=rid: self._add_to_region(ids, r))
                         menu.addAction(act_add)
-                    else:
-                        rid = region.id
-                        rlabel = region.label
-                        act_rem = QAction(f"Remove from Region: {rlabel}", menu)
-                        act_rem.triggered.connect(lambda _=None, s=sid, r=rid: self._remove_from_region(s, r))
+                    if in_members:
+                        label = (
+                            f"Remove {len(in_members)} nodes from Region: {rlabel}"
+                            if is_multi
+                            else f"Remove from Region: {rlabel}"
+                        )
+                        act_rem = QAction(label, menu)
+                        act_rem.triggered.connect(
+                            lambda _=None, ids=in_members, r=rid: self._remove_from_region(ids, r)
+                        )
                         menu.addAction(act_rem)
             # Create region from multi-selection
-            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
             if len(selected_nodes) >= 2:
                 menu.addSeparator()
                 n = len(selected_nodes)
@@ -1272,38 +1290,49 @@ class EditScene(QGraphicsScene):
             ri.set_color(region.color)
         self.graph_changed.emit()
 
-    def _add_to_region(self, state_id: str, region_id: str) -> None:
+    def _add_to_region(self, state_ids: list[str], region_id: str) -> None:
         if self._config is None:
             return
         region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None or state_id in region.members:
+        if region is None:
+            return
+        to_add = [sid for sid in state_ids if sid not in region.members]
+        if not to_add:
             return
         self._pre_edit("Edit Region")
-        region.members.append(state_id)
+        for sid in to_add:
+            region.members.append(sid)
         ri = self._region_items.get(region_id)
         if ri is not None:
-            ri._member_ids.append(state_id)
+            for sid in to_add:
+                ri._member_ids.append(sid)
             ri._recompute_rect()
         self.graph_changed.emit()
 
-    def _remove_from_region(self, state_id: str, region_id: str) -> None:
+    def _remove_from_region(self, state_ids: list[str], region_id: str) -> None:
         if self._config is None:
             return
         region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None or state_id not in region.members:
+        if region is None:
             return
+        to_remove = [sid for sid in state_ids if sid in region.members]
+        if not to_remove:
+            return
+        remaining = [m for m in region.members if m not in to_remove]
         self._pre_edit("Edit Region")
-        region.members.remove(state_id)
-        if len(region.members) < 2:
+        if len(remaining) < 2:
             self._in_structural_edit = True
             self._delete_region(region_id)
             self._in_structural_edit = False
             self.graph_changed.emit()
             return
+        for sid in to_remove:
+            region.members.remove(sid)
         ri = self._region_items.get(region_id)
         if ri is not None:
-            if state_id in ri._member_ids:
-                ri._member_ids.remove(state_id)
+            for sid in to_remove:
+                if sid in ri._member_ids:
+                    ri._member_ids.remove(sid)
             ri._recompute_rect()
         self.graph_changed.emit()
 
