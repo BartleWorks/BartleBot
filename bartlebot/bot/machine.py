@@ -61,6 +61,7 @@ class BotMachine:
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
         self._ambient_combat_lock = asyncio.Lock()
+        self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
         self.last_result: str | None = None
         self._no_match_count: int = 0
         self._max_consecutive_same_state = max_consecutive_same_state
@@ -468,55 +469,67 @@ class BotMachine:
             if not battling:
                 continue
 
-            async with self._ambient_combat_lock:
-                # Re-check state after acquiring lock — FSM may have entered handle_combat
-                # between the check above and here.
-                try:
-                    if self._state_map.get(self.state, {}).get("node_type") == "handle_combat":
-                        continue
-                except AttributeError:
-                    continue
+            was_running = self._resume_event.is_set()
+            if was_running:
+                self._combat_auto_paused = True
+                self.pause()
+                self.log("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
 
-                self.log(
-                    f"Ambient combat detected on {len(battling)} client(s) — handling",
-                    logging.WARNING,
-                )
-
-                combat_dsl, dsl_source = _resolve_combat_dsl(self, {}, use_bot_default=True)
-                if not combat_dsl:
-                    self.log("Ambient combat: no combat DSL available, skipping", logging.WARNING)
-                    continue
-
-                self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
-
-                chat_before_raw = await asyncio.gather(
-                    *[snapshot_chat(c) for c in battling],
-                    return_exceptions=True,
-                )
-                chat_before = [s if isinstance(s, str) else "" for s in chat_before_raw]
-
-                per_client_dsl = _split_combat_config(combat_dsl, len(battling))
-                results = await asyncio.gather(
-                    *[_run_combat(c, dsl) for c, dsl in zip(battling, per_client_dsl)],
-                    return_exceptions=True,
-                )
-                for i, r in enumerate(results):
-                    if isinstance(r, Exception):
-                        self.log(f"Ambient combat: error on client {i}: {r}", logging.DEBUG)
-
-                self.log("Ambient combat: SprintyCombat finished", logging.DEBUG)
-
-                for i, (client, before) in enumerate(zip(battling, chat_before)):
+            try:
+                async with self._ambient_combat_lock:
+                    # Re-check state after acquiring lock — FSM may have entered handle_combat
+                    # between the check above and here.
                     try:
-                        after = await snapshot_chat(client)
-                        for item_name in extract_new_drops(before, after):
-                            self.on_drop(item_name, 1, self.clients.index(client))
-                            self.log(f"Ambient combat drop: {item_name}")
-                    except Exception as exc:
-                        self.log(
-                            f"Ambient combat: drop detection error on client {i}: {exc}",
-                            logging.DEBUG,
-                        )
+                        if self._state_map.get(self.state, {}).get("node_type") == "handle_combat":
+                            continue
+                    except AttributeError:
+                        continue
+
+                    self.log(
+                        f"Ambient combat detected on {len(battling)} client(s) — handling",
+                        logging.WARNING,
+                    )
+
+                    combat_dsl, dsl_source = _resolve_combat_dsl(self, {}, use_bot_default=True)
+                    if not combat_dsl:
+                        self.log("Ambient combat: no combat DSL available, skipping", logging.WARNING)
+                        continue
+
+                    self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
+
+                    chat_before_raw = await asyncio.gather(
+                        *[snapshot_chat(c) for c in battling],
+                        return_exceptions=True,
+                    )
+                    chat_before = [s if isinstance(s, str) else "" for s in chat_before_raw]
+
+                    per_client_dsl = _split_combat_config(combat_dsl, len(battling))
+                    results = await asyncio.gather(
+                        *[_run_combat(c, dsl) for c, dsl in zip(battling, per_client_dsl)],
+                        return_exceptions=True,
+                    )
+                    for i, r in enumerate(results):
+                        if isinstance(r, Exception):
+                            self.log(f"Ambient combat: error on client {i}: {r}", logging.DEBUG)
+
+                    self.log("Ambient combat: SprintyCombat finished", logging.DEBUG)
+
+                    for i, (client, before) in enumerate(zip(battling, chat_before)):
+                        try:
+                            after = await snapshot_chat(client)
+                            for item_name in extract_new_drops(before, after):
+                                self.on_drop(item_name, 1, self.clients.index(client))
+                                self.log(f"Ambient combat drop: {item_name}")
+                        except Exception as exc:
+                            self.log(
+                                f"Ambient combat: drop detection error on client {i}: {exc}",
+                                logging.DEBUG,
+                            )
+            finally:
+                if self._combat_auto_paused:
+                    self._combat_auto_paused = False
+                    self.resume()
+                    self.log("Ambient combat: FSM resumed", logging.INFO)
 
     def stop(self) -> None:
         """Signal the FSM to stop.
