@@ -60,7 +60,7 @@ async def test_success_immediate_prompt():
     """Entity found, prompt appears immediately — X is pressed and SUCCESS returned."""
     client = FakeClient()
     client.get_base_entities_with_vague_name.return_value = [_entity()]
-    client.is_in_npc_range.return_value = True
+    client.is_in_npc_range.side_effect = [True, False]  # True: in range (prompted); False: gone (dismissed)
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
@@ -85,7 +85,7 @@ async def test_success_prompt_appears_after_polling():
     async def npc_range():
         nonlocal call_count
         call_count += 1
-        return call_count >= 3  # first two checks return False; third returns True
+        return call_count == 3  # False for calls 1-2 (polling); True for call 3 (prompted); False after (dismissed)
 
     client.is_in_npc_range.side_effect = npc_range
 
@@ -110,7 +110,7 @@ async def test_success_multiple_entities():
         _entity(_XYZ_B),
         _entity(XYZ(0.0, 0.0, 10.0)),
     ]
-    client.is_in_npc_range.return_value = True
+    client.is_in_npc_range.side_effect = [True, False, True, False, True, False]  # in/out pair per entity
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
@@ -175,8 +175,8 @@ async def test_multiple_clients_independent():
     c2 = FakeClient()
     c1.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_A)]
     c2.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_B)]
-    c1.is_in_npc_range.return_value = True
-    c2.is_in_npc_range.return_value = True
+    c1.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
+    c2.is_in_npc_range.side_effect = [True, False]
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
@@ -198,7 +198,7 @@ async def test_multiple_clients_one_misses():
     c2 = FakeClient()
     c1.get_base_entities_with_vague_name.return_value = [_entity()]
     c2.get_base_entities_with_vague_name.return_value = []
-    c1.is_in_npc_range.return_value = True
+    c1.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
@@ -218,7 +218,7 @@ async def test_drop_tracking():
     """Items appearing in chat after pressing X are reported via machine.on_drop()."""
     client = FakeClient()
     client.get_base_entities_with_vague_name.return_value = [_entity()]
-    client.is_in_npc_range.return_value = True
+    client.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
     machine = FakeMachine()
 
     with (
