@@ -208,22 +208,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 150.0,
-        "y": 21.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Pyramid of the Sun",
       "position": {
-        "x": 450.0,
-        "y": 21.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -239,16 +238,15 @@
           "z": 496.29
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_zone",
       "label": "Enter Royal Hall",
       "position": {
-        "x": 750.0,
-        "y": 21.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
@@ -264,16 +262,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 1050.0,
-        "y": 21.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -283,16 +280,15 @@
           "z": 2.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1350.0,
-        "y": 21.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -301,16 +297,15 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_dungeon",
       "label": "Enter Biti's Chamber",
       "position": {
-        "x": 2167.620791366906,
-        "y": 19.293525179856104
+        "x": 2640,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -326,16 +321,15 @@
           "z": 2.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "handle_combat",
       "label": "Defeat Biti Nirini",
       "position": {
-        "x": 2467.620791366907,
-        "y": 19.293525179856104
+        "x": 3080,
+        "y": -90.0
       },
       "params": {
         "enemy": "KrokPharaoh-FireHair-KTBoss-L03",
@@ -343,16 +337,15 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1906.9569064748202,
-        "y": 151.83575539568344
+        "x": 3080,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -360,16 +353,15 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "enter_zone",
       "label": "Exit Biti's Chamber",
       "position": {
-        "x": 3017.8439846513766,
-        "y": 20.651497878207266
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/Interiors/KT_Hall_T1",
@@ -385,16 +377,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 1606.9569064748202,
-        "y": 151.83575539568344
+        "x": 2640,
+        "y": 90.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -404,30 +395,28 @@
           "z": 2.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 152.12250452362682,
-        "y": 401.9398199533157
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
       "label": "Enter Tomb of Storms",
       "position": {
-        "x": 1652.1225045236265,
-        "y": 401.9398199533157
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -443,16 +432,15 @@
           "z": -117.74
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "interact",
       "label": "Activate first pillar",
       "position": {
-        "x": 452.12250452362684,
-        "y": 401.9398199533157
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -470,16 +458,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "interact",
       "label": "Activate second pillar",
       "position": {
-        "x": 752.1225045236267,
-        "y": 401.9398199533157
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -497,16 +484,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "interact",
       "label": "Activate third pillar",
       "position": {
-        "x": 1052.1225045236267,
-        "y": 401.9398199533157
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -524,30 +510,28 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
       "node_type": "sleep",
       "label": "Wait for portal to open",
       "position": {
-        "x": 1352.1225045236265,
-        "y": 380.9398199533157
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "duration": 15.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
       "node_type": "enter_zone",
       "label": "Enter Well of Spirits",
       "position": {
-        "x": 1952.1225045236265,
-        "y": 401.9398199533157
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub_Crypt",
@@ -563,16 +547,15 @@
           "z": -373.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Storms",
       "position": {
-        "x": 2252.122504523626,
-        "y": 401.9398199533157
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
@@ -588,16 +571,15 @@
           "z": -501.58
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_19",
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2568.1915543266873,
-        "y": 400.9305931180072
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -612,40 +594,37 @@
           "z": 1.46
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_20",
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 3304.2180009679078,
-        "y": 19.538187636073154
+        "x": 4400,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_21",
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": -183.5046794468251,
-        "y": 22.17450905796848
+        "x": 0,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_22",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2740.7039453958437,
-        "y": 20.376740168816667
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -654,8 +633,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

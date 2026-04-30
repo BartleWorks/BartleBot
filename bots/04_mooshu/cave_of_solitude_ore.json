@@ -26,52 +26,49 @@
       "node_type": "collect_reagent",
       "label": "Collect reagents",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave",
         "spawns": "{\"x\": 24722.86, \"y\": 23939.32, \"z\": -2148.26}\n{\"x\": 26785.13, \"y\": 24321.14, \"z\": -2148.26}\n{\"x\": 31867.56, \"y\": 28143.3, \"z\": -1980.03}\n{\"x\": 33929.93, \"y\": 26827.05, \"z\": -1853.56}\n{\"x\": 29335.54, \"y\": 25782.7, \"z\": -1980.03}"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Jade Palace",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter Water Dojo",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -87,16 +84,15 @@
           "z": 31.44
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "enter_zone",
       "label": "Enter Shoshun Village",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/Interiors/MS_WaterDojot1_Common",
@@ -112,16 +108,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Enter Cave of Solitude",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
@@ -137,8 +132,7 @@
           "z": 480.02
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

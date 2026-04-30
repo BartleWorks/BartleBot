@@ -32,52 +32,49 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "entity_name": "Ore"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 4350.0,
-        "y": 7.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Northguard",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_MainHub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter Mirkholm Keep",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Grizzleheim/GH_MainHub",
@@ -93,16 +90,15 @@
           "z": 575.09
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to first spawn area",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -112,16 +108,15 @@
           "z": -470.05
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second spawn area",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -131,31 +126,29 @@
           "z": -700.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "entity_name": "Ore"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to third spawn area",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -165,31 +158,29 @@
           "z": -670.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "entity_name": "Ore"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fourth spawn area",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -199,31 +190,29 @@
           "z": -900.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "entity_name": "Ore"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to fifth spawn area",
       "position": {
-        "x": 3450.0,
-        "y": 7.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -233,31 +222,29 @@
           "z": -123.09
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3750.0,
-        "y": 7.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "entity_name": "Ore"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to safety",
       "position": {
-        "x": 4050.0,
-        "y": 7.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
@@ -267,16 +254,15 @@
           "z": -123.09
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -285,8 +271,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

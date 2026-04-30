@@ -128,22 +128,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Golem Court",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -159,16 +158,15 @@
           "z": 229.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -176,16 +174,15 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone_via_object",
       "label": "Enter the Drains",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -201,16 +198,15 @@
           "z": 0.1
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "enter_dungeon",
       "label": "Enter Abandoned House",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
@@ -226,16 +222,15 @@
           "z": 4.74
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "teleport_to_coordinates",
       "label": "Trigger first dialogue",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -245,28 +240,26 @@
           "z": 539.5
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "handle_combat",
       "label": "Defeat first set of mobs",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "teleport_to_coordinates",
       "label": "Trigger second dialogue",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -276,28 +269,26 @@
           "z": 539.5
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "handle_combat",
       "label": "Defeat second set of mobs",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "interact",
       "label": "Talk to Belgrim SparklePants",
       "position": {
-        "x": 3750.0,
-        "y": 7.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -315,16 +306,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "enter_zone",
       "label": "Enter Abandoned Backyard",
       "position": {
-        "x": 4050.0,
-        "y": 7.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
@@ -340,16 +330,15 @@
           "z": 0.4
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "handle_combat",
       "label": "Defeat King Detritus",
       "position": {
-        "x": 4950.0,
-        "y": 7.0
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "enemy": "CC_Trash_Boss_A_01",
@@ -357,16 +346,15 @@
         "combat_config": "### p1\n{1} feint @ boss\n{2} any<blade>[sharp] @ self\n{3} any<aura & out_damage>\n{4} lord[epic]\n{5} tempest\npass\n\n### p2\n{1} feint @ boss\n{2} any<blade>[sharp] @ ally(0)\n{3} any<blade> @ ally(0)\n{4} purge @ ally(0)\n{5} tempest[epic]\npass",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "teleport_to_coordinates",
       "label": "Trigger boss dialogue",
       "position": {
-        "x": 4350.0,
-        "y": 7.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubBackyard",
@@ -376,52 +364,48 @@
           "z": 1.8
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "wait_for_dialogue",
       "label": "Dismiss dialogue",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
       "node_type": "wait_for_dialogue",
       "label": "Wait for boss dialogue",
       "position": {
-        "x": 4650.0,
-        "y": 7.0
+        "x": 6600,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 5250.0,
-        "y": 7.0
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "keep_list": [
@@ -432,22 +416,20 @@
         "sell_socket_wrenches": false,
         "sell_skeleton_keys": false
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
       "node_type": "sleep",
       "label": "Give Belgrim a moment to get ready",
       "position": {
-        "x": 3450.0,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
         "duration": 3.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

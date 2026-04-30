@@ -215,17 +215,21 @@ class BotInfoSection(SidebarSection):
         self._authors_lbl.setText(text or _PLACEHOLDER)
         self.metadata_changed.emit()
 
-    def _on_initial_changed(self, text: str) -> None:
-        if self._suppress or self._config is None or not text:
-            return
-        self._config.initial = text
-        self.metadata_changed.emit()
-
-    def _on_recovery_changed(self, text: str) -> None:
+    def _on_initial_changed(self, _text: str) -> None:
         if self._suppress or self._config is None:
             return
-        self._config.recovery_state = text if text and text != _PLACEHOLDER else None
-        self._recovery_lbl.setText(text or _PLACEHOLDER)
+        state_id = self._initial_combo.currentData()
+        if not state_id:
+            return
+        self._config.initial = state_id
+        self.metadata_changed.emit()
+
+    def _on_recovery_changed(self, _text: str) -> None:
+        if self._suppress or self._config is None:
+            return
+        state_id = self._recovery_combo.currentData()
+        self._config.recovery_state = state_id or None
+        self._recovery_lbl.setText(_text or _PLACEHOLDER)
         self.metadata_changed.emit()
 
     # ------------------------------------------------------------------
@@ -241,23 +245,33 @@ class BotInfoSection(SidebarSection):
     def _populate_initial_combo(self, states: list, current_initial: str) -> None:
         self._suppress = True
         self._initial_combo.clear()
+        current_label = _PLACEHOLDER
         for state in states:
-            self._initial_combo.addItem(state.id)
-        idx = self._initial_combo.findText(current_initial)
+            display = state.label or state.id
+            self._initial_combo.addItem(display, state.id)
+            if state.id == current_initial:
+                current_label = display
+        idx = self._initial_combo.findData(current_initial)
         if idx >= 0:
             self._initial_combo.setCurrentIndex(idx)
-        self._initial_lbl.setText(current_initial or _PLACEHOLDER)
+        self._initial_lbl.setText(current_label)
         self._suppress = False
 
     def _populate_recovery_combo(self, states: list, current_recovery: str | None) -> None:
         self._suppress = True
         self._recovery_combo.clear()
-        self._recovery_combo.addItem(_PLACEHOLDER)  # "(none)" option
+        self._recovery_combo.addItem(_PLACEHOLDER)  # "(none)" option, no user data
+        current_label = _PLACEHOLDER
         for state in states:
-            self._recovery_combo.addItem(state.id)
-        target = current_recovery or _PLACEHOLDER
-        idx = self._recovery_combo.findText(target)
-        if idx >= 0:
-            self._recovery_combo.setCurrentIndex(idx)
-        self._recovery_lbl.setText(current_recovery or _PLACEHOLDER)
+            display = state.label or state.id
+            self._recovery_combo.addItem(display, state.id)
+            if state.id == current_recovery:
+                current_label = display
+        if current_recovery is None:
+            self._recovery_combo.setCurrentIndex(0)
+        else:
+            idx = self._recovery_combo.findData(current_recovery)
+            if idx >= 0:
+                self._recovery_combo.setCurrentIndex(idx)
+        self._recovery_lbl.setText(current_label)
         self._suppress = False

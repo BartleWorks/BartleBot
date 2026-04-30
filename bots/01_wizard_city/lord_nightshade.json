@@ -319,22 +319,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Commons",
       "position": {
-        "x": 150.0,
-        "y": 14.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
       "position": {
-        "x": 750.0,
-        "y": 14.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -350,16 +349,15 @@
           "z": -27.99
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1050.0,
-        "y": 14.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -375,16 +373,15 @@
           "z": -29.36
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1350.0,
-        "y": 14.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -400,16 +397,15 @@
           "z": -1397.84
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "enter_zone",
       "label": "Enter Haunted Cave",
       "position": {
-        "x": 1650.0,
-        "y": 14.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
@@ -425,16 +421,15 @@
           "z": 1.23
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_dungeon",
       "label": "Enter Stormdrain Tower",
       "position": {
-        "x": 1950.0,
-        "y": 14.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_HauntedCave",
@@ -450,16 +445,15 @@
           "z": -133.66
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "handle_combat",
       "label": "Defeat Lord Nightshade",
       "position": {
-        "x": 2250.0,
-        "y": 14.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "enemy": "Wraith-WCBoss-L05",
@@ -467,16 +461,15 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "enter_zone",
       "label": "Exit Stormdrain Tower",
       "position": {
-        "x": 2550.0,
-        "y": 14.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
@@ -492,16 +485,15 @@
           "z": 4.5
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "teleport_to_coordinates",
       "label": "Go to wisp spawns",
       "position": {
-        "x": 2850.0,
-        "y": 14.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_HauntedCave",
@@ -511,28 +503,26 @@
           "z": 30.01
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3150.0,
-        "y": 14.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 14.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -540,8 +530,7 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

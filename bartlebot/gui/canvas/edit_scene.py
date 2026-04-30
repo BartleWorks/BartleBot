@@ -9,9 +9,10 @@ also exported here so BotCanvas can use them without circular imports.
 """
 
 import math
+from collections import defaultdict
 
-from PyQt6.QtCore import QPointF, Qt, pyqtSignal
-from PyQt6.QtGui import QAction, QKeyEvent, QMouseEvent, QPen
+from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QAction, QBrush, QKeyEvent, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
@@ -22,9 +23,15 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
-from bartlebot.gui.canvas.edge_item import EdgeItem
+from bartlebot.gui.canvas.edge_item import (
+    EdgeItem,
+    bridge_y_above,
+    bridge_y_below,
+    channel_x_after_src,
+    is_above_routed,
+)
 from bartlebot.gui.canvas.graph_view import GraphView
-from bartlebot.gui.canvas.node_item import NODE_H, NODE_W, NodeItem
+from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -34,7 +41,7 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPE
 # ---------------------------------------------------------------------------
 
 _PORT_HIT_RADIUS = 16
-_AUTO_SPACING = 260
+_AUTO_SPACING = GRID_W  # auto-layout column stride matches grid width
 _PASTE_OFFSET = 40  # px shift per successive paste of the same clipboard
 
 _SCROLL_MARGIN = 40  # px from viewport edge at which auto-scroll activates during drag
@@ -221,11 +228,46 @@ class EditScene(QGraphicsScene):
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
+        self._drag_snap_edge: EdgeItem | None = None
         self._auto_scrolling: bool = False
+        self._node_drag_scroll_pos: QPointF | None = None
+        self._scroll_timer = QTimer(self)
+        self._scroll_timer.setInterval(16)
+        self._scroll_timer.timeout.connect(self._on_scroll_timer)
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
         self._paste_count: int = 0
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
+        self._snap_enabled: bool = False
+
+    # ------------------------------------------------------------------
+    # Grid / snap
+    # ------------------------------------------------------------------
+
+    def set_snap_enabled(self, enabled: bool) -> None:
+        """Toggle snap-to-grid for all nodes and repaint the background grid."""
+        self._snap_enabled = enabled
+        for node in self._node_items.values():
+            node.set_snap_enabled(enabled)
+        self.update()
+
+    def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
+        super().drawBackground(painter, rect)
+        if not self._snap_enabled:
+            return
+        # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
+        dot_r = 2.0
+        x_off = 0.0
+        y_off = 0.0
+        x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
+        while x <= rect.right():
+            y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off
+            while y <= rect.bottom():
+                painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
+                y += GRID_H
+            x += GRID_W
 
     # ------------------------------------------------------------------
     # Public API
@@ -245,6 +287,7 @@ class EditScene(QGraphicsScene):
         self._drag_src = None
         self._drag_when = None
         self._temp_edge = None
+        self._drag_snap_edge = None
         self._config = None
 
     def _pre_edit(self, desc: str) -> None:
@@ -263,7 +306,7 @@ class EditScene(QGraphicsScene):
         for i, state in enumerate(states):
             pos = state.position
             if pos and isinstance(pos, dict):
-                x = pos.get("x", 0) - NODE_W / 2
+                x = pos.get("x", 0)
                 y = pos.get("y", 0) - NODE_H / 2
             else:
                 total_w = (len(states) - 1) * _AUTO_SPACING
@@ -283,16 +326,94 @@ class EditScene(QGraphicsScene):
                 is_error=is_error,
                 is_warning=is_warning,
                 node_type=state.node_type,
-                flipped=getattr(state, "flipped", False),
             )
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
+            node.set_snap_enabled(self._snap_enabled)
             node.setPos(x, y)
             self.addItem(node)
             self._node_items[state.id] = node
 
         non_loop = {(t.source, t.dest) for t in transitions if t.source != t.dest}
         bidi = {(s, d) for (s, d) in non_loop if (d, s) in non_loop}
+
+        # Pre-compute shared bridge_y for same-destination backward-edge groups.
+        # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
+        # to a common corridor so they overlap cleanly instead of forming a spaghetti
+        # bundle of nearly-identical slightly-offset paths.
+        #
+        # Two separate corridors are computed:
+        #   below — all backward edges except topmost-port edges (FAILURE, FALSE, etc.)
+        #   above — topmost-port (index-0) backward edges on nodes with ≥2 returns
+        #           (SUCCESS, TRUE, etc.) — routed above the node row so they occupy a
+        #           separate vertical band and do not cross the failure-path edges below.
+        #
+        # Y-band outliers (source Y differs from destination Y by ≥ one node height)
+        # are excluded from corridor grouping and route independently.
+        # bridge_y_below / bridge_y_above / is_above_routed are imported from
+        # edge_item so the corridor geometry stays in one place.
+
+        # Collect unique (s, w, d) tuples from transitions (deduplicated).
+        unique_edges: list[tuple[str, str | None, str]] = []
+        _seen: set[tuple[str, str | None, str]] = set()
+        for t in transitions:
+            key = (t.source, t.when, t.dest)
+            if key not in _seen:
+                _seen.add(key)
+                unique_edges.append(key)
+
+        # Group by (when, y_row) so all backward edges in the same horizontal band
+        # with the same when-label share a corridor, regardless of destination.
+        # Using destination as the grouping key caused edges to unique destinations
+        # to route independently via a port-midpoint heuristic, producing a different
+        # bridge Y than the node-bounds formula used for multi-destination groups.
+        below_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
+        above_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
+        for s, w, d in unique_edges:
+            if s == d or s not in self._node_items or d not in self._node_items:
+                continue
+            sn, dn = self._node_items[s], self._node_items[d]
+            if dn.pos().x() >= sn.pos().x():
+                continue  # forward edge
+            if abs(sn.pos().y() - dn.pos().y()) >= sn._height:
+                continue  # Y-band outlier — routes independently
+            y_row = round(sn.pos().y() / GRID_H)
+            if is_above_routed(sn, w):
+                above_groups[(w, y_row)].append((s, w, d))
+            else:
+                below_groups[(w, y_row)].append((s, w, d))
+
+        bridge_y_map: dict[tuple[str, str | None, str], float] = {}
+        for group_edges in below_groups.values():
+            shared_y = max(bridge_y_below(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            for key in group_edges:
+                bridge_y_map[key] = shared_y
+        for group_edges in above_groups.values():
+            shared_y = min(bridge_y_above(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            for key in group_edges:
+                bridge_y_map[key] = shared_y
+
+        # Forward cross-row edges: compute shared vertical channel_x per (when, x_src_col) group,
+        # analogous to the backward-edge bridge_y_map above but rotated 90°.
+        fwd_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
+        for s, w, d in unique_edges:
+            if s == d or s not in self._node_items or d not in self._node_items:
+                continue
+            sn, dn = self._node_items[s], self._node_items[d]
+            src_pt = sn.port_out_for(w)
+            dst_pt = dn.port_in()
+            if dst_pt.x() <= src_pt.x():  # backward or same-column
+                continue
+            if abs(dn.scenePos().y() - sn.scenePos().y()) < GRID_H * 0.5:  # same row
+                continue
+            x_col = round(sn.scenePos().x() / GRID_W)
+            fwd_groups[(w, x_col)].append((s, w, d))
+
+        channel_x_map: dict[tuple[str, str | None, str], float] = {}
+        for group_edges in fwd_groups.values():
+            shared_x = max(channel_x_after_src(self._node_items[s]) for s, w, d in group_edges)
+            for key in group_edges:
+                channel_x_map[key] = shared_x
 
         drawn: set[tuple[str, str | None, str]] = set()
         for t in transitions:
@@ -309,7 +430,14 @@ class EditScene(QGraphicsScene):
             else:
                 is_bidi = (s, d) in bidi
                 offset = 22.0 if (is_bidi and s < d) else (-22.0 if is_bidi else 0.0)
-                edge = EdgeItem(sn, dn, offset=offset, when=w)
+                edge = EdgeItem(
+                    sn,
+                    dn,
+                    offset=offset,
+                    when=w,
+                    bridge_y_override=bridge_y_map.get(key),
+                    channel_x_override=channel_x_map.get(key),
+                )
             self.addItem(edge)
             sn.add_edge(edge)
             if dn is not sn:
@@ -388,12 +516,13 @@ class EditScene(QGraphicsScene):
         state = StateModel(
             id=state_id,
             node_type=node_type,
-            position={"x": pos.x() + NODE_W / 2, "y": pos.y() + NODE_H / 2},
+            position={"x": pos.x(), "y": pos.y() + NODE_H / 2},
             params=default_params,
         )
         self._config.states.append(state)
         returns = _node_returns(node_type)
         node = NodeItem(state_id, None, interactive=True, returns=returns, is_terminal=True, node_type=node_type)
+        node.set_snap_enabled(self._snap_enabled)
         node.setPos(pos)
         self.addItem(node)
         self._node_items[state_id] = node
@@ -426,7 +555,20 @@ class EditScene(QGraphicsScene):
         if self._drag_src is not None and self._temp_edge is not None:
             src_pt = self._drag_src.port_out_for(self._drag_when)
             cur = event.scenePos()
-            self._temp_edge.setLine(src_pt.x(), src_pt.y(), cur.x(), cur.y())
+
+            snap_edge = self._edge_near(cur)
+            if snap_edge is not None and snap_edge._src is self._drag_src and snap_edge._when == self._drag_when:
+                snap_edge = None
+            if snap_edge is not self._drag_snap_edge:
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(False)
+                self._drag_snap_edge = snap_edge
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(True)
+
+            end_pt = self._drag_snap_edge._dst.port_in() if self._drag_snap_edge else cur
+            self._temp_edge.setLine(src_pt.x(), src_pt.y(), end_pt.x(), end_pt.y())
+
             views = self.views()
             if views and not self._auto_scrolling:
                 self._auto_scrolling = True
@@ -434,17 +576,57 @@ class EditScene(QGraphicsScene):
                 self._auto_scrolling = False
             event.accept()
             return
+        if isinstance(self.mouseGrabberItem(), NodeItem):
+            self._node_drag_scroll_pos = event.scenePos()
+            if not self._scroll_timer.isActive():
+                self._scroll_timer.start()
         super().mouseMoveEvent(event)
 
+    def _on_scroll_timer(self) -> None:
+        if self._node_drag_scroll_pos is None:
+            self._scroll_timer.stop()
+            return
+        views = self.views()
+        if not views:
+            self._scroll_timer.stop()
+            return
+        view = views[0]
+        vp_pos = view.mapFromScene(self._node_drag_scroll_pos)
+        rect = view.viewport().rect()
+        in_margin = (
+            vp_pos.x() < _SCROLL_MARGIN
+            or vp_pos.x() > rect.width() - _SCROLL_MARGIN
+            or vp_pos.y() < _SCROLL_MARGIN
+            or vp_pos.y() > rect.height() - _SCROLL_MARGIN
+        )
+        if in_margin:
+            _auto_scroll_view(view, self._node_drag_scroll_pos)
+        else:
+            self._scroll_timer.stop()
+
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self._scroll_timer.stop()
+        self._node_drag_scroll_pos = None
         if self._drag_src is not None:
             if self._temp_edge:
                 self.removeItem(self._temp_edge)
                 self._temp_edge = None
             if event.button() == Qt.MouseButton.LeftButton:
-                dst = self._node_near_port_in(event.scenePos())
-                if dst is not None:
-                    self._create_transition(self._drag_src, dst, self._drag_when)
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(False)
+                snap = self._drag_snap_edge
+                self._drag_snap_edge = None
+
+                if snap is not None:
+                    self._create_transition(self._drag_src, snap._dst, self._drag_when)
+                else:
+                    dst = self._node_near_port_in(event.scenePos())
+                    if dst is not None:
+                        self._create_transition(self._drag_src, dst, self._drag_when)
+            else:
+                if self._drag_snap_edge is not None:
+                    self._drag_snap_edge.set_snap_target(False)
+                self._drag_snap_edge = None
             self._drag_src = None
             self._drag_when = None
             event.accept()
@@ -469,9 +651,6 @@ class EditScene(QGraphicsScene):
             return
         if ctrl and event.key() == Qt.Key.Key_V:
             self._paste()
-            return
-        if event.key() == Qt.Key.Key_F:
-            self._flip_selected_nodes()
             return
         super().keyPressEvent(event)
 
@@ -501,36 +680,49 @@ class EditScene(QGraphicsScene):
         )
         menu = QMenu()
         if isinstance(item, NodeItem):
+            sid = item.state_id
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
-            flip_label = "Unflip Node" if item._flipped else "Flip Node"
-            act_flip = QAction(flip_label, menu)
-            sid = item.state_id
-            act_flip.triggered.connect(lambda _=None, s=sid: self._flip_node(s))
-            menu.addAction(act_flip)
             act_help = QAction("Node Help", menu)
             act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
             menu.addAction(act_help)
+            # Determine target nodes: all selected if the clicked node is part of a multi-selection
+            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+            if len(selected_nodes) >= 2 and item in selected_nodes:
+                target_ids = [n.state_id for n in selected_nodes]
+            else:
+                target_ids = [sid]
+            is_multi = len(target_ids) > 1
             # Region membership actions
             if self._config and self._config.regions:
                 menu.addSeparator()
-                sid = item.state_id
                 for region in self._config.regions:
-                    if sid not in region.members:
-                        rid = region.id
-                        rlabel = region.label
-                        act_add = QAction(f"Add to Region: {rlabel}", menu)
-                        act_add.triggered.connect(lambda _=None, s=sid, r=rid: self._add_to_region(s, r))
+                    not_members = [i for i in target_ids if i not in region.members]
+                    in_members = [i for i in target_ids if i in region.members]
+                    rid = region.id
+                    rlabel = region.label
+                    if not_members:
+                        label = (
+                            f"Add {len(not_members)} nodes to Region: {rlabel}"
+                            if is_multi
+                            else f"Add to Region: {rlabel}"
+                        )
+                        act_add = QAction(label, menu)
+                        act_add.triggered.connect(lambda _=None, ids=not_members, r=rid: self._add_to_region(ids, r))
                         menu.addAction(act_add)
-                    else:
-                        rid = region.id
-                        rlabel = region.label
-                        act_rem = QAction(f"Remove from Region: {rlabel}", menu)
-                        act_rem.triggered.connect(lambda _=None, s=sid, r=rid: self._remove_from_region(s, r))
+                    if in_members:
+                        label = (
+                            f"Remove {len(in_members)} nodes from Region: {rlabel}"
+                            if is_multi
+                            else f"Remove from Region: {rlabel}"
+                        )
+                        act_rem = QAction(label, menu)
+                        act_rem.triggered.connect(
+                            lambda _=None, ids=in_members, r=rid: self._remove_from_region(ids, r)
+                        )
                         menu.addAction(act_rem)
             # Create region from multi-selection
-            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
             if len(selected_nodes) >= 2:
                 menu.addSeparator()
                 n = len(selected_nodes)
@@ -602,6 +794,13 @@ class EditScene(QGraphicsScene):
         for node in self._node_items.values():
             if _dist(pos, node.port_in()) <= _PORT_HIT_RADIUS:
                 return node
+        return None
+
+    def _edge_near(self, pos: QPointF) -> EdgeItem | None:
+        """Return the first EdgeItem whose hit-shape (12 px stroke) contains pos."""
+        for item in self.items(pos):
+            if isinstance(item, EdgeItem):
+                return item
         return None
 
     def _create_transition(self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None) -> None:
@@ -684,12 +883,12 @@ class EditScene(QGraphicsScene):
                 returns=returns,
                 is_terminal=True,
                 node_type=state.node_type,
-                flipped=state.flipped,
             )
+            node.set_snap_enabled(self._snap_enabled)
             if new_sd.get("position"):
                 node.setPos(
                     QPointF(
-                        new_sd["position"]["x"] - NODE_W / 2,
+                        new_sd["position"]["x"],
                         new_sd["position"]["y"] - NODE_H / 2,
                     )
                 )
@@ -715,38 +914,6 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
         self._in_structural_edit = False
         self.graph_changed.emit()
-
-    def _flip_node(self, state_id: str) -> None:
-        if self._config is None:
-            return
-        node = self._node_items.get(state_id)
-        if node is None:
-            return
-        self._pre_edit("Flip Node")
-        new_flipped = not node._flipped
-        node.set_flipped(new_flipped)
-        state = next((s for s in self._config.states if s.id == state_id), None)
-        if state is not None:
-            state.flipped = new_flipped
-        self.graph_changed.emit()
-
-    def _flip_selected_nodes(self) -> None:
-        if self._config is None:
-            return
-        if not any(isinstance(item, NodeItem) for item in self.selectedItems()):
-            return
-        self._pre_edit("Flip Node")
-        changed = False
-        for item in self.selectedItems():
-            if isinstance(item, NodeItem):
-                new_flipped = not item._flipped
-                item.set_flipped(new_flipped)
-                state = next((s for s in self._config.states if s.id == item.state_id), None)
-                if state is not None:
-                    state.flipped = new_flipped
-                changed = True
-        if changed:
-            self.graph_changed.emit()
 
     def _delete_selected(self) -> None:
         if self._config is None:
@@ -1010,7 +1177,7 @@ class EditScene(QGraphicsScene):
         state = StateModel(
             id=new_id,
             node_type=node_type,
-            position={"x": mid.x() + NODE_W / 2, "y": mid.y() + NODE_H / 2},
+            position={"x": insert_pos.x(), "y": mid.y() + NODE_H / 2},
             params=default_params,
         )
         self._config.states.append(state)
@@ -1023,6 +1190,7 @@ class EditScene(QGraphicsScene):
             is_terminal=True,
             node_type=node_type,
         )
+        new_node.set_snap_enabled(self._snap_enabled)
         new_node.setPos(insert_pos)
         self.addItem(new_node)
         self._node_items[new_id] = new_node
@@ -1052,7 +1220,7 @@ class EditScene(QGraphicsScene):
             if node is None:
                 continue
             new_pos = {
-                "x": node.scenePos().x() + NODE_W / 2,
+                "x": node.scenePos().x(),
                 "y": node.scenePos().y() + node._height / 2,
             }
             if state.position != new_pos:
@@ -1062,6 +1230,7 @@ class EditScene(QGraphicsScene):
             for state in self._config.states:
                 if state.id in updates:
                     state.position = updates[state.id]
+            self._update_scene_rect()
             self.graph_changed.emit()
 
     def _flush_regions(self) -> None:
@@ -1154,44 +1323,55 @@ class EditScene(QGraphicsScene):
             ri.set_color(region.color)
         self.graph_changed.emit()
 
-    def _add_to_region(self, state_id: str, region_id: str) -> None:
+    def _add_to_region(self, state_ids: list[str], region_id: str) -> None:
         if self._config is None:
             return
         region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None or state_id in region.members:
+        if region is None:
+            return
+        to_add = [sid for sid in state_ids if sid not in region.members]
+        if not to_add:
             return
         self._pre_edit("Edit Region")
-        region.members.append(state_id)
+        for sid in to_add:
+            region.members.append(sid)
         ri = self._region_items.get(region_id)
         if ri is not None:
-            ri._member_ids.append(state_id)
+            for sid in to_add:
+                ri._member_ids.append(sid)
             ri._recompute_rect()
         self.graph_changed.emit()
 
-    def _remove_from_region(self, state_id: str, region_id: str) -> None:
+    def _remove_from_region(self, state_ids: list[str], region_id: str) -> None:
         if self._config is None:
             return
         region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None or state_id not in region.members:
+        if region is None:
             return
+        to_remove = [sid for sid in state_ids if sid in region.members]
+        if not to_remove:
+            return
+        remaining = [m for m in region.members if m not in to_remove]
         self._pre_edit("Edit Region")
-        region.members.remove(state_id)
-        if len(region.members) < 2:
+        if len(remaining) < 2:
             self._in_structural_edit = True
             self._delete_region(region_id)
             self._in_structural_edit = False
             self.graph_changed.emit()
             return
+        for sid in to_remove:
+            region.members.remove(sid)
         ri = self._region_items.get(region_id)
         if ri is not None:
-            if state_id in ri._member_ids:
-                ri._member_ids.remove(state_id)
+            for sid in to_remove:
+                if sid in ri._member_ids:
+                    ri._member_ids.remove(sid)
             ri._recompute_rect()
         self.graph_changed.emit()
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
-        self.setSceneRect(self.sceneRect().united(bounds))
+        self.setSceneRect(bounds)
 
     def _get_tab_order(self) -> list[str]:
         """State IDs in BFS order from initial state, orphans appended at the end."""

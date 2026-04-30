@@ -6,7 +6,7 @@ from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtGui import QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QStyleOptionGraphicsItem
 
-from bartlebot.gui.canvas.node_item import NodeItem
+from bartlebot.gui.canvas.node_item import NODE_W, NodeItem
 from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
@@ -16,9 +16,13 @@ from bartlebot.gui.theme import THEME
 ARROW_SIZE = 13
 
 _CORNER_R = 8  # rounded-corner radius on orthogonal paths (px)
-_BACK_H_STEP = 30  # how far backward edges extend horizontally beyond node edge
-_BACK_PADDING = 10  # minimum gap between backward-edge bridge and the node edges
+_BACK_H_STEP = 20  # how far backward edges extend horizontally beyond node edge
+_SELF_LOOP_H_STEP = -15  # vertical bridge clearance for self-loops — must exceed arrowhead back-reach (~11 px)
+_SELF_LOOP_ARM = 20  # horizontal arm length for self-loops (visual width)
+BACK_PADDING = 30  # minimum gap between backward-edge bridge and the node edges
+_BACK_PADDING = BACK_PADDING  # alias kept for internal use
 _STRAIGHT_THRESHOLD = 15  # vertical delta (px) below which forward edges go straight
+FORWARD_PADDING = 30  # gap between forward-edge channel and source node right edge
 
 
 def _edge_color():
@@ -33,15 +37,47 @@ def _edge_selected():
     return THEME.qcolor("edge_selected")
 
 
-def _when_edge_color(when: str | None):
+def _when_edge_color(when: str | None, is_self_loop: bool = False):
     if when is None:
         return _edge_color()
     name = when.upper()
     if name in ("SUCCESS", "TRUE"):
         return THEME.qcolor("chip_success_bg")
     if name in ("FAILURE", "FALSE"):
-        return THEME.qcolor("chip_failure_bg")
+        token = "chip_failure_loop_bg" if is_self_loop else "chip_failure_bg"
+        return THEME.qcolor(token)
     return THEME.qcolor("chip_neutral_bg")
+
+
+# ---------------------------------------------------------------------------
+# Shared bridge-Y geometry — single source of truth used by both EdgeItem
+# (dynamic rebuilds after node drags) and EditScene.setup() (corridor
+# pre-computation).  Keep these three functions in sync with each other.
+# ---------------------------------------------------------------------------
+
+
+def bridge_y_below(src_node: NodeItem, dst_node: NodeItem) -> float:
+    """Y for a below-corridor bridge: BACK_PADDING below the bottom of the lower node."""
+    src_bot = src_node.scenePos().y() + src_node._height
+    dst_bot = dst_node.scenePos().y() + dst_node._height
+    return max(src_bot, dst_bot) + BACK_PADDING
+
+
+def bridge_y_above(src_node: NodeItem, dst_node: NodeItem) -> float:
+    """Y for an above-corridor bridge: BACK_PADDING above the top of the higher node."""
+    return min(src_node.scenePos().y(), dst_node.scenePos().y()) - BACK_PADDING
+
+
+def channel_x_after_src(src_node: NodeItem) -> float:
+    """X for a forward-edge vertical channel: FORWARD_PADDING right of src_node's right edge."""
+    return src_node.scenePos().x() + NODE_W + FORWARD_PADDING
+
+
+def is_above_routed(src_node: NodeItem, when: str | None) -> bool:
+    """True when a backward edge from src_node with the given return label should
+    route above the node row (topmost-port on a node with ≥ 2 named returns)."""
+    returns = src_node._returns
+    return when is not None and len(returns) >= 2 and when == returns[0]
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +101,8 @@ class EdgeItem(QGraphicsPathItem):
         dst_node: NodeItem,
         offset: float = 0.0,
         when: str | None = None,
+        bridge_y_override: float | None = None,
+        channel_x_override: float | None = None,
     ):
         super().__init__()
         self._src = src_node
@@ -73,11 +111,20 @@ class EdgeItem(QGraphicsPathItem):
         self._when = when
         self._is_self_loop = src_node is dst_node
         self._hovered = False
+        self._snap_target = False
+        self._bridge_y_override = bridge_y_override
+        self._channel_x_override = channel_x_override
 
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
         self._rebuild()
+        self._bridge_y_override = None  # only applies to the initial build
+        self._channel_x_override = None  # only applies to the initial build
+
+    @property
+    def when(self) -> str | None:
+        return self._when
 
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
@@ -86,6 +133,9 @@ class EdgeItem(QGraphicsPathItem):
         ps = QPainterPathStroker()
         ps.setWidth(12)
         return ps.createStroke(self.path())
+
+    def _should_route_above(self) -> bool:
+        return is_above_routed(self._src, self._when)
 
     def _rebuild(self) -> None:
         path = QPainterPath()
@@ -109,18 +159,31 @@ class EdgeItem(QGraphicsPathItem):
         self.update()
         super().hoverLeaveEvent(event)
 
+    def set_snap_target(self, active: bool) -> None:
+        if self._snap_target != active:
+            self._snap_target = active
+            self.update()
+
     # ------------------------------------------------------------------
     # Paint
     # ------------------------------------------------------------------
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        if self._snap_target:
+            pen = QPen(THEME.qcolor("port_color"), 3.0, Qt.PenStyle.SolidLine)
+            pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawPath(self.path())
+            return
         if self.isSelected():
             pen = QPen(_edge_selected(), 2.5, Qt.PenStyle.DashLine)
         elif self._hovered:
             pen = QPen(_edge_hover(), 2.5)
         else:
-            pen = QPen(_when_edge_color(self._when), 1.5)
+            pen = QPen(_when_edge_color(self._when, self._is_self_loop), 2.0)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -135,24 +198,7 @@ class EdgeItem(QGraphicsPathItem):
         dst_pt = self._dst.port_in()
         if math.hypot(dst_pt.x() - src_pt.x(), dst_pt.y() - src_pt.y()) < 1:
             return
-        src_flipped = self._src._flipped
-        dst_flipped = self._dst._flipped
-        if src_flipped or dst_flipped:
-            # Flipped ports: use direction-aware routing so path extensions always
-            # go *outside* the node body regardless of which side the port is on.
-            # src exits left (-1) when flipped, right (+1) when normal.
-            # dst is approached from right (+1) when flipped, left (-1) when normal.
-            src_sign = -1 if src_flipped else 1
-            dst_sign = 1 if dst_flipped else -1
-            if src_flipped and dst_flipped and dst_pt.x() <= src_pt.x():
-                # Both ports face each other (src exits left, dst accepts from right)
-                # and dst is to the left — the natural forward direction for flipped
-                # nodes. Route as a simple Z-path through the horizontal midpoint;
-                # no node-clearing bridge needed.
-                self._build_forward_ortho(path, src_pt, dst_pt)
-            else:
-                self._build_directed_ortho(path, src_pt, dst_pt, src_sign, dst_sign)
-        elif dst_pt.x() > src_pt.x():
+        if dst_pt.x() > src_pt.x():
             self._build_forward_ortho(path, src_pt, dst_pt)
         else:
             self._build_backward_ortho(path, src_pt, dst_pt)
@@ -168,9 +214,12 @@ class EdgeItem(QGraphicsPathItem):
             path.lineTo(dst_pt)
             _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
             return
-        # For bidirectional pairs the offset shifts the vertical segment laterally
-        # so the two mirrored paths are visually separated.
-        mid_x = (src_pt.x() + dst_pt.x()) / 2 + self._offset * 0.5
+        if self._channel_x_override is not None:
+            mid_x = self._channel_x_override
+        else:
+            # For bidirectional pairs the offset shifts the vertical segment laterally
+            # so the two mirrored paths are visually separated.
+            mid_x = (src_pt.x() + dst_pt.x()) / 2 + self._offset * 0.5
         waypoints = [
             src_pt,
             QPointF(mid_x, src_pt.y()),
@@ -189,15 +238,11 @@ class EdgeItem(QGraphicsPathItem):
     ) -> None:
         """Orthogonal path with parameterized exit/approach directions.
 
-        *src_sign* (+1/-1): direction the departure arm extends from the source
-        port (+1 = rightward for normal output, -1 = leftward for flipped output).
+        *src_sign* (+1/-1): direction the departure arm extends from the source port.
+        *dst_sign* (+1/-1): direction the arrival arm extends from the destination port.
 
-        *dst_sign* (+1/-1): direction the arrival arm extends from the destination
-        port (-1 = leftward for normal input, +1 = rightward for flipped input).
-
-        When both signs are equal the departure and arrival arms are on the same
-        side, so a simple 4-point Z-path suffices — no horizontal bridge needed.
-        When the signs differ a 6-point bridge path is used instead.
+        When both signs are equal a 4-point Z-path suffices; when they differ a
+        6-point bridge path is used instead.
         """
         if src_sign == dst_sign:
             # Both ports face the same direction: 4-point Z-path.
@@ -220,16 +265,12 @@ class EdgeItem(QGraphicsPathItem):
             _draw_ortho_path(path, waypoints)
         else:
             # Ports face opposite directions: 6-point bridge path.
-            mid_y = (src_pt.y() + dst_pt.y()) / 2 + self._offset * 0.5
-            src_h = self._src._height
-            dst_h = self._dst._height
-            if abs(dst_pt.y() - src_pt.y()) < max(src_h, dst_h):
-                above_limit = min(src_pt.y() - src_h / 2, dst_pt.y() - dst_h / 2) - _BACK_PADDING
-                below_limit = max(src_pt.y() + src_h / 2, dst_pt.y() + dst_h / 2) + _BACK_PADDING
-                if mid_y - above_limit > below_limit - mid_y:
-                    mid_y = above_limit
-                else:
-                    mid_y = below_limit
+            if self._bridge_y_override is not None:
+                mid_y = self._bridge_y_override
+            elif self._should_route_above():
+                mid_y = bridge_y_above(self._src, self._dst)
+            else:
+                mid_y = bridge_y_below(self._src, self._dst)
             waypoints = [
                 src_pt,
                 QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),
@@ -253,18 +294,15 @@ class EdgeItem(QGraphicsPathItem):
         src_h = self._src._height
         src_center_y = node_top + src_h / 2
         if src_pt.y() <= src_center_y:
-            bridge_y = node_top - _BACK_PADDING - _BACK_H_STEP
+            bridge_y = node_top - _BACK_PADDING - _SELF_LOOP_H_STEP
         else:
-            bridge_y = node_top + src_h + _BACK_PADDING + _BACK_H_STEP
-        flipped = self._src._flipped
-        src_sign = -1 if flipped else 1
-        dst_sign = 1 if flipped else -1
+            bridge_y = node_top + src_h + _BACK_PADDING + _SELF_LOOP_H_STEP
         waypoints = [
             src_pt,
-            QPointF(src_pt.x() + src_sign * _BACK_H_STEP, src_pt.y()),
-            QPointF(src_pt.x() + src_sign * _BACK_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, bridge_y),
-            QPointF(dst_pt.x() + dst_sign * _BACK_H_STEP, dst_pt.y()),
+            QPointF(src_pt.x() + _SELF_LOOP_ARM, src_pt.y()),
+            QPointF(src_pt.x() + _SELF_LOOP_ARM, bridge_y),
+            QPointF(dst_pt.x() - _SELF_LOOP_ARM, bridge_y),
+            QPointF(dst_pt.x() - _SELF_LOOP_ARM, dst_pt.y()),
             dst_pt,
         ]
         _draw_ortho_path(path, waypoints)

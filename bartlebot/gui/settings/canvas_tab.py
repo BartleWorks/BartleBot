@@ -31,6 +31,11 @@ class CanvasTab(QWidget):
         self._minimap_cb.setChecked(sm.get("canvas", "minimap_visible", default=True))
         form.addRow("Enable minimap:", self._minimap_cb)
 
+        # Snap to grid
+        self._snap_cb = QCheckBox()
+        self._snap_cb.setChecked(sm.get("canvas", "snap_to_grid", default=False))
+        form.addRow("Snap nodes to grid:", self._snap_cb)
+
         # LOD compact threshold
         self._lod_sb = QDoubleSpinBox()
         self._lod_sb.setRange(0.10, 1.00)
@@ -56,4 +61,5 @@ class CanvasTab(QWidget):
     def apply(self) -> None:
         sm = SettingsManager.instance()
         sm.set("canvas", "minimap_visible", value=self._minimap_cb.isChecked())
+        sm.set("canvas", "snap_to_grid", value=self._snap_cb.isChecked())
         sm.set("canvas", "lod_compact_threshold", value=round(self._lod_sb.value(), 2))

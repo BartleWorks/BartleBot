@@ -1,5 +1,5 @@
 {
-  "name": "Queen Calypso farmer",
+  "name": "Queen Calypso",
   "description": "Endlessly farms Queen Calypso",
   "version": "1.0",
   "clients": "all",
@@ -9,7 +9,294 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Celestia",
   "drops": [
-    "Atavistic rings and level 60 pins"
+    "Abyss Bodkin",
+    "Accurate Talent Opal",
+    "Atavistic Balance Band",
+    "Atavistic Death Band",
+    "Atavistic Fire Band",
+    "Atavistic Ice Band",
+    "Atavistic Life Band",
+    "Atavistic Myth Band",
+    "Atavistic Storm Band",
+    "Balance Crushing Pin (60, Death)",
+    "Balance Crushing Pin (60, Fire)",
+    "Balance Crushing Pin (60, Ice)",
+    "Balance Crushing Pin (60, Life)",
+    "Balance Crushing Pin (60, Myth)",
+    "Balance Crushing Pin (60, Storm)",
+    "Balance Disabling Pin (60, Death)",
+    "Balance Disabling Pin (60, Fire)",
+    "Balance Disabling Pin (60, Ice)",
+    "Balance Disabling Pin (60, Life)",
+    "Balance Disabling Pin (60, Myth)",
+    "Balance Disabling Pin (60, Storm)",
+    "Balance Punishing Pin (50, Death)",
+    "Balance Punishing Pin (50, Fire)",
+    "Balance Punishing Pin (50, Ice)",
+    "Balance Punishing Pin (50, Life)",
+    "Balance Punishing Pin (50, Myth)",
+    "Balance Punishing Pin (50, Storm)",
+    "Balance Punishing Pin (60, Death)",
+    "Balance Punishing Pin (60, Ice)",
+    "Balance Punishing Pin (60, Myth)",
+    "Banshee",
+    "Berserk Talent Opal",
+    "Blade of Ice Sapphire",
+    "Blemished Defense Peridot +24",
+    "Blight Hound",
+    "Boots of Catastrophe",
+    "Boots of Celestian Totality",
+    "Brimstone Boots",
+    "Bronze",
+    "Bygone Balance Band",
+    "Bygone Death Band",
+    "Bygone Fire Band",
+    "Bygone Ice Band",
+    "Bygone Life Band",
+    "Bygone Myth Band",
+    "Bygone Storm Band",
+    "Cauliflowers",
+    "Centaur",
+    "Cloak",
+    "Cobalt",
+    "Colossus",
+    "Cyclops",
+    "Cyclops Minion",
+    "Darkwind",
+    "Deadly Fly Trap",
+    "Death Crushing Pin (60, Balance)",
+    "Death Crushing Pin (60, Fire)",
+    "Death Crushing Pin (60, Ice)",
+    "Death Crushing Pin (60, Life)",
+    "Death Crushing Pin (60, Myth)",
+    "Death Crushing Pin (60, Storm)",
+    "Death Disabling Pin (60, Balance)",
+    "Death Disabling Pin (60, Fire)",
+    "Death Disabling Pin (60, Ice)",
+    "Death Disabling Pin (60, Life)",
+    "Death Disabling Pin (60, Myth)",
+    "Death Disabling Pin (60, Storm)",
+    "Death Punishing Pin (50, Balance)",
+    "Death Punishing Pin (50, Fire)",
+    "Death Punishing Pin (50, Ice)",
+    "Death Punishing Pin (50, Life)",
+    "Death Punishing Pin (50, Myth)",
+    "Death Punishing Pin (50, Storm)",
+    "Death Punishing Pin (60, Balance)",
+    "Death Punishing Pin (60, Ice)",
+    "Death Punishing Pin (60, Myth)",
+    "Delicious Cookie",
+    "Disarmament Amethyst",
+    "Doom and Gloom",
+    "Dragonflies",
+    "Dull Critical Citrine +3",
+    "Dull Critical Jade +3",
+    "Dull Health Opal +51",
+    "Dull Health Opal +53",
+    "Dull Mana Opal +23",
+    "Earth Walker",
+    "Empower",
+    "Eureka Coif",
+    "Eureka Wraps",
+    "Evil Snowman",
+    "Fire Crushing Pin (60, Balance)",
+    "Fire Crushing Pin (60, Death)",
+    "Fire Crushing Pin (60, Ice)",
+    "Fire Crushing Pin (60, Life)",
+    "Fire Crushing Pin (60, Myth)",
+    "Fire Crushing Pin (60, Storm)",
+    "Fire Disabling Pin (60, Balance)",
+    "Fire Disabling Pin (60, Death)",
+    "Fire Disabling Pin (60, Ice)",
+    "Fire Disabling Pin (60, Life)",
+    "Fire Disabling Pin (60, Myth)",
+    "Fire Disabling Pin (60, Storm)",
+    "Fire Dragon",
+    "Fire Punishing Pin (50, Balance)",
+    "Fire Punishing Pin (50, Death)",
+    "Fire Punishing Pin (50, Ice)",
+    "Fire Punishing Pin (50, Life)",
+    "Fire Punishing Pin (50, Myth)",
+    "Fire Punishing Pin (50, Storm)",
+    "Fire Punishing Pin (60, Balance)",
+    "Fire Punishing Pin (60, Death)",
+    "Fire Punishing Pin (60, Ice)",
+    "Fire Punishing Pin (60, Myth)",
+    "Fish on a Vine",
+    "Forest Lord",
+    "Frost Giant",
+    "Frostbit Footguards",
+    "Gargantuan",
+    "Gearhead Destroyer",
+    "Glowing Star Fruit",
+    "Glowing Taffy",
+    "Headdress of Dragon Fire",
+    "Helephant",
+    "Helm of Burning Ambition",
+    "Hydra",
+    "Ice Crushing Pin (60, Balance)",
+    "Ice Crushing Pin (60, Death)",
+    "Ice Crushing Pin (60, Fire)",
+    "Ice Crushing Pin (60, Life)",
+    "Ice Crushing Pin (60, Myth)",
+    "Ice Crushing Pin (60, Storm)",
+    "Ice Disabling Pin (60, Balance)",
+    "Ice Disabling Pin (60, Death)",
+    "Ice Disabling Pin (60, Fire)",
+    "Ice Disabling Pin (60, Life)",
+    "Ice Disabling Pin (60, Myth)",
+    "Ice Disabling Pin (60, Storm)",
+    "Ice Punishing Pin (50, Balance)",
+    "Ice Punishing Pin (50, Death)",
+    "Ice Punishing Pin (50, Fire)",
+    "Ice Punishing Pin (50, Life)",
+    "Ice Punishing Pin (50, Myth)",
+    "Ice Punishing Pin (50, Storm)",
+    "Ice Punishing Pin (60, Balance)",
+    "Ice Punishing Pin (60, Death)",
+    "Ice Punishing Pin (60, Myth)",
+    "Ice Rangers",
+    "Ice Wyvern",
+    "Ice Wyvern",
+    "Icestar Stalkers",
+    "Immolate",
+    "Infector Onyx",
+    "Kraken",
+    "Lead",
+    "Life Crushing Pin (60, Balance)",
+    "Life Crushing Pin (60, Death)",
+    "Life Crushing Pin (60, Fire)",
+    "Life Crushing Pin (60, Ice)",
+    "Life Crushing Pin (60, Myth)",
+    "Life Crushing Pin (60, Storm)",
+    "Life Disabling Pin (60, Balance)",
+    "Life Disabling Pin (60, Death)",
+    "Life Disabling Pin (60, Fire)",
+    "Life Disabling Pin (60, Ice)",
+    "Life Disabling Pin (60, Myth)",
+    "Life Disabling Pin (60, Storm)",
+    "Life Punishing Pin (50, Balance)",
+    "Life Punishing Pin (50, Death)",
+    "Life Punishing Pin (50, Fire)",
+    "Life Punishing Pin (50, Ice)",
+    "Life Punishing Pin (50, Myth)",
+    "Life Punishing Pin (50, Storm)",
+    "Life Punishing Pin (60, Balance)",
+    "Life Punishing Pin (60, Death)",
+    "Life Punishing Pin (60, Ice)",
+    "Life Punishing Pin (60, Myth)",
+    "Locust Swarm",
+    "Maelstrom Snap Dragon",
+    "Mass Fire Prism Ruby",
+    "Mass Ice Prism Sapphire",
+    "Mass Myth Prism Peridot",
+    "Mass Storm Prism Amethyst",
+    "Mend Minion Talent Peridot",
+    "Minotaur",
+    "Myth Crushing Pin (60, Balance)",
+    "Myth Crushing Pin (60, Death)",
+    "Myth Crushing Pin (60, Fire)",
+    "Myth Crushing Pin (60, Ice)",
+    "Myth Crushing Pin (60, Life)",
+    "Myth Crushing Pin (60, Storm)",
+    "Myth Disabling Pin (60, Balance)",
+    "Myth Disabling Pin (60, Death)",
+    "Myth Disabling Pin (60, Fire)",
+    "Myth Disabling Pin (60, Ice)",
+    "Myth Disabling Pin (60, Life)",
+    "Myth Disabling Pin (60, Storm)",
+    "Myth Punishing Pin (50, Balance)",
+    "Myth Punishing Pin (50, Death)",
+    "Myth Punishing Pin (50, Fire)",
+    "Myth Punishing Pin (50, Ice)",
+    "Myth Punishing Pin (50, Life)",
+    "Myth Punishing Pin (50, Storm)",
+    "Myth Punishing Pin (60, Balance)",
+    "Myth Punishing Pin (60, Death)",
+    "Myth Punishing Pin (60, Ice)",
+    "Nature's Wrath",
+    "Nickel",
+    "No Pain, No Gain Onyx",
+    "Nova Necklace",
+    "Orthrus",
+    "Pandemonium Platemail",
+    "Phoenix",
+    "Pink Dandelion",
+    "Plain Blocking Onyx +6",
+    "Plain Blocking Opal +3",
+    "Plain Blocking Peridot +6",
+    "Plain Blocking Ruby +6",
+    "Plain Blocking Sapphire +6",
+    "Plain Damage Amethyst +15",
+    "Plain Damage Jade +15",
+    "Plain Damage Sapphire +15",
+    "Plain Defense Opal +16",
+    "Power Nova",
+    "Precision",
+    "Raiment of Reverie",
+    "Reshuffle Citrine",
+    "Ring of Rapture",
+    "Ring of Rare Origins",
+    "Salgio's Tinder Cloak",
+    "Satyr",
+    "Scarecrow",
+    "Seraph",
+    "Shark Hut",
+    "Shark Tooth",
+    "Silver Trumpet Vine",
+    "Skeletal Pirate",
+    "Sniper",
+    "Spectral Blast",
+    "Spicy Drumstick",
+    "Starfish",
+    "Steel",
+    "Stone Colossus",
+    "Storm Crushing Pin (60, Balance)",
+    "Storm Crushing Pin (60, Death)",
+    "Storm Crushing Pin (60, Fire)",
+    "Storm Crushing Pin (60, Ice)",
+    "Storm Crushing Pin (60, Life)",
+    "Storm Crushing Pin (60, Myth)",
+    "Storm Disabling Pin (60, Balance)",
+    "Storm Disabling Pin (60, Death)",
+    "Storm Disabling Pin (60, Fire)",
+    "Storm Disabling Pin (60, Ice)",
+    "Storm Disabling Pin (60, Life)",
+    "Storm Disabling Pin (60, Myth)",
+    "Storm Lord",
+    "Storm Punishing Pin (50, Balance)",
+    "Storm Punishing Pin (50, Death)",
+    "Storm Punishing Pin (50, Fire)",
+    "Storm Punishing Pin (50, Ice)",
+    "Storm Punishing Pin (50, Life)",
+    "Storm Punishing Pin (50, Myth)",
+    "Storm Punishing Pin (60, Balance)",
+    "Storm Punishing Pin (60, Death)",
+    "Storm Punishing Pin (60, Ice)",
+    "Storm Punishing Pin (60, Myth)",
+    "Storm Shark",
+    "Stormzilla",
+    "Strawberry Cupcake",
+    "Sub Zero Jerkin",
+    "Submarine Sandwich",
+    "Sun Circle",
+    "Sun Kris",
+    "Sunbird",
+    "Synthesis Cover",
+    "Tempest Trackers",
+    "Thundercloud Coif",
+    "Tin",
+    "Tower Shield Sapphire",
+    "Tragic Tunic",
+    "Triton",
+    "Turbulent Tunic",
+    "Unstoppable",
+    "Vampire",
+    "Versatile Celestian Boots",
+    "Vial of the Sun",
+    "Virtue Shoes",
+    "Vital Headdress",
+    "Wraith"
   ],
   "authors": "BartleBot",
   "options": [
@@ -35,22 +322,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Go to Crustacean Empire",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Hub",
@@ -66,16 +352,15 @@
           "z": -1099.7
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "teleport_to_coordinates",
       "label": "Go to Calypso's Cavern",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -85,16 +370,15 @@
           "z": -290.1
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_dungeon",
       "label": "Enter Calypso's Cavern",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -110,16 +394,15 @@
           "z": -288.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "interact",
       "label": "Spawn Queen Calypso",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -137,46 +420,43 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "handle_combat",
       "label": "Defeat Queen Calypso",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "enemy": "CL-UndeadMaiden-Boss-R10",
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "sleep",
       "label": "Wait for Queen Calypso to spawn",
       "position": {
-        "x": 2850.0,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
         "duration": 1.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3450.0,
-        "y": 7.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -184,16 +464,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "interact",
       "label": "Reset Queen Calypso",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -211,16 +490,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "teleport_to_coordinates",
       "label": "Enter render radius",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -230,35 +508,32 @@
           "z": -1014.19
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "threshold": 1.0,
         "timeout": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -443,6 +718,14 @@
       "source": "state_8",
       "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_5",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

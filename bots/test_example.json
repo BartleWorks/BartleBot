@@ -25,7 +25,7 @@
       "node_type": "enter_zone",
       "label": "Go to Ravenwood",
       "position": {
-        "x": 150.0,
+        "x": 0,
         "y": 0.0
       },
       "params": {
@@ -37,15 +37,14 @@
           "z": -27.99
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "go_to_zone_b",
       "node_type": "enter_zone",
       "label": "Go to The Commons",
       "position": {
-        "x": 450.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -57,22 +56,20 @@
           "z": -130.64
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_1",
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 750.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

@@ -86,22 +86,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Golem Court",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -117,16 +116,15 @@
           "z": 229.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -134,16 +132,15 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone_via_object",
       "label": "Enter the Drains",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -159,16 +156,15 @@
           "z": 0.1
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "enter_zone",
       "label": "Enter the Catacombs",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
@@ -184,28 +180,26 @@
           "z": -569.87
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "enter_dungeon",
       "label": "Enter Viggor's Tomb",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Catacombs",
@@ -221,16 +215,15 @@
           "z": 14.61
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "teleport_to_coordinates",
       "label": "Skip to Prince Viggor",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/Interiors/WC_Catacombs_ViggorsTomb",
@@ -240,16 +233,15 @@
           "z": -3786.53
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "handle_combat",
       "label": "Defeat Prince Viggor",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "enemy": "CC_Human_DSWarPrince_A_01",
@@ -257,8 +249,7 @@
         "combat_config": "",
         "max_duration": 1200.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

@@ -293,22 +293,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to Celestia Base Camp",
       "position": {
-        "x": 150.0,
-        "y": 14.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 450.0,
-        "y": 14.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -316,16 +315,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_dungeon",
       "label": "Enter Temple of the Sun",
       "position": {
-        "x": 1050.0,
-        "y": 14.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Hub",
@@ -341,16 +339,15 @@
           "z": -899.7
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Big Salgio",
       "position": {
-        "x": 1350.0,
-        "y": 14.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z11_Temple_Of_The_Sun",
@@ -360,46 +357,43 @@
           "z": -1994.53
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "sleep",
       "label": "Wait for Big Salgio to load",
       "position": {
-        "x": 1650.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
         "duration": 1.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "handle_combat",
       "label": "Defeat Big Salgio",
       "position": {
-        "x": 1950.0,
-        "y": 14.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "enemy": "Cl-SharkWarrior-Grey-Boss-R10",
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 750.0,
-        "y": 14.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -407,8 +401,7 @@
         "refill_potions": true,
         "mark_zone": "Celestia/CL_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

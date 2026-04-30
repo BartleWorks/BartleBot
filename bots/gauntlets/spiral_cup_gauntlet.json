@@ -9,7 +9,97 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Greenwarden's Energetic gear set"
+    "Angora Bunny Ears",
+    "Ape Grapes",
+    "Avalon Abbey Road Theme",
+    "Avalon Combat Theme",
+    "Avalon Glorious Theme",
+    "Avalon Haunting Theme",
+    "Avalon Main Theme",
+    "Avalon Tense Theme",
+    "Avalon Wyrd Theme",
+    "Black Lotus",
+    "Blizzard Lizard Sapphire",
+    "Blue Huckleberries",
+    "Blue Vine Wallpaper",
+    "Bowl of Tomatoes",
+    "Brass",
+    "Broken Palm Tree",
+    "Broken Stump",
+    "Bronze",
+    "Bronze Gear",
+    "Caramel Popcorn",
+    "Cauliflowers",
+    "Celestian Tree Sprig",
+    "Clear Accurate Sapphire +9%",
+    "Clear Blocking Ruby +9",
+    "Clear Critical Citrine +10",
+    "Clear Damage Onyx +19",
+    "Cobalt",
+    "Cross Section Floor Tile",
+    "Crunch Apple",
+    "Deadly Helephant Ears",
+    "Death-Away Onyx",
+    "Delicious Cookie",
+    "Elm Tree",
+    "Fire Bush",
+    "Fire Cracker",
+    "Flapjacks",
+    "Flowering Celestian Tree",
+    "Frost Flower",
+    "Glowing Rock Candy",
+    "Green Foodcart",
+    "Greenwarden's Energetic Boots (Level 100+)",
+    "Greenwarden's Energetic Mask (Level 100+)",
+    "Greenwarden's Energetic Shroud (Level 100+)",
+    "Greenwarden's Energetic Staff (Level 100+)",
+    "Greenwarden's Energetic Staff (Level 90+)",
+    "Gummy Bloodbat",
+    "Ice Trap Sapphire (Triangle)",
+    "Large Cypress Tree",
+    "Large Evergreen Tree",
+    "Large Fir Tree",
+    "Large Fish",
+    "Large Willow Tree",
+    "Leaning Palm Tree",
+    "Maple Tree",
+    "Mass Infection Onyx",
+    "Meat Soup",
+    "Medium Evergreen Tree",
+    "Medium Fir Tree",
+    "Medium Pine Tree",
+    "Nickel",
+    "Ninja Fig",
+    "Ninja Pig Opal",
+    "Red Huckleberries",
+    "Red Leaf Tree",
+    "Red Mandrake",
+    "Redskin Peanut",
+    "Rude Goblin",
+    "Shh! Opal",
+    "Small Bush",
+    "Small Cypress Tree",
+    "Small Maple Tree",
+    "Spicy Drumstick",
+    "Square Root",
+    "Stone Block Wallpaper",
+    "Strawberry Cupcake",
+    "Stucco Wallpaper",
+    "Submarine Sandwich",
+    "Sunflower",
+    "Tall Palm Tree",
+    "Tall Pumpkin",
+    "Tasty Biscuit",
+    "Tree Fountain",
+    "Unstoppable Talent Opal",
+    "Vestment of Chaos",
+    "Vestment of Earth",
+    "Vestment of Ember",
+    "Vestment of Equilibrium",
+    "Vestment of Frost",
+    "Wheat Cracker",
+    "Wooden Well",
+    "Yellow Flowers Wallpaper"
   ],
   "authors": "BartleBot",
   "options": [
@@ -38,37 +128,35 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "friend_name": "Alice StormBlade",
         "to_zone": "Housing_AR_Dormroom/Interior"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -86,16 +174,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Hydra",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -111,16 +198,15 @@
           "z": 1.23
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -128,16 +214,15 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Hydra",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02",
@@ -153,16 +238,15 @@
           "z": 0.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -180,16 +264,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "enter_zone",
       "label": "Enter Hall of the Specter",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -205,16 +288,15 @@
           "z": 1.08
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 3150.0,
-        "y": 7.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -222,16 +304,15 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
       "label": "Exit Hall of the Specter",
       "position": {
-        "x": 3450.0,
-        "y": 7.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03",
@@ -247,16 +328,15 @@
           "z": 0.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -264,16 +344,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 4050.0,
-        "y": 7.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -291,16 +370,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "enter_zone",
       "label": "Enter Hall of the Harpy",
       "position": {
-        "x": 4350.0,
-        "y": 7.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -316,16 +394,15 @@
           "z": 1.15
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 4650.0,
-        "y": 7.0
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -333,16 +410,15 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
       "node_type": "enter_zone",
       "label": "Exit Hall of the Harpy",
       "position": {
-        "x": 4950.0,
-        "y": 7.0
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_04",
@@ -358,16 +434,15 @@
           "z": 0.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3750.0,
-        "y": 7.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -375,16 +450,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_19",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 5250.0,
-        "y": 7.0
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -392,16 +466,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_20",
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 5550.0,
-        "y": 7.0
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -419,16 +492,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_21",
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Basilisk",
       "position": {
-        "x": 5850.0,
-        "y": 7.0
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -444,16 +516,15 @@
           "z": 1.15
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_22",
       "node_type": "handle_combat",
       "label": "Defeat Tamworth Brickhouse",
       "position": {
-        "x": 6150.0,
-        "y": 7.0
+        "x": 8800,
+        "y": 0.0
       },
       "params": {
         "enemy": "",
@@ -461,16 +532,15 @@
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_23",
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Basilisk",
       "position": {
-        "x": 6450.0,
-        "y": 7.0
+        "x": 9240,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_05",
@@ -486,16 +556,15 @@
           "z": 0.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_24",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6750.0,
-        "y": 7.0
+        "x": 9680,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -503,16 +572,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_25",
       "node_type": "enter_zone_via_object",
       "label": "Enter final boss room",
       "position": {
-        "x": 7050.0,
-        "y": 7.0
+        "x": 10120,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
@@ -528,16 +596,15 @@
           "z": 1.41
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_26",
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 7350.0,
-        "y": 7.0
+        "x": 10560,
+        "y": 0.0
       },
       "params": {
         "enemy": "SC-AV-Ogre-80",
@@ -545,16 +612,15 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_27",
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat",
       "position": {
-        "x": 7650.0,
-        "y": 7.0
+        "x": 11000,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_06",
@@ -564,30 +630,28 @@
           "z": 0.19
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_28",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 7950.0,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
         "duration": 1.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_29",
       "node_type": "handle_combat",
       "label": "Defeat final boss",
       "position": {
-        "x": 8250.0,
-        "y": 7.0
+        "x": 11880,
+        "y": 0.0
       },
       "params": {
         "enemy": "SC-AV-Giant-FormoriHandsome-80",
@@ -595,23 +659,21 @@
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "threshold": 0.8,
         "timeout": 120.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -681,13 +743,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_7",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_14",
       "dest": "state_15",
       "when": "SUCCESS",
@@ -715,13 +770,6 @@
       "source": "state_12",
       "dest": "state_18",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_14",
       "flags": [],
       "flag_op": "AND"
     },
@@ -1037,13 +1085,6 @@
     {
       "trigger": "advance",
       "source": "state_10",
-      "dest": "state_3",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
@@ -1067,6 +1108,30 @@
       "source": "state_1",
       "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_14",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

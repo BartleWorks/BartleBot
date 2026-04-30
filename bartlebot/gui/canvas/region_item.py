@@ -1,16 +1,15 @@
 """Region overlay items for the bot canvas.
 
-_RegionHandle  — draggable grip at the top-left of a region; moves all member nodes.
-RegionItem     — colored translucent background rect drawn behind member nodes.
+RegionItem — colored translucent background rect drawn behind member nodes.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QPointF, QRectF, Qt
+from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
-from PyQt6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem
+from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
 from bartlebot.gui.theme import THEME
 
@@ -22,8 +21,7 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-_PADDING = 20
-_HANDLE_SIZE = 16
+_PADDING = 60
 _REGION_RADIUS = 12
 _FILL_ALPHA = 40  # ~16% opacity for the region fill
 _LABEL_FONT_SIZE = 9
@@ -32,74 +30,7 @@ _PILL_H = 20  # pill height in px
 _PILL_PAD_X = 10  # horizontal padding inside pill
 _PILL_GAP = 4  # gap between pill bottom and region top
 _PILL_ALPHA = 80  # fill alpha for pill (~31% opacity)
-
-
-class _RegionHandle(QGraphicsItem):
-    """A small draggable grip pinned to the top-left of a RegionItem.
-
-    Dragging the handle translates all member NodeItems by the same delta.
-    The handle itself never actually moves — it resets to its fixed offset
-    after each position change, making the drag feel natural while keeping
-    the handle stationary relative to the region rect.
-    """
-
-    def __init__(self, color_key: int, node_items_ref: dict, member_ids_ref: list, parent: QGraphicsItem) -> None:
-        super().__init__(parent)
-        self._color_key = color_key
-        self._node_items = node_items_ref  # live dict reference from RegionItem
-        self._member_ids = member_ids_ref  # live list reference from RegionItem
-        self._fixed_offset = QPointF(0.0, 0.0)
-        self._last_pos = QPointF(0.0, 0.0)
-
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges, True)
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations, False)
-        self.setCursor(Qt.CursorShape.SizeAllCursor)
-        self.setZValue(2)
-
-    # ------------------------------------------------------------------
-    # QGraphicsItem interface
-    # ------------------------------------------------------------------
-
-    def boundingRect(self) -> QRectF:
-        return QRectF(0, 0, _HANDLE_SIZE, _HANDLE_SIZE)
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
-        color = THEME.region_color(self._color_key)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(color))
-        path = QPainterPath()
-        path.addRoundedRect(self.boundingRect(), 4, 4)
-        painter.drawPath(path)
-
-    def itemChange(self, change, value):
-        if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
-            new_pos: QPointF = value
-            # Compute scene-space delta
-            delta = self.mapToScene(new_pos) - self.mapToScene(self._last_pos)
-            if abs(delta.x()) > 0.001 or abs(delta.y()) > 0.001:
-                # Translate all live member nodes
-                for sid in self._member_ids:
-                    node = self._node_items.get(sid)
-                    if node is not None:
-                        node.setPos(node.pos() + delta)
-            # Always reset to fixed offset — handle never actually moves
-            return self._fixed_offset
-        return super().itemChange(change, value)
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
-
-    def set_interactive(self, interactive: bool) -> None:
-        self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
-
-    def update_offset(self, offset: QPointF) -> None:
-        """Reposition the handle to track the top-left of the region rect."""
-        self._fixed_offset = offset
-        self._last_pos = offset
-        self.setPos(offset)
+_BORDER_ALPHA = 100  # ~39% opacity for region border — recedes behind full-opacity edges
 
 
 class RegionItem(QGraphicsItem):
@@ -108,6 +39,8 @@ class RegionItem(QGraphicsItem):
     The item is fixed at scene origin (pos = 0,0); its bounding rect is
     expressed in scene coordinates.  Member positions are tracked via a
     ``scene.changed`` connection wired by EditScene.setup().
+
+    Clicking the region's pill label in edit mode selects all member nodes.
     """
 
     def __init__(
@@ -123,19 +56,13 @@ class RegionItem(QGraphicsItem):
         self._node_items = node_items
 
         self._rect = QRectF()
+        self._interactive: bool = False
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
         self.setPos(0.0, 0.0)
         self.setZValue(-1)
         self.fit_exclude = True  # excluded from fit_scene() bounds to avoid pill top-margin inflation
-
-        self._handle = _RegionHandle(
-            color_key=self._color_key,
-            node_items_ref=self._node_items,
-            member_ids_ref=self._member_ids,
-            parent=self,
-        )
 
     # ------------------------------------------------------------------
     # QGraphicsItem interface
@@ -161,8 +88,9 @@ class RegionItem(QGraphicsItem):
         fill.setAlpha(_FILL_ALPHA)
         painter.setBrush(QBrush(fill))
 
-        # Full-opacity border
-        pen = QPen(color, 2.0)
+        border_color = QColor(color)
+        border_color.setAlpha(_BORDER_ALPHA)
+        pen = QPen(border_color, 2.0)
         painter.setPen(pen)
 
         path = QPainterPath()
@@ -199,6 +127,22 @@ class RegionItem(QGraphicsItem):
         painter.setPen(label_color)
         painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, self._label)
 
+    def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        if not self._interactive or self._rect.isNull():
+            event.ignore()
+            return
+        # The pill sits above self._rect.top() in item/scene coordinates (item is at origin).
+        if event.pos().y() < self._rect.top():
+            if not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
+                self.scene().clearSelection()
+            for sid in self._member_ids:
+                node = self._node_items.get(sid)
+                if node is not None:
+                    node.setSelected(True)
+            event.accept()
+        else:
+            event.ignore()
+
     # ------------------------------------------------------------------
     # Rect recompute
     # ------------------------------------------------------------------
@@ -209,7 +153,7 @@ class RegionItem(QGraphicsItem):
         for sid in self._member_ids:
             node = self._node_items.get(sid)
             if node is not None:
-                rects.append(node.mapRectToScene(node.boundingRect()))
+                rects.append(node.body_scene_rect())
 
         if not rects:
             new_rect = QRectF()
@@ -222,7 +166,6 @@ class RegionItem(QGraphicsItem):
         if new_rect != self._rect:
             self.prepareGeometryChange()
             self._rect = new_rect
-            self._handle.update_offset(QPointF(self._rect.left(), self._rect.top()))
             self.update()
 
     # ------------------------------------------------------------------
@@ -238,7 +181,7 @@ class RegionItem(QGraphicsItem):
         return self._member_ids
 
     def set_interactive(self, interactive: bool) -> None:
-        self._handle.set_interactive(interactive)
+        self._interactive = interactive
 
     def set_label(self, label: str) -> None:
         self._label = label
@@ -246,6 +189,4 @@ class RegionItem(QGraphicsItem):
 
     def set_color(self, key: int) -> None:
         self._color_key = key
-        self._handle._color_key = key
-        self._handle.update()
         self.update()

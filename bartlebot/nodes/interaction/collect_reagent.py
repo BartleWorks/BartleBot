@@ -88,7 +88,7 @@ async def _collect_for_client(machine, client, client_idx: int, entity_name: str
         )
         await client.teleport(xyz)
 
-        prompted = await client.is_in_npc_range() or await node_helpers.poll_until(
+        prompted = await node_helpers.poll_until(
             lambda: node_helpers.all_in_npc_range([client]),
             safety_delay,
             POLL_INTERVAL,
@@ -97,10 +97,20 @@ async def _collect_for_client(machine, client, client_idx: int, entity_name: str
         if prompted:
             chat_before = await snapshot_chat(client)
             await client.send_key(Keycode.X, 0.1)
-            await asyncio.sleep(safety_delay)
-            collected += 1
-            for item_name in extract_new_drops(chat_before, await snapshot_chat(client)):
-                machine.on_drop(item_name, 1, client_idx)
+            dismissed = await node_helpers.poll_until(
+                lambda: node_helpers.none_in_npc_range([client]),
+                safety_delay,
+                POLL_INTERVAL,
+            )
+            if dismissed:
+                collected += 1
+                for item_name in extract_new_drops(chat_before, await snapshot_chat(client)):
+                    machine.on_drop(item_name, 1, client_idx)
+            else:
+                machine.log(
+                    f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after X, skipping",
+                    logging.DEBUG,
+                )
         else:
             machine.log(
                 f"Client {client_idx + 1}: entity {i} — no prompt after teleport, skipping",
@@ -132,7 +142,10 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("FAILURE: entity_name is blank", logging.WARNING)
         return "FAILURE"
 
-    # 3. Each client independently finds and collects its own entity list.
+    # 3. Wait for entities to load.
+    await asyncio.sleep(safety_delay)
+
+    # 4. Each client independently finds and collects its own entity list.
     counts = await asyncio.gather(
         *[_collect_for_client(machine, c, i, entity_name, safety_delay) for i, c in enumerate(clients)]
     )

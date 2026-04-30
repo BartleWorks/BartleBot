@@ -9,8 +9,94 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Azteca",
   "drops": [
-    "Potent Trap TC",
-    "Sharpened Blade TC"
+    "Allocados",
+    "Angel Oak",
+    "Azteca Combat Theme",
+    "Azteca Dungeon Theme",
+    "Azteca Swamp Theme",
+    "Basilisk",
+    "Bedrock Bonbons",
+    "Black Lotus",
+    "Black Pearl",
+    "Black Sun Chac's Armor",
+    "Blood Moss",
+    "Bone",
+    "Bronze",
+    "Bronze Gear",
+    "Cacao Beans",
+    "Cactus Fruit",
+    "Catch Opal",
+    "Chapulines",
+    "Chastisement",
+    "Clear Accurate Jade +9%",
+    "Clear Defense Peridot +38",
+    "Clear Piercing Peridot +5%",
+    "Clear Piercing Ruby +5%",
+    "Clear PIP Opal +8%",
+    "Coatl Lord's Hat",
+    "Colossal",
+    "Cycle of Life",
+    "Deep Mushroom",
+    "Dr. Von's Monster",
+    "Earth Dino Shield",
+    "Fern Jelly",
+    "Fire Blossom",
+    "Fish on a Vine",
+    "Fossil",
+    "Fried Ice Cream",
+    "Furnace",
+    "Galvanic Field",
+    "Gargantuan",
+    "Glorious Feathered Mantle",
+    "Gnomes!",
+    "Golden Head of the Cold House",
+    "Golden Pearl",
+    "House of Plague Greenstone",
+    "Jaguar Prince's Leapers",
+    "Keeper of the Codex Crown",
+    "Lava Lily",
+    "Lord of Night",
+    "Lord of the Swamp's Scepter",
+    "Maize",
+    "Marzipan Maize",
+    "Mega-Upset Opal",
+    "Mend",
+    "Mist Wood",
+    "Nightshade",
+    "Ore",
+    "Philosoraptor's Ideal Mantle",
+    "Philososaur's Robes",
+    "Polymorph Icehorn",
+    "Polymorph Jaguar",
+    "Polymorph Pteranodon",
+    "Potent Trap",
+    "Primordial",
+    "Punishment",
+    "Quetzal Pretzel",
+    "Red Bell Pepper",
+    "Red Mandrake",
+    "Reliquary",
+    "Saber-Tooth Cider",
+    "Sharp Opal",
+    "Sharpened Blade",
+    "Sirens",
+    "Sleet Storm",
+    "Stone Block",
+    "Storm Owl's Favored Trackers",
+    "Stumble On Opal",
+    "Sun Jar",
+    "Sun's Death Smiling Pendant",
+    "Sunstone",
+    "Tenochti-Flan",
+    "The Enchanter",
+    "Tortilla Chips",
+    "Turquoise",
+    "Venus Fly Trap",
+    "Virulence",
+    "Wide Drum",
+    "Winter's Pyramid Deck",
+    "Woolly Mammoth",
+    "Zocalo Wings"
   ],
   "authors": "BartleBot",
   "options": [
@@ -36,21 +122,20 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Zocalo",
       "position": {
-        "x": 150.0,
+        "x": 0,
         "y": 0.0
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Three Points",
       "position": {
-        "x": 450.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -67,15 +152,14 @@
           "z": 276.01
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_zone",
       "label": "Enter Cenote",
       "position": {
-        "x": 750.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -92,15 +176,14 @@
           "z": 3.24
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_dungeon",
       "label": "Enter Ruined Mine",
       "position": {
-        "x": 1050.0,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -117,15 +200,14 @@
           "z": -0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "handle_combat",
       "label": "Defeat Guillermo Shatterer",
       "position": {
-        "x": 1350.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -134,27 +216,25 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1650.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "enter_zone",
       "label": "Exit Ruined Mine",
       "position": {
-        "x": 1950.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -171,8 +251,7 @@
           "z": 91.05
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

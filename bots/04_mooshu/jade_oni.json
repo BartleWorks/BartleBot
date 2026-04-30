@@ -9,12 +9,249 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Mooshu",
   "drops": [
-    "Rank 1-5 Spirit and Balance spellements",
-    "crowns gear",
-    "holiday items",
-    "pet jewels",
-    "school design gear",
-    "Adept's Socket Wrench"
+    "Add Health Opal",
+    "Adept's Socket Wrench",
+    "Angelic Helm",
+    "Attentive Opal",
+    "Balance-Boon Citrine",
+    "Balance-Giver Citrine",
+    "Banana Peel Opal",
+    "Banshee",
+    "Big Boost Opal",
+    "Big Downer Opal",
+    "Big Energy Opal",
+    "Big Holiday Tree",
+    "Big-Check Opal",
+    "Black Cat",
+    "Blemished Damage Amethyst +11",
+    "Blemished Damage Citrine +11",
+    "Blemished Damage Jade +11",
+    "Blemished Damage Onyx +11",
+    "Blemished Damage Peridot +11",
+    "Blemished Damage Ruby +11",
+    "Blemished Damage Sapphire +11",
+    "Blemished Defense Citrine +21",
+    "Blemished Defense Opal +11",
+    "Blemished Health Opal +40",
+    "Blood Bat",
+    "Blubbering Pumpkin Scepter",
+    "Blue Holiday Ornament",
+    "Boon Tree",
+    "Brass",
+    "Brogans of Decrepitude",
+    "Brooding Cap",
+    "Bunny Feet",
+    "Bunny Suit",
+    "Cackling Pumpkin Scepter",
+    "Candy Wand",
+    "Carol of the Bells Theme",
+    "Charge Opal",
+    "Charge Up Opal",
+    "Check Opal",
+    "Cheeky Opal",
+    "Christmas Elf",
+    "Chuckling Pumpkin Scepter",
+    "Clay Post Opal",
+    "Clear Path Opal",
+    "Cobalt",
+    "Colossus",
+    "Cool Pumpkin Mask",
+    "Copper",
+    "Cupig",
+    "Cyclops",
+    "Cyclops Minion",
+    "Cyclops Pumpkin Mask",
+    "Dark Sprite",
+    "Dashing Shoes",
+    "Dawdle Opal",
+    "Dead End Opal",
+    "Death-Away Onyx",
+    "Death-Boon Onyx",
+    "Death-Giver Onyx",
+    "Deck the Halls Theme",
+    "Decorative Cannon",
+    "Dependable Opal",
+    "Determined Opal",
+    "Dirt Post Opal",
+    "Downer Opal",
+    "Eager Opal",
+    "Earth Walker",
+    "Earthquake",
+    "Ectoplasm",
+    "Effective Opal",
+    "Even Footing",
+    "Exhaust Opal",
+    "Extra Mana Opal",
+    "Fire-Away Ruby",
+    "Fire-Giver Ruby",
+    "Frostman",
+    "Gearhead Destroyer",
+    "Ghost Dragon",
+    "Ghoul",
+    "Gogi Berry Stained Boots",
+    "Gold Miner Opal",
+    "Golden Goose",
+    "Green Holiday Ornament",
+    "Hallowe'en Robe",
+    "Happy Holidaisy",
+    "Happy Pumpkin Mask",
+    "Hatchling Scepter",
+    "Headgear of the Sylph",
+    "Headwraps of the Zealous",
+    "Healer Opal",
+    "Helephant",
+    "Helm of Disquiet",
+    "Holiday Fireplace",
+    "Holiday Hook Wand",
+    "Holiday Treat Wand",
+    "Holiday Wreath",
+    "Huge Energy Opal",
+    "Humongofrog Peridot",
+    "Hurry Opal",
+    "Hydra",
+    "Ice Wyvern Sapphire",
+    "Ice-Away Sapphire",
+    "Ice-Boon Sapphire",
+    "Ice-Giver Sapphire",
+    "Imp",
+    "Imperial Statue",
+    "Intrepid Opal",
+    "Jade Oni",
+    "Jade Oni's Amethyst Blade",
+    "Jade Oni's Amulet of Duplicity",
+    "Jade Oni's Boots",
+    "Jade Oni's Cap",
+    "Jade Oni's Garments",
+    "Jade Oni's Shroud of Nothing",
+    "Jade Oni's Vestment",
+    "Jingle Bells Theme",
+    "Kitty Pumpkin Mask",
+    "Knotwork Wand",
+    "Kraken Amethyst",
+    "Krokopatra Exalted Duel",
+    "Krokopatra Master Duel",
+    "Lead",
+    "Leprechaun",
+    "Life-Boon Jade",
+    "Life-Eye Jade",
+    "Life-Proof Jade",
+    "Locust Swarm",
+    "Lovely Ladybug",
+    "Lovely Leopard",
+    "Lucky Leprechaun",
+    "Lucky Shamrock Wand",
+    "Lump of Coal",
+    "Mana Boost Opal",
+    "Maple Moose",
+    "Mend Minion Talent Peridot",
+    "Meowiarty Archmage Duel",
+    "Meowiarty Exalted Duel",
+    "Meteor Strike Ruby",
+    "Milk and Cookies",
+    "Minotaur",
+    "Mint Standee",
+    "Mint Swirl",
+    "MooShu Main Theme",
+    "MooShu Plague Theme",
+    "Move It! Opal",
+    "Mummy Costume Footwraps",
+    "Mummy Costume Headwraps",
+    "Myth-Boon Peridot",
+    "Myth-Eye Peridot",
+    "Myth-Proof Peridot",
+    "Nature's Wrath",
+    "Nickel",
+    "Ninja Pig Hat",
+    "Ninja Pig Shoes",
+    "Nosferatu's Cloak",
+    "Nutcracker",
+    "Nutcracker",
+    "Nutcracker Wand",
+    "Oil Slick Opal",
+    "Peculiar Garments",
+    "Perplex Opal",
+    "Pet Egg",
+    "Pilgrim Robe",
+    "Pip O'Plenty Opal",
+    "Pirate Pumpkin Mask",
+    "Polka Dot Wrapped Gift",
+    "Power Play Citrine",
+    "Rattlebones Exalted Duel",
+    "Rattlebones Master Duel",
+    "Red Holiday Ornament",
+    "Rescue Rover",
+    "Reshuffle",
+    "Restore Opal",
+    "Samoorai",
+    "Sanguine Scepter",
+    "Santa Boots",
+    "Santa Hat",
+    "Santa Robe",
+    "Scarab",
+    "Scarecrow",
+    "Scepter of Spring's Bounty",
+    "Scepter of the Cherub",
+    "Scorpion",
+    "Seraph",
+    "Seraph",
+    "Seraph Jade",
+    "Skeletal Pirate",
+    "Skeletal Pirate Onyx",
+    "Slippers of Enthusiasm",
+    "Slippers of Inflection",
+    "Small Color Light Strand",
+    "Snowball",
+    "Snowglobe",
+    "Snowman",
+    "Snowman Wrapped Gift",
+    "Spectral Blast",
+    "Spooky Bob",
+    "Spring Bunny Scepter",
+    "Staff of the Crimson Hart",
+    "Staff of the Harvest",
+    "Staff of the White Rabbit",
+    "Star Staff",
+    "Statue Base",
+    "Statue of Koto",
+    "Stave of the Holiday Flame",
+    "Storm-Away Amethyst",
+    "Storm-Boon Amethyst",
+    "Storm-Eye Amethyst",
+    "Storm-Giver Amethyst",
+    "Stormclaw Amethyst",
+    "Stormrider Hare",
+    "Stormzilla",
+    "Strong",
+    "Sugar Cane Wand",
+    "Super-Pass Opal",
+    "Super-Stall Opal",
+    "Tin",
+    "To The Jade Palace",
+    "Troll",
+    "Tunic of Anthems",
+    "Tunic of Discontent",
+    "Tunic of Fiery Renewal",
+    "Turkey Hat",
+    "Ultra Energy Opal",
+    "Unbalancer Citrine",
+    "Valentine Pig",
+    "Vampire",
+    "Vampire Costume Boots",
+    "Vampire Costume Wig",
+    "Vestment of the Lotus",
+    "Wand of Compassion",
+    "Wand of Nature's Ebb",
+    "Wand of Wealth",
+    "Wise Opal",
+    "Wisp Bonus Opal",
+    "Wooden Skeleton Key",
+    "Youkai's Shoes",
+    "Yuletide Lg. Keeper Aquarium",
+    "Yuletide Lg. Small Fry Aquarium",
+    "Yuletide Spirit",
+    "Yuletide Tall Keeper Aquarium",
+    "Yuletide Tall Small Fry Aquarium",
+    "Zeus Exalted Duel"
   ],
   "authors": "BartleBot",
   "options": [
@@ -50,22 +287,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to the Jade Palace",
       "position": {
-        "x": 150.0,
-        "y": 14.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 450.0,
-        "y": 14.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -73,16 +309,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_dungeon",
       "label": "Enter the Emperor's Throne Room",
       "position": {
-        "x": 1050.0,
-        "y": 14.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Hub",
@@ -98,16 +333,15 @@
           "z": 898.45
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "interact",
       "label": "Summon the Jade Oni",
       "position": {
-        "x": 1950.0,
-        "y": 14.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -127,16 +361,15 @@
       },
       "option_overrides": {
         "Safety Delay": 0.0
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_5",
       "node_type": "handle_combat",
       "label": "Defeat the Jade Oni",
       "position": {
-        "x": 2550.0,
-        "y": 14.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "enemy": "Oni-Jade-MSBoss-L76",
@@ -144,16 +377,15 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2850.0,
-        "y": 14.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.8,
@@ -161,16 +393,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
       "position": {
-        "x": 3150.0,
-        "y": 14.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -180,30 +411,28 @@
           "z": 767.77
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3450.0,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
         "duration": 5.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 750.0,
-        "y": 14.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -211,16 +440,15 @@
         "refill_potions": true,
         "mark_zone": "MooShu/MS_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "teleport_to_coordinates",
       "label": "Enter Jade Oni's render radius",
       "position": {
-        "x": 2250.0,
-        "y": 14.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -230,28 +458,26 @@
           "z": 767.77
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 1350.0,
-        "y": 14.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 1621.7713633398569,
-        "y": -57.18525766470975
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/Interiors/MS_Emperor_Palace",
@@ -266,8 +492,7 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

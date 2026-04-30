@@ -58,22 +58,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Go to the Basilica",
       "position": {
-        "x": 152.65066580608053,
-        "y": 12.245391931780915
+        "x": 1320,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone_via_object",
       "label": "Take portal to Dragonspyre Academy",
       "position": {
-        "x": 452.6506658060805,
-        "y": 12.245391931780915
+        "x": 1760,
+        "y": 180.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_Hub_Cathedral",
@@ -89,16 +88,15 @@
           "z": -0.04
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_zone_via_object",
       "label": "Start dragon ride",
       "position": {
-        "x": 750.0,
-        "y": 12.245391931780915
+        "x": 2200,
+        "y": 90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
@@ -114,16 +112,15 @@
           "z": 1998.84
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "mark_location",
       "label": "Mark location outside dungeon entrance",
       "position": {
-        "x": 1350.0,
-        "y": 14.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
@@ -133,16 +130,15 @@
           "z": -0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1650.0,
-        "y": 14.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -150,16 +146,15 @@
         "refill_potions": true,
         "mark_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "enter_dungeon",
       "label": "Enter the Great Spyre dungeon",
       "position": {
-        "x": 1950.0,
-        "y": 14.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
@@ -175,16 +170,15 @@
           "z": -0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 2513.3820924893416,
-        "y": 145.19514594949163
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
@@ -199,16 +193,15 @@
           "z": -274.89
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "interact",
       "label": "Skip dragon ride",
       "position": {
-        "x": 1048.4742538537225,
-        "y": 12.226369301410294
+        "x": 2640,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
@@ -223,16 +216,15 @@
           "z": 16.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "enter_zone",
       "label": "Go to Path of Scales",
       "position": {
-        "x": 2844.4690062315512,
-        "y": 10.967530337815688
+        "x": 1760,
+        "y": -180.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
@@ -248,16 +240,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
       "label": "Go to the Great Spyre",
       "position": {
-        "x": 3118.5313217448347,
-        "y": 10.948507707445103
+        "x": 2200,
+        "y": -90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
@@ -273,16 +264,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "enter_zone_via_object",
       "label": "Activate elevator",
       "position": {
-        "x": 3400.2223679895046,
-        "y": 10.948507707445117
+        "x": 2640,
+        "y": -90.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
@@ -298,30 +288,28 @@
           "z": -5777.41
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "sleep",
       "label": "Wait for elevator",
       "position": {
-        "x": 3681.913414234175,
-        "y": 4.5772384388324525
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "duration": 25.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "enter_zone",
       "label": "Exit elevator",
       "position": {
-        "x": 3952.9242374549026,
-        "y": 18.577238438832453
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Elevator_Up",
@@ -337,44 +325,41 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 2248.474253853723,
-        "y": 13.980977369629372
+        "x": 1320,
+        "y": -90.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Firebender",
       "position": {
-        "x": 4303.638228142399,
-        "y": -110.06613996930415
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "enemy": "Helephant-Fire-Boss-R9",
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "teleport_to_coordinates",
       "label": "Enter Gurtok Piercer render radius",
       "position": {
-        "x": 4650.232570515952,
-        "y": 16.50324205788518
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -384,46 +369,43 @@
           "z": 4734.39
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 4887.069319823825,
-        "y": -222.7456612251807
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "duration": 4.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Piercer",
       "position": {
-        "x": 5131.788953646426,
-        "y": -96.84668417320526
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "enemy": "Helephant-Death-Boss-R9",
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_19",
       "node_type": "interact",
       "label": "Activate crystal stand",
       "position": {
-        "x": 5471.5815027507715,
-        "y": 14.000000000000021
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -438,16 +420,15 @@
           "z": 4734.24
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_20",
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 5746.577857976391,
-        "y": 14.573584489905627
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -455,16 +436,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_21",
       "node_type": "enter_zone",
       "label": "Go to the Crown of Fire",
       "position": {
-        "x": 6025.158905973386,
-        "y": 12.255568959157536
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -480,16 +460,15 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_28",
       "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for mobs",
       "position": {
-        "x": 6373.967083951438,
-        "y": 9.32384439162388
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -499,30 +478,28 @@
           "z": 410.58
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_29",
       "node_type": "sleep",
       "label": "Wait for mobs to render",
       "position": {
-        "x": 6633.1768291619865,
-        "y": 3.9198174114930033
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "duration": 3.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_30",
       "node_type": "handle_combat",
       "label": "Defeat mobs",
       "position": {
-        "x": 6897.5992790084765,
-        "y": 12.18397251243681
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "enemy": "Undead-Caster-Blue-R8-1",
@@ -534,30 +511,28 @@
           1,
           2
         ]
-      },
-      "flipped": false
+      }
     },
     {
       "id": "state_31",
       "node_type": "sleep",
       "label": "Wait for Malistaire to start dialogue",
       "position": {
-        "x": 7169.478327223742,
-        "y": 0.47831047205929167
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "duration": 8.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_32",
       "node_type": "teleport_to_coordinates",
       "label": "Activate Malistaire dialogue",
       "position": {
-        "x": 7435.047946050037,
-        "y": 15.625479451870525
+        "x": 8800,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -567,30 +542,28 @@
           "z": 626.36
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_33",
       "node_type": "sleep",
       "label": "Wait for Malistaire dialogue to end",
       "position": {
-        "x": 7704.059071815771,
-        "y": 5.066986391304237
+        "x": 9240,
+        "y": 0.0
       },
       "params": {
         "duration": 20.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_34",
       "node_type": "teleport_to_coordinates",
       "label": "Reset Malistaire dialogue",
       "position": {
-        "x": 7436.768699519753,
-        "y": 148.69708110997374
+        "x": 10120,
+        "y": 90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -600,32 +573,30 @@
           "z": 410.4
         }
       },
-      "option_overrides": {},
-      "flipped": true
+      "option_overrides": {}
     },
     {
       "id": "state_35",
       "node_type": "handle_combat",
       "label": "Defeat Malistaire",
       "position": {
-        "x": 7961.024923293493,
-        "y": 17.34623292158739
+        "x": 9680,
+        "y": 0.0
       },
       "params": {
         "enemy": "Malistaire-Boss-R10",
         "use_bot_default": true,
         "combat_config": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_36",
       "node_type": "teleport_to_marked_location",
       "label": "Recall to mark",
       "position": {
-        "x": 1648.2334419841957,
-        "y": 257.20994797219083
+        "x": 10120,
+        "y": -90.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
@@ -635,8 +606,7 @@
           "z": 0.0
         }
       },
-      "option_overrides": {},
-      "flipped": true
+      "option_overrides": {}
     }
   ],
   "transitions": [

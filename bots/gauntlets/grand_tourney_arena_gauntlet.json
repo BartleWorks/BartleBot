@@ -9,7 +9,90 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Pixie's energy gear"
+    "Accurate Talent Opal",
+    "Acorn",
+    "Aether",
+    "Aquamarine",
+    "Asparagus Spears",
+    "Basilisk",
+    "Bearberry",
+    "Black Cap Crisps",
+    "Black Spider",
+    "Blaze Beast",
+    "Blue Ghost",
+    "Bog Witch Beetroot",
+    "Brass",
+    "Bronze",
+    "Caliburnt Toast",
+    "Ceara Ashbury Bobblehead",
+    "Chimera",
+    "Chocolate Comet",
+    "Clear Critical Amethyst +10",
+    "Clear Critical Peridot +10",
+    "Clear Damage Ruby +19",
+    "Cobalt",
+    "Cornbread Fruit Bush",
+    "Crab Knight Cakes",
+    "Crystal Ball",
+    "Crystal Custard",
+    "Dark Sprite",
+    "Deepwater Toffee",
+    "Dimension Shift Peridot",
+    "Dryad",
+    "Efreet",
+    "Enfeeble Amethyst",
+    "Faerie Court Boots (Level 100+)",
+    "Faerie Court Steel Leaf (Level 100+)",
+    "Fire Blossom",
+    "Fire Dragon",
+    "Fire Elf",
+    "Forest Beast",
+    "Frost Giant",
+    "Giant Talent Opal",
+    "Grandfather Clock",
+    "Great Spiral Glyph",
+    "Grendelweed",
+    "Helephant Ears",
+    "High Road Haggis",
+    "King Artorius Bobblehead",
+    "Lady's Favor",
+    "Large Willow Tree",
+    "Lectern",
+    "Lemon Harts",
+    "Levee Breaking Lute (Level 100+)",
+    "Mandolin of Evermore (Level 100+)",
+    "Mask of the Faerie Court (Level 100+)",
+    "Mass Infection Onyx",
+    "Mass Triage Jade",
+    "Misty Mountain Mandolin (Level 100+)",
+    "Monstrous Talent Opal",
+    "Muscle Sprouts",
+    "Mythic Beast",
+    "Ogre Meanies",
+    "Pixie Parsnips",
+    "Pixie's Armor of Encanta (Level 100+)",
+    "Pixie's Enchanted Boots (Level 100+)",
+    "Pixie's Enchanted Boots (Level 90+)",
+    "Pixie's Mask of Encanta (Level 100+)",
+    "Pomegranite",
+    "Red Bell Pepper",
+    "Rye Bread Fruit Bush",
+    "Seraph Food Cake",
+    "Shadow Beast",
+    "Shepherd's Crook Pie",
+    "Sir Pike Del Lago Bobblehead",
+    "Snow Beast",
+    "Spark Beast",
+    "Spiral Shield",
+    "Spirit Trap Citrine (Triangle)",
+    "Spring",
+    "Steel",
+    "Toad in the Hole",
+    "Weirwood Cake",
+    "World's Fool Armor (Level 100+)",
+    "World's Fool Boots (Level 100+)",
+    "World's Fool Mask (Level 100+)",
+    "Wyrmy Apple"
   ],
   "authors": "BartleBot",
   "options": [
@@ -32,36 +115,34 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 750.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {
         "friend_name": "Alice StormBlade",
         "to_zone": "Housing_AR_Dormroom/Interior"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "teleport_to_world_hub",
       "label": "Go to The Commons",
       "position": {
-        "x": 150.0,
+        "x": 0,
         "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -70,29 +151,27 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1050.0,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
         "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "handle_combat",
       "label": "Defeat Sir Lyonel LaughingStorm",
       "position": {
-        "x": 1350.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -101,15 +180,14 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 1650.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -126,15 +204,14 @@
           "z": -13.42
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 1950.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -153,15 +230,14 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 2250.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -178,15 +254,14 @@
           "z": 2.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "handle_combat",
       "label": "Defeat Lady Tanselle DreamingStar",
       "position": {
-        "x": 2550.0,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -195,15 +270,14 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 2850.0,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -220,15 +294,14 @@
           "z": -13.62
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 3150.0,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -247,15 +320,14 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 3450.0,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -272,15 +344,14 @@
           "z": 2.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_13",
       "node_type": "handle_combat",
       "label": "Defeat Sir Dunc",
       "position": {
-        "x": 3750.0,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -289,15 +360,14 @@
         "combat_config": "",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_14",
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 4050.0,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -314,15 +384,14 @@
           "z": -13.42
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_15",
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 4350.0,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -341,15 +410,14 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_16",
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 4650.0,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -366,15 +434,14 @@
           "z": 2.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_17",
       "node_type": "handle_combat",
       "label": "Defeat Sir Steffan BadApple",
       "position": {
-        "x": 4950.0,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -383,15 +450,14 @@
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_18",
       "node_type": "enter_zone",
       "label": "Enter tent",
       "position": {
-        "x": 5250.0,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -408,15 +474,14 @@
           "z": -8.74
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_19",
       "node_type": "interact",
       "label": "Talk",
       "position": {
-        "x": 5550.0,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -435,15 +500,14 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_20",
       "node_type": "enter_zone",
       "label": "Exit tent",
       "position": {
-        "x": 5850.0,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -460,15 +524,14 @@
           "z": 2.2
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_21",
       "node_type": "handle_combat",
       "label": "Defeat Sir Claudus D'Agrodolce",
       "position": {
-        "x": 6150.0,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -477,15 +540,14 @@
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_22",
       "node_type": "teleport_to_coordinates",
       "label": "Complete gauntlet",
       "position": {
-        "x": 6750.0,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -496,15 +558,14 @@
           "z": -12.37
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_23",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6450.0,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -513,8 +574,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -874,6 +934,7 @@
       "trigger": "advance",
       "source": "state_23",
       "dest": "state_22",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
     },
@@ -881,7 +942,7 @@
       "trigger": "advance",
       "source": "state_23",
       "dest": "state_22",
-      "when": "FAILURE",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

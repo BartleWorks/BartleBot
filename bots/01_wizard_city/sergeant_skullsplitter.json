@@ -121,22 +121,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Commons",
       "position": {
-        "x": 150.0,
-        "y": 28.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
       "position": {
-        "x": 750.0,
-        "y": 28.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -152,16 +151,15 @@
           "z": -27.99
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_zone",
       "label": "Enter Olde Town",
       "position": {
-        "x": 1050.0,
-        "y": 28.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Shop_Area",
@@ -177,16 +175,15 @@
           "z": -29.36
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter Triton Avenue",
       "position": {
-        "x": 1350.0,
-        "y": 28.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
@@ -202,16 +199,15 @@
           "z": -1397.84
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "enter_dungeon",
       "label": "Enter Skull Fort",
       "position": {
-        "x": 1650.0,
-        "y": 28.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
@@ -227,16 +223,15 @@
           "z": 59.12
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "handle_combat",
       "label": "Defeat Sergeant Skullsplitter",
       "position": {
-        "x": 1950.0,
-        "y": 28.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "enemy": "Skeleton-Gold-WCBoss-L03",
@@ -244,16 +239,15 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "enter_zone",
       "label": "Exit Skull Fort",
       "position": {
-        "x": 2250.0,
-        "y": 28.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
@@ -269,28 +263,26 @@
           "z": 1.61
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2550.0,
-        "y": 28.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {},
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 28.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -298,8 +290,7 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

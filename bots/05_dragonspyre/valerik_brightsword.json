@@ -1,16 +1,49 @@
 {
-  "name": "Valerik Brightsword Farmer",
+  "name": "Valerik Brightsword",
   "description": "Endlessly farms Valerik Brightsword in The Crucible, Dragonspyre.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_5",
+  "initial": "state_1",
   "recovery_state": "state_1",
   "default_combat_config": "novus[epic]@boss | any<damage>[epic]@boss | any<damage>@boss",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Dragonspyre",
   "drops": [
+    "Brass",
+    "Cloak of the Seasons",
+    "Cobalt",
+    "Cowl of Blazes",
+    "Deadly Fly Trap",
+    "Deck of Perfect Harmony",
+    "Drake Marker",
+    "Drape of Symmetry",
+    "Dull Blocking Onyx +4",
+    "Dull Damage Citrine +13",
+    "Dull Damage Jade +13",
+    "Fiery Boom Shroom",
+    "Footgear of Craftsmanship",
+    "Headgear of the Ice Pilot",
+    "Hood of the Historian",
     "King Parsley",
-    "Pink Dandelion"
+    "Leather Straps",
+    "Maelstrom Snap Dragon",
+    "Monsoon Mocassins",
+    "Nickel",
+    "Ozone Shroud",
+    "Pink Dandelion",
+    "Sandals of the Prophet",
+    "Shoes of Gloom",
+    "Signet of the Reaper",
+    "Slippers of the Ice Flow",
+    "Slippers of the Slipstream",
+    "Snowflake Plaque",
+    "Soothing Steel",
+    "Stonecutter",
+    "Tin",
+    "Tunic of Effervescence",
+    "Valerik's Chilled Vestment",
+    "Valerik's Sandals of Destiny",
+    "White Laugh-O-Dil"
   ],
   "authors": "BartleBot",
   "options": [
@@ -36,22 +69,21 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Basilica",
       "position": {
-        "x": 150.0,
-        "y": 14.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_2",
       "node_type": "enter_zone_via_object",
       "label": "Enter the Necropolis",
       "position": {
-        "x": 1050.0,
-        "y": 14.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_Hub_Cathedral",
@@ -67,16 +99,15 @@
           "z": -0.04
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_zone",
       "label": "Enter The Crucible",
       "position": {
-        "x": 1350.0,
-        "y": 14.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
@@ -92,16 +123,15 @@
           "z": 1091.11
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "interact",
       "label": "Summon Valerik Brightsword",
       "position": {
-        "x": 1950.0,
-        "y": 14.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
@@ -119,16 +149,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "teleport_to_coordinates",
       "label": "Go to Valerik Brightsword",
       "position": {
-        "x": 1650.0,
-        "y": 14.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
@@ -138,16 +167,15 @@
           "z": -700.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "handle_combat",
       "label": "Defeat Valerik Brightsword",
       "position": {
-        "x": 2250.0,
-        "y": 14.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "enemy": "Warrior-Male-Armor-Purple-Boss-R8",
@@ -155,16 +183,15 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
       "position": {
-        "x": 2850.0,
-        "y": 14.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
@@ -174,30 +201,28 @@
           "z": -700.0
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3150.0,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
         "duration": 5.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3450.0,
-        "y": 14.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -205,16 +230,15 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2550.0,
-        "y": 14.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -222,16 +246,15 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 450.0,
-        "y": 14.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -239,23 +262,21 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_12",
       "node_type": "wait_for_health",
       "label": "Wait for health",
       "position": {
-        "x": 750.0,
-        "y": 14.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "threshold": 0.8,
         "timeout": 600.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -272,13 +293,6 @@
       "source": "state_3",
       "dest": "state_5",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_4",
       "flags": [],
       "flag_op": "AND"
     },
@@ -318,6 +332,7 @@
       "trigger": "advance",
       "source": "state_10",
       "dest": "state_7",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     },
@@ -411,20 +426,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_2",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_12",
       "dest": "state_1",
       "when": "FAILURE",
@@ -436,6 +437,30 @@
       "source": "state_9",
       "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_4",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }

@@ -1,0 +1,360 @@
+{
+  "name": "Sprockets",
+  "description": "Endlessly defeats Sprockets in Counterweight East, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "tempest[epic]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Marleybone",
+  "drops": [
+    "Admirable Shoes",
+    "Alluring Robes",
+    "Angled Gravemarker",
+    "Artificial Robe",
+    "Bewitching Shoes",
+    "Blizzard Sapphire",
+    "Boots of the Nucleus",
+    "Bronze Gear",
+    "Cap of the Unicorn",
+    "Caramel Popcorn",
+    "Cat Burglar's Cap",
+    "Chipped Accurate Citrine +3%",
+    "Chipped Accurate Onyx +3%",
+    "Chipped Damage Onyx +8",
+    "Chipped Defense Jade +15",
+    "Chipped Defense Ruby +15",
+    "Chipped Health Opal +25",
+    "Clear Path Opal",
+    "Cloak of Clarity",
+    "Copper",
+    "Crossbone Gravestone",
+    "Dexterous Vest",
+    "Double Wall Lamp",
+    "Dryad",
+    "Exacting Boots",
+    "Exquisite Slippers",
+    "Feline's Invigorating Robe",
+    "Feline's Whimsical Robe",
+    "Flawed Damage Sapphire +10",
+    "Flawed Defense Amethyst +17",
+    "Flawed Defense Citrine +17",
+    "Flawed Defense Onyx +17",
+    "Flawed Defense Peridot +17",
+    "Flawed Health Opal +26",
+    "Flawed PIP Opal +3%",
+    "Footwraps of Anguish",
+    "Garment of the Supreme",
+    "Gummy Bloodbat",
+    "Heck Hound",
+    "Ice Wyvern",
+    "Iron",
+    "Jerrycan",
+    "Jinxed Hat",
+    "Lead",
+    "Magnificent Boots",
+    "Marleybone Theme 3",
+    "Marleybonian Pilot Painting",
+    "Medium Fish",
+    "Mist Wood",
+    "Myth-Proof Peridot",
+    "Nickel",
+    "Park Bench (Inactive)",
+    "Polished Garments",
+    "Premium Footwraps",
+    "Rat Magician",
+    "Redskin Peanut",
+    "Ring of Clarity",
+    "Ring of Effect",
+    "Ring of the Unicorn",
+    "Robe of the Bubble",
+    "Sandals of Delusion",
+    "Sandstorm",
+    "Satyr",
+    "Scrap Iron",
+    "Shaman's Hat",
+    "Shoes of the Devoted",
+    "Silent Canine Cowl",
+    "Slippers of Predominance",
+    "Slippers of the Worrier",
+    "Spider Silk",
+    "Spirit Armor",
+    "Sprockets' Amulet",
+    "Sprockets' Basking Athame",
+    "Sprockets' Charming Shoes",
+    "Sprockets' Enticing Boots",
+    "Sprockets' Equivalent Robe",
+    "Sprockets' Hat of the Feline",
+    "Sprockets' Invigorating Hat",
+    "Sprockets' Marvelous Boots",
+    "Sprockets' Medicinal Ring",
+    "Sprockets' Shoes of Ideals",
+    "Sprockets' Slippers",
+    "Sprockets' Urbane Cowl",
+    "Sprockets' Vestment",
+    "Sprockets's Cultured Cap",
+    "Sprockets's Robe",
+    "Sprockets's Victorian Vest",
+    "Square Watermelon",
+    "Stinky Cheese",
+    "Super-Pass Opal",
+    "Superstitious Canine Cowl",
+    "Tin",
+    "Tunic of Symmetry",
+    "Tunic of the Clever",
+    "Vest of Predominance",
+    "Vestment of Expertise",
+    "Vestment of the Sun",
+    "Watchman's Athame",
+    "Wheat Cracker",
+    "Winter Canine Cowl",
+    "Wisp Bonus Opal",
+    "Wyldfire Ruby"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Skip to boss",
+      "type": "bool",
+      "default": true
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": -440.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Royal Museum",
+      "position": {
+        "x": 0.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -205.62,
+          "y": 9124.3,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -191.04,
+          "y": 8491.09,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Counterweight East",
+      "position": {
+        "x": 440.0,
+        "y": -270.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "dungeon_zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
+        "sigil_xyz": {
+          "x": 855.23,
+          "y": 5732.53,
+          "z": 250.0
+        },
+        "reset_xyz": {
+          "x": 1559.06,
+          "y": 5948.36,
+          "z": 249.97
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "handle_combat",
+      "label": "Defeat Sprockets",
+      "position": {
+        "x": 1320.0,
+        "y": -270.0
+      },
+      "params": {
+        "enemy": "Golem-Brass-MBBoss-L48",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Exit Counterweight East",
+      "position": {
+        "x": 1760.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -2.47,
+          "y": -5255.66,
+          "z": 10.01
+        },
+        "reset_xyz": {
+          "x": -10.09,
+          "y": -4835.73,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_coordinates",
+      "label": "Spawn Sprockets",
+      "position": {
+        "x": 880.0,
+        "y": -270.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
+        "xyz": {
+          "x": 1312.93,
+          "y": -1691.39,
+          "z": 3850.0
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Skip to boss",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

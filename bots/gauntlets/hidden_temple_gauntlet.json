@@ -37,23 +37,22 @@
       "node_type": "teleport_to_friend",
       "label": "Teleport to friend",
       "position": {
-        "x": 750.0,
-        "y": 7.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "friend_name": "Alice StormBlade",
         "to_zone": "WizardCity/Interiors/WC_Housing_Dorm_Interior"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_4",
       "node_type": "interact",
       "label": "Talk to Fitzhume",
       "position": {
-        "x": 1350.0,
-        "y": 7.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
@@ -71,16 +70,15 @@
           1
         ]
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_5",
       "node_type": "enter_zone",
       "label": "Enter Temple of Water",
       "position": {
-        "x": 1650.0,
-        "y": 7.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
@@ -96,16 +94,15 @@
           "z": 646.21
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 1950.0,
-        "y": 7.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int02",
@@ -121,16 +118,15 @@
           "z": -247.97
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_7",
       "node_type": "teleport_to_coordinates",
       "label": "Go to final boss fight",
       "position": {
-        "x": 2250.0,
-        "y": 7.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int03",
@@ -140,16 +136,15 @@
           "z": -753.1
         }
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_8",
       "node_type": "handle_combat",
       "label": "Defeat final bosses",
       "position": {
-        "x": 2550.0,
-        "y": 7.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "enemy": "HG_Dino_Undead_C_L50",
@@ -157,44 +152,41 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_9",
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2850.0,
-        "y": 7.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_10",
       "node_type": "teleport_to_world_hub",
       "label": "Go to The Commons",
       "position": {
-        "x": 150.0,
-        "y": 7.0
+        "x": 0,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_11",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 450.0,
-        "y": 7.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -202,22 +194,20 @@
         "refill_potions": true,
         "mark_zone": ""
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     },
     {
       "id": "state_3",
       "node_type": "enter_gauntlet",
       "label": "Enter gauntlet",
       "position": {
-        "x": 1050.0,
-        "y": 7.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "dungeon_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01"
       },
-      "option_overrides": {},
-      "flipped": false
+      "option_overrides": {}
     }
   ],
   "transitions": [

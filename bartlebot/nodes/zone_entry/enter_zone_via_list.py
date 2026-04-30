@@ -97,7 +97,7 @@ NODE_SPEC = NodeSpec(
 )
 
 _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
-_FUZZY_THRESHOLD = 0.6  # Minimum SequenceMatcher ratio for a fuzzy match
+_FUZZY_THRESHOLD = 0.75  # Minimum SequenceMatcher ratio for a fuzzy match
 
 
 def _fuzzy_match(text: str, query_lower: str) -> bool:
@@ -144,6 +144,7 @@ async def _select_zone(client, entry: str, safety_delay: float) -> bool:
         visited.add(sig)
 
         for i, text in enumerate(texts):
+            logging.debug(f"Searching for {entry_lower!r} in {text!r} (client={client}, option={i})")
             if _fuzzy_match(text, entry_lower):
                 await node_helpers.click_by_path(client, universe_zone_option_path(i))
                 return True
