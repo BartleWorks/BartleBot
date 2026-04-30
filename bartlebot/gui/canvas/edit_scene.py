@@ -11,7 +11,7 @@ also exported here so BotCanvas can use them without circular imports.
 import math
 from collections import defaultdict
 
-from PyQt6.QtCore import QPointF, QRectF, Qt, pyqtSignal
+from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QBrush, QKeyEvent, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import (
     QGraphicsItem,
@@ -230,6 +230,10 @@ class EditScene(QGraphicsScene):
         self._temp_edge: QGraphicsLineItem | None = None
         self._drag_snap_edge: EdgeItem | None = None
         self._auto_scrolling: bool = False
+        self._node_drag_scroll_pos: QPointF | None = None
+        self._scroll_timer = QTimer(self)
+        self._scroll_timer.setInterval(16)
+        self._scroll_timer.timeout.connect(self._on_scroll_timer)
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
         self._paste_count: int = 0
@@ -572,9 +576,37 @@ class EditScene(QGraphicsScene):
                 self._auto_scrolling = False
             event.accept()
             return
+        if isinstance(self.mouseGrabberItem(), NodeItem):
+            self._node_drag_scroll_pos = event.scenePos()
+            if not self._scroll_timer.isActive():
+                self._scroll_timer.start()
         super().mouseMoveEvent(event)
 
+    def _on_scroll_timer(self) -> None:
+        if self._node_drag_scroll_pos is None:
+            self._scroll_timer.stop()
+            return
+        views = self.views()
+        if not views:
+            self._scroll_timer.stop()
+            return
+        view = views[0]
+        vp_pos = view.mapFromScene(self._node_drag_scroll_pos)
+        rect = view.viewport().rect()
+        in_margin = (
+            vp_pos.x() < _SCROLL_MARGIN
+            or vp_pos.x() > rect.width() - _SCROLL_MARGIN
+            or vp_pos.y() < _SCROLL_MARGIN
+            or vp_pos.y() > rect.height() - _SCROLL_MARGIN
+        )
+        if in_margin:
+            _auto_scroll_view(view, self._node_drag_scroll_pos)
+        else:
+            self._scroll_timer.stop()
+
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        self._scroll_timer.stop()
+        self._node_drag_scroll_pos = None
         if self._drag_src is not None:
             if self._temp_edge:
                 self.removeItem(self._temp_edge)
