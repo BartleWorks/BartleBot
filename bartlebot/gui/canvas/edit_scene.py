@@ -1198,6 +1198,7 @@ class EditScene(QGraphicsScene):
             for state in self._config.states:
                 if state.id in updates:
                     state.position = updates[state.id]
+            self._update_scene_rect()
             self.graph_changed.emit()
 
     def _flush_regions(self) -> None:
@@ -1338,7 +1339,7 @@ class EditScene(QGraphicsScene):
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
-        self.setSceneRect(self.sceneRect().united(bounds))
+        self.setSceneRect(bounds)
 
     def _get_tab_order(self) -> list[str]:
         """State IDs in BFS order from initial state, orphans appended at the end."""

@@ -402,6 +402,10 @@ class NodeItem(QGraphicsItem):
                     edge._rebuild()
                 except RuntimeError:
                     pass
+            scene = self.scene()
+            if scene is not None:
+                item_rect = self.mapToScene(self.boundingRect()).boundingRect().adjusted(-500, -500, 500, 500)
+                scene.setSceneRect(scene.sceneRect().united(item_rect))
         return super().itemChange(change, value)
 
     # ------------------------------------------------------------------
