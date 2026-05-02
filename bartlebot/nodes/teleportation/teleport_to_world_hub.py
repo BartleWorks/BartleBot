@@ -13,23 +13,23 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Hub Zone",
-        help="The hub zone name clients must be in when this node completes. "
-        "If all clients are already in this zone, the node returns SUCCESS immediately.",
+        help="The hub zone name players must be in when this node completes. "
+        "If all players are already in this zone, the node returns SUCCESS immediately.",
         default="",
         required=True,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports all clients to the hub zone for their current world by clicking the hub teleport button in the HUD compass.",
+    description="Teleports all players to the hub zone for their current world by clicking the hub teleport button in the HUD compass.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are now in the hub zone."),
+        ReturnSpec("SUCCESS", "All players are now in the hub zone."),
         ReturnSpec(
             "FAILURE",
             "The hub teleport button did not become enabled within the timeout, "
-            "clients did not enter a loading screen after pressing END, "
-            "or not all clients arrived in the expected hub zone.",
+            "players did not enter a loading screen after pressing END, "
+            "or not all players arrived in the expected hub zone.",
         ),
     ],
     max_consecutive_retries=10,

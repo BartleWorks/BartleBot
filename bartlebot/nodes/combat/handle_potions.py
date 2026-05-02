@@ -100,10 +100,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Potions used and/or refilled as needed for all clients."),
+        ReturnSpec("SUCCESS", "Potions used and/or refilled as needed for all players."),
         ReturnSpec(
             "FAILURE",
-            "Buying clients were not in mark_zone; mark failed; a navigation step failed; "
+            "Buying players were not in mark_zone; mark failed; a navigation step failed; "
             "or the potion shop could not be reached.",
         ),
     ],

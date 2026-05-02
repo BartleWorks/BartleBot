@@ -58,10 +58,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients have exited combat successfully."),
+        ReturnSpec("SUCCESS", "All players have exited combat successfully."),
         ReturnSpec(
             "FAILURE",
-            "No valid target found, no combat config available, or clients failed to enter combat within the timeout.",
+            "No valid target found, no combat config available, or players failed to enter combat within the timeout.",
         ),
     ],
     required_bot_options=[

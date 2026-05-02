@@ -283,7 +283,7 @@ class GameView(QWidget):
         """Embed the game window identified by *hwnd* as client *client_idx*."""
         if client_idx in self._tiles:
             return  # already embedded
-        label = f"Client {client_idx + 1}"
+        label = f"Player {client_idx + 1}"
         tile = ClientTile(hwnd, label, parent=self)
         self._tiles[client_idx] = tile
         tile.detach_requested.connect(lambda idx=client_idx: self._detach_client(idx))
@@ -360,7 +360,7 @@ class GameView(QWidget):
             old_idx = hwnd_to_old_idx.get(client.window_handle)
             if old_idx is not None and old_idx in self._tiles:
                 tile = self._tiles[old_idx]
-                tile._label = f"Client {new_idx + 1}"
+                tile._label = f"Player {new_idx + 1}"
                 tile.update()
                 # Reconnect detach_requested with the updated index so the detach
                 # button targets the correct slot after a client reorder.

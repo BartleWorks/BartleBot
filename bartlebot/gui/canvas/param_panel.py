@@ -10,18 +10,20 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QSize, QStringListModel, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QCompleter,
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -29,6 +31,7 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QStackedWidget,
     QStyledItemDelegate,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -59,6 +62,28 @@ class _StrListLineEdit(QLineEdit):
     """
 
 
+class _ZoneLineEdit(QLineEdit):
+    """QLineEdit with zone-path autocomplete for 'str' fields whose key contains 'zone'.
+
+    Refreshes suggestions from a caller-supplied getter on focus so the dropdown
+    always reflects currently connected players and recently visited zones.
+    """
+
+    def __init__(self, get_suggestions: Callable[[], list[str]], parent=None):
+        super().__init__(parent)
+        self._get_suggestions = get_suggestions
+        self._model = QStringListModel(self)
+        completer = QCompleter(self._model, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.setCompleter(completer)
+
+    def focusInEvent(self, event) -> None:
+        self._model.setStringList(self._get_suggestions())
+        super().focusInEvent(event)
+
+
 class _IntChoiceComboBox(QComboBox):
     """QComboBox variant used for 'int_choice' param fields.
 
@@ -84,6 +109,8 @@ class _DynamicParamForm(QWidget):
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
         self._suppress = False
+        self._get_clients: Callable[[], list] = lambda: []
+        self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
@@ -219,7 +246,7 @@ class _DynamicParamForm(QWidget):
             w.textChanged.connect(self._emit_changed)
             return w
         if field_type == "str":
-            w = QLineEdit()
+            w = _ZoneLineEdit(self._get_zone_suggestions) if "zone" in key.lower() else QLineEdit()
             w.setText(str(val) if val is not None else "")
             if help_text:
                 w.setToolTip(help_text)
@@ -280,10 +307,16 @@ class _DynamicParamForm(QWidget):
             return w
         if field_type == "xyz":
             xyz = val if isinstance(val, dict) else {}
-            container = QWidget()
-            row = QHBoxLayout(container)
-            row.setContentsMargins(0, 0, 0, 0)
-            row.setSpacing(4)
+            outer = QWidget()
+            if help_text:
+                outer.setToolTip(help_text)
+            outer_layout = QVBoxLayout(outer)
+            outer_layout.setContentsMargins(0, 0, 0, 0)
+            outer_layout.setSpacing(2)
+            # Row 1: X/Y/Z spinboxes
+            spins_row = QHBoxLayout()
+            spins_row.setContentsMargins(0, 0, 0, 0)
+            spins_row.setSpacing(4)
             spins = []
             for axis, axis_key in [("X", "x"), ("Y", "y"), ("Z", "z")]:
                 lbl = QLabel(axis)
@@ -297,17 +330,38 @@ class _DynamicParamForm(QWidget):
                 except (TypeError, ValueError):
                     spin.setValue(0.0)
                 spin.valueChanged.connect(self._emit_changed)
-                row.addWidget(lbl)
-                row.addWidget(spin, 1)
+                spins_row.addWidget(lbl)
+                spins_row.addWidget(spin, 1)
                 spins.append(spin)
-            if help_text:
-                container.setToolTip(help_text)
+            outer_layout.addLayout(spins_row)
+            # Row 2: action buttons (right-aligned)
+            btns_row = QHBoxLayout()
+            btns_row.setContentsMargins(0, 0, 0, 0)
+            btns_row.setSpacing(4)
+            btns_row.addStretch()
+            copy_btn = QPushButton("Copy")
+            copy_btn.setFixedWidth(48)
+            copy_btn.setToolTip("Copy XYZ to clipboard")
+            copy_btn.clicked.connect(lambda _checked, k=key: self._copy_xyz(k))
+            btns_row.addWidget(copy_btn)
             paste_btn = QPushButton("Paste")
             paste_btn.setFixedWidth(48)
             paste_btn.setToolTip("Fill from clipboard (Copy XYZ format)")
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
-            row.addWidget(paste_btn)
-            return (spins[0], spins[1], spins[2], container)
+            btns_row.addWidget(paste_btn)
+            fill_btn = QToolButton()
+            fill_btn.setText("Fill ▾")
+            fill_btn.setFixedWidth(54)
+            fill_btn.setToolTip("Fill from a connected player's current position")
+            fill_btn.clicked.connect(lambda _checked, k=key, b=fill_btn: self._show_fill_menu(k, b))
+            btns_row.addWidget(fill_btn)
+            tp_btn = QPushButton("TP Here")
+            tp_btn.setFixedWidth(58)
+            tp_btn.setToolTip("Teleport all connected players to this XYZ to verify")
+            tp_btn.clicked.connect(lambda _checked, k=key: asyncio.ensure_future(self._teleport_to_xyz(k)))
+            btns_row.addWidget(tp_btn)
+            outer_layout.addLayout(btns_row)
+            return (spins[0], spins[1], spins[2], outer)
         if field_type == "int_choice":
             w = _IntChoiceComboBox()
             for c in choices or []:
@@ -357,6 +411,53 @@ class _DynamicParamForm(QWidget):
             pass
         self._suppress = False
         self._emit_changed()
+
+    def _copy_xyz(self, key: str) -> None:
+        widgets = self._widgets.get(key)
+        if not isinstance(widgets, tuple):
+            return
+        x_s, y_s, z_s, _ = widgets
+        QApplication.clipboard().setText(json.dumps({"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}))
+
+    def _show_fill_menu(self, key: str, btn: QToolButton) -> None:
+        clients = self._get_clients()
+        if not clients:
+            return
+        menu = QMenu(btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Fill from Player {i + 1}")
+            action.triggered.connect(
+                lambda _checked, k=key, idx=i: asyncio.ensure_future(self._fill_xyz_from_player(k, idx))
+            )
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    async def _fill_xyz_from_player(self, key: str, idx: int) -> None:
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        try:
+            pos = await clients[idx].body.position()
+            self.set_xyz(key, pos.x, pos.y, pos.z)
+        except Exception:
+            pass
+
+    async def _teleport_to_xyz(self, key: str) -> None:
+        from wizwalker import XYZ
+
+        clients = self._get_clients()
+        if not clients:
+            return
+        widgets = self._widgets.get(key)
+        if not isinstance(widgets, tuple):
+            return
+        x_s, y_s, z_s, _ = widgets
+        target = XYZ(x_s.value(), y_s.value(), z_s.value())
+        try:
+            await asyncio.gather(
+                *[c.teleport(target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
+            )
+        except Exception:
+            pass
 
     def set_str(self, key: str, value: str) -> None:
         """Programmatically set a 'str' field by key."""
@@ -1109,7 +1210,7 @@ class _ParamPanel(QWidget):
             return
         clients = self._get_clients()
         if not clients:
-            self._record_status_lbl.setText("No client connected.")
+            self._record_status_lbl.setText("No player connected.")
             return
         if self._state.node_type not in recording.RECORDABLE_NODES:
             return

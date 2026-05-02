@@ -22,12 +22,12 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Blocks until all clients are no longer in dialogue, then returns SUCCESS. Set timeout to 0 for no time limit."
+        "Blocks until all players are no longer in dialogue, then returns SUCCESS. Set timeout to 0 for no time limit."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are out of dialogue."),
-        ReturnSpec("FAILURE", "The timeout expired while clients were still in dialogue."),
+        ReturnSpec("SUCCESS", "All players are out of dialogue."),
+        ReturnSpec("FAILURE", "The timeout expired while players were still in dialogue."),
     ],
     max_consecutive_retries=None,
 )

@@ -17,10 +17,10 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="clients_to_check",
         type="int_list",
-        label="Clients to Check",
-        help=("1-based client numbers to check (e.g. '1, 2'). Leave empty to check all clients."),
+        label="Players to Check",
+        help=("1-based player numbers to check (e.g. '1, 2'). Leave empty to check all players."),
         default=[],
-        default_hint="checks all clients",
+        default_hint="checks all players",
     ),
     ParamField(
         key="require_all",
@@ -28,8 +28,8 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Require All",
         help=(
             "When checked, returns TRUE only if every item in the list has been "
-            "dropped for every checked client. When unchecked, returns TRUE as "
-            "soon as any matching item is found for any checked client."
+            "dropped for every checked player. When unchecked, returns TRUE as "
+            "soon as any matching item is found for any checked player."
         ),
         default=False,
     ),

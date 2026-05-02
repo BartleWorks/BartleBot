@@ -14,7 +14,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name the clients must currently be in when this node executes.",
+        help="Zone name players must currently be in when this node executes.",
         default="",
         required=True,
     ),
@@ -77,10 +77,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Interaction complete and menu path became visible on all active clients."),
+        ReturnSpec("SUCCESS", "Interaction complete and menu path became visible on all active players."),
         ReturnSpec(
             "FAILURE",
-            "Clients not in zone, interact prompt never appeared after retries, "
+            "Players not in zone, interact prompt never appeared after retries, "
             "or menu path did not become visible within menu_timeout.",
         ),
     ],

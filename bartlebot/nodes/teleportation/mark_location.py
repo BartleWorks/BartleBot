@@ -18,8 +18,8 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name all clients must be in when this node executes. "
-        "If clients are in the correct zone but at the wrong XYZ, they will be teleported.",
+        help="Zone name all players must be in when this node executes. "
+        "If players are in the correct zone but at the wrong XYZ, they will be teleported.",
         default="",
         required=True,
     ),
@@ -27,7 +27,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Mark XYZ",
-        help="Coordinates to teleport clients to before marking, if not already there.",
+        help="Coordinates to teleport players to before marking, if not already there.",
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
@@ -41,10 +41,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients have successfully marked their location."),
+        ReturnSpec("SUCCESS", "All players have successfully marked their location."),
         ReturnSpec(
             "FAILURE",
-            "One or more clients had no mana; clients were not in the expected zone; "
+            "One or more players had no mana; players were not in the expected zone; "
             "or the mark cooldown timer did not clear within the timeout.",
         ),
     ],

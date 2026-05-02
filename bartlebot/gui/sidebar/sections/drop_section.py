@@ -69,7 +69,7 @@ class DropSection(SidebarSection):
             table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             table.verticalHeader().setVisible(False)
             self._tables.append(table)
-            self._tabs.addTab(table, f"Client {i + 1}")
+            self._tabs.addTab(table, f"Player {i + 1}")
 
     def add_drop(self, item: str, quantity: int, client_index: int = 0) -> None:
         if client_index >= len(self._tables):

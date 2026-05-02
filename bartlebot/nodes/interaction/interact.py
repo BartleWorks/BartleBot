@@ -14,7 +14,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name the clients must currently be in when this node executes.",
+        help="Zone name players must currently be in when this node executes.",
         default="",
         required=True,
     ),

@@ -94,6 +94,7 @@ _DEFAULTS: dict[str, Any] = {
     "favorite_nodes": [],
     "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
+    "recent_zones": [],
 }
 
 # Valid Wizard101 windowed resolutions (width, height)
@@ -350,6 +351,24 @@ class SettingsManager:
     def clear_favorited_hotkey_node(self, slot: int) -> None:
         """Clear the assignment for the given 0-based slot."""
         self.set_favorited_hotkey_node(slot, "")
+
+    @property
+    def recent_zones(self) -> list[str]:
+        """List of recently seen zone path strings, newest first. Capped at 30."""
+        return list(self.get("recent_zones", default=[]))
+
+    def add_recent_zone(self, zone: str) -> None:
+        """Prepend zone to recent_zones, deduplicating and capping at 30. No-op if already at top."""
+        zone = zone.strip()
+        if not zone or zone == "—":
+            return
+        recent = self.recent_zones
+        if recent and recent[0] == zone:
+            return
+        recent = [z for z in recent if z != zone]
+        recent.insert(0, zone)
+        self.set("recent_zones", value=recent[:30])
+        self.save()
 
     # ------------------------------------------------------------------
     # Window sizing helper

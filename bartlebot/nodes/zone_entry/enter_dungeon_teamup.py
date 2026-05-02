@@ -20,7 +20,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="str",
         label="From Zone",
-        help="Zone name the clients must currently be in when this node executes.",
+        help="Zone name players must currently be in when this node executes.",
         default="",
         required=True,
     ),
@@ -28,7 +28,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="dungeon_zone",
         type="str",
         label="Dungeon Zone",
-        help="Zone name all clients must be in after successfully entering the dungeon.",
+        help="Zone name all players must be in after successfully entering the dungeon.",
         default="",
         required=True,
     ),
@@ -65,17 +65,17 @@ NODE_SPEC = NodeSpec(
     description=(
         "Enters a dungeon via the team-up queue. Handles prompt detection, "
         "team size selection, anti-AFK inputs during the queue wait, and "
-        "client zone desynchronization."
+        "player zone desynchronization."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are now in dungeon_zone."),
+        ReturnSpec("SUCCESS", "All players are now in dungeon_zone."),
         ReturnSpec(
             "FAILURE",
-            "Clients were not in from_zone at the start, the entrance prompt "
+            "Players were not in from_zone at the start, the entrance prompt "
             "never appeared after retries, the team-up confirmation window never "
             "opened, an invalid minimum_team_size was given, timed out waiting "
-            "for the queue match, or not all clients reached dungeon_zone.",
+            "for the queue match, or not all players reached dungeon_zone.",
         ),
     ],
     required_bot_options=[

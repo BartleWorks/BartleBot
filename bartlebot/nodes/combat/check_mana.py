@@ -9,21 +9,21 @@ PARAM_SCHEMA: list[ParamField] = [
         key="threshold",
         type="float",
         label="Mana Threshold",
-        help="Mana ratio (0.0–1.0). Returns TRUE if every client's mana is at or above this value.",
+        help="Mana ratio (0.0–1.0). Returns TRUE if every player's mana is at or above this value.",
         default=1.0,
-        default_hint="TRUE only if all clients are at full mana",
+        default_hint="TRUE only if all players are at full mana",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Returns TRUE if all clients are at or above a mana ratio threshold, FALSE otherwise. "
-        "Useful for routing to a recovery node (potions, wisps) when any client is low on mana."
+        "Returns TRUE if all players are at or above a mana ratio threshold, FALSE otherwise. "
+        "Useful for routing to a recovery node (potions, wisps) when any player is low on mana."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("TRUE", "All clients have a mana ratio at or above the threshold."),
-        ReturnSpec("FALSE", "At least one client has a mana ratio below the threshold."),
+        ReturnSpec("TRUE", "All players have a mana ratio at or above the threshold."),
+        ReturnSpec("FALSE", "At least one player has a mana ratio below the threshold."),
     ],
 )
 

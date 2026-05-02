@@ -978,6 +978,11 @@ class BotCanvas(QWidget):
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable that returns the current list of hooked clients."""
         self._param_panel._get_clients = fn
+        self._param_panel._param_form._get_clients = fn
+
+    def set_zone_getter(self, fn: Callable[[], list[str]]) -> None:
+        """Pass a callable that returns zone suggestions (current player zones + history)."""
+        self._param_panel._param_form._get_zone_suggestions = fn
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)

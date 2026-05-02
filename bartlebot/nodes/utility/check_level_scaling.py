@@ -9,24 +9,24 @@ from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH
 PARAM_SCHEMA: list[ParamField] = []
 
 _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
-    name="Level Scaling Clients",
+    name="Level Scaling Players",
     type="int_list",
     default=[],
     description=(
-        "1-based client numbers to check/apply level scaling (e.g. '2, 3'). "
-        "Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+        "1-based player numbers to check/apply level scaling (e.g. '2, 3'). "
+        "Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     ),
 )
 
 NODE_SPEC = NodeSpec(
     description=(
         "Checks whether the level-scaling elixir UI indicator is visible for the "
-        "specified clients. Returns TRUE only if every checked client is level scaled."
+        "specified players. Returns TRUE only if every checked player is level scaled."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("TRUE", "All specified clients have an active level-scaling elixir."),
-        ReturnSpec("FALSE", "One or more specified clients are not level scaled."),
+        ReturnSpec("TRUE", "All specified players have an active level-scaling elixir."),
+        ReturnSpec("FALSE", "One or more specified players are not level scaled."),
     ],
     required_bot_options=[_LEVEL_SCALING_CLIENTS_OPTION],
 )
