@@ -12,7 +12,7 @@ import math
 from collections import defaultdict
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QBrush, QKeyEvent, QMouseEvent, QPainter, QPen
+from PyQt6.QtGui import QAction, QBrush, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
@@ -42,10 +42,30 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPE
 
 _PORT_HIT_RADIUS = 16
 _AUTO_SPACING = GRID_W  # auto-layout column stride matches grid width
-_PASTE_OFFSET = 40  # px shift per successive paste of the same clipboard
 
 _SCROLL_MARGIN = 40  # px from viewport edge at which auto-scroll activates during drag
 _SCROLL_SPEED = 10  # max px to scroll per mouseMoveEvent while in the margin zone
+
+
+def _spiral_ring(r: int):
+    """Yield (dx, dy) offsets at Chebyshev distance r from (0, 0).
+
+    Order: right column top-to-bottom, bottom row right-to-left,
+    left column bottom-to-top, top row left-to-right.  This biases
+    new nodes toward the right/below the origin, matching natural
+    canvas reading order.
+    """
+    if r == 0:
+        yield (0, 0)
+        return
+    for dy in range(-r, r + 1):
+        yield (r, dy)
+    for dx in range(r - 1, -r - 1, -1):
+        yield (dx, r)
+    for dy in range(r - 1, -r - 1, -1):
+        yield (-r, dy)
+    for dx in range(-r + 1, r):
+        yield (dx, -r)
 
 
 def _auto_scroll_view(view, scene_pos: QPointF) -> None:
@@ -236,7 +256,6 @@ class EditScene(QGraphicsScene):
         self._scroll_timer.timeout.connect(self._on_scroll_timer)
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
-        self._paste_count: int = 0
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
 
@@ -494,6 +513,29 @@ class EditScene(QGraphicsScene):
             region.set_interactive(interactive)
         if not interactive:
             self.clearSelection()
+
+    def _find_empty_grid_cell(self, viewport_center: QPointF) -> QPointF:
+        """Return the top-left scene position of the nearest unoccupied grid cell to viewport_center.
+
+        Searches outward in a spiral so new nodes never land on top of an existing one.
+        Falls back to viewport_center (minus half node dims) if the canvas is pathologically full.
+        """
+        occupied: set[tuple[int, int]] = set()
+        for item in self._node_items.values():
+            p = item.pos()
+            occupied.add((round(p.x() / GRID_W), round((p.y() + NODE_H / 2) / GRID_H)))
+
+        # Grid cell whose center is nearest to viewport_center
+        start_cx = round((viewport_center.x() - NODE_W / 2) / GRID_W)
+        start_cy = round(viewport_center.y() / GRID_H)
+
+        for radius in range(31):
+            for dx, dy in _spiral_ring(radius):
+                cell = (start_cx + dx, start_cy + dy)
+                if cell not in occupied:
+                    return QPointF(cell[0] * GRID_W, cell[1] * GRID_H - NODE_H / 2)
+
+        return QPointF(viewport_center.x() - NODE_W / 2, viewport_center.y() - NODE_H / 2)
 
     def add_state(self, pos: QPointF) -> None:
         """Open the node browser dialog and emit node_type_chosen on confirmation."""
@@ -845,7 +887,6 @@ class EditScene(QGraphicsScene):
             t.model_dump() for t in self._config.transitions if t.source in selected_ids and t.dest in selected_ids
         ]
         self._clipboard = (states, transitions)
-        self._paste_count = 0
 
     def _paste(self) -> None:
         if self._config is None or self._clipboard is None:
@@ -853,8 +894,43 @@ class EditScene(QGraphicsScene):
         self._pre_edit("Paste")
         self._in_structural_edit = True
         states_data, transitions_data = self._clipboard
-        self._paste_count += 1
-        offset = _PASTE_OFFSET * self._paste_count
+
+        # Determine (offset_x, offset_y) to apply to every pasted node's stored position.
+        # Clipboard positions: p["x"] = node left edge, p["y"] = node center y (StateModel convention).
+        positions = [sd["position"] for sd in states_data if sd.get("position")]
+
+        offset_x = 0.0
+        offset_y = 0.0
+        if positions:
+            view = self.views()[0] if self.views() else None
+            cursor_in_vp = False
+            if view:
+                cursor_local = view.viewport().mapFromGlobal(QCursor.pos())
+                cursor_in_vp = view.viewport().rect().contains(cursor_local)
+                if cursor_in_vp:
+                    cursor_scene = view.mapToScene(view.mapFromGlobal(QCursor.pos()))
+                    centroid_x = sum(p["x"] for p in positions) / len(positions)
+                    centroid_y = sum(p["y"] for p in positions) / len(positions)
+                    offset_x = cursor_scene.x() - centroid_x
+                    offset_y = cursor_scene.y() - centroid_y
+
+            if not cursor_in_vp:
+                # Fallback: start one grid row below the source nodes, preserving X.
+                offset_y = GRID_H
+
+            # Shift offset_y downward until no pasted node collides with an existing one.
+            # Grid cell key: (col based on left edge, row based on center y) — same as snap formula.
+            occupied = {
+                (round(item.pos().x() / GRID_W), round((item.pos().y() + NODE_H / 2) / GRID_H))
+                for item in self._node_items.values()
+            }
+            for _ in range(50):
+                if not any(
+                    (round((p["x"] + offset_x) / GRID_W), round((p["y"] + offset_y) / GRID_H)) in occupied
+                    for p in positions
+                ):
+                    break
+                offset_y += GRID_H
 
         # Build old_id → new_id mapping
         id_map: dict[str, str] = {}
@@ -870,8 +946,8 @@ class EditScene(QGraphicsScene):
             new_sd["id"] = id_map[sd["id"]]
             if new_sd.get("position"):
                 new_sd["position"] = {
-                    "x": new_sd["position"]["x"] + offset,
-                    "y": new_sd["position"]["y"] + offset,
+                    "x": new_sd["position"]["x"] + offset_x,
+                    "y": new_sd["position"]["y"] + offset_y,
                 }
             state = StateModel.model_validate(new_sd)
             self._config.states.append(state)

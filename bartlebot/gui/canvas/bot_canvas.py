@@ -12,7 +12,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QCursor,
     QKeySequence,
@@ -47,7 +47,7 @@ from bartlebot.gui.canvas.edit_scene import (
 )
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
-from bartlebot.gui.canvas.node_item import NODE_H, NODE_W, NodeItem
+from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
@@ -1079,7 +1079,7 @@ class BotCanvas(QWidget):
 
     def _on_add_state(self) -> None:
         center = self._view.mapToScene(self._view.viewport().rect().center())
-        self._scene.add_state(QPointF(center.x() - NODE_W / 2, center.y() - NODE_H / 2))
+        self._scene.add_state(self._scene._find_empty_grid_cell(center))
 
     def _on_node_type_chosen(self, node_type: str, pos: object) -> None:
         """Slot for EditScene.node_type_chosen — creates the state after dialog confirmation."""
@@ -1108,11 +1108,12 @@ class BotCanvas(QWidget):
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _add_node_at_viewport_center(self, node_type: str) -> None:
-        """Add a node of the given type at the center of the canvas viewport (used by favorites bar clicks)."""
+        """Add a node of the given type near the viewport center, avoiding occupied grid cells."""
         if self._mode != BotMode.EDIT or self._scene._config is None:
             return
         center = self._view.mapToScene(self._view.viewport().rect().center())
-        self._scene._create_state_at(node_type, center)
+        pos = self._scene._find_empty_grid_cell(center)
+        self._scene._create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _on_layout_clicked(self) -> None:
