@@ -119,6 +119,7 @@ class PossibleDropsSection(SidebarSection):
     """Collapsible 'Possible Drops' section: the items this bot can farm."""
 
     drops_changed = pyqtSignal()
+    _expanded_v_policy = QSizePolicy.Policy.Expanding
 
     def __init__(self, parent=None):
         super().__init__(_BASE_TITLE, parent)

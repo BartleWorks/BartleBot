@@ -21,17 +21,13 @@ from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 class DropSection(SidebarSection):
     """Collapsible 'Drops' section with per-client drop tables and CSV export."""
 
+    _expanded_v_policy = QSizePolicy.Policy.Expanding
+
     def __init__(self, parent=None):
         super().__init__("Drops", parent)
 
-        # Override the Maximum vertical policy set by SidebarSection so the
-        # tables can grow to fill available sidebar space.
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-
-        # Revert to Maximum when collapsed so the sidebar doesn't allocate
-        # extra space to this widget (which would push the header off-center).
-        self._header.toggled.connect(self._on_toggled)
 
         self._tables: list[QTableWidget] = []
 
@@ -123,10 +119,6 @@ class DropSection(SidebarSection):
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
-
-    def _on_toggled(self, expanded: bool) -> None:
-        policy = QSizePolicy.Policy.Expanding if expanded else QSizePolicy.Policy.Maximum
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, policy)
 
     def _on_search_changed(self, text: str) -> None:
         idx = self._tabs.currentIndex()

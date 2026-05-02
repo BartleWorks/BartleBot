@@ -1,0 +1,1557 @@
+{
+  "name": "Trial of the Spheres",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Celestia",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Celestia Base Camp",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_dungeon",
+      "label": "Enter Trial of the Spheres",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Hub",
+        "dungeon_zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "sigil_xyz": {
+          "x": -217.96,
+          "y": 15369.93,
+          "z": -1048.77
+        },
+        "reset_xyz": {
+          "x": -21.36,
+          "y": 14693.1,
+          "z": -1099.7
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_coordinates",
+      "label": "Activate cutscene",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "xyz": {
+          "x": 17.36,
+          "y": -3673.38,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_coordinates",
+      "label": "Begin Test of the Shining Stars",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "xyz": {
+          "x": 1207.03,
+          "y": -3872.6,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Activate first star",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": 2488.79,
+          "y": -4721.29,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 1952.03,
+          "y": -4481.61,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "interact",
+      "label": "Activate second star",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": 2740.92,
+          "y": -2541.06,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 2559.75,
+          "y": -3199.47,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Activate third star",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": 3637.72,
+          "y": -3872.51,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 3417.52,
+          "y": -3284.04,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "interact",
+      "label": "Activate fourth star",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": 1585.6,
+          "y": -3394.54,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 2240.92,
+          "y": -3352.16,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Begin Test of Constellation",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "xyz": {
+          "x": -1431.71,
+          "y": -3453.99,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Activate green console",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -3444.77,
+          "y": -3461.92,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -3171.75,
+          "y": -2952.97,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "interact",
+      "label": "Activate red console",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -3555.21,
+          "y": -4448.17,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -4024.59,
+          "y": -4140.4,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "interact",
+      "label": "Activate yellow console",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -2449.02,
+          "y": -4593.62,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -2877.7,
+          "y": -5162.67,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Begin Test of Vision",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "xyz": {
+          "x": -3529.76,
+          "y": 1050.27,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Turn first head",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -3800.87,
+          "y": 1532.89,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -3529.76,
+          "y": 1050.27,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Turn second head",
+      "position": {
+        "x": 6160.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -4591.17,
+          "y": 2147.69,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -4005.5,
+          "y": 2589.22,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "interact",
+      "label": "Turn second head",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -4591.17,
+          "y": 2147.69,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -4005.5,
+          "y": 2589.22,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "interact",
+      "label": "Turn third head",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -5225.39,
+          "y": 1307.3,
+          "z": 10.38
+        },
+        "reset_xyz": {
+          "x": -5722.94,
+          "y": 1882.64,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "interact",
+      "label": "Turn third head",
+      "position": {
+        "x": 6600.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -5225.39,
+          "y": 1307.3,
+          "z": 10.38
+        },
+        "reset_xyz": {
+          "x": -5722.94,
+          "y": 1882.64,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "interact",
+      "label": "Turn third head",
+      "position": {
+        "x": 6600.0,
+        "y": -270.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "interact_xyz": {
+          "x": -5225.39,
+          "y": 1307.3,
+          "z": 10.38
+        },
+        "reset_xyz": {
+          "x": -5722.94,
+          "y": 1882.64,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "enter_zone",
+      "label": "Enter Sanctum of the Stars",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "to_zone": "Celestia/Interiors/CL_Z12i1_Test_Of_The_Spheres",
+        "xyz": {
+          "x": -32.36,
+          "y": 3907.97,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -664.37,
+          "y": 3656.29,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "handle_combat",
+      "label": "Defeat Astraeus",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "CL-Star-Boss-R10",
+        "use_bot_default": false,
+        "combat_config": "### p1\nshatter@boss | any<blade>@ally(0) | feint@boss | any<aoe>[epic]\n\n### p2\nbunyip[epic] | any<aura & out_damage> | tempest[epic]",
+        "max_duration": 600.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone",
+      "label": "Enter teleporter to moon room",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/Interiors/CL_Z12i1_Test_Of_The_Spheres",
+        "to_zone": "Celestia/CL_Z12_Test_of_the_Spheres/MoonRoom",
+        "xyz": {
+          "x": -29.79,
+          "y": 1829.06,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 28.0,
+          "y": 1154.49,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "mark_location",
+      "label": "Go to Ptolemos",
+      "position": {
+        "x": 8800.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/MoonRoom",
+        "xyz": {
+          "x": 14.3,
+          "y": 3813.74,
+          "z": 1036.12
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "handle_combat",
+      "label": "Defeat Ptolemos",
+      "position": {
+        "x": 9240.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "CL-Moon-Boss-R10",
+        "use_bot_default": false,
+        "combat_config": "### p1\nany<blade>@ally(0) | any<aoe>[epic]\n\n### p2\nbunyip[epic] | tempest[epic]",
+        "max_duration": 600.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_26",
+      "node_type": "enter_zone",
+      "label": "Enter teleporter to sun room",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Z12_Test_of_the_Spheres/MoonRoom",
+        "to_zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "xyz": {
+          "x": -19.66,
+          "y": 8563.82,
+          "z": 1036.12
+        },
+        "reset_xyz": {
+          "x": -24.85,
+          "y": 7805.32,
+          "z": 1036.12
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_27",
+      "node_type": "interact",
+      "label": "Align first mirror",
+      "position": {
+        "x": 10120.0,
+        "y": -270.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": -3794.54,
+          "y": 3114.14,
+          "z": 540.0
+        },
+        "reset_xyz": {
+          "x": -4023.73,
+          "y": 2653.43,
+          "z": 539.63
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_28",
+      "node_type": "interact",
+      "label": "Align second mirror",
+      "position": {
+        "x": 10120.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": -3130.9,
+          "y": -3766.24,
+          "z": 540.0
+        },
+        "reset_xyz": {
+          "x": -2645.97,
+          "y": -3573.72,
+          "z": 539.75
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "interact",
+      "label": "Align third mirror",
+      "position": {
+        "x": 10120.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": 3811.0,
+          "y": -3106.25,
+          "z": 540.0
+        },
+        "reset_xyz": {
+          "x": 3808.99,
+          "y": -2595.53,
+          "z": 539.03
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "interact",
+      "label": "Align fourth mirror",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": 3122.63,
+          "y": 3820.51,
+          "z": 540.0
+        },
+        "reset_xyz": {
+          "x": 2613.47,
+          "y": 3772.45,
+          "z": 539.1
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_31",
+      "node_type": "interact",
+      "label": "Collect first sword",
+      "position": {
+        "x": 10560.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": 2125.52,
+          "y": 1948.6,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 1751.77,
+          "y": 1740.95,
+          "z": -0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "interact",
+      "label": "Place first sword",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": 798.32,
+          "y": 795.64,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 1368.41,
+          "y": 1420.55,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "interact",
+      "label": "Collect second sword",
+      "position": {
+        "x": 11000.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": 1926.08,
+          "y": -2117.99,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 1272.96,
+          "y": -1225.51,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "interact",
+      "label": "Place second sword",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": 800.47,
+          "y": -889.22,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 1473.75,
+          "y": -1532.43,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "interact",
+      "label": "Collect third sword",
+      "position": {
+        "x": 11440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": -2083.68,
+          "y": -1916.89,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -1474.14,
+          "y": -1479.16,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "interact",
+      "label": "Place third sword",
+      "position": {
+        "x": 11440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": -758.0,
+          "y": -794.66,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -1458.44,
+          "y": -1515.48,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "interact",
+      "label": "Collect fourth sword",
+      "position": {
+        "x": 11880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": -1925.96,
+          "y": 2111.59,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -1144.75,
+          "y": 1097.02,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_38",
+      "node_type": "interact",
+      "label": "Place fourth sword",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "interact_xyz": {
+          "x": -815.19,
+          "y": 769.65,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -1335.8,
+          "y": 1296.78,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_39",
+      "node_type": "enter_zone",
+      "label": "Take teleporter to Sanctum of the Sun",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
+        "to_zone": "Celestia/Interiors/CL_Z12i2_Test_Of_The_Spheres",
+        "xyz": {
+          "x": -7.8,
+          "y": -37.34,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -123.3,
+          "y": 519.89,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_40",
+      "node_type": "handle_combat",
+      "label": "Defeat Mithraya",
+      "position": {
+        "x": 12760.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "CL-Sun-Boss-R10",
+        "use_bot_default": false,
+        "combat_config": "any<aoe>[epic]",
+        "max_duration": 120.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_41",
+      "node_type": "enter_zone",
+      "label": "Take teleporter to Celestia Base Camp",
+      "position": {
+        "x": 13200.0,
+        "y": -360.0
+      },
+      "params": {
+        "from_zone": "Celestia/Interiors/CL_Z12i2_Test_Of_The_Spheres",
+        "to_zone": "Celestia/CL_Hub",
+        "xyz": {
+          "x": 297.68,
+          "y": 2378.14,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 236.35,
+          "y": 1826.29,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_24",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_24",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_21",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_40",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

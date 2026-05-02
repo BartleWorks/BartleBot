@@ -18,6 +18,7 @@ from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 
 _PLACEHOLDER = "—"
+_QWIDGETSIZE_MAX = 16777215  # Qt's QWIDGETSIZE_MAX
 
 
 # ---------------------------------------------------------------------------
@@ -54,6 +55,7 @@ class _SectionHeader(QWidget):
         layout.addStretch()
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
     def mousePressEvent(self, event):  # noqa: ARG002
         self._expanded = not self._expanded
@@ -91,6 +93,9 @@ class SidebarSection(QWidget):
 
     # Standard padding applied around every section's content area.
     _CONTENT_MARGINS = (0, 2, 0, 6)
+    # Vertical size policy used when the section is expanded.  Subclasses that
+    # need to grow (e.g. a list that should fill remaining space) override this.
+    _expanded_v_policy: QSizePolicy.Policy = QSizePolicy.Policy.Maximum
 
     def __init__(self, title: str, parent=None):
         super().__init__(parent)
@@ -108,6 +113,19 @@ class SidebarSection(QWidget):
         vbox.addWidget(self._body)
 
         self._header.toggled.connect(self._body.setVisible)
+        self._header.toggled.connect(self._on_section_toggled)
+
+    def _on_section_toggled(self, expanded: bool) -> None:
+        if expanded:
+            self.setMaximumHeight(_QWIDGETSIZE_MAX)
+            self.setSizePolicy(QSizePolicy.Policy.Preferred, self._expanded_v_policy)
+        else:
+            # Switch to Maximum so the parent layout stops allocating extra space
+            # to this widget; without this the section holds its large allocated
+            # cell and the header appears centred within it.
+            self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+            h = self._header.height() or self._header.sizeHint().height() or 24
+            self.setMaximumHeight(h)
 
     def set_content_layout(self, layout) -> None:
         """Attach *layout* as the section body and apply standard content margins."""
@@ -144,9 +162,15 @@ class Sidebar(QScrollArea):
         self.setWidgetResizable(True)
         self.setMinimumWidth(min_width)
 
-    def _add_section(self, section: SidebarSection) -> None:
-        """Insert *section* before the trailing stretch."""
-        self._layout.insertWidget(self._layout.count() - 1, section)
+    def _add_section(self, section: SidebarSection, stretch: int = 0) -> None:
+        """Insert *section* before the trailing stretch.
+
+        Pass ``stretch=1`` for a section that should fill remaining vertical
+        space when expanded (e.g. a drop table or list).  The trailing spacer
+        added in ``__init__`` absorbs any leftover space when that section is
+        collapsed to ``Maximum`` policy, preventing Qt from centering the items.
+        """
+        self._layout.insertWidget(self._layout.count() - 1, section, stretch)
 
 
 # ---------------------------------------------------------------------------

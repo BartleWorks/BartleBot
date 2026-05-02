@@ -15,8 +15,8 @@ class RightSidebar(Sidebar):
         self.drops = DropSection()
 
         self._add_section(self.clients)
-        self._add_section(self.drops)
-
-        # Remove the trailing stretch added by Sidebar so the expanding DropSection
-        # fills all remaining vertical space instead of the stretch taking it.
-        self._layout.takeAt(self._layout.count() - 1)
+        # stretch=1 means DropSection wins Qt's first distribution pass and fills
+        # remaining space when expanded.  The trailing spacer (added by Sidebar)
+        # absorbs leftover space when DropSection is collapsed to Maximum policy,
+        # keeping both sections top-aligned instead of centred.
+        self._add_section(self.drops, stretch=1)
