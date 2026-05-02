@@ -1,0 +1,357 @@
+{
+  "name": "Foulgaze",
+  "description": "Endlessly defeats Foulgaze in Olde Town. Ideal for low-level monstrology farming.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [
+    "Adventurer's Helm",
+    "Adventurer's Robe",
+    "Antiquated Knife",
+    "Antiquated Wand",
+    "Antique Deck",
+    "Antique Footguards",
+    "Antique Helm",
+    "Blightshroud",
+    "Blonde Strawberry",
+    "Blood Bat",
+    "Boots of Embers",
+    "Boots of Obstruction",
+    "Branded Dagger",
+    "Branded Wand",
+    "Canvas Cloak",
+    "Carbonshroud",
+    "Charged Coat",
+    "Charged Cover",
+    "Charged Kris",
+    "Charged Wand",
+    "Cheese Broccoli",
+    "Chillcloak",
+    "Chocolate Strawberry",
+    "Cloak of Calamity",
+    "Crown of Seasons",
+    "Dagger of Repose",
+    "Dark Sprite",
+    "Dulled Athame",
+    "Durable Hood",
+    "Ectoplasm",
+    "Embershroud",
+    "Fairy's Athame",
+    "Fine Dagger",
+    "Fire Cat",
+    "Fire Shield",
+    "Fireguard Robe",
+    "Frost Wolf Cloak",
+    "Frozen Pedestal",
+    "Fur-Lined Hood",
+    "Ghost Touch",
+    "Ghoul",
+    "Goldleaf Shoes",
+    "Guiding Light",
+    "Gummy Firecat",
+    "Hallowed Robes",
+    "Hardened Boots",
+    "Healer's Vestment",
+    "Honed Athame",
+    "Honey Sickle",
+    "Hood of Storms",
+    "Imp",
+    "Imp Lord's Helm",
+    "Insulated Dirk",
+    "Leather Straps",
+    "Lightning Bats",
+    "Martyr's Hat",
+    "Martyr's Raiment",
+    "Myth Shield",
+    "Novice's Athame",
+    "Novice's Hat",
+    "Novitiate Boots",
+    "Novitiate Hat",
+    "Novitiate Robe",
+    "Pixie",
+    "Plated Boots",
+    "Prop Mountains 2",
+    "Robe of Embers",
+    "Robe of Savvy",
+    "Roughspun Robe",
+    "Roughspun Shoes",
+    "Sapphyra's Vestment",
+    "Scarab",
+    "Scavenger's Staff of Sagas",
+    "Scholarly Robes",
+    "Senior Novice's Robe",
+    "Shoes of the Troll King",
+    "Simple Opal Ring",
+    "Snow Serpent",
+    "Snow Shield",
+    "Soft Boots",
+    "Soft Hood",
+    "Soot Stained Tunic",
+    "Storm Shield",
+    "Stormcaller's Robe",
+    "Stormforged Boots",
+    "Stormforged Mantle",
+    "Sturdy Blade",
+    "Sturdy Coat",
+    "Sturdy Hat",
+    "Sugar Donut",
+    "Sundae (Wizard City)",
+    "Swiftshadow Wings",
+    "Symmetrical Dirk",
+    "Thunder Snake",
+    "Time of Legend",
+    "Tough",
+    "Trollskin Cloak",
+    "Trollskin Hat",
+    "Veil of Sparks",
+    "Venomous Cowl",
+    "Vestment of Essence",
+    "Vestment of Tremors",
+    "Vrixx's Verdant Cowl",
+    "Windrunners"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Commons",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter the Shopping District",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1341.02,
+          "y": -3551.32,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1332.84,
+          "y": -3038.14,
+          "z": -27.99
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -6094.02,
+          "y": -3308.97,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5175.8,
+          "y": -3255.2,
+          "z": -29.36
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_dungeon",
+      "label": "Enter Sapphyra's Tower",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2",
+        "sigil_xyz": {
+          "x": -9580.06,
+          "y": -5382.17,
+          "z": -2159.26
+        },
+        "reset_xyz": {
+          "x": -9277.5,
+          "y": -4819.83,
+          "z": -2198.47
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat Foulgaze",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Ghost-Red-WCBoss-L03",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 600.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Exit Sapphyra's Tower",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -7.01,
+          "y": -1210.12,
+          "z": 1.62
+        },
+        "reset_xyz": {
+          "x": -3.26,
+          "y": -841.74,
+          "z": 1.61
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

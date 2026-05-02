@@ -92,6 +92,7 @@ _DEFAULTS: dict[str, Any] = {
     "recent_bot_files": [],
     "recently_used_nodes": [],
     "favorite_nodes": [],
+    "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
 }
 
@@ -331,6 +332,24 @@ class SettingsManager:
         self.set("favorite_nodes", value=favs)
         self.save()
         return is_fav
+
+    @property
+    def favorited_hotkey_nodes(self) -> list[str]:
+        """10-slot list of node type keys bound to hotkeys 1–9 and 0. Empty string = unassigned."""
+        raw = self.get("favorited_hotkey_nodes", default=[""] * 10)
+        result = list(raw) + [""] * 10
+        return result[:10]
+
+    def set_favorited_hotkey_node(self, slot: int, node_type: str) -> None:
+        """Assign node_type to the given 0-based slot (0 = key 1, …, 9 = key 0)."""
+        slots = self.favorited_hotkey_nodes
+        slots[slot] = node_type
+        self.set("favorited_hotkey_nodes", value=slots)
+        self.save()
+
+    def clear_favorited_hotkey_node(self, slot: int) -> None:
+        """Clear the assignment for the given 0-based slot."""
+        self.set_favorited_hotkey_node(slot, "")
 
     # ------------------------------------------------------------------
     # Window sizing helper

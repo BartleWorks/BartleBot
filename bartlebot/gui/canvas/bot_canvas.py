@@ -14,18 +14,23 @@ from pathlib import Path
 
 from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
+    QCursor,
     QKeySequence,
     QShortcut,
 )
 from PyQt6.QtWidgets import (
+    QAbstractSpinBox,
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
+    QPlainTextEdit,
     QPushButton,
     QScrollArea,
     QStackedWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -40,6 +45,7 @@ from bartlebot.gui.canvas.edit_scene import (
     _reachable_states,
     _validate_node,
 )
+from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
@@ -697,11 +703,17 @@ class BotCanvas(QWidget):
         self._minimap.setVisible(SettingsManager.instance().get("canvas", "minimap_visible", default=True))
         self._failure_edges_btn.setChecked(SettingsManager.instance().get("canvas", "show_failure_edges", default=True))
 
-        # ── Main layout: toolbar + validation banner + graph view ─────
+        # ── Favorites bar — shown only in Edit mode ───────────────────
+        self._favorites_bar = FavoritesBar()
+        self._favorites_bar.node_requested.connect(self._add_node_at_viewport_center)
+        self._favorites_bar.setVisible(False)
+
+        # ── Main layout: toolbar + favorites bar + graph view ─────────
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
         outer.addWidget(toolbar)
+        outer.addWidget(self._favorites_bar)
         outer.addWidget(self._view, 1)
 
         # ── Search bar overlay — top-center of the graph view ────────
@@ -744,6 +756,13 @@ class BotCanvas(QWidget):
         failure_edges_shortcut.activated.connect(
             lambda: self._failure_edges_btn.setChecked(not self._failure_edges_btn.isChecked())
         )
+
+        # ── Hotkey slots 1–9 and 0 for the favorites bar ─────────────
+        for _i in range(10):
+            _key = str(_i + 1) if _i < 9 else "0"
+            _sc = QShortcut(QKeySequence(_key), self)
+            _sc.setContext(Qt.ShortcutContext.WindowShortcut)
+            _sc.activated.connect(lambda _slot=_i: self._on_hotkey_slot(_slot))
 
         # ── Reposition banner overlay when the view or its viewport resizes ─
         self._view.installEventFilter(self)
@@ -1069,6 +1088,33 @@ class BotCanvas(QWidget):
         if isinstance(pos, _QPointF):
             self._scene._create_state_at(node_type, pos)
 
+    def _on_hotkey_slot(self, slot: int) -> None:
+        """Handle a bare number-key press for the given favorites slot."""
+        focused = QApplication.focusWidget()
+        if isinstance(focused, (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox)):
+            return
+        if self._mode != BotMode.EDIT or self._scene._config is None:
+            return
+        node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
+        if not node_type:
+            return
+        # Spawn at cursor if the cursor is within the canvas viewport, else at viewport center.
+        cursor_local = self._view.viewport().mapFromGlobal(QCursor.pos())
+        if self._view.viewport().rect().contains(cursor_local):
+            scene_pos = self._view.mapToScene(self._view.mapFromGlobal(QCursor.pos()))
+        else:
+            scene_pos = self._view.mapToScene(self._view.viewport().rect().center())
+        self._scene._create_state_at(node_type, scene_pos)
+        SettingsManager.instance().add_recently_used_node(node_type)
+
+    def _add_node_at_viewport_center(self, node_type: str) -> None:
+        """Add a node of the given type at the center of the canvas viewport (used by favorites bar clicks)."""
+        if self._mode != BotMode.EDIT or self._scene._config is None:
+            return
+        center = self._view.mapToScene(self._view.viewport().rect().center())
+        self._scene._create_state_at(node_type, center)
+        SettingsManager.instance().add_recently_used_node(node_type)
+
     def _on_layout_clicked(self) -> None:
         if self._config is None or self._focus_region_id is not None:
             return
@@ -1233,6 +1279,7 @@ class BotCanvas(QWidget):
         if mode == BotMode.RUN:
             self._center_stack.setCurrentIndex(_TB_RUN)
             self._right_stack.setCurrentIndex(_TB_RUN)
+            self._favorites_bar.setVisible(False)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
             self._undo_mgr.set_enabled(False)
@@ -1241,6 +1288,7 @@ class BotCanvas(QWidget):
         else:
             self._center_stack.setCurrentIndex(_TB_EDIT)
             self._right_stack.setCurrentIndex(_TB_EDIT)
+            self._favorites_bar.setVisible(True)
             self._scene.set_interactive(True)
             self._undo_mgr.set_enabled(True)
             self._emit_bot_status()
