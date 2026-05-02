@@ -50,7 +50,8 @@ class LeftSidebar(QTabWidget):
         bot_vbox.setContentsMargins(8, 8, 8, 8)
         bot_vbox.setSpacing(4)
         bot_vbox.addWidget(self.bot_info)
-        bot_vbox.addWidget(self.possible_drops, 1)
+        bot_vbox.addWidget(self.possible_drops, 1)  # stretch=1: fills space when expanded
+        bot_vbox.addStretch()  # absorbs leftover when possible_drops is collapsed
 
         # ── Config tab ──────────────────────────────────────────
         self.options = OptionsSection()
