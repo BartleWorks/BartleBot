@@ -1077,9 +1077,20 @@ class BotCanvas(QWidget):
         self.mode_changed.emit(BotMode.RUN)
         self.save_done.emit()
 
+    def _canvas_origin(self):
+        """Return cursor scene position if the cursor is over the canvas, else viewport center.
+
+        Used as the search origin for _find_empty_grid_cell so all add-node paths share the
+        same placement logic.  When the user clicks a toolbar button the cursor is outside the
+        canvas, so this degrades gracefully to viewport center.
+        """
+        cursor_local = self._view.viewport().mapFromGlobal(QCursor.pos())
+        if self._view.viewport().rect().contains(cursor_local):
+            return self._view.mapToScene(self._view.mapFromGlobal(QCursor.pos()))
+        return self._view.mapToScene(self._view.viewport().rect().center())
+
     def _on_add_state(self) -> None:
-        center = self._view.mapToScene(self._view.viewport().rect().center())
-        self._scene.add_state(self._scene._find_empty_grid_cell(center))
+        self._scene.add_state(self._scene._find_empty_grid_cell(self._canvas_origin()))
 
     def _on_node_type_chosen(self, node_type: str, pos: object) -> None:
         """Slot for EditScene.node_type_chosen — creates the state after dialog confirmation."""
@@ -1098,21 +1109,15 @@ class BotCanvas(QWidget):
         node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
         if not node_type:
             return
-        # Spawn at cursor if the cursor is within the canvas viewport, else at viewport center.
-        cursor_local = self._view.viewport().mapFromGlobal(QCursor.pos())
-        if self._view.viewport().rect().contains(cursor_local):
-            scene_pos = self._view.mapToScene(self._view.mapFromGlobal(QCursor.pos()))
-        else:
-            scene_pos = self._view.mapToScene(self._view.viewport().rect().center())
-        self._scene._create_state_at(node_type, scene_pos)
+        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
+        self._scene._create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _add_node_at_viewport_center(self, node_type: str) -> None:
-        """Add a node of the given type near the viewport center, avoiding occupied grid cells."""
+        """Add a node of the given type near the canvas origin, avoiding occupied grid cells."""
         if self._mode != BotMode.EDIT or self._scene._config is None:
             return
-        center = self._view.mapToScene(self._view.viewport().rect().center())
-        pos = self._scene._find_empty_grid_cell(center)
+        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
         self._scene._create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
