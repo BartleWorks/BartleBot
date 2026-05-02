@@ -558,7 +558,7 @@
     },
     {
       "id": "state_24",
-      "node_type": "mark_location",
+      "node_type": "teleport_to_coordinates",
       "label": "Go to Ptolemos",
       "position": {
         "x": 8800.0,
@@ -972,7 +972,7 @@
       "label": "Take teleporter to Celestia Base Camp",
       "position": {
         "x": 13200.0,
-        "y": -360.0
+        "y": -90.0
       },
       "params": {
         "from_zone": "Celestia/Interiors/CL_Z12i2_Test_Of_The_Spheres",
@@ -987,6 +987,25 @@
           "y": 1826.29,
           "z": 0.0
         }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_42",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 13640.0,
+        "y": -360.0
+      },
+      "params": {
+        "keep_list": [
+          "Atavsitic"
+        ],
+        "sell_crowns": true,
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
       },
       "option_overrides": {}
     }
@@ -1546,12 +1565,181 @@
     },
     {
       "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
       "source": "state_41",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
       "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "051bf615",
+      "label": "Test of the Shining Stars",
+      "members": [
+        "state_7",
+        "state_5",
+        "state_4",
+        "state_6",
+        "state_8"
+      ],
+      "color": 1
+    },
+    {
+      "id": "93f5192f",
+      "label": "Test of Constellation",
+      "members": [
+        "state_11",
+        "state_12",
+        "state_9",
+        "state_10"
+      ],
+      "color": 2
+    },
+    {
+      "id": "6568af8b",
+      "label": "Test of Vision",
+      "members": [
+        "state_18",
+        "state_13",
+        "state_14",
+        "state_17",
+        "state_15",
+        "state_19",
+        "state_16"
+      ],
+      "color": 3
+    },
+    {
+      "id": "028dbf80",
+      "label": "Sun puzzles",
+      "members": [
+        "state_31",
+        "state_30",
+        "state_36",
+        "state_27",
+        "state_28",
+        "state_29",
+        "state_37",
+        "state_38",
+        "state_33",
+        "state_32",
+        "state_35",
+        "state_34"
+      ],
+      "color": 4
+    }
+  ]
 }

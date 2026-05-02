@@ -56,6 +56,7 @@ class RegionItem(QGraphicsItem):
         self._node_items = node_items
 
         self._rect = QRectF()
+        self._pill_w_nominal: float = 0.0  # pill width in screen px (zoom-invariant); set on first paint
         self._interactive: bool = False
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
@@ -115,6 +116,7 @@ class RegionItem(QGraphicsItem):
         pill_x = self._rect.left() + (self._rect.width() - pill_w) / 2
         pill_y = self._rect.top() - pill_h - pill_gap
         pill_rect = QRectF(pill_x, pill_y, pill_w, pill_h)
+        self._pill_w_nominal = pill_w * lod  # screen-px width; zoom-invariant (pill_w ∝ 1/lod)
 
         pill_fill = QColor(color)
         pill_fill.setAlpha(_PILL_ALPHA)
@@ -127,12 +129,23 @@ class RegionItem(QGraphicsItem):
         painter.setPen(label_color)
         painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, self._label)
 
+    def shape(self) -> QPainterPath:
+        # boundingRect() is intentionally oversized (8× pill height) so Qt never clips the
+        # pill at low zoom levels. shape() governs hit-testing separately, so we restrict
+        # it to the region rect plus the pill's actual rendered bounds at the current zoom.
+        path = QPainterPath()
+        if not self._rect.isNull():
+            path.addRoundedRect(self._rect, _REGION_RADIUS, _REGION_RADIUS)
+            pill = self._pill_hit_rect()
+            if not pill.isNull():
+                path.addRoundedRect(pill, pill.height() / 2, pill.height() / 2)
+        return path
+
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
         if not self._interactive or self._rect.isNull():
             event.ignore()
             return
-        # The pill sits above self._rect.top() in item/scene coordinates (item is at origin).
-        if event.pos().y() < self._rect.top():
+        if self._pill_hit_rect().contains(event.pos()):
             if not (event.modifiers() & Qt.KeyboardModifier.ShiftModifier):
                 self.scene().clearSelection()
             for sid in self._member_ids:
@@ -142,6 +155,31 @@ class RegionItem(QGraphicsItem):
             event.accept()
         else:
             event.ignore()
+
+    def _pill_hit_rect(self) -> QRectF:
+        """Pill bounds in scene coordinates at the current view zoom.
+
+        Computed dynamically so shape() and mousePressEvent stay accurate across zoom
+        changes without relying on a cached value from the last paint() call.
+        Font-metric-dependent pill width is not available here, so the full region
+        width is used — this is intentionally generous for hit-testing.
+        """
+        if self._rect.isNull():
+            return QRectF()
+        lod = 1.0
+        scene = self.scene()
+        if scene and scene.views():
+            lod = max(0.1, scene.views()[0].transform().m11())
+        s = 1.0 / lod
+        pill_h = _PILL_H * s
+        pill_gap = _PILL_GAP * s
+        if self._pill_w_nominal > 0:
+            pill_w = self._pill_w_nominal * s
+            pill_x = self._rect.left() + (self._rect.width() - pill_w) / 2
+        else:
+            pill_w = self._rect.width()
+            pill_x = self._rect.left()
+        return QRectF(pill_x, self._rect.top() - pill_h - pill_gap, pill_w, pill_h)
 
     # ------------------------------------------------------------------
     # Rect recompute
