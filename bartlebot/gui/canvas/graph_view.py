@@ -80,6 +80,17 @@ class GraphView(QGraphicsView):
     def _clear_fitting(self) -> None:
         self._fitting = False
 
+    def smooth_pan_if_offscreen(self, item: QGraphicsItem, duration_ms: int = 300) -> None:
+        """Animate the viewport to center on item only when item is not already fully visible.
+
+        Used after adding or pasting nodes so the user always sees the result, but the camera
+        stays put when the node lands inside the current viewport.
+        """
+        node_scene_rect = item.mapRectToScene(item.boundingRect())
+        visible_scene_rect = self.mapToScene(self.viewport().rect()).boundingRect()
+        if not visible_scene_rect.contains(node_scene_rect):
+            self.smooth_center_on(item, duration_ms)
+
     def smooth_center_on(self, item: QGraphicsItem, duration_ms: int = 300) -> None:
         """Animate the viewport to center on item.
 

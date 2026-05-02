@@ -569,6 +569,9 @@ class EditScene(QGraphicsScene):
         self.addItem(node)
         self._node_items[state_id] = node
         self._update_scene_rect()
+        view = self.views()[0] if self.views() else None
+        if view is not None:
+            view.smooth_pan_if_offscreen(node)
         self.graph_changed.emit()
 
     # ------------------------------------------------------------------
@@ -988,6 +991,11 @@ class EditScene(QGraphicsScene):
                 self._node_items[new_id].setSelected(True)
 
         self._update_scene_rect()
+        view = self.views()[0] if self.views() else None
+        if view is not None:
+            new_nodes = [self._node_items[nid] for nid in id_map.values() if nid in self._node_items]
+            if new_nodes:
+                view.smooth_pan_if_offscreen(new_nodes[0])
         self._in_structural_edit = False
         self.graph_changed.emit()
 
