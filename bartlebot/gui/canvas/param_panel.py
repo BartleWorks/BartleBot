@@ -31,7 +31,6 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QStackedWidget,
     QStyledItemDelegate,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -110,22 +109,15 @@ class _ZoneWidget(QWidget):
         self._edit = _ZoneLineEdit(get_suggestions)
         outer.addWidget(self._edit)
 
-        btns_row = QHBoxLayout()
-        btns_row.setContentsMargins(0, 0, 0, 0)
-        btns_row.setSpacing(3)
-        btns_row.addStretch()
+        _BTN_H = 22
+        _btn_style = "QPushButton { font-size: 11px; padding: 1px 2px; }"
 
-        _btn_style = "QToolButton { font-size: 11px; padding: 1px 4px; }"
-
-        fill_btn = QToolButton()
-        fill_btn.setText("Fill ▾")
-        fill_btn.setFixedWidth(50)
+        fill_btn = QPushButton("Fill from Player ▾")
+        fill_btn.setFixedHeight(_BTN_H)
         fill_btn.setToolTip("Fill from a connected player's current zone")
         fill_btn.setStyleSheet(_btn_style)
         fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
-        btns_row.addWidget(fill_btn)
-
-        outer.addLayout(btns_row)
+        outer.addWidget(fill_btn)
 
         self._edit.textChanged.connect(self.textChanged)
 
@@ -143,9 +135,12 @@ class _ZoneWidget(QWidget):
     # Fill from player
     # ------------------------------------------------------------------
 
-    def _show_fill_menu(self, btn: QToolButton) -> None:
+    def _show_fill_menu(self, btn: QPushButton) -> None:
         clients = self._get_clients()
         if not clients:
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._fill_from_player(0))
             return
         menu = QMenu(btn)
         for i in range(len(clients)):
@@ -427,37 +422,36 @@ class _DynamicParamForm(QWidget):
                 spins_row.addWidget(spin, 1)
                 spins.append(spin)
             outer_layout.addLayout(spins_row)
-            # Row 2: action buttons (right-aligned)
+            # Row 2: full-width segmented action bar — all buttons equal width, uniform height
             btns_row = QHBoxLayout()
             btns_row.setContentsMargins(0, 0, 0, 0)
-            btns_row.setSpacing(3)
-            btns_row.addStretch()
-            _btn_style = "QPushButton, QToolButton { font-size: 11px; padding: 1px 4px; }"
+            btns_row.setSpacing(2)
+            _BTN_H = 22
+            _btn_style = "QPushButton { font-size: 11px; padding: 1px 2px; }"
             copy_btn = QPushButton("Copy")
-            copy_btn.setFixedWidth(44)
+            copy_btn.setFixedHeight(_BTN_H)
             copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
             copy_btn.setStyleSheet(_btn_style)
             copy_btn.clicked.connect(lambda _checked, k=key: self._copy_xyz(k))
-            btns_row.addWidget(copy_btn)
+            btns_row.addWidget(copy_btn, 1)
             paste_btn = QPushButton("Paste")
-            paste_btn.setFixedWidth(44)
+            paste_btn.setFixedHeight(_BTN_H)
             paste_btn.setToolTip("Paste XYZ from clipboard (JSON format)")
             paste_btn.setStyleSheet(_btn_style)
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
-            btns_row.addWidget(paste_btn)
-            fill_btn = QToolButton()
-            fill_btn.setText("Fill ▾")
-            fill_btn.setFixedWidth(50)
+            btns_row.addWidget(paste_btn, 1)
+            fill_btn = QPushButton("Fill ▾")
+            fill_btn.setFixedHeight(_BTN_H)
             fill_btn.setToolTip("Fill from a connected player's live position")
             fill_btn.setStyleSheet(_btn_style)
             fill_btn.clicked.connect(lambda _checked, k=key, b=fill_btn: self._show_fill_menu(k, b))
-            btns_row.addWidget(fill_btn)
+            btns_row.addWidget(fill_btn, 1)
             tp_btn = QPushButton("TP")
-            tp_btn.setFixedWidth(36)
+            tp_btn.setFixedHeight(_BTN_H)
             tp_btn.setToolTip("Teleport all connected players to these coordinates")
             tp_btn.setStyleSheet(_btn_style)
             tp_btn.clicked.connect(lambda _checked, k=key: asyncio.ensure_future(self._teleport_to_xyz(k)))
-            btns_row.addWidget(tp_btn)
+            btns_row.addWidget(tp_btn, 1)
             outer_layout.addLayout(btns_row)
             return (spins[0], spins[1], spins[2], outer)
         if field_type == "int_choice":
@@ -517,9 +511,12 @@ class _DynamicParamForm(QWidget):
         x_s, y_s, z_s, _ = widgets
         QApplication.clipboard().setText(json.dumps({"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}))
 
-    def _show_fill_menu(self, key: str, btn: QToolButton) -> None:
+    def _show_fill_menu(self, key: str, btn: QPushButton) -> None:
         clients = self._get_clients()
         if not clients:
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._fill_xyz_from_player(key, 0))
             return
         menu = QMenu(btn)
         for i in range(len(clients)):
