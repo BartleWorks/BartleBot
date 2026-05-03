@@ -61,6 +61,28 @@ class _StrListLineEdit(QLineEdit):
     """
 
 
+class _FillButton(QPushButton):
+    """QPushButton that updates its label on hover to reflect fill options.
+
+    - 0 players connected  → "Fill current"  (no-op click)
+    - 1 player connected   → "Fill current"  (direct fill, no menu)
+    - 2+ players connected → "Fill current ▾"  (dropdown)
+    """
+
+    def __init__(self, get_clients: Callable[[], list], parent=None):
+        super().__init__(parent)
+        self._get_clients = get_clients
+        self._refresh_label()
+
+    def enterEvent(self, event) -> None:  # type: ignore[override]
+        self._refresh_label()
+        super().enterEvent(event)
+
+    def _refresh_label(self) -> None:
+        n = len(self._get_clients())
+        self.setText("Fill current" if n == 1 else "Fill current ▾")
+
+
 class _ZoneLineEdit(QLineEdit):
     """QLineEdit with zone-path autocomplete for 'str' fields whose key contains 'zone'.
 
@@ -109,13 +131,10 @@ class _ZoneWidget(QWidget):
         self._edit = _ZoneLineEdit(get_suggestions)
         outer.addWidget(self._edit)
 
-        _BTN_H = 22
-        _btn_style = "QPushButton { font-size: 11px; padding: 1px 2px; }"
-
-        fill_btn = QPushButton("Fill from Player ▾")
-        fill_btn.setFixedHeight(_BTN_H)
+        fill_btn = _FillButton(get_clients)
+        fill_btn.setFixedHeight(22)
         fill_btn.setToolTip("Fill from a connected player's current zone")
-        fill_btn.setStyleSheet(_btn_style)
+        fill_btn.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
         fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
         outer.addWidget(fill_btn)
 
@@ -440,7 +459,7 @@ class _DynamicParamForm(QWidget):
             paste_btn.setStyleSheet(_btn_style)
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
             btns_row.addWidget(paste_btn, 1)
-            fill_btn = QPushButton("Fill ▾")
+            fill_btn = _FillButton(self._get_clients)
             fill_btn.setFixedHeight(_BTN_H)
             fill_btn.setToolTip("Fill from a connected player's live position")
             fill_btn.setStyleSheet(_btn_style)
