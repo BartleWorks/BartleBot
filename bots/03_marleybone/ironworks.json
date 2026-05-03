@@ -1,0 +1,210 @@
+{
+  "name": "The Ironworks",
+  "description": "Endlessly completes the Ironworks, or simply the specific bosses of your choice within the dungeon",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Marleybone",
+  "drops": [
+    "Athame of Chivalry",
+    "Banshee Onyx",
+    "Black Mantle",
+    "Bone",
+    "Boots of Sparking Energy",
+    "Caramel Popcorn",
+    "Cat Burglar's Shoes",
+    "Chipped Defense Opal +8",
+    "Chipped Health Opal +21",
+    "Chipped Health Opal +23",
+    "Chipped Mana Opal +10",
+    "Copper",
+    "Cyclops Peridot",
+    "Dawdle Opal",
+    "Dryad",
+    "Evil Snowman Sapphire",
+    "Finely Finished Mask",
+    "Fishbones",
+    "Flawed Health Opal +30",
+    "Flawed Resilient Opal +2%",
+    "Footwraps of Dreamland",
+    "Gummy Bloodbat",
+    "Healer Opal",
+    "Helm of Intolerance",
+    "Ice-Proof Sapphire",
+    "Iron",
+    "Lead",
+    "Leather Straps",
+    "Life-Shot Jade",
+    "Marleybone Dance Theme",
+    "Masterful Canine Cowl",
+    "Medium Fish",
+    "Nailed Boards",
+    "Nails O'Leary's Footwraps",
+    "Nails O'Leary's Shoes",
+    "Nails' Band of Stasis",
+    "Nails' Debonair Slippers",
+    "Nails' Hat of Parity",
+    "Nails' Helm of the Clever",
+    "Nails' Medical Hat",
+    "Nails' Obligatory Sandals",
+    "Nails' Singed Headwrap",
+    "Nails' Singed Tunic",
+    "Nails' Smooth Spun Boots",
+    "Nails' Soothing Helm",
+    "Nails' Sophisticated Shoes",
+    "Nails' Tunic of Equation",
+    "Nails' Tunic of Reverence",
+    "Nails' Vestment of Invention",
+    "Nails' Vestment of the Mender",
+    "Nickel",
+    "O'Leary Jinxed Staff",
+    "O'Leary's Deck of Unicorns",
+    "O'Leary's Deck of Winter",
+    "O'Leary's Vestment",
+    "Pyrite",
+    "Redskin Peanut",
+    "Ring of Rejuvenation",
+    "Shoes of Bottled Anger",
+    "Shoes of Humanity",
+    "Shoes of the Breakneck",
+    "Smooth Spun Hat",
+    "Storm Shark Amethyst",
+    "Tall Crate",
+    "Tin",
+    "Tough",
+    "Wheat Cracker"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Digmoore Station",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/MB_Station/MB_Station_Hub",
+        "xyz": {
+          "x": 9574.17,
+          "y": -7436.83,
+          "z": 30.0
+        },
+        "reset_xyz": {
+          "x": 8955.24,
+          "y": -7185.8,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter the Ironworks",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Station/MB_Station_Hub",
+        "dungeon_zone": "Marleybone/MB_Station/MB_FlightToIronworks",
+        "sigil_xyz": {
+          "x": -4709.25,
+          "y": 8132.7,
+          "z": -113.55
+        },
+        "reset_xyz": {
+          "x": -3625.81,
+          "y": 8070.27,
+          "z": -113.55
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_via_object",
+      "label": "Skip flight",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Station/MB_FlightToIronworks",
+        "to_zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 228.0,
+          "y": 328.0,
+          "z": 52.0
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

@@ -757,6 +757,9 @@ class BotCanvas(QWidget):
             lambda: self._failure_edges_btn.setChecked(not self._failure_edges_btn.isChecked())
         )
 
+        record_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        record_shortcut.activated.connect(self._param_panel.toggle_record)
+
         # ── Hotkey slots 1–9 and 0 for the favorites bar ─────────────
         for _i in range(10):
             _key = str(_i + 1) if _i < 9 else "0"

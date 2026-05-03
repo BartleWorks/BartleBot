@@ -84,6 +84,87 @@ class _ZoneLineEdit(QLineEdit):
         super().focusInEvent(event)
 
 
+class _ZoneWidget(QWidget):
+    """Zone string field with autocomplete + a 'Fill from Player' dropdown button.
+
+    Wraps a ``_ZoneLineEdit`` and adds a compact button row so users can
+    populate the field from a connected player's current zone without
+    switching to the sidebar.
+    """
+
+    textChanged = pyqtSignal(str)
+
+    def __init__(
+        self,
+        get_suggestions: Callable[[], list[str]],
+        get_clients: Callable[[], list],
+        parent=None,
+    ):
+        super().__init__(parent)
+        self._get_clients = get_clients
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(2)
+
+        self._edit = _ZoneLineEdit(get_suggestions)
+        outer.addWidget(self._edit)
+
+        btns_row = QHBoxLayout()
+        btns_row.setContentsMargins(0, 0, 0, 0)
+        btns_row.setSpacing(3)
+        btns_row.addStretch()
+
+        _btn_style = "QToolButton { font-size: 11px; padding: 1px 4px; }"
+
+        fill_btn = QToolButton()
+        fill_btn.setText("Fill ▾")
+        fill_btn.setFixedWidth(50)
+        fill_btn.setToolTip("Fill from a connected player's current zone")
+        fill_btn.setStyleSheet(_btn_style)
+        fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
+        btns_row.addWidget(fill_btn)
+
+        outer.addLayout(btns_row)
+
+        self._edit.textChanged.connect(self.textChanged)
+
+    # ------------------------------------------------------------------
+    # Public interface (matches QLineEdit enough for form integration)
+    # ------------------------------------------------------------------
+
+    def text(self) -> str:
+        return self._edit.text()
+
+    def setText(self, text: str) -> None:
+        self._edit.setText(text)
+
+    # ------------------------------------------------------------------
+    # Fill from player
+    # ------------------------------------------------------------------
+
+    def _show_fill_menu(self, btn: QToolButton) -> None:
+        clients = self._get_clients()
+        if not clients:
+            return
+        menu = QMenu(btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Fill from Player {i + 1}")
+            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    async def _fill_from_player(self, idx: int) -> None:
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        try:
+            zone = await clients[idx].zone_name()
+            if zone:
+                self.setText(zone)
+        except Exception:
+            pass
+
+
 class _IntChoiceComboBox(QComboBox):
     """QComboBox variant used for 'int_choice' param fields.
 
@@ -189,6 +270,9 @@ class _DynamicParamForm(QWidget):
             elif isinstance(widget, QPlainTextEdit):
                 display_w = widget
                 empty = not widget.toPlainText().strip()
+            elif isinstance(widget, _ZoneWidget):
+                display_w = widget
+                empty = not widget.text().strip()
             elif isinstance(widget, QLineEdit):
                 display_w = widget
                 empty = not widget.text().strip()
@@ -212,6 +296,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = [
                     x.strip().strip("'\"") for x in w.text().strip("[] ").split(",") if x.strip().strip("'\"")
                 ]
+            elif isinstance(w, _ZoneWidget):
+                result[key] = w.text()
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):
@@ -246,12 +332,19 @@ class _DynamicParamForm(QWidget):
             w.textChanged.connect(self._emit_changed)
             return w
         if field_type == "str":
-            w = _ZoneLineEdit(self._get_zone_suggestions) if "zone" in key.lower() else QLineEdit()
-            w.setText(str(val) if val is not None else "")
+            if "zone" in key.lower():
+                w: QWidget = _ZoneWidget(self._get_zone_suggestions, self._get_clients)
+                w.setText(str(val) if val is not None else "")
+                if help_text:
+                    w.setToolTip(help_text)
+                w.textChanged.connect(self._emit_changed)
+                return w
+            plain = QLineEdit()
+            plain.setText(str(val) if val is not None else "")
             if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
+                plain.setToolTip(help_text)
+            plain.textChanged.connect(self._emit_changed)
+            return plain
         if field_type == "int_list":
             w = _IntListLineEdit()
             if isinstance(val, list):
@@ -337,27 +430,32 @@ class _DynamicParamForm(QWidget):
             # Row 2: action buttons (right-aligned)
             btns_row = QHBoxLayout()
             btns_row.setContentsMargins(0, 0, 0, 0)
-            btns_row.setSpacing(4)
+            btns_row.setSpacing(3)
             btns_row.addStretch()
+            _btn_style = "QPushButton, QToolButton { font-size: 11px; padding: 1px 4px; }"
             copy_btn = QPushButton("Copy")
-            copy_btn.setFixedWidth(48)
-            copy_btn.setToolTip("Copy XYZ to clipboard")
+            copy_btn.setFixedWidth(44)
+            copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
+            copy_btn.setStyleSheet(_btn_style)
             copy_btn.clicked.connect(lambda _checked, k=key: self._copy_xyz(k))
             btns_row.addWidget(copy_btn)
             paste_btn = QPushButton("Paste")
-            paste_btn.setFixedWidth(48)
-            paste_btn.setToolTip("Fill from clipboard (Copy XYZ format)")
+            paste_btn.setFixedWidth(44)
+            paste_btn.setToolTip("Paste XYZ from clipboard (JSON format)")
+            paste_btn.setStyleSheet(_btn_style)
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
             btns_row.addWidget(paste_btn)
             fill_btn = QToolButton()
             fill_btn.setText("Fill ▾")
-            fill_btn.setFixedWidth(54)
-            fill_btn.setToolTip("Fill from a connected player's current position")
+            fill_btn.setFixedWidth(50)
+            fill_btn.setToolTip("Fill from a connected player's live position")
+            fill_btn.setStyleSheet(_btn_style)
             fill_btn.clicked.connect(lambda _checked, k=key, b=fill_btn: self._show_fill_menu(k, b))
             btns_row.addWidget(fill_btn)
-            tp_btn = QPushButton("TP Here")
-            tp_btn.setFixedWidth(58)
-            tp_btn.setToolTip("Teleport all connected players to this XYZ to verify")
+            tp_btn = QPushButton("TP")
+            tp_btn.setFixedWidth(36)
+            tp_btn.setToolTip("Teleport all connected players to these coordinates")
+            tp_btn.setStyleSheet(_btn_style)
             tp_btn.clicked.connect(lambda _checked, k=key: asyncio.ensure_future(self._teleport_to_xyz(k)))
             btns_row.addWidget(tp_btn)
             outer_layout.addLayout(btns_row)
@@ -462,7 +560,7 @@ class _DynamicParamForm(QWidget):
     def set_str(self, key: str, value: str) -> None:
         """Programmatically set a 'str' field by key."""
         widget = self._widgets.get(key)
-        if not isinstance(widget, QLineEdit):
+        if not isinstance(widget, (_ZoneWidget, QLineEdit)):
             return
         self._suppress = True
         widget.setText(value)
@@ -1194,6 +1292,10 @@ class _ParamPanel(QWidget):
     # ------------------------------------------------------------------
     # Recording
     # ------------------------------------------------------------------
+
+    def toggle_record(self) -> None:
+        """Start or cancel recording for the currently selected node (hotkey handler)."""
+        self._on_record_clicked()
 
     def _cancel_record(self) -> None:
         if self._record_task is not None and not self._record_task.done():

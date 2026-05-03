@@ -1421,7 +1421,8 @@
       },
       "params": {
         "keep_list": [
-          "Atavsitic"
+          "Atavistic",
+          "Bygone"
         ],
         "sell_crowns": true,
         "sell_pets": true,
