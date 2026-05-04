@@ -977,6 +977,10 @@ class BotCanvas(QWidget):
             self.bot_status_changed.emit(color, "Paused", self._active_state_label(), self._elapsed_str())
 
     @property
+    def config(self) -> "BotConfig | None":
+        return self._config
+
+    @property
     def param_panel(self) -> QWidget:
         """The _ParamPanel widget — placed in the left sidebar Properties tab."""
         return self._param_panel

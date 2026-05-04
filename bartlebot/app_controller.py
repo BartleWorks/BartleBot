@@ -366,6 +366,9 @@ class AppController(QObject):
     def _on_config_changed(self) -> None:
         self._has_unsaved_changes = True
         self._window.set_save_enabled(True)
+        canvas_config = self._window.bot_canvas.config
+        if canvas_config is not None:
+            self._loaded_config = canvas_config
         if self._loaded_config is not None:
             self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
