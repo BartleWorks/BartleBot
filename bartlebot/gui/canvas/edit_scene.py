@@ -258,6 +258,7 @@ class EditScene(QGraphicsScene):
         self._clipboard: tuple[list[dict], list[dict]] | None = None
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
+        self._grid_style: str = "dots"  # "dots" | "lines" | "none"
 
     # ------------------------------------------------------------------
     # Grid / snap
@@ -270,23 +271,40 @@ class EditScene(QGraphicsScene):
             node.set_snap_enabled(enabled)
         self.update()
 
+    def set_grid_style(self, style: str) -> None:
+        """Set background grid rendering style ("dots", "lines", or "none")."""
+        self._grid_style = style
+        self.update()
+
     def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
         super().drawBackground(painter, rect)
-        if not self._snap_enabled:
+        if not self._snap_enabled or self._grid_style == "none":
             return
-        # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
-        dot_r = 2.0
+        grid_color = THEME.qcolor("grid_dot")
         x_off = 0.0
         y_off = 0.0
-        x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
-        while x <= rect.right():
+        if self._grid_style == "lines":
+            painter.setPen(QPen(grid_color, 1.0))
+            x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
+            while x <= rect.right():
+                painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
+                x += GRID_W
             y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off
             while y <= rect.bottom():
-                painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
+                painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
                 y += GRID_H
-            x += GRID_W
+        else:
+            # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(grid_color))
+            dot_r = 2.0
+            x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
+            while x <= rect.right():
+                y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off
+                while y <= rect.bottom():
+                    painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
+                    y += GRID_H
+                x += GRID_W
 
     # ------------------------------------------------------------------
     # Public API

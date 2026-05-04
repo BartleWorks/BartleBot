@@ -44,6 +44,9 @@ class _CanvasSettings(BaseModel):
     lod_compact_threshold: float = 0.6
     snap_to_grid: bool = False
     show_failure_edges: bool = True
+    zoom_step: float = 1.15  # wheel zoom multiplier per step (1.05–1.30)
+    pan_animation_ms: int = 300  # smooth-pan duration in ms; 0 = instant
+    grid_style: str = "dots"  # "dots" | "lines" | "none"
 
 
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
@@ -84,6 +87,9 @@ _DEFAULTS: dict[str, Any] = {
         "lod_compact_threshold": 0.6,
         "snap_to_grid": False,
         "show_failure_edges": True,
+        "zoom_step": 1.15,
+        "pan_animation_ms": 300,
+        "grid_style": "dots",
         "bot_library_path": "bots",
     },
     "accounts": [],
