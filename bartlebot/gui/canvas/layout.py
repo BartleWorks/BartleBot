@@ -1,8 +1,6 @@
-"""Auto-layout for BotConfig states using BFS or DFS layering + barycenter heuristic."""
+"""Auto-layout for BotConfig states using longest-path layering."""
 
 from __future__ import annotations
-
-from collections import deque
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
@@ -11,20 +9,21 @@ H_SPACING = GRID_W  # one grid column width — keeps auto-layout positions on-g
 V_SPACING = 2 * GRID_H  # two grid rows — enough vertical room for edges between stacked nodes
 
 
-def auto_layout(config: BotConfig, method: str = "dfs") -> None:
-    """Assign positions to all states using hierarchical layout.
+def auto_layout(config: BotConfig) -> None:
+    """Assign positions to all states using hierarchical longest-path layout.
 
-    ``method`` selects the traversal used to assign layers:
+    Each node is placed at the layer corresponding to the longest path from
+    the initial state to that node. Convergence points (nodes reachable via
+    parallel branches of different lengths) appear at the far end of the
+    longest incoming branch, keeping parallel paths visually distinct.
 
-    - ``"bfs"`` (default): layers are shortest-path distance from the initial
-      state.  Works best for wide, shallow graphs.
-    - ``"dfs"``: layers are DFS depth from the initial state.  Works best for
-      deep, linear chains — nodes along the main execution path stay in the
-      same column rather than being compressed into early layers.
-
-    In both cases a barycenter heuristic reduces edge crossings within each
-    layer, and unreachable (orphaned) states are collected in a final extra
-    layer.
+    Back-edges (cycle edges such as failure loops back to an earlier state)
+    are detected and excluded from layer assignment; they still render as
+    backward arrows in the canvas. Vertical positions use barycenter
+    propagation: each node's y is the average of its predecessors' y-values,
+    with multi-node layers spread evenly around that average. This keeps nodes
+    vertically aligned with the branch they belong to rather than centering
+    every layer independently at y=0.
 
     Modifies state.position in-place. Caller must call scene.setup(config)
     to rebuild the canvas.
@@ -41,117 +40,97 @@ def auto_layout(config: BotConfig, method: str = "dfs") -> None:
             if t.dest not in adj[t.source]:
                 adj[t.source].append(t.dest)
 
-    if method == "dfs":
-        layer, col = _dfs_layers(state_ids, adj, config.initial)
-    else:
-        layer, col = _bfs_layers(state_ids, adj, config.initial)
+    layer, discovery = _longest_path_layers(state_ids, adj, config.initial)
 
-    # Write positions back, centering each layer vertically around y=0
+    # Build predecessor map from adj for barycenter computation.
+    # Back-edges are excluded naturally below: their sources have higher layer
+    # numbers and won't be in y_pos yet when the destination is processed.
+    pred: dict[str, list[str]] = {sid: [] for sid in state_ids}
+    for src, dests in adj.items():
+        for dest in dests:
+            pred[dest].append(src)
+
+    # Group nodes by layer and compute y-positions via barycenter propagation.
+    # Each node's y is the average of its predecessors' y-values (ignoring
+    # predecessors not yet assigned, i.e. back-edge sources). Multi-node layers
+    # are spread evenly at V_SPACING intervals around that average.
     layers: dict[int, list[str]] = {}
     for sid, lay in layer.items():
         layers.setdefault(lay, []).append(sid)
-    layer_counts = {lay: len(nodes) for lay, nodes in layers.items()}
+
+    y_pos: dict[str, float] = {}
+    for lay_idx in sorted(layers.keys()):
+        nodes = layers[lay_idx]
+        bary: dict[str, float] = {}
+        for sid in nodes:
+            preds_y = [y_pos[p] for p in pred[sid] if p in y_pos]
+            bary[sid] = sum(preds_y) / len(preds_y) if preds_y else 0.0
+        nodes_sorted = sorted(nodes, key=lambda s: (bary[s], discovery.get(s, 0)))
+        n = len(nodes_sorted)
+        mean_bary = sum(bary[s] for s in nodes_sorted) / n
+        for i, sid in enumerate(nodes_sorted):
+            y_pos[sid] = mean_bary + (i - (n - 1) / 2) * V_SPACING
 
     for state in config.states:
         sid = state.id
-        lay = layer[sid]
-        c = col.get(sid, 0)
-        n = layer_counts[lay]
-        x = lay * H_SPACING
-        y = (c - (n - 1) / 2) * V_SPACING
-        state.position = {"x": x, "y": y}
+        state.position = {"x": layer[sid] * H_SPACING, "y": y_pos.get(sid, 0.0)}
 
 
-# ---------------------------------------------------------------------------
-# Layer / column assignment strategies
-# ---------------------------------------------------------------------------
-
-
-def _bfs_layers(
+def _longest_path_layers(
     state_ids: list[str],
     adj: dict[str, list[str]],
     initial: str,
 ) -> tuple[dict[str, int], dict[str, int]]:
-    """Return (layer, col) dicts using BFS shortest-path distance."""
-    layer: dict[str, int] = {}
-    queue: deque[str] = deque([initial])
-    layer[initial] = 0
-    while queue:
-        node = queue.popleft()
-        for dest in adj.get(node, []):
-            if dest not in layer:
-                layer[dest] = layer[node] + 1
-                queue.append(dest)
+    """Return (layer, discovery) dicts using longest-path distance from initial.
 
-    _assign_orphans(state_ids, layer)
-
-    # Group and sort layers by barycenter heuristic
-    layers: dict[int, list[str]] = {}
-    for sid, lay in layer.items():
-        layers.setdefault(lay, []).append(sid)
-
-    col: dict[str, int] = {}
-    for lay_idx in sorted(layers.keys()):
-        nodes_in_layer = layers[lay_idx]
-        if lay_idx == 0:
-            for i, sid in enumerate(nodes_in_layer):
-                col[sid] = i
-        else:
-
-            def _bary(sid: str) -> float:
-                preds = [s for s in state_ids if sid in adj.get(s, []) and s in col]
-                return sum(col[p] for p in preds) / len(preds) if preds else float("inf")
-
-            nodes_in_layer.sort(key=_bary)
-            for i, sid in enumerate(nodes_in_layer):
-                col[sid] = i
-
-    return layer, col
-
-
-def _dfs_layers(
-    state_ids: list[str],
-    adj: dict[str, list[str]],
-    initial: str,
-) -> tuple[dict[str, int], dict[str, int]]:
-    """Return (layer, col) dicts using iterative DFS depth.
-
-    Nodes are placed at their depth in the DFS spanning tree, so a long linear
-    chain stays spread across many layers rather than all piling up at depth 1.
-    Within each layer, nodes are ordered by DFS discovery time.
+    Detects back-edges via DFS and excludes them from layer assignment so
+    cycles don't prevent termination. discovery maps each node to its DFS
+    visit order, used as a tiebreaker in barycenter sorting.
     """
-    layer: dict[str, int] = {}
+    back_edges: set[tuple[str, str]] = set()
+    visited: set[str] = set()
+    on_stack: set[str] = set()
     discovery: dict[str, int] = {}
+    topo_order: list[str] = []  # post-order; reversed = topological order
     counter = 0
 
-    # Iterative DFS — avoids recursion limits on large graphs
-    stack: list[tuple[str, int]] = [(initial, 0)]
+    # Iterative DFS: detect back-edges and build topological order
+    stack: list[tuple[str, bool]] = [(initial, False)]
     while stack:
-        node, depth = stack.pop()
-        if node in layer:
+        node, is_return = stack.pop()
+        if is_return:
+            on_stack.discard(node)
+            topo_order.append(node)
             continue
-        layer[node] = depth
+        if node in visited:
+            continue
+        visited.add(node)
+        on_stack.add(node)
         discovery[node] = counter
         counter += 1
-        # Reverse so the first child is processed first
+        stack.append((node, True))
         for dest in reversed(adj.get(node, [])):
-            if dest not in layer:
-                stack.append((dest, depth + 1))
+            if dest in on_stack:
+                back_edges.add((node, dest))
+            elif dest not in visited:
+                stack.append((dest, False))
+
+    # Build reverse adjacency (predecessors), excluding back-edges
+    pred: dict[str, list[str]] = {sid: [] for sid in state_ids}
+    for src, dests in adj.items():
+        for dest in dests:
+            if (src, dest) not in back_edges:
+                pred[dest].append(src)
+
+    # Assign layers in topological order: each node gets max(predecessor layers) + 1
+    layer: dict[str, int] = {}
+    for node in reversed(topo_order):
+        incoming = [layer[p] for p in pred[node] if p in layer]
+        layer[node] = max(incoming) + 1 if incoming else 0
 
     _assign_orphans(state_ids, layer, discovery_map=discovery, counter_start=counter)
 
-    # Group layers; within each layer sort by DFS discovery order
-    layers: dict[int, list[str]] = {}
-    for sid, lay in layer.items():
-        layers.setdefault(lay, []).append(sid)
-
-    col: dict[str, int] = {}
-    for lay_idx in sorted(layers.keys()):
-        nodes_in_layer = sorted(layers[lay_idx], key=lambda s: discovery.get(s, 0))
-        for i, sid in enumerate(nodes_in_layer):
-            col[sid] = i
-
-    return layer, col
+    return layer, discovery
 
 
 def _assign_orphans(

@@ -68,11 +68,6 @@ def bridge_y_above(src_node: NodeItem, dst_node: NodeItem) -> float:
     return min(src_node.scenePos().y(), dst_node.scenePos().y()) - BACK_PADDING
 
 
-def channel_x_after_src(src_node: NodeItem) -> float:
-    """X for a forward-edge vertical channel: FORWARD_PADDING right of src_node's right edge."""
-    return src_node.scenePos().x() + NODE_W + FORWARD_PADDING
-
-
 def is_above_routed(src_node: NodeItem, when: str | None) -> bool:
     """True when a backward edge from src_node with the given return label should
     route above the node row (topmost-port on a node with ≥ 2 named returns)."""
@@ -102,7 +97,6 @@ class EdgeItem(QGraphicsPathItem):
         offset: float = 0.0,
         when: str | None = None,
         bridge_y_override: float | None = None,
-        channel_x_override: float | None = None,
     ):
         super().__init__()
         self._src = src_node
@@ -113,14 +107,12 @@ class EdgeItem(QGraphicsPathItem):
         self._hovered = False
         self._snap_target = False
         self._bridge_y_override = bridge_y_override
-        self._channel_x_override = channel_x_override
 
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
         self.setAcceptHoverEvents(True)
         self._rebuild()
         self._bridge_y_override = None  # only applies to the initial build
-        self._channel_x_override = None  # only applies to the initial build
 
     @property
     def when(self) -> str | None:
@@ -214,12 +206,10 @@ class EdgeItem(QGraphicsPathItem):
             path.lineTo(dst_pt)
             _add_arrowhead(path, dst_pt, math.atan2(dst_pt.y() - src_pt.y(), dst_pt.x() - src_pt.x()))
             return
-        if self._channel_x_override is not None:
-            mid_x = self._channel_x_override
-        else:
-            # For bidirectional pairs the offset shifts the vertical segment laterally
-            # so the two mirrored paths are visually separated.
-            mid_x = (src_pt.x() + dst_pt.x()) / 2 + self._offset * 0.5
+        # Pin the vertical channel just past the source node's right edge.
+        # For bidirectional pairs the offset shifts the channel laterally so
+        # the two mirrored paths are visually separated.
+        mid_x = self._src.scenePos().x() + NODE_W + FORWARD_PADDING + self._offset * 0.5
         waypoints = [
             src_pt,
             QPointF(mid_x, src_pt.y()),

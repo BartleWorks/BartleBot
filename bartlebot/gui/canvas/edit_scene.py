@@ -27,7 +27,6 @@ from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
     bridge_y_below,
-    channel_x_after_src,
     is_above_routed,
 )
 from bartlebot.gui.canvas.graph_view import GraphView
@@ -430,28 +429,6 @@ class EditScene(QGraphicsScene):
             for key in group_edges:
                 bridge_y_map[key] = shared_y
 
-        # Forward cross-row edges: compute shared vertical channel_x per (when, x_src_col) group,
-        # analogous to the backward-edge bridge_y_map above but rotated 90°.
-        fwd_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
-        for s, w, d in unique_edges:
-            if s == d or s not in self._node_items or d not in self._node_items:
-                continue
-            sn, dn = self._node_items[s], self._node_items[d]
-            src_pt = sn.port_out_for(w)
-            dst_pt = dn.port_in()
-            if dst_pt.x() <= src_pt.x():  # backward or same-column
-                continue
-            if abs(dn.scenePos().y() - sn.scenePos().y()) < GRID_H * 0.5:  # same row
-                continue
-            x_col = round(sn.scenePos().x() / GRID_W)
-            fwd_groups[(w, x_col)].append((s, w, d))
-
-        channel_x_map: dict[tuple[str, str | None, str], float] = {}
-        for group_edges in fwd_groups.values():
-            shared_x = max(channel_x_after_src(self._node_items[s]) for s, w, d in group_edges)
-            for key in group_edges:
-                channel_x_map[key] = shared_x
-
         drawn: set[tuple[str, str | None, str]] = set()
         for t in transitions:
             s, d, w = t.source, t.dest, t.when
@@ -473,7 +450,6 @@ class EditScene(QGraphicsScene):
                     offset=offset,
                     when=w,
                     bridge_y_override=bridge_y_map.get(key),
-                    channel_x_override=channel_x_map.get(key),
                 )
             self.addItem(edge)
             sn.add_edge(edge)
