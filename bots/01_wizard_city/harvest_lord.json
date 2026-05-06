@@ -1,6 +1,6 @@
 {
   "name": "The Harvest Lord",
-  "description": "Endlessly defeats The Harvest Lord in Triton Avenue",
+  "description": "Endlessly farms The Harvest Lord in Triton Avenue",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",

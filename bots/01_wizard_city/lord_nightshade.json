@@ -1,6 +1,6 @@
 {
   "name": "Lord Nightshade",
-  "description": "Endlessly defeats Lord Nightshade in Haunted Cave, Wizard City",
+  "description": "Endlessly farms Lord Nightshade in Haunted Cave, Wizard City",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",

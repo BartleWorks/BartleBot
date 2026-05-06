@@ -1,6 +1,6 @@
 {
   "name": "Bellows",
-  "description": "Endlessly defeats Bellows in Counterweight West, Marleybone",
+  "description": "Endlessly farms Bellows in Counterweight West, Marleybone",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",

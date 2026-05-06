@@ -1,6 +1,6 @@
 {
   "name": "Sprockets",
-  "description": "Endlessly defeats Sprockets in Counterweight East, Marleybone",
+  "description": "Endlessly farms Sprockets in Counterweight East, Marleybone",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",

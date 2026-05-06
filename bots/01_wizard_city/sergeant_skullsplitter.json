@@ -1,6 +1,6 @@
 {
   "name": "Sergeant Skullsplitter",
-  "description": "Endlessly defeats Sergeant Skullsplitter in Triton Avenue",
+  "description": "Endlessly farms Sergeant Skullsplitter in Triton Avenue",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",

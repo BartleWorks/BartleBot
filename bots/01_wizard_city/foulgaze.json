@@ -1,6 +1,6 @@
 {
   "name": "Foulgaze",
-  "description": "Endlessly defeats Foulgaze in Olde Town. Ideal for low-level monstrology farming.",
+  "description": "Endlessly farms Foulgaze in Olde Town. Ideal for low-level monstrology farming.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
