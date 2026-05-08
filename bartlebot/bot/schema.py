@@ -17,11 +17,23 @@ class FlagCondition(BaseModel):
     """A single bot-option guard on a transition.
 
     ``option`` is a BotOptionModel.name; ``negate`` inverts the truthiness check.
-    Multiple FlagConditions are combined by TransitionModel.flag_op (AND or OR).
+    Multiple FlagConditions are combined by their parent's ``op`` field.
     """
 
     option: str
     negate: bool = False
+
+
+class FlagGroup(BaseModel):
+    """A group of FlagConditions combined by a single AND/OR operator.
+
+    Multiple groups are combined by TransitionModel.flag_groups_op (AND or OR).
+    This enables expressions like ``(A AND B) OR C`` by using two groups:
+    group 1 = [A, B] with op=AND, group 2 = [C] with op=AND, groups_op=OR.
+    """
+
+    flags: list[FlagCondition]
+    op: Literal["AND", "OR"] = "AND"
 
 
 class TransitionModel(BaseModel):
@@ -32,10 +44,16 @@ class TransitionModel(BaseModel):
     # BotMachine auto-generates a condition method from this at construction time.
     # None means the transition fires unconditionally (no condition check).
     when: str | None = None
-    # List of bot-option guards.  Empty = no flag conditions (transition fires freely
-    # when 'when' is satisfied).  Combined by flag_op (AND or OR).
+    # --- Flat (legacy) flag fields ---
+    # Single-level list of option guards combined by flag_op.  Kept for backward
+    # compatibility; if flag_groups is non-empty, it takes precedence.
     flags: list[FlagCondition] = Field(default_factory=list)
     flag_op: Literal["AND", "OR"] = "AND"
+    # --- Grouped flag fields ---
+    # Two-level flag expression: each group combines its flags internally with op,
+    # then groups are combined with flag_groups_op.  Takes precedence over flags.
+    flag_groups: list[FlagGroup] = Field(default_factory=list)
+    flag_groups_op: Literal["AND", "OR"] = "OR"
     label: str | None = None
 
 
@@ -140,7 +158,21 @@ class BotConfig(BaseModel):
             d: dict = {"trigger": t.trigger, "source": t.source, "dest": t.dest}
             if t.when:
                 d["conditions"] = [f"_result_is_{t.when}"]
-            if t.flags:
+            if t.flag_groups:
+                # Grouped form: two-level boolean expression.
+                cond_name = f"_flag_compound_{idx}"
+                d.setdefault("conditions", []).append(cond_name)
+                conditions_registry[cond_name] = {
+                    "groups": [
+                        {
+                            "flags": [{"option": fc.option, "negate": fc.negate} for fc in g.flags],
+                            "op": g.op,
+                        }
+                        for g in t.flag_groups
+                    ],
+                    "groups_op": t.flag_groups_op,
+                }
+            elif t.flags:
                 if len(t.flags) == 1 and not t.flags[0].negate and t.flag_op == "AND":
                     # Simple case: keep the cheap _flag_<name> form so existing bots
                     # with one plain flag condition continue to work without a registry lookup.
@@ -155,6 +187,10 @@ class BotConfig(BaseModel):
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
+        # Stable-sort so conditional transitions (those with conditions) are evaluated
+        # before unconditional ones from the same source.  This makes unconditional edges
+        # act as explicit fallbacks regardless of their position in the JSON file.
+        trans_list.sort(key=lambda t: (t["source"], 0 if t.get("conditions") else 1))
         states = []
         for s in self.states:
             sd = s.model_dump()

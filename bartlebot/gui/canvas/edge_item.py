@@ -97,6 +97,7 @@ class EdgeItem(QGraphicsPathItem):
         offset: float = 0.0,
         when: str | None = None,
         bridge_y_override: float | None = None,
+        has_flags: bool = False,
     ):
         super().__init__()
         self._src = src_node
@@ -107,6 +108,7 @@ class EdgeItem(QGraphicsPathItem):
         self._hovered = False
         self._snap_target = False
         self._bridge_y_override = bridge_y_override
+        self._has_flags = has_flags
 
         self.setZValue(0)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, True)
@@ -117,6 +119,12 @@ class EdgeItem(QGraphicsPathItem):
     @property
     def when(self) -> str | None:
         return self._when
+
+    def set_has_flags(self, has_flags: bool) -> None:
+        """Update whether this edge has boolean flag conditions (affects pen style)."""
+        if self._has_flags != has_flags:
+            self._has_flags = has_flags
+            self.update()
 
     def shape(self):
         """Widen the hit area so thin paths are easier to click."""
@@ -173,9 +181,10 @@ class EdgeItem(QGraphicsPathItem):
         if self.isSelected():
             pen = QPen(_edge_selected(), 2.5, Qt.PenStyle.DashLine)
         elif self._hovered:
-            pen = QPen(_edge_hover(), 2.5)
+            pen = QPen(_edge_hover(), 2.5, Qt.PenStyle.DotLine if self._has_flags else Qt.PenStyle.SolidLine)
         else:
-            pen = QPen(_when_edge_color(self._when, self._is_self_loop), 2.0)
+            style = Qt.PenStyle.DotLine if self._has_flags else Qt.PenStyle.SolidLine
+            pen = QPen(_when_edge_color(self._when, self._is_self_loop), 2.0, style)
         pen.setCapStyle(Qt.PenCapStyle.RoundCap)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)

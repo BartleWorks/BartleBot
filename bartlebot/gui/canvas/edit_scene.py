@@ -439,10 +439,11 @@ class EditScene(QGraphicsScene):
             if s not in self._node_items or d not in self._node_items:
                 continue
             sn, dn = self._node_items[s], self._node_items[d]
+            has_flags = bool(t.flags or t.flag_groups)
             if s == d:
-                edge = EdgeItem(sn, sn, when=w)
+                edge = EdgeItem(sn, sn, when=w, has_flags=has_flags)
             else:
-                edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y_map.get(key))
+                edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y_map.get(key), has_flags=has_flags)
             self.addItem(edge)
             sn.add_edge(edge)
             if dn is not sn:
@@ -470,6 +471,14 @@ class EditScene(QGraphicsScene):
         """Update the initial-state purple-border indicator."""
         for node_id, node in self._node_items.items():
             node.set_initial(node_id == initial_id)
+
+    def refresh_edge_flags(self, transition) -> None:
+        """Refresh the dotted-pen flag indicator on the edge matching *transition*."""
+        has_flags = bool(transition.flags or transition.flag_groups)
+        for s, w, d, edge in self._edge_items:
+            if s == transition.source and d == transition.dest and w == transition.when:
+                edge.set_has_flags(has_flags)
+                break
 
     def refresh_terminal(self) -> None:
         """Update the terminal-state badge based on current transitions."""

@@ -778,6 +778,8 @@ class BotCanvas(QWidget):
         self._param_panel.structural_property_changed.connect(self._on_about_to_change)
         self._param_panel.properties_changed.connect(self._on_param_changed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
+        self._param_panel.select_edge_requested.connect(self._on_select_edge_requested)
+        self._param_panel.select_state_requested.connect(self._on_select_state_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
@@ -1349,6 +1351,26 @@ class BotCanvas(QWidget):
             desc = "Edit transition" if self._param_panel._transition is not None else "Edit params"
             self._undo_mgr.begin_debounce(self._config, desc)
         self._on_scene_changed()
+        # Refresh the dotted-pen flag indicator on the selected edge when flags change.
+        if self._param_panel._transition is not None:
+            self._scene.refresh_edge_flags(self._param_panel._transition)
+
+    def _on_select_edge_requested(self, transition) -> None:
+        """Select the edge on the canvas that corresponds to *transition* and centre it."""
+        self._scene.clearSelection()
+        for s, w, d, edge in self._scene._edge_items:
+            if s == transition.source and d == transition.dest and w == transition.when:
+                edge.setSelected(True)
+                self._view.centerOn(edge)
+                break
+
+    def _on_select_state_requested(self, state_id: str) -> None:
+        """Select the node on the canvas that corresponds to *state_id* and centre it."""
+        self._scene.clearSelection()
+        node = self._scene._node_items.get(state_id)
+        if node is not None:
+            node.setSelected(True)
+            self._view.centerOn(node)
 
     def _on_undo(self) -> None:
         if self._config is None or self._mode != BotMode.EDIT:
@@ -1498,7 +1520,11 @@ class BotCanvas(QWidget):
         if isinstance(item, NodeItem) and self._scene._config:
             state = next((s for s in self._scene._config.states if s.id == item.state_id), None)
             if state:
-                self._param_panel.show_state(state)
+                self._param_panel.show_state(
+                    state,
+                    all_states=list(self._scene._config.states),
+                    all_transitions=self._scene._config.transitions,
+                )
                 self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:
             for s, w, d, ei in self._scene._edge_items:
