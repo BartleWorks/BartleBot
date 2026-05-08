@@ -4,6 +4,51 @@ import logging
 from unittest.mock import AsyncMock, MagicMock
 
 from wizwalker import XYZ
+from wizwalker.extensions.wizsprinter import SprintyClient
+
+# ---------------------------------------------------------------------------
+# API drift guard
+#
+# Validates that every method mocked in FakeClient still exists on the real
+# SprintyClient (which inherits from WizWalker's Client).  When the WizSprinter
+# pin in pyproject.toml is bumped, any renamed or removed method will cause an
+# immediate ImportError here rather than silently passing stale tests.
+#
+# The four MagicMock attributes — body, root_window, stats, mouse_handler —
+# are instance attributes set in WizWalker's Client.__init__, not class-level
+# attributes, so hasattr(SprintyClient, name) cannot see them.  They are
+# excluded from this check and must be verified manually when the pin changes.
+# ---------------------------------------------------------------------------
+_FAKED_METHODS = frozenset(
+    {
+        "zone_name",
+        "teleport",
+        "is_loading",
+        "is_in_npc_range",
+        "is_in_dialog",
+        "send_key",
+        "find_closest_mob",
+        "find_closest_by_vague_name",
+        "tp_to",
+        "in_battle",
+        "calc_health_ratio",
+        "calc_mana_ratio",
+        "has_potion",
+        "use_potion_if_needed",
+        "use_potion",
+        "tp_to_closest_health_wisp",
+        "tp_to_closest_mana_wisp",
+        "backpack_space",
+        "get_base_entities_with_vague_name",
+    }
+)
+for _method in _FAKED_METHODS:
+    if not hasattr(SprintyClient, _method):
+        raise AttributeError(
+            f"FakeClient mocks {_method!r} but SprintyClient has no such attribute. "
+            "Update FakeClient to match the current WizSprinter API."
+        )
+del _method
 
 
 class FakeClient:

@@ -417,9 +417,7 @@ All 26 tested nodes use consistent patterns (FakeClient + FakeMachine fixtures, 
 
 FakeClient in `tests/conftest.py` manually mocks 25 methods with `AsyncMock()`. No `spec=SprintyClient` is used.
 
-**Risk:** When WizSprinter adds, removes, or renames methods, tests will not detect the divergence. `FakeClient` will happily respond to any attribute access (`MagicMock` behavior), and tests pass while production code fails on the first real WizSprinter call. WizSprinter is pinned to a specific commit hash, which mitigates the immediate risk — but when the pin is updated, the FakeClient should be validated against the new API.
-
-**Adding `spec=SprintyClient`** would enforce that only real methods are mocked. This is a 5-minute change but requires importing `SprintyClient` in conftest.py.
+**Risk:** ~~When WizSprinter adds, removes, or renames methods, tests will not detect the divergence.~~ **Fixed** — `conftest.py` now imports `SprintyClient` and validates all 19 mocked async methods against `hasattr(SprintyClient, name)` at import time. If a method is renamed or removed when the WizSprinter pin is bumped, the test run fails immediately with an `AttributeError` naming the offending method. The 4 `MagicMock` attributes (`body`, `root_window`, `stats`, `mouse_handler`) are instance attributes set in WizWalker's `Client.__init__` and cannot be checked via `hasattr` on the class; they must be verified manually when the pin changes.
 
 ### Dependencies Audit
 
@@ -448,7 +446,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | New systems | `recording.py` completely untested | High |
 | New systems | `safety_warning_dialog.py` (`collect_safety_warnings`) untested | High |
 | New systems | `wiki_import_dialog.py` HTML parsing untested | Medium |
-| FakeClient | No `spec=SprintyClient`; API drift undetected | High |
+| FakeClient | ~~No `spec=SprintyClient`; API drift undetected~~ | High — **DONE** |
 | Integration | Recovery procedure not tested | Medium |
 | Integration | Machine stop during execution not tested | Medium |
 
@@ -456,7 +454,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 
 | # | Issue | Severity |
 |---|-------|----------|
-| 1 | FakeClient lacks `spec=SprintyClient` | High |
+| 1 | ~~FakeClient lacks `spec=SprintyClient`~~ | High — **DONE** |
 | 2 | `enter_gauntlet` node untested | High |
 | 3 | ~~`undo_manager.py` untested~~ | High — **DONE** |
 | 4 | `recording.py` untested | High |
@@ -516,11 +514,9 @@ Created `tests/test_undo_manager.py` with 17 passing tests covering: push/undo, 
 ---
 
 ### 7. Add `spec=SprintyClient` to FakeClient
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** FakeClient manually mirrors WizSprinter's API with no validation. When WizSprinter is updated (by bumping the pinned commit), the FakeClient will not detect removed or renamed methods.
-
-**What to do:** Import `SprintyClient` in `tests/conftest.py` and add `spec=SprintyClient` to the AsyncMock/MagicMock constructors. Audit which mocked methods no longer match the actual API and update accordingly.
+Imported `SprintyClient` in `tests/conftest.py` and added a module-level guard that calls `hasattr(SprintyClient, name)` for all 19 mocked async methods at import time. A renamed or removed method now raises `AttributeError` immediately when the test suite is collected, naming the offending attribute. The 4 `MagicMock` instance-attribute proxies (`body`, `root_window`, `stats`, `mouse_handler`) cannot be checked this way and are documented as a manual verification step when the WizSprinter pin is bumped.
 
 ---
 
