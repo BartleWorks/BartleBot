@@ -1,5 +1,5 @@
 {
-  "name": "Grand Tourney Arena Gauntlet",
+  "name": "Grand Tourney Arena Gauntlet (Lvl 80+)",
   "description": "Endlessly farms the Grand Tourney Arena Gauntlet.\n\nREQUIREMENTS: Change the client name in \"Teleport to friend\" to your friend. Must be standing on the gauntlet entrance sigil.\n\nDouble-click to teleport to friend must be disabled.",
   "version": "1.0",
   "clients": "all",

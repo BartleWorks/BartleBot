@@ -3,7 +3,7 @@
   "description": "Farms Ore and Diamonds in Cave of Solitude in Mooshu",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
+  "initial": "state_3",
   "recovery_state": "state_3",
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Mooshu",
@@ -26,12 +26,12 @@
       "node_type": "collect_reagent",
       "label": "Collect reagents",
       "position": {
-        "x": 440,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave",
-        "spawns": "{\"x\": 24722.86, \"y\": 23939.32, \"z\": -2148.26}\n{\"x\": 26785.13, \"y\": 24321.14, \"z\": -2148.26}\n{\"x\": 31867.56, \"y\": 28143.3, \"z\": -1980.03}\n{\"x\": 33929.93, \"y\": 26827.05, \"z\": -1853.56}\n{\"x\": 29335.54, \"y\": 25782.7, \"z\": -1980.03}"
+        "entity_name": "Ore"
       },
       "option_overrides": {}
     },
@@ -40,7 +40,7 @@
       "node_type": "change_realm",
       "label": "Change realm",
       "position": {
-        "x": 0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -54,7 +54,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Jade Palace",
       "position": {
-        "x": 880,
+        "x": 0,
         "y": 0.0
       },
       "params": {
@@ -67,7 +67,7 @@
       "node_type": "enter_zone",
       "label": "Enter Water Dojo",
       "position": {
-        "x": 1320,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -91,7 +91,7 @@
       "node_type": "enter_zone",
       "label": "Enter Shoshun Village",
       "position": {
-        "x": 1760,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -115,7 +115,7 @@
       "node_type": "enter_zone",
       "label": "Enter Cave of Solitude",
       "position": {
-        "x": 2200,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
@@ -227,7 +227,7 @@
     {
       "trigger": "advance",
       "source": "state_6",
-      "dest": "state_1",
+      "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND"

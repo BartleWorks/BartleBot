@@ -8,38 +8,110 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Marleybone",
   "drops": [
+    "Affable Cloak",
+    "Animated Canine Cloak",
+    "Artificial Headwrap",
     "Athame of Chivalry",
+    "Athame of the Sleuth",
+    "Ball of Yellow Yarn",
+    "Bandit's Footwraps",
     "Banshee Onyx",
+    "Barkford",
+    "Biting Garment",
     "Black Mantle",
     "Bone",
+    "Boots of Fabrication",
+    "Boots of Heartache",
     "Boots of Sparking Energy",
+    "Brady's Boots of the Cultured",
+    "Brady's Conventional Ring",
+    "Brady's Deck of the Kraken",
+    "Brady's Distressed Deck",
+    "Brady's Formal Slippers",
+    "Brady's Frigid Garment",
+    "Brady's Hat of Extinction",
+    "Brady's Hat of History",
+    "Brady's Hat of Reverence",
+    "Brady's Provincial Kris",
+    "Brady's Provincial Ring",
+    "Brady's Robe of the Cyclops",
+    "Brady's Solar Cowl",
+    "Brady's Staff of Intensity",
+    "Brady's Stylish Sandals",
+    "Bronze Gear",
+    "Cap of Expertise",
+    "Cap of Poise",
+    "Cap of Symmetry",
     "Caramel Popcorn",
     "Cat Burglar's Shoes",
+    "Charming Garment",
+    "Chipped Damage Sapphire +7",
+    "Chipped Defense Opal +7",
     "Chipped Defense Opal +8",
     "Chipped Health Opal +21",
     "Chipped Health Opal +23",
     "Chipped Mana Opal +10",
+    "Cloak of Civility",
+    "Comedian's Robe",
     "Copper",
+    "Cowl of Diplomacy",
+    "Cracked Damage Opal +3",
+    "Crumpled Newspaper",
     "Cyclops Peridot",
+    "Dandy Hat",
     "Dawdle Opal",
+    "Debonair Garments",
+    "Dirk of Nobles",
+    "Distinct Slippers",
+    "Distinguished Robe",
+    "Distressing Garment",
     "Dryad",
+    "Effective Opal",
+    "Empty Tin Cans",
+    "Enticing Robe",
+    "Evil Snowman",
+    "Evil Snowman",
+    "Evil Snowman (Tier 2b)",
     "Evil Snowman Sapphire",
+    "Finely Finished Cloak",
     "Finely Finished Mask",
+    "Fire Elf",
     "Fishbones",
+    "Flawed Damage Opal +5",
+    "Flawed Health Opal +29",
     "Flawed Health Opal +30",
     "Flawed Resilient Opal +2%",
     "Footwraps of Dreamland",
+    "Frost Beetle",
+    "Giant",
+    "Grandiose Headwraps",
     "Gummy Bloodbat",
+    "Headwrap of the Affected",
+    "Headwraps of Preference",
     "Healer Opal",
     "Helm of Intolerance",
+    "High Statue Base",
     "Ice-Proof Sapphire",
+    "Immolate",
     "Iron",
+    "Jolting Boots",
+    "Kraken",
     "Lead",
     "Leather Straps",
     "Life-Shot Jade",
+    "Lightning Bats",
+    "Lightning Bats (Tier 2b)",
+    "Locust Swarm",
+    "Locust Swarm Citrine",
     "Marleybone Dance Theme",
+    "Marleybone Theme 1",
+    "Marleybonian Street Sign",
+    "Masterful Canine Cloak",
     "Masterful Canine Cowl",
     "Medium Fish",
+    "Medium Purple Rug",
+    "Metal Wall Lamp",
+    "Monstrous",
     "Nailed Boards",
     "Nails O'Leary's Footwraps",
     "Nails O'Leary's Shoes",
@@ -60,20 +132,103 @@
     "Nails' Vestment of the Mender",
     "Nickel",
     "O'Leary Jinxed Staff",
+    "O'Leary's Briney Amulet",
     "O'Leary's Deck of Unicorns",
     "O'Leary's Deck of Winter",
+    "O'Leary's Forest Band",
     "O'Leary's Vestment",
+    "Old Smokey's Band",
+    "Old Smokey's Boots",
+    "Old Smokey's Dagger",
+    "Old Smokey's Footwraps",
+    "Old Smokey's Formal Cap",
+    "Old Smokey's Froggy Loop",
+    "Old Smokey's Hat",
+    "Old Smokey's Noble Hat",
+    "Old Smokey's Proficient Hat",
+    "Old Smokey's Vestment",
+    "Open Furnace",
+    "Pops O'Leary Shifty Dagger",
+    "Pops O'Leary Slippers",
+    "Pops O'Leary's Savvy Shoes",
+    "Pops O'Leary's Shoes",
+    "Pops O'Leary's Sun Visor",
+    "Pops' Band of Stability",
+    "Pops' Deck of Stasis",
+    "Pops' Headwrap of Equity",
+    "Pops' Icy Hat of the Feline",
+    "Pops' Puzzling Cap",
+    "Pops' Sandals of Expertise",
+    "Pops' Skillful Boots",
+    "Pops' Theraputic Hat",
+    "Pops' Tunic of Severity",
+    "Pops' Tunic of Subtlety",
+    "Pops' Uniform of Horrors",
+    "Pops' Vest of Invigoration",
+    "Pops's Band of the Mender",
+    "Power Enfused Blade",
+    "Power Play",
     "Pyrite",
+    "Rainslicker",
     "Redskin Peanut",
+    "Remarkable Robe",
     "Ring of Rejuvenation",
+    "Robe of Paramount",
+    "Robe of Politeness",
+    "Robe of the Aristocrat",
+    "Sandals of Dedication",
+    "Sandstorm",
+    "Satyr",
+    "Scarab",
+    "Scorpion (Tier 2b)",
+    "Scrap Iron",
     "Shoes of Bottled Anger",
+    "Shoes of Certainty",
     "Shoes of Humanity",
     "Shoes of the Breakneck",
+    "Short Roof Vent",
+    "Shroud of Predominance",
+    "Slippers of Tranquility",
+    "Smokey's Clever Dagger",
+    "Smokey's Cultured Cloak",
+    "Smokey's Emotional Shoes",
+    "Smokey's Genteel Vest",
+    "Smokey's Intense Band",
+    "Smokey's Pompous Cloak",
+    "Smokey's Pompous Dagger",
+    "Smokey's Robe of Integrity",
+    "Smokey's Sandals of Clarity",
+    "Smokey's Staff of the Sun",
     "Smooth Spun Hat",
+    "Sneak's Frightful Hat",
+    "Sneak's Frosty Headwrap",
+    "Sneak's Robe of Parity",
+    "Sniper",
+    "Snow Serpent",
+    "Snow Serpent (Tier 2b)",
+    "Spider Silk",
+    "Spirit Armor",
+    "Sprite Jade",
+    "Square Watermelon",
+    "Stack of 3 Books",
+    "Staff of the Ice Wyvern",
+    "Stinky Cheese",
+    "Storm Shark",
+    "Storm Shark (Tier 2b)",
     "Storm Shark Amethyst",
+    "Storm Trap",
+    "Sunbird",
+    "Sunbird (Tier 2b)",
+    "Sunbird Ruby",
     "Tall Crate",
+    "The Sneak's Noble Shoes",
+    "The Sneak's Phobic Robe",
+    "The Sneak's Puzzling Robes",
+    "Thunder Snake",
     "Tin",
     "Tough",
+    "Urbane Robe",
+    "Vestment of Fright",
     "Wheat Cracker"
   ],
   "authors": "BartleBot",
@@ -83,6 +238,36 @@
       "type": "float",
       "default": 3.0,
       "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Defeat Old Smokey",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat Old Smokey, an optional side boss who drops school design gear"
+    },
+    {
+      "name": "Defeat Nails O'Leary",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat Nails O'Leary. CANNOT be skipped to."
+    },
+    {
+      "name": "Defeat Brady the Sneak",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat Brady the Sneak. CANNOT be skipped to."
+    },
+    {
+      "name": "Defeat Pops O'Leary",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to defeat Pops O'Leary. CAN be skipped to."
     }
   ],
   "states": [
@@ -91,7 +276,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Regent's Square",
       "position": {
-        "x": 0,
+        "x": -1320.0,
         "y": 0.0
       },
       "params": {
@@ -104,7 +289,7 @@
       "node_type": "enter_zone",
       "label": "Enter Digmoore Station",
       "position": {
-        "x": 440,
+        "x": -440.0,
         "y": 0.0
       },
       "params": {
@@ -128,7 +313,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter the Ironworks",
       "position": {
-        "x": 880,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
@@ -152,7 +337,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Skip flight",
       "position": {
-        "x": 1320,
+        "x": 440.0,
         "y": 0.0
       },
       "params": {
@@ -170,17 +355,788 @@
         }
       },
       "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Talk to Baxter",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -347.82,
+          "y": 15382.26,
+          "z": 0.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to O'Leary Napper",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": -8273.37,
+          "y": 14381.21,
+          "z": -480.04
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat O'Leary Napper",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "interact",
+      "label": "Talk to Baxter",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -347.82,
+          "y": 15382.26,
+          "z": 0.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Open gate",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 1820.98,
+          "y": 15164.45,
+          "z": -230.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Talk to Baxter",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -347.82,
+          "y": 15382.26,
+          "z": 0.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Enter Nails O'Leary's clocktower",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Station/MB_Ironworks",
+        "to_zone": "Marleybone/MB_Station/Interiors/MB_Ironworks_T1",
+        "xyz": {
+          "x": -7586.67,
+          "y": 31580.49,
+          "z": 36.31
+        },
+        "reset_xyz": {
+          "x": -7569.46,
+          "y": 30716.29,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Nails O'Leary",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "Cat-Thug-Blue-MBBoss-L38",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "enter_zone",
+      "label": "Exit Nails O'Leary's clocktower",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Station/Interiors/MB_Ironworks_T1",
+        "to_zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 7.6,
+          "y": -1372.09,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 0.36,
+          "y": -890.34,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Talk to Baxter outside gate",
+      "position": {
+        "x": 7480.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -347.82,
+          "y": 15382.26,
+          "z": 0.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "mark_location",
+      "label": "Mark location",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "teleport_to_marked_location",
+      "label": "Teleport to marked location",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "interact",
+      "label": "Talk to Baxter outside factory",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 7049.47,
+          "y": 28014.27,
+          "z": -239.86
+        },
+        "reset_xyz": {
+          "x": 7374.48,
+          "y": 27748.23,
+          "z": -239.86
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "interact",
+      "label": "Collect plans",
+      "position": {
+        "x": 11440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 8515.98,
+          "y": 31676.69,
+          "z": -724.85
+        },
+        "reset_xyz": {
+          "x": 9137.62,
+          "y": 31721.07,
+          "z": -724.85
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "interact",
+      "label": "Talk to Baxter outside factory",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 7049.47,
+          "y": 28014.27,
+          "z": -239.86
+        },
+        "reset_xyz": {
+          "x": 7374.48,
+          "y": 27748.23,
+          "z": -239.86
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Pops O'Leary",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 5702.33,
+          "y": 35970.19,
+          "z": 721.14
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "interact",
+      "label": "Talk to Baxter outside factory",
+      "position": {
+        "x": 12760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 7049.47,
+          "y": 28014.27,
+          "z": -239.86
+        },
+        "reset_xyz": {
+          "x": 7374.48,
+          "y": 27748.23,
+          "z": -239.86
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone",
+      "label": "Enter Brady the Sneak's warehouse",
+      "position": {
+        "x": 13200.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Station/MB_Ironworks",
+        "to_zone": "Marleybone/MB_Station/Interiors/MB_Ironworks_T5",
+        "xyz": {
+          "x": 31838.22,
+          "y": 40910.04,
+          "z": -240.0
+        },
+        "reset_xyz": {
+          "x": 31313.1,
+          "y": 40881.74,
+          "z": -240.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "handle_combat",
+      "label": "Defeat Brady the Sneak  ",
+      "position": {
+        "x": 14080.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "Cat-Burglar-Yellow-MBBoss-L39",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "teleport_to_marked_location",
+      "label": "Teleport to marked location",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_26",
+      "node_type": "enter_zone",
+      "label": "Exit Brady the Sneak's warehouse",
+      "position": {
+        "x": 14520.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Station/Interiors/MB_Ironworks_T5",
+        "to_zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 18.19,
+          "y": -2272.36,
+          "z": -724.39
+        },
+        "reset_xyz": {
+          "x": 12.7,
+          "y": -1720.98,
+          "z": -724.71
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_28",
+      "node_type": "teleport_to_marked_location",
+      "label": "Teleport to marked location",
+      "position": {
+        "x": 14960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": -338.48,
+          "y": 15943.3,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_27",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Pops O'Leary",
+      "position": {
+        "x": 15400.0,
+        "y": -270.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 5702.33,
+          "y": 35970.19,
+          "z": 721.14
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "handle_combat",
+      "label": "Defeat Pops O'Leary",
+      "position": {
+        "x": 15840.0,
+        "y": -270.0
+      },
+      "params": {
+        "enemy": "Cat-Thug-Green-MBBoss-L42",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "interact",
+      "label": "Talk to Baxter in hideout",
+      "position": {
+        "x": 16720.0,
+        "y": -270.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 6657.88,
+          "y": 36120.02,
+          "z": 775.26
+        },
+        "reset_xyz": {
+          "x": 7178.15,
+          "y": 36488.53,
+          "z": 775.26
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_31",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "interact",
+      "label": "Activate bug chimney",
+      "position": {
+        "x": 7920.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 2896.36,
+          "y": 14810.5,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": 2321.57,
+          "y": 15161.41,
+          "z": -230.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "interact",
+      "label": "Activate bird chimney",
+      "position": {
+        "x": 8360.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 2715.83,
+          "y": 15466.68,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": 2275.89,
+          "y": 15125.16,
+          "z": -230.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "interact",
+      "label": "Deactivate dog chimney",
+      "position": {
+        "x": 8800.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 3284.0,
+          "y": 15280.98,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": 2364.38,
+          "y": 15123.64,
+          "z": -230.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "interact",
+      "label": "Deactivate moon chimney",
+      "position": {
+        "x": 9240.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 4167.0,
+          "y": 14739.46,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": 3649.08,
+          "y": 14492.68,
+          "z": -200.13
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_38",
+      "node_type": "interact",
+      "label": "Activate snake chimney",
+      "position": {
+        "x": 9680.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 4963.04,
+          "y": 14695.84,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": 4532.42,
+          "y": 14265.85,
+          "z": -230.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_39",
+      "node_type": "interact",
+      "label": "Activate lever",
+      "position": {
+        "x": 10120.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "interact_xyz": {
+          "x": 5060.05,
+          "y": 15534.29,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": 5062.6,
+          "y": 16018.72,
+          "z": -230.0
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_40",
+      "node_type": "teleport_to_coordinates",
+      "label": "Hit gate trigger",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 5689.68,
+          "y": 15177.39,
+          "z": -230.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_41",
+      "node_type": "wait_for_dialogue",
+      "label": "Dismiss dialogue",
+      "position": {
+        "x": 16280.0,
+        "y": -270.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "handle_combat",
+      "label": "Defeat Old Smokey",
+      "position": {
+        "x": 2200.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "Golem-Steel-MBBoss-L43",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_42",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Old Smokey",
+      "position": {
+        "x": 1760.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Station/MB_Ironworks",
+        "xyz": {
+          "x": 9137.62,
+          "y": 31721.07,
+          "z": -724.85
+        }
+      },
+      "option_overrides": {}
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
     {
       "trigger": "advance",
       "source": "state_2",
@@ -220,7 +1176,885 @@
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Brady the Sneak",
+          "negate": false
+        },
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": false
+        }
+      ],
+      "flag_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Old Smokey",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_25",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_24",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_28",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_27",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_29",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Old Smokey",
+          "negate": true
+        },
+        {
+          "option": "Defeat Nails O'Leary",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_30",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Nails O'Leary",
+          "negate": true
+        },
+        {
+          "option": "Defeat Brady the Sneak",
+          "negate": true
+        },
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": false
+        },
+        {
+          "option": "Defeat Old Smokey",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": false
+        },
+        {
+          "option": "Defeat Brady the Sneak",
+          "negate": true
+        },
+        {
+          "option": "Defeat Nails O'Leary",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Old Smokey",
+          "negate": false
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Brady the Sneak",
+          "negate": false
+        },
+        {
+          "option": "Defeat Nails O'Leary",
+          "negate": false
+        }
+      ],
+      "flag_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Brady the Sneak",
+          "negate": true
+        },
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Nails O'Leary",
+          "negate": true
+        },
+        {
+          "option": "Defeat Brady the Sneak",
+          "negate": true
+        },
+        {
+          "option": "Defeat Pops O'Leary",
+          "negate": true
+        }
+      ],
+      "flag_op": "AND"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "0b22dfa5",
+      "label": "Pops O'Leary",
+      "members": [
+        "state_29",
+        "state_27",
+        "state_30",
+        "state_41"
+      ],
+      "color": 4
+    },
+    {
+      "id": "b111b0e9",
+      "label": "Brady the Sneak",
+      "members": [
+        "state_25",
+        "state_28",
+        "state_24",
+        "state_21",
+        "state_26",
+        "state_23"
+      ],
+      "color": 1
+    },
+    {
+      "id": "13e91897",
+      "label": "Open gate",
+      "members": [
+        "state_9",
+        "state_15",
+        "state_10",
+        "state_7",
+        "state_8",
+        "state_5",
+        "state_6"
+      ],
+      "color": 3
+    },
+    {
+      "id": "4a9c9018",
+      "label": "Nails O'Leary",
+      "members": [
+        "state_14",
+        "state_11",
+        "state_16",
+        "state_13",
+        "state_12"
+      ],
+      "color": 6
+    },
+    {
+      "id": "e46de369",
+      "label": "Factory",
+      "members": [
+        "state_19",
+        "state_17",
+        "state_20",
+        "state_18"
+      ],
+      "color": 5
+    },
+    {
+      "id": "ea8e7828",
+      "label": "Enter dungeon",
+      "members": [
+        "state_2",
+        "state_3",
+        "state_4",
+        "state_32",
+        "state_1",
+        "state_31",
+        "state_33"
+      ],
+      "color": 2
+    },
+    {
+      "id": "b06a9e4f",
+      "label": "Puzzle",
+      "members": [
+        "state_38",
+        "state_37",
+        "state_36",
+        "state_35",
+        "state_34",
+        "state_39",
+        "state_40"
+      ],
+      "color": 1
+    },
+    {
+      "id": "39aad88e",
+      "label": "Old Smokey",
+      "members": [
+        "state_42",
+        "state_22"
+      ],
+      "color": 5
+    }
+  ]
 }

@@ -1,5 +1,5 @@
 {
-  "name": "Spiral Cup Gauntlet",
+  "name": "Spiral Cup Gauntlet (Lvl 80+)",
   "description": "Endlessly farms the Spiral Cup Gauntlet.\n\nREQUIREMENTS: Change the client name in \"Teleport to friend\" to your friend. Must be standing on the gauntlet entrance sigil.\n\nDouble-click to teleport to friend must be disabled.",
   "version": "2.0",
   "clients": "all",

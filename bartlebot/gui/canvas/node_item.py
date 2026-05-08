@@ -28,6 +28,7 @@ NODE_W = NODE_INFO_W + NODE_PORT_W  # = 300, full node width
 NODE_H = 70  # node height — always fixed regardless of return count
 NODE_RADIUS = 12
 PORT_R = 6  # radius of connection-port circles
+_FAN_MAX_PORTS = 4  # fan input ports only when this many or fewer edges arrive
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 _BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal)
 _BADGE_GAP = 4  # gap between adjacent badge circles
@@ -275,6 +276,29 @@ class NodeItem(QGraphicsItem):
     def port_in(self) -> QPointF:
         """Scene-coordinate input port — left edge of info section (x=0)."""
         return self.scenePos() + QPointF(0, NODE_H / 2)
+
+    def _incoming_edges(self) -> list:
+        """Sorted list of non-self-loop edges whose destination is this node."""
+        return sorted(
+            [e for e in self._edges if e._dst is self and not e._is_self_loop],
+            key=lambda e: e._when or "",
+        )
+
+    def port_in_for(self, edge) -> QPointF:
+        """Scene-coordinate input port for a specific incoming edge.
+
+        Fans ports vertically across the left edge when 2–_FAN_MAX_PORTS edges
+        arrive; falls back to the single center port for 0, 1, or >_FAN_MAX_PORTS.
+        """
+        incoming = self._incoming_edges()
+        n = len(incoming)
+        if n <= 1 or n > _FAN_MAX_PORTS:
+            return self.scenePos() + QPointF(0, NODE_H / 2)
+        try:
+            idx = incoming.index(edge)
+        except ValueError:
+            return self.scenePos() + QPointF(0, NODE_H / 2)
+        return self.scenePos() + QPointF(0, (idx + 0.5) * NODE_H / n)
 
     def port_out(self) -> QPointF:
         """Scene-coordinate output port (center-edge fallback when no named returns)."""
@@ -599,8 +623,14 @@ class NodeItem(QGraphicsItem):
                     painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
                 painter.restore()
 
-            # Input port dot at the left edge
+            # Input port dot(s) at the left edge — fanned when 2–_FAN_MAX_PORTS edges arrive
             if self._interactive:
                 painter.setPen(QPen(_port_color(), 1.5))
                 painter.setBrush(QBrush(_port_color()))
-                painter.drawEllipse(QPointF(0.0, NODE_H / 2), PORT_R, PORT_R)
+                incoming = self._incoming_edges()
+                n = len(incoming)
+                if 1 < n <= _FAN_MAX_PORTS:
+                    for i in range(n):
+                        painter.drawEllipse(QPointF(0.0, (i + 0.5) * NODE_H / n), PORT_R, PORT_R)
+                else:
+                    painter.drawEllipse(QPointF(0.0, NODE_H / 2), PORT_R, PORT_R)

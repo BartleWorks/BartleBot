@@ -258,6 +258,9 @@ class EditScene(QGraphicsScene):
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
         self._grid_style: str = "dots"  # "dots" | "lines" | "none"
+        self._cycle_pos: QPointF = QPointF()
+        self._cycle_edges: list[EdgeItem] = []
+        self._cycle_idx: int = -1
 
     # ------------------------------------------------------------------
     # Grid / snap
@@ -370,9 +373,6 @@ class EditScene(QGraphicsScene):
             self.addItem(node)
             self._node_items[state.id] = node
 
-        non_loop = {(t.source, t.dest) for t in transitions if t.source != t.dest}
-        bidi = {(s, d) for (s, d) in non_loop if (d, s) in non_loop}
-
         # Pre-compute shared bridge_y for same-destination backward-edge groups.
         # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
         # to a common corridor so they overlap cleanly instead of forming a spaghetti
@@ -442,20 +442,16 @@ class EditScene(QGraphicsScene):
             if s == d:
                 edge = EdgeItem(sn, sn, when=w)
             else:
-                is_bidi = (s, d) in bidi
-                offset = 22.0 if (is_bidi and s < d) else (-22.0 if is_bidi else 0.0)
-                edge = EdgeItem(
-                    sn,
-                    dn,
-                    offset=offset,
-                    when=w,
-                    bridge_y_override=bridge_y_map.get(key),
-                )
+                edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y_map.get(key))
             self.addItem(edge)
             sn.add_edge(edge)
             if dn is not sn:
                 dn.add_edge(edge)
             self._edge_items.append((s, w, d, edge))
+
+        # Compute forward-edge offsets and fan arrival ports now that all edges
+        # are registered with their nodes (port_in_for needs the full edge list).
+        self._recompute_offsets()
 
         # Add region items behind nodes (z=-1)
         for region in config.regions:
@@ -588,6 +584,32 @@ class EditScene(QGraphicsScene):
                 self.addItem(line)
                 event.accept()
                 return
+
+            # Click-cycle: when multiple edges overlap at a point, repeated clicks
+            # at the same location cycle through them for individual selection.
+            hit = list(self.items(scene_pos))
+            hit_nodes = [i for i in hit if isinstance(i, NodeItem)]
+            hit_edges = [i for i in hit if isinstance(i, EdgeItem)]
+            if not hit_nodes and len(hit_edges) > 1:
+                # Prune stale references from previous cycles.
+                self._cycle_edges = [e for e in self._cycle_edges if e.scene() is self]
+                near = (
+                    self._cycle_edges
+                    and abs(scene_pos.x() - self._cycle_pos.x()) < 10
+                    and abs(scene_pos.y() - self._cycle_pos.y()) < 10
+                )
+                if near:
+                    self._cycle_idx = (self._cycle_idx + 1) % len(self._cycle_edges)
+                else:
+                    self._cycle_pos = scene_pos
+                    self._cycle_edges = hit_edges
+                    self._cycle_idx = 0
+                self.clearSelection()
+                self._cycle_edges[self._cycle_idx].setSelected(True)
+                event.accept()
+                return
+
+        self._cycle_edges = []
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -842,6 +864,28 @@ class EditScene(QGraphicsScene):
                 return item
         return None
 
+    def _recompute_offsets(self) -> None:
+        """Recompute forward-edge mid_x offsets for all (source, dest) groups.
+
+        Handles bidirectional separation and N-parallel-edge spreading.  Also
+        calls _rebuild() on every non-loop edge so fan arrival-port positions
+        (option A) and Z-channel positions (option C) are both updated in one pass.
+        """
+        PARALLEL_STEP = 22.0
+        sd_groups: dict[tuple[str, str], list] = defaultdict(list)
+        for s, w, d, edge in self._edge_items:
+            if s != d:
+                sd_groups[(s, d)].append((s, w, d, edge))
+        non_loop_pairs = {(s, d) for s, _w, d, _ in self._edge_items if s != d}
+        for (s, d), group in sd_groups.items():
+            group_sorted = sorted(group, key=lambda x: x[1] or "")
+            n = len(group_sorted)
+            is_bidi = (d, s) in non_loop_pairs
+            bidi_base = (PARALLEL_STEP if s < d else -PARALLEL_STEP) if is_bidi else 0.0
+            for i, (_s, _w, _d, edge) in enumerate(group_sorted):
+                edge._offset = bidi_base + (i - (n - 1) / 2) * PARALLEL_STEP
+                edge._rebuild()
+
     def _create_transition(self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None) -> None:
         if self._config is None:
             return
@@ -852,22 +896,13 @@ class EditScene(QGraphicsScene):
         t = TransitionModel(trigger="advance", source=s, dest=d, when=when)
         self._config.transitions.append(t)
 
-        reverse_exists = any(es == d and ed == s for (es, _ew, ed, _ei) in self._edge_items)
-        if reverse_exists:
-            for es, _ew, ed, existing in self._edge_items:
-                if es == d and ed == s:
-                    existing._offset = -22.0
-                    existing._rebuild()
-            offset = 22.0
-        else:
-            offset = 0.0
-
-        edge = EdgeItem(src_node, dst_node, offset=offset, when=when)
+        edge = EdgeItem(src_node, dst_node, when=when)
         self.addItem(edge)
         src_node.add_edge(edge)
         if dst_node is not src_node:
             dst_node.add_edge(edge)
         self._edge_items.append((s, when, d, edge))
+        self._recompute_offsets()
         self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
@@ -1083,6 +1118,7 @@ class EditScene(QGraphicsScene):
             else:
                 remaining.append((s, w, d, edge_item))
         self._edge_items = remaining
+        self._recompute_offsets()
         self._config.states = [s for s in self._config.states if s.id != state_id]
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
@@ -1130,6 +1166,7 @@ class EditScene(QGraphicsScene):
             else:
                 remaining.append((s, w, d, ei))
         self._edge_items = remaining
+        self._recompute_offsets()
         self.refresh_terminal()
         self.refresh_errors()
         self.graph_changed.emit()
@@ -1175,25 +1212,10 @@ class EditScene(QGraphicsScene):
         if old_dst_node and old_dst_node is not old_src_node:
             old_dst_node.remove_edge(edge_item)
 
-        # Recalculate offset — check if a reverse edge already exists on the NEW pair
-        reverse_exists = any(
-            es == new_dst and ed == new_src for (es, _ew, ed, _ei2) in self._edge_items if _ei2 is not edge_item
-        )
-        if reverse_exists:
-            for _i2, (es, _ew, ed, ei2) in enumerate(self._edge_items):
-                if ei2 is not edge_item and es == new_dst and ed == new_src:
-                    ei2._offset = -22.0
-                    ei2._rebuild()
-            new_offset = 22.0
-        else:
-            new_offset = 0.0
-
         # Update the EdgeItem in-place
         edge_item._src = new_src_node
         edge_item._dst = new_dst_node
         edge_item._is_self_loop = new_src_node is new_dst_node
-        edge_item._offset = new_offset
-        edge_item._rebuild()
 
         # Register with new nodes
         new_src_node.add_edge(edge_item)
@@ -1203,15 +1225,8 @@ class EditScene(QGraphicsScene):
         # Update the _edge_items record
         self._edge_items[record_idx] = (new_src, old_when_str, new_dst, edge_item)
 
-        # Clean up offsets on the OLD pair if the reverse was offset for it
-        old_reverse = any(
-            es == old_dst and ed == old_src for (es, _ew, ed, ei2) in self._edge_items if ei2 is not edge_item
-        )
-        if not old_reverse:
-            for _i2, (es, _ew, ed, ei2) in enumerate(self._edge_items):
-                if ei2 is not edge_item and es == old_dst and ed == old_src:
-                    ei2._offset = 0.0
-                    ei2._rebuild()
+        # Recompute all offsets and fan positions now that the topology has changed.
+        self._recompute_offsets()
 
         self._update_scene_rect()
         self.refresh_terminal()
