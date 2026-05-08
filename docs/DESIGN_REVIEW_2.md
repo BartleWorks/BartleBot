@@ -206,7 +206,7 @@ Async coroutines dispatch per node type via `_REGISTRY`. Each coroutine updates 
 
 Snapshot-based with a 50-state deque and 500ms debounce for param edits. Each snapshot is a full `model_dump()` of `BotConfig`. For a bot with 50 states + 70 transitions (~20 KB serialized), 50 snapshots costs ~1 MB — acceptable.
 
-**No tests exist.** This is the highest-risk gap: silent undo logic failures or regressions from `model_validate()` changes will not be caught. (See Stage 5.)
+**No tests exist** — fixed. `tests/test_undo_manager.py` now covers 17 cases: push/undo, redo, push-clears-redo, max-depth eviction, debounce (multiple calls produce one snapshot, cancel discards, commit clears redo), structural+param interleave, state queries (`can_undo`, `can_redo`, `undo_desc`, `redo_desc`), `clear()`, and `set_enabled(False)`.
 
 **Edit coverage:** `push()` and `begin_debounce()` are called from `param_panel.py` and structural operations in `bot_canvas.py`. Potential gaps in `edit_scene.py` region operations were not confirmed — this should be audited when writing tests.
 
@@ -259,7 +259,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | File | Line | Issue | Severity |
 |------|------|-------|----------|
 | `node_browser_dialog.py` | 740 | ~~`AttributeError`: `_NodeListItem.update_star()` does not exist~~ | Critical — **DONE** |
-| `undo_manager.py` | — | No tests; silent regressions possible | High |
+| `undo_manager.py` | — | ~~No tests; silent regressions possible~~ | High — **DONE** |
 | `safety_warning_dialog.py` | 37–100 | Warning coverage limited to 3 hard-coded node types | High |
 | `ui_tree_browser.py` | 320–323 | Overlay not cleaned up if exception occurs before closeEvent | Medium |
 | `recording.py` | — | Concurrent session protection relies on single-panel assumption (undocumented) | Medium |
@@ -273,7 +273,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | # | Issue | File | Severity |
 |---|-------|------|----------|
 | 1 | ~~`AttributeError` on favorite toggle in node browser~~ | `node_browser_dialog.py` | Critical — **DONE** |
-| 2 | Undo/redo system completely untested | `undo_manager.py` | High |
+| 2 | ~~Undo/redo system completely untested~~ | `undo_manager.py` | High — **DONE** |
 | 3 | Safety warning coverage: only 3 of many risky nodes | `safety_warning_dialog.py` | High |
 | 4 | UI tree overlay not cleaned up on exception | `ui_tree_browser.py:320-323` | Medium |
 | 5 | Wiki import thread not joined on dialog close | `wiki_import_dialog.py:285-288` | Low |
@@ -444,7 +444,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | Node coverage | `enter_gauntlet` has no test file | High |
 | Node coverage | `change_realm` has no test file | Medium |
 | Node coverage | `sleep` has no test file | Low |
-| New systems | `undo_manager.py` completely untested | High |
+| New systems | ~~`undo_manager.py` completely untested~~ | High — **DONE** |
 | New systems | `recording.py` completely untested | High |
 | New systems | `safety_warning_dialog.py` (`collect_safety_warnings`) untested | High |
 | New systems | `wiki_import_dialog.py` HTML parsing untested | Medium |
@@ -458,7 +458,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 |---|-------|----------|
 | 1 | FakeClient lacks `spec=SprintyClient` | High |
 | 2 | `enter_gauntlet` node untested | High |
-| 3 | `undo_manager.py` untested | High |
+| 3 | ~~`undo_manager.py` untested~~ | High — **DONE** |
 | 4 | `recording.py` untested | High |
 | 5 | `safety_warning_dialog.collect_safety_warnings()` untested | High |
 | 6 | `change_realm` node untested | Medium |
@@ -509,16 +509,9 @@ Wrapped the `_on_drop` invocation in try/except. Exceptions are logged at ERROR 
 ---
 
 ### 6. Add tests for `undo_manager.py`
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** Core editor feature with no test coverage. Silent regressions from `model_validate()` changes or undo stack logic bugs will not be caught.
-
-**What to do:** Create `tests/test_undo_manager.py`:
-- push/pop: verify config is restored on undo
-- redo: verify config is re-applied on redo
-- max depth: verify oldest snapshot is dropped when 50-limit is exceeded
-- debounce: verify multiple rapid edits produce one snapshot
-- interleave: verify undo after structural edit (push) then param edit (begin_debounce)
+Created `tests/test_undo_manager.py` with 17 passing tests covering: push/undo, redo, push-clears-redo, max-depth eviction, debounce (multiple calls → one snapshot, cancel discards, commit clears redo), structural+param interleave, state queries, `clear()`, and `set_enabled(False)`. Uses a session-scoped `QApplication` fixture required by `QTimer`; debounce tests call `_commit_debounce()` directly to avoid a 500ms sleep.
 
 ---
 
