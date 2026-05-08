@@ -185,6 +185,10 @@ class BotMachine:
     def is_stopped(self) -> bool:
         return self._stop_flag.is_set()
 
+    def set_clients(self, clients: list) -> None:
+        """Replace the active client list."""
+        self.clients = clients
+
     @property
     def stop_event(self) -> asyncio.Event:
         """The asyncio Event that is set when stop() is called.

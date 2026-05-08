@@ -302,11 +302,9 @@ AppController has grown from 330 to 882 lines (2.7×) and now manages 10 distinc
 
 **This is a god class.** 10 responsibilities, 7+ reasons to change, 882 lines.
 
-**Machine coupling violations:** AppController directly accesses private BotMachine internals:
-- `machine._stop_flag.is_set()` — lines 505, 515, 584 (3 occurrences)
-- `self._current_machine.clients = self._clients` — lines 416, 453, 463, 471 (direct mutation of private state)
-
-These should be public methods (`machine.is_stopped` property, `machine.set_clients()`). If BotMachine ever renames these internals, AppController silently breaks.
+**Machine coupling violations:** ~~AppController directly accessed private BotMachine internals.~~ **Fixed.**
+- `machine._stop_flag.is_set()` → `machine.is_stopped` (property already existed; 3 call sites updated)
+- `self._current_machine.clients = self._clients` → `self._current_machine.set_clients(self._clients)` (`set_clients()` added to `machine.py`; 4 call sites updated)
 
 **Recovery procedure fault-tolerance:** `_reconnect_client()` (lines 599–721, 122 lines) is the most complex procedure in the codebase. It has moderate fault-tolerance but:
 - If the 2nd of 3 queued clients fails reconnect, the 1st is recovered but `_pending_recovery` is left dirty — subsequent client disconnects may interact with stale recovery state
@@ -350,8 +348,8 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 
 | File | Line | Issue | Severity |
 |------|------|-------|----------|
-| `app_controller.py` | 505, 515, 584 | `machine._stop_flag.is_set()` — private attribute accessed directly | Critical |
-| `app_controller.py` | 416, 453, 463, 471 | `machine.clients = ...` — private state mutated directly | Critical |
+| `app_controller.py` | 505, 515, 584 | ~~`machine._stop_flag.is_set()` — private attribute accessed directly~~ | Critical — **DONE** |
+| `app_controller.py` | 416, 453, 463, 471 | ~~`machine.clients = ...` — private state mutated directly~~ | Critical — **DONE** |
 | `app_controller.py` | 564–597 | Recovery queue state leak on partial multi-client failure | High |
 | `bot_canvas.py` | 1110, 1117, 1129, 1138 | Calls EditScene private methods directly | High |
 | `app_controller.py` | 617–621 | No user-facing dialog on password retrieval failure in recovery | High |
@@ -364,7 +362,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 
 | # | Issue | Severity |
 |---|-------|----------|
-| 1 | `app_controller.py` accesses `machine._stop_flag` and `.clients` directly | Critical |
+| 1 | ~~`app_controller.py` accesses `machine._stop_flag` and `.clients` directly~~ | Critical — **DONE** |
 | 2 | Extract `ClientManager` from `app_controller.py` | Medium (growing concern) |
 | 3 | Validation pills don't re-apply stylesheet on theme change | Medium |
 | 4 | BotCanvas calls EditScene private methods | High |
@@ -504,15 +502,9 @@ Wrapped the `_on_drop` invocation in try/except. Exceptions are logged at ERROR 
 ---
 
 ### 5. Fix `machine._stop_flag` and `.clients` direct access in `app_controller.py`
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** Three accesses to `machine._stop_flag.is_set()` and four direct mutations of `machine.clients`. This is the most dangerous coupling in the codebase — BotMachine's public API is not being used.
-
-**What to do:**
-- Add `machine.is_stopped` property if not already present (check line 182)
-- Replace all `machine._stop_flag.is_set()` calls with `machine.is_stopped`
-- Add `machine.set_clients(clients: list)` public method
-- Replace all direct `self._current_machine.clients = ...` with `self._current_machine.set_clients(self._clients)`
+`is_stopped` property was already present in `machine.py`. Added `set_clients(clients: list)` public method. Replaced all 3 `machine._stop_flag.is_set()` calls with `machine.is_stopped` and all 4 `self._current_machine.clients = ...` assignments with `self._current_machine.set_clients(self._clients)` in `app_controller.py`.
 
 ---
 
