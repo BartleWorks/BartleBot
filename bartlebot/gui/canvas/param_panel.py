@@ -1155,7 +1155,7 @@ class _ParamPanel(QWidget):
         self._conn_toggle_btn.setFlat(True)
         self._conn_toggle_btn.setStyleSheet(
             f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-            " border: none; padding: 0; font-size: 11px; background: transparent; }}"
+            " border: none; padding: 0; font-size: 11px; background: transparent; }"
         )
         _conn_header_layout.addWidget(self._conn_toggle_btn)
         _conn_header_layout.addStretch()
