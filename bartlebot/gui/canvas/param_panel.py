@@ -10,7 +10,7 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QSize, QStringListModel, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QSize, QStringListModel, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
@@ -1126,9 +1126,9 @@ class _ParamPanel(QWidget):
         _notes_vbox = QVBoxLayout(self._notes_section)
         _notes_vbox.setContentsMargins(6, 4, 6, 6)
         _notes_vbox.setSpacing(3)
-        _notes_title = QLabel("Notes:")
-        _notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-        _notes_vbox.addWidget(_notes_title)
+        self._notes_title = QLabel("Notes:")
+        self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
+        _notes_vbox.addWidget(self._notes_title)
         self._notes_edit = QPlainTextEdit()
         self._notes_edit.setPlaceholderText("Add notes about this node…")
         self._notes_edit.setFixedHeight(72)
@@ -1229,6 +1229,19 @@ class _ParamPanel(QWidget):
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
+            self._notes_edit.setStyleSheet(
+                f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+                f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+            )
+            self._conn_toggle_btn.setStyleSheet(
+                f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
+                " border: none; padding: 0; font-size: 11px; background: transparent; }"
+            )
 
     def show_idle(self) -> None:
         self._cancel_record()

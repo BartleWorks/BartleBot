@@ -7,7 +7,7 @@ Slots can be rearranged by dragging one button onto another.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QByteArray, QMimeData, QPoint, Qt, pyqtSignal
+from PyQt6.QtCore import QByteArray, QEvent, QMimeData, QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import QDrag
 from PyQt6.QtWidgets import (
     QApplication,
@@ -212,3 +212,9 @@ class FavoritesBar(QWidget):
         hotkeys = SettingsManager.instance().favorited_hotkey_nodes
         for i, btn in enumerate(self._slots):
             btn.set_node_type(hotkeys[i] if i < len(hotkeys) else "")
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            for btn in self._slots:
+                btn._refresh_style()
