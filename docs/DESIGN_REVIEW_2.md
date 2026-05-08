@@ -378,9 +378,9 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 
 | Node | Category | Missing Tests |
 |------|----------|--------------|
-| `enter_gauntlet` | Zone Entry | All — entry flow, wrong zone, queue timeout, match failure |
-| `change_realm` | Utility | All — realm switch, loading, cooldown, pagination |
-| `sleep` | Utility | All — trivial, but no coverage |
+| ~~`enter_gauntlet`~~ | Zone Entry | **DONE** — 5 tests |
+| ~~`change_realm`~~ | Utility | **DONE** — 6 tests |
+| ~~`sleep`~~ | Utility | **DONE** — 2 tests |
 
 All 26 tested nodes use consistent patterns (FakeClient + FakeMachine fixtures, no game process required).
 
@@ -439,9 +439,9 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 
 | Area | Issue | Severity |
 |------|-------|----------|
-| Node coverage | `enter_gauntlet` has no test file | High |
-| Node coverage | `change_realm` has no test file | Medium |
-| Node coverage | `sleep` has no test file | Low |
+| Node coverage | ~~`enter_gauntlet` has no test file~~ | High — **DONE** |
+| Node coverage | ~~`change_realm` has no test file~~ | Medium — **DONE** |
+| Node coverage | ~~`sleep` has no test file~~ | Low — **DONE** |
 | New systems | ~~`undo_manager.py` completely untested~~ | High — **DONE** |
 | New systems | `recording.py` completely untested | High |
 | New systems | `safety_warning_dialog.py` (`collect_safety_warnings`) untested | High |
@@ -455,11 +455,11 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | # | Issue | Severity |
 |---|-------|----------|
 | 1 | ~~FakeClient lacks `spec=SprintyClient`~~ | High — **DONE** |
-| 2 | `enter_gauntlet` node untested | High |
+| 2 | ~~`enter_gauntlet` node untested~~ | High — **DONE** |
 | 3 | ~~`undo_manager.py` untested~~ | High — **DONE** |
 | 4 | `recording.py` untested | High |
 | 5 | `safety_warning_dialog.collect_safety_warnings()` untested | High |
-| 6 | `change_realm` node untested | Medium |
+| 6 | ~~`change_realm` node untested~~ | Medium — **DONE** |
 | 7 | Wiki import HTML parsing untested | Medium |
 | 8 | Recovery + stop paths missing from integration tests | Medium |
 
@@ -521,14 +521,11 @@ Imported `SprintyClient` in `tests/conftest.py` and added a module-level guard t
 ---
 
 ### 8. Add tests for `enter_gauntlet`, `change_realm`, and `sleep` nodes
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** Three nodes have no test files. `enter_gauntlet` is a production path (Zone Entry) with no validation at all.
-
-**What to do:**
-- `tests/test_enter_gauntlet.py`: success path (match entered, zone reached), wrong source zone (immediate FAILURE), queue timeout (FAILURE after threshold), cancelled match (FAILURE)
-- `tests/test_change_realm.py`: success path (realm switched), timeout (FAILURE), realm not found (FAILURE)
-- `tests/test_sleep.py`: success path (trivial — returns SUCCESS after sleep)
+- `tests/test_enter_gauntlet.py` — 5 tests: prompt never appears (FAILURE, X not pressed), success, wrong zone after entry (FAILURE), multiple clients all enter, loading screen awaited.
+- `tests/test_change_realm.py` — 6 tests: `run()` wrapper returns SUCCESS/FAILURE, one-of-two clients fails; `_change_realm_for_client` directly: spellbook never opens (FAILURE), realm panel never opens (FAILURE), realm-hop cooldown timeout (FAILURE, via `REALM_HOP_TIMEOUT=-1`).
+- `tests/test_sleep.py` — 2 tests: returns SUCCESS, `asyncio.sleep` called with the correct duration.
 
 ---
 
