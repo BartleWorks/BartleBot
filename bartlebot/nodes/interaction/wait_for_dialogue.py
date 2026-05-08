@@ -52,10 +52,8 @@ async def run(machine, clients: list, params: dict) -> str:
     APIs: SprintyClient.is_in_dialog()
 
     Flow:
-      1. Poll is_in_dialog() for at least Safety Delay seconds.
-         If no client ever enters dialogue within that window, return SUCCESS.
-      2. Once dialogue is detected (or if already in dialogue at start), wait for
-         all clients to leave dialogue.
+      1. Check is_in_dialog() once. If no client is in dialogue, return SUCCESS immediately.
+      2. If any client is in dialogue, wait for all clients to leave dialogue.
       3. If timeout > 0 and it expires while clients are still in dialogue, return FAILURE.
 
     FAILURE: timeout expired before all clients left dialogue
@@ -63,30 +61,17 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     timeout_raw: float = params.get("timeout", 60.0)
     timeout_val: float | None = None if timeout_raw == 0.0 else timeout_raw
-    safety_delay: float = machine.get_option("Safety Delay", 3.0)
-
-    machine.log("wait_for_dialogue: waiting for dialogue to begin", logging.DEBUG)
 
     loop = asyncio.get_event_loop()
     start = loop.time()
 
-    # Phase 1: wait up to safety_delay for any client to enter dialogue.
-    while True:
-        in_dialog = await asyncio.gather(*[c.is_in_dialog() for c in clients])
-        elapsed = loop.time() - start
-        if any(in_dialog):
-            machine.log("wait_for_dialogue: dialogue detected", logging.DEBUG)
-            break
-        if elapsed >= safety_delay:
-            machine.log(
-                "wait_for_dialogue: SUCCESS — no dialogue appeared within Safety Delay",
-                logging.DEBUG,
-            )
-            return "SUCCESS"
-        await asyncio.sleep(POLL_INTERVAL)
+    # Phase 1: single initial check — return immediately if no dialogue is active.
+    in_dialog = await asyncio.gather(*[c.is_in_dialog() for c in clients])
+    if not any(in_dialog):
+        machine.log("wait_for_dialogue: SUCCESS — not in dialogue", logging.DEBUG)
+        return "SUCCESS"
 
     # Phase 2: dialogue was seen — wait for all clients to leave it.
-    machine.log("wait_for_dialogue: waiting for all clients to leave dialogue", logging.DEBUG)
 
     async def all_out() -> bool:
         in_dialog = await asyncio.gather(*[c.is_in_dialog() for c in clients])
