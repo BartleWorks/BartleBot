@@ -1354,6 +1354,7 @@ class BotCanvas(QWidget):
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
         if self._param_panel._transition is not None:
             self._scene.refresh_edge_flags(self._param_panel._transition)
+            self._config.sort_transitions()
 
     def _on_select_edge_requested(self, transition) -> None:
         """Select the edge on the canvas that corresponds to *transition* and centre it."""

@@ -140,6 +140,15 @@ class BotConfig(BaseModel):
             raise ValueError(f"recovery_state '{self.recovery_state}' is not in states list")
         return self
 
+    def sort_transitions(self) -> None:
+        """Stable-sort transitions so flag-guarded edges precede plain when-only fallbacks.
+
+        Edges with ``flags`` or ``flag_groups`` may not always fire (the flag condition
+        could be false), so they must be evaluated before edges that fire unconditionally
+        on a matching ``when`` result.  Edges with only a ``when`` value act as fallbacks.
+        """
+        self.transitions.sort(key=lambda t: (t.source, 0 if (t.flags or t.flag_groups) else 1))
+
     def to_machine_config(self, node_specs: dict | None = None) -> dict:
         """Convert to the flat dict format BotMachine expects.
 
@@ -152,6 +161,7 @@ class BotConfig(BaseModel):
           - Single non-negated flag, AND: ``_flag_<option>`` (simple, backward-compat)
           - All other cases: ``_flag_compound_<idx>`` with an entry in conditions_registry
         """
+        self.sort_transitions()
         conditions_registry: dict[str, dict] = {}
         trans_list = []
         for idx, t in enumerate(self.transitions):
@@ -187,10 +197,6 @@ class BotConfig(BaseModel):
             if t.label:
                 d["label"] = t.label
             trans_list.append(d)
-        # Stable-sort so conditional transitions (those with conditions) are evaluated
-        # before unconditional ones from the same source.  This makes unconditional edges
-        # act as explicit fallbacks regardless of their position in the JSON file.
-        trans_list.sort(key=lambda t: (t["source"], 0 if t.get("conditions") else 1))
         states = []
         for s in self.states:
             sd = s.model_dump()
