@@ -311,7 +311,7 @@ class DetachedTile(QWidget):
         painter.drawText(
             QRect(0, body_top, self.width(), body_h),
             Qt.AlignmentFlag.AlignCenter,
-            "Client game window not currently embedded",
+            "Player game window not currently embedded",
         )
 
         # Pill label (same layout as ClientTile, but with attach icon)

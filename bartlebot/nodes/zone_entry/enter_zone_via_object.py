@@ -13,7 +13,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="str",
         label="From Zone",
-        help="Zone name the clients must currently be in when this node executes.",
+        help="Zone name players must currently be in when this node executes.",
         default="",
         required=True,
     ),
@@ -21,7 +21,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="str",
         label="To Zone",
-        help="Zone name clients must be in after this node completes.",
+        help="Zone name players must be in after this node completes.",
         default="",
         required=True,
     ),
@@ -49,18 +49,18 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Interacts with an NPC or world object that triggers a zone change (e.g., "
-        "a snowglobe or portal). Teleports clients to the interact point, waits for "
-        "the prompt, presses X for all clients, and re-presses X for any client that "
-        "hasn't started loading — until all clients are in the destination zone."
+        "a snowglobe or portal). Teleports players to the interact point, waits for "
+        "the prompt, presses X for all players, and re-presses X for any player that "
+        "hasn't started loading — until all players are in the destination zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are now in to_zone."),
+        ReturnSpec("SUCCESS", "All players are now in to_zone."),
         ReturnSpec(
             "FAILURE",
-            "Clients were not in from_zone at the start, the interact prompt never "
-            "appeared after retries, clients did not enter a loading screen within "
-            "the timeout, or not all clients arrived in to_zone.",
+            "Players were not in from_zone at the start, the interact prompt never "
+            "appeared after retries, players did not enter a loading screen within "
+            "the timeout, or not all players arrived in to_zone.",
         ),
     ],
     required_bot_options=[

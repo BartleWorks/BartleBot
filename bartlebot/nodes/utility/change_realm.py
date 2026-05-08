@@ -64,7 +64,7 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients successfully entered a loading screen and the realm change completed."),
+        ReturnSpec("SUCCESS", "All players successfully entered a loading screen and the realm change completed."),
         ReturnSpec(
             "FAILURE",
             "The spellbook or realms panel did not open, the realm-hop timer did not "

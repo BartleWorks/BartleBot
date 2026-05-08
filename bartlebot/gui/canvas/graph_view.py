@@ -9,6 +9,7 @@ from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
 
 from bartlebot.gui.theme import THEME
+from bartlebot.settings_manager import SettingsManager
 
 # ---------------------------------------------------------------------------
 # GraphView — reusable zoomable/pannable view
@@ -24,7 +25,6 @@ class GraphView(QGraphicsView):
     """
 
     view_changed = pyqtSignal()  # emitted after zoom so overlays can repaint
-    _ZOOM_FACTOR = 1.15
 
     def __init__(self, scene: QGraphicsScene, interactive: bool = False, parent=None):
         super().__init__(scene, parent)
@@ -80,12 +80,26 @@ class GraphView(QGraphicsView):
     def _clear_fitting(self) -> None:
         self._fitting = False
 
-    def smooth_center_on(self, item: QGraphicsItem, duration_ms: int = 300) -> None:
+    def smooth_pan_if_offscreen(self, item: QGraphicsItem, duration_ms: int | None = None) -> None:
+        """Animate the viewport to center on item only when item is not already fully visible.
+
+        Used after adding or pasting nodes so the user always sees the result, but the camera
+        stays put when the node lands inside the current viewport.
+        """
+        node_scene_rect = item.mapRectToScene(item.boundingRect())
+        visible_scene_rect = self.mapToScene(self.viewport().rect()).boundingRect()
+        if not visible_scene_rect.contains(node_scene_rect):
+            self.smooth_center_on(item, duration_ms)
+
+    def smooth_center_on(self, item: QGraphicsItem, duration_ms: int | None = None) -> None:
         """Animate the viewport to center on item.
 
         Skipped only when the node is fully visible AND the entire graph fits in the viewport.
         When zoomed in past the point where all nodes fit, always re-centers on the active node.
         """
+        if duration_ms is None:
+            duration_ms = SettingsManager.instance().get("canvas", "pan_animation_ms", default=300)
+
         node_scene_rect = item.mapRectToScene(item.boundingRect())
         visible_scene_rect = self.mapToScene(self.viewport().rect()).boundingRect()
         if visible_scene_rect.contains(node_scene_rect):
@@ -121,7 +135,8 @@ class GraphView(QGraphicsView):
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         self._user_zoomed = True
-        factor = self._ZOOM_FACTOR if event.angleDelta().y() > 0 else 1 / self._ZOOM_FACTOR
+        _zoom_step = SettingsManager.instance().get("canvas", "zoom_step", default=1.15)
+        factor = _zoom_step if event.angleDelta().y() > 0 else 1 / _zoom_step
         cursor_pos = event.position().toPoint()
         scene_pos = self.mapToScene(cursor_pos)
         self.scale(factor, factor)

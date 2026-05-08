@@ -15,19 +15,19 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="clients_to_check",
         type="int_list",
-        label="Clients to Check",
-        help="1-based client numbers to check (e.g. '1, 2'). Leave empty to check all clients.",
+        label="Players to Check",
+        help="1-based player numbers to check (e.g. '1, 2'). Leave empty to check all players.",
         default=[],
         default_hint="checks all clients",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Checks whether all specified clients are currently in a given zone.",
+    description="Checks whether all specified players are currently in a given zone.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("TRUE", "All checked clients are in the specified zone."),
-        ReturnSpec("FALSE", "One or more checked clients are not in the specified zone."),
+        ReturnSpec("TRUE", "All checked players are in the specified zone."),
+        ReturnSpec("FALSE", "One or more checked players are not in the specified zone."),
     ],
 )
 

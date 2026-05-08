@@ -12,7 +12,7 @@ import math
 from collections import defaultdict
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QBrush, QKeyEvent, QMouseEvent, QPainter, QPen
+from PyQt6.QtGui import QAction, QBrush, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
@@ -27,7 +27,6 @@ from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
     bridge_y_below,
-    channel_x_after_src,
     is_above_routed,
 )
 from bartlebot.gui.canvas.graph_view import GraphView
@@ -42,10 +41,30 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPE
 
 _PORT_HIT_RADIUS = 16
 _AUTO_SPACING = GRID_W  # auto-layout column stride matches grid width
-_PASTE_OFFSET = 40  # px shift per successive paste of the same clipboard
 
 _SCROLL_MARGIN = 40  # px from viewport edge at which auto-scroll activates during drag
 _SCROLL_SPEED = 10  # max px to scroll per mouseMoveEvent while in the margin zone
+
+
+def _spiral_ring(r: int):
+    """Yield (dx, dy) offsets at Chebyshev distance r from (0, 0).
+
+    Order: right column top-to-bottom, bottom row right-to-left,
+    left column bottom-to-top, top row left-to-right.  This biases
+    new nodes toward the right/below the origin, matching natural
+    canvas reading order.
+    """
+    if r == 0:
+        yield (0, 0)
+        return
+    for dy in range(-r, r + 1):
+        yield (r, dy)
+    for dx in range(r - 1, -r - 1, -1):
+        yield (dx, r)
+    for dy in range(r - 1, -r - 1, -1):
+        yield (-r, dy)
+    for dx in range(-r + 1, r):
+        yield (dx, -r)
 
 
 def _auto_scroll_view(view, scene_pos: QPointF) -> None:
@@ -236,9 +255,12 @@ class EditScene(QGraphicsScene):
         self._scroll_timer.timeout.connect(self._on_scroll_timer)
         self._interactive_mode: bool = True
         self._clipboard: tuple[list[dict], list[dict]] | None = None
-        self._paste_count: int = 0
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
+        self._grid_style: str = "dots"  # "dots" | "lines" | "none"
+        self._cycle_pos: QPointF = QPointF()
+        self._cycle_edges: list[EdgeItem] = []
+        self._cycle_idx: int = -1
 
     # ------------------------------------------------------------------
     # Grid / snap
@@ -251,23 +273,40 @@ class EditScene(QGraphicsScene):
             node.set_snap_enabled(enabled)
         self.update()
 
+    def set_grid_style(self, style: str) -> None:
+        """Set background grid rendering style ("dots", "lines", or "none")."""
+        self._grid_style = style
+        self.update()
+
     def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
         super().drawBackground(painter, rect)
-        if not self._snap_enabled:
+        if not self._snap_enabled or self._grid_style == "none":
             return
-        # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QBrush(THEME.qcolor("grid_dot")))
-        dot_r = 2.0
+        grid_color = THEME.qcolor("grid_dot")
         x_off = 0.0
         y_off = 0.0
-        x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
-        while x <= rect.right():
+        if self._grid_style == "lines":
+            painter.setPen(QPen(grid_color, 1.0))
+            x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
+            while x <= rect.right():
+                painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
+                x += GRID_W
             y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off
             while y <= rect.bottom():
-                painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
+                painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
                 y += GRID_H
-            x += GRID_W
+        else:
+            # Dots sit at (GRID_W*i, GRID_H*j) — node left edges and vertical centers.
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(grid_color))
+            dot_r = 2.0
+            x = math.floor((rect.left() - x_off) / GRID_W) * GRID_W + x_off
+            while x <= rect.right():
+                y = math.floor((rect.top() - y_off) / GRID_H) * GRID_H + y_off
+                while y <= rect.bottom():
+                    painter.drawEllipse(QPointF(x, y), dot_r, dot_r)
+                    y += GRID_H
+                x += GRID_W
 
     # ------------------------------------------------------------------
     # Public API
@@ -334,9 +373,6 @@ class EditScene(QGraphicsScene):
             self.addItem(node)
             self._node_items[state.id] = node
 
-        non_loop = {(t.source, t.dest) for t in transitions if t.source != t.dest}
-        bidi = {(s, d) for (s, d) in non_loop if (d, s) in non_loop}
-
         # Pre-compute shared bridge_y for same-destination backward-edge groups.
         # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
         # to a common corridor so they overlap cleanly instead of forming a spaghetti
@@ -393,28 +429,6 @@ class EditScene(QGraphicsScene):
             for key in group_edges:
                 bridge_y_map[key] = shared_y
 
-        # Forward cross-row edges: compute shared vertical channel_x per (when, x_src_col) group,
-        # analogous to the backward-edge bridge_y_map above but rotated 90°.
-        fwd_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
-        for s, w, d in unique_edges:
-            if s == d or s not in self._node_items or d not in self._node_items:
-                continue
-            sn, dn = self._node_items[s], self._node_items[d]
-            src_pt = sn.port_out_for(w)
-            dst_pt = dn.port_in()
-            if dst_pt.x() <= src_pt.x():  # backward or same-column
-                continue
-            if abs(dn.scenePos().y() - sn.scenePos().y()) < GRID_H * 0.5:  # same row
-                continue
-            x_col = round(sn.scenePos().x() / GRID_W)
-            fwd_groups[(w, x_col)].append((s, w, d))
-
-        channel_x_map: dict[tuple[str, str | None, str], float] = {}
-        for group_edges in fwd_groups.values():
-            shared_x = max(channel_x_after_src(self._node_items[s]) for s, w, d in group_edges)
-            for key in group_edges:
-                channel_x_map[key] = shared_x
-
         drawn: set[tuple[str, str | None, str]] = set()
         for t in transitions:
             s, d, w = t.source, t.dest, t.when
@@ -425,24 +439,20 @@ class EditScene(QGraphicsScene):
             if s not in self._node_items or d not in self._node_items:
                 continue
             sn, dn = self._node_items[s], self._node_items[d]
+            has_flags = bool(t.flags or t.flag_groups)
             if s == d:
-                edge = EdgeItem(sn, sn, when=w)
+                edge = EdgeItem(sn, sn, when=w, has_flags=has_flags)
             else:
-                is_bidi = (s, d) in bidi
-                offset = 22.0 if (is_bidi and s < d) else (-22.0 if is_bidi else 0.0)
-                edge = EdgeItem(
-                    sn,
-                    dn,
-                    offset=offset,
-                    when=w,
-                    bridge_y_override=bridge_y_map.get(key),
-                    channel_x_override=channel_x_map.get(key),
-                )
+                edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y_map.get(key), has_flags=has_flags)
             self.addItem(edge)
             sn.add_edge(edge)
             if dn is not sn:
                 dn.add_edge(edge)
             self._edge_items.append((s, w, d, edge))
+
+        # Compute forward-edge offsets and fan arrival ports now that all edges
+        # are registered with their nodes (port_in_for needs the full edge list).
+        self._recompute_offsets()
 
         # Add region items behind nodes (z=-1)
         for region in config.regions:
@@ -461,6 +471,14 @@ class EditScene(QGraphicsScene):
         """Update the initial-state purple-border indicator."""
         for node_id, node in self._node_items.items():
             node.set_initial(node_id == initial_id)
+
+    def refresh_edge_flags(self, transition) -> None:
+        """Refresh the dotted-pen flag indicator on the edge matching *transition*."""
+        has_flags = bool(transition.flags or transition.flag_groups)
+        for s, w, d, edge in self._edge_items:
+            if s == transition.source and d == transition.dest and w == transition.when:
+                edge.set_has_flags(has_flags)
+                break
 
     def refresh_terminal(self) -> None:
         """Update the terminal-state badge based on current transitions."""
@@ -495,6 +513,29 @@ class EditScene(QGraphicsScene):
         if not interactive:
             self.clearSelection()
 
+    def _find_empty_grid_cell(self, viewport_center: QPointF) -> QPointF:
+        """Return the top-left scene position of the nearest unoccupied grid cell to viewport_center.
+
+        Searches outward in a spiral so new nodes never land on top of an existing one.
+        Falls back to viewport_center (minus half node dims) if the canvas is pathologically full.
+        """
+        occupied: set[tuple[int, int]] = set()
+        for item in self._node_items.values():
+            p = item.pos()
+            occupied.add((round(p.x() / GRID_W), round((p.y() + NODE_H / 2) / GRID_H)))
+
+        # Grid cell whose center is nearest to viewport_center
+        start_cx = round((viewport_center.x() - NODE_W / 2) / GRID_W)
+        start_cy = round(viewport_center.y() / GRID_H)
+
+        for radius in range(31):
+            for dx, dy in _spiral_ring(radius):
+                cell = (start_cx + dx, start_cy + dy)
+                if cell not in occupied:
+                    return QPointF(cell[0] * GRID_W, cell[1] * GRID_H - NODE_H / 2)
+
+        return QPointF(viewport_center.x() - NODE_W / 2, viewport_center.y() - NODE_H / 2)
+
     def add_state(self, pos: QPointF) -> None:
         """Open the node browser dialog and emit node_type_chosen on confirmation."""
         if self._config is None:
@@ -527,6 +568,9 @@ class EditScene(QGraphicsScene):
         self.addItem(node)
         self._node_items[state_id] = node
         self._update_scene_rect()
+        view = self.views()[0] if self.views() else None
+        if view is not None:
+            view.smooth_pan_if_offscreen(node)
         self.graph_changed.emit()
 
     # ------------------------------------------------------------------
@@ -549,6 +593,32 @@ class EditScene(QGraphicsScene):
                 self.addItem(line)
                 event.accept()
                 return
+
+            # Click-cycle: when multiple edges overlap at a point, repeated clicks
+            # at the same location cycle through them for individual selection.
+            hit = list(self.items(scene_pos))
+            hit_nodes = [i for i in hit if isinstance(i, NodeItem)]
+            hit_edges = [i for i in hit if isinstance(i, EdgeItem)]
+            if not hit_nodes and len(hit_edges) > 1:
+                # Prune stale references from previous cycles.
+                self._cycle_edges = [e for e in self._cycle_edges if e.scene() is self]
+                near = (
+                    self._cycle_edges
+                    and abs(scene_pos.x() - self._cycle_pos.x()) < 10
+                    and abs(scene_pos.y() - self._cycle_pos.y()) < 10
+                )
+                if near:
+                    self._cycle_idx = (self._cycle_idx + 1) % len(self._cycle_edges)
+                else:
+                    self._cycle_pos = scene_pos
+                    self._cycle_edges = hit_edges
+                    self._cycle_idx = 0
+                self.clearSelection()
+                self._cycle_edges[self._cycle_idx].setSelected(True)
+                event.accept()
+                return
+
+        self._cycle_edges = []
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -803,6 +873,28 @@ class EditScene(QGraphicsScene):
                 return item
         return None
 
+    def _recompute_offsets(self) -> None:
+        """Recompute forward-edge mid_x offsets for all (source, dest) groups.
+
+        Handles bidirectional separation and N-parallel-edge spreading.  Also
+        calls _rebuild() on every non-loop edge so fan arrival-port positions
+        (option A) and Z-channel positions (option C) are both updated in one pass.
+        """
+        PARALLEL_STEP = 22.0
+        sd_groups: dict[tuple[str, str], list] = defaultdict(list)
+        for s, w, d, edge in self._edge_items:
+            if s != d:
+                sd_groups[(s, d)].append((s, w, d, edge))
+        non_loop_pairs = {(s, d) for s, _w, d, _ in self._edge_items if s != d}
+        for (s, d), group in sd_groups.items():
+            group_sorted = sorted(group, key=lambda x: x[1] or "")
+            n = len(group_sorted)
+            is_bidi = (d, s) in non_loop_pairs
+            bidi_base = (PARALLEL_STEP if s < d else -PARALLEL_STEP) if is_bidi else 0.0
+            for i, (_s, _w, _d, edge) in enumerate(group_sorted):
+                edge._offset = bidi_base + (i - (n - 1) / 2) * PARALLEL_STEP
+                edge._rebuild()
+
     def _create_transition(self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None) -> None:
         if self._config is None:
             return
@@ -813,22 +905,13 @@ class EditScene(QGraphicsScene):
         t = TransitionModel(trigger="advance", source=s, dest=d, when=when)
         self._config.transitions.append(t)
 
-        reverse_exists = any(es == d and ed == s for (es, _ew, ed, _ei) in self._edge_items)
-        if reverse_exists:
-            for es, _ew, ed, existing in self._edge_items:
-                if es == d and ed == s:
-                    existing._offset = -22.0
-                    existing._rebuild()
-            offset = 22.0
-        else:
-            offset = 0.0
-
-        edge = EdgeItem(src_node, dst_node, offset=offset, when=when)
+        edge = EdgeItem(src_node, dst_node, when=when)
         self.addItem(edge)
         src_node.add_edge(edge)
         if dst_node is not src_node:
             dst_node.add_edge(edge)
         self._edge_items.append((s, when, d, edge))
+        self._recompute_offsets()
         self._update_scene_rect()
         self.refresh_terminal()
         self.refresh_errors()
@@ -845,7 +928,6 @@ class EditScene(QGraphicsScene):
             t.model_dump() for t in self._config.transitions if t.source in selected_ids and t.dest in selected_ids
         ]
         self._clipboard = (states, transitions)
-        self._paste_count = 0
 
     def _paste(self) -> None:
         if self._config is None or self._clipboard is None:
@@ -853,8 +935,43 @@ class EditScene(QGraphicsScene):
         self._pre_edit("Paste")
         self._in_structural_edit = True
         states_data, transitions_data = self._clipboard
-        self._paste_count += 1
-        offset = _PASTE_OFFSET * self._paste_count
+
+        # Determine (offset_x, offset_y) to apply to every pasted node's stored position.
+        # Clipboard positions: p["x"] = node left edge, p["y"] = node center y (StateModel convention).
+        positions = [sd["position"] for sd in states_data if sd.get("position")]
+
+        offset_x = 0.0
+        offset_y = 0.0
+        if positions:
+            view = self.views()[0] if self.views() else None
+            cursor_in_vp = False
+            if view:
+                cursor_local = view.viewport().mapFromGlobal(QCursor.pos())
+                cursor_in_vp = view.viewport().rect().contains(cursor_local)
+                if cursor_in_vp:
+                    cursor_scene = view.mapToScene(view.mapFromGlobal(QCursor.pos()))
+                    centroid_x = sum(p["x"] for p in positions) / len(positions)
+                    centroid_y = sum(p["y"] for p in positions) / len(positions)
+                    offset_x = cursor_scene.x() - centroid_x
+                    offset_y = cursor_scene.y() - centroid_y
+
+            if not cursor_in_vp:
+                # Fallback: start one grid row below the source nodes, preserving X.
+                offset_y = GRID_H
+
+            # Shift offset_y downward until no pasted node collides with an existing one.
+            # Grid cell key: (col based on left edge, row based on center y) — same as snap formula.
+            occupied = {
+                (round(item.pos().x() / GRID_W), round((item.pos().y() + NODE_H / 2) / GRID_H))
+                for item in self._node_items.values()
+            }
+            for _ in range(50):
+                if not any(
+                    (round((p["x"] + offset_x) / GRID_W), round((p["y"] + offset_y) / GRID_H)) in occupied
+                    for p in positions
+                ):
+                    break
+                offset_y += GRID_H
 
         # Build old_id → new_id mapping
         id_map: dict[str, str] = {}
@@ -870,8 +987,8 @@ class EditScene(QGraphicsScene):
             new_sd["id"] = id_map[sd["id"]]
             if new_sd.get("position"):
                 new_sd["position"] = {
-                    "x": new_sd["position"]["x"] + offset,
-                    "y": new_sd["position"]["y"] + offset,
+                    "x": new_sd["position"]["x"] + offset_x,
+                    "y": new_sd["position"]["y"] + offset_y,
                 }
             state = StateModel.model_validate(new_sd)
             self._config.states.append(state)
@@ -912,6 +1029,11 @@ class EditScene(QGraphicsScene):
                 self._node_items[new_id].setSelected(True)
 
         self._update_scene_rect()
+        view = self.views()[0] if self.views() else None
+        if view is not None:
+            new_nodes = [self._node_items[nid] for nid in id_map.values() if nid in self._node_items]
+            if new_nodes:
+                view.smooth_pan_if_offscreen(new_nodes[0])
         self._in_structural_edit = False
         self.graph_changed.emit()
 
@@ -1005,6 +1127,7 @@ class EditScene(QGraphicsScene):
             else:
                 remaining.append((s, w, d, edge_item))
         self._edge_items = remaining
+        self._recompute_offsets()
         self._config.states = [s for s in self._config.states if s.id != state_id]
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
@@ -1052,6 +1175,7 @@ class EditScene(QGraphicsScene):
             else:
                 remaining.append((s, w, d, ei))
         self._edge_items = remaining
+        self._recompute_offsets()
         self.refresh_terminal()
         self.refresh_errors()
         self.graph_changed.emit()
@@ -1097,25 +1221,10 @@ class EditScene(QGraphicsScene):
         if old_dst_node and old_dst_node is not old_src_node:
             old_dst_node.remove_edge(edge_item)
 
-        # Recalculate offset — check if a reverse edge already exists on the NEW pair
-        reverse_exists = any(
-            es == new_dst and ed == new_src for (es, _ew, ed, _ei2) in self._edge_items if _ei2 is not edge_item
-        )
-        if reverse_exists:
-            for _i2, (es, _ew, ed, ei2) in enumerate(self._edge_items):
-                if ei2 is not edge_item and es == new_dst and ed == new_src:
-                    ei2._offset = -22.0
-                    ei2._rebuild()
-            new_offset = 22.0
-        else:
-            new_offset = 0.0
-
         # Update the EdgeItem in-place
         edge_item._src = new_src_node
         edge_item._dst = new_dst_node
         edge_item._is_self_loop = new_src_node is new_dst_node
-        edge_item._offset = new_offset
-        edge_item._rebuild()
 
         # Register with new nodes
         new_src_node.add_edge(edge_item)
@@ -1125,15 +1234,8 @@ class EditScene(QGraphicsScene):
         # Update the _edge_items record
         self._edge_items[record_idx] = (new_src, old_when_str, new_dst, edge_item)
 
-        # Clean up offsets on the OLD pair if the reverse was offset for it
-        old_reverse = any(
-            es == old_dst and ed == old_src for (es, _ew, ed, ei2) in self._edge_items if ei2 is not edge_item
-        )
-        if not old_reverse:
-            for _i2, (es, _ew, ed, ei2) in enumerate(self._edge_items):
-                if ei2 is not edge_item and es == old_dst and ed == old_src:
-                    ei2._offset = 0.0
-                    ei2._rebuild()
+        # Recompute all offsets and fan positions now that the topology has changed.
+        self._recompute_offsets()
 
         self._update_scene_rect()
         self.refresh_terminal()

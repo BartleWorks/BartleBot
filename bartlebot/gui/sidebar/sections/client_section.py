@@ -20,7 +20,7 @@ class ClientSection(SidebarSection):
     swap_requested = pyqtSignal(int, int)
 
     def __init__(self, parent=None):
-        super().__init__("Clients", parent)
+        super().__init__("Players", parent)
         self._widgets: list[ClientWidget] = []
         self._refresh_task: asyncio.Task | None = None
 

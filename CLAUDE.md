@@ -66,6 +66,21 @@ Never use `print()` for diagnostics. Logging is configured in `bartlebot/logging
 ### GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
 
+Any widget that sets a stylesheet using `THEME` tokens must also override `changeEvent` to re-apply that stylesheet when the theme changes. Qt delivers `QEvent.Type.StyleChange` to all widgets when `QApplication.setStyleSheet()` is called (which happens on every theme switch via `AppController._apply_theme()`). Stylesheets applied at `__init__` time are NOT automatically refreshed — without a `changeEvent` override the widget will show stale colors after a theme change.
+
+Pattern:
+```python
+from PyQt6.QtCore import QEvent
+from bartlebot.gui.theme import THEME
+
+def changeEvent(self, event: QEvent) -> None:
+    super().changeEvent(event)
+    if event.type() == QEvent.Type.StyleChange:
+        self._my_widget.setStyleSheet(f"color: {THEME.text}; ...")
+```
+
+Widgets that read THEME at paint time (e.g. `QGraphicsItem.paint()`) update automatically and don't need this.
+
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
@@ -79,6 +94,14 @@ Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json
 - **WizWalker**: low-level Wizard101 memory hooking (Git branch `development` — exact commit pinned via `poetry.lock`)
 - **WizSprinter**: safe wrappers + combat DSL (pinned to commit hash in `pyproject.toml`)
 - Both are fragile to game updates. After a game patch: update the `rev` in `pyproject.toml`, run `poetry lock`, test locally.
+
+I have downloaded reference files to assist in planning:
+
+| Library     | Local Location               | Repo URL                                             | Description |
+|-------------|------------------------------|------------------------------------------------------|-------------|
+| WizWalker   | `C:\GitHub\wizwalker`        | https://github.com/Deimos-Wizard101/wizwalker        | Core library for hooking Wizard101 clients and interacting with them. Provides main basic functionality.
+| WizSprinter | `C:\GitHub\wizsprinter`      | https://github.com/Deimos-Wizard101/wizsprinter      | Extension for WizWalker that adds slightly more advanced functionality. Not very actively maintained, so consult Deimos (below) for examples on how to use. Deimos does have some custom WizSprinter implementation.
+| Deimos      | `C:\GitHub\Deimos-Wizard101` | https://github.com/Deimos-Wizard101/Deimos-Wizard101 | An existing Wizard101 botting tool. Includes examples of how to interface with WizWalker and WizSprinter, as well as some custom utilities 
 
 ## Ruff
 

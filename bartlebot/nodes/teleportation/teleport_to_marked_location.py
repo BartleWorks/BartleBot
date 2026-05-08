@@ -19,7 +19,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name all clients must be in after this node completes.",
+        help="Zone name all players must be in after this node completes.",
         default="",
         required=True,
     ),
@@ -40,7 +40,7 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients recalled and arrived at the expected zone and XYZ."),
+        ReturnSpec("SUCCESS", "All players recalled and arrived at the expected zone and XYZ."),
         ReturnSpec(
             "FAILURE",
             "One or more clients had no mana; the RecallButton was not enabled within the "

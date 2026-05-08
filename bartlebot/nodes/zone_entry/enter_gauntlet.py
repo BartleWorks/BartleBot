@@ -13,7 +13,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="dungeon_zone",
         type="str",
         label="Dungeon Zone",
-        help="Zone name all clients must be in after successfully entering the gauntlet.",
+        help="Zone name all players must be in after successfully entering the gauntlet.",
         default="",
         required=True,
     ),
@@ -22,16 +22,16 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Enters a gauntlet dungeon placed in a player's house. Unlike enter_dungeon, "
-        "this node does not teleport clients — the player must walk to the gauntlet sigil. "
+        "this node does not teleport players — they must walk to the gauntlet sigil. "
         "Waits for the entrance prompt to appear, presses X, confirms any warning dialog, "
-        "and waits for all clients to arrive in the dungeon zone."
+        "and waits for all players to arrive in the dungeon zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are now in dungeon_zone."),
+        ReturnSpec("SUCCESS", "All players are now in dungeon_zone."),
         ReturnSpec(
             "FAILURE",
-            "The entrance prompt never appeared within the timeout, or not all clients reached dungeon_zone.",
+            "The entrance prompt never appeared within the timeout, or not all players reached dungeon_zone.",
         ),
     ],
     required_bot_options=[

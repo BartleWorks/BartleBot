@@ -1,0 +1,1446 @@
+{
+  "name": "House of Scales",
+  "description": "Endlessly completes the House of Scales in Zigazag",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_35",
+  "recovery_state": "state_1",
+  "default_combat_config": "### p1\nany<aoe>[epic]\n\n### p2, p3, p4\npass",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Krokotopia",
+  "drops": [
+    "Ancient Rebus Headgear",
+    "Ancient Rebus Sandals",
+    "Ancient Rebus Vestment",
+    "Anubis' Cards of Veracity",
+    "Anubis' Crown of Judgment",
+    "Anubis' Staff of Redress",
+    "Anubis' Tunic of Judgment",
+    "Army of the Condemned Helm",
+    "Array of the Archaic Rebus",
+    "Baby Carrots",
+    "Biting Cold Broadsword",
+    "Blade of Anubis' Verdict",
+    "Blizzard Lizard Sapphire",
+    "Blood Hound",
+    "Bone",
+    "Boots of the Burning Scales",
+    "Boots of the Condemned",
+    "Boots of the Fire Sands",
+    "Boss Toad Peridot",
+    "Brass",
+    "Bronze",
+    "Bronze Gear",
+    "Burning Scales Headdress",
+    "Burning Scales Raiment",
+    "Case of the Virtuous Soul",
+    "Cat Bandit Opal",
+    "Cauliflowers",
+    "Cheese Broccoli",
+    "Chocolate Strawberry",
+    "Clear Blocking Hematite +10",
+    "Clear Blocking Onyx +10",
+    "Clear Blocking Opal +5",
+    "Clear Critical Jade +10",
+    "Clear Critical Onyx +10",
+    "Clear Critical Peridot +10",
+    "Clear Damage Ruby +19",
+    "Cobalt",
+    "Cracker",
+    "Crown of the Frozen Desert",
+    "Crown of the Sistrum",
+    "Crown of Upper Zigazag",
+    "Crystallize Sapphire",
+    "Dagger of the Cold Bones",
+    "Dagger of the Hidden Words",
+    "Deck of Sand Squalls",
+    "Deck of the Simmering Evil",
+    "Deep Mushroom",
+    "Desert Rain Mukluks",
+    "Detonate Ruby",
+    "Dull Critical Ruby +4",
+    "Dull Defense Jade +28",
+    "Dull Defense Ruby +28",
+    "Dune Storm Armor",
+    "Ectoplasm",
+    "Efreet",
+    "Evil Snow Peas",
+    "Fire Serpent",
+    "Footwraps of the Sistrum",
+    "Glowing Star Fruit",
+    "Greatsword of Adjudication",
+    "Greatsword of Redemption",
+    "Green Grapes",
+    "Greensleeves Jade",
+    "Gummy Firecat",
+    "Hands of Anubis Boots",
+    "Hands of Anubis Mantle",
+    "Hands of Anubis Staff",
+    "Hands of Anubis Uniform",
+    "Headgear of Dune Storms",
+    "Helm of the Ravenous Teeth",
+    "House of Scales Headdress",
+    "House of Scales Raiment",
+    "House of Scales Walkers",
+    "Ice-Giver Sapphire",
+    "Izft's Dirk of Incarnation",
+    "Jelly Baby",
+    "Key Limes",
+    "Kola Nuts",
+    "Kris of Thunderous Resolve",
+    "Krokotillian",
+    "Leather Straps",
+    "Life-Away Jade",
+    "Life-Giver Jade",
+    "Locust Swarm",
+    "Longblade of the Soul Eater",
+    "Lower Zigazag Headdress",
+    "Lower Zigazag Stalkers",
+    "Lower Zigazag Vestment",
+    "Merle's Whisker",
+    "Montante of the Immortals",
+    "Mote of Severity",
+    "Nettle Root",
+    "Nickel",
+    "Ore",
+    "Pipe Down! Opal",
+    "Plain Accurate Jade +7%",
+    "Plain Accurate Peridot +7%",
+    "Plain Critical Peridot +6",
+    "Plain Critical Sapphire +6",
+    "Plain Piercing Jade +3%",
+    "Plain Piercing Ruby +3%",
+    "Ra",
+    "Ravenous Teeth Garb",
+    "Ravenous Teeth Stompers",
+    "Rebus Breaker's Stave",
+    "Robes of the Fire Sands",
+    "Robes of the Frozen Desert",
+    "Robes of the Sistrum",
+    "Rod of the Burning Scales",
+    "Sandswells Greatblade",
+    "Scarab",
+    "Scorching Sands Greatsword",
+    "Scorpion",
+    "Shoes of Anubis' Judgment",
+    "Snap Dragon",
+    "Soul Devourer's Arcana (Triangle)",
+    "Soul Devourer's Footwraps",
+    "Soul Devourer's Greathelm",
+    "Soul Devourer's Tunic",
+    "Spider Silk",
+    "Stave of Cold Justice",
+    "Steel",
+    "Stone Colossus",
+    "Stone Skeleton Key",
+    "Stonewall Opal",
+    "Sugar Donut",
+    "Sunbird",
+    "Tin",
+    "Tiny Fish",
+    "Tunic of Upper Zigazag",
+    "Uniform of the Condemned",
+    "Upper Zigazag Striders",
+    "White Laugh-O-Dil",
+    "Wrath of Anubis Staff",
+    "Zigazag Desert Armor",
+    "Zigazag Desert Headgear",
+    "Zigazag Desert Mukluks"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Upper Zigazag",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z01_ZigazagUpper"
+      },
+      "option_overrides": {},
+      "notes": "Failure path assumes you are in Zigazag already and skips ahead"
+    },
+    {
+      "id": "state_2",
+      "node_type": "interact",
+      "label": "Take boat to Krokosphinx",
+      "position": {
+        "x": 440.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub",
+        "interact_xyz": {
+          "x": 4441.79,
+          "y": 3205.88,
+          "z": 25.79
+        },
+        "reset_xyz": {
+          "x": 4084.78,
+          "y": 2847.44,
+          "z": 26.83
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone_via_object",
+      "label": "Skip boat ride",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Hub",
+        "to_zone": "Krokotopia/KT_Hub_Sphinx",
+        "interact_xyz": {
+          "x": 4411.25,
+          "y": 3179.02,
+          "z": 25.79
+        },
+        "reset_xyz": {
+          "x": 4411.25,
+          "y": 3179.02,
+          "z": 25.79
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "sleep",
+      "label": "Wait for boat ride",
+      "position": {
+        "x": 1320.0,
+        "y": 180.0
+      },
+      "params": {
+        "duration": 30.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone_via_object",
+      "label": "Take ladder to Balance school",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Hub_Sphinx",
+        "to_zone": "Krokotopia/Interiors/KT_School",
+        "interact_xyz": {
+          "x": 14187.74,
+          "y": 1971.27,
+          "z": 1139.83
+        },
+        "reset_xyz": {
+          "x": 13936.36,
+          "y": 2864.78,
+          "z": 1205.15
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone_via_object",
+      "label": "Take statue to Upper Zigazag",
+      "position": {
+        "x": 2200.0,
+        "y": 180.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/Interiors/KT_School",
+        "to_zone": "G14_HS/HS_Z01_ZigazagUpper",
+        "interact_xyz": {
+          "x": -26.02,
+          "y": 276.63,
+          "z": 2.0
+        },
+        "reset_xyz": {
+          "x": -28.12,
+          "y": -40.77,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter House of Scales",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_HS/HS_Z01_ZigazagUpper",
+        "dungeon_zone": "G14_HS/HS_Z04_HouseOfScales",
+        "sigil_xyz": {
+          "x": 9936.0,
+          "y": -3459.35,
+          "z": 215.86
+        },
+        "reset_xyz": {
+          "x": 9703.55,
+          "y": -2717.88,
+          "z": 219.37
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger entrance dialogue",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z04_HouseOfScales",
+        "xyz": {
+          "x": 2974.4,
+          "y": -3794.35,
+          "z": 295.58
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Talk to Baruti",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z04_HouseOfScales",
+        "interact_xyz": {
+          "x": 804.12,
+          "y": -3202.56,
+          "z": 81.46
+        },
+        "reset_xyz": {
+          "x": 1292.86,
+          "y": -3399.43,
+          "z": 81.45
+        },
+        "interact_clients": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Condemned Soldiers",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z04_HouseOfScales",
+        "xyz": {
+          "x": 34.64,
+          "y": 520.35,
+          "z": 81.78
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Condemned Soldiers",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-HS-Krok_Condemned",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "enter_zone",
+      "label": "Enter Chamber of the Sistrum",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_HS/HS_Z04_HouseOfScales",
+        "to_zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "xyz": {
+          "x": -16.86,
+          "y": 6721.59,
+          "z": 618.73
+        },
+        "reset_xyz": {
+          "x": -16.39,
+          "y": 5599.34,
+          "z": 331.21
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "xyz": {
+          "x": 0.14,
+          "y": -602.28,
+          "z": 522.23
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "handle_combat",
+      "label": "Defeat Condemned Manders",
+      "position": {
+        "x": 7040.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-HS-Mummy_Ifzt",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Condemned Manders",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "xyz": {
+          "x": 27.85,
+          "y": 1731.39,
+          "z": 242.96
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Izft",
+      "position": {
+        "x": 7480.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "xyz": {
+          "x": 4791.86,
+          "y": 12379.58,
+          "z": 87.2
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "handle_combat",
+      "label": "Defeat Izft",
+      "position": {
+        "x": 8800.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-HS-Ifzt",
+        "use_bot_default": false,
+        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss\n\n### p3, p4\npass",
+        "max_duration": 0.0
+      },
+      "option_overrides": {
+        "Default Combat Order": [
+          2,
+          1,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "enter_zone",
+      "label": "Enter Chamber of Reeds",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "to_zone": "G14_HS/HS_Z06_ChamberOfReeds",
+        "xyz": {
+          "x": 6452.85,
+          "y": 14491.0,
+          "z": 148.4
+        },
+        "reset_xyz": {
+          "x": 5374.19,
+          "y": 13972.42,
+          "z": 85.39
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 9680.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z06_ChamberOfReeds",
+        "xyz": {
+          "x": -3663.8,
+          "y": -23.71,
+          "z": 190.75
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Pit Vipers",
+      "position": {
+        "x": 10120.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z06_ChamberOfReeds",
+        "xyz": {
+          "x": -1554.3,
+          "y": -32.4,
+          "z": -49.58
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "handle_combat",
+      "label": "Defeat Pit Vipers",
+      "position": {
+        "x": 10560.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-HS-Ophidian_Element",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Apep",
+      "position": {
+        "x": 11440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z06_ChamberOfReeds",
+        "xyz": {
+          "x": 3218.13,
+          "y": 23.08,
+          "z": 351.98
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "handle_combat",
+      "label": "Defeat Apep",
+      "position": {
+        "x": 12760.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-HS-Apep_Boss",
+        "use_bot_default": false,
+        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss\n\n### p3, p4\npass",
+        "max_duration": 0.0
+      },
+      "option_overrides": {
+        "Default Combat Order": [
+          2,
+          1,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_25",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of Justice",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "G14_HS/HS_Z06_ChamberOfReeds",
+        "to_zone": "G14_HS/HS_Z07_HallOfJustice",
+        "xyz": {
+          "x": 6576.02,
+          "y": -2447.28,
+          "z": 439.0
+        },
+        "reset_xyz": {
+          "x": 6589.94,
+          "y": -1724.58,
+          "z": 131.01
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_26",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Ammit, the Devourer",
+      "position": {
+        "x": 14080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z07_HallOfJustice",
+        "xyz": {
+          "x": -4597.44,
+          "y": -5561.85,
+          "z": -2808.99
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_27",
+      "node_type": "handle_combat",
+      "label": "Defeat Ammit, the Devourer",
+      "position": {
+        "x": 14520.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-HS-Ammit",
+        "use_bot_default": false,
+        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss\n\n### p3, p4\npass",
+        "max_duration": 0.0
+      },
+      "option_overrides": {
+        "Default Combat Order": [
+          2,
+          1,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Upper Zigazag",
+      "position": {
+        "x": 14960.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z01_ZigazagUpper"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 15400.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 7920.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_31",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 8360.0,
+        "y": -90.0
+      },
+      "params": {
+        "duration": 5.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 11880.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 12320.0,
+        "y": -90.0
+      },
+      "params": {
+        "duration": 5.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Oasis",
+      "position": {
+        "x": 0.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Hub"
+      },
+      "option_overrides": {},
+      "notes": "Failure path assumes you are in Zigazag already and skips ahead"
+    },
+    {
+      "id": "state_35",
+      "node_type": "check_zone",
+      "label": "Check if starting in Zigazag",
+      "position": {
+        "x": -440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z01_ZigazagUpper",
+        "clients_to_check": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 11000.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 13200.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_38",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_17",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_17",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_20",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_21",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_21",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_23",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_23",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_17",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_23",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_1",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_34",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_23",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_25",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

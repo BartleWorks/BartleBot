@@ -15,7 +15,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="friend_name",
         type="str",
         label="Friend Name",
-        help="Wizard name to search for in the friends list (case-insensitive). Must be online and on each client's friends list.",
+        help="Wizard name to search for in the friends list (case-insensitive). Must be online and on each player's friends list.",
         default="",
         required=True,
     ),
@@ -23,7 +23,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="str",
         label="Destination Zone",
-        help="Expected zone name after teleport. Clients already in this zone are skipped. Used to verify arrival.",
+        help="Expected zone name after teleport. Players already in this zone are skipped. Used to verify arrival.",
         default="",
         required=True,
     ),
@@ -31,19 +31,19 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Teleports one or more clients to a named friend using the in-game friends list. "
-        "Clients already in the destination zone are skipped. "
+        "Teleports one or more players to a named friend using the in-game friends list. "
+        "Players already in the destination zone are skipped. "
         "Handles the friend-busy error dialog and verifies arrival zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are now in to_zone."),
+        ReturnSpec("SUCCESS", "All players are now in to_zone."),
         ReturnSpec(
             "FAILURE",
             "Friend not found or not online; the friend-busy dialog appeared "
             "(friend has teleports off, is in combat, or the instance is unavailable); "
-            "clients did not enter a loading screen within the trigger timeout; "
-            "or not all clients arrived in to_zone after loading.",
+            "players did not enter a loading screen within the trigger timeout; "
+            "or not all players arrived in to_zone after loading.",
         ),
     ],
     max_consecutive_retries=5,

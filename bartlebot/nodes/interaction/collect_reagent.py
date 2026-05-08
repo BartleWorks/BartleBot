@@ -14,7 +14,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name all clients must currently be in when this node executes.",
+        help="Zone name all players must currently be in when this node executes.",
         default="",
         required=True,
     ),
@@ -40,10 +40,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "At least one entity was found and visited across all clients."),
+        ReturnSpec("SUCCESS", "At least one entity was found and visited across all players."),
         ReturnSpec(
             "FAILURE",
-            "Clients were not in the expected zone, entity_name is blank, or no matching entities were found.",
+            "Players were not in the expected zone, entity_name is blank, or no matching entities were found.",
         ),
     ],
     required_bot_options=[

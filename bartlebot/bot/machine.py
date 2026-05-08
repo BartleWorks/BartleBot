@@ -104,6 +104,19 @@ class BotMachine:
             if cond_info:
 
                 def _eval_compound(ci=cond_info):
+                    if "groups" in ci:
+                        # Grouped format: evaluate each group then combine with groups_op.
+                        group_results = []
+                        for grp in ci["groups"]:
+                            vals = [
+                                (not bool(self.get_option(c["option"], default=False)))
+                                if c["negate"]
+                                else bool(self.get_option(c["option"], default=False))
+                                for c in grp["flags"]
+                            ]
+                            group_results.append(any(vals) if grp["op"] == "OR" else all(vals))
+                        return any(group_results) if ci["groups_op"] == "OR" else all(group_results)
+                    # Legacy flat format.
                     results = [
                         (not bool(self.get_option(c["option"], default=False)))
                         if c["negate"]

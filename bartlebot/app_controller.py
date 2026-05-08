@@ -97,6 +97,19 @@ class AppController(QObject):
         w.bot_canvas.save_done.connect(self._save_bot)
         w.bot_canvas.set_clients_getter(lambda: self._clients)
 
+        def _zone_getter() -> list[str]:
+            settings = SettingsManager.instance()
+            current_zones: list[str] = []
+            for widget in w.right_sidebar.clients._widgets:
+                zone = getattr(widget, "_last_zone", "")
+                if zone and zone != "—" and zone not in current_zones:
+                    current_zones.append(zone)
+                    settings.add_recent_zone(zone)
+            recent = [z for z in settings.recent_zones if z not in current_zones]
+            return current_zones + recent
+
+        w.bot_canvas.set_zone_getter(_zone_getter)
+
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
 
@@ -353,6 +366,9 @@ class AppController(QObject):
     def _on_config_changed(self) -> None:
         self._has_unsaved_changes = True
         self._window.set_save_enabled(True)
+        canvas_config = self._window.bot_canvas.config
+        if canvas_config is not None:
+            self._loaded_config = canvas_config
         if self._loaded_config is not None:
             self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)

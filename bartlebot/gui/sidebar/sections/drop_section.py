@@ -2,7 +2,7 @@
 
 import csv
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QFileDialog,
     QHeaderView,
@@ -30,6 +30,9 @@ class DropSection(SidebarSection):
         self.body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self._tables: list[QTableWidget] = []
+        self._data: list[dict[str, int]] = []  # backing store; one dict per client
+        self._pending: set[int] = set()  # client indices that need a table rebuild
+        self._flush_scheduled = False
 
         layout = QVBoxLayout()
         layout.setSpacing(4)
@@ -59,6 +62,9 @@ class DropSection(SidebarSection):
         """Create one tab per client, replacing any existing tabs."""
         self._tabs.clear()
         self._tables.clear()
+        self._data.clear()
+        self._pending.clear()
+        self._flush_scheduled = False
         for i in range(count):
             table = QTableWidget(0, 2)
             table.setHorizontalHeaderLabels(["Item", "Qty"])
@@ -68,38 +74,28 @@ class DropSection(SidebarSection):
             table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
             table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             table.verticalHeader().setVisible(False)
+            table.setSortingEnabled(True)
             self._tables.append(table)
-            self._tabs.addTab(table, f"Client {i + 1}")
+            self._data.append({})
+            self._tabs.addTab(table, f"Player {i + 1}")
 
     def add_drop(self, item: str, quantity: int, client_index: int = 0) -> None:
-        if client_index >= len(self._tables):
+        if client_index >= len(self._data):
             return
-        table = self._tables[client_index]
-        for row in range(table.rowCount()):
-            item_cell = table.item(row, 0)
-            if item_cell and item_cell.text() == item:
-                qty_cell = table.item(row, 1)
-                current = int(qty_cell.text()) if qty_cell else 0
-                qty_item = QTableWidgetItem(str(current + quantity))
-                qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                table.setItem(row, 1, qty_item)
-                return
-        name_lower = item.lower()
-        row = 0
-        while row < table.rowCount():
-            cell = table.item(row, 0)
-            if cell and cell.text().lower() > name_lower:
-                break
-            row += 1
-        table.insertRow(row)
-        table.setItem(row, 0, QTableWidgetItem(item))
-        qty_item = QTableWidgetItem(str(quantity))
-        qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-        table.setItem(row, 1, qty_item)
+        d = self._data[client_index]
+        d[item] = d.get(item, 0) + quantity
+        self._pending.add(client_index)
+        if not self._flush_scheduled:
+            self._flush_scheduled = True
+            QTimer.singleShot(0, self._flush)
 
     def clear_drops(self) -> None:
+        for d in self._data:
+            d.clear()
         for table in self._tables:
             table.setRowCount(0)
+        self._pending.clear()
+        self._flush_scheduled = False
         self._search.clear()
 
     def swap_clients(self, idx_a: int, idx_b: int) -> None:
@@ -113,12 +109,41 @@ class DropSection(SidebarSection):
         bar = self._tabs.tabBar()
         bar.moveTab(idx_b, idx_a)
         bar.moveTab(idx_a + 1, idx_b)
-        # Keep _tables in sync with the new tab order
+        # Keep _tables and _data in sync with the new tab order
         self._tables[idx_a], self._tables[idx_b] = self._tables[idx_b], self._tables[idx_a]
+        self._data[idx_a], self._data[idx_b] = self._data[idx_b], self._data[idx_a]
 
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
+
+    def _flush(self) -> None:
+        self._flush_scheduled = False
+        search = self._search.text().lower()
+        for idx in self._pending:
+            self._rebuild_table(idx, search)
+        self._pending.clear()
+
+    def _rebuild_table(self, idx: int, search: str) -> None:
+        table = self._tables[idx]
+        table.setUpdatesEnabled(False)
+        table.setSortingEnabled(False)  # suppress per-row re-sorts during bulk insert
+        table.blockSignals(True)
+        try:
+            table.setRowCount(0)
+            for item, qty in self._data[idx].items():
+                row = table.rowCount()
+                table.insertRow(row)
+                table.setItem(row, 0, QTableWidgetItem(item))
+                qty_item = QTableWidgetItem(str(qty))
+                qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                table.setItem(row, 1, qty_item)
+        finally:
+            table.blockSignals(False)
+            table.setSortingEnabled(True)  # Qt sorts once in C++ when re-enabled
+            table.setUpdatesEnabled(True)
+        if search:
+            self._filter_table(table, search)
 
     def _on_search_changed(self, text: str) -> None:
         idx = self._tabs.currentIndex()

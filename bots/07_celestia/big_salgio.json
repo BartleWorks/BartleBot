@@ -1,6 +1,6 @@
 {
   "name": "Big Salgio",
-  "description": "Endlessly defeats Big Salgio in Temple of the Sun, Celestia",
+  "description": "Endlessly farms Big Salgio in Temple of the Sun, Celestia",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",

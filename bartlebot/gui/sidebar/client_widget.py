@@ -48,7 +48,7 @@ class ClientWidget(QWidget):
         layout.setSpacing(4)
 
         # Title row with move up/down buttons
-        title = QLabel(f"Client {index + 1}")
+        title = QLabel(f"Player {index + 1}")
         font = QFont()
         font.setBold(True)
         title.setFont(font)
@@ -56,13 +56,13 @@ class ClientWidget(QWidget):
 
         btn_up = QPushButton("▲")
         btn_up.setFixedSize(22, 22)
-        btn_up.setToolTip("Move client up")
+        btn_up.setToolTip("Move player up")
         btn_up.setEnabled(index > 0)
         btn_up.clicked.connect(lambda: self.move_up.emit(index))
 
         btn_down = QPushButton("▼")
         btn_down.setFixedSize(22, 22)
-        btn_down.setToolTip("Move client down")
+        btn_down.setToolTip("Move player down")
         btn_down.setEnabled(index < total - 1)
         btn_down.clicked.connect(lambda: self.move_down.emit(index))
 
@@ -139,12 +139,12 @@ class ClientWidget(QWidget):
         tool_row = QHBoxLayout()
 
         entity_btn = QPushButton("Entity Browser")
-        entity_btn.setToolTip("Inspect nearby entities for this client")
+        entity_btn.setToolTip("Inspect nearby entities for this player")
         entity_btn.clicked.connect(self._open_entity_browser)
         tool_row.addWidget(entity_btn)
 
         ui_tree_btn = QPushButton("UI Tree Browser")
-        ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this client")
+        ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this player")
         ui_tree_btn.clicked.connect(self._open_ui_tree)
         tool_row.addWidget(ui_tree_btn)
 

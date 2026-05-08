@@ -15,7 +15,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name all clients must currently be in when this node executes.",
+        help="Zone name all players must currently be in when this node executes.",
         default="",
         required=True,
     ),
@@ -23,20 +23,20 @@ PARAM_SCHEMA: list[ParamField] = [
         key="xyz",
         type="xyz",
         label="Target XYZ",
-        help="Coordinates within zone to teleport clients to.",
+        help="Coordinates within zone to teleport players to.",
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
-    description="Teleports all clients to a specific XYZ coordinate within the current zone.",
+    description="Teleports all players to a specific XYZ coordinate within the current zone.",
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are now at the target XYZ within the expected zone."),
+        ReturnSpec("SUCCESS", "All players are now at the target XYZ within the expected zone."),
         ReturnSpec(
             "FAILURE",
-            "Clients were not in the expected zone at the start, or not all clients "
+            "Players were not in the expected zone at the start, or not all players "
             "reached the target XYZ after teleporting.",
         ),
     ],

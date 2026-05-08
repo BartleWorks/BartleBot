@@ -1,0 +1,585 @@
+{
+  "name": "Mr. Cane",
+  "description": "Endlessly farms Mr. Cane in Billabong Resort. Good for +155 hp tear jewels.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "### p1\nship[epic] | feint mass | feint[potent]@boss | feint@boss\n\n### p2\nfeint[potent]@boss | bunyip[epic] | blade@self | kraken[epic]@boss",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Wallaru",
+  "drops": [
+    "Amazing Accurate Amethyst +15%",
+    "Amazing Accurate Citrine +15%",
+    "Amazing Accurate Jade +15%",
+    "Amazing Accurate Onyx +15%",
+    "Amazing Accurate Peridot +15%",
+    "Amazing Accurate Sapphire +15%",
+    "Amazing Archmastery Opal +14 (Tear)",
+    "Amazing Health Opal +136",
+    "Amazing Health Opal +137",
+    "Amazing Health Opal +139",
+    "Amazing Health Opal +140",
+    "Amazing Health Opal +143",
+    "Amazing Health Opal +144",
+    "Amazing Health Opal +145",
+    "Amazing Mana Opal +58",
+    "Amazing Mana Opal +59",
+    "Arcticzilla",
+    "Ashen Bones",
+    "Balance Crushing Pin (150, Storm)",
+    "Balance Crushing Pin (160, Life)",
+    "Balance Crushing Pin (160, Storm)",
+    "Balance Disabling Pin (150, Storm)",
+    "Balance Disabling Pin (160, Storm)",
+    "Balance Punishing Pin (150, Storm)",
+    "Balance Punishing Pin (160, Fire)",
+    "Balance Punishing Pin (160, Storm)",
+    "Balanceblade",
+    "Banshee (Tier 2b)",
+    "Barbarian's Saga",
+    "Bell Pepper Steak",
+    "Black Sun Seeds",
+    "Blast Off!",
+    "Blood Bat (Tier 2b)",
+    "Bone",
+    "Brass",
+    "Bunyip's Rage",
+    "Cleanse Charm",
+    "Cobalt",
+    "Copper",
+    "Count Croakula",
+    "Cracker",
+    "Cyclops (Tier 2b)",
+    "Dark & Stormy",
+    "Dark Sprite (Tier 2b)",
+    "Deadly Minotaur",
+    "Death Crushing Pin (150, Storm)",
+    "Death Crushing Pin (160, Storm)",
+    "Death Disabling Pin (150, Fire)",
+    "Death Disabling Pin (150, Storm)",
+    "Death Punishing Pin (150, Myth)",
+    "Death Punishing Pin (150, Storm)",
+    "Death Punishing Pin (160, Storm)",
+    "Deathly Depths",
+    "Dog Tracy Amethyst",
+    "Drop Bear Fury",
+    "Duck Savage Sapphire",
+    "Dynamic Enforcer's Boots",
+    "Dynamic Enforcer's Uniform",
+    "Dynamic Protector's Boots",
+    "Dynamic Protector's Uniform",
+    "Ectoplasm",
+    "Elemental Blade",
+    "Elemental Trap",
+    "Empower",
+    "Evil Carrot",
+    "Evil Snowman (Tier 2b)",
+    "Fern Jelly",
+    "Fire Cat (Tier 2b)",
+    "Fire Crushing Pin (150, Myth)",
+    "Fire Crushing Pin (150, Storm)",
+    "Fire Crushing Pin (160, Storm)",
+    "Fire Disabling Pin (150, Storm)",
+    "Fire Disabling Pin (160, Storm)",
+    "Fire Elf (Tier 2b)",
+    "Fire Punishing Pin (150, Storm)",
+    "Fire Trap",
+    "Fireblade",
+    "Fish Fin",
+    "Flaming Carrot",
+    "Flaming Jalapeno",
+    "Flawless Accurate Amethyst +16%",
+    "Flawless Accurate Citrine +16%",
+    "Flawless Accurate Onyx +16%",
+    "Flawless Accurate Peridot +16%",
+    "Flawless Accurate Sapphire +16%",
+    "Flawless Archmastery Opal +15 (Tear)",
+    "Flawless Health Opal +147",
+    "Flawless Health Opal +148",
+    "Flawless Health Opal +149",
+    "Flawless Health Opal +150",
+    "Flawless Health Opal +151",
+    "Flawless Health Opal +152",
+    "Flawless Health Opal +153",
+    "Flawless Health Opal +154",
+    "Flawless Health Opal +155",
+    "Flawless Mana Opal +61",
+    "Flawless Mana Opal +62",
+    "Flawless Mana Opal +63",
+    "Flawless Mana Opal +64",
+    "Freeze Ray",
+    "Frost Beetle (Tier 2b)",
+    "Furious Enforcer's Boots",
+    "Furious Enforcer's Uniform",
+    "Furious Protector's Boots",
+    "Furious Protector's Uniform",
+    "Ghoul (Tier 2b)",
+    "Glimpse of Infinity",
+    "Glimpse of Infinity Ruby",
+    "Glowing Dragon Fruit",
+    "Gravestorm",
+    "Grim Reader",
+    "Grrnadier",
+    "Harmattan Maxios",
+    "Heavenly Bubblegum",
+    "Hex",
+    "Ice Crushing Pin (150, Myth)",
+    "Ice Crushing Pin (150, Storm)",
+    "Ice Disabing Pin (150, Storm)",
+    "Ice Disabling Pin (160, Storm)",
+    "Ice Punishing Pin (150, Storm)",
+    "Ice Punishing Pin (160, Storm)",
+    "Iceblade",
+    "Imp (Tier 2b)",
+    "Improbable Gaze",
+    "Just Enforcer's Boots",
+    "Just Enforcer's Uniform",
+    "Just Protector's Boots",
+    "Just Protector's Uniform",
+    "Lava Guava",
+    "Legendary Enforcer's Boots",
+    "Legendary Enforcer's Uniform",
+    "Legendary Protector's Boots",
+    "Legendary Protector's Uniform",
+    "Leprechaun (Tier 2b)",
+    "Life Crushing Pin (150, Fire)",
+    "Life Crushing Pin (160, Storm)",
+    "Life Disabling Pin (150, Fire)",
+    "Life Disabling Pin (150, Storm)",
+    "Life Disabling Pin (160, Storm)",
+    "Life Punishing Pin (150, Storm)",
+    "Lifeblade",
+    "Lightning Bats (Tier 2b)",
+    "Locust Swarm (Tier 2b)",
+    "Lord of the Jungle",
+    "Lord of the Squall",
+    "Mandar Peridot",
+    "Mini Pumpkin",
+    "Misfortune Cookie",
+    "Mockenspiel",
+    "Morbid Enforcer's Boots",
+    "Morbid Enforcer's Uniform",
+    "Morbid Protector's Boots",
+    "Morbid Protector's Uniform",
+    "Myth Crushing Pin (150, Storm)",
+    "Myth Crushing Pin (160, Balance)",
+    "Myth Crushing Pin (160, Storm)",
+    "Myth Disabling Pin (150, Storm)",
+    "Myth Disabling Pin (160, Storm)",
+    "Myth Punishing Pin (150, Storm)",
+    "Myth Punishing Pin (160, Death)",
+    "Myth Punishing Pin (160, Storm)",
+    "Myth Trap",
+    "Nana's Pumpkin Spice Milkshake",
+    "Nature's Wrath (Tier 2b)",
+    "Nickel",
+    "Old One's Endgame",
+    "PB Cookie",
+    "Phantasmania!",
+    "Pierce",
+    "Popsicle",
+    "Raging Bull",
+    "Rainbow Serpent",
+    "Reshuffle",
+    "Rusalka's Wrath",
+    "S'more Machine",
+    "Scales of Destiny",
+    "Scales of Destiny Citrine",
+    "Scarab (Tier 2b)",
+    "Scion of Balance",
+    "Scion of Ice",
+    "Scion of Life",
+    "Scorpion (Tier 2b)",
+    "Shatterhorn",
+    "Sirocco Djinni",
+    "Snack Attack",
+    "Snow Serpent (Tier 2b)",
+    "Snowball Barrage",
+    "Solomon Crane Onyx",
+    "Sound of Musicology",
+    "Spicy Chips",
+    "Spirit Blade",
+    "Spirit Trap",
+    "Starspawn",
+    "Starspawn Jade",
+    "Steely Enforcer's Boots",
+    "Steely Enforcer's Uniform",
+    "Steely Protector's Boots",
+    "Steely Protector's Uniform",
+    "Storm Punishing Pin (150, Life)",
+    "Storm Shark (Tier 2b)",
+    "Storm Trap",
+    "Stormblade",
+    "Sunbird (Tier 2b)",
+    "Tamales",
+    "Tatzlewurm Terror",
+    "Thunder Snake (Tier 2b)",
+    "Thunderous Enforcer's Boots",
+    "Thunderous Enforcer's Uniform",
+    "Thunderous Protector's Boots",
+    "Thunderous Protector's Uniform",
+    "Tree of Strife",
+    "Troll (Tier 2b)",
+    "Tungsten",
+    "Turmeric",
+    "Wallaru Billabong Resort Com Theme",
+    "Wallaru Billabong Resort Theme",
+    "Wallaru Doom Moon Combat Theme",
+    "Wallaru Doom Moon Theme",
+    "Wallaru Eucalyptus Forest Com Theme",
+    "Wallaru Eucalyptus Forest Theme",
+    "Wallaru Hope Springs Theme",
+    "Wallaru Outback Theme",
+    "Wallaru Ranch Combat Theme",
+    "Wallaru The Dreaming Theme",
+    "Wallaru Wobbegong Combat Theme",
+    "Wallaru Wobbegong Theme",
+    "Winged Sorrow",
+    "Wings of Fate",
+    "Witch's House Call",
+    "Wobbegong Frenzy",
+    "Wrath's Grape Juice",
+    "Zand the Bandit"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Hope Springs",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Wallaru/WL_Z01_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone_via_list",
+      "label": "Take Traveler's Truck to Billabong Resort",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Wallaru/WL_Z01_Hub",
+        "to_zone": "Wallaru/WL_Z08_BillabongResort",
+        "interact_xyz": {
+          "x": 2836.12,
+          "y": 15605.94,
+          "z": 2.0
+        },
+        "reset_xyz": {
+          "x": 2624.98,
+          "y": 15009.7,
+          "z": 2.0
+        },
+        "zone_list_entry": "Billabong Resort"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Cabin",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Wallaru/WL_Z08_BillabongResort",
+        "dungeon_zone": "Wallaru/Interiors/WL_Z08_I03_HotelRoom",
+        "sigil_xyz": {
+          "x": 2732.91,
+          "y": 19665.74,
+          "z": 22.0
+        },
+        "reset_xyz": {
+          "x": 2519.31,
+          "y": 20454.89,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Mr. Cane",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "WL_Frog_Owner_A_01",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Exit Cabin",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Wallaru/Interiors/WL_Z08_I03_HotelRoom",
+        "to_zone": "Wallaru/WL_Z08_BillabongResort",
+        "xyz": {
+          "x": -17.66,
+          "y": 24.57,
+          "z": 2.0
+        },
+        "reset_xyz": {
+          "x": 0.26,
+          "y": -293.11,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "keep_list": [
+          "155"
+        ],
+        "sell_crowns": true,
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND"
+    }
+  ],
+  "regions": []
+}

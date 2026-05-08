@@ -10,18 +10,20 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QSize, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QSize, QStringListModel, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QCompleter,
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -33,7 +35,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import FlagCondition, StateModel, TransitionModel
+from bartlebot.bot.schema import FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -57,6 +59,124 @@ class _StrListLineEdit(QLineEdit):
     Stores values as a comma-separated string (e.g. "IronBloom, GoldKey") and
     is identified by get_params() to deserialise back to list[str].
     """
+
+
+class _FillButton(QPushButton):
+    """QPushButton that updates its label on hover to reflect fill options.
+
+    - 0 players connected  → "Fill current"  (no-op click)
+    - 1 player connected   → "Fill current"  (direct fill, no menu)
+    - 2+ players connected → "Fill current ▾"  (dropdown)
+    """
+
+    def __init__(self, get_clients: Callable[[], list], parent=None):
+        super().__init__(parent)
+        self._get_clients = get_clients
+        self._refresh_label()
+
+    def enterEvent(self, event) -> None:  # type: ignore[override]
+        self._refresh_label()
+        super().enterEvent(event)
+
+    def _refresh_label(self) -> None:
+        n = len(self._get_clients())
+        self.setText("Fill current" if n == 1 else "Fill current ▾")
+
+
+class _ZoneLineEdit(QLineEdit):
+    """QLineEdit with zone-path autocomplete for 'str' fields whose key contains 'zone'.
+
+    Refreshes suggestions from a caller-supplied getter on focus so the dropdown
+    always reflects currently connected players and recently visited zones.
+    """
+
+    def __init__(self, get_suggestions: Callable[[], list[str]], parent=None):
+        super().__init__(parent)
+        self._get_suggestions = get_suggestions
+        self._model = QStringListModel(self)
+        completer = QCompleter(self._model, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.setCompleter(completer)
+
+    def focusInEvent(self, event) -> None:
+        self._model.setStringList(self._get_suggestions())
+        super().focusInEvent(event)
+
+
+class _ZoneWidget(QWidget):
+    """Zone string field with autocomplete + a 'Fill from Player' dropdown button.
+
+    Wraps a ``_ZoneLineEdit`` and adds a compact button row so users can
+    populate the field from a connected player's current zone without
+    switching to the sidebar.
+    """
+
+    textChanged = pyqtSignal(str)
+
+    def __init__(
+        self,
+        get_suggestions: Callable[[], list[str]],
+        get_clients: Callable[[], list],
+        parent=None,
+    ):
+        super().__init__(parent)
+        self._get_clients = get_clients
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(2)
+
+        self._edit = _ZoneLineEdit(get_suggestions)
+        outer.addWidget(self._edit)
+
+        fill_btn = _FillButton(get_clients)
+        fill_btn.setFixedHeight(22)
+        fill_btn.setToolTip("Fill from a connected player's current zone")
+        fill_btn.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
+        fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
+        outer.addWidget(fill_btn)
+
+        self._edit.textChanged.connect(self.textChanged)
+
+    # ------------------------------------------------------------------
+    # Public interface (matches QLineEdit enough for form integration)
+    # ------------------------------------------------------------------
+
+    def text(self) -> str:
+        return self._edit.text()
+
+    def setText(self, text: str) -> None:
+        self._edit.setText(text)
+
+    # ------------------------------------------------------------------
+    # Fill from player
+    # ------------------------------------------------------------------
+
+    def _show_fill_menu(self, btn: QPushButton) -> None:
+        clients = self._get_clients()
+        if not clients:
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._fill_from_player(0))
+            return
+        menu = QMenu(btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Fill from Player {i + 1}")
+            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    async def _fill_from_player(self, idx: int) -> None:
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        try:
+            zone = await clients[idx].zone_name()
+            if zone:
+                self.setText(zone)
+        except Exception:
+            pass
 
 
 class _IntChoiceComboBox(QComboBox):
@@ -84,6 +204,8 @@ class _DynamicParamForm(QWidget):
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
         self._suppress = False
+        self._get_clients: Callable[[], list] = lambda: []
+        self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
@@ -162,6 +284,9 @@ class _DynamicParamForm(QWidget):
             elif isinstance(widget, QPlainTextEdit):
                 display_w = widget
                 empty = not widget.toPlainText().strip()
+            elif isinstance(widget, _ZoneWidget):
+                display_w = widget
+                empty = not widget.text().strip()
             elif isinstance(widget, QLineEdit):
                 display_w = widget
                 empty = not widget.text().strip()
@@ -185,6 +310,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = [
                     x.strip().strip("'\"") for x in w.text().strip("[] ").split(",") if x.strip().strip("'\"")
                 ]
+            elif isinstance(w, _ZoneWidget):
+                result[key] = w.text()
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
             elif isinstance(w, QSpinBox):
@@ -219,12 +346,19 @@ class _DynamicParamForm(QWidget):
             w.textChanged.connect(self._emit_changed)
             return w
         if field_type == "str":
-            w = QLineEdit()
-            w.setText(str(val) if val is not None else "")
+            if "zone" in key.lower():
+                w: QWidget = _ZoneWidget(self._get_zone_suggestions, self._get_clients)
+                w.setText(str(val) if val is not None else "")
+                if help_text:
+                    w.setToolTip(help_text)
+                w.textChanged.connect(self._emit_changed)
+                return w
+            plain = QLineEdit()
+            plain.setText(str(val) if val is not None else "")
             if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
+                plain.setToolTip(help_text)
+            plain.textChanged.connect(self._emit_changed)
+            return plain
         if field_type == "int_list":
             w = _IntListLineEdit()
             if isinstance(val, list):
@@ -280,10 +414,16 @@ class _DynamicParamForm(QWidget):
             return w
         if field_type == "xyz":
             xyz = val if isinstance(val, dict) else {}
-            container = QWidget()
-            row = QHBoxLayout(container)
-            row.setContentsMargins(0, 0, 0, 0)
-            row.setSpacing(4)
+            outer = QWidget()
+            if help_text:
+                outer.setToolTip(help_text)
+            outer_layout = QVBoxLayout(outer)
+            outer_layout.setContentsMargins(0, 0, 0, 0)
+            outer_layout.setSpacing(2)
+            # Row 1: X/Y/Z spinboxes
+            spins_row = QHBoxLayout()
+            spins_row.setContentsMargins(0, 0, 0, 0)
+            spins_row.setSpacing(4)
             spins = []
             for axis, axis_key in [("X", "x"), ("Y", "y"), ("Z", "z")]:
                 lbl = QLabel(axis)
@@ -297,17 +437,42 @@ class _DynamicParamForm(QWidget):
                 except (TypeError, ValueError):
                     spin.setValue(0.0)
                 spin.valueChanged.connect(self._emit_changed)
-                row.addWidget(lbl)
-                row.addWidget(spin, 1)
+                spins_row.addWidget(lbl)
+                spins_row.addWidget(spin, 1)
                 spins.append(spin)
-            if help_text:
-                container.setToolTip(help_text)
+            outer_layout.addLayout(spins_row)
+            # Row 2: full-width segmented action bar — all buttons equal width, uniform height
+            btns_row = QHBoxLayout()
+            btns_row.setContentsMargins(0, 0, 0, 0)
+            btns_row.setSpacing(2)
+            _BTN_H = 22
+            _btn_style = "QPushButton { font-size: 11px; padding: 1px 2px; }"
+            copy_btn = QPushButton("Copy")
+            copy_btn.setFixedHeight(_BTN_H)
+            copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
+            copy_btn.setStyleSheet(_btn_style)
+            copy_btn.clicked.connect(lambda _checked, k=key: self._copy_xyz(k))
+            btns_row.addWidget(copy_btn, 1)
             paste_btn = QPushButton("Paste")
-            paste_btn.setFixedWidth(48)
-            paste_btn.setToolTip("Fill from clipboard (Copy XYZ format)")
+            paste_btn.setFixedHeight(_BTN_H)
+            paste_btn.setToolTip("Paste XYZ from clipboard (JSON format)")
+            paste_btn.setStyleSheet(_btn_style)
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
-            row.addWidget(paste_btn)
-            return (spins[0], spins[1], spins[2], container)
+            btns_row.addWidget(paste_btn, 1)
+            fill_btn = _FillButton(self._get_clients)
+            fill_btn.setFixedHeight(_BTN_H)
+            fill_btn.setToolTip("Fill from a connected player's live position")
+            fill_btn.setStyleSheet(_btn_style)
+            fill_btn.clicked.connect(lambda _checked, k=key, b=fill_btn: self._show_fill_menu(k, b))
+            btns_row.addWidget(fill_btn, 1)
+            tp_btn = QPushButton("TP")
+            tp_btn.setFixedHeight(_BTN_H)
+            tp_btn.setToolTip("Teleport all connected players to these coordinates")
+            tp_btn.setStyleSheet(_btn_style)
+            tp_btn.clicked.connect(lambda _checked, k=key: asyncio.ensure_future(self._teleport_to_xyz(k)))
+            btns_row.addWidget(tp_btn, 1)
+            outer_layout.addLayout(btns_row)
+            return (spins[0], spins[1], spins[2], outer)
         if field_type == "int_choice":
             w = _IntChoiceComboBox()
             for c in choices or []:
@@ -358,10 +523,60 @@ class _DynamicParamForm(QWidget):
         self._suppress = False
         self._emit_changed()
 
+    def _copy_xyz(self, key: str) -> None:
+        widgets = self._widgets.get(key)
+        if not isinstance(widgets, tuple):
+            return
+        x_s, y_s, z_s, _ = widgets
+        QApplication.clipboard().setText(json.dumps({"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}))
+
+    def _show_fill_menu(self, key: str, btn: QPushButton) -> None:
+        clients = self._get_clients()
+        if not clients:
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._fill_xyz_from_player(key, 0))
+            return
+        menu = QMenu(btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Fill from Player {i + 1}")
+            action.triggered.connect(
+                lambda _checked, k=key, idx=i: asyncio.ensure_future(self._fill_xyz_from_player(k, idx))
+            )
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    async def _fill_xyz_from_player(self, key: str, idx: int) -> None:
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        try:
+            pos = await clients[idx].body.position()
+            self.set_xyz(key, pos.x, pos.y, pos.z)
+        except Exception:
+            pass
+
+    async def _teleport_to_xyz(self, key: str) -> None:
+        from wizwalker import XYZ
+
+        clients = self._get_clients()
+        if not clients:
+            return
+        widgets = self._widgets.get(key)
+        if not isinstance(widgets, tuple):
+            return
+        x_s, y_s, z_s, _ = widgets
+        target = XYZ(x_s.value(), y_s.value(), z_s.value())
+        try:
+            await asyncio.gather(
+                *[c.teleport(target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
+            )
+        except Exception:
+            pass
+
     def set_str(self, key: str, value: str) -> None:
         """Programmatically set a 'str' field by key."""
         widget = self._widgets.get(key)
-        if not isinstance(widget, QLineEdit):
+        if not isinstance(widget, (_ZoneWidget, QLineEdit)):
             return
         self._suppress = True
         widget.setText(value)
@@ -456,58 +671,60 @@ def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
 
 
 class _FlagConditionsWidget(QWidget):
-    """Widget that edits a list of FlagConditions on a TransitionModel.
+    """Widget that edits flag conditions on a TransitionModel.
 
-    Layout:
-        [AND | OR ▾]   ← operator selector (top row)
-        [NOT □] [option ▾]  [✕]   ← one row per condition
-        [NOT □] [option ▾]  [✕]
-        [+ Add condition]          ← append button
+    Supports two levels of boolean logic:
+    - Each group combines its conditions internally with AND or OR.
+    - Multiple groups are combined with the outer AND/OR selector.
+
+    Single-group display (one group, outer selector hidden) matches the old
+    flat-list layout for simple cases and backward compatibility.
     """
 
     changed = pyqtSignal()
 
-    # Width budget for the NOT checkbox and remove button
     _NOT_W = 52
     _REM_W = 24
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._transition: TransitionModel | None = None
         self._option_names: list[str] = []
         self._updating: bool = False
+        # List of (group_frame, inner_op_combo, rows_layout, row_tuples_list)
+        self._groups: list[tuple[QFrame, QComboBox, QVBoxLayout, list]] = []
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(4)
 
-        # Operator row
-        op_row = QHBoxLayout()
-        op_row.setContentsMargins(0, 0, 0, 0)
-        op_lbl = QLabel("Combine with:")
-        op_lbl.setStyleSheet(
-            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.text_muted}; font-size: 11px; font-weight: 600;"
-        )
-        self._op_combo = QComboBox()
-        self._op_combo.addItems(["AND", "OR"])
-        self._op_combo.setFixedWidth(64)
-        op_row.addWidget(op_lbl)
-        op_row.addWidget(self._op_combo)
-        op_row.addStretch()
-        outer.addLayout(op_row)
+        # Outer operator row (hidden when only one group)
+        self._outer_op_row = QWidget()
+        _oor = QHBoxLayout(self._outer_op_row)
+        _oor.setContentsMargins(0, 0, 0, 0)
+        _oor.setSpacing(4)
+        _oor_lbl = QLabel("Groups combine with:")
+        _oor_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;")
+        self._groups_op_combo = QComboBox()
+        self._groups_op_combo.addItems(["OR", "AND"])
+        self._groups_op_combo.setFixedWidth(64)
+        _oor.addWidget(_oor_lbl)
+        _oor.addWidget(self._groups_op_combo)
+        _oor.addStretch()
+        outer.addWidget(self._outer_op_row)
+        self._outer_op_row.setVisible(False)
 
-        # Rows container
-        self._rows_widget = QWidget()
-        self._rows_layout = QVBoxLayout(self._rows_widget)
-        self._rows_layout.setContentsMargins(0, 0, 0, 0)
-        self._rows_layout.setSpacing(2)
-        outer.addWidget(self._rows_widget)
+        # Groups container
+        self._groups_widget = QWidget()
+        self._groups_layout = QVBoxLayout(self._groups_widget)
+        self._groups_layout.setContentsMargins(0, 0, 0, 0)
+        self._groups_layout.setSpacing(6)
+        outer.addWidget(self._groups_widget)
 
-        # Add button
-        self._add_btn = QPushButton("+ Add condition")
-        self._add_btn.setFixedHeight(22)
-        self._add_btn.clicked.connect(self._on_add)
-        outer.addWidget(self._add_btn)
+        # Add group button
+        self._add_group_btn = QPushButton("+ Add condition group")
+        self._add_group_btn.setFixedHeight(22)
+        self._add_group_btn.clicked.connect(self._on_add_group)
+        outer.addWidget(self._add_group_btn)
 
         # Separator
         sep = QFrame()
@@ -515,61 +732,140 @@ class _FlagConditionsWidget(QWidget):
         sep.setStyleSheet(f"color: {THEME.border};")
         outer.addWidget(sep)
 
-        self._op_combo.currentTextChanged.connect(self._on_op_changed)
-        self._row_widgets: list[tuple[QCheckBox, QComboBox, QPushButton]] = []
+        self._groups_op_combo.currentTextChanged.connect(self._on_any_changed)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def set_conditions(
+    def set_flag_groups(
+        self,
+        flag_groups: list[FlagGroup],
+        flag_groups_op: str,
+        option_names: list[str],
+    ) -> None:
+        """Load from the new grouped FlagGroup format."""
+        self._updating = True
+        self._option_names = list(option_names)
+        self._clear_all_groups()
+        idx = self._groups_op_combo.findText(flag_groups_op)
+        self._groups_op_combo.setCurrentIndex(idx if idx >= 0 else 0)
+        for g in flag_groups:
+            self._add_group(flags=g.flags, op=g.op)
+        if not self._groups:
+            self._add_group()
+        self._refresh_outer_op_visibility()
+        self._updating = False
+
+    def set_conditions_flat(
         self,
         flags: list[FlagCondition],
         flag_op: str,
         option_names: list[str],
     ) -> None:
-        """Rebuild the widget from a transition's flags list."""
+        """Load from the legacy flat flags+flag_op format (single group)."""
         self._updating = True
         self._option_names = list(option_names)
-
-        # Clear existing rows
-        for not_cb, opt_cb, rem_btn in self._row_widgets:
-            not_cb.setParent(None)
-            opt_cb.setParent(None)
-            rem_btn.setParent(None)
-        self._row_widgets.clear()
-        while self._rows_layout.count():
-            item = self._rows_layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        # Operator
-        idx = self._op_combo.findText(flag_op)
-        self._op_combo.setCurrentIndex(idx if idx >= 0 else 0)
-
-        # One row per FlagCondition
-        for fc in flags:
-            self._add_row(fc.option, fc.negate)
-
+        self._clear_all_groups()
+        self._groups_op_combo.setCurrentIndex(0)  # OR default
+        self._add_group(flags=flags, op=flag_op)
+        self._refresh_outer_op_visibility()
         self._updating = False
 
-    def get_conditions(self) -> tuple[list[FlagCondition], str]:
-        """Return the current flags list and flag_op string."""
-        flags = []
-        for not_cb, opt_cb, _rem in self._row_widgets:
-            option = opt_cb.currentText()
-            if option:
-                flags.append(FlagCondition(option=option, negate=not_cb.isChecked()))
-        return flags, self._op_combo.currentText()
+    def get_flag_groups(self) -> tuple[list[FlagGroup], str]:
+        """Return the current state as (flag_groups, flag_groups_op)."""
+        result: list[FlagGroup] = []
+        for _frame, inner_op, _rows_layout, rows in self._groups:
+            flags = []
+            for not_cb, opt_cb, _rem in rows:
+                option = opt_cb.currentText()
+                if option:
+                    flags.append(FlagCondition(option=option, negate=not_cb.isChecked()))
+            if flags:
+                result.append(FlagGroup(flags=flags, op=inner_op.currentText()))
+        return result, self._groups_op_combo.currentText()
 
     # ------------------------------------------------------------------
-    # Internal helpers
+    # Group management
     # ------------------------------------------------------------------
 
-    def _add_row(self, option: str = "", negate: bool = False) -> None:
-        from bartlebot.gui.theme import THEME
+    def _clear_all_groups(self) -> None:
+        for frame, _, _, _ in self._groups:
+            self._groups_layout.removeWidget(frame)
+            frame.deleteLater()
+        self._groups.clear()
+
+    def _add_group(self, flags: list[FlagCondition] | None = None, op: str = "AND") -> None:
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Shape.StyledPanel)
+        frame.setStyleSheet(f"QFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}")
+        frame_layout = QVBoxLayout(frame)
+        frame_layout.setContentsMargins(6, 4, 6, 4)
+        frame_layout.setSpacing(3)
+
+        # Group header: inner-op selector + remove button
+        header = QWidget()
+        header.setStyleSheet("QWidget { border: none; }")
+        h_layout = QHBoxLayout(header)
+        h_layout.setContentsMargins(0, 0, 0, 0)
+        h_layout.setSpacing(4)
+
+        op_lbl = QLabel("Combine with:")
+        op_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600; border: none;")
+        inner_op = QComboBox()
+        inner_op.addItems(["AND", "OR"])
+        inner_op.setFixedWidth(64)
+        inner_op_idx = inner_op.findText(op)
+        inner_op.setCurrentIndex(inner_op_idx if inner_op_idx >= 0 else 0)
+
+        rem_group_btn = QPushButton("✕")
+        rem_group_btn.setFixedWidth(self._REM_W)
+        rem_group_btn.setStyleSheet(f"color: {THEME.error}; font-weight: bold; border: none; padding: 0;")
+
+        h_layout.addWidget(op_lbl)
+        h_layout.addWidget(inner_op)
+        h_layout.addStretch()
+        h_layout.addWidget(rem_group_btn)
+        frame_layout.addWidget(header)
+
+        # Rows container for this group
+        rows_widget = QWidget()
+        rows_widget.setStyleSheet("QWidget { border: none; }")
+        rows_layout = QVBoxLayout(rows_widget)
+        rows_layout.setContentsMargins(0, 0, 0, 0)
+        rows_layout.setSpacing(2)
+        frame_layout.addWidget(rows_widget)
+
+        # Add condition button
+        add_cond_btn = QPushButton("+ Add condition")
+        add_cond_btn.setStyleSheet("QPushButton { border: none; }")
+        add_cond_btn.setFixedHeight(20)
+        frame_layout.addWidget(add_cond_btn)
+
+        row_tuples: list[tuple[QCheckBox, QComboBox, QPushButton]] = []
+        group_entry = (frame, inner_op, rows_layout, row_tuples)
+        self._groups.append(group_entry)
+        self._groups_layout.addWidget(frame)
+
+        # Add initial condition rows
+        for fc in flags or []:
+            self._add_condition_row(group_entry, fc.option, fc.negate)
+
+        # Wire signals
+        inner_op.currentTextChanged.connect(self._on_any_changed)
+        add_cond_btn.clicked.connect(lambda _, ge=group_entry: self._on_add_condition(ge))
+        rem_group_btn.clicked.connect(lambda _, f=frame, ge=group_entry: self._on_remove_group(f, ge))
+
+    def _add_condition_row(
+        self,
+        group_entry: tuple,
+        option: str = "",
+        negate: bool = False,
+    ) -> None:
+        frame, inner_op, rows_layout, row_tuples = group_entry
 
         row = QWidget()
+        row.setStyleSheet("QWidget { border: none; }")
         row_layout = QHBoxLayout(row)
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(4)
@@ -592,38 +888,57 @@ class _FlagConditionsWidget(QWidget):
         row_layout.addWidget(not_cb)
         row_layout.addWidget(opt_combo, 1)
         row_layout.addWidget(rem_btn)
-        self._rows_layout.addWidget(row)
+        rows_layout.addWidget(row)
 
-        self._row_widgets.append((not_cb, opt_combo, rem_btn))
+        t = (not_cb, opt_combo, rem_btn)
+        row_tuples.append(t)
 
-        not_cb.checkStateChanged.connect(self._on_row_changed)
-        opt_combo.currentTextChanged.connect(self._on_row_changed)
-        rem_btn.clicked.connect(lambda _=None, r=row, t=(not_cb, opt_combo, rem_btn): self._on_remove(r, t))
+        not_cb.checkStateChanged.connect(self._on_any_changed)
+        opt_combo.currentTextChanged.connect(self._on_any_changed)
+        rem_btn.clicked.connect(lambda _=None, r=row, tup=t, ge=group_entry: self._on_remove_condition(r, tup, ge))
 
-    def _on_add(self) -> None:
-        default = self._option_names[0] if self._option_names else ""
-        self._add_row(option=default, negate=False)
+    def _refresh_outer_op_visibility(self) -> None:
+        self._outer_op_row.setVisible(len(self._groups) > 1)
+
+    # ------------------------------------------------------------------
+    # Event handlers
+    # ------------------------------------------------------------------
+
+    def _on_add_group(self) -> None:
+        self._add_group()
+        self._refresh_outer_op_visibility()
         if not self._updating:
-            self._emit()
+            self.changed.emit()
 
-    def _on_remove(self, row: QWidget, widgets: tuple) -> None:
-        if widgets in self._row_widgets:
-            self._row_widgets.remove(widgets)
-        self._rows_layout.removeWidget(row)
+    def _on_remove_group(self, frame: QFrame, group_entry: tuple) -> None:
+        if len(self._groups) <= 1:
+            return  # always keep at least one group
+        if group_entry in self._groups:
+            self._groups.remove(group_entry)
+        self._groups_layout.removeWidget(frame)
+        frame.deleteLater()
+        self._refresh_outer_op_visibility()
+        if not self._updating:
+            self.changed.emit()
+
+    def _on_add_condition(self, group_entry: tuple) -> None:
+        default = self._option_names[0] if self._option_names else ""
+        self._add_condition_row(group_entry, default, False)
+        if not self._updating:
+            self.changed.emit()
+
+    def _on_remove_condition(self, row: QWidget, tup: tuple, group_entry: tuple) -> None:
+        _frame, _inner_op, rows_layout, row_tuples = group_entry
+        if tup in row_tuples:
+            row_tuples.remove(tup)
+        rows_layout.removeWidget(row)
         row.deleteLater()
         if not self._updating:
-            self._emit()
+            self.changed.emit()
 
-    def _on_op_changed(self, _text: str) -> None:
+    def _on_any_changed(self, *_) -> None:
         if not self._updating:
-            self._emit()
-
-    def _on_row_changed(self, *_) -> None:
-        if not self._updating:
-            self._emit()
-
-    def _emit(self) -> None:
-        self.changed.emit()
+            self.changed.emit()
 
 
 # ---------------------------------------------------------------------------
@@ -665,6 +980,9 @@ class _ParamPanel(QWidget):
     # Emitted when the user completes a wiki import from the handle_combat node panel.
     # Carries the list of selected item name strings to be added to the bot's drops.
     wiki_import_completed = pyqtSignal(list)
+    # Emitted when the user clicks a connection row to navigate to an edge or state.
+    select_edge_requested = pyqtSignal(object)  # TransitionModel
+    select_state_requested = pyqtSignal(str)  # state ID
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -677,6 +995,9 @@ class _ParamPanel(QWidget):
         self._all_states: list = []
         # Other transitions in the config — for duplicate-check in endpoint change
         self._all_transitions: list[TransitionModel] = []
+        # All states/transitions for connections panel; populated by show_state()
+        self._all_states_for_node: list = []
+        self._all_transitions_for_node: list[TransitionModel] = []
 
         self._stack = QStackedWidget()
         layout = QVBoxLayout(self)
@@ -805,9 +1126,9 @@ class _ParamPanel(QWidget):
         _notes_vbox = QVBoxLayout(self._notes_section)
         _notes_vbox.setContentsMargins(6, 4, 6, 6)
         _notes_vbox.setSpacing(3)
-        _notes_title = QLabel("Notes:")
-        _notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-        _notes_vbox.addWidget(_notes_title)
+        self._notes_title = QLabel("Notes:")
+        self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
+        _notes_vbox.addWidget(self._notes_title)
         self._notes_edit = QPlainTextEdit()
         self._notes_edit.setPlaceholderText("Add notes about this node…")
         self._notes_edit.setFixedHeight(72)
@@ -816,6 +1137,36 @@ class _ParamPanel(QWidget):
             f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
         )
         _notes_vbox.addWidget(self._notes_edit)
+
+        # Connections section — lists outgoing/incoming transitions for this node
+        self._connections_section = QWidget()
+        _conn_outer = QVBoxLayout(self._connections_section)
+        _conn_outer.setContentsMargins(6, 4, 6, 4)
+        _conn_outer.setSpacing(4)
+
+        _conn_header = QWidget()
+        _conn_header_layout = QHBoxLayout(_conn_header)
+        _conn_header_layout.setContentsMargins(0, 0, 0, 0)
+        _conn_header_layout.setSpacing(4)
+        self._conn_toggle_btn = QPushButton("▾ Connections")
+        self._conn_toggle_btn.setFlat(True)
+        self._conn_toggle_btn.setStyleSheet(
+            f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
+            " border: none; padding: 0; font-size: 11px; background: transparent; }"
+        )
+        _conn_header_layout.addWidget(self._conn_toggle_btn)
+        _conn_header_layout.addStretch()
+        _conn_outer.addWidget(_conn_header)
+
+        self._conn_body = QWidget()
+        self._conn_body_layout = QVBoxLayout(self._conn_body)
+        self._conn_body_layout.setContentsMargins(0, 2, 0, 2)
+        self._conn_body_layout.setSpacing(2)
+        _conn_outer.addWidget(self._conn_body)
+
+        self._conn_expanded = True
+        self._conn_toggle_btn.clicked.connect(self._toggle_connections)
+        self._connections_section.setVisible(False)
 
         node_outer = QWidget()
         node_vbox = QVBoxLayout(node_outer)
@@ -827,6 +1178,7 @@ class _ParamPanel(QWidget):
         node_vbox.addWidget(self._wiki_import_row)
         node_vbox.addWidget(self._overrides_section)
         node_vbox.addWidget(self._returns_section)
+        node_vbox.addWidget(self._connections_section)
         node_vbox.addWidget(self._notes_section)
         self._stack.addWidget(node_outer)
 
@@ -878,16 +1230,36 @@ class _ParamPanel(QWidget):
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
 
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
+            self._notes_edit.setStyleSheet(
+                f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+                f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+            )
+            self._conn_toggle_btn.setStyleSheet(
+                f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
+                " border: none; padding: 0; font-size: 11px; background: transparent; }"
+            )
+
     def show_idle(self) -> None:
         self._cancel_record()
         self._state = None
         self._transition = None
         self._stack.setCurrentIndex(_PAGE_IDLE)
 
-    def show_state(self, state: StateModel) -> None:
+    def show_state(
+        self,
+        state: StateModel,
+        all_states: list | None = None,
+        all_transitions: list[TransitionModel] | None = None,
+    ) -> None:
         self._cancel_record()
         self._state = state
         self._transition = None
+        self._all_states_for_node = list(all_states or [])
+        self._all_transitions_for_node = list(all_transitions or [])
         self._suppress = True
         self._node_id_lbl.setText(state.id)
         self._node_label_edit.setText(state.label or "")
@@ -898,6 +1270,7 @@ class _ParamPanel(QWidget):
         self._param_form.load_schema(schema, state.params or {})
         self._rebuild_overrides(state)
         self._rebuild_returns(state.node_type)
+        self._rebuild_connections(state.id)
         self._notes_edit.blockSignals(True)
         self._notes_edit.setPlainText(state.notes or "")
         self._notes_edit.blockSignals(False)
@@ -947,12 +1320,19 @@ class _ParamPanel(QWidget):
         else:
             self._edge_when_combo.setCurrentIndex(0)
 
-        # Flag conditions widget
-        self._flag_conditions_widget.set_conditions(
-            transition.flags,
-            transition.flag_op,
-            option_names or [],
-        )
+        # Flag conditions widget — prefer grouped format, fall back to flat legacy format
+        if transition.flag_groups:
+            self._flag_conditions_widget.set_flag_groups(
+                transition.flag_groups,
+                transition.flag_groups_op,
+                option_names or [],
+            )
+        else:
+            self._flag_conditions_widget.set_conditions_flat(
+                transition.flags,
+                transition.flag_op,
+                option_names or [],
+            )
 
         self._suppress = False
         self._stack.setCurrentIndex(_PAGE_EDGE)
@@ -1072,9 +1452,11 @@ class _ParamPanel(QWidget):
     def _on_flag_conditions_changed(self) -> None:
         if self._suppress or self._transition is None:
             return
-        flags, flag_op = self._flag_conditions_widget.get_conditions()
-        self._transition.flags = flags
-        self._transition.flag_op = flag_op
+        flag_groups, flag_groups_op = self._flag_conditions_widget.get_flag_groups()
+        self._transition.flag_groups = flag_groups
+        self._transition.flag_groups_op = flag_groups_op
+        # Clear legacy flat fields — the grouped format takes precedence in to_machine_config()
+        self._transition.flags = []
         self.properties_changed.emit()
 
     # ------------------------------------------------------------------
@@ -1094,6 +1476,10 @@ class _ParamPanel(QWidget):
     # Recording
     # ------------------------------------------------------------------
 
+    def toggle_record(self) -> None:
+        """Start or cancel recording for the currently selected node (hotkey handler)."""
+        self._on_record_clicked()
+
     def _cancel_record(self) -> None:
         if self._record_task is not None and not self._record_task.done():
             self._record_task.cancel()
@@ -1109,7 +1495,7 @@ class _ParamPanel(QWidget):
             return
         clients = self._get_clients()
         if not clients:
-            self._record_status_lbl.setText("No client connected.")
+            self._record_status_lbl.setText("No player connected.")
             return
         if self._state.node_type not in recording.RECORDABLE_NODES:
             return
@@ -1211,3 +1597,143 @@ class _ParamPanel(QWidget):
             self._returns_section.setVisible(True)
         else:
             self._returns_section.setVisible(False)
+
+    # ------------------------------------------------------------------
+    # Connections section
+    # ------------------------------------------------------------------
+
+    def _toggle_connections(self) -> None:
+        self._conn_expanded = not self._conn_expanded
+        self._conn_body.setVisible(self._conn_expanded)
+        self._conn_toggle_btn.setText("▾ Connections" if self._conn_expanded else "▸ Connections")
+
+    def _rebuild_connections(self, state_id: str) -> None:
+        """Rebuild the outgoing/incoming connections list for the selected node."""
+        # Clear existing rows
+        while self._conn_body_layout.count():
+            item = self._conn_body_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        all_t = self._all_transitions_for_node
+        state_map = {s.id: (s.label or s.id) for s in self._all_states_for_node}
+
+        outgoing = [t for t in all_t if t.source == state_id]
+        incoming = [t for t in all_t if t.dest == state_id and t.source != state_id]
+
+        if not outgoing and not incoming:
+            placeholder = QLabel("No connections")
+            placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            self._conn_body_layout.addWidget(placeholder)
+            self._connections_section.setVisible(True)
+            return
+
+        # Sort outgoing: conditional first (matches evaluation order from to_machine_config)
+        outgoing.sort(key=lambda t: 0 if t.when else 1)
+
+        if outgoing:
+            out_lbl = QLabel("Outgoing:")
+            out_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; font-weight: 600;")
+            self._conn_body_layout.addWidget(out_lbl)
+            for priority, t in enumerate(outgoing, 1):
+                row = self._make_conn_row(
+                    t,
+                    badge_text=str(priority),
+                    chip_text=t.when or "always",
+                    node_label=state_map.get(t.dest, t.dest),
+                    node_id=t.dest,
+                    is_outgoing=True,
+                )
+                self._conn_body_layout.addWidget(row)
+
+        if incoming:
+            in_lbl = QLabel("Incoming:")
+            in_lbl.setStyleSheet(
+                f"color: {THEME.text_muted}; font-size: 10px; font-weight: 600;{'margin-top: 4px;' if outgoing else ''}"
+            )
+            self._conn_body_layout.addWidget(in_lbl)
+            for t in incoming:
+                row = self._make_conn_row(
+                    t,
+                    badge_text=None,
+                    chip_text=t.when or "always",
+                    node_label=state_map.get(t.source, t.source),
+                    node_id=t.source,
+                    is_outgoing=False,
+                )
+                self._conn_body_layout.addWidget(row)
+
+        self._connections_section.setVisible(True)
+
+    def _make_conn_row(
+        self,
+        transition: TransitionModel,
+        badge_text: str | None,
+        chip_text: str,
+        node_label: str,
+        node_id: str,
+        is_outgoing: bool,
+    ) -> QWidget:
+        """Build a single connection row widget."""
+        row = QWidget()
+        row.setStyleSheet(f"QWidget {{ border-radius: 4px; }}QWidget:hover {{ background: {THEME.surface}; }}")
+        row.setCursor(Qt.CursorShape.PointingHandCursor)
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(4, 2, 4, 2)
+        layout.setSpacing(4)
+
+        # Priority badge (outgoing only)
+        if badge_text is not None:
+            badge = QLabel(badge_text)
+            badge.setFixedWidth(18)
+            badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            badge.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9px; font-weight: 600;")
+            layout.addWidget(badge)
+
+        # Condition chip
+        chip_text_upper = chip_text.upper()
+        if chip_text_upper in ("SUCCESS", "TRUE"):
+            chip_bg = THEME.chip_success_bg
+            chip_fg = "#ffffff"
+        elif chip_text_upper in ("FAILURE", "FALSE"):
+            chip_bg = THEME.chip_failure_bg
+            chip_fg = "#ffffff"
+        elif chip_text == "always":
+            chip_bg = THEME.surface
+            chip_fg = THEME.text_muted
+        else:
+            chip_bg = THEME.chip_neutral_bg
+            chip_fg = "#ffffff"
+        chip = QLabel(chip_text)
+        chip.setStyleSheet(
+            f"background: {chip_bg}; color: {chip_fg}; border-radius: 3px;"
+            " font-size: 10px; font-weight: 600; padding: 1px 5px;"
+        )
+
+        # Node name link
+        name_lbl = QLabel(node_label)
+        name_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 11px;")
+        name_lbl.setCursor(Qt.CursorShape.PointingHandCursor)
+        name_lbl.setToolTip(f"Navigate to: {node_label}")
+
+        if is_outgoing:
+            layout.addWidget(chip)
+            layout.addWidget(name_lbl, 1)
+        else:
+            layout.addWidget(name_lbl, 1)
+            layout.addWidget(chip)
+
+        # Clicking the node name navigates to that state
+        def _on_name_clicked(ev, nid=node_id):
+            ev.accept()
+            self.select_state_requested.emit(nid)
+
+        name_lbl.mousePressEvent = _on_name_clicked  # type: ignore[method-assign]
+
+        # Clicking anywhere else on the row selects the edge
+        def _on_row_pressed(ev, t=transition):
+            self.select_edge_requested.emit(t)
+
+        row.mousePressEvent = _on_row_pressed  # type: ignore[method-assign]
+
+        return row

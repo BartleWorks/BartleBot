@@ -82,10 +82,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients are at or above both fail thresholds after collection."),
+        ReturnSpec("SUCCESS", "All players are at or above both fail thresholds after collection."),
         ReturnSpec(
             "FAILURE",
-            "At least one client is still below a fail threshold after wisps were exhausted.",
+            "At least one player is still below a fail threshold after wisps were exhausted.",
         ),
     ],
     max_consecutive_retries=15,

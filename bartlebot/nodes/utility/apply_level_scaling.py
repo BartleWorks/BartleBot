@@ -14,7 +14,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="zone",
         type="str",
         label="Zone",
-        help="Zone name all clients must be in when this node executes (the level-scaling dungeon).",
+        help="Zone name all players must be in when this node executes (the level-scaling dungeon).",
         default="",
         required=True,
     ),
@@ -62,14 +62,14 @@ _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
 NODE_SPEC = NodeSpec(
     description=(
         "Interacts with the level-scaling NPC to apply the level-scaling elixir. "
-        "Assumes clients are already in the correct dungeon zone."
+        "Assumes players are already in the correct dungeon zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Level-scaling elixir applied to all specified clients."),
+        ReturnSpec("SUCCESS", "Level-scaling elixir applied to all specified players."),
         ReturnSpec(
             "FAILURE",
-            "Clients not in zone, interact prompt never appeared after retries, "
+            "Players not in zone, interact prompt never appeared after retries, "
             "NPCServicesWin option button never became visible, "
             "or elixir not active after interaction.",
         ),

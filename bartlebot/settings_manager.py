@@ -44,6 +44,9 @@ class _CanvasSettings(BaseModel):
     lod_compact_threshold: float = 0.6
     snap_to_grid: bool = False
     show_failure_edges: bool = True
+    zoom_step: float = 1.15  # wheel zoom multiplier per step (1.05–1.30)
+    pan_animation_ms: int = 300  # smooth-pan duration in ms; 0 = instant
+    grid_style: str = "dots"  # "dots" | "lines" | "none"
 
 
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
@@ -84,6 +87,9 @@ _DEFAULTS: dict[str, Any] = {
         "lod_compact_threshold": 0.6,
         "snap_to_grid": False,
         "show_failure_edges": True,
+        "zoom_step": 1.15,
+        "pan_animation_ms": 300,
+        "grid_style": "dots",
         "bot_library_path": "bots",
     },
     "accounts": [],
@@ -92,7 +98,9 @@ _DEFAULTS: dict[str, Any] = {
     "recent_bot_files": [],
     "recently_used_nodes": [],
     "favorite_nodes": [],
+    "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
+    "recent_zones": [],
 }
 
 # Valid Wizard101 windowed resolutions (width, height)
@@ -331,6 +339,42 @@ class SettingsManager:
         self.set("favorite_nodes", value=favs)
         self.save()
         return is_fav
+
+    @property
+    def favorited_hotkey_nodes(self) -> list[str]:
+        """10-slot list of node type keys bound to hotkeys 1–9 and 0. Empty string = unassigned."""
+        raw = self.get("favorited_hotkey_nodes", default=[""] * 10)
+        result = list(raw) + [""] * 10
+        return result[:10]
+
+    def set_favorited_hotkey_node(self, slot: int, node_type: str) -> None:
+        """Assign node_type to the given 0-based slot (0 = key 1, …, 9 = key 0)."""
+        slots = self.favorited_hotkey_nodes
+        slots[slot] = node_type
+        self.set("favorited_hotkey_nodes", value=slots)
+        self.save()
+
+    def clear_favorited_hotkey_node(self, slot: int) -> None:
+        """Clear the assignment for the given 0-based slot."""
+        self.set_favorited_hotkey_node(slot, "")
+
+    @property
+    def recent_zones(self) -> list[str]:
+        """List of recently seen zone path strings, newest first. Capped at 30."""
+        return list(self.get("recent_zones", default=[]))
+
+    def add_recent_zone(self, zone: str) -> None:
+        """Prepend zone to recent_zones, deduplicating and capping at 30. No-op if already at top."""
+        zone = zone.strip()
+        if not zone or zone == "—":
+            return
+        recent = self.recent_zones
+        if recent and recent[0] == zone:
+            return
+        recent = [z for z in recent if z != zone]
+        recent.insert(0, zone)
+        self.set("recent_zones", value=recent[:30])
+        self.save()
 
     # ------------------------------------------------------------------
     # Window sizing helper

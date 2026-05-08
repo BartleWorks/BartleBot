@@ -12,20 +12,25 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-from PyQt6.QtCore import QEvent, QPointF, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
+    QCursor,
     QKeySequence,
     QShortcut,
 )
 from PyQt6.QtWidgets import (
+    QAbstractSpinBox,
+    QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
+    QPlainTextEdit,
     QPushButton,
     QScrollArea,
     QStackedWidget,
+    QTextEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -40,8 +45,9 @@ from bartlebot.gui.canvas.edit_scene import (
     _reachable_states,
     _validate_node,
 )
+from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
-from bartlebot.gui.canvas.node_item import NODE_H, NODE_W, NodeItem
+from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
@@ -697,11 +703,17 @@ class BotCanvas(QWidget):
         self._minimap.setVisible(SettingsManager.instance().get("canvas", "minimap_visible", default=True))
         self._failure_edges_btn.setChecked(SettingsManager.instance().get("canvas", "show_failure_edges", default=True))
 
-        # ── Main layout: toolbar + validation banner + graph view ─────
+        # ── Favorites bar — shown only in Edit mode ───────────────────
+        self._favorites_bar = FavoritesBar()
+        self._favorites_bar.node_requested.connect(self._add_node_at_viewport_center)
+        self._favorites_bar.setVisible(False)
+
+        # ── Main layout: toolbar + favorites bar + graph view ─────────
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(0)
         outer.addWidget(toolbar)
+        outer.addWidget(self._favorites_bar)
         outer.addWidget(self._view, 1)
 
         # ── Search bar overlay — top-center of the graph view ────────
@@ -745,6 +757,16 @@ class BotCanvas(QWidget):
             lambda: self._failure_edges_btn.setChecked(not self._failure_edges_btn.isChecked())
         )
 
+        record_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        record_shortcut.activated.connect(self._param_panel.toggle_record)
+
+        # ── Hotkey slots 1–9 and 0 for the favorites bar ─────────────
+        for _i in range(10):
+            _key = str(_i + 1) if _i < 9 else "0"
+            _sc = QShortcut(QKeySequence(_key), self)
+            _sc.setContext(Qt.ShortcutContext.WindowShortcut)
+            _sc.activated.connect(lambda _slot=_i: self._on_hotkey_slot(_slot))
+
         # ── Reposition banner overlay when the view or its viewport resizes ─
         self._view.installEventFilter(self)
         self._view.viewport().installEventFilter(self)
@@ -756,6 +778,8 @@ class BotCanvas(QWidget):
         self._param_panel.structural_property_changed.connect(self._on_about_to_change)
         self._param_panel.properties_changed.connect(self._on_param_changed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
+        self._param_panel.select_edge_requested.connect(self._on_select_edge_requested)
+        self._param_panel.select_state_requested.connect(self._on_select_state_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
@@ -795,7 +819,9 @@ class BotCanvas(QWidget):
 
             auto_layout(config)
         self._scene.setup(config)
-        self._scene.set_snap_enabled(SettingsManager.instance().get("canvas", "snap_to_grid", default=False))
+        _sm = SettingsManager.instance()
+        self._scene.set_snap_enabled(_sm.get("canvas", "snap_to_grid", default=False))
+        self._scene.set_grid_style(_sm.get("canvas", "grid_style", default="dots"))
         self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._param_panel.show_idle()
         self._view.fit_scene()
@@ -914,6 +940,7 @@ class BotCanvas(QWidget):
         sm = SettingsManager.instance()
         self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
         self._scene.set_snap_enabled(sm.get("canvas", "snap_to_grid", default=False))
+        self._scene.set_grid_style(sm.get("canvas", "grid_style", default="dots"))
         show_failure = sm.get("canvas", "show_failure_edges", default=True)
         self._failure_edges_btn.setChecked(show_failure)
         self._apply_failure_edge_visibility(show_failure)
@@ -952,6 +979,10 @@ class BotCanvas(QWidget):
             self.bot_status_changed.emit(color, "Paused", self._active_state_label(), self._elapsed_str())
 
     @property
+    def config(self) -> "BotConfig | None":
+        return self._config
+
+    @property
     def param_panel(self) -> QWidget:
         """The _ParamPanel widget — placed in the left sidebar Properties tab."""
         return self._param_panel
@@ -959,6 +990,11 @@ class BotCanvas(QWidget):
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable that returns the current list of hooked clients."""
         self._param_panel._get_clients = fn
+        self._param_panel._param_form._get_clients = fn
+
+    def set_zone_getter(self, fn: Callable[[], list[str]]) -> None:
+        """Pass a callable that returns zone suggestions (current player zones + history)."""
+        self._param_panel._param_form._get_zone_suggestions = fn
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -1058,9 +1094,20 @@ class BotCanvas(QWidget):
         self.mode_changed.emit(BotMode.RUN)
         self.save_done.emit()
 
+    def _canvas_origin(self):
+        """Return cursor scene position if the cursor is over the canvas, else viewport center.
+
+        Used as the search origin for _find_empty_grid_cell so all add-node paths share the
+        same placement logic.  When the user clicks a toolbar button the cursor is outside the
+        canvas, so this degrades gracefully to viewport center.
+        """
+        cursor_local = self._view.viewport().mapFromGlobal(QCursor.pos())
+        if self._view.viewport().rect().contains(cursor_local):
+            return self._view.mapToScene(self._view.mapFromGlobal(QCursor.pos()))
+        return self._view.mapToScene(self._view.viewport().rect().center())
+
     def _on_add_state(self) -> None:
-        center = self._view.mapToScene(self._view.viewport().rect().center())
-        self._scene.add_state(QPointF(center.x() - NODE_W / 2, center.y() - NODE_H / 2))
+        self._scene.add_state(self._scene._find_empty_grid_cell(self._canvas_origin()))
 
     def _on_node_type_chosen(self, node_type: str, pos: object) -> None:
         """Slot for EditScene.node_type_chosen — creates the state after dialog confirmation."""
@@ -1068,6 +1115,28 @@ class BotCanvas(QWidget):
 
         if isinstance(pos, _QPointF):
             self._scene._create_state_at(node_type, pos)
+
+    def _on_hotkey_slot(self, slot: int) -> None:
+        """Handle a bare number-key press for the given favorites slot."""
+        focused = QApplication.focusWidget()
+        if isinstance(focused, (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox)):
+            return
+        if self._mode != BotMode.EDIT or self._scene._config is None:
+            return
+        node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
+        if not node_type:
+            return
+        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
+        self._scene._create_state_at(node_type, pos)
+        SettingsManager.instance().add_recently_used_node(node_type)
+
+    def _add_node_at_viewport_center(self, node_type: str) -> None:
+        """Add a node of the given type near the canvas origin, avoiding occupied grid cells."""
+        if self._mode != BotMode.EDIT or self._scene._config is None:
+            return
+        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
+        self._scene._create_state_at(node_type, pos)
+        SettingsManager.instance().add_recently_used_node(node_type)
 
     def _on_layout_clicked(self) -> None:
         if self._config is None or self._focus_region_id is not None:
@@ -1078,7 +1147,9 @@ class BotCanvas(QWidget):
         self._undo_mgr.push(self._config, "Auto Layout")
         auto_layout(self._config)
         self._scene.setup(self._config)
-        self._scene.set_snap_enabled(SettingsManager.instance().get("canvas", "snap_to_grid", default=False))
+        _sm = SettingsManager.instance()
+        self._scene.set_snap_enabled(_sm.get("canvas", "snap_to_grid", default=False))
+        self._scene.set_grid_style(_sm.get("canvas", "grid_style", default="dots"))
         self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
@@ -1233,6 +1304,7 @@ class BotCanvas(QWidget):
         if mode == BotMode.RUN:
             self._center_stack.setCurrentIndex(_TB_RUN)
             self._right_stack.setCurrentIndex(_TB_RUN)
+            self._favorites_bar.setVisible(False)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
             self._undo_mgr.set_enabled(False)
@@ -1241,6 +1313,7 @@ class BotCanvas(QWidget):
         else:
             self._center_stack.setCurrentIndex(_TB_EDIT)
             self._right_stack.setCurrentIndex(_TB_EDIT)
+            self._favorites_bar.setVisible(True)
             self._scene.set_interactive(True)
             self._undo_mgr.set_enabled(True)
             self._emit_bot_status()
@@ -1278,6 +1351,27 @@ class BotCanvas(QWidget):
             desc = "Edit transition" if self._param_panel._transition is not None else "Edit params"
             self._undo_mgr.begin_debounce(self._config, desc)
         self._on_scene_changed()
+        # Refresh the dotted-pen flag indicator on the selected edge when flags change.
+        if self._param_panel._transition is not None:
+            self._scene.refresh_edge_flags(self._param_panel._transition)
+            self._config.sort_transitions()
+
+    def _on_select_edge_requested(self, transition) -> None:
+        """Select the edge on the canvas that corresponds to *transition* and centre it."""
+        self._scene.clearSelection()
+        for s, w, d, edge in self._scene._edge_items:
+            if s == transition.source and d == transition.dest and w == transition.when:
+                edge.setSelected(True)
+                self._view.centerOn(edge)
+                break
+
+    def _on_select_state_requested(self, state_id: str) -> None:
+        """Select the node on the canvas that corresponds to *state_id* and centre it."""
+        self._scene.clearSelection()
+        node = self._scene._node_items.get(state_id)
+        if node is not None:
+            node.setSelected(True)
+            self._view.centerOn(node)
 
     def _on_undo(self) -> None:
         if self._config is None or self._mode != BotMode.EDIT:
@@ -1427,7 +1521,11 @@ class BotCanvas(QWidget):
         if isinstance(item, NodeItem) and self._scene._config:
             state = next((s for s in self._scene._config.states if s.id == item.state_id), None)
             if state:
-                self._param_panel.show_state(state)
+                self._param_panel.show_state(
+                    state,
+                    all_states=list(self._scene._config.states),
+                    all_transitions=self._scene._config.transitions,
+                )
                 self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:
             for s, w, d, ei in self._scene._edge_items:
@@ -1443,7 +1541,7 @@ class BotCanvas(QWidget):
                             spec = NODE_SPECS.get(src_state.node_type)
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
-                        option_names = [opt.name for opt in self._scene._config.options]
+                        option_names = [opt.name for opt in self._scene._config.options if opt.type == "bool"]
                         self._param_panel.show_transition(
                             trans,
                             src_returns,

@@ -11,7 +11,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="from_zone",
         type="str",
         label="From Zone",
-        help="Zone name the clients must currently be in when this node executes.",
+        help="Zone name players must currently be in when this node executes.",
         default="",
         required=True,
     ),
@@ -19,7 +19,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="str",
         label="To Zone",
-        help="Zone name clients must be in after this node completes.",
+        help="Zone name players must be in after this node completes.",
         default="",
         required=True,
     ),
@@ -29,7 +29,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Transition XYZ",
         help=(
             "A point inside the destination zone's transition bounding box. "
-            "Teleporting clients here triggers the automatic zone change."
+            "Teleporting players here triggers the automatic zone change."
         ),
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,

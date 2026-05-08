@@ -13,7 +13,7 @@ PARAM_SCHEMA: list[ParamField] = [
         key="threshold",
         type="float",
         label="Health Threshold",
-        help="Wait until all clients' health ratio is at or above this value (0.0–1.0).",
+        help="Wait until all players' health ratio is at or above this value (0.0–1.0).",
         default=0.8,
         required=True,
     ),
@@ -34,8 +34,8 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients met the health threshold before the timeout."),
-        ReturnSpec("FAILURE", "The timeout expired before all clients met the health threshold."),
+        ReturnSpec("SUCCESS", "All players met the health threshold before the timeout."),
+        ReturnSpec("FAILURE", "The timeout expired before all players met the health threshold."),
     ],
     max_consecutive_retries=None,
 )

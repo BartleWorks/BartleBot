@@ -9,21 +9,21 @@ PARAM_SCHEMA: list[ParamField] = [
         key="threshold",
         type="float",
         label="Health Threshold",
-        help="Health ratio (0.0–1.0). Returns TRUE if every client's health is at or above this value.",
+        help="Health ratio (0.0–1.0). Returns TRUE if every player's health is at or above this value.",
         default=1.0,
-        default_hint="TRUE only if all clients are at full health",
+        default_hint="TRUE only if all players are at full health",
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Returns TRUE if all clients are at or above a health ratio threshold, FALSE otherwise. "
-        "Useful for routing to a recovery node (potions, wisps) when any client is low on health."
+        "Returns TRUE if all players are at or above a health ratio threshold, FALSE otherwise. "
+        "Useful for routing to a recovery node (potions, wisps) when any player is low on health."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("TRUE", "All clients have a health ratio at or above the threshold."),
-        ReturnSpec("FALSE", "At least one client has a health ratio below the threshold."),
+        ReturnSpec("TRUE", "All players have a health ratio at or above the threshold."),
+        ReturnSpec("FALSE", "At least one player has a health ratio below the threshold."),
     ],
 )
 
