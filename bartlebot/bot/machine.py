@@ -170,7 +170,10 @@ class BotMachine:
             item, quantity = m.group(2), quantity * int(m.group(1))
         self.drops.append((item, quantity, client_index))
         if self._on_drop:
-            self._on_drop(item, quantity, client_index)
+            try:
+                self._on_drop(item, quantity, client_index)
+            except Exception:
+                logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
 
     # --- Public API ---
 

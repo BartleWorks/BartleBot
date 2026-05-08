@@ -130,7 +130,7 @@ All three critical bugs from the original review are confirmed fixed:
 
 #### 1. Reliable Execution — GOOD, ONE UNGUARDED CALLBACK
 
-**`on_drop` callback not wrapped (machine.py:172-173):** The `on_state_change` and `on_transition` callbacks are correctly guarded. `on_drop` is not. If `AppController._on_machine_drop()` raises (e.g., a PyQt6 signal error while updating the drops widget), the exception propagates into `run()`, which has no handler at that point — the bot crashes. This is the same class of bug that was fixed for the other callbacks and was simply missed.
+**`on_drop` callback not wrapped (machine.py:172-173):** ~~The `on_state_change` and `on_transition` callbacks are correctly guarded. `on_drop` is not.~~ **Fixed** — `on_drop` invocation is now wrapped in try/except matching the pattern used for the other callbacks. Exceptions are logged at ERROR level via `logger.exception()` and do not propagate into `run()`.
 
 **Loading screen watcher false-positive risk:** The watcher flags a client dead after `is_loading()` returns `True` for 60 continuous seconds (threshold from `timing.LOADING_SCREEN_TIMEOUT`). Legitimate Wizard101 loads on slow PCs or large areas can reach 45–50 seconds. A 60-second threshold is conservative but not bulletproof. A false-positive triggers full reconnect: force-close game → wait for WizSprinter to detect removal → relaunch → spam Enter → wait up to 120s for hook.
 
@@ -144,9 +144,9 @@ State transitions are logged with labels. The `label` field from `TransitionMode
 
 **Minor:** Watcher errors are logged at DEBUG level, which makes them easy to miss in production logs filtered to INFO+.
 
-#### 3. Safety Controls — GOOD, ONE GAP
+#### 3. Safety Controls — GOOD
 
-`on_drop` callback unguarded (HIGH — see above). All other safety controls are sound: pause/resume via `_resume_event`, grace period stop (1.0s default), idempotent pause calls.
+~~`on_drop` callback unguarded (HIGH — see above).~~ **Fixed.** All safety controls are now sound: pause/resume via `_resume_event`, grace period stop (1.0s default), idempotent pause calls.
 
 The `_loading_screen_watcher` intentionally continues during FSM pause — correct, since loading hangs should be detected even when the FSM is waiting. The `_ambient_dialog_watcher` and `_ambient_combat_watcher` correctly pause when the FSM is paused.
 
@@ -180,7 +180,7 @@ No `print()` calls. All exception handling uses `logger.exception()`. Callback w
 
 | # | Issue | File | Severity |
 |---|-------|------|----------|
-| 1 | `on_drop` callback not wrapped in try/except | `machine.py:172` | High |
+| 1 | ~~`on_drop` callback not wrapped in try/except~~ | `machine.py` | High — **DONE** |
 | 2 | Ambient combat watcher race window (check at 467, lock at 492) | `machine.py:467-492` | Medium |
 | 3 | Loading screen watcher false-positive on 45–50s legitimate loads | `machine.py:405` | Medium |
 | 4 | `self.drops` list unbounded | `machine.py:60,171` | Low |
@@ -483,18 +483,9 @@ Removed the `new_item.update_star(True)` call. `_NodeListItem` has no such metho
 ---
 
 ### 2. Guard the `on_drop` callback in `machine.py`
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** The same class of bug (unguarded callback) was fixed for `on_state_change` and `on_transition` in the original review. `on_drop` was simply missed. If AppController's drop handler raises (PyQt6 signal error, widget update failure), the FSM crashes.
-
-**What to do:** Wrap lines 172–173 in try/except:
-```python
-if self._on_drop:
-    try:
-        self._on_drop(item, quantity, client_index)
-    except Exception:
-        logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
-```
+Wrapped the `_on_drop` invocation in try/except. Exceptions are logged at ERROR level via `logger.exception()` and do not propagate into `run()`, matching the guard pattern already in place for `on_state_change` and `on_transition`.
 
 ---
 
