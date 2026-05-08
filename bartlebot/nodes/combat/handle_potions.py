@@ -40,6 +40,8 @@ from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, MAX_RETRIES, POLL_I
 
 _HOME_LOADING_TIMEOUT = 15.0  # max seconds to wait for a loading screen after HOME.
 _SHOP_OPEN_TIMEOUT = 5.0  # max seconds to wait for the potion shop window.
+_SHOP_CLICK_DELAY = 0.25  # seconds to wait after clicking Fill All / Buy to let the UI settle.
+_EXIT_CLICK_INTERVAL = 0.125  # seconds between repeated Exit clicks while the shop window is still open.
 
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -460,13 +462,13 @@ async def _buy_potions_for_client(machine, client) -> None:
             )
 
         await node_helpers.click_by_path(client, POTION_FILL_ALL_PATH)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(_SHOP_CLICK_DELAY)
         await node_helpers.click_by_path(client, POTION_BUY_PATH)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(_SHOP_CLICK_DELAY)
 
         while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
             await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-            await asyncio.sleep(0.125)
+            await asyncio.sleep(_EXIT_CLICK_INTERVAL)
 
         charge_after = await client.stats.potion_charge()
         machine.log(f"Charge after buy: {charge_after}/{max_potions}", logging.DEBUG)

@@ -64,6 +64,10 @@ REALM_HOP_TIMEOUT = 65.0
 # Seconds to wait for the realm-hop cooldown to expire.
 # Wizard101 imposes a ~60-second timer between realm changes; this adds a 5-second margin.
 
+DIALOG_TIMEOUT = 60.0
+# Seconds to wait for an NPC dialog prompt to appear after triggering interaction.
+# Dialog appearance can be slow when the game is under load or zone assets are streaming.
+
 
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.

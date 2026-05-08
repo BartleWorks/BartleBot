@@ -76,9 +76,7 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=10,
 )
 
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
-
-DIALOG_TIMEOUT = 60.0
+from bartlebot.nodes.timing import DIALOG_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
 
 
 async def run(machine, clients: list, params: dict) -> str:
