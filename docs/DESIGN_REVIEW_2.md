@@ -57,11 +57,11 @@ Two nodes have grown well beyond single-responsibility:
 
 #### 2. Reliable Execution — MOSTLY GOOD, TWO ISSUES
 
-**Timing constants:** All nodes except `interact.py` correctly import from `timing.py`. No node defines its own `POLL_INTERVAL`. `timing.py` is well-structured with 13 constants and a `jitter()` function.
+**Timing constants:** All nodes correctly import from `timing.py`. No node defines its own `POLL_INTERVAL`. `timing.py` is well-structured with 14 constants and a `jitter()` function.
 
-**Exception:** `interact.py:81` defines `DIALOG_TIMEOUT = 60.0` locally instead of importing from `timing.py`. This is the only timing constant outside `timing.py`.
+**`interact.py` DIALOG_TIMEOUT:** Moved to `timing.py` (was the only timing constant defined outside the shared module). `interact.py` now imports it alongside `MAX_RETRIES` and `POLL_INTERVAL`.
 
-**`handle_potions.py` hardcoded sleeps:** Lines 463, 465, and 469 use raw `asyncio.sleep(0.25)` and `asyncio.sleep(0.125)` with no explanation. These should use `POLL_INTERVAL` or a named timing constant.
+**`handle_potions.py` hardcoded sleeps:** Replaced. `_SHOP_CLICK_DELAY = 0.25` and `_EXIT_CLICK_INTERVAL = 0.125` are now defined as named module-level constants at the top of `handle_potions.py` (prefixed `_` since they are too shop-specific to belong in `timing.py`). The three raw `asyncio.sleep()` literals reference these constants.
 
 **`handle_potions.py` unsafe position snapshot:** Line 256–257 snapshots position from the first client only and applies it to all. This assumes clients start synchronized. If they don't, the recall target will be wrong for non-primary clients.
 
@@ -89,9 +89,9 @@ New nodes (14 total) follow conventions well. Minor issues:
 
 | # | Issue | File | Severity |
 |---|-------|------|----------|
-| 1 | `DIALOG_TIMEOUT = 60.0` defined locally | `interact.py:81` | High |
+| 1 | ~~`DIALOG_TIMEOUT = 60.0` defined locally~~ | `interact.py` | High — **DONE** |
 | 2 | God-node: 12+ responsibilities, 508 lines | `handle_potions.py` | High |
-| 3 | Hardcoded `asyncio.sleep(0.25/0.125)` | `handle_potions.py:463,465,469` | Medium |
+| 3 | ~~Hardcoded `asyncio.sleep(0.25/0.125)`~~ | `handle_potions.py` | Medium — **DONE** |
 | 4 | Position snapshot from first client only | `handle_potions.py:256` | Medium |
 | 5 | Logging level passed as string `"WARNING"` | `wait_for_health.py:83`, `click_path.py:90,106,111,126` | Low |
 
@@ -214,7 +214,7 @@ Snapshot-based with a 50-state deque and 500ms debounce for param edits. Each sn
 
 Two-mode dialog (add-node + read-only reference). Driven entirely by `NODE_SPECS` and `NODE_CATEGORIES`. Dual-mode UI, category tabs, search, detail panel, geometry persistence, favorites toggling. 797 lines is justified by this breadth.
 
-**Critical bug — line 740:** `new_item.update_star(True)` is called on a `_NodeListItem` instance, which has no `update_star()` method. Only `_DetailPanel` has star-toggling logic. This raises `AttributeError` when the user adds a node to favorites while the Favorites tab is active.
+**Critical bug — line 740:** ~~`new_item.update_star(True)` was called on a `_NodeListItem` instance, which has no `update_star()` method.~~ **Fixed** — the spurious call is removed. The Favorites tab list is rebuilt from `SettingsManager` state on each toggle, so no additional update call on the new item is needed.
 
 **Documentation error:** Docstring mentions "drag-to-canvas" but no drag/drop is implemented. Nodes are added by double-click or dialog acceptance only.
 
@@ -258,7 +258,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 
 | File | Line | Issue | Severity |
 |------|------|-------|----------|
-| `node_browser_dialog.py` | 740 | `AttributeError`: `_NodeListItem.update_star()` does not exist | Critical |
+| `node_browser_dialog.py` | 740 | ~~`AttributeError`: `_NodeListItem.update_star()` does not exist~~ | Critical — **DONE** |
 | `undo_manager.py` | — | No tests; silent regressions possible | High |
 | `safety_warning_dialog.py` | 37–100 | Warning coverage limited to 3 hard-coded node types | High |
 | `ui_tree_browser.py` | 320–323 | Overlay not cleaned up if exception occurs before closeEvent | Medium |
@@ -272,7 +272,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 
 | # | Issue | File | Severity |
 |---|-------|------|----------|
-| 1 | `AttributeError` on favorite toggle in node browser | `node_browser_dialog.py:740` | Critical |
+| 1 | ~~`AttributeError` on favorite toggle in node browser~~ | `node_browser_dialog.py` | Critical — **DONE** |
 | 2 | Undo/redo system completely untested | `undo_manager.py` | High |
 | 3 | Safety warning coverage: only 3 of many risky nodes | `safety_warning_dialog.py` | High |
 | 4 | UI tree overlay not cleaned up on exception | `ui_tree_browser.py:320-323` | Medium |
@@ -376,7 +376,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 
 ### Node Coverage
 
-27 of 29 nodes have test files. Three nodes are completely untested:
+26 of 29 nodes have test files. Three nodes are completely untested:
 
 | Node | Category | Missing Tests |
 |------|----------|--------------|
@@ -476,11 +476,9 @@ Prioritized by bang-for-buck — fixes that address the highest-severity issues 
 ---
 
 ### 1. Fix the `node_browser_dialog.py` AttributeError (line 740)
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why first:** This is a crash in a commonly-used workflow (adding a node to favorites while the Favorites tab is active). Critical, 5-minute fix.
-
-**What to do:** Remove the `new_item.update_star(True)` call on line 740. Favorites tab refresh already handles visual state; no update needed on the list item.
+Removed the `new_item.update_star(True)` call. `_NodeListItem` has no such method — only `_DetailPanel` does. The Favorites tab reconstructs the list from settings state on each toggle, so no post-add update is needed.
 
 ---
 
@@ -501,20 +499,16 @@ if self._on_drop:
 ---
 
 ### 3. Move `DIALOG_TIMEOUT` to `timing.py`
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** `interact.py:81` is the only node that defines a timing constant locally. It breaks the centralization established by the original review fix #5.
-
-**What to do:** Add `DIALOG_TIMEOUT = 60.0` to `bartlebot/nodes/timing.py` with a comment explaining it represents the maximum time to wait for an NPC dialog prompt to appear. Update `interact.py` to import it.
+`DIALOG_TIMEOUT = 60.0` added to `timing.py` with a comment. Local definition removed from `interact.py`; the constant is now imported alongside `MAX_RETRIES` and `POLL_INTERVAL`.
 
 ---
 
 ### 4. Fix `handle_potions.py` timing issues
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** Three raw `asyncio.sleep()` calls (lines 463, 465, 469) with hardcoded values. The standard is to use named constants from `timing.py` for all delays.
-
-**What to do:** Add `_SHOP_CLICK_DELAY = 0.25` and `_EXIT_CLICK_INTERVAL = 0.125` to `timing.py` (or as module-level constants in `handle_potions.py` if too specific to be shared). Replace the three raw sleep calls.
+`_SHOP_CLICK_DELAY = 0.25` and `_EXIT_CLICK_INTERVAL = 0.125` added as named module-level constants in `handle_potions.py` (too shop-specific for `timing.py`). The three raw `asyncio.sleep()` literals are replaced with these constants.
 
 ---
 

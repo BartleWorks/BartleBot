@@ -737,7 +737,6 @@ class NodeBrowserDialog(QDialog):
             else:
                 # Add the newly-favorited item
                 new_item = _NodeListItem(node_type)
-                new_item.update_star(True)
                 self._list.addItem(new_item)
                 self._list_stack.setCurrentIndex(0)
 
