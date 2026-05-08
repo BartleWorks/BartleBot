@@ -1107,7 +1107,7 @@
       "label": "Defeat Old Smokey",
       "position": {
         "x": 2200.0,
-        "y": -180.0
+        "y": 0.0
       },
       "params": {
         "enemy": "Golem-Steel-MBBoss-L43",
@@ -1123,7 +1123,7 @@
       "label": "Go to Old Smokey",
       "position": {
         "x": 1760.0,
-        "y": -180.0
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/MB_Station/MB_Ironworks",
@@ -1638,23 +1638,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_33",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Defeat Old Smokey",
-          "negate": true
-        },
-        {
-          "option": "Defeat Nails O'Leary",
-          "negate": false
-        }
-      ],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
       "source": "state_14",
       "dest": "state_34",
       "when": "SUCCESS",
@@ -1952,6 +1935,23 @@
         {
           "option": "Defeat Pops O'Leary",
           "negate": true
+        }
+      ],
+      "flag_op": "AND"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [
+        {
+          "option": "Defeat Old Smokey",
+          "negate": true
+        },
+        {
+          "option": "Defeat Nails O'Leary",
+          "negate": false
         }
       ],
       "flag_op": "AND"

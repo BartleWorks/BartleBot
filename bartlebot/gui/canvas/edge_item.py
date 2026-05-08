@@ -187,7 +187,7 @@ class EdgeItem(QGraphicsPathItem):
 
     def _build_edge(self, path: QPainterPath) -> None:
         src_pt = self._src.port_out_for(self._when)
-        dst_pt = self._dst.port_in_for(self)
+        dst_pt = self._dst.port_in()
         if math.hypot(dst_pt.x() - src_pt.x(), dst_pt.y() - src_pt.y()) < 1:
             return
         if dst_pt.x() > src_pt.x():
