@@ -1541,7 +1541,7 @@ class BotCanvas(QWidget):
                             spec = NODE_SPECS.get(src_state.node_type)
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
-                        option_names = [opt.name for opt in self._scene._config.options]
+                        option_names = [opt.name for opt in self._scene._config.options if opt.type == "bool"]
                         self._param_panel.show_transition(
                             trans,
                             src_returns,

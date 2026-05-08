@@ -850,9 +850,6 @@ class _FlagConditionsWidget(QWidget):
         # Add initial condition rows
         for fc in flags or []:
             self._add_condition_row(group_entry, fc.option, fc.negate)
-        if not flags:
-            default = self._option_names[0] if self._option_names else ""
-            self._add_condition_row(group_entry, default, False)
 
         # Wire signals
         inner_op.currentTextChanged.connect(self._on_any_changed)
