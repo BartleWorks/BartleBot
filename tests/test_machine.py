@@ -14,7 +14,8 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import bartlebot.bot.machine as machine_module
+import bartlebot.bot.client_health_monitor as health_module
+from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.machine import BotMachine
 
 # ---------------------------------------------------------------------------
@@ -436,27 +437,29 @@ async def test_node_exception_results_in_failure():
 
 
 async def test_loading_screen_watcher_fires_on_timeout():
-    """_loading_screen_watcher calls on_client_disconnected and pauses the machine
-    when a client reports is_loading() for longer than LOADING_SCREEN_TIMEOUT."""
+    """_loading_screen_watcher calls on_client_disconnected and on_pause when a
+    client is stuck loading past LOADING_SCREEN_TIMEOUT."""
     fake_hwnd = 12345
     fake_client = AsyncMock()
     fake_client.window_handle = fake_hwnd
     fake_client.is_loading.return_value = True
 
+    paused: list[bool] = []
     disconnected: list[int] = []
 
-    m = BotMachine(
-        clients=[fake_client],
-        config=TWO_STATE_CONFIG,
-        node_registry={"mock": AsyncMock(return_value="SUCCESS")},
+    stop = asyncio.Event()
+    monitor = ClientHealthMonitor(
+        clients_ref=lambda: [fake_client],
+        stop_flag=stop,
+        on_pause=lambda: paused.append(True),
         on_client_disconnected=lambda hwnd: disconnected.append(hwnd),
     )
 
     with (
-        patch.object(machine_module, "LOADING_SCREEN_TIMEOUT", 0.0),
-        patch.object(machine_module, "POLL_INTERVAL", 0.0),
+        patch.object(health_module, "LOADING_SCREEN_TIMEOUT", 0.0),
+        patch.object(health_module, "POLL_INTERVAL", 0.0),
     ):
-        task = asyncio.create_task(m._loading_screen_watcher())
+        task = asyncio.create_task(monitor._loading_screen_watcher())
         await asyncio.sleep(0.05)  # let the watcher fire at least once
         task.cancel()
         try:
@@ -465,8 +468,8 @@ async def test_loading_screen_watcher_fires_on_timeout():
             pass
 
     assert disconnected == [fake_hwnd], "on_client_disconnected should be called with the stuck client's hwnd"
-    assert not m._resume_event.is_set(), "machine should be paused after loading screen timeout"
-    assert fake_hwnd in m._status_check_flagged, "hwnd should be flagged to prevent duplicate callbacks"
+    assert paused, "on_pause should be called after loading screen timeout"
+    assert fake_hwnd in monitor._flagged, "hwnd should be flagged to prevent duplicate callbacks"
 
 
 async def test_loading_screen_watcher_resets_when_loading_clears():
@@ -479,19 +482,20 @@ async def test_loading_screen_watcher_resets_when_loading_clears():
 
     disconnected: list[int] = []
 
-    m = BotMachine(
-        clients=[fake_client],
-        config=TWO_STATE_CONFIG,
-        node_registry={"mock": AsyncMock(return_value="SUCCESS")},
+    stop = asyncio.Event()
+    monitor = ClientHealthMonitor(
+        clients_ref=lambda: [fake_client],
+        stop_flag=stop,
+        on_pause=lambda: None,
         on_client_disconnected=lambda hwnd: disconnected.append(hwnd),
     )
 
     # Timeout is generous; loading clears after one tick, watcher should not fire.
     with (
-        patch.object(machine_module, "LOADING_SCREEN_TIMEOUT", 999.0),
-        patch.object(machine_module, "POLL_INTERVAL", 0.0),
+        patch.object(health_module, "LOADING_SCREEN_TIMEOUT", 999.0),
+        patch.object(health_module, "POLL_INTERVAL", 0.0),
     ):
-        task = asyncio.create_task(m._loading_screen_watcher())
+        task = asyncio.create_task(monitor._loading_screen_watcher())
         await asyncio.sleep(0.05)
         task.cancel()
         try:

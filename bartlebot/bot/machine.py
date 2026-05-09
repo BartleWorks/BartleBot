@@ -9,19 +9,14 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, MemoryReadError
 
-from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
+from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
-_CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
-# Seconds between client responsiveness polls in _client_status_watcher.
-
-_CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
-# Consecutive failed zone_name() calls before a client is treated as unresponsive.
 
 
 class BotMachine:
@@ -68,7 +63,7 @@ class BotMachine:
         self._no_match_count: int = 0
         self._max_consecutive_same_state = max_consecutive_same_state
         self._consecutive_same_state_count: int = 0
-        self._status_check_flagged: set[int] = set()  # HWNDs already flagged as unresponsive
+        self._health_monitor: ClientHealthMonitor | None = None
 
         self._state_map = {s["id"]: s for s in config["states"]}
         # Compiled compound flag expressions from to_machine_config().
@@ -217,10 +212,15 @@ class BotMachine:
 
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
+        self._health_monitor = ClientHealthMonitor(
+            clients_ref=lambda: self.clients,
+            stop_flag=self._stop_flag,
+            on_pause=self.pause,
+            on_client_disconnected=self._on_client_disconnected,
+        )
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
-        status_watcher = asyncio.create_task(self._client_status_watcher())
-        loading_watcher = asyncio.create_task(self._loading_screen_watcher())
+        health_task = asyncio.create_task(self._health_monitor.run())
         try:
             while not self._stop_flag.is_set():
                 await self._resume_event.wait()  # block here while paused
@@ -338,108 +338,12 @@ class BotMachine:
         finally:
             watcher.cancel()
             combat_watcher.cancel()
-            status_watcher.cancel()
-            loading_watcher.cancel()
-            for t in (watcher, combat_watcher, status_watcher, loading_watcher):
+            health_task.cancel()
+            for t in (watcher, combat_watcher, health_task):
                 try:
                     await t
                 except asyncio.CancelledError:
                     pass
-
-    async def _client_status_watcher(self) -> None:
-        """Background task: detect unresponsive clients via zone_name() polling.
-
-        Checks every _CLIENT_STATUS_CHECK_INTERVAL seconds. If a client fails
-        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD consecutive checks, it is considered dead
-        (crashed or stuck on a disconnect dialog). The machine is paused and
-        on_client_disconnected is fired with the client's HWND so AppController can
-        force-close the game window. The resulting process exit is detected by
-        _client_loop / remove_dead_clients(), which triggers the reconnect procedure.
-
-        This approach avoids trying to match a specific disconnect dialog UI path, which
-        shares the same generic MessageBoxModalWindow structure as many other dialogs.
-        """
-        fail_counts: dict[int, int] = {}  # hwnd -> consecutive failure count
-
-        while not self._stop_flag.is_set():
-            await asyncio.sleep(_CLIENT_STATUS_CHECK_INTERVAL)
-            for client in list(self.clients):
-                hwnd = client.window_handle
-                if hwnd in self._status_check_flagged:
-                    continue
-                try:
-                    await client.zone_name()
-                    fail_counts[hwnd] = 0
-                except Exception:
-                    fail_counts[hwnd] = fail_counts.get(hwnd, 0) + 1
-                    logger.debug(
-                        "Client status check failed for hwnd=%d (%d/%d)",
-                        hwnd,
-                        fail_counts[hwnd],
-                        _CLIENT_STATUS_CHECK_FAIL_THRESHOLD,
-                    )
-                    if fail_counts[hwnd] >= _CLIENT_STATUS_CHECK_FAIL_THRESHOLD:
-                        logger.warning(
-                            "Client hwnd=%d unresponsive after %d checks — pausing and notifying",
-                            hwnd,
-                            fail_counts[hwnd],
-                        )
-                        self._status_check_flagged.add(hwnd)
-                        self.pause()
-                        if self._on_client_disconnected:
-                            try:
-                                self._on_client_disconnected(hwnd)
-                            except Exception:
-                                logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
-
-    async def _loading_screen_watcher(self) -> None:
-        """Background task: detect clients stuck in an infinite loading screen.
-
-        Tracks when each client first enters a loading state. If any client remains
-        loading for longer than LOADING_SCREEN_TIMEOUT seconds, it is treated as a
-        crash: the machine is paused and on_client_disconnected is called so
-        AppController can force-close and relaunch the game via the standard
-        crash-recovery path.
-        """
-        loading_since: dict[int, float] = {}  # hwnd -> monotonic time loading started
-
-        while not self._stop_flag.is_set():
-            await asyncio.sleep(POLL_INTERVAL)
-            for client in list(self.clients):
-                hwnd = client.window_handle
-                if hwnd in self._status_check_flagged:
-                    loading_since.pop(hwnd, None)
-                    continue
-                try:
-                    is_loading = await client.is_loading()
-                except Exception:
-                    loading_since.pop(hwnd, None)
-                    continue  # let _client_status_watcher handle dead clients
-
-                if is_loading:
-                    now = time.monotonic()
-                    start = loading_since.setdefault(hwnd, now)
-                    elapsed = now - start
-                    if elapsed >= LOADING_SCREEN_TIMEOUT:
-                        logger.warning(
-                            "Client hwnd=%d stuck in loading screen for %.0fs — "
-                            "treating as crash and triggering recovery",
-                            hwnd,
-                            elapsed,
-                        )
-                        loading_since.pop(hwnd)
-                        self._status_check_flagged.add(hwnd)
-                        self.pause()
-                        if self._on_client_disconnected:
-                            try:
-                                self._on_client_disconnected(hwnd)
-                            except Exception:
-                                logger.exception(
-                                    "on_client_disconnected callback raised for hwnd=%d (loading timeout)",
-                                    hwnd,
-                                )
-                else:
-                    loading_since.pop(hwnd, None)
 
     async def _ambient_dialog_watcher(self) -> None:
         """Background task: dismiss any open dialog on all clients via SPACEBAR."""
@@ -602,7 +506,8 @@ class BotMachine:
 
     def resume(self) -> None:
         """Resume a paused FSM."""
-        self._status_check_flagged.clear()  # allow re-detection after client recovery
+        if self._health_monitor is not None:
+            self._health_monitor.clear_flagged()  # allow re-detection after client recovery
         self._resume_event.set()
 
     def force_state(self, state_id: str) -> None:

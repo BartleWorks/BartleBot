@@ -69,6 +69,21 @@ DIALOG_TIMEOUT = 60.0
 # Dialog appearance can be slow when the game is under load or zone assets are streaming.
 
 
+CLIENT_REFRESH_INTERVAL_IDLE = 0.1
+# Seconds between client sidebar refreshes when no bot is running.
+
+CLIENT_REFRESH_INTERVAL_RUN = 0.5
+# Seconds between client sidebar refreshes during an active bot run.
+# Reduced from idle rate to lower contention on the asyncio event loop —
+# WizWalker memory reads are synchronous (blocking) calls, so fewer GUI
+# reads per second means less interference with the running bot's reads.
+
+CLIENT_REFRESH_TIMEOUT = 1.0
+# Per-widget timeout for a single refresh cycle. If any one client's
+# zone/xyz reads take longer than this (e.g. during a zone transition),
+# that widget's refresh is cancelled rather than blocking all others.
+
+
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.
 

@@ -184,7 +184,7 @@ No `print()` calls. All exception handling uses `logger.exception()`. Callback w
 | 2 | ~~Ambient combat watcher race window (check at 467, lock at 492)~~ | `machine.py:467-492` | Medium — **DONE** |
 | 3 | ~~Loading screen watcher false-positive on 45–50s legitimate loads~~ | `machine.py:405` | Medium — **INVALID** (observed ceiling is ~30s; 60s threshold is adequate) |
 | 4 | ~~`self.drops` list unbounded~~ | `machine.py:60,171` | Low — **DONE** |
-| 5 | BotMachine responsibility growth (5+ concerns, 593 lines) | `machine.py` | Code smell |
+| 5 | ~~BotMachine responsibility growth (5+ concerns, 593 lines)~~ | `machine.py` | Code smell — **DONE** |
 
 ---
 

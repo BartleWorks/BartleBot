@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QVBoxLayout
 
 from bartlebot.gui.sidebar.client_widget import ClientWidget
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
+from bartlebot.nodes.timing import CLIENT_REFRESH_INTERVAL_IDLE, CLIENT_REFRESH_INTERVAL_RUN, CLIENT_REFRESH_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class ClientSection(SidebarSection):
         super().__init__("Players", parent)
         self._widgets: list[ClientWidget] = []
         self._refresh_task: asyncio.Task | None = None
+        self._refresh_interval: float = CLIENT_REFRESH_INTERVAL_IDLE
 
         self._clients_layout = QVBoxLayout()
         self._clients_layout.setSpacing(0)
@@ -53,6 +55,10 @@ class ClientSection(SidebarSection):
 
         self._start_refresh_loop()
 
+    def set_bot_running(self, running: bool) -> None:
+        """Switch refresh rate between idle and active-bot modes."""
+        self._refresh_interval = CLIENT_REFRESH_INTERVAL_RUN if running else CLIENT_REFRESH_INTERVAL_IDLE
+
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
@@ -68,12 +74,12 @@ class ClientSection(SidebarSection):
             while True:
                 if self._widgets:
                     results = await asyncio.gather(
-                        *[w.refresh() for w in self._widgets],
+                        *[asyncio.wait_for(w.refresh(), timeout=CLIENT_REFRESH_TIMEOUT) for w in self._widgets],
                         return_exceptions=True,
                     )
                     for r in results:
                         if isinstance(r, Exception) and not isinstance(r, asyncio.CancelledError):
                             logger.debug("ClientWidget refresh error: %s", r)
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(self._refresh_interval)
         except asyncio.CancelledError:
             pass

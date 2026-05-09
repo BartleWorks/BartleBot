@@ -275,9 +275,6 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _on_run_requested(self) -> None:
-        self._bot_task = asyncio.create_task(self._start_bot())
-
-    async def _start_bot(self) -> None:
         if not self._clients or self._loaded_config is None:
             return
         from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
@@ -287,6 +284,11 @@ class AppController(QObject):
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
             if not dlg.exec():
                 return
+        self._bot_task = asyncio.create_task(self._start_bot())
+
+    async def _start_bot(self) -> None:
+        if not self._clients or self._loaded_config is None:
+            return
         machine = BotMachine(
             clients=self._clients,
             config=self._loaded_config.to_machine_config(node_specs=NODE_SPECS),
@@ -308,6 +310,7 @@ class AppController(QObject):
         log_cb = self._window.left_sidebar.log_panel.append_log_formatted
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
+        self._window.right_sidebar.clients.set_bot_running(True)
         try:
             try:
                 with keep.running(on_fail="error"):
@@ -319,6 +322,7 @@ class AppController(QObject):
                 await machine.run()
         finally:
             self._window.bot_canvas.set_idle()
+            self._window.right_sidebar.clients.set_bot_running(False)
             remove_gui_callback(log_cb)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
