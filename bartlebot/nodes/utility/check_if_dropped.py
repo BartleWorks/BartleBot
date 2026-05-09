@@ -50,13 +50,12 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: machine.drops (runtime state — no client API calls)
+    APIs: machine.has_drop() (runtime state — no client API calls)
 
     Flow:
       1. Normalize item_names to lowercase; return FALSE immediately if the list is empty.
       2. Resolve which 0-based client indices to check (defaults to all clients).
-      3. Build a set of (client_index, item_name_lower) from machine.drops.
-      4. If require_all: return TRUE only if every item appears for every checked client.
+      3. If require_all: return TRUE only if every item appears for every checked client.
          Otherwise: return TRUE as soon as any item matches any checked client.
 
     FAILURE: never — always returns TRUE or FALSE.
@@ -77,14 +76,11 @@ async def run(machine, clients: list, params: dict) -> str:
     else:
         check_indices = list(range(len(clients)))
 
-    # Build a set of (client_index, item_name_lower) that have been seen.
-    seen: set[tuple[int, str]] = {(client_idx, name.strip().lower()) for name, _qty, client_idx in machine.drops}
-
     if require_all:
         # Every item must be present for every checked client.
         for idx in check_indices:
             for item in items:
-                if (idx, item) not in seen:
+                if not machine.has_drop(item, idx):
                     machine.log(f"check_if_dropped: FALSE — {item!r} not found for client {idx + 1}")
                     return "FALSE"
         machine.log("check_if_dropped: TRUE — all items present for all checked clients")
@@ -93,7 +89,7 @@ async def run(machine, clients: list, params: dict) -> str:
         # Any item present for any checked client is sufficient.
         for idx in check_indices:
             for item in items:
-                if (idx, item) in seen:
+                if machine.has_drop(item, idx):
                     machine.log(f"check_if_dropped: TRUE — {item!r} found for client {idx + 1}")
                     return "TRUE"
         machine.log("check_if_dropped: FALSE — no matching items found")

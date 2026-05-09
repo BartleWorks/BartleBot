@@ -237,6 +237,14 @@ class ClientWidget(QWidget):
             return  # Widget was deleted while awaiting
 
     async def _refresh(self) -> None:
+        # Skip all reads during zone transitions — pointers are stale and reads
+        # are slow or produce garbage, which is what causes the sidebar to freeze.
+        try:
+            if await self._client.is_loading():
+                return
+        except Exception:
+            pass
+
         # Zone
         try:
             zone = await self._client.zone_name() or "—"

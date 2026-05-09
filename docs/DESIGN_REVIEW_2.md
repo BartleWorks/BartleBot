@@ -132,7 +132,7 @@ All three critical bugs from the original review are confirmed fixed:
 
 **`on_drop` callback not wrapped (machine.py:172-173):** ~~The `on_state_change` and `on_transition` callbacks are correctly guarded. `on_drop` is not.~~ **Fixed** — `on_drop` invocation is now wrapped in try/except matching the pattern used for the other callbacks. Exceptions are logged at ERROR level via `logger.exception()` and do not propagate into `run()`.
 
-**Loading screen watcher false-positive risk:** The watcher flags a client dead after `is_loading()` returns `True` for 60 continuous seconds (threshold from `timing.LOADING_SCREEN_TIMEOUT`). Legitimate Wizard101 loads on slow PCs or large areas can reach 45–50 seconds. A 60-second threshold is conservative but not bulletproof. A false-positive triggers full reconnect: force-close game → wait for WizSprinter to detect removal → relaunch → spam Enter → wait up to 120s for hook.
+**Loading screen watcher false-positive risk:** ~~The watcher flags a client dead after `is_loading()` returns `True` for 60 continuous seconds. Legitimate loads on slow PCs or large areas can reach 45–50 seconds, making the threshold too tight.~~ **Invalid** — the observed ceiling for a successful load is ~30s; 60s provides a safe 2× margin. No change needed.
 
 **Ambient combat watcher race window (machine.py:467-492):** The watcher checks `self.state != "handle_combat"` at line 467, then awaits `_ambient_combat_lock` at line 492. Between the check and lock acquisition, the FSM can advance into a `handle_combat` node. The re-check after acquiring the lock (line 492-499) partially mitigates this, but two combat handlers could theoretically start simultaneously. In asyncio (single-threaded), a true parallel execution cannot occur, but logical interleaving across await points is possible.
 
@@ -181,10 +181,10 @@ No `print()` calls. All exception handling uses `logger.exception()`. Callback w
 | # | Issue | File | Severity |
 |---|-------|------|----------|
 | 1 | ~~`on_drop` callback not wrapped in try/except~~ | `machine.py` | High — **DONE** |
-| 2 | Ambient combat watcher race window (check at 467, lock at 492) | `machine.py:467-492` | Medium |
-| 3 | Loading screen watcher false-positive on 45–50s legitimate loads | `machine.py:405` | Medium |
-| 4 | `self.drops` list unbounded | `machine.py:60,171` | Low |
-| 5 | BotMachine responsibility growth (5+ concerns, 593 lines) | `machine.py` | Code smell |
+| 2 | ~~Ambient combat watcher race window (check at 467, lock at 492)~~ | `machine.py:467-492` | Medium — **DONE** |
+| 3 | ~~Loading screen watcher false-positive on 45–50s legitimate loads~~ | `machine.py:405` | Medium — **INVALID** (observed ceiling is ~30s; 60s threshold is adequate) |
+| 4 | ~~`self.drops` list unbounded~~ | `machine.py:60,171` | Low — **DONE** |
+| 5 | ~~BotMachine responsibility growth (5+ concerns, 593 lines)~~ | `machine.py` | Code smell — **DONE** |
 
 ---
 
