@@ -579,8 +579,10 @@ class AppController(QObject):
                     await self._reconnect_client(orig_pos, username)
                 except Exception:
                     logger.exception("Unhandled error in recovery for slot %d — stopping bot", orig_pos)
+                    self._pending_recovery.clear()
                     if self._current_machine:
                         self._current_machine.stop()
+                    return
                 self._pending_recovery.pop(orig_pos, None)
 
             # All pending clients are back in-game — jump to recovery state and resume.
