@@ -261,8 +261,8 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | `safety_warning_dialog.py` | 37–100 | ~~Warning coverage limited to 3 hard-coded node types~~ | High — **DONE** |
 | `ui_tree_browser.py` | 320–323 | ~~Overlay not cleaned up if exception occurs before closeEvent~~ | Medium — **DONE** |
 | `recording.py` | — | ~~Concurrent session protection relies on single-panel assumption (undocumented)~~ | Medium — **DONE** |
-| `wiki_import_dialog.py` | 285–288 | QThread not explicitly joined on dialog close | Low |
-| `wiki_import_dialog.py` | 75 | `curl_cffi` hard dependency; no fallback | Low |
+| `wiki_import_dialog.py` | 285–288 | ~~QThread not explicitly joined on dialog close~~ | Low — **DONE** |
+| `wiki_import_dialog.py` | 75 | ~~`curl_cffi` hard dependency; no fallback~~ | Low — **DONE** |
 | `node_browser_dialog.py` | 10 | Docstring claims drag-to-canvas; feature not implemented | Low |
 | `safety_warning_dialog.py` | 165 | "Run Bot" always enabled; zero-click bypass of all warnings | Low |
 
@@ -274,7 +274,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | 2 | ~~Undo/redo system completely untested~~ | `undo_manager.py` | High — **DONE** |
 | 3 | ~~Safety warning coverage: only 3 of many risky nodes~~ | `safety_warning_dialog.py` | High — **DONE** |
 | 4 | ~~UI tree overlay not cleaned up on exception~~ | `ui_tree_browser.py:320-323` | Medium — **DONE** |
-| 5 | Wiki import thread not joined on dialog close | `wiki_import_dialog.py:285-288` | Low |
+| 5 | ~~Wiki import thread not joined on dialog close~~ | `wiki_import_dialog.py:285-288` | Low — **DONE** |
 
 ---
 

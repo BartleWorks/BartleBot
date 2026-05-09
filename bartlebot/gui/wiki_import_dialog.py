@@ -71,8 +71,12 @@ class _FetchWorker(QThread):
 
     def run(self) -> None:
         try:
+            try:
+                from curl_cffi import requests as cf_requests
+            except ImportError as exc:
+                self.error.emit(f"curl_cffi is not available ({exc}). Run: pip install curl_cffi")
+                return
             from bs4 import BeautifulSoup  # noqa: F401 — confirm dep available
-            from curl_cffi import requests as cf_requests
 
             resp = cf_requests.get(self._url, timeout=15, impersonate="chrome124")
             resp.raise_for_status()
@@ -262,6 +266,24 @@ class WikiImportDialog(QDialog):
         self._tree.itemChanged.connect(self._on_item_changed)
         self._btn_box.accepted.connect(self._on_accept)
         self._btn_box.rejected.connect(self.reject)
+
+    # ------------------------------------------------------------------
+    # Lifecycle
+    # ------------------------------------------------------------------
+
+    def closeEvent(self, event) -> None:
+        worker = self._worker
+        self._worker = None
+        if worker is not None and worker.isRunning():
+            # Disconnect before the dialog is destroyed so the thread's
+            # signals don't fire into a dead widget.
+            worker.finished.disconnect(self._on_fetch_done)
+            worker.error.disconnect(self._on_fetch_error)
+            # Detach from dialog so the dialog destructor doesn't block
+            # waiting for the thread; the thread will self-delete when done.
+            worker.setParent(None)  # type: ignore[arg-type]
+            worker.finished.connect(worker.deleteLater)
+        super().closeEvent(event)
 
     # ------------------------------------------------------------------
     # Fetch
