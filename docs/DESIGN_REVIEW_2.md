@@ -305,8 +305,8 @@ AppController has grown from 330 to 882 lines (2.7×) and now manages 10 distinc
 - `self._current_machine.clients = self._clients` → `self._current_machine.set_clients(self._clients)` (`set_clients()` added to `machine.py`; 4 call sites updated)
 
 **Recovery procedure fault-tolerance:** `_reconnect_client()` (lines 599–721, 122 lines) is the most complex procedure in the codebase. It has moderate fault-tolerance but:
-- If the 2nd of 3 queued clients fails reconnect, the 1st is recovered but `_pending_recovery` is left dirty — subsequent client disconnects may interact with stale recovery state
-- Wrong/missing password fails silently with no user-facing dialog (line 617–621)
+- ~~If the 2nd of 3 queued clients fails reconnect, the 1st is recovered but `_pending_recovery` is left dirty — subsequent client disconnects may interact with stale recovery state~~ **Fixed:** on exception, `_pending_recovery.clear()` + `return` prevents any further reconnect attempts and leaves queue state clean.
+- ~~Wrong/missing password fails silently with no user-facing dialog (line 617–621)~~ **Fixed:** `recovery_error = pyqtSignal(str)` emitted with an actionable message before stopping the machine; wired to `QMessageBox.critical` in `_wire()`.
 - Exceptions during the Enter-spam loop (line 675–689) are swallowed with no escalation
 
 **Recommended split:**
@@ -321,17 +321,17 @@ AppController (file ops, signal wiring, theming, auto-save — ~300 lines)
 └─ BotRunner (new class, optional — execution + callbacks — ~180 lines)
 ```
 
-This is the highest-priority architectural work in the codebase. Extract `ClientManager` first (it's the most self-contained). The recovery logic is a hairball that deserves isolation and independent testing.
+This is the highest-priority architectural work in the codebase. Extract `ClientManager` first (it's the most self-contained). The recovery logic now has comprehensive independent tests (`tests/test_recovery.py`, 28 tests covering all four recovery methods), which will make the extraction safer when undertaken.
 
 ### bot_canvas.py and edit_scene.py — Large but Mostly Sound
 
 Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCanvas owns UI/UX (mode switching, toolbars, search, validation display), EditScene owns data (nodes, edges, regions, clipboard, positions).
 
-**One coupling violation:** BotCanvas directly calls EditScene private methods at lines 1110, 1117, 1129, 1138 (`_find_empty_grid_cell`, `_create_state_at`). These should be public API.
+**One coupling violation:** ~~BotCanvas directly calls EditScene private methods at lines 1110, 1117, 1129, 1138 (`_find_empty_grid_cell`, `_create_state_at`). These should be public API.~~ **Fixed:** both methods renamed to `find_empty_grid_cell` / `create_state_at`; all four call sites updated.
 
 **`_ParamPanel` still misplaced:** Created in BotCanvas (line 565) and displayed in LeftSidebar (passed as a constructor parameter). Neither owns it semantically — it's an edit-state concern. This is the same issue flagged in the original review, still unresolved. Low day-to-day impact but creates confusion about ownership.
 
-**Theme compliance gap:** BotCanvas constructs `_error_pill` (line 679) and `_warning_pill` (line 685) with THEME-colored stylesheets in `__init__`. The `changeEvent` override (line 999) re-tints button icons but does not re-apply pill stylesheets. Pills will show stale colors after a theme switch.
+**Theme compliance gap:** ~~BotCanvas constructs `_error_pill` (line 679) and `_warning_pill` (line 685) with THEME-colored stylesheets in `__init__`. The `changeEvent` override (line 999) re-tints button icons but does not re-apply pill stylesheets. Pills will show stale colors after a theme switch.~~ **Fixed:** stylesheet application extracted to `_apply_pill_stylesheets()`; called from both `__init__` and `changeEvent`.
 
 **Signal discipline:** Well-resolved. EditScene uses specific signal names (`graph_changed`, `about_to_change`, `focus_region_requested`, `node_type_chosen`). BotCanvas signals are all specific. The generic `config_changed` concern from the original review is fully addressed.
 
@@ -348,11 +348,11 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 |------|------|-------|----------|
 | `app_controller.py` | 505, 515, 584 | ~~`machine._stop_flag.is_set()` — private attribute accessed directly~~ | Critical — **DONE** |
 | `app_controller.py` | 416, 453, 463, 471 | ~~`machine.clients = ...` — private state mutated directly~~ | Critical — **DONE** |
-| `app_controller.py` | 564–597 | Recovery queue state leak on partial multi-client failure | High |
-| `bot_canvas.py` | 1110, 1117, 1129, 1138 | Calls EditScene private methods directly | High |
-| `app_controller.py` | 617–621 | No user-facing dialog on password retrieval failure in recovery | High |
+| `app_controller.py` | 564–597 | ~~Recovery queue state leak on partial multi-client failure~~ | High — **DONE** |
+| `bot_canvas.py` | 1110, 1117, 1129, 1138 | ~~Calls EditScene private methods directly~~ | High — **DONE** |
+| `app_controller.py` | 617–621 | ~~No user-facing dialog on password retrieval failure in recovery~~ | High — **DONE** |
 | `bot_canvas.py` | 565 | `_ParamPanel` owned by canvas, displayed in sidebar — split ownership | Medium |
-| `bot_canvas.py` | 679, 685 | Validation pill stylesheets not re-applied on theme change | Medium |
+| `bot_canvas.py` | 679, 685 | ~~Validation pill stylesheets not re-applied on theme change~~ | Medium — **DONE** |
 | `app_controller.py` | — | God class (10 responsibilities, 882 lines) — `ClientManager` not extracted | Medium |
 | `edit_scene.py` | 1350–1472 | Region management (7 methods, 150 lines) extractable | Low |
 
@@ -361,10 +361,11 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 | # | Issue | Severity |
 |---|-------|----------|
 | 1 | ~~`app_controller.py` accesses `machine._stop_flag` and `.clients` directly~~ | Critical — **DONE** |
-| 2 | Extract `ClientManager` from `app_controller.py` | Medium (growing concern) |
-| 3 | Validation pills don't re-apply stylesheet on theme change | Medium |
-| 4 | BotCanvas calls EditScene private methods | High |
-| 5 | Recovery queue partial-completion state leak | High |
+| 2 | ~~Recovery queue partial-completion state leak~~ | High — **DONE** |
+| 3 | ~~No user-facing dialog on password retrieval failure in recovery~~ | High — **DONE** |
+| 4 | ~~BotCanvas calls EditScene private methods~~ | High — **DONE** |
+| 5 | ~~Validation pills don't re-apply stylesheet on theme change~~ | Medium — **DONE** |
+| 6 | Extract `ClientManager` from `app_controller.py` | Medium (open) |
 
 ---
 
@@ -445,7 +446,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | New systems | `safety_warning_dialog.py` (`collect_safety_warnings`) untested | High |
 | New systems | `wiki_import_dialog.py` HTML parsing untested | Medium |
 | FakeClient | ~~No `spec=SprintyClient`; API drift undetected~~ | High — **DONE** |
-| Integration | Recovery procedure not tested | Medium |
+| Integration | ~~Recovery procedure not tested~~ | Medium — **DONE** |
 | Integration | Machine stop during execution not tested | Medium |
 
 ### Summary: Priority Issues
@@ -459,7 +460,8 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | 5 | ~~`safety_warning_dialog.collect_safety_warnings()` untested~~ | High — **DONE** |
 | 6 | ~~`change_realm` node untested~~ | Medium — **DONE** |
 | 7 | Wiki import HTML parsing untested | Medium |
-| 8 | Recovery + stop paths missing from integration tests | Medium |
+| 8 | ~~Recovery procedure not tested~~ | Medium — **DONE** |
+| 9 | Recovery stop paths + machine stop during execution missing from integration tests | Medium |
 
 ---
 
@@ -560,6 +562,6 @@ Three instance fields added in `__init__`: `_load_task`, `_overlay_task`, and `_
 | Extract `region_manager.py` from `edit_scene.py` | Low coupling, good extraction point, but no immediate pain. Defer until touching region code. |
 | Extract `ClientHealthMonitor` from `machine.py` | Watchers are tightly coupled to `pause()/resume()`. Clean extraction requires a callback interface. Defer until watcher count grows or tests require isolation. |
 | `_ParamPanel` ownership cleanup | Functional, just confusing. Low day-to-day impact. |
-| Recovery queue partial-completion state leak | Rare scenario (multiple clients crash in rapid succession). Acceptable as-is with a code comment. |
+| ~~Recovery queue partial-completion state leak~~ | **Fixed** — `_pending_recovery.clear()` + early return on exception. |
 | FakeClient → `spec=SprintyClient` (full audit) | Item #7 above covers adding spec=. Full method audit is deferred — do it when bumping the WizSprinter pin. |
 | Ambient combat watcher race window | Asyncio single-threaded; logical race requires specific interleaving. Accept current mitigation (post-lock re-check). |
