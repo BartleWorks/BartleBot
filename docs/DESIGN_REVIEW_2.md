@@ -263,8 +263,8 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | `recording.py` | — | ~~Concurrent session protection relies on single-panel assumption (undocumented)~~ | Medium — **DONE** |
 | `wiki_import_dialog.py` | 285–288 | ~~QThread not explicitly joined on dialog close~~ | Low — **DONE** |
 | `wiki_import_dialog.py` | 75 | ~~`curl_cffi` hard dependency; no fallback~~ | Low — **DONE** |
-| `node_browser_dialog.py` | 10 | Docstring claims drag-to-canvas; feature not implemented | Low |
-| `safety_warning_dialog.py` | 165 | "Run Bot" always enabled; zero-click bypass of all warnings | Low |
+| `node_browser_dialog.py` | 10 | ~~Docstring claims drag-to-canvas; feature not implemented~~ | Low — **DONE** |
+| `safety_warning_dialog.py` | 165 | ~~"Run Bot" always enabled; zero-click bypass of all warnings~~ | Low — **WON'T FIX** |
 
 ### Summary: Priority Issues
 
