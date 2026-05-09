@@ -33,6 +33,10 @@ class AppController(QObject):
     # Connected to GameView.renumber_tiles and ClientSection.set_clients.
     clients_changed = pyqtSignal(list)
 
+    # Emitted when client recovery cannot proceed due to a user-fixable error.
+    # Carries a human-readable message suitable for a dialog title + body pair.
+    recovery_error = pyqtSignal(str)
+
     def __init__(self, app: QApplication) -> None:
         super().__init__()
         self._app = app
@@ -119,6 +123,8 @@ class AppController(QObject):
 
         # Reorder buttons in sidebar → swap client positions
         w.right_sidebar.clients.swap_requested.connect(self.swap_clients)
+
+        self.recovery_error.connect(lambda msg: QMessageBox.critical(self._window, "Client Recovery Failed", msg))
 
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
         w.settings_applied.connect(self._reconfigure_autosave_timer)
@@ -623,6 +629,10 @@ class AppController(QObject):
         password = CredentialStore.retrieve(username)
         if not password:
             logger.error("No stored password for '%s' — stopping bot", username)
+            self.recovery_error.emit(
+                f"No stored password for account '{username}'.\n\n"
+                "Open Settings → Accounts and save the password, then restart the bot."
+            )
             machine.stop()
             return
 
