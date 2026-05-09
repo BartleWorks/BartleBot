@@ -114,6 +114,10 @@ class FakeMachine:
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:
         self.drops.append((item, qty, client_index))
 
+    def has_drop(self, item: str, client_index: int) -> bool:
+        key = item.strip().lower()
+        return any(client_index == ci and name.strip().lower() == key for name, _qty, ci in self.drops)
+
     def get_option(self, name: str, default=None):
         """Return configured option value, or a sensible test default.
 

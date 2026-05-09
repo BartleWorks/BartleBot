@@ -2,6 +2,7 @@ import asyncio
 import logging
 import re
 import time
+from collections import deque
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -57,7 +58,8 @@ class BotMachine:
         self._stop_flag = asyncio.Event()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
-        self.drops: list[tuple[str, int, int]] = []  # (item, quantity, client_index)
+        self.drops: deque[tuple[str, int, int]] = deque(maxlen=10_000)  # (item, quantity, client_index)
+        self._drops_seen: set[tuple[int, str]] = set()  # (client_index, item_lower) — never evicted, used by has_drop()
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
         self._ambient_combat_lock = asyncio.Lock()
@@ -169,11 +171,20 @@ class BotMachine:
         if m:
             item, quantity = m.group(2), quantity * int(m.group(1))
         self.drops.append((item, quantity, client_index))
+        self._drops_seen.add((client_index, item.strip().lower()))
         if self._on_drop:
             try:
                 self._on_drop(item, quantity, client_index)
             except Exception:
                 logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
+
+    def has_drop(self, item: str, client_index: int) -> bool:
+        """Return True if *item* was ever dropped by *client_index* in this run.
+
+        Uses a dedicated set so the answer is correct even when self.drops has
+        rotated old entries out of its bounded deque window.
+        """
+        return (client_index, item.strip().lower()) in self._drops_seen
 
     # --- Public API ---
 
