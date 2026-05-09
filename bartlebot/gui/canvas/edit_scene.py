@@ -513,7 +513,7 @@ class EditScene(QGraphicsScene):
         if not interactive:
             self.clearSelection()
 
-    def _find_empty_grid_cell(self, viewport_center: QPointF) -> QPointF:
+    def find_empty_grid_cell(self, viewport_center: QPointF) -> QPointF:
         """Return the top-left scene position of the nearest unoccupied grid cell to viewport_center.
 
         Searches outward in a spiral so new nodes never land on top of an existing one.
@@ -547,7 +547,7 @@ class EditScene(QGraphicsScene):
         if dlg.exec() and dlg.selected_node_type:
             self.node_type_chosen.emit(dlg.selected_node_type, pos)
 
-    def _create_state_at(self, node_type: str, pos: QPointF) -> None:
+    def create_state_at(self, node_type: str, pos: QPointF) -> None:
         """Instantiate a state of the given node_type at pos. Called after dialog confirmation."""
         if self._config is None:
             return

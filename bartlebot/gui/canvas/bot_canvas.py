@@ -1107,14 +1107,14 @@ class BotCanvas(QWidget):
         return self._view.mapToScene(self._view.viewport().rect().center())
 
     def _on_add_state(self) -> None:
-        self._scene.add_state(self._scene._find_empty_grid_cell(self._canvas_origin()))
+        self._scene.add_state(self._scene.find_empty_grid_cell(self._canvas_origin()))
 
     def _on_node_type_chosen(self, node_type: str, pos: object) -> None:
         """Slot for EditScene.node_type_chosen — creates the state after dialog confirmation."""
         from PyQt6.QtCore import QPointF as _QPointF
 
         if isinstance(pos, _QPointF):
-            self._scene._create_state_at(node_type, pos)
+            self._scene.create_state_at(node_type, pos)
 
     def _on_hotkey_slot(self, slot: int) -> None:
         """Handle a bare number-key press for the given favorites slot."""
@@ -1126,16 +1126,16 @@ class BotCanvas(QWidget):
         node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
         if not node_type:
             return
-        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
-        self._scene._create_state_at(node_type, pos)
+        pos = self._scene.find_empty_grid_cell(self._canvas_origin())
+        self._scene.create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _add_node_at_viewport_center(self, node_type: str) -> None:
         """Add a node of the given type near the canvas origin, avoiding occupied grid cells."""
         if self._mode != BotMode.EDIT or self._scene._config is None:
             return
-        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
-        self._scene._create_state_at(node_type, pos)
+        pos = self._scene.find_empty_grid_cell(self._canvas_origin())
+        self._scene.create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _on_layout_clicked(self) -> None:
