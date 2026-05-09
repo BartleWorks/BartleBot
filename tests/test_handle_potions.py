@@ -345,6 +345,47 @@ async def test_only_depleted_clients_enter_refill():
     assert buy_mock.call_args.args[1] is c_depleted
 
 
+async def test_multi_client_refill_uses_per_client_positions():
+    """Two buying clients at different positions: mark and recall use each client's own XYZ."""
+    c0 = _depleted_client(zone="MyDungeon")
+    c0.body.position.return_value = XYZ(100.0, 200.0, 0.0)
+    c1 = _depleted_client(zone="MyDungeon")
+    c1.body.position.return_value = XYZ(500.0, 600.0, 0.0)
+    params = {**_PARAMS, "mark_zone": "MyDungeon"}
+
+    mark_calls: list[tuple] = []
+
+    async def capture_mark(_machine, clients, rp):
+        mark_calls.append((clients[0], dict(rp)))
+        return "SUCCESS"
+
+    recall_calls: list[tuple] = []
+
+    async def capture_recall(_machine, clients, rp):
+        recall_calls.append((clients[0], dict(rp)))
+        return "SUCCESS"
+
+    with (
+        patch.object(mark_location, "run", new=capture_mark),
+        patch.object(teleport_to_marked_location, "run", new=capture_recall),
+        _HOME_OK,
+        _ZONES_OK,
+        _SHOP_FN_OK,
+        _BUY_OK,
+    ):
+        result = await hp.run(FakeMachine(), [c0, c1], params)
+
+    assert result == "SUCCESS"
+    assert len(mark_calls) == 2
+    assert mark_calls[0][0] is c0
+    assert mark_calls[0][1]["xyz"] == {"x": 100.0, "y": 200.0, "z": 0.0}
+    assert mark_calls[1][0] is c1
+    assert mark_calls[1][1]["xyz"] == {"x": 500.0, "y": 600.0, "z": 0.0}
+    assert len(recall_calls) == 2
+    assert recall_calls[0][1]["xyz"] == {"x": 100.0, "y": 200.0, "z": 0.0}
+    assert recall_calls[1][1]["xyz"] == {"x": 500.0, "y": 600.0, "z": 0.0}
+
+
 async def test_enter_zone_called_twice_for_route():
     """enter_zone must be called exactly twice (dorm→raven, raven→commons)."""
     client = _depleted_client()

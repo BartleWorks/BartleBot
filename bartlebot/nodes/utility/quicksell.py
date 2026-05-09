@@ -99,6 +99,11 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=5,
+    safety_warning=(
+        "This bot quicksells items when your backpack is full. "
+        "Ensure that you have locked any valuable items or have added them "
+        "to the keep list in the quicksell node parameters."
+    ),
 )
 
 from bartlebot.nodes.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # noqa: E402

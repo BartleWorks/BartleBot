@@ -58,6 +58,9 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=5,
+    safety_warning=(
+        "This bot teleports to collect reagents. Ensure that you are not in a busy realm when you run this bot."
+    ),
 )
 
 

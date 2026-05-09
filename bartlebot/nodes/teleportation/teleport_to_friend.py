@@ -47,6 +47,10 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=5,
+    safety_warning=(
+        "This bot teleports you to a friend. You must have the following player on your "
+        "friends list or change the friend name in the teleport_to_friend node settings."
+    ),
 )
 
 

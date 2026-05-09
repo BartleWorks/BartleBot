@@ -170,7 +170,10 @@ class BotMachine:
             item, quantity = m.group(2), quantity * int(m.group(1))
         self.drops.append((item, quantity, client_index))
         if self._on_drop:
-            self._on_drop(item, quantity, client_index)
+            try:
+                self._on_drop(item, quantity, client_index)
+            except Exception:
+                logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
 
     # --- Public API ---
 
@@ -181,6 +184,10 @@ class BotMachine:
     @property
     def is_stopped(self) -> bool:
         return self._stop_flag.is_set()
+
+    def set_clients(self, clients: list) -> None:
+        """Replace the active client list."""
+        self.clients = clients
 
     @property
     def stop_event(self) -> asyncio.Event:

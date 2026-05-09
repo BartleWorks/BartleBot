@@ -40,6 +40,8 @@ from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, MAX_RETRIES, POLL_I
 
 _HOME_LOADING_TIMEOUT = 15.0  # max seconds to wait for a loading screen after HOME.
 _SHOP_OPEN_TIMEOUT = 5.0  # max seconds to wait for the potion shop window.
+_SHOP_CLICK_DELAY = 0.25  # seconds to wait after clicking Fill All / Buy to let the UI settle.
+_EXIT_CLICK_INTERVAL = 0.125  # seconds between repeated Exit clicks while the shop window is still open.
 
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -251,23 +253,27 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
 
-    # 5. Snapshot the current zone and position (will be the mark and recall target).
-    ref = buying_clients[0]
-    current_zone = await ref.zone_name()
-    current_pos = await ref.body.position()
-    recall_params = {
-        "zone": current_zone,
-        "xyz": {"x": current_pos.x, "y": current_pos.y, "z": current_pos.z},
-    }
-    machine.log(
-        f"Mark/recall point: {current_zone!r} XYZ({current_pos.x:.1f}, {current_pos.y:.1f}, {current_pos.z:.1f})",
-        logging.DEBUG,
-    )
+    # 5. Snapshot each buying client's current position for independent mark/recall.
+    #    Using each client's own position ensures they recall to where they actually were,
+    #    not to the first client's position (clients may not be co-located).
+    positions = await asyncio.gather(*[c.body.position() for c in buying_clients])
+    per_client_recall_params = [
+        {"zone": zone, "xyz": {"x": pos.x, "y": pos.y, "z": pos.z}} for zone, pos in zip(zones, positions)
+    ]
+    for i, p in enumerate(per_client_recall_params):
+        machine.log(
+            f"Client {i} mark/recall point: {p['zone']!r} "
+            f"XYZ({p['xyz']['x']:.1f}, {p['xyz']['y']:.1f}, {p['xyz']['z']:.1f})",
+            logging.DEBUG,
+        )
 
-    # 6. Mark location for all buying clients.
+    # 6. Mark each buying client at their own current position.
     machine.log(f"Marking location for {len(buying_clients)} buying client(s)…")
-    if await mark_location.run(machine, buying_clients, recall_params) != "SUCCESS":
-        machine.log("FAILURE: mark_location failed", logging.WARNING)
+    mark_results = await asyncio.gather(
+        *[mark_location.run(machine, [c], rp) for c, rp in zip(buying_clients, per_client_recall_params)]
+    )
+    if not all(r == "SUCCESS" for r in mark_results):
+        machine.log("FAILURE: mark_location failed for one or more clients", logging.WARNING)
         return "FAILURE"
 
     # 7. Teleport home and verify dorm zone.
@@ -320,13 +326,17 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Buying potions…")
     await asyncio.gather(*[_buy_potions_for_client(machine, c) for c in buying_clients])
 
-    # 12. Recall all buying clients to the marked location.
+    # 12. Recall each buying client to their own marked location.
     machine.log("Recalling buying clients to marked location…")
-    if await teleport_to_marked_location.run(machine, buying_clients, recall_params) != "SUCCESS":
-        machine.log("FAILURE: teleport_to_marked_location failed", logging.WARNING)
+    recall_results = await asyncio.gather(
+        *[teleport_to_marked_location.run(machine, [c], rp) for c, rp in zip(buying_clients, per_client_recall_params)]
+    )
+    if not all(r == "SUCCESS" for r in recall_results):
+        machine.log("FAILURE: teleport_to_marked_location failed for one or more clients", logging.WARNING)
         return "FAILURE"
 
-    machine.log(f"SUCCESS: potions refilled, {len(buying_clients)} client(s) recalled to {current_zone!r}")
+    origin_zones = [rp["zone"] for rp in per_client_recall_params]
+    machine.log(f"SUCCESS: potions refilled, {len(buying_clients)} client(s) recalled to {origin_zones}")
     return "SUCCESS"
 
 
@@ -460,13 +470,13 @@ async def _buy_potions_for_client(machine, client) -> None:
             )
 
         await node_helpers.click_by_path(client, POTION_FILL_ALL_PATH)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(_SHOP_CLICK_DELAY)
         await node_helpers.click_by_path(client, POTION_BUY_PATH)
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(_SHOP_CLICK_DELAY)
 
         while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
             await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-            await asyncio.sleep(0.125)
+            await asyncio.sleep(_EXIT_CLICK_INTERVAL)
 
         charge_after = await client.stats.potion_charge()
         machine.log(f"Charge after buy: {charge_after}/{max_potions}", logging.DEBUG)

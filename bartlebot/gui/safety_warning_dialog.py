@@ -19,6 +19,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.nodes.registry import NODE_SPECS
+
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
@@ -34,68 +36,61 @@ class SafetyWarning:
     """Optional (label, value) rows shown in a compact form below the message."""
 
 
+def _quicksell_details(states) -> list[tuple[str, str]]:
+    details: list[tuple[str, str]] = []
+    for state in states:
+        prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
+        p = state.params
+        details += [
+            (f"{prefix}Sell Crowns Items", "Yes" if p.get("sell_crowns", True) else "No"),
+            (f"{prefix}Sell Pets", "Yes" if p.get("sell_pets", True) else "No"),
+            (f"{prefix}Sell Socket Wrenches", "Yes" if p.get("sell_socket_wrenches", False) else "No"),
+            (f"{prefix}Sell Skeleton Keys", "Yes" if p.get("sell_skeleton_keys", False) else "No"),
+        ]
+    return details
+
+
+def _teleport_to_friend_details(states) -> list[tuple[str, str]]:
+    details: list[tuple[str, str]] = []
+    for state in states:
+        prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
+        p = state.params
+        details += [
+            (f"{prefix}Friend Name", p.get("friend_name", "")),
+            (f"{prefix}Destination Zone", p.get("to_zone", "")),
+        ]
+    details.append(("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"))
+    return details
+
+
+_DETAIL_BUILDERS = {
+    "quicksell": _quicksell_details,
+    "teleport_to_friend": _teleport_to_friend_details,
+}
+
+
 def collect_safety_warnings(config: BotConfig) -> list[SafetyWarning]:
     """Return a list of SafetyWarning for every risky node type present in *config*.
 
     Returns at most one SafetyWarning per risky node type, even when multiple
-    states with the same node_type exist. Adding coverage for a new node type
-    requires only adding an additional block here.
+    states with the same node_type exist. Coverage is driven by the safety_warning
+    field on each NodeSpec — adding a warning for a new node type requires only
+    setting that field in the node's NODE_SPEC.
     """
+    states_by_type: dict[str, list] = {}
+    for state in config.states:
+        states_by_type.setdefault(state.node_type, []).append(state)
+
     warnings: list[SafetyWarning] = []
-
-    quicksell_states = [s for s in config.states if s.node_type == "quicksell"]
-    if quicksell_states:
-        details: list[tuple[str, str]] = []
-        for state in quicksell_states:
-            prefix = f"{state.label or state.id}: " if len(quicksell_states) > 1 else ""
-            p = state.params
-            details += [
-                (f"{prefix}Sell Crowns Items", "Yes" if p.get("sell_crowns", True) else "No"),
-                (f"{prefix}Sell Pets", "Yes" if p.get("sell_pets", True) else "No"),
-                (f"{prefix}Sell Socket Wrenches", "Yes" if p.get("sell_socket_wrenches", False) else "No"),
-                (f"{prefix}Sell Skeleton Keys", "Yes" if p.get("sell_skeleton_keys", False) else "No"),
-            ]
-        warnings.append(
-            SafetyWarning(
-                message=(
-                    "This bot quicksells items when your backpack is full. "
-                    "Ensure that you have locked any valuable items or have added them "
-                    "to the keep list in the quicksell node parameters."
-                ),
-                details=details,
-            )
-        )
-
-    if any(s.node_type == "collect_reagent" for s in config.states):
-        warnings.append(
-            SafetyWarning(
-                message=(
-                    "This bot teleports to collect reagents. "
-                    "Ensure that you are not in a busy realm when you run this bot."
-                ),
-            )
-        )
-
-    teleport_to_friend_states = [s for s in config.states if s.node_type == "teleport_to_friend"]
-    if teleport_to_friend_states:
-        details: list[tuple[str, str]] = []
-        for state in teleport_to_friend_states:
-            prefix = f"{state.label or state.id}: " if len(teleport_to_friend_states) > 1 else ""
-            p = state.params
-            details += [
-                (f"{prefix}Friend Name", p.get("friend_name", "")),
-                (f"{prefix}Destination Zone", p.get("to_zone", "")),
-            ]
-        details.append(("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"))
-        warnings.append(
-            SafetyWarning(
-                message=(
-                    "This bot teleports you to a friend. You must have the following player on your "
-                    "friends list or change the friend name in the teleport_to_friend node settings."
-                ),
-                details=details,
-            )
-        )
+    for node_type, spec in NODE_SPECS.items():
+        if not spec.safety_warning:
+            continue
+        states = states_by_type.get(node_type, [])
+        if not states:
+            continue
+        detail_builder = _DETAIL_BUILDERS.get(node_type)
+        details = detail_builder(states) if detail_builder else []
+        warnings.append(SafetyWarning(message=spec.safety_warning, details=details))
 
     return warnings
 

@@ -413,7 +413,7 @@ class AppController(QObject):
                     self._sync_embedded_clients(self._clients, [])
                     self._clients = []
                     if self._current_machine:
-                        self._current_machine.clients = self._clients
+                        self._current_machine.set_clients(self._clients)
                     self.clients_changed.emit([])
                     self._window.set_start_enabled(False)
                     await asyncio.sleep(3.0)
@@ -450,7 +450,7 @@ class AppController(QObject):
                     self._sync_embedded_clients(self._clients, ordered)
                     self._clients = ordered
                     if self._current_machine:
-                        self._current_machine.clients = self._clients
+                        self._current_machine.set_clients(self._clients)
                     self.clients_changed.emit(self._clients)
                     self._window.set_start_enabled(self._start_enabled())
 
@@ -460,7 +460,7 @@ class AppController(QObject):
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
                 if self._current_machine:
-                    self._current_machine.clients = self._clients
+                    self._current_machine.set_clients(self._clients)
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
                 await asyncio.sleep(1.0)
@@ -468,7 +468,7 @@ class AppController(QObject):
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
                 if self._current_machine:
-                    self._current_machine.clients = self._clients
+                    self._current_machine.set_clients(self._clients)
                 self.clients_changed.emit([])
                 self._window.set_start_enabled(False)
                 logger.exception("Client loop error")
@@ -502,7 +502,7 @@ class AppController(QObject):
             orig_pos = next((i for i, u in enumerate(self._client_order) if u == username), None)
             if orig_pos is not None:
                 self._client_order[orig_pos] = None
-                if machine is not None and not machine._stop_flag.is_set():
+                if machine is not None and not machine.is_stopped:
                     self._pending_recovery[orig_pos] = username
                     logger.warning(
                         "Client at slot %d (account: %s) disconnected — queuing recovery",
@@ -512,7 +512,7 @@ class AppController(QObject):
         if self._pending_recovery:
             # Pause immediately to prevent FAILURE results from accumulating before
             # recovery resumes the machine. Idempotent if already paused.
-            if machine is not None and not machine._stop_flag.is_set():
+            if machine is not None and not machine.is_stopped:
                 machine.pause()
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
@@ -581,7 +581,7 @@ class AppController(QObject):
 
             # All pending clients are back in-game — jump to recovery state and resume.
             machine = self._current_machine
-            if machine and not machine._stop_flag.is_set():
+            if machine and not machine.is_stopped:
                 recovery_state = self._loaded_config.recovery_state if self._loaded_config else None
                 if recovery_state:
                     machine.force_state(recovery_state)
