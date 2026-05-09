@@ -391,7 +391,7 @@ All 26 tested nodes use consistent patterns (FakeClient + FakeMachine fixtures, 
 | `undo_manager.py` | None | **Untested** |
 | `recording.py` | None | **Untested** |
 | `wiki_import_dialog.py` (HTML parsing) | None | **Untested** |
-| `safety_warning_dialog.py` | None | **Untested** |
+| `safety_warning_dialog.py` | `test_safety_warning.py` | 17 tests — **DONE** |
 | `node_browser_dialog.py` | None | **Untested** |
 | `entity_browser.py` | None | Untested (lower priority) |
 | `ui_tree_browser.py` | None | Untested (lower priority) |
@@ -458,7 +458,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | 2 | ~~`enter_gauntlet` node untested~~ | High — **DONE** |
 | 3 | ~~`undo_manager.py` untested~~ | High — **DONE** |
 | 4 | `recording.py` untested | High |
-| 5 | `safety_warning_dialog.collect_safety_warnings()` untested | High |
+| 5 | ~~`safety_warning_dialog.collect_safety_warnings()` untested~~ | High — **DONE** |
 | 6 | ~~`change_realm` node untested~~ | Medium — **DONE** |
 | 7 | Wiki import HTML parsing untested | Medium |
 | 8 | Recovery + stop paths missing from integration tests | Medium |
@@ -530,15 +530,9 @@ Imported `SprintyClient` in `tests/conftest.py` and added a module-level guard t
 ---
 
 ### 9. Add tests for `safety_warning_dialog.collect_safety_warnings()`
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** Safety-critical function with zero tests. A bug here means dangerous operations silently run without warning.
-
-**What to do:** Create `tests/test_safety_warning.py`:
-- Config with quicksell node having `sell_crowns=True` → warning emitted
-- Config with quicksell node having all sell flags False → no warning (or warning with accurate details)
-- Config with `teleport_to_friend` → warning emitted
-- Config with no risky nodes → empty warning list
+Created `tests/test_safety_warning.py` with 17 passing tests covering: no-risky-nodes returns empty, non-risky node returns empty, quicksell warning emitted with correct message, sell flag details show "Yes"/"No" accurately, all-false flags still emits warning with "No" values, four sell flags all present in details, multiple quicksell states prefix details with label/id, collect_reagent warning with no details, teleport_to_friend warning with friend name + destination zone + game setting note, multiple teleport_to_friend states prefix details with label, three risky node types together produce three warnings, and warning order follows NODE_SPECS insertion order.
 
 ---
 
