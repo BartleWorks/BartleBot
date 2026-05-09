@@ -240,7 +240,7 @@ Shows the live WizWalker window tree with a transparent red rectangle overlay on
 
 #### Safety Warning Dialog (`safety_warning_dialog.py`, 170 lines)
 
-Hard-codes warnings for 3 node types: `quicksell`, `collect_reagent`, `teleport_to_friend`. Adding a new risky node requires editing `collect_safety_warnings()` directly — no registry or `NodeSpec` field indicates danger. `change_realm`, `enter_gauntlet` (wrong team size), and `handle_potions` on shared realms are not warned about.
+~~Hard-codes warnings for 3 node types: `quicksell`, `collect_reagent`, `teleport_to_friend`. Adding a new risky node requires editing `collect_safety_warnings()` directly — no registry or `NodeSpec` field indicates danger.~~ **Fixed** — warnings are now driven by a `safety_warning` field on `NodeSpec`; `collect_safety_warnings()` loops over `NODE_SPECS` rather than a hard-coded if-chain.
 
 **Bypass friction:** The "Run Bot" button has default focus and is always enabled. One click dismisses all warnings and starts the bot. No acknowledgment required.
 
@@ -260,7 +260,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 |------|------|-------|----------|
 | `node_browser_dialog.py` | 740 | ~~`AttributeError`: `_NodeListItem.update_star()` does not exist~~ | Critical — **DONE** |
 | `undo_manager.py` | — | ~~No tests; silent regressions possible~~ | High — **DONE** |
-| `safety_warning_dialog.py` | 37–100 | Warning coverage limited to 3 hard-coded node types | High |
+| `safety_warning_dialog.py` | 37–100 | ~~Warning coverage limited to 3 hard-coded node types~~ | High — **DONE** |
 | `ui_tree_browser.py` | 320–323 | Overlay not cleaned up if exception occurs before closeEvent | Medium |
 | `recording.py` | — | Concurrent session protection relies on single-panel assumption (undocumented) | Medium |
 | `wiki_import_dialog.py` | 285–288 | QThread not explicitly joined on dialog close | Low |
@@ -274,7 +274,7 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 |---|-------|------|----------|
 | 1 | ~~`AttributeError` on favorite toggle in node browser~~ | `node_browser_dialog.py` | Critical — **DONE** |
 | 2 | ~~Undo/redo system completely untested~~ | `undo_manager.py` | High — **DONE** |
-| 3 | Safety warning coverage: only 3 of many risky nodes | `safety_warning_dialog.py` | High |
+| 3 | ~~Safety warning coverage: only 3 of many risky nodes~~ | `safety_warning_dialog.py` | High — **DONE** |
 | 4 | UI tree overlay not cleaned up on exception | `ui_tree_browser.py:320-323` | Medium |
 | 5 | Wiki import thread not joined on dialog close | `wiki_import_dialog.py:285-288` | Low |
 
@@ -543,11 +543,9 @@ Imported `SprintyClient` in `tests/conftest.py` and added a module-level guard t
 ---
 
 ### 10. Extend safety warning coverage to more risky nodes
-**Status:** `TODO`
+**Status:** `DONE`
 
-**Why:** `change_realm`, `enter_gauntlet` (with team-size mismatches), and `handle_potions` on shared realms have no safety warnings. The current design hard-codes 3 node types in `collect_safety_warnings()`.
-
-**What to do:** Add a `safety_warning: str | None` field to `NodeSpec` in `param_schema.py`. Nodes that are inherently risky set this field. `collect_safety_warnings()` becomes a loop over `NODE_SPECS` rather than a hard-coded if-chain. This makes the system extensible — new risky nodes just declare their warning in `NODE_SPEC`.
+Added `safety_warning: str | None = None` to `NodeSpec` in `param_schema.py`. Set `safety_warning=` on 3 nodes: `quicksell`, `collect_reagent`, `teleport_to_friend` (existing coverage migrated). `collect_safety_warnings()` is now a loop over `NODE_SPECS` — adding a warning for a new node requires only setting `safety_warning` in its `NODE_SPEC`. Nodes with dynamic detail rows (`quicksell`, `teleport_to_friend`) register a `_DETAIL_BUILDERS` function that is called when that node type is present.
 
 ---
 
