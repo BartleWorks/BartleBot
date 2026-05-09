@@ -489,21 +489,23 @@ class BotMachine:
             if not battling:
                 continue
 
-            was_running = self._resume_event.is_set()
-            if was_running:
-                self._combat_auto_paused = True
-                self.pause()
-                self.log("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
-
             try:
                 async with self._ambient_combat_lock:
                     # Re-check state after acquiring lock — FSM may have entered handle_combat
-                    # between the check above and here.
+                    # between the pre-lock check above and here (in_battle gather is an await point).
                     try:
                         if self._state_map.get(self.state, {}).get("node_type") == "handle_combat":
                             continue
                     except AttributeError:
                         continue
+
+                    # Pause only after confirming inside the lock that we need to handle combat,
+                    # so a spurious pause never happens if the FSM slipped into handle_combat
+                    # while we were awaiting in_battle_flags.
+                    if self._resume_event.is_set():
+                        self._combat_auto_paused = True
+                        self.pause()
+                        self.log("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
 
                     self.log(
                         f"Ambient combat detected on {len(battling)} client(s) — handling",
