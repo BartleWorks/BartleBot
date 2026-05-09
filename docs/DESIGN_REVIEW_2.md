@@ -353,7 +353,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 | `app_controller.py` | 617–621 | ~~No user-facing dialog on password retrieval failure in recovery~~ | High — **DONE** |
 | `bot_canvas.py` | 565 | `_ParamPanel` owned by canvas, displayed in sidebar — split ownership | Medium |
 | `bot_canvas.py` | 679, 685 | ~~Validation pill stylesheets not re-applied on theme change~~ | Medium — **DONE** |
-| `app_controller.py` | — | God class (10 responsibilities, 882 lines) — `ClientManager` not extracted | Medium |
+| `app_controller.py` | — | ~~God class (10 responsibilities, 882 lines) — `ClientManager` not extracted~~ | Medium — **DONE** |
 | `edit_scene.py` | 1350–1472 | Region management (7 methods, 150 lines) extractable | Low |
 
 ### Summary: Priority Issues
@@ -365,7 +365,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 | 3 | ~~No user-facing dialog on password retrieval failure in recovery~~ | High — **DONE** |
 | 4 | ~~BotCanvas calls EditScene private methods~~ | High — **DONE** |
 | 5 | ~~Validation pills don't re-apply stylesheet on theme change~~ | Medium — **DONE** |
-| 6 | Extract `ClientManager` from `app_controller.py` | Medium (open) |
+| 6 | ~~Extract `ClientManager` from `app_controller.py`~~ | Medium — **DONE** |
 
 ---
 
@@ -556,7 +556,7 @@ Three instance fields added in `__init__`: `_load_task`, `_overlay_task`, and `_
 
 | Issue | Why Deferred |
 |---|---|
-| Extract `ClientManager` from `app_controller.py` | High-value but high-effort. Recovery procedure complexity makes isolation non-trivial. Defer until the next time recovery logic needs modification. |
+| ~~Extract `ClientManager` from `app_controller.py`~~ | **Done** — `bartlebot/client_manager.py` created; all 28 recovery tests pass against `ClientManager`. |
 | Decompose `handle_potions.py` god-node | Large refactor, fragile procedure. Acceptable as-is while covered by tests. Revisit when adding a new potion type or NPC location. |
 | Fix loading screen watcher false-positive risk | Threshold is conservative (60s). Real-world occurrence rate is low. Acceptable until a user reports it. |
 | Extract `region_manager.py` from `edit_scene.py` | Low coupling, good extraction point, but no immediate pain. Defer until touching region code. |

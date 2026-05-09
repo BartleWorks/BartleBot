@@ -1,4 +1,4 @@
-"""Comprehensive tests for the AppController client recovery system.
+"""Comprehensive tests for the ClientManager client recovery system.
 
 Tests cover:
   - _on_clients_removed   — disconnect detection, slot marking, recovery task dispatch
@@ -6,18 +6,17 @@ Tests cover:
   - _reconnect_client     — full reconnect pipeline (launch, wait, crowns shop dismiss)
   - _build_ordered_clients — slot-ordered client list assembly
 
-The RecoveryHarness binds real AppController methods to a minimal fake object so
+The RecoveryHarness binds real ClientManager methods to a minimal fake object so
 tests exercise actual production code paths without needing a QApplication, WizSprinter,
 or any Wizard101 process.
 """
 
 import asyncio
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot.app_controller import AppController
+from bartlebot.client_manager import ClientManager
 
 # ---------------------------------------------------------------------------
 # Test harness
@@ -25,10 +24,10 @@ from bartlebot.app_controller import AppController
 
 
 class RecoveryHarness:
-    """Minimal stub that hosts recovery state and binds AppController methods.
+    """Minimal stub that hosts recovery state and binds ClientManager methods.
 
     Python's descriptor protocol makes class-level function references behave as
-    bound methods when accessed on an instance, so the real AppController methods
+    bound methods when accessed on an instance, so the real ClientManager methods
     run with `self` pointing at this harness object.  Tests that need to replace
     _reconnect_client with a mock can set an instance attribute directly:
         harness._reconnect_client = AsyncMock()
@@ -36,10 +35,10 @@ class RecoveryHarness:
     """
 
     # Bind real methods directly — no copying, no duplication.
-    _on_clients_removed = AppController._on_clients_removed
-    _run_recovery_queue = AppController._run_recovery_queue
-    _reconnect_client = AppController._reconnect_client
-    _build_ordered_clients = AppController._build_ordered_clients
+    _on_clients_removed = ClientManager._on_clients_removed
+    _run_recovery_queue = ClientManager._run_recovery_queue
+    _reconnect_client = ClientManager._reconnect_client
+    _build_ordered_clients = ClientManager._build_ordered_clients
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
@@ -48,8 +47,8 @@ class RecoveryHarness:
         self._recovery_in_progress: bool = False
         self._recovery_task = None
         self._clients: list = []
-        self._current_machine = None
-        self._loaded_config = None
+        self._machine = None
+        self._get_recovery_state = lambda: None
         # Simulate pyqtSignal without requiring a QApplication.
         self.recovery_error = MagicMock()
 
@@ -99,7 +98,7 @@ class TestOnClientsRemoved:
     def test_no_machine_clears_slot_but_skips_recovery(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
         harness._client_order = ["user1"]
-        harness._current_machine = None
+        harness._machine = None
         harness._on_clients_removed({100})
         assert harness._client_order == [None]
         assert harness._pending_recovery == {}
@@ -107,7 +106,7 @@ class TestOnClientsRemoved:
     def test_stopped_machine_clears_slot_but_skips_recovery(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
         harness._client_order = ["user1"]
-        harness._current_machine = _make_machine(stopped=True)
+        harness._machine = _make_machine(stopped=True)
         harness._on_clients_removed({100})
         assert harness._client_order == [None]
         assert harness._pending_recovery == {}
@@ -115,19 +114,19 @@ class TestOnClientsRemoved:
     def test_running_machine_queues_recovery_pauses_and_spawns_task(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
         harness._client_order = ["user1"]
-        harness._current_machine = _make_machine()
+        harness._machine = _make_machine()
         with patch("asyncio.create_task", side_effect=_mock_create_task) as mock_create_task:
             harness._on_clients_removed({100})
         assert harness._client_order == [None]
         assert harness._pending_recovery == {0: "user1"}
-        harness._current_machine.pause.assert_called_once()
+        harness._machine.pause.assert_called_once()
         mock_create_task.assert_called_once()
         assert harness._recovery_in_progress is True
 
     def test_multiple_clients_removed_at_once_all_queued(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1", 200: "user2"}
         harness._client_order = ["user1", "user2"]
-        harness._current_machine = _make_machine()
+        harness._machine = _make_machine()
         with patch("asyncio.create_task", side_effect=_mock_create_task):
             harness._on_clients_removed({100, 200})
         assert harness._client_order == [None, None]
@@ -136,7 +135,7 @@ class TestOnClientsRemoved:
     def test_no_second_task_when_recovery_already_in_progress(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
         harness._client_order = ["user1"]
-        harness._current_machine = _make_machine()
+        harness._machine = _make_machine()
         harness._recovery_in_progress = True
         with patch("asyncio.create_task") as mock_create_task:
             harness._on_clients_removed({100})
@@ -146,7 +145,7 @@ class TestOnClientsRemoved:
         # Hwnd is unknown so _pending_recovery stays empty after removal.
         harness._hwnd_account_map = {}
         harness._client_order = ["user1"]
-        harness._current_machine = _make_machine()
+        harness._machine = _make_machine()
         with patch("asyncio.create_task") as mock_create_task:
             harness._on_clients_removed({999})
         mock_create_task.assert_not_called()
@@ -160,9 +159,9 @@ class TestOnClientsRemoved:
 class TestRunRecoveryQueue:
     async def test_single_client_success_jumps_fsm_and_resumes(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1"}
-        harness._loaded_config = SimpleNamespace(recovery_state="recovery_zone")
+        harness._get_recovery_state = lambda: "recovery_zone"
         harness._reconnect_client = AsyncMock()
 
         await harness._run_recovery_queue()
@@ -175,9 +174,9 @@ class TestRunRecoveryQueue:
 
     async def test_multiple_clients_processed_sequentially_single_resume(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1", 1: "user2"}
-        harness._loaded_config = SimpleNamespace(recovery_state="start")
+        harness._get_recovery_state = lambda: "start"
 
         call_log: list[tuple] = []
 
@@ -194,9 +193,9 @@ class TestRunRecoveryQueue:
 
     async def test_reconnect_exception_clears_queue_stops_machine_no_resume(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1", 1: "user2"}
-        harness._loaded_config = SimpleNamespace(recovery_state="start")
+        harness._get_recovery_state = lambda: "start"
         harness._reconnect_client = AsyncMock(side_effect=RuntimeError("network error"))
 
         await harness._run_recovery_queue()
@@ -209,9 +208,9 @@ class TestRunRecoveryQueue:
 
     async def test_second_client_failure_stops_after_first_is_already_done(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1", 1: "user2"}
-        harness._loaded_config = SimpleNamespace(recovery_state="start")
+        harness._get_recovery_state = lambda: "start"
 
         call_count = 0
 
@@ -231,9 +230,9 @@ class TestRunRecoveryQueue:
 
     async def test_no_recovery_state_stops_machine_instead_of_resuming(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1"}
-        harness._loaded_config = SimpleNamespace(recovery_state=None)
+        harness._get_recovery_state = lambda: None
         harness._reconnect_client = AsyncMock()
 
         await harness._run_recovery_queue()
@@ -244,9 +243,9 @@ class TestRunRecoveryQueue:
 
     async def test_no_loaded_config_stops_machine(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1"}
-        harness._loaded_config = None
+        harness._get_recovery_state = lambda: None
         harness._reconnect_client = AsyncMock()
 
         await harness._run_recovery_queue()
@@ -256,9 +255,9 @@ class TestRunRecoveryQueue:
 
     async def test_machine_externally_stopped_mid_recovery_no_force_state(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._pending_recovery = {0: "user1"}
-        harness._loaded_config = SimpleNamespace(recovery_state="start")
+        harness._get_recovery_state = lambda: "start"
 
         async def _stop_machine(pos: int, username: str) -> None:
             machine.is_stopped = True
@@ -271,9 +270,9 @@ class TestRunRecoveryQueue:
         machine.resume.assert_not_called()
 
     async def test_recovery_in_progress_flag_cleared_even_on_exception(self, harness: RecoveryHarness) -> None:
-        harness._current_machine = _make_machine()
+        harness._machine = _make_machine()
         harness._pending_recovery = {0: "user1"}
-        harness._loaded_config = SimpleNamespace(recovery_state="start")
+        harness._get_recovery_state = lambda: "start"
         harness._recovery_in_progress = True
         harness._reconnect_client = AsyncMock(side_effect=RuntimeError("crash"))
 
@@ -295,26 +294,26 @@ def _base_reconnect_patches(display_name: str = "j***n"):
     mock_windll.user32.FindWindowW.return_value = 0  # no crashed window by default
 
     return (
-        patch("bartlebot.app_controller.CredentialStore"),
-        patch("bartlebot.app_controller.SettingsManager"),
+        patch("bartlebot.client_manager.CredentialStore"),
+        patch("bartlebot.client_manager.SettingsManager"),
         patch("bartlebot.launcher.launch_profile.launch_account", new_callable=AsyncMock),
         patch("ctypes.windll", mock_windll),
         patch("asyncio.sleep", new_callable=AsyncMock),
-        patch("bartlebot.app_controller.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+        patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
     )
 
 
 class TestReconnectClient:
     async def test_no_machine_returns_immediately(self, harness: RecoveryHarness) -> None:
-        harness._current_machine = None
+        harness._machine = None
         # Should return without touching any external deps — no patches needed.
         await harness._reconnect_client(0, "user1")
 
     async def test_missing_password_emits_error_signal_and_stops(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
 
-        with patch("bartlebot.app_controller.CredentialStore") as mock_creds:
+        with patch("bartlebot.client_manager.CredentialStore") as mock_creds:
             mock_creds.retrieve.return_value = None
             await harness._reconnect_client(0, "user1")
 
@@ -326,13 +325,13 @@ class TestReconnectClient:
 
     async def test_launch_failure_stops_machine(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         mock_settings = MagicMock()
         mock_settings.accounts = []
 
         with (
-            patch("bartlebot.app_controller.CredentialStore") as mock_creds,
-            patch("bartlebot.app_controller.SettingsManager") as mock_sm,
+            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
             patch(
                 "bartlebot.launcher.launch_profile.launch_account",
                 new_callable=AsyncMock,
@@ -350,7 +349,7 @@ class TestReconnectClient:
 
     async def test_success_restores_slot_and_does_not_stop_machine(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._client_order = [None]
 
         fake_client = MagicMock()
@@ -361,13 +360,13 @@ class TestReconnectClient:
         mock_settings.accounts = []
 
         with (
-            patch("bartlebot.app_controller.CredentialStore") as mock_creds,
-            patch("bartlebot.app_controller.SettingsManager") as mock_sm,
+            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_account", new_callable=AsyncMock),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.app_controller.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.app_controller.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -379,7 +378,7 @@ class TestReconnectClient:
 
     async def test_client_timeout_stops_machine_and_leaves_slot_empty(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._client_order = [None]
         harness._clients = []  # client never appears
 
@@ -399,8 +398,8 @@ class TestReconnectClient:
         loop.time = _fake_time
         try:
             with (
-                patch("bartlebot.app_controller.CredentialStore") as mock_creds,
-                patch("bartlebot.app_controller.SettingsManager") as mock_sm,
+                patch("bartlebot.client_manager.CredentialStore") as mock_creds,
+                patch("bartlebot.client_manager.SettingsManager") as mock_sm,
                 patch("bartlebot.launcher.launch_profile.launch_account", new_callable=AsyncMock),
                 patch("ctypes.windll", MagicMock()),
                 patch("asyncio.sleep", new_callable=AsyncMock),
@@ -417,7 +416,7 @@ class TestReconnectClient:
 
     async def test_old_window_resolution_passed_to_launch(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._client_order = [None]
 
         fake_client = MagicMock()
@@ -439,15 +438,15 @@ class TestReconnectClient:
         mock_launch = AsyncMock()
 
         with (
-            patch("bartlebot.app_controller.CredentialStore") as mock_creds,
-            patch("bartlebot.app_controller.SettingsManager") as mock_sm,
+            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_account", mock_launch),
             patch("ctypes.windll", mock_windll),
             patch("ctypes.wintypes") as mock_wintypes,
             patch("ctypes.byref", return_value=MagicMock()),
-            patch("bartlebot.app_controller.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.app_controller.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_wintypes.RECT.return_value = mock_rect
             mock_creds.retrieve.return_value = "s3cr3t"
@@ -460,7 +459,7 @@ class TestReconnectClient:
 
     async def test_no_old_window_passes_none_resolution_to_launch(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._client_order = [None]
 
         fake_client = MagicMock()
@@ -476,13 +475,13 @@ class TestReconnectClient:
         mock_launch = AsyncMock()
 
         with (
-            patch("bartlebot.app_controller.CredentialStore") as mock_creds,
-            patch("bartlebot.app_controller.SettingsManager") as mock_sm,
+            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_account", mock_launch),
             patch("ctypes.windll", mock_windll),
-            patch("bartlebot.app_controller.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.app_controller.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -494,7 +493,7 @@ class TestReconnectClient:
 
     async def test_crowns_shop_dismissed_click_by_path_called(self, harness: RecoveryHarness) -> None:
         machine = _make_machine()
-        harness._current_machine = machine
+        harness._machine = machine
         harness._client_order = [None]
 
         fake_client = MagicMock()
@@ -509,15 +508,15 @@ class TestReconnectClient:
         mock_click = AsyncMock()
 
         with (
-            patch("bartlebot.app_controller.CredentialStore") as mock_creds,
-            patch("bartlebot.app_controller.SettingsManager") as mock_sm,
+            patch("bartlebot.client_manager.CredentialStore") as mock_creds,
+            patch("bartlebot.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_account", new_callable=AsyncMock),
             patch("ctypes.windll", MagicMock()),
-            patch("bartlebot.app_controller.get_window_title", return_value="[j***n] Wizard101"),
+            patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.app_controller.is_enabled_by_path", crowns_check),
-            patch("bartlebot.app_controller.poll_until", new_callable=AsyncMock, return_value=True),
-            patch("bartlebot.app_controller.click_by_path", mock_click),
+            patch("bartlebot.client_manager.is_enabled_by_path", crowns_check),
+            patch("bartlebot.client_manager.poll_until", new_callable=AsyncMock, return_value=True),
+            patch("bartlebot.client_manager.click_by_path", mock_click),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
