@@ -80,5 +80,5 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("wait_for_health: SUCCESS — health threshold reached")
         return "SUCCESS"
     else:
-        machine.log(f"wait_for_health: FAILURE — timed out after {timeout_raw}s", "WARNING")
+        machine.log(f"wait_for_health: FAILURE — timed out after {timeout_raw}s", logging.WARNING)
         return "FAILURE"

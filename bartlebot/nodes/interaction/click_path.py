@@ -1,6 +1,7 @@
 """Node: click a UI element at a window-tree path with optional pre/post-click checks."""
 
 import asyncio
+import logging
 
 from bartlebot.nodes.node_helpers import click_by_path, is_enabled_by_path, is_visible_by_path, poll_until
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
@@ -87,7 +88,7 @@ async def run(machine, clients: list, params: dict) -> str:
     confirm_timeout: float = params.get("confirm_timeout", TRIGGER_TIMEOUT)
 
     if not path:
-        machine.log("click_path: FAILURE — path parameter is empty", "WARNING")
+        machine.log("click_path: FAILURE — path parameter is empty", logging.WARNING)
         return "FAILURE"
 
     machine.log(f"click_path: clicking {'→'.join(path)}")
@@ -103,12 +104,12 @@ async def run(machine, clients: list, params: dict) -> str:
         )
 
     if not all(checks):
-        machine.log(f"click_path: FAILURE — path not available within {availability_timeout}s", "WARNING")
+        machine.log(f"click_path: FAILURE — path not available within {availability_timeout}s", logging.WARNING)
         return "FAILURE"
 
     clicked = await asyncio.gather(*[click_by_path(c, path) for c in clients])
     if not all(clicked):
-        machine.log("click_path: FAILURE — click returned False (element grayed or missing)", "WARNING")
+        machine.log("click_path: FAILURE — click returned False (element grayed or missing)", logging.WARNING)
         return "FAILURE"
 
     if confirm_path:
@@ -123,7 +124,7 @@ async def run(machine, clients: list, params: dict) -> str:
             *[poll_until(lambda c=c: _confirm(c), confirm_timeout, POLL_INTERVAL) for c in clients]
         )
         if not all(confirmed):
-            machine.log(f"click_path: FAILURE — confirm path not met within {confirm_timeout}s", "WARNING")
+            machine.log(f"click_path: FAILURE — confirm path not met within {confirm_timeout}s", logging.WARNING)
             return "FAILURE"
 
     machine.log("click_path: SUCCESS")

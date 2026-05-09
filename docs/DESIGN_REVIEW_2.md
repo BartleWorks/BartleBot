@@ -92,8 +92,8 @@ New nodes (14 total) follow conventions well. Minor issues:
 | 1 | ~~`DIALOG_TIMEOUT = 60.0` defined locally~~ | `interact.py` | High — **DONE** |
 | 2 | God-node: 12+ responsibilities, 508 lines | `handle_potions.py` | High |
 | 3 | ~~Hardcoded `asyncio.sleep(0.25/0.125)`~~ | `handle_potions.py` | Medium — **DONE** |
-| 4 | Position snapshot from first client only | `handle_potions.py:256` | Medium |
-| 5 | Logging level passed as string `"WARNING"` | `wait_for_health.py:83`, `click_path.py:90,106,111,126` | Low |
+| 4 | ~~Position snapshot from first client only~~ | `handle_potions.py:256` | Medium — **DONE** |
+| 5 | ~~Logging level passed as string `"WARNING"`~~ | `wait_for_health.py:83`, `click_path.py:90,106,111,126` | Low — **DONE** |
 
 ---
 
