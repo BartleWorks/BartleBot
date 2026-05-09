@@ -990,7 +990,6 @@ class _ParamPanel(QWidget):
         self._transition: TransitionModel | None = None
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
-        self._record_task: asyncio.Task | None = None
         # All states for the source/dest dropdowns; populated by show_transition()
         self._all_states: list = []
         # Other transitions in the config — for duplicate-check in endpoint change
@@ -1481,14 +1480,12 @@ class _ParamPanel(QWidget):
         self._on_record_clicked()
 
     def _cancel_record(self) -> None:
-        if self._record_task is not None and not self._record_task.done():
-            self._record_task.cancel()
-        self._record_task = None
+        recording.cancel_active_recording()
         self._record_btn.setText("Record")
         self._record_status_lbl.setText("")
 
     def _on_record_clicked(self) -> None:
-        if self._record_task is not None and not self._record_task.done():
+        if recording.is_recording():
             self._cancel_record()
             return
         if self._state is None:
@@ -1499,7 +1496,7 @@ class _ParamPanel(QWidget):
             return
         if self._state.node_type not in recording.RECORDABLE_NODES:
             return
-        self._record_task = asyncio.ensure_future(
+        asyncio.ensure_future(
             recording.run_recording(
                 self._state.node_type,
                 clients[0],

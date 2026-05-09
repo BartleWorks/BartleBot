@@ -198,7 +198,7 @@ Scope: All major GUI systems added since the original review — recording, undo
 
 Async coroutines dispatch per node type via `_REGISTRY`. Each coroutine updates the param form in real time as the user walks through the game. Error paths are correct: `CancelledError` is caught and the Record button is restored in all exit paths. Client disconnect mid-recording triggers an exception catch, shows an error message, and exits cleanly.
 
-**Coverage gaps:** The registry covers 11 of 29 node types. The 18 non-recordable nodes are appropriate (conditions, passive-wait nodes). However, some nodes with XYZ parameters (`collect_wisps`, `quicksell`) could benefit from coordinate recording — no blocker, just a future-feature gap.
+**Coverage gaps:** The registry covers 11 of 29 node types. The 18 non-recordable nodes are appropriate (conditions, passive-wait nodes). However, some nodes with XYZ parameters could benefit from coordinate recording — no blocker, just a future-feature gap.
 
 **Concurrent session risk:** `param_panel.py` cancels any existing `_record_task` before starting a new one. This is correct for single-panel usage. No guard in `recording.py` itself — protection relies on the assumption that only one param panel is active. This is documented implicitly but not asserted.
 
@@ -244,8 +244,6 @@ Shows the live WizWalker window tree with a transparent red rectangle overlay on
 
 **Bypass friction:** The "Run Bot" button has default focus and is always enabled. One click dismisses all warnings and starts the bot. No acknowledgment required.
 
-**False positive:** `quicksell` warning fires even when all sell flags are `False`, because the current code checks for the presence of the node, not for dangerous param values.
-
 #### Recovery Dialog (`recovery_dialog.py`, 102 lines)
 
 Simple table of autosave candidates. If `original_path` is `None` (unsaved new bot), the dialog returns it as a candidate — the calling code must handle restoration of an unsaved file. No explicit validation in the dialog.
@@ -261,12 +259,12 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | `node_browser_dialog.py` | 740 | ~~`AttributeError`: `_NodeListItem.update_star()` does not exist~~ | Critical — **DONE** |
 | `undo_manager.py` | — | ~~No tests; silent regressions possible~~ | High — **DONE** |
 | `safety_warning_dialog.py` | 37–100 | ~~Warning coverage limited to 3 hard-coded node types~~ | High — **DONE** |
-| `ui_tree_browser.py` | 320–323 | Overlay not cleaned up if exception occurs before closeEvent | Medium |
-| `recording.py` | — | Concurrent session protection relies on single-panel assumption (undocumented) | Medium |
-| `wiki_import_dialog.py` | 285–288 | QThread not explicitly joined on dialog close | Low |
-| `wiki_import_dialog.py` | 75 | `curl_cffi` hard dependency; no fallback | Low |
-| `node_browser_dialog.py` | 10 | Docstring claims drag-to-canvas; feature not implemented | Low |
-| `safety_warning_dialog.py` | 165 | "Run Bot" always enabled; zero-click bypass of all warnings | Low |
+| `ui_tree_browser.py` | 320–323 | ~~Overlay not cleaned up if exception occurs before closeEvent~~ | Medium — **DONE** |
+| `recording.py` | — | ~~Concurrent session protection relies on single-panel assumption (undocumented)~~ | Medium — **DONE** |
+| `wiki_import_dialog.py` | 285–288 | ~~QThread not explicitly joined on dialog close~~ | Low — **DONE** |
+| `wiki_import_dialog.py` | 75 | ~~`curl_cffi` hard dependency; no fallback~~ | Low — **DONE** |
+| `node_browser_dialog.py` | 10 | ~~Docstring claims drag-to-canvas; feature not implemented~~ | Low — **DONE** |
+| `safety_warning_dialog.py` | 165 | ~~"Run Bot" always enabled; zero-click bypass of all warnings~~ | Low — **WON'T FIX** |
 
 ### Summary: Priority Issues
 
@@ -275,8 +273,8 @@ Simple table of autosave candidates. If `original_path` is `None` (unsaved new b
 | 1 | ~~`AttributeError` on favorite toggle in node browser~~ | `node_browser_dialog.py` | Critical — **DONE** |
 | 2 | ~~Undo/redo system completely untested~~ | `undo_manager.py` | High — **DONE** |
 | 3 | ~~Safety warning coverage: only 3 of many risky nodes~~ | `safety_warning_dialog.py` | High — **DONE** |
-| 4 | UI tree overlay not cleaned up on exception | `ui_tree_browser.py:320-323` | Medium |
-| 5 | Wiki import thread not joined on dialog close | `wiki_import_dialog.py:285-288` | Low |
+| 4 | ~~UI tree overlay not cleaned up on exception~~ | `ui_tree_browser.py:320-323` | Medium — **DONE** |
+| 5 | ~~Wiki import thread not joined on dialog close~~ | `wiki_import_dialog.py:285-288` | Low — **DONE** |
 
 ---
 
@@ -544,6 +542,15 @@ Added `safety_warning: str | None = None` to `NodeSpec` in `param_schema.py`. Se
 ---
 
 ### Items Deferred
+
+### 11. Fix UI tree browser overlay lifetime
+**Status:** `DONE`
+
+`_RectOverlay` was only cleaned up in `closeEvent`, but two fire-and-forget async tasks (`_load_tree`, `_update_overlay`) held implicit references and could access the overlay after `deleteLater()` was called.
+
+Three instance fields added in `__init__`: `_load_task`, `_overlay_task`, and `_closed`. Both `_load_tree` launch sites now store their task in `_load_task`. `_on_selection_changed` cancels any in-flight `_overlay_task` before creating a new one (also prevents stale moves on rapid clicks). `_update_overlay` returns immediately if `_closed`, and its `except` branch guards `self._overlay.hide()` with the same check. `closeEvent` sets `_closed = True` first, cancels both tasks, then hides and deletes the overlay — ensuring any task that resumes after cancellation sees the flag and exits without touching the deleted widget.
+
+---
 
 | Issue | Why Deferred |
 |---|---|

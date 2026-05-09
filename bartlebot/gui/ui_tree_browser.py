@@ -70,9 +70,12 @@ class UITreeBrowserDialog(QDialog):
         super().__init__(parent)
         self._client = client
         self._overlay = _RectOverlay()
+        self._load_task: asyncio.Task | None = None
+        self._overlay_task: asyncio.Task | None = None
+        self._closed = False
         self._node_count = 0
         self._build_ui()
-        asyncio.ensure_future(self._load_tree())
+        self._load_task = asyncio.ensure_future(self._load_tree())
 
     # ------------------------------------------------------------------
     # UI construction
@@ -212,7 +215,7 @@ class UITreeBrowserDialog(QDialog):
         self._tree.clear()
         self._status.setText("Loading…")
         self._add_loading_placeholder()
-        asyncio.ensure_future(self._load_tree())
+        self._load_task = asyncio.ensure_future(self._load_tree())
 
     # ------------------------------------------------------------------
     # Expand / Collapse All
@@ -288,11 +291,15 @@ class UITreeBrowserDialog(QDialog):
         if items:
             window = items[0].data(0, _WINDOW_ROLE)
             if window is not None:
-                asyncio.ensure_future(self._update_overlay(window))
+                if self._overlay_task is not None:
+                    self._overlay_task.cancel()
+                self._overlay_task = asyncio.ensure_future(self._update_overlay(window))
                 return
         self._overlay.hide()
 
     async def _update_overlay(self, window) -> None:
+        if self._closed:
+            return
         try:
             rect = await window.scale_to_client()
             qt_win = QWindow.fromWinId(self._client.window_handle)
@@ -311,13 +318,19 @@ class UITreeBrowserDialog(QDialog):
                 bottom_right.y() - top_left.y(),
             )
         except Exception:
-            self._overlay.hide()
+            if not self._closed:
+                self._overlay.hide()
 
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 
     def closeEvent(self, event) -> None:
+        self._closed = True
+        if self._load_task is not None:
+            self._load_task.cancel()
+        if self._overlay_task is not None:
+            self._overlay_task.cancel()
         self._overlay.hide()
         self._overlay.deleteLater()
         super().closeEvent(event)

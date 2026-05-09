@@ -16,6 +16,35 @@ from collections.abc import Callable
 from typing import Any
 
 # ---------------------------------------------------------------------------
+# Session guard — enforces at most one active recording across the entire app
+# ---------------------------------------------------------------------------
+
+# The currently running recording task, or None.  This is module-level so
+# the invariant holds regardless of how many _ParamPanel instances exist.
+_active_task: asyncio.Task | None = None
+
+
+def is_recording() -> bool:
+    """Return True if a recording session is currently active."""
+    return _active_task is not None and not _active_task.done()
+
+
+def cancel_active_recording() -> None:
+    """Cancel the currently active recording session, if any.
+
+    Clears the module-level guard immediately so a new session can start
+    without waiting for the cancelled coroutine to process CancelledError.
+    The cancelled coroutine's own cleanup callbacks (on_btn/on_status) will
+    still fire but are harmless at that point.
+    """
+    global _active_task
+    task = _active_task
+    _active_task = None
+    if task is not None and not task.done():
+        task.cancel()
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -28,10 +57,26 @@ async def run_recording(
     on_btn: Callable[[str], None],
     try_set_label: Callable[[str], None],
 ) -> None:
-    """Dispatch to the appropriate recording coroutine for *node_type*."""
+    """Dispatch to the appropriate recording coroutine for *node_type*.
+
+    At most one session runs at a time.  Returns immediately if another
+    session is already active.
+    """
+    global _active_task
     fn = _REGISTRY.get(node_type)
-    if fn:
+    if fn is None:
+        return
+    if is_recording():
+        return
+    my_task = asyncio.current_task()
+    _active_task = my_task
+    try:
         await fn(client, param_form, on_status, on_btn, try_set_label)
+    finally:
+        # Only clear if we're still the registered task; a cancel followed by
+        # an immediate new session could have already replaced _active_task.
+        if _active_task is my_task:
+            _active_task = None
 
 
 # ---------------------------------------------------------------------------
