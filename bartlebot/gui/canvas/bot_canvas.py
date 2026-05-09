@@ -674,19 +674,12 @@ class BotCanvas(QWidget):
         # ── Validation banner — right-aligned below toolbar ───────────
         # Hidden when valid (takes no space); appears under the edit/save
         # button whose right_stack sits at the 4 px right margin of the toolbar.
-        _pill_base = "border-radius: 4px; padding: 1px 7px;"
         self._error_pill = QLabel()
-        self._error_pill.setStyleSheet(
-            f"QLabel {{ background-color: {THEME.error}; color: {THEME.pill_text}; {_pill_base} }}"
-        )
         self._error_pill.setVisible(False)
 
         self._warning_pill = QPushButton()
-        self._warning_pill.setStyleSheet(
-            f"QPushButton {{ background-color: {THEME.warning}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
-            f"QPushButton:hover {{ background-color: {THEME.pill_warning_hover}; }}"
-        )
         self._warning_pill.setVisible(False)
+        self._apply_pill_stylesheets()
         self._warning_pill.clicked.connect(self._cleanup_orphans)
 
         self._validation_banner = QWidget(self._view)
@@ -996,11 +989,22 @@ class BotCanvas(QWidget):
         """Pass a callable that returns zone suggestions (current player zones + history)."""
         self._param_panel._param_form._get_zone_suggestions = fn
 
+    def _apply_pill_stylesheets(self) -> None:
+        _pill_base = "border-radius: 4px; padding: 1px 7px;"
+        self._error_pill.setStyleSheet(
+            f"QLabel {{ background-color: {THEME.error}; color: {THEME.pill_text}; {_pill_base} }}"
+        )
+        self._warning_pill.setStyleSheet(
+            f"QPushButton {{ background-color: {THEME.warning}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
+            f"QPushButton:hover {{ background-color: {THEME.pill_warning_hover}; }}"
+        )
+
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             for btn, icon_name in self._btn_icons.items():
                 btn.setIcon(svg_icon(icon_name))
+            self._apply_pill_stylesheets()
 
     def _set_run_icon(self, icon_name: str) -> None:
         """Set the run/pause button icon and record it for live theme updates."""
