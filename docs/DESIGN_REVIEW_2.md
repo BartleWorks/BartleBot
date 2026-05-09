@@ -198,7 +198,7 @@ Scope: All major GUI systems added since the original review — recording, undo
 
 Async coroutines dispatch per node type via `_REGISTRY`. Each coroutine updates the param form in real time as the user walks through the game. Error paths are correct: `CancelledError` is caught and the Record button is restored in all exit paths. Client disconnect mid-recording triggers an exception catch, shows an error message, and exits cleanly.
 
-**Coverage gaps:** The registry covers 11 of 29 node types. The 18 non-recordable nodes are appropriate (conditions, passive-wait nodes). However, some nodes with XYZ parameters (`collect_wisps`, `quicksell`) could benefit from coordinate recording — no blocker, just a future-feature gap.
+**Coverage gaps:** The registry covers 11 of 29 node types. The 18 non-recordable nodes are appropriate (conditions, passive-wait nodes). However, some nodes with XYZ parameters could benefit from coordinate recording — no blocker, just a future-feature gap.
 
 **Concurrent session risk:** `param_panel.py` cancels any existing `_record_task` before starting a new one. This is correct for single-panel usage. No guard in `recording.py` itself — protection relies on the assumption that only one param panel is active. This is documented implicitly but not asserted.
 
@@ -243,8 +243,6 @@ Shows the live WizWalker window tree with a transparent red rectangle overlay on
 ~~Hard-codes warnings for 3 node types: `quicksell`, `collect_reagent`, `teleport_to_friend`. Adding a new risky node requires editing `collect_safety_warnings()` directly — no registry or `NodeSpec` field indicates danger.~~ **Fixed** — warnings are now driven by a `safety_warning` field on `NodeSpec`; `collect_safety_warnings()` loops over `NODE_SPECS` rather than a hard-coded if-chain.
 
 **Bypass friction:** The "Run Bot" button has default focus and is always enabled. One click dismisses all warnings and starts the bot. No acknowledgment required.
-
-**False positive:** `quicksell` warning fires even when all sell flags are `False`, because the current code checks for the presence of the node, not for dangerous param values.
 
 #### Recovery Dialog (`recovery_dialog.py`, 102 lines)
 
