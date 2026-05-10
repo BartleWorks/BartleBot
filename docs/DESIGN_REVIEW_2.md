@@ -335,7 +335,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 
 **Signal discipline:** Well-resolved. EditScene uses specific signal names (`graph_changed`, `about_to_change`, `focus_region_requested`, `node_type_chosen`). BotCanvas signals are all specific. The generic `config_changed` concern from the original review is fully addressed.
 
-**Region management in edit_scene.py:** 7 methods and ~150 lines managing regions. This cluster has minimal coupling to the rest of EditScene (accesses `_config` and `_node_items`, emits `graph_changed`) and is a natural extraction candidate into a `region_manager.py`. Defer until touching this code for another reason.
+**Region management in edit_scene.py:** 7 methods and ~150 lines managing regions. This cluster has minimal coupling to the rest of EditScene (accesses `_config` and `_node_items`, emits `graph_changed`) and is a natural extraction candidate into a `region_manager.py`. **Done** — extracted to `bartlebot/gui/canvas/region_manager.py`; `bot_canvas.py` coupling violation fixed (`_scene._region_items` → `_scene.region_items`); cut/paste region sync bug fixed in `flush_regions()`.
 
 **Top extraction candidates from bot_canvas.py:**
 1. Mode switching engine (`_apply_mode()`, run-state buttons, tick timer) — ~80 lines, many state mutations
@@ -354,7 +354,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 | `bot_canvas.py` | 565 | `_ParamPanel` owned by canvas, displayed in sidebar — split ownership | Medium |
 | `bot_canvas.py` | 679, 685 | ~~Validation pill stylesheets not re-applied on theme change~~ | Medium — **DONE** |
 | `app_controller.py` | — | ~~God class (10 responsibilities, 882 lines) — `ClientManager` not extracted~~ | Medium — **DONE** |
-| `edit_scene.py` | 1350–1472 | Region management (7 methods, 150 lines) extractable | Low |
+| `edit_scene.py` | 1350–1472 | ~~Region management (7 methods, 150 lines) extractable~~ | Low — **DONE** |
 
 ### Summary: Priority Issues
 
@@ -559,7 +559,7 @@ Three instance fields added in `__init__`: `_load_task`, `_overlay_task`, and `_
 | ~~Extract `ClientManager` from `app_controller.py`~~ | **Done** — `bartlebot/client_manager.py` created; all 28 recovery tests pass against `ClientManager`. |
 | Decompose `handle_potions.py` god-node | Large refactor, fragile procedure. Acceptable as-is while covered by tests. Revisit when adding a new potion type or NPC location. |
 | Fix loading screen watcher false-positive risk | Threshold is conservative (60s). Real-world occurrence rate is low. Acceptable until a user reports it. |
-| Extract `region_manager.py` from `edit_scene.py` | Low coupling, good extraction point, but no immediate pain. Defer until touching region code. |
+| ~~Extract `region_manager.py` from `edit_scene.py`~~ | **Done** — extracted + cut/paste sync bug fixed. |
 | Extract `ClientHealthMonitor` from `machine.py` | Watchers are tightly coupled to `pause()/resume()`. Clean extraction requires a callback interface. Defer until watcher count grows or tests require isolation. |
 | `_ParamPanel` ownership cleanup | Functional, just confusing. Low day-to-day impact. |
 | ~~Recovery queue partial-completion state leak~~ | **Fixed** — `_pending_recovery.clear()` + early return on exception. |

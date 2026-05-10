@@ -1178,7 +1178,7 @@ class BotCanvas(QWidget):
             node.setVisible(sid in member_set)
         for s, _, d, edge in self._scene._edge_items:
             edge.setVisible(s in member_set and d in member_set)
-        for rid, ri in self._scene._region_items.items():
+        for rid, ri in self._scene.region_items.items():
             ri.setVisible(rid == region_id)
 
         self._focus_crumb_label.setText(f"Viewing: {region.label}")
@@ -1194,7 +1194,7 @@ class BotCanvas(QWidget):
             node.setVisible(True)
         for *_, edge in self._scene._edge_items:
             edge.setVisible(True)
-        for ri in self._scene._region_items.values():
+        for ri in self._scene.region_items.values():
             ri.setVisible(True)
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.setVisible(False)

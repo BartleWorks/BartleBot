@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import BotConfig, BotOptionModel, RegionModel, StateModel, TransitionModel
+from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
@@ -32,6 +32,7 @@ from bartlebot.gui.canvas.edge_item import (
 from bartlebot.gui.canvas.graph_view import GraphView
 from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.region_item import RegionItem
+from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 
@@ -243,7 +244,7 @@ class EditScene(QGraphicsScene):
         self._config: BotConfig | None = None
         self._node_items: dict[str, NodeItem] = {}
         self._edge_items: list[tuple[str, str | None, str, EdgeItem]] = []
-        self._region_items: dict[str, RegionItem] = {}
+        self._region_manager: RegionManager | None = None
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
         self._temp_edge: QGraphicsLineItem | None = None
@@ -314,12 +315,9 @@ class EditScene(QGraphicsScene):
 
     def teardown(self) -> None:
         """Remove all items and reset internal state without loading a new config."""
-        for ri in self._region_items.values():
-            try:
-                self.changed.disconnect(ri._recompute_rect)
-            except (RuntimeError, TypeError):
-                pass
-        self._region_items.clear()
+        if self._region_manager is not None:
+            self._region_manager.teardown()
+            self._region_manager = None
         self.clear()
         self._node_items.clear()
         self._edge_items.clear()
@@ -455,14 +453,8 @@ class EditScene(QGraphicsScene):
         self._recompute_offsets()
 
         # Add region items behind nodes (z=-1)
-        for region in config.regions:
-            ri = RegionItem(region, self._node_items)
-            ri.set_interactive(self._interactive_mode)
-            self.addItem(ri)
-            self._region_items[region.id] = ri
-        for ri in self._region_items.values():
-            self.changed.connect(ri._recompute_rect)
-            ri._recompute_rect()
+        self._region_manager = RegionManager(self, config, self._node_items, self._pre_edit, self.graph_changed.emit)
+        self._region_manager.setup(self._interactive_mode)
 
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(bounds)
@@ -508,8 +500,8 @@ class EditScene(QGraphicsScene):
             node.set_interactive(interactive)
         for _s, _w, _d, edge in self._edge_items:
             edge.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
-        for region in self._region_items.values():
-            region.set_interactive(interactive)
+        if self._region_manager is not None:
+            self._region_manager.set_interactive(interactive)
         if not interactive:
             self.clearSelection()
 
@@ -779,7 +771,9 @@ class EditScene(QGraphicsScene):
                             else f"Add to Region: {rlabel}"
                         )
                         act_add = QAction(label, menu)
-                        act_add.triggered.connect(lambda _=None, ids=not_members, r=rid: self._add_to_region(ids, r))
+                        act_add.triggered.connect(
+                            lambda _=None, ids=not_members, r=rid: self._region_manager.add_to_region(ids, r)
+                        )
                         menu.addAction(act_add)
                     if in_members:
                         label = (
@@ -789,7 +783,7 @@ class EditScene(QGraphicsScene):
                         )
                         act_rem = QAction(label, menu)
                         act_rem.triggered.connect(
-                            lambda _=None, ids=in_members, r=rid: self._remove_from_region(ids, r)
+                            lambda _=None, ids=in_members, r=rid: self._region_manager.remove_from_region(ids, r)
                         )
                         menu.addAction(act_rem)
             # Create region from multi-selection
@@ -797,18 +791,20 @@ class EditScene(QGraphicsScene):
                 menu.addSeparator()
                 n = len(selected_nodes)
                 act_cr = QAction(f"Create Region from {n} selected states", menu)
-                act_cr.triggered.connect(lambda: self._create_region([nd.state_id for nd in selected_nodes]))
+                act_cr.triggered.connect(
+                    lambda: self._region_manager.create_region([nd.state_id for nd in selected_nodes])
+                )
                 menu.addAction(act_cr)
         elif isinstance(item, RegionItem):
             rid = item.region_id
             act_rn = QAction("Rename Region", menu)
-            act_rn.triggered.connect(lambda: self._rename_region(rid))
+            act_rn.triggered.connect(lambda: self._region_manager.rename_region(rid))
             menu.addAction(act_rn)
             act_rc = QAction("Change Color", menu)
-            act_rc.triggered.connect(lambda: self._recolor_region(rid))
+            act_rc.triggered.connect(lambda: self._region_manager.recolor_region(rid))
             menu.addAction(act_rc)
             act_del = QAction("Remove Region", menu)
-            act_del.triggered.connect(lambda: self._delete_region(rid))
+            act_del.triggered.connect(lambda: self._region_manager.delete_region(rid))
             menu.addAction(act_del)
         elif isinstance(item, EdgeItem):
             act = QAction("Delete Transition", menu)
@@ -829,7 +825,9 @@ class EditScene(QGraphicsScene):
                 menu.addSeparator()
                 n = len(selected_nodes)
                 act_cr = QAction(f"Create Region from {n} selected states", menu)
-                act_cr.triggered.connect(lambda: self._create_region([nd.state_id for nd in selected_nodes]))
+                act_cr.triggered.connect(
+                    lambda: self._region_manager.create_region([nd.state_id for nd in selected_nodes])
+                )
                 menu.addAction(act_cr)
         menu.exec(event.screenPos())
 
@@ -1133,7 +1131,7 @@ class EditScene(QGraphicsScene):
             self.removeItem(self._node_items.pop(state_id))
         self.refresh_terminal()
         self.refresh_errors()
-        self._flush_regions()
+        self._region_manager.flush_regions()
         self._in_structural_edit = prev_in_structural
         self._update_scene_rect()
         self.graph_changed.emit()
@@ -1335,141 +1333,10 @@ class EditScene(QGraphicsScene):
             self._update_scene_rect()
             self.graph_changed.emit()
 
-    def _flush_regions(self) -> None:
-        """Remove stale member IDs from regions; auto-delete regions with < 2 members."""
-        if self._config is None:
-            return
-        state_ids = {s.id for s in self._config.states}
-        for region in list(self._config.regions):
-            cleaned = [m for m in region.members if m in state_ids]
-            if len(cleaned) < 2:
-                self._delete_region(region.id)
-            else:
-                region.members[:] = cleaned
-
-    def _create_region(self, state_ids: list[str]) -> None:
-        if self._config is None or len(state_ids) < 2:
-            return
-        import uuid
-
-        from PyQt6.QtWidgets import QInputDialog
-
-        label, ok = QInputDialog.getText(self.views()[0] if self.views() else None, "Create Region", "Region name:")
-        if not ok or not label.strip():
-            return
-        self._pre_edit("Create Region")
-        region = RegionModel(
-            id=uuid.uuid4().hex[:8],
-            label=label.strip(),
-            members=list(state_ids),
-            color=1,
-        )
-        self._config.regions.append(region)
-        ri = RegionItem(region, self._node_items)
-        ri.set_interactive(self._interactive_mode)
-        self.addItem(ri)
-        self._region_items[region.id] = ri
-        self.changed.connect(ri._recompute_rect)
-        ri._recompute_rect()
-        self.graph_changed.emit()
-
-    def _delete_region(self, region_id: str) -> None:
-        if self._config is None:
-            return
-        self._pre_edit("Delete Region")
-        ri = self._region_items.pop(region_id, None)
-        if ri is not None:
-            try:
-                self.changed.disconnect(ri._recompute_rect)
-            except RuntimeError:
-                pass
-            self.removeItem(ri)
-        self._config.regions = [r for r in self._config.regions if r.id != region_id]
-        self.graph_changed.emit()
-
-    def _rename_region(self, region_id: str) -> None:
-        if self._config is None:
-            return
-        region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
-            return
-        from PyQt6.QtWidgets import QInputDialog
-
-        label, ok = QInputDialog.getText(
-            self.views()[0] if self.views() else None, "Rename Region", "Region name:", text=region.label
-        )
-        if not ok or not label.strip():
-            return
-        self._pre_edit("Rename Region")
-        region.label = label.strip()
-        ri = self._region_items.get(region_id)
-        if ri is not None:
-            ri.set_label(region.label)
-        self.graph_changed.emit()
-
-    def _recolor_region(self, region_id: str) -> None:
-        if self._config is None:
-            return
-        region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
-            return
-        from PyQt6.QtWidgets import QDialog
-
-        dlg = _ColorPickerDialog(current_key=region.color, parent=self.views()[0] if self.views() else None)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        self._pre_edit("Change Region Color")
-        region.color = dlg.selected_color()
-        ri = self._region_items.get(region_id)
-        if ri is not None:
-            ri.set_color(region.color)
-        self.graph_changed.emit()
-
-    def _add_to_region(self, state_ids: list[str], region_id: str) -> None:
-        if self._config is None:
-            return
-        region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
-            return
-        to_add = [sid for sid in state_ids if sid not in region.members]
-        if not to_add:
-            return
-        self._pre_edit("Edit Region")
-        for sid in to_add:
-            region.members.append(sid)
-        ri = self._region_items.get(region_id)
-        if ri is not None:
-            for sid in to_add:
-                ri._member_ids.append(sid)
-            ri._recompute_rect()
-        self.graph_changed.emit()
-
-    def _remove_from_region(self, state_ids: list[str], region_id: str) -> None:
-        if self._config is None:
-            return
-        region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
-            return
-        to_remove = [sid for sid in state_ids if sid in region.members]
-        if not to_remove:
-            return
-        remaining = [m for m in region.members if m not in to_remove]
-        self._pre_edit("Edit Region")
-        if len(remaining) < 2:
-            self._in_structural_edit = True
-            self._delete_region(region_id)
-            self._in_structural_edit = False
-            self.graph_changed.emit()
-            return
-        for sid in to_remove:
-            region.members.remove(sid)
-        ri = self._region_items.get(region_id)
-        if ri is not None:
-            for sid in to_remove:
-                if sid in ri._member_ids:
-                    ri._member_ids.remove(sid)
-            ri._recompute_rect()
-        self.graph_changed.emit()
+    @property
+    def region_items(self) -> dict[str, RegionItem]:
+        """Public access to the region visual items (used by BotCanvas focus mode)."""
+        return self._region_manager.items if self._region_manager is not None else {}
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
