@@ -11,6 +11,10 @@ import random
 POLL_INTERVAL = 0.25
 # General polling interval used by all wait loops (poll_until, poll_each_until_seen, manual sleep loops).
 
+RECORDING_POLL_INTERVAL = 0.15
+# Poll interval for recording coroutines — faster than POLL_INTERVAL because recording
+# tracks the player's live position during interactive walkthroughs.
+
 ZONE_CHANGE_TIMEOUT = 30.0
 # Seconds to wait for a zone transition to complete (clients leave the source
 # zone and arrive in the destination zone).

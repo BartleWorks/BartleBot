@@ -16,6 +16,7 @@ What is NOT tested here (by design):
   - WizWalker / WizSprinter APIs: FakeClient stubs these out (same as node unit tests).
 """
 
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -421,3 +422,172 @@ async def test_enter_zone_failure_self_loops():
     assert all(result == "FAILURE" for _, result, _ in transitions_seen)
     assert all(prev == "state_a" and nxt == "state_a" for prev, _, nxt in transitions_seen)
     assert ("state_a", "SUCCESS", "state_b") not in transitions_seen
+
+
+# ---------------------------------------------------------------------------
+# Part 5: Machine stop during execution
+# ---------------------------------------------------------------------------
+
+
+async def test_stop_during_node_execution_cooperative():
+    """A node that polls machine.is_stopped exits cooperatively before the grace period.
+
+    Verifies the full pipeline: BotConfig → to_machine_config() → BotMachine with a
+    cooperative node that checks is_stopped in a loop. stop() is called externally while
+    the node is running; the node exits cleanly and no transition fires (the stop flag
+    prevents advance).
+    """
+    execution_started = asyncio.Event()
+    transitions_seen: list[tuple] = []
+
+    async def cooperative_node(machine, clients, params):
+        execution_started.set()
+        while not machine.is_stopped:
+            await asyncio.sleep(0.01)
+        return "FAILURE"
+
+    config = BotConfig(
+        name="stop-cooperative-test",
+        initial="state_a",
+        states=[
+            StateModel(id="state_a", node_type="coop"),
+            StateModel(id="state_b", node_type="coop"),
+        ],
+        transitions=[
+            TransitionModel(trigger="advance", source="state_a", dest="state_b", when="SUCCESS"),
+            TransitionModel(trigger="advance", source="state_a", dest="state_a", when="FAILURE"),
+        ],
+    )
+    mc = config.to_machine_config()
+    machine = BotMachine(
+        clients=[],
+        config=mc,
+        node_registry={"coop": cooperative_node},
+        bot_config=config,
+        stop_grace_period=1.0,
+        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+    )
+
+    task = asyncio.create_task(machine.run())
+    await execution_started.wait()
+    machine.stop()
+    await asyncio.wait_for(task, timeout=1.5)
+
+    assert machine.is_stopped
+    assert machine.state == "state_a"
+    assert ("state_a", "SUCCESS", "state_b") not in transitions_seen
+
+
+async def test_stop_forces_cancellation_after_grace_period():
+    """A node that never checks is_stopped is forcibly cancelled after the grace period.
+
+    Verifies that _deferred_cancel fires after stop_grace_period seconds and the FSM
+    exits cleanly via the CancelledError path in run() (machine.py lines 245-249).
+    No state transition fires.
+    """
+    execution_started = asyncio.Event()
+    transitions_seen: list[tuple] = []
+
+    async def blocking_node(machine, clients, params):
+        execution_started.set()
+        await asyncio.sleep(30)  # never returns within any reasonable test window
+        return "SUCCESS"
+
+    config = BotConfig(
+        name="stop-forced-cancel-test",
+        initial="state_a",
+        states=[
+            StateModel(id="state_a", node_type="blocker"),
+            StateModel(id="state_b", node_type="blocker"),
+        ],
+        transitions=[
+            TransitionModel(trigger="advance", source="state_a", dest="state_b", when="SUCCESS"),
+            TransitionModel(trigger="advance", source="state_a", dest="state_a", when="FAILURE"),
+        ],
+    )
+    mc = config.to_machine_config()
+    machine = BotMachine(
+        clients=[],
+        config=mc,
+        node_registry={"blocker": blocking_node},
+        bot_config=config,
+        stop_grace_period=0.05,
+        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
+    )
+
+    task = asyncio.create_task(machine.run())
+    await execution_started.wait()
+    machine.stop()
+    await asyncio.wait_for(task, timeout=0.5)
+
+    assert machine.is_stopped
+    assert machine.state == "state_a"
+    assert ("state_a", "SUCCESS", "state_b") not in transitions_seen
+
+
+async def test_stop_while_machine_is_paused_with_real_config():
+    """stop() unblocks a paused machine built from a real BotConfig and exits cleanly.
+
+    Integration-level counterpart to test_machine.py::test_stop_while_paused_exits_cleanly.
+    Uses the full BotConfig.load() → to_machine_config() → BotMachine path with the
+    real crimson_fields.json bot file.
+    """
+    src = _BOTS_DIR / "04_mooshu" / "crimson_fields.json"
+    config = BotConfig.load(src)
+    mc = config.to_machine_config()
+    machine = BotMachine(clients=[], config=mc, node_registry=NODE_REGISTRY, bot_config=config)
+
+    machine.pause()
+    task = asyncio.create_task(machine.run())
+    # Yield control so the run() loop can start and block on _resume_event.wait().
+    await asyncio.sleep(0.05)
+    machine.stop()
+    await asyncio.wait_for(task, timeout=1.0)
+
+    assert machine.is_stopped
+
+
+async def test_stop_after_client_error_induced_pause():
+    """stop() exits cleanly when the machine has self-paused after a ClientClosedError.
+
+    When a node raises ClientClosedError the FSM catches it, calls pause(), and loops
+    back to block on _resume_event.wait() (machine.py lines 252-270). stop() must
+    unblock that wait and exit without resuming execution or advancing state.
+    """
+    from wizwalker.errors import ClientClosedError
+
+    execution_started = asyncio.Event()
+
+    async def error_node(machine, clients, params):
+        execution_started.set()
+        raise ClientClosedError("simulated client death")
+
+    config = BotConfig(
+        name="client-error-pause-test",
+        initial="state_a",
+        states=[
+            StateModel(id="state_a", node_type="error_node"),
+            StateModel(id="state_b", node_type="error_node"),
+        ],
+        transitions=[
+            TransitionModel(trigger="advance", source="state_a", dest="state_b", when="SUCCESS"),
+            TransitionModel(trigger="advance", source="state_a", dest="state_a", when="FAILURE"),
+        ],
+    )
+    mc = config.to_machine_config()
+    machine = BotMachine(
+        clients=[],
+        config=mc,
+        node_registry={"error_node": error_node},
+        bot_config=config,
+    )
+
+    task = asyncio.create_task(machine.run())
+    await execution_started.wait()
+    # Yield control so the exception handler can call pause() and re-enter the while loop.
+    await asyncio.sleep(0.05)
+    machine.stop()
+    await asyncio.wait_for(task, timeout=1.0)
+
+    assert machine.is_stopped
+    assert machine.state == "state_a"

@@ -63,6 +63,8 @@ logger = logging.getLogger(__name__)
 ```
 Never use `print()` for diagnostics. Logging is configured in `bartlebot/logging_setup.py` — per-session timestamped files in `logs/` (10 most recent kept), plus a GUI bridge handler for the in-app log widget.
 
+Pass `logging.WARNING` (int constant), not `"WARNING"` (string), to `machine.log()` and any other logging call. The logging module expects integer level values; a string may coerce silently today but is semantically wrong.
+
 ### GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
 
@@ -107,6 +109,52 @@ Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
+
+Every new node, background task, or non-trivial utility class must ship with a corresponding test file. Cover at minimum: the success path, one failure path, and any timeout/retry behavior. The exception is pure `QWidget` subclasses that can't be tested without a `QApplication`; extract any testable logic into a plain function or class.
+
+### Use public API across class boundaries
+
+Never access private attributes (names starting with `_`) of `BotMachine`, `AppController`, `ClientManager`, `EditScene`, `BotCanvas`, or any other BartleBot class from outside that class. If you need access to something, add a property or public method to the owning class. Private attributes are implementation details; reaching into them from outside creates hidden coupling that breaks on any internal refactor.
+
+Examples of what this prevents: `machine._stop_flag.is_set()` → use `machine.is_stopped`; `scene._region_items` → use `scene.region_items`; `canvas._find_empty_grid_cell()` → use `canvas.find_empty_grid_cell()`.
+
+### Callback guards in BotMachine
+
+Every callback stored on `BotMachine` and invoked from the `run()` loop must be wrapped in try/except. A bare callback call will crash the FSM on any GUI exception. Follow the existing pattern for `on_state_change` and `on_transition`:
+
+```python
+if self._on_my_callback:
+    try:
+        self._on_my_callback(arg1, arg2)
+    except Exception:
+        logger.exception("on_my_callback raised")
+```
+
+When adding a new callback to `BotMachine`, check that its invocation site has this guard.
+
+### Background task lifetime in GUI widgets
+
+Any `asyncio.Task` or `QThread` started inside a `QWidget` or `QDialog` must be explicitly cleaned up in `closeEvent` to prevent callbacks from firing on a destroyed widget.
+
+Pattern for asyncio tasks:
+```python
+def __init__(self):
+    self._my_task: asyncio.Task | None = None
+    self._closed = False
+
+def closeEvent(self, event):
+    self._closed = True
+    if self._my_task:
+        self._my_task.cancel()
+    super().closeEvent(event)
+
+async def _some_async_method(self):
+    if self._closed:
+        return
+    # ... do work ...
+```
+
+For `QThread`, call `thread.quit()` and `thread.wait()` in `closeEvent` before letting the dialog be destroyed.
 
 ## External Dependencies
 

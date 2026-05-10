@@ -442,12 +442,12 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | Node coverage | ~~`change_realm` has no test file~~ | Medium — **DONE** |
 | Node coverage | ~~`sleep` has no test file~~ | Low — **DONE** |
 | New systems | ~~`undo_manager.py` completely untested~~ | High — **DONE** |
-| New systems | `recording.py` completely untested | High |
-| New systems | `safety_warning_dialog.py` (`collect_safety_warnings`) untested | High |
-| New systems | `wiki_import_dialog.py` HTML parsing untested | Medium |
+| New systems | ~~`recording.py` completely untested~~ | High — **DONE** |
+| New systems | ~~`safety_warning_dialog.py` (`collect_safety_warnings`) untested~~ | High — **DONE** |
+| New systems | ~~`wiki_import_dialog.py` HTML parsing untested~~ | Medium — **DONE** |
 | FakeClient | ~~No `spec=SprintyClient`; API drift undetected~~ | High — **DONE** |
 | Integration | ~~Recovery procedure not tested~~ | Medium — **DONE** |
-| Integration | Machine stop during execution not tested | Medium |
+| Integration | ~~Machine stop during execution not tested~~ | Medium — **DONE** |
 
 ### Summary: Priority Issues
 
@@ -456,12 +456,12 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | 1 | ~~FakeClient lacks `spec=SprintyClient`~~ | High — **DONE** |
 | 2 | ~~`enter_gauntlet` node untested~~ | High — **DONE** |
 | 3 | ~~`undo_manager.py` untested~~ | High — **DONE** |
-| 4 | `recording.py` untested | High |
+| 4 | ~~`recording.py` untested~~ | High — **DONE** |
 | 5 | ~~`safety_warning_dialog.collect_safety_warnings()` untested~~ | High — **DONE** |
 | 6 | ~~`change_realm` node untested~~ | Medium — **DONE** |
-| 7 | Wiki import HTML parsing untested | Medium |
+| 7 | ~~Wiki import HTML parsing untested~~ | Medium — **DONE** |
 | 8 | ~~Recovery procedure not tested~~ | Medium — **DONE** |
-| 9 | Recovery stop paths + machine stop during execution missing from integration tests | Medium |
+| 9 | ~~Recovery stop paths + machine stop during execution missing from integration tests~~ | Medium — **DONE** |
 
 ---
 
