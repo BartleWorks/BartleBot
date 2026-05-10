@@ -47,6 +47,7 @@ class RecoveryHarness:
         self._recovery_in_progress: bool = False
         self._recovery_task = None
         self._clients: list = []
+        self._client_resolutions: dict[str, tuple[int, int]] = {}
         self._machine = None
         self._get_recovery_state = lambda: None
         # Simulate pyqtSignal without requiring a QApplication.
@@ -418,6 +419,7 @@ class TestReconnectClient:
         machine = _make_machine()
         harness._machine = machine
         harness._client_order = [None]
+        harness._client_resolutions["user1"] = (800, 600)
 
         fake_client = MagicMock()
         fake_client.window_handle = 999
@@ -426,29 +428,17 @@ class TestReconnectClient:
         mock_settings = MagicMock()
         mock_settings.accounts = []
 
-        mock_rect = MagicMock()
-        mock_rect.right = 800
-        mock_rect.left = 0
-        mock_rect.bottom = 600
-        mock_rect.top = 0
-
-        mock_windll = MagicMock()
-        mock_windll.user32.FindWindowW.return_value = 42  # crashed window found
-
         mock_launch = AsyncMock()
 
         with (
             patch("bartlebot.client_manager.CredentialStore") as mock_creds,
             patch("bartlebot.client_manager.SettingsManager") as mock_sm,
             patch("bartlebot.launcher.launch_profile.launch_account", mock_launch),
-            patch("ctypes.windll", mock_windll),
-            patch("ctypes.wintypes") as mock_wintypes,
-            patch("ctypes.byref", return_value=MagicMock()),
+            patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
-            mock_wintypes.RECT.return_value = mock_rect
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
             mock_sm.instance.return_value = mock_settings
@@ -503,8 +493,13 @@ class TestReconnectClient:
         mock_settings = MagicMock()
         mock_settings.accounts = []
 
-        # Crowns shop open on first check; closed on second (after dismiss).
-        crowns_check = AsyncMock(side_effect=[True, False])
+        # ESC cleanup loops each call is_enabled_by_path once (BACKPACK_CLOSE_BUTTON_PATH):
+        #   loop 1: True  → break immediately
+        #   loop 2: False → not False = True → break immediately
+        # Then the crowns shop loop calls it with CROWNS_SHOP_PATH:
+        #   iteration 1: True  → enter dismiss flow
+        #   iteration 2: False → not False = True → break
+        crowns_check = AsyncMock(side_effect=[True, False, True, False])
         mock_click = AsyncMock()
 
         with (
