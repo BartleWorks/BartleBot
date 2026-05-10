@@ -329,7 +329,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 
 **One coupling violation:** ~~BotCanvas directly calls EditScene private methods at lines 1110, 1117, 1129, 1138 (`_find_empty_grid_cell`, `_create_state_at`). These should be public API.~~ **Fixed:** both methods renamed to `find_empty_grid_cell` / `create_state_at`; all four call sites updated.
 
-**`_ParamPanel` still misplaced:** Created in BotCanvas (line 565) and displayed in LeftSidebar (passed as a constructor parameter). Neither owns it semantically — it's an edit-state concern. This is the same issue flagged in the original review, still unresolved. Low day-to-day impact but creates confusion about ownership.
+**`_ParamPanel` still misplaced:** Created in BotCanvas (line 565) and displayed in LeftSidebar (passed as a constructor parameter). Neither owns it semantically — it's an edit-state concern. Five solutions were analyzed (move ownership to MainWindow, to LeftSidebar, integrate visually into BotCanvas, introduce a PropertiesController mediator, or formalize the current pattern with documentation). **Decision: intentionally deferred.** Low day-to-day impact; none of the fixes justify the refactoring cost at this stage. Revisit if a canvas layout redesign happens (at which point moving the panel into BotCanvas visually becomes the right answer).
 
 **Theme compliance gap:** ~~BotCanvas constructs `_error_pill` (line 679) and `_warning_pill` (line 685) with THEME-colored stylesheets in `__init__`. The `changeEvent` override (line 999) re-tints button icons but does not re-apply pill stylesheets. Pills will show stale colors after a theme switch.~~ **Fixed:** stylesheet application extracted to `_apply_pill_stylesheets()`; called from both `__init__` and `changeEvent`.
 
@@ -351,7 +351,7 @@ Both files are ~1,570 lines. Their responsibilities are cleanly separated: BotCa
 | `app_controller.py` | 564–597 | ~~Recovery queue state leak on partial multi-client failure~~ | High — **DONE** |
 | `bot_canvas.py` | 1110, 1117, 1129, 1138 | ~~Calls EditScene private methods directly~~ | High — **DONE** |
 | `app_controller.py` | 617–621 | ~~No user-facing dialog on password retrieval failure in recovery~~ | High — **DONE** |
-| `bot_canvas.py` | 565 | `_ParamPanel` owned by canvas, displayed in sidebar — split ownership | Medium |
+| `bot_canvas.py` | 565 | ~~`_ParamPanel` owned by canvas, displayed in sidebar — split ownership~~ | Medium - **DEFERRED** |
 | `bot_canvas.py` | 679, 685 | ~~Validation pill stylesheets not re-applied on theme change~~ | Medium — **DONE** |
 | `app_controller.py` | — | ~~God class (10 responsibilities, 882 lines) — `ClientManager` not extracted~~ | Medium — **DONE** |
 | `edit_scene.py` | 1350–1472 | ~~Region management (7 methods, 150 lines) extractable~~ | Low — **DONE** |

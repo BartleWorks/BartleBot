@@ -377,7 +377,7 @@ class ClientManager(QObject):
                     ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_RETURN, 0)
                     await asyncio.sleep(0.05)
                     ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_RETURN, 0)
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(5.0)
 
         spam_task = asyncio.create_task(_enter_spam())
 
@@ -411,15 +411,34 @@ class ClientManager(QObject):
 
         logger.info("Client '%s' recovered and in-game, slot %d restored", display_name, orig_pos)
 
-        # Dismiss the crowns shop if it opened automatically on login.
         _VK_ESCAPE = 0x1B
-        for _ in range(5):
-            if not await is_enabled_by_path(new_client, CROWNS_SHOP_PATH):
-                break
-            hwnd = new_client.window_handle
+        hwnd = new_client.window_handle
+
+        async def _send_esc() -> None:
             ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_ESCAPE, 0)
             await asyncio.sleep(0.05)
             ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_ESCAPE, 0)
+
+        # Close any window accidentally opened by Enter spam (e.g. chat box).
+        # ESC always opens the settings window after closing chat, so: fire ESC until
+        # settings appears, then fire ESC until settings disappears.
+        logger.info("Cleaning up any window opened by Enter spam on client '%s'", display_name)
+        for _ in range(5):
+            if await is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH):
+                break
+            await _send_esc()
+            await asyncio.sleep(2.0)
+        for _ in range(5):
+            if not await is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH):
+                break
+            await _send_esc()
+            await asyncio.sleep(2.0)
+
+        # Dismiss the crowns shop if it opened automatically on login.
+        for _ in range(5):
+            if not await is_enabled_by_path(new_client, CROWNS_SHOP_PATH):
+                break
+            await _send_esc()
             if not await poll_until(
                 lambda: is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH),
                 timeout=TRIGGER_TIMEOUT,
