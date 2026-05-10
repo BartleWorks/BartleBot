@@ -447,7 +447,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | New systems | ~~`wiki_import_dialog.py` HTML parsing untested~~ | Medium — **DONE** |
 | FakeClient | ~~No `spec=SprintyClient`; API drift undetected~~ | High — **DONE** |
 | Integration | ~~Recovery procedure not tested~~ | Medium — **DONE** |
-| Integration | Machine stop during execution not tested | Medium |
+| Integration | ~~Machine stop during execution not tested~~ | Medium — **DONE** |
 
 ### Summary: Priority Issues
 
@@ -461,7 +461,7 @@ GitHub Actions runs on `windows-latest` (required for WizWalker Windows APIs). S
 | 6 | ~~`change_realm` node untested~~ | Medium — **DONE** |
 | 7 | ~~Wiki import HTML parsing untested~~ | Medium — **DONE** |
 | 8 | ~~Recovery procedure not tested~~ | Medium — **DONE** |
-| 9 | Recovery stop paths + machine stop during execution missing from integration tests | Medium |
+| 9 | ~~Recovery stop paths + machine stop during execution missing from integration tests~~ | Medium — **DONE** |
 
 ---
 
