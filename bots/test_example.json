@@ -3,7 +3,7 @@
   "description": "A basic example script for testing purposes.",
   "version": "2.0",
   "clients": "all",
-  "initial": "go_to_zone_a",
+  "initial": "state_1",
   "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
   "start_location": "The Commons",
@@ -25,7 +25,7 @@
       "node_type": "enter_zone",
       "label": "Go to Ravenwood",
       "position": {
-        "x": 0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -44,7 +44,7 @@
       "node_type": "enter_zone",
       "label": "Go to The Commons",
       "position": {
-        "x": 440,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -63,7 +63,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 880,
+        "x": 0,
         "y": 0.0
       },
       "params": {
@@ -79,7 +79,9 @@
       "dest": "go_to_zone_b",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -87,7 +89,9 @@
       "dest": "go_to_zone_a",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -95,7 +99,29 @@
       "dest": "go_to_zone_a",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "go_to_zone_b",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -103,23 +129,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "go_to_zone_b",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": []

@@ -8,7 +8,7 @@ import bartlebot.nodes.interaction.collect_reagent as cr
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 
 _ENTITY_NAME = "FungusWort"
-_PARAMS = {"zone": "TestZone", "entity_name": _ENTITY_NAME}
+_PARAMS = {"zone": "TestZone", "entity_names": [_ENTITY_NAME]}
 
 _XYZ_A = XYZ(100.0, 200.0, 0.0)
 _XYZ_B = XYZ(-300.0, 500.0, 50.0)
@@ -35,11 +35,11 @@ async def test_wrong_zone_fails():
     client.teleport.assert_not_called()
 
 
-async def test_blank_entity_name_fails():
-    """FAILURE when entity_name is empty."""
+async def test_blank_entity_names_fails():
+    """FAILURE when entity_names is empty."""
     client = FakeClient()
 
-    result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_name": ""})
+    result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": []})
 
     assert result == "FAILURE"
     client.teleport.assert_not_called()
@@ -125,6 +125,33 @@ async def test_success_multiple_entities():
 
     x_presses = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
     assert len(x_presses) == 3
+
+
+async def test_multiple_entity_names_combined():
+    """Two entity names provided — entities from both are collected in one pass."""
+    client = FakeClient()
+    entity_a = _entity(_XYZ_A)
+    entity_b = _entity(_XYZ_B)
+
+    def entities_for_name(name):
+        return [entity_a] if name == "FungusWort" else [entity_b]
+
+    client.get_base_entities_with_vague_name.side_effect = entities_for_name
+    client.is_in_npc_range.side_effect = [True, False, True, False]  # in/out per entity
+
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch(_SNAP, new=AsyncMock(return_value="")),
+        patch(_EXTRACT, return_value=[]),
+    ):
+        result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["FungusWort", "Mushroom"]})
+
+    assert result == "SUCCESS"
+    assert client.teleport.call_count == 2
+    from wizwalker import Keycode
+
+    x_presses = [c for c in client.send_key.call_args_list if c.args[0] == Keycode.X]
+    assert len(x_presses) == 2
 
 
 async def test_entity_found_no_prompt_fails():

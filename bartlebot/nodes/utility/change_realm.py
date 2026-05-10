@@ -353,10 +353,12 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
     await node_helpers.click_by_path(client, REALM_GO_TO_BUTTON_PATH)
 
     # 11. Wait for the loading screen to start.
+    #     Re-click Go To Realm each tick while still enabled — the button can be clicked
+    #     too quickly after it enables, causing the game to ignore the first press.
     seen = await node_helpers.poll_each_until_seen(
         [client],
         check_fn=lambda c: c.is_loading(),
-        action_fn=lambda c: asyncio.sleep(0),
+        action_fn=lambda c: node_helpers.click_by_path(c, REALM_GO_TO_BUTTON_PATH),
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )

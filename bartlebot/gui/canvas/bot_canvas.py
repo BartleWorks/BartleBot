@@ -674,19 +674,12 @@ class BotCanvas(QWidget):
         # ── Validation banner — right-aligned below toolbar ───────────
         # Hidden when valid (takes no space); appears under the edit/save
         # button whose right_stack sits at the 4 px right margin of the toolbar.
-        _pill_base = "border-radius: 4px; padding: 1px 7px;"
         self._error_pill = QLabel()
-        self._error_pill.setStyleSheet(
-            f"QLabel {{ background-color: {THEME.error}; color: {THEME.pill_text}; {_pill_base} }}"
-        )
         self._error_pill.setVisible(False)
 
         self._warning_pill = QPushButton()
-        self._warning_pill.setStyleSheet(
-            f"QPushButton {{ background-color: {THEME.warning}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
-            f"QPushButton:hover {{ background-color: {THEME.pill_warning_hover}; }}"
-        )
         self._warning_pill.setVisible(False)
+        self._apply_pill_stylesheets()
         self._warning_pill.clicked.connect(self._cleanup_orphans)
 
         self._validation_banner = QWidget(self._view)
@@ -996,11 +989,22 @@ class BotCanvas(QWidget):
         """Pass a callable that returns zone suggestions (current player zones + history)."""
         self._param_panel._param_form._get_zone_suggestions = fn
 
+    def _apply_pill_stylesheets(self) -> None:
+        _pill_base = "border-radius: 4px; padding: 1px 7px;"
+        self._error_pill.setStyleSheet(
+            f"QLabel {{ background-color: {THEME.error}; color: {THEME.pill_text}; {_pill_base} }}"
+        )
+        self._warning_pill.setStyleSheet(
+            f"QPushButton {{ background-color: {THEME.warning}; color: {THEME.pill_text}; {_pill_base} border: none; }}"
+            f"QPushButton:hover {{ background-color: {THEME.pill_warning_hover}; }}"
+        )
+
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             for btn, icon_name in self._btn_icons.items():
                 btn.setIcon(svg_icon(icon_name))
+            self._apply_pill_stylesheets()
 
     def _set_run_icon(self, icon_name: str) -> None:
         """Set the run/pause button icon and record it for live theme updates."""
@@ -1107,14 +1111,14 @@ class BotCanvas(QWidget):
         return self._view.mapToScene(self._view.viewport().rect().center())
 
     def _on_add_state(self) -> None:
-        self._scene.add_state(self._scene._find_empty_grid_cell(self._canvas_origin()))
+        self._scene.add_state(self._scene.find_empty_grid_cell(self._canvas_origin()))
 
     def _on_node_type_chosen(self, node_type: str, pos: object) -> None:
         """Slot for EditScene.node_type_chosen — creates the state after dialog confirmation."""
         from PyQt6.QtCore import QPointF as _QPointF
 
         if isinstance(pos, _QPointF):
-            self._scene._create_state_at(node_type, pos)
+            self._scene.create_state_at(node_type, pos)
 
     def _on_hotkey_slot(self, slot: int) -> None:
         """Handle a bare number-key press for the given favorites slot."""
@@ -1126,16 +1130,16 @@ class BotCanvas(QWidget):
         node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
         if not node_type:
             return
-        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
-        self._scene._create_state_at(node_type, pos)
+        pos = self._scene.find_empty_grid_cell(self._canvas_origin())
+        self._scene.create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _add_node_at_viewport_center(self, node_type: str) -> None:
         """Add a node of the given type near the canvas origin, avoiding occupied grid cells."""
         if self._mode != BotMode.EDIT or self._scene._config is None:
             return
-        pos = self._scene._find_empty_grid_cell(self._canvas_origin())
-        self._scene._create_state_at(node_type, pos)
+        pos = self._scene.find_empty_grid_cell(self._canvas_origin())
+        self._scene.create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _on_layout_clicked(self) -> None:
@@ -1174,7 +1178,7 @@ class BotCanvas(QWidget):
             node.setVisible(sid in member_set)
         for s, _, d, edge in self._scene._edge_items:
             edge.setVisible(s in member_set and d in member_set)
-        for rid, ri in self._scene._region_items.items():
+        for rid, ri in self._scene.region_items.items():
             ri.setVisible(rid == region_id)
 
         self._focus_crumb_label.setText(f"Viewing: {region.label}")
@@ -1190,7 +1194,7 @@ class BotCanvas(QWidget):
             node.setVisible(True)
         for *_, edge in self._scene._edge_items:
             edge.setVisible(True)
-        for ri in self._scene._region_items.values():
+        for ri in self._scene.region_items.values():
             ri.setVisible(True)
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.setVisible(False)

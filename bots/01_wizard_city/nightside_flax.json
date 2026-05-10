@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Flax Collector",
   "description": "Collects Flax in Nightside",
   "version": "1.0",
@@ -30,7 +30,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_NightSide",
-        "entity_name": "FrostedFlax_01"
+        "entity_names": ["FrostedFlax_01"]
       },
       "option_overrides": {}
     }
