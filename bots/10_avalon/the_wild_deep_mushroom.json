@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "The Wild Deep Mushroom Collector",
   "description": "Collects Deep Mushroom/Nightshade in The Wild, Avalon",
   "version": "1.0",
@@ -172,7 +172,7 @@
       },
       "params": {
         "zone": "Avalon/AV_Z04_TheWild",
-        "entity_name": "Mushroom"
+        "entity_names": ["Mushroom"]
       },
       "option_overrides": {}
     }

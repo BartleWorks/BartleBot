@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Parchment Collector (Selenopolis)",
   "description": "Endlessly collects Parchment and Ancient Scroll reagents in Selenopolis, Krokotopia",
   "version": "1.0",
@@ -86,7 +86,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
-        "entity_name": "Parchment"
+        "entity_names": ["Parchment"]
       },
       "option_overrides": {}
     },
@@ -118,7 +118,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
-        "entity_name": "Parchment"
+        "entity_names": ["Parchment"]
       },
       "option_overrides": {}
     }

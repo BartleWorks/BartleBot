@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "Silver Chest Locator",
   "description": "Locates Silver Chests in Aeriel Shores and Aeriel Jungle, Empyrea.\n\nDOES NOT AUTOMATICALLY PLAY CHEST MINIGAMES! This bot simply locates the chests for you. Stop the bot once you find a Silver Chest.",
   "version": "1.0",
@@ -86,7 +86,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -118,7 +118,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -150,7 +150,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -182,7 +182,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -214,7 +214,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -246,7 +246,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -278,7 +278,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -292,7 +292,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -324,7 +324,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -356,7 +356,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -388,7 +388,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -420,7 +420,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },
@@ -452,7 +452,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_name": "EM-Chest-Rare-001"
+        "entity_names": ["EM-Chest-Rare-001"]
       },
       "option_overrides": {}
     },

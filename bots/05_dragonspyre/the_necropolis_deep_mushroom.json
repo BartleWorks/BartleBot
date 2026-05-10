@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "The Necropolis Deep Mushroom Collector",
   "description": "Collects Deep Mushroom/Nightshade in The Necropolis, Dragonspyre",
   "version": "1.0",
@@ -106,7 +106,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
-        "entity_name": "Mushroom"
+        "entity_names": ["Mushroom"]
       },
       "option_overrides": {}
     },
@@ -138,7 +138,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
-        "entity_name": "Mushroom"
+        "entity_names": ["Mushroom"]
       },
       "option_overrides": {}
     },
@@ -170,7 +170,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
-        "entity_name": "Mushroom"
+        "entity_names": ["Mushroom"]
       },
       "option_overrides": {}
     },
@@ -202,7 +202,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
-        "entity_name": "Mushroom"
+        "entity_names": ["Mushroom"]
       },
       "option_overrides": {}
     },
@@ -240,7 +240,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza",
-        "entity_name": "Ore"
+        "entity_names": ["Ore"]
       },
       "option_overrides": {}
     },
