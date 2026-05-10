@@ -1,6 +1,6 @@
 {
-  "name": "Mirkholm Keep Ore Farmer",
-  "description": "Farms Ore and Diamonds in Mirkholm Keep in Grizzleheim",
+  "name": "Mirkholm Keep Ore Collector",
+  "description": "Farms Ore and Diamonds in Mirkholm Keep in Grizzleheim. Optionally also farms Cattails/Water Lillies and Frost Flowers/Grendelweed.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_3",

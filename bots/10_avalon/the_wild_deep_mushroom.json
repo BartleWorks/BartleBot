@@ -1,0 +1,343 @@
+{
+  "name": "The Wild Deep Mushroom Collector",
+  "description": "Collects Deep Mushroom/Nightshade in The Wild, Avalon",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Avalon",
+  "drops": [
+    "Deep Mushroom",
+    "Nightshade"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Caliburn",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Avalon/AV_Z00_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone_via_object",
+      "label": "Take teleporter to The Wild",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Avalon/AV_Z00_Hub",
+        "to_zone": "Avalon/AV_Z04_TheWild",
+        "interact_xyz": {
+          "x": 1070.37,
+          "y": -229.6,
+          "z": -20.37
+        },
+        "reset_xyz": {
+          "x": 550.35,
+          "y": -711.47,
+          "z": 0.4
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter High Road",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Avalon/AV_Z00_Hub",
+        "to_zone": "Avalon/AV_Z02_HighRoad",
+        "xyz": {
+          "x": 182.94,
+          "y": 6107.86,
+          "z": -493.61
+        },
+        "reset_xyz": {
+          "x": -427.87,
+          "y": 4526.11,
+          "z": -493.65
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Caer Lyon",
+      "position": {
+        "x": 1320.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Avalon/AV_Z02_HighRoad",
+        "to_zone": "Avalon/AV_Z03_CaerLyon",
+        "xyz": {
+          "x": -845.21,
+          "y": 14253.63,
+          "z": 171.97
+        },
+        "reset_xyz": {
+          "x": -873.7,
+          "y": 13396.95,
+          "z": 13.15
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Enter The Wild",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Avalon/AV_Z03_CaerLyon",
+        "to_zone": "Avalon/AV_Z04_TheWild",
+        "xyz": {
+          "x": -7705.26,
+          "y": 14861.19,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -6824.6,
+          "y": 14794.37,
+          "z": 1126.04
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "change_realm",
+      "label": "Change realm",
+      "position": {
+        "x": 2200,
+        "y": 0.0
+      },
+      "params": {
+        "start_realm_page": 3,
+        "end_realm_page": 5
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Toadstool Village",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Avalon/AV_Z04_TheWild",
+        "xyz": {
+          "x": -6127.68,
+          "y": -3902.1,
+          "z": 456.5
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "collect_reagent",
+      "label": "Collect Deep Mushroom",
+      "position": {
+        "x": 3080,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Avalon/AV_Z04_TheWild",
+        "entity_name": "Mushroom"
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}
