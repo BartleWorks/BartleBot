@@ -19,15 +19,15 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
-        key="entity_name",
-        type="str",
-        label="Entity Name",
+        key="entity_names",
+        type="str_list",
+        label="Entity Names",
         help=(
-            "Internal object name of the reagent to collect — use the Nearest Entity "
-            "display in the client widget to find it. Partial matches work "
-            "(e.g. 'Fungi' matches 'FungusWort')."
+            "Internal object names of the reagents to collect — use the Nearest Entity "
+            "display in the client widget to find them. Partial matches work "
+            "(e.g. 'Fungi' matches 'FungusWort'). All listed reagents are collected in one pass."
         ),
-        default="",
+        default=[],
         required=True,
     ),
 ]
@@ -43,7 +43,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "At least one entity was found and visited across all players."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in the expected zone, entity_name is blank, or no matching entities were found.",
+            "Players were not in the expected zone, entity_names is empty, or no matching entities were found.",
         ),
     ],
     required_bot_options=[
@@ -64,16 +64,25 @@ NODE_SPEC = NodeSpec(
 )
 
 
-async def _collect_for_client(machine, client, client_idx: int, entity_name: str, safety_delay: float) -> int:
+async def _collect_for_client(machine, client, client_idx: int, entity_names: list[str], safety_delay: float) -> int:
     """Find and collect all matching reagent entities for a single client. Returns collected count."""
     from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
 
-    entities = await client.get_base_entities_with_vague_name(entity_name)
+    entities = []
+    for name in entity_names:
+        found = await client.get_base_entities_with_vague_name(name)
+        if found:
+            machine.log(f"Client {client_idx + 1}: found {len(found)} '{name}' entity(s)", logging.DEBUG)
+            entities.extend(found)
+
     if not entities:
-        machine.log(f"Client {client_idx + 1}: no '{entity_name}' present — skipping", logging.DEBUG)
+        machine.log(f"Client {client_idx + 1}: no entities matching {entity_names} present — skipping", logging.DEBUG)
         return 0
 
-    machine.log(f"Client {client_idx + 1}: found {len(entities)} '{entity_name}' entity(s)", logging.DEBUG)
+    machine.log(
+        f"Client {client_idx + 1}: found {len(entities)} entity(s) total across {len(entity_names)} name(s)",
+        logging.DEBUG,
+    )
     collected = 0
 
     for i, entity in enumerate(entities, start=1):
@@ -125,9 +134,9 @@ async def _collect_for_client(machine, client, client_idx: int, entity_name: str
 
 async def run(machine, clients: list, params: dict) -> str:
     zone: str = params["zone"]
-    entity_name: str = params.get("entity_name", "").strip()
+    entity_names: list[str] = [n.strip() for n in params.get("entity_names", []) if n.strip()]
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
-    machine.log(f"collect_reagent: zone={zone!r} entity_name={entity_name!r}")
+    machine.log(f"collect_reagent: zone={zone!r} entity_names={entity_names!r}")
 
     # 1. Zone check.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -140,9 +149,9 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 2. Validate entity name.
-    if not entity_name:
-        machine.log("FAILURE: entity_name is blank", logging.WARNING)
+    # 2. Validate entity names.
+    if not entity_names:
+        machine.log("FAILURE: entity_names is empty", logging.WARNING)
         return "FAILURE"
 
     # 3. Wait for entities to load.
@@ -150,11 +159,11 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4. Each client independently finds and collects its own entity list.
     counts = await asyncio.gather(
-        *[_collect_for_client(machine, c, i, entity_name, safety_delay) for i, c in enumerate(clients)]
+        *[_collect_for_client(machine, c, i, entity_names, safety_delay) for i, c in enumerate(clients)]
     )
     total = sum(counts)
     if total == 0:
-        machine.log(f"FAILURE: no '{entity_name}' entities found on any client", logging.WARNING)
+        machine.log(f"FAILURE: no entities matching {entity_names} found on any client", logging.WARNING)
         return "FAILURE"
     machine.log(f"collect_reagent: collected {total} reagent(s) across {len(clients)} client(s) — SUCCESS")
     return "SUCCESS"
