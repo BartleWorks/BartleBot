@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
-from wizwalker.errors import ClientClosedError, MemoryReadError
+from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 
@@ -249,7 +249,7 @@ class BotMachine:
                         break
                     # run() was cancelled from outside — propagate.
                     raise
-                except (ClientClosedError, MemoryReadError) as exc:
+                except (ClientClosedError, ExceptionalTimeout, MemoryReadError) as exc:
                     # A client process has died. Pause immediately rather than treating
                     # this as a normal FAILURE — prevents the no-match / idle counters
                     # from hitting their limits before _client_loop detects the removal
@@ -257,6 +257,8 @@ class BotMachine:
                     # MemoryReadError (e.g. error 299 = ERROR_PARTIAL_COPY) occurs when the
                     # process dies before WizWalker's ClientClosedError fires; both indicate
                     # a dead game process and need the same recovery path.
+                    # ExceptionalTimeout wraps a memory-read poll that timed out — same root
+                    # cause when WizWalker's internal timeout fires before ClientClosedError.
                     logger.warning(
                         "%s in state %s — client may have died, pausing for recovery",
                         type(exc).__name__,

@@ -284,9 +284,9 @@
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "xyz": {
-          "x": 26628.42,
-          "y": 33787.04,
-          "z": -1194.81
+          "x": 26579.31,
+          "y": 32735.93,
+          "z": -1053.07
         }
       },
       "option_overrides": {}
@@ -316,9 +316,9 @@
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
         "xyz": {
-          "x": 26628.42,
-          "y": 33787.04,
-          "z": -1194.81
+          "x": 26579.31,
+          "y": 32735.93,
+          "z": -1053.07
         }
       },
       "option_overrides": {}
@@ -344,6 +344,16 @@
       "source": "state_1",
       "dest": "state_6",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -381,6 +391,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_12",
       "dest": "state_12",
       "when": "FAILURE",
@@ -404,6 +424,16 @@
       "source": "state_13",
       "dest": "state_14",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_13",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -511,6 +541,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_18",
       "dest": "state_19",
       "when": "SUCCESS",
@@ -534,6 +574,16 @@
       "source": "state_19",
       "dest": "state_2",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_19",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -651,6 +701,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_8",
       "dest": "state_8",
       "when": "FAILURE",
@@ -681,68 +741,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_9",
       "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_13",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_19",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
