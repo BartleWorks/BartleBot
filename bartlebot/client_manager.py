@@ -48,6 +48,8 @@ class ClientManager(QObject):
         # Slots pending recovery: original_position → username
         self._pending_recovery: dict[int, str] = {}
         self._recovery_in_progress: bool = False
+        # Last known window resolution per username; used by recovery to restore original size.
+        self._client_resolutions: dict[str, tuple[int, int]] = {}
         self._client_loop_task: asyncio.Task | None = None
         self._recovery_task: asyncio.Task | None = None
         self._machine = None
@@ -183,6 +185,9 @@ class ClientManager(QObject):
 
     def _refresh_account_map(self, live_clients: list) -> None:
         """For each live client with an unrecognised HWND, try to match window title to an account."""
+        import ctypes  # noqa: PLC0415
+        import ctypes.wintypes  # noqa: PLC0415
+
         settings = SettingsManager.instance()
         for client in live_clients:
             if client.window_handle in self._hwnd_account_map:
@@ -197,6 +202,14 @@ class ClientManager(QObject):
                 display = CredentialStore.display_name(username, alias)
                 if title == f"[{display}] Wizard101":
                     self._hwnd_account_map[client.window_handle] = username
+                    try:
+                        rect = ctypes.wintypes.RECT()
+                        ctypes.windll.user32.GetClientRect(client.window_handle, ctypes.byref(rect))
+                        w, h = rect.right - rect.left, rect.bottom - rect.top
+                        if w > 0 and h > 0:
+                            self._client_resolutions[username] = (w, h)
+                    except Exception:
+                        pass
                     break
 
     def _on_clients_removed(self, removed_hwnds: set) -> None:
@@ -342,17 +355,9 @@ class ClientManager(QObject):
         display_name = CredentialStore.display_name(username, alias)
         expected_title = f"[{display_name}] Wizard101"
 
-        # Read the crashed window's resolution before relaunching so the new instance
-        # opens at the same size. Falls back to None (settings default) if the window
-        # is already gone.
-        crashed_resolution: tuple[int, int] | None = None
-        old_hwnd = ctypes.windll.user32.FindWindowW(None, expected_title)
-        if old_hwnd:
-            rect = ctypes.wintypes.RECT()
-            ctypes.windll.user32.GetClientRect(old_hwnd, ctypes.byref(rect))
-            w_old, h_old = rect.right - rect.left, rect.bottom - rect.top
-            if w_old > 0 and h_old > 0:
-                crashed_resolution = (w_old, h_old)
+        # Use the last known resolution for this client, captured while the window was alive.
+        # Falls back to None (global setting) if the client was never seen before recovery.
+        crashed_resolution = self._client_resolutions.get(username)
 
         logger.info("Relaunching '%s' for recovery at slot %d", display_name, orig_pos)
         try:
