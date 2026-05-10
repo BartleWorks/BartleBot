@@ -377,11 +377,14 @@ class ClientManager(QObject):
 
         async def _enter_spam() -> None:
             while not _enter_stop.is_set():
-                hwnd = ctypes.windll.user32.FindWindowW(None, expected_title)
-                if hwnd:
-                    ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_RETURN, 0)
-                    await asyncio.sleep(0.05)
-                    ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_RETURN, 0)
+                try:
+                    hwnd = ctypes.windll.user32.FindWindowW(None, expected_title)
+                    if hwnd:
+                        ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_RETURN, 0)
+                        await asyncio.sleep(0.05)
+                        ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_RETURN, 0)
+                except Exception:
+                    logger.warning("Enter-spam: ctypes call failed, will retry", exc_info=True)
                 await asyncio.sleep(5.0)
 
         spam_task = asyncio.create_task(_enter_spam())
@@ -406,7 +409,7 @@ class ClientManager(QObject):
             spam_task.cancel()
             try:
                 await spam_task
-            except asyncio.CancelledError:
+            except (asyncio.CancelledError, Exception):
                 pass
 
         if new_client is None:
