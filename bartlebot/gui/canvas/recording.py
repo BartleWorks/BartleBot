@@ -15,6 +15,8 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
+from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL
+
 # ---------------------------------------------------------------------------
 # Session guard — enforces at most one active recording across the entire app
 # ---------------------------------------------------------------------------
@@ -114,7 +116,6 @@ async def _wait_for_zone_name(client, poll: float, timeout: float = 10.0) -> str
 
 
 async def _record_enter_zone_gateway(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -127,7 +128,7 @@ async def _record_enter_zone_gateway(client, param_form, on_status, on_btn, try_
         last_pos = start_pos
 
         while True:
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if await client.is_loading():
                 param_form.set_xyz("xyz", last_pos.x, last_pos.y, last_pos.z)
                 on_status("Loading…")
@@ -136,9 +137,9 @@ async def _record_enter_zone_gateway(client, param_form, on_status, on_btn, try_
             param_form.set_xyz("xyz", last_pos.x, last_pos.y, last_pos.z)
 
         while await client.is_loading():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
-        to_zone = await _wait_for_zone_name(client, POLL)
+        to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str("to_zone", to_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(to_zone)}")
         on_status(f"Done — {_zone_display(to_zone)}")
@@ -169,7 +170,6 @@ async def _record_go_to_xyz(client, param_form, on_status, on_btn, try_set_label
 
 
 async def _record_enter_dungeon(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -182,7 +182,7 @@ async def _record_enter_dungeon(client, param_form, on_status, on_btn, try_set_l
         last_pos = start_pos
 
         while True:
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if await client.is_loading():
                 param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
                 on_status("Loading…")
@@ -191,9 +191,9 @@ async def _record_enter_dungeon(client, param_form, on_status, on_btn, try_set_l
             param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
 
         while await client.is_loading():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
-        dungeon_zone = await _wait_for_zone_name(client, POLL)
+        dungeon_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str("dungeon_zone", dungeon_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}")
         on_status(f"Done — {_zone_display(dungeon_zone)}")
@@ -208,7 +208,6 @@ async def _record_enter_dungeon(client, param_form, on_status, on_btn, try_set_l
 
 
 async def _record_interact(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -219,13 +218,13 @@ async def _record_interact(client, param_form, on_status, on_btn, try_set_label)
         on_status("Walk to interactable…")
 
         while not await client.is_in_npc_range():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status("Interact to finish…")
         while True:
             pos = await client.body.position()
             param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if not await client.is_in_npc_range():
                 break
 
@@ -242,7 +241,6 @@ async def _record_interact(client, param_form, on_status, on_btn, try_set_label)
 
 
 async def _record_interact_menu(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -253,13 +251,13 @@ async def _record_interact_menu(client, param_form, on_status, on_btn, try_set_l
         on_status("Walk to interactable…")
 
         while not await client.is_in_npc_range():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status("Interact to finish…")
         while True:
             pos = await client.body.position()
             param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if not await client.is_in_npc_range():
                 break
 
@@ -276,7 +274,6 @@ async def _record_interact_menu(client, param_form, on_status, on_btn, try_set_l
 
 
 async def _record_apply_level_scaling(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -287,13 +284,13 @@ async def _record_apply_level_scaling(client, param_form, on_status, on_btn, try
         on_status("Walk to level-scaling NPC…")
 
         while not await client.is_in_npc_range():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status("Leave NPC range to finish…")
         while True:
             pos = await client.body.position()
             param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if not await client.is_in_npc_range():
                 break
 
@@ -310,7 +307,6 @@ async def _record_apply_level_scaling(client, param_form, on_status, on_btn, try
 
 
 async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -321,23 +317,23 @@ async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try
         on_status("Walk to interactable…")
 
         while not await client.is_in_npc_range():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status("Interact to trigger zone change…")
         while True:
             pos = await client.body.position()
             param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if not await client.is_in_npc_range():
                 break
 
         on_status("Loading…")
         while not await client.is_loading():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
         while await client.is_loading():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
-        to_zone = await _wait_for_zone_name(client, POLL)
+        to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str("to_zone", to_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(to_zone)}")
         on_status(f"Done — {_zone_display(to_zone)}")
@@ -352,7 +348,6 @@ async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try
 
 
 async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -365,7 +360,7 @@ async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, tr
         last_pos = start_pos
 
         while True:
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if await client.is_loading():
                 param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
                 on_status("Loading…")
@@ -374,9 +369,9 @@ async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, tr
             param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
 
         while await client.is_loading():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
-        dungeon_zone = await _wait_for_zone_name(client, POLL)
+        dungeon_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str("dungeon_zone", dungeon_zone)
         try_set_label(f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}")
         on_status(f"Done — {_zone_display(dungeon_zone)}")
@@ -391,7 +386,6 @@ async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, tr
 
 
 async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try_set_label) -> None:
-    POLL = 0.15
     on_btn("Stop")
     on_status("Starting…")
     try:
@@ -402,7 +396,7 @@ async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try
         on_status("Walk to zone-list object…")
 
         while not await client.is_in_npc_range():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status("Press X, select zone, click Teleport…")
         # Keep updating interact_xyz until the teleport triggers a loading screen.
@@ -410,13 +404,13 @@ async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try
         while not await client.is_loading():
             pos = await client.body.position()
             param_form.set_xyz("interact_xyz", pos.x, pos.y, pos.z)
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status("Loading…")
         while await client.is_loading():
-            await asyncio.sleep(POLL)
+            await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
-        to_zone = await _wait_for_zone_name(client, POLL)
+        to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str("to_zone", to_zone)
         # WizWalker exposes no "selected item" state on list controls, so we derive
         # the list entry text from the destination zone's display name. The user
@@ -452,7 +446,7 @@ async def _record_mark_location(client, param_form, on_status, on_btn, try_set_l
 
 async def _record_teleport_to_marked_location(client, param_form, on_status, on_btn, try_set_label) -> None:
     on_btn("Stop")
-    on_status("Click the Recall button to recall…")
+    on_status("Stand at the recall destination, then click Record…")
     try:
         zone = await client.zone_name()
         pos = await client.body.position()

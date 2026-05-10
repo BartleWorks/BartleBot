@@ -130,3 +130,24 @@ class FakeMachine:
         options={"Safety Delay": <value>} to the constructor.
         """
         return self._options.get(name, 0.01 if name == "Safety Delay" else 0)
+
+
+class FakeParamForm:
+    """Minimal stub for _DynamicParamForm used by recording coroutines.
+
+    Recording coroutines call only two methods:
+      - set_str(key, value)    — stores a string field
+      - set_xyz(key, x, y, z) — stores an XYZ coordinate triple
+
+    Tests inspect .str_fields and .xyz_fields directly.
+    """
+
+    def __init__(self):
+        self.str_fields: dict[str, str] = {}
+        self.xyz_fields: dict[str, tuple[float, float, float]] = {}
+
+    def set_str(self, key: str, value: str) -> None:
+        self.str_fields[key] = value
+
+    def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
+        self.xyz_fields[key] = (x, y, z)
