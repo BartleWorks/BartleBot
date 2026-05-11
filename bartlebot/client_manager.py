@@ -24,6 +24,7 @@ class ClientManager(QObject):
     """
 
     clients_changed = pyqtSignal(list)
+    all_clients_changed = pyqtSignal(list, list)  # (active_clients, unhooked_clients)
     recovery_error = pyqtSignal(str)
 
     def __init__(
@@ -50,6 +51,8 @@ class ClientManager(QObject):
         self._recovery_in_progress: bool = False
         # Last known window resolution per username; used by recovery to restore original size.
         self._client_resolutions: dict[str, tuple[int, int]] = {}
+        self._unhooked_clients: list = []
+        self._unhooked_hwnds: set[int] = set()
         self._client_loop_task: asyncio.Task | None = None
         self._recovery_task: asyncio.Task | None = None
         self._machine = None
@@ -93,6 +96,66 @@ class ClientManager(QObject):
             )
         self._drops_widget.swap_clients(idx_a, idx_b)
         self.clients_changed.emit(self._clients)
+        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
+    async def unhook_client(self, index: int) -> None:
+        """Unhook WizWalker from the client at the given index without closing its game window."""
+        if index >= len(self._clients):
+            return
+        client = self._clients[index]
+        hwnd = client.window_handle
+        self._unhooked_hwnds.add(hwnd)
+
+        try:
+            await client.close()
+        except Exception:
+            logger.exception("Error while unhooking client hwnd=%d", hwnd)
+
+        username = self._hwnd_account_map.pop(hwnd, None)
+        if username:
+            try:
+                self._client_order.remove(username)
+            except ValueError:
+                pass
+
+        prev_clients = list(self._clients)
+        self._clients = [c for c in self._clients if c.window_handle != hwnd]
+        self._unhooked_clients.append(client)
+        self._sync_embedded_clients(prev_clients, self._clients)
+        if self._machine:
+            self._machine.set_clients(self._clients)
+        self.clients_changed.emit(list(self._clients))
+        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+        logger.info("Unhooked client hwnd=%d — game window left open", hwnd)
+
+    async def rehook_client(self, hwnd: int) -> None:
+        """Re-activate WizWalker hooks on a previously unhooked client."""
+        client = next((c for c in self._unhooked_clients if c.window_handle == hwnd), None)
+        if client is None:
+            return
+
+        try:
+            await client.activate_hooks()
+        except Exception:
+            logger.exception("Error while rehoooking client hwnd=%d", hwnd)
+            return
+
+        self._unhooked_clients.remove(client)
+        self._unhooked_hwnds.discard(hwnd)
+        self._clients.append(client)
+
+        self._refresh_account_map(self._clients)
+        username = self._hwnd_account_map.get(hwnd)
+        if username and username not in self._client_order:
+            self._client_order.append(username)
+
+        prev_without = [c for c in self._clients if c.window_handle != hwnd]
+        self._sync_embedded_clients(prev_without, self._clients)
+        if self._machine:
+            self._machine.set_clients(self._clients)
+        self.clients_changed.emit(list(self._clients))
+        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+        logger.info("Rehooked client hwnd=%d", hwnd)
 
     # ------------------------------------------------------------------
     # Client loop
@@ -117,6 +180,19 @@ class ClientManager(QObject):
                         continue
 
                 clients = list(self._handler.clients)
+
+                # Exclude unhooked clients — window still open but hooks deactivated.
+                clients = [c for c in clients if c.window_handle not in self._unhooked_hwnds]
+
+                # Clean up _unhooked_clients whose game windows have since closed.
+                handler_hwnds = {c.window_handle for c in self._handler.clients}
+                closed_unhooked = [c for c in self._unhooked_clients if c.window_handle not in handler_hwnds]
+                if closed_unhooked:
+                    for c in closed_unhooked:
+                        self._unhooked_clients.remove(c)
+                        self._unhooked_hwnds.discard(c.window_handle)
+                    self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
                 if not clients:
                     # Detect removals before clearing the list — handles the case where the
                     # last remaining client(s) crash, which would otherwise skip _on_clients_removed.
@@ -128,6 +204,7 @@ class ClientManager(QObject):
                     if self._machine:
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit([])
+                    self.all_clients_changed.emit([], list(self._unhooked_clients))
                     await asyncio.sleep(3.0)
                     continue
 
@@ -164,6 +241,7 @@ class ClientManager(QObject):
                     if self._machine:
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit(self._clients)
+                    self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
 
                 await asyncio.sleep(1.0)
 
@@ -173,6 +251,7 @@ class ClientManager(QObject):
                 if self._machine:
                     self._machine.set_clients(self._clients)
                 self.clients_changed.emit([])
+                self.all_clients_changed.emit([], list(self._unhooked_clients))
                 await asyncio.sleep(1.0)
             except Exception:
                 self._sync_embedded_clients(self._clients, [])
@@ -180,6 +259,7 @@ class ClientManager(QObject):
                 if self._machine:
                     self._machine.set_clients(self._clients)
                 self.clients_changed.emit([])
+                self.all_clients_changed.emit([], list(self._unhooked_clients))
                 logger.exception("Client loop error")
                 await asyncio.sleep(3.0)
 

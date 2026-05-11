@@ -19,6 +19,8 @@ class ClientSection(SidebarSection):
     # Emitted when a move-up or move-down button is clicked.
     # Arguments are (idx_a, idx_b) to pass directly to AppController.swap_clients.
     swap_requested = pyqtSignal(int, int)
+    unhook_requested = pyqtSignal(int)  # index of active client to unhook
+    rehook_requested = pyqtSignal(int)  # HWND of unhooked client to rehook
 
     def __init__(self, parent=None):
         super().__init__("Players", parent)
@@ -34,8 +36,8 @@ class ClientSection(SidebarSection):
     # Public API
     # ------------------------------------------------------------------
 
-    def set_clients(self, clients: list) -> None:
-        """Rebuild widgets to match the current client list."""
+    def set_all_clients(self, active_clients: list, unhooked_clients: list) -> None:
+        """Rebuild widgets: active clients first, then unhooked clients (grayed out)."""
         if self._refresh_task and not self._refresh_task.done():
             self._refresh_task.cancel()
             self._refresh_task = None
@@ -45,11 +47,19 @@ class ClientSection(SidebarSection):
             w.deleteLater()
         self._widgets.clear()
 
-        total = len(clients)
-        for i, client in enumerate(clients):
+        total = len(active_clients)
+        for i, client in enumerate(active_clients):
             widget = ClientWidget(client, i, total, self.body)
             widget.move_up.connect(lambda idx: self.swap_requested.emit(idx, idx - 1))
             widget.move_down.connect(lambda idx: self.swap_requested.emit(idx, idx + 1))
+            widget.unhook_requested.connect(self.unhook_requested)
+            self._clients_layout.addWidget(widget)
+            self._widgets.append(widget)
+
+        for client in unhooked_clients:
+            widget = ClientWidget(client, -1, 0, self.body)
+            widget.rehook_requested.connect(self.rehook_requested)
+            widget.set_unhooked(True)
             self._clients_layout.addWidget(widget)
             self._widgets.append(widget)
 
@@ -58,6 +68,8 @@ class ClientSection(SidebarSection):
     def set_bot_running(self, running: bool) -> None:
         """Switch refresh rate between idle and active-bot modes."""
         self._refresh_interval = CLIENT_REFRESH_INTERVAL_RUN if running else CLIENT_REFRESH_INTERVAL_IDLE
+        for w in self._widgets:
+            w.set_bot_running(running)
 
     # ------------------------------------------------------------------
     # Internal
@@ -72,9 +84,10 @@ class ClientSection(SidebarSection):
     async def _refresh_loop(self) -> None:
         try:
             while True:
-                if self._widgets:
+                active_widgets = [w for w in self._widgets if not w.is_unhooked]
+                if active_widgets:
                     results = await asyncio.gather(
-                        *[asyncio.wait_for(w.refresh(), timeout=CLIENT_REFRESH_TIMEOUT) for w in self._widgets],
+                        *[asyncio.wait_for(w.refresh(), timeout=CLIENT_REFRESH_TIMEOUT) for w in active_widgets],
                         return_exceptions=True,
                     )
                     for r in results:

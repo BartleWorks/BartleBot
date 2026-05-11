@@ -27,10 +27,14 @@ class ClientWidget(QWidget):
 
     move_up = pyqtSignal(int)  # emits this widget's current index
     move_down = pyqtSignal(int)
+    unhook_requested = pyqtSignal(int)  # emits index (for active clients)
+    rehook_requested = pyqtSignal(int)  # emits HWND (for unhooked clients)
 
     def __init__(self, client, index: int, total: int, parent=None):
         super().__init__(parent)
         self._client = client
+        self._index = index
+        self._is_unhooked = False
         self._in_freecam = False
         self._last_zone = "—"
         self._last_xyz = "—"
@@ -47,8 +51,9 @@ class ClientWidget(QWidget):
         layout.setContentsMargins(6, 4, 6, 4)
         layout.setSpacing(4)
 
-        # Title row with move up/down buttons
-        title = QLabel(f"Player {index + 1}")
+        # Title row with move up/down buttons and hook toggle
+        title_text = f"Player {index + 1}" if index >= 0 else "Player (unhooked)"
+        title = QLabel(title_text)
         font = QFont()
         font.setBold(True)
         title.setFont(font)
@@ -66,10 +71,17 @@ class ClientWidget(QWidget):
         btn_down.setEnabled(index < total - 1)
         btn_down.clicked.connect(lambda: self.move_down.emit(index))
 
+        btn_hook = QPushButton("Unhook")
+        btn_hook.setFixedHeight(22)
+        btn_hook.setToolTip("Unhook this client (leaves game window open)")
+        btn_hook.clicked.connect(self._on_hook_btn_clicked)
+        self._hook_btn = btn_hook
+
         title_row = QHBoxLayout()
         title_row.addWidget(btn_up)
         title_row.addWidget(title, 1)
         title_row.addWidget(btn_down)
+        title_row.addWidget(btn_hook)
         layout.addLayout(title_row)
 
         # Zone row
@@ -155,6 +167,37 @@ class ClientWidget(QWidget):
         line.setFrameShape(QFrame.Shape.HLine)
         line.setFrameShadow(QFrame.Shadow.Sunken)
         layout.addWidget(line)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    @property
+    def hwnd(self) -> int:
+        return self._client.window_handle
+
+    @property
+    def is_unhooked(self) -> bool:
+        return self._is_unhooked
+
+    def set_unhooked(self, unhooked: bool) -> None:
+        self._is_unhooked = unhooked
+        self._hook_btn.setText("Rehook" if unhooked else "Unhook")
+        self._hook_btn.setToolTip(
+            "Re-hook this client into BartleBot" if unhooked else "Unhook this client (leaves game window open)"
+        )
+        self.setEnabled(not unhooked)
+        self._hook_btn.setEnabled(True)  # keep the hook button itself always clickable
+
+    def set_bot_running(self, running: bool) -> None:
+        if not self._is_unhooked:
+            self._hook_btn.setEnabled(not running)
+
+    def _on_hook_btn_clicked(self) -> None:
+        if self._is_unhooked:
+            self.rehook_requested.emit(self._client.window_handle)
+        else:
+            self.unhook_requested.emit(self._index)
 
     # ------------------------------------------------------------------
     # Copy helpers

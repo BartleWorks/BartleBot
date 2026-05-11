@@ -96,13 +96,25 @@ class AppController(QObject):
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
 
-        # Client list changes → game view renumber + sidebar rebuild + start button
+        # Client list changes → game view renumber + start button state
         self._client_manager.clients_changed.connect(w.game_view.renumber_tiles)
-        self._client_manager.clients_changed.connect(w.right_sidebar.clients.set_clients)
         self._client_manager.clients_changed.connect(self._on_clients_changed)
+
+        # All clients (active + unhooked) → sidebar rebuild
+        self._client_manager.all_clients_changed.connect(
+            lambda active, unhooked: w.right_sidebar.clients.set_all_clients(active, unhooked)
+        )
 
         # Reorder buttons in sidebar → swap client positions
         w.right_sidebar.clients.swap_requested.connect(self._client_manager.swap_clients)
+
+        # Unhook/rehook buttons in sidebar → ClientManager
+        w.right_sidebar.clients.unhook_requested.connect(
+            lambda idx: asyncio.ensure_future(self._client_manager.unhook_client(idx))
+        )
+        w.right_sidebar.clients.rehook_requested.connect(
+            lambda hwnd: asyncio.ensure_future(self._client_manager.rehook_client(hwnd))
+        )
 
         self._client_manager.recovery_error.connect(
             lambda msg: QMessageBox.critical(self._window, "Client Recovery Failed", msg)
