@@ -71,17 +71,10 @@ class ClientWidget(QWidget):
         btn_down.setEnabled(index < total - 1)
         btn_down.clicked.connect(lambda: self.move_down.emit(index))
 
-        btn_hook = QPushButton("Unhook")
-        btn_hook.setFixedHeight(22)
-        btn_hook.setToolTip("Unhook this client (leaves game window open)")
-        btn_hook.clicked.connect(self._on_hook_btn_clicked)
-        self._hook_btn = btn_hook
-
         title_row = QHBoxLayout()
         title_row.addWidget(btn_up)
         title_row.addWidget(title, 1)
         title_row.addWidget(btn_down)
-        title_row.addWidget(btn_hook)
         layout.addLayout(title_row)
 
         # Zone row
@@ -159,6 +152,12 @@ class ClientWidget(QWidget):
         ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this player")
         ui_tree_btn.clicked.connect(self._open_ui_tree)
         tool_row.addWidget(ui_tree_btn)
+
+        btn_hook = QPushButton("Unhook")
+        btn_hook.setToolTip("Unhook this client (leaves game window open)")
+        btn_hook.clicked.connect(self._on_hook_btn_clicked)
+        self._hook_btn = btn_hook
+        tool_row.addWidget(btn_hook)
 
         layout.addLayout(tool_row)
 
