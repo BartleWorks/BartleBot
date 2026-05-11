@@ -84,11 +84,11 @@ async def run(machine, clients: list, params: dict) -> str:
     # 1. Early exit if all clients already in to_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     machine.log(f"Current zones: {list(zones)}", logging.DEBUG)
-    if all(z == to_zone for z in zones):
+    if all(node_helpers.zone_matches(z, to_zone) for z in zones):
         machine.log(f"SUCCESS: all clients already in {to_zone!r}")
         return "SUCCESS"
 
-    clients_to_move = [c for c, z in zip(clients, zones) if z != to_zone]
+    clients_to_move = [c for c, z in zip(clients, zones) if not node_helpers.zone_matches(z, to_zone)]
     machine.log(f"{len(clients_to_move)} of {len(clients)} client(s) will teleport", logging.DEBUG)
 
     # 2. Initiate teleport on all clients_to_move simultaneously.

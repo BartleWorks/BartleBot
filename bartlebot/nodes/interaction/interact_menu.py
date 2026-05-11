@@ -118,8 +118,8 @@ async def run(machine, clients: list, params: dict) -> str:
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
 
     machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(z == zone for z in zones):
-        wrong = [z for z in zones if z != zone]
+    if not all(node_helpers.zone_matches(z, zone) for z in zones):
+        wrong = [z for z in zones if not node_helpers.zone_matches(z, zone)]
         machine.log(
             f"FAILURE: clients not in expected zone (expected={zone!r}, unexpected={wrong})",
             logging.WARNING,
