@@ -138,6 +138,11 @@ class _ZoneWidget(QWidget):
         fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
         outer.addWidget(fill_btn)
 
+        hint = QLabel("Glob patterns supported: * matches any sequence, ? matches one character")
+        hint.setStyleSheet("font-size: 10px; color: gray;")
+        hint.setWordWrap(True)
+        outer.addWidget(hint)
+
         self._edit.textChanged.connect(self.textChanged)
 
     # ------------------------------------------------------------------

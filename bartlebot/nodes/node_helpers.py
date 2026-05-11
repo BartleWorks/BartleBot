@@ -1,6 +1,11 @@
 """Shared async helpers for node implementations."""
 
 import asyncio
+import fnmatch
+import logging
+import re
+
+logger = logging.getLogger(__name__)
 
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
@@ -159,16 +164,47 @@ async def poll_each_until_seen(
         await asyncio.sleep(poll_interval)
 
 
+def zone_matches(actual: str, pattern: str) -> bool:
+    """Return True when actual matches pattern.
+
+    If pattern contains glob metacharacters (* ? [), fnmatch is used so callers
+    can write patterns like "WizardCity/*" to match any WizardCity sub-zone.
+    Plain strings (no metacharacters) fall through to exact equality, preserving
+    the previous behaviour for all existing bot files.
+
+    Malformed glob patterns (e.g. "[unclosed") log a warning and fall back to
+    exact equality rather than raising.
+    """
+    if "*" in pattern or "?" in pattern or "[" in pattern:
+        try:
+            matched = fnmatch.fnmatchcase(actual, pattern)
+        except re.error:
+            logger.warning("zone_matches: invalid glob pattern %r — falling back to exact match", pattern)
+            return actual == pattern
+        if matched:
+            logger.debug("zone_matches: pattern %r matched actual zone %r (wildcard)", pattern, actual)
+        return matched
+    return actual == pattern
+
+
 async def all_left_zone(clients: list, zone: str) -> bool:
-    """Return True when every client's zone_name differs from zone."""
+    """Return True when every client's zone_name does not match zone.
+
+    zone may be a glob pattern (e.g. "WizardCity/*"); see zone_matches().
+    Note: if the pattern is broad enough to encompass the destination zone,
+    this helper will never return True until clients leave that zone family too.
+    """
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    return all(z != zone for z in zones)
+    return all(not zone_matches(z, zone) for z in zones)
 
 
 async def all_in_zone(clients: list, zone: str) -> bool:
-    """Return True when every client's zone_name matches zone."""
+    """Return True when every client's zone_name matches zone.
+
+    zone may be a glob pattern (e.g. "WizardCity/*"); see zone_matches().
+    """
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    return all(z == zone for z in zones)
+    return all(zone_matches(z, zone) for z in zones)
 
 
 async def wait_for_zone(

@@ -186,7 +186,7 @@ async def run(machine, clients: list, params: dict) -> str:
     )
 
     async def _loading_or_arrived(c) -> bool:
-        return await c.is_loading() or await c.zone_name() == to_zone
+        return await c.is_loading() or node_helpers.zone_matches(await c.zone_name(), to_zone)
 
     seen_loading = await node_helpers.poll_each_until_seen(
         clients,
