@@ -45,6 +45,12 @@ def test_zone_matches_case_sensitive():
     assert zone_matches("wizardcity/wc_hub", "WizardCity/*") is False
 
 
+def test_zone_matches_none_actual_returns_false():
+    # zone_name() returns None during loading screens; must not raise
+    assert zone_matches(None, "WizardCity/WC_Hub") is False
+    assert zone_matches(None, "WizardCity/*") is False
+
+
 def test_zone_matches_malformed_pattern_falls_back_to_exact():
     # "[unclosed" is an invalid glob — should not raise, falls back to equality
     assert zone_matches("WizardCity/WC_Hub", "[unclosed") is False

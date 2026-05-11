@@ -175,6 +175,8 @@ def zone_matches(actual: str, pattern: str) -> bool:
     Malformed glob patterns (e.g. "[unclosed") log a warning and fall back to
     exact equality rather than raising.
     """
+    if actual is None:
+        return False
     if "*" in pattern or "?" in pattern or "[" in pattern:
         try:
             matched = fnmatch.fnmatchcase(actual, pattern)

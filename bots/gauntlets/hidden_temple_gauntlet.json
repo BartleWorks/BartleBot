@@ -9,7 +9,7 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Hidden Temple gear"
+    "Fitzhume's Explorer gear"
   ],
   "authors": "BartleBot",
   "options": [
@@ -42,7 +42,7 @@
       },
       "params": {
         "friend_name": "Alice StormBlade",
-        "to_zone": "WizardCity/Interiors/WC_Housing_Dorm_Interior"
+        "to_zone": "*Housing*"
       },
       "option_overrides": {}
     },
@@ -217,7 +217,9 @@
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -225,7 +227,9 @@
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -233,7 +237,9 @@
       "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -241,7 +247,9 @@
       "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -249,7 +257,9 @@
       "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -257,7 +267,9 @@
       "dest": "state_10",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -265,7 +277,9 @@
       "dest": "state_11",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -273,7 +287,9 @@
       "dest": "state_1",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -281,7 +297,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -289,7 +307,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -297,7 +317,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -305,7 +327,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -313,7 +337,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -321,7 +347,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -329,7 +357,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -337,7 +367,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -345,7 +377,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -353,7 +387,9 @@
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -361,7 +397,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -369,7 +407,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": []
