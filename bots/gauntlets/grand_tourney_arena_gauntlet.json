@@ -1,5 +1,5 @@
 {
-  "name": "Grand Tourney Arena Gauntlet (Lvl 80+)",
+  "name": "Grand Tourney Arena Gauntlet",
   "description": "Endlessly farms the Grand Tourney Arena Gauntlet.\n\nREQUIREMENTS: Change the client name in \"Teleport to friend\" to your friend. Must be standing on the gauntlet entrance sigil.\n\nDouble-click to teleport to friend must be disabled.",
   "version": "1.0",
   "clients": "all",
@@ -41,8 +41,8 @@
     "Dryad",
     "Efreet",
     "Enfeeble Amethyst",
-    "Faerie Court Boots (Level 100+)",
-    "Faerie Court Steel Leaf (Level 100+)",
+    "Faerie Court Boots",
+    "Faerie Court Steel Leaf",
     "Fire Blossom",
     "Fire Dragon",
     "Fire Elf",
@@ -59,21 +59,20 @@
     "Large Willow Tree",
     "Lectern",
     "Lemon Harts",
-    "Levee Breaking Lute (Level 100+)",
-    "Mandolin of Evermore (Level 100+)",
-    "Mask of the Faerie Court (Level 100+)",
+    "Levee Breaking Lute",
+    "Mandolin of Evermore",
+    "Mask of the Faerie Court",
     "Mass Infection Onyx",
     "Mass Triage Jade",
-    "Misty Mountain Mandolin (Level 100+)",
+    "Misty Mountain Mandolin",
     "Monstrous Talent Opal",
     "Muscle Sprouts",
     "Mythic Beast",
     "Ogre Meanies",
     "Pixie Parsnips",
-    "Pixie's Armor of Encanta (Level 100+)",
-    "Pixie's Enchanted Boots (Level 100+)",
-    "Pixie's Enchanted Boots (Level 90+)",
-    "Pixie's Mask of Encanta (Level 100+)",
+    "Pixie's Armor of Encanta",
+    "Pixie's Enchanted Boots",
+    "Pixie's Mask of Encanta",
     "Pomegranite",
     "Red Bell Pepper",
     "Rye Bread Fruit Bush",
@@ -89,9 +88,9 @@
     "Steel",
     "Toad in the Hole",
     "Weirwood Cake",
-    "World's Fool Armor (Level 100+)",
-    "World's Fool Boots (Level 100+)",
-    "World's Fool Mask (Level 100+)",
+    "World's Fool Armor",
+    "World's Fool Boots",
+    "World's Fool Mask",
     "Wyrmy Apple"
   ],
   "authors": "BartleBot",
@@ -162,7 +161,7 @@
         "y": 0.0
       },
       "params": {
-        "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01"
+        "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01"
       },
       "option_overrides": {}
     },
@@ -175,7 +174,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "DD-AV01-DeerKnight-80",
+        "enemy": "DD-AV01-DeerKnight-??",
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
@@ -191,8 +190,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_02",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_02",
         "xyz": {
           "x": -1364.28,
           "y": -3391.03,
@@ -215,7 +214,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_02",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_02",
         "interact_xyz": {
           "x": -2838.83,
           "y": 222.01,
@@ -241,8 +240,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_02",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_02",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
         "xyz": {
           "x": -2805.2,
           "y": -813.98,
@@ -265,7 +264,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "DD-AV01-FoxKnight-80",
+        "enemy": "DD-AV01-FoxKnight-??",
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
@@ -281,8 +280,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_03",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_03",
         "xyz": {
           "x": -2198.24,
           "y": -3025.78,
@@ -305,7 +304,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_03",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_03",
         "interact_xyz": {
           "x": 74.71,
           "y": 366.19,
@@ -331,8 +330,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_03",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_03",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
         "xyz": {
           "x": -17.84,
           "y": -844.59,
@@ -355,7 +354,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "DD-AV01-BadgerKnight-80",
+        "enemy": "DD-AV01-BadgerKnight-??",
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
@@ -371,8 +370,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_04",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_04",
         "xyz": {
           "x": -452.4,
           "y": -3408.7,
@@ -395,7 +394,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_04",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_04",
         "interact_xyz": {
           "x": -5575.39,
           "y": 206.17,
@@ -421,8 +420,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_04",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_04",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
         "xyz": {
           "x": -5605.43,
           "y": -843.43,
@@ -445,7 +444,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "DD-AV01-DogKnight-80",
+        "enemy": "DD-AV01-DogKnight-??",
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
@@ -461,8 +460,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_05",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_05",
         "xyz": {
           "x": 700.34,
           "y": -1377.06,
@@ -485,7 +484,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_05",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_05",
         "interact_xyz": {
           "x": -8362.13,
           "y": -20.27,
@@ -511,8 +510,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_05",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_05",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
         "xyz": {
           "x": -8393.09,
           "y": -857.54,
@@ -535,7 +534,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "DD-AV01-CrabKnight-80",
+        "enemy": "DD-AV01-CrabKnight-??",
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
@@ -551,7 +550,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_80/AV_Gauntlet_80_01",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
         "xyz": {
           "x": -470.2,
           "y": -76.98,

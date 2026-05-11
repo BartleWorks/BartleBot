@@ -49,11 +49,10 @@
     "Frost Flower",
     "Glowing Rock Candy",
     "Green Foodcart",
-    "Greenwarden's Energetic Boots (Level 100+)",
-    "Greenwarden's Energetic Mask (Level 100+)",
-    "Greenwarden's Energetic Shroud (Level 100+)",
-    "Greenwarden's Energetic Staff (Level 100+)",
-    "Greenwarden's Energetic Staff (Level 90+)",
+    "Greenwarden's Energetic Boots",
+    "Greenwarden's Energetic Mask",
+    "Greenwarden's Energetic Shroud",
+    "Greenwarden's Energetic Staff",
     "Gummy Bloodbat",
     "Ice Trap Sapphire (Triangle)",
     "Large Cypress Tree",
@@ -146,7 +145,7 @@
         "y": 0.0
       },
       "params": {
-        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01"
+        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01"
       },
       "option_overrides": {}
     },
@@ -159,7 +158,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -185,8 +184,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_02",
         "xyz": {
           "x": -1482.77,
           "y": -13.7,
@@ -225,8 +224,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_02",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "xyz": {
           "x": 647.42,
           "y": 1578.09,
@@ -249,7 +248,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -275,8 +274,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_03",
         "xyz": {
           "x": -1039.09,
           "y": -1057.99,
@@ -315,8 +314,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_03",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "xyz": {
           "x": 601.38,
           "y": 1446.98,
@@ -355,7 +354,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -381,8 +380,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_04",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_04",
         "xyz": {
           "x": 1048.44,
           "y": -1053.31,
@@ -421,8 +420,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_04",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_04",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "xyz": {
           "x": 605.41,
           "y": 1406.74,
@@ -477,7 +476,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -503,8 +502,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_05",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_05",
         "xyz": {
           "x": 1488.28,
           "y": -6.51,
@@ -543,8 +542,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_05",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_05",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
         "xyz": {
           "x": 605.41,
           "y": 1406.74,
@@ -583,8 +582,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_06",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_06",
         "interact_xyz": {
           "x": -17.35,
           "y": -1310.53,
@@ -607,7 +606,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "SC-AV-Ogre-80",
+        "enemy": "SC-AV-Ogre-??",
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
@@ -623,7 +622,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_06",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_06",
         "xyz": {
           "x": -24.78,
           "y": 832.96,
@@ -654,7 +653,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "SC-AV-Giant-FormoriHandsome-80",
+        "enemy": "SC-AV-Giant-FormoriHandsome-??",
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0

@@ -147,7 +147,7 @@
         "y": 0.0
       },
       "params": {
-        "enemy": "HG_Dino_Undead_C_L50",
+        "enemy": "HG_Dino_Undead_C_L??",
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
