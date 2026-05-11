@@ -3,7 +3,7 @@
   "description": "Endlessly farms Prince Viggor in Wizard City Catacombs",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
+  "initial": "state_6",
   "recovery_state": "state_1",
   "default_combat_config": "### p1\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | scarecrow[epic]\n\n### p2\nany<blade>[sharp] @ ally(0) | any<blade> @ ally(0) | purge @ ally(0) | lord[epic]",
   "use_bartlebot_default_combat_config": false,
@@ -86,8 +86,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 0,
-        "y": 0.0
+        "x": 0.0,
+        "y": 90.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -99,8 +99,8 @@
       "node_type": "enter_zone",
       "label": "Enter Golem Court",
       "position": {
-        "x": 880,
-        "y": 0.0
+        "x": 880.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -123,8 +123,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
-        "y": 0.0
+        "x": 440.0,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 0.75,
@@ -139,8 +139,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter the Drains",
       "position": {
-        "x": 1760,
-        "y": 0.0
+        "x": 1760.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Golem_Tower",
@@ -187,8 +187,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
-        "y": 0.0
+        "x": 1320.0,
+        "y": 90.0
       },
       "params": {},
       "option_overrides": {}
@@ -250,6 +250,20 @@
         "max_duration": 1200.0
       },
       "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "check_zone",
+      "label": "Check starting zone",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Catacombs",
+        "clients_to_check": []
+      },
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -259,7 +273,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -267,7 +283,9 @@
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -275,7 +293,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -283,7 +303,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -291,7 +313,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -299,7 +323,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -307,7 +333,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -315,7 +343,9 @@
       "dest": "state_15",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -323,7 +353,9 @@
       "dest": "state_4",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -331,7 +363,9 @@
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -339,7 +373,9 @@
       "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -347,7 +383,9 @@
       "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -355,7 +393,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -363,7 +403,9 @@
       "dest": "state_9",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -371,7 +413,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -379,7 +423,9 @@
       "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -387,7 +433,9 @@
       "dest": "state_1",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -395,7 +443,29 @@
       "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_5",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": []

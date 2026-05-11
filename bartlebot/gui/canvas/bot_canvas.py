@@ -1330,6 +1330,8 @@ class BotCanvas(QWidget):
     def refresh_initial(self, initial_id: str) -> None:
         """Propagate initial state change to the canvas node indicator."""
         self._scene.refresh_initial(initial_id)
+        self._refresh_errors()
+        self._update_validation_badge()
 
     def _on_scene_changed(self) -> None:
         if self._scene._config is not None:

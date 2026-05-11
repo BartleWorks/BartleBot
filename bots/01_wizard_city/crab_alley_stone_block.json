@@ -3,7 +3,7 @@
   "description": "Endlessly collects Stone Blocks in Triton Avenue",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
+  "initial": "state_16",
   "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
@@ -152,7 +152,7 @@
       "label": "Collect Stone Block",
       "position": {
         "x": 3520.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -168,7 +168,7 @@
       "label": "Go to second spawn group",
       "position": {
         "x": 3960.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -186,7 +186,7 @@
       "label": "Collect Stone Block",
       "position": {
         "x": 4400.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -202,7 +202,7 @@
       "label": "Go to third spawn group",
       "position": {
         "x": 4840.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -220,7 +220,7 @@
       "label": "Collect Stone Block",
       "position": {
         "x": 5280.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -236,7 +236,7 @@
       "label": "Go to fourth spawn group",
       "position": {
         "x": 5720.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -254,7 +254,7 @@
       "label": "Collect Stone Block",
       "position": {
         "x": 6160.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -270,7 +270,7 @@
       "label": "Change realm",
       "position": {
         "x": 2640.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "start_realm_page": 3,
@@ -284,7 +284,7 @@
       "label": "Go to first spawn group",
       "position": {
         "x": 3080.0,
-        "y": 0.0
+        "y": -180.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -293,6 +293,20 @@
           "y": 1317.95,
           "z": -4.01
         }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "check_zone",
+      "label": "Check starting zone",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "clients_to_check": []
       },
       "option_overrides": {}
     }
@@ -597,6 +611,26 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_14",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -624,7 +658,8 @@
         "state_13",
         "state_12",
         "state_6",
-        "state_10"
+        "state_10",
+        "state_15"
       ],
       "color": 1
     }

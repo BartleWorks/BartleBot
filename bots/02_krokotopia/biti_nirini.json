@@ -200,6 +200,12 @@
         4
       ],
       "description": "1-based client numbers to check/apply level scaling (e.g. '2, 3'). Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+    },
+    {
+      "name": "Level Scaling Players",
+      "type": "int_list",
+      "default": [],
+      "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     }
   ],
   "states": [
@@ -208,8 +214,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 440,
-        "y": 0.0
+        "x": 4400.0,
+        "y": 270.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
@@ -221,8 +227,8 @@
       "node_type": "enter_zone",
       "label": "Enter Pyramid of the Sun",
       "position": {
-        "x": 880,
-        "y": 0.0
+        "x": 4840.0,
+        "y": 270.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -245,8 +251,8 @@
       "node_type": "enter_zone",
       "label": "Enter Royal Hall",
       "position": {
-        "x": 1320,
-        "y": 0.0
+        "x": 5280.0,
+        "y": 270.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
@@ -269,8 +275,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 1760,
-        "y": 0.0
+        "x": 5720.0,
+        "y": 180.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -287,8 +293,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2200,
-        "y": 0.0
+        "x": 6160.0,
+        "y": 270.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -304,8 +310,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Biti's Chamber",
       "position": {
-        "x": 2640,
-        "y": -90.0
+        "x": 7480.0,
+        "y": 180.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -328,8 +334,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Biti Nirini",
       "position": {
-        "x": 3080,
-        "y": -90.0
+        "x": 7920.0,
+        "y": 270.0
       },
       "params": {
         "enemy": "KrokPharaoh-FireHair-KTBoss-L03",
@@ -344,8 +350,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3080,
-        "y": 90.0
+        "x": 7040.0,
+        "y": 270.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -360,8 +366,8 @@
       "node_type": "enter_zone",
       "label": "Exit Biti's Chamber",
       "position": {
-        "x": 3960,
-        "y": 0.0
+        "x": 8800.0,
+        "y": 270.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/Interiors/KT_Hall_T1",
@@ -384,8 +390,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisp area",
       "position": {
-        "x": 2640,
-        "y": 90.0
+        "x": 6600.0,
+        "y": 270.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_Hall",
@@ -402,8 +408,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 4840,
-        "y": 0.0
+        "x": 440.0,
+        "y": 360.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
@@ -415,8 +421,8 @@
       "node_type": "enter_zone",
       "label": "Enter Tomb of Storms",
       "position": {
-        "x": 7040,
-        "y": 0.0
+        "x": 2640.0,
+        "y": 360.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -439,8 +445,8 @@
       "node_type": "interact",
       "label": "Activate first pillar",
       "position": {
-        "x": 5280,
-        "y": 0.0
+        "x": 880.0,
+        "y": 360.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -465,8 +471,8 @@
       "node_type": "interact",
       "label": "Activate second pillar",
       "position": {
-        "x": 5720,
-        "y": 0.0
+        "x": 1320.0,
+        "y": 360.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -491,8 +497,8 @@
       "node_type": "interact",
       "label": "Activate third pillar",
       "position": {
-        "x": 6160,
-        "y": 0.0
+        "x": 1760.0,
+        "y": 360.0
       },
       "params": {
         "zone": "Krokotopia/KT_Hub",
@@ -517,8 +523,8 @@
       "node_type": "sleep",
       "label": "Wait for portal to open",
       "position": {
-        "x": 6600,
-        "y": 0.0
+        "x": 2200.0,
+        "y": 360.0
       },
       "params": {
         "duration": 15.0
@@ -530,8 +536,8 @@
       "node_type": "enter_zone",
       "label": "Enter Well of Spirits",
       "position": {
-        "x": 7480,
-        "y": 0.0
+        "x": 3080.0,
+        "y": 360.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub_Crypt",
@@ -554,8 +560,8 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Storms",
       "position": {
-        "x": 7920,
-        "y": 0.0
+        "x": 3520.0,
+        "y": 360.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
@@ -578,8 +584,8 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 8360,
-        "y": 0.0
+        "x": 3960.0,
+        "y": 360.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -601,8 +607,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 9240.0,
+        "y": 180.0
       },
       "params": {},
       "option_overrides": {}
@@ -612,8 +618,8 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 0,
-        "y": 0.0
+        "x": 3520.0,
+        "y": 180.0
       },
       "params": {},
       "option_overrides": {}
@@ -623,8 +629,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3520,
-        "y": 0.0
+        "x": 8360.0,
+        "y": 270.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -632,6 +638,20 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "check_zone",
+      "label": "Check starting zone",
+      "position": {
+        "x": 3960.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Pyramid/KT_Hall",
+        "clients_to_check": []
       },
       "option_overrides": {}
     }
@@ -643,7 +663,9 @@
       "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -651,7 +673,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -659,7 +683,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -667,7 +693,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -675,7 +703,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -683,7 +713,9 @@
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -691,7 +723,9 @@
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -699,7 +733,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -707,7 +743,9 @@
       "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -715,7 +753,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -723,7 +763,9 @@
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -731,7 +773,9 @@
       "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -739,7 +783,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -747,7 +793,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -755,7 +803,9 @@
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -763,7 +813,9 @@
       "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -771,7 +823,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -779,7 +833,9 @@
       "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -787,7 +843,9 @@
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -795,7 +853,9 @@
       "dest": "state_15",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -803,7 +863,9 @@
       "dest": "state_16",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -811,7 +873,9 @@
       "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -819,7 +883,9 @@
       "dest": "state_13",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -827,7 +893,9 @@
       "dest": "state_14",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -835,7 +903,9 @@
       "dest": "state_15",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -843,7 +913,9 @@
       "dest": "state_13",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -851,7 +923,9 @@
       "dest": "state_11",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -859,7 +933,9 @@
       "dest": "state_17",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -867,7 +943,9 @@
       "dest": "state_11",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -875,7 +953,9 @@
       "dest": "state_11",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -883,7 +963,9 @@
       "dest": "state_11",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -891,7 +973,9 @@
       "dest": "state_18",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -899,7 +983,9 @@
       "dest": "state_19",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -907,7 +993,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -915,7 +1003,9 @@
       "dest": "state_4",
       "when": "TRUE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -923,15 +1013,9 @@
       "dest": "state_11",
       "when": "FALSE",
       "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_1",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -939,7 +1023,9 @@
       "dest": "state_11",
       "when": "FALSE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -947,7 +1033,9 @@
       "dest": "state_1",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -955,7 +1043,9 @@
       "dest": "state_22",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -963,7 +1053,9 @@
       "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -971,7 +1063,9 @@
       "dest": "state_9",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -979,7 +1073,39 @@
       "dest": "state_20",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_23",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_4",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -1004,7 +1130,8 @@
         "state_8",
         "state_7",
         "state_9",
-        "state_20"
+        "state_20",
+        "state_22"
       ],
       "color": 1
     },
