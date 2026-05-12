@@ -185,8 +185,6 @@ class ClientWidget(QWidget):
         self._hook_btn.setToolTip(
             "Re-hook this client into BartleBot" if unhooked else "Unhook this client (leaves game window open)"
         )
-        self.setEnabled(not unhooked)
-        self._hook_btn.setEnabled(True)  # keep the hook button itself always clickable
 
     def set_bot_running(self, running: bool) -> None:
         if not self._is_unhooked:
