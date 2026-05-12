@@ -109,7 +109,7 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool, xyz always have a value
 
 
-def _validate_node(state, config) -> tuple[bool, bool, list[str], list[str]]:
+def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bool, bool, list[str], list[str]]:
     """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
 
     Error conditions:
@@ -149,7 +149,8 @@ def _validate_node(state, config) -> tuple[bool, bool, list[str], list[str]]:
                     warning_reasons.append(f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}")
 
     if config.initial and state.id != config.initial:
-        if state.id not in _reachable_states(config):
+        r = reachable if reachable is not None else _reachable_states(config)
+        if state.id not in r:
             warning_reasons.append("Unreachable from initial state")
 
     return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
@@ -484,11 +485,12 @@ class EditScene(QGraphicsScene):
         """Recompute and apply error/warning indicators for all nodes."""
         if self._config is None:
             return
+        reachable = _reachable_states(self._config)
         for state in self._config.states:
             node = self._node_items.get(state.id)
             if node is None:
                 continue
-            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable)
             reasons = err_reasons + warn_reasons
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)

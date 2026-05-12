@@ -349,17 +349,21 @@ class NodeItem(QGraphicsItem):
 
     def set_error(self, is_error: bool, reasons: list[str] | None = None) -> None:
         """Mark this node as having a configuration error (red tint + border + tooltip)."""
+        new_reasons = list(reasons) if reasons is not None else self._reasons
+        if self._is_error == is_error and self._reasons == new_reasons:
+            return
         self._is_error = is_error
-        if reasons is not None:
-            self._reasons = list(reasons)
+        self._reasons = new_reasons
         self._update_tooltip()
         self.update()
 
     def set_warning(self, is_warning: bool, reasons: list[str] | None = None) -> None:
         """Mark this node as having a configuration warning (amber tint + border + tooltip)."""
+        new_reasons = list(reasons) if reasons is not None else self._reasons
+        if self._is_warning == is_warning and self._reasons == new_reasons:
+            return
         self._is_warning = is_warning
-        if reasons is not None:
-            self._reasons = list(reasons)
+        self._reasons = new_reasons
         self._update_tooltip()
         self.update()
 

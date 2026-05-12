@@ -543,6 +543,11 @@ class BotCanvas(QWidget):
         self._tick_timer.setInterval(1000)
         self._tick_timer.timeout.connect(self._tick)
 
+        self._validation_timer = QTimer(self)
+        self._validation_timer.setSingleShot(True)
+        self._validation_timer.setInterval(250)
+        self._validation_timer.timeout.connect(self._deferred_validation)
+
         self._tab_idx: int = 0
         self._search_matches: list[str] = []
         self._search_match_idx: int = 0
@@ -1353,11 +1358,20 @@ class BotCanvas(QWidget):
         if self._config is not None and self._mode == BotMode.EDIT:
             desc = "Edit transition" if self._param_panel._transition is not None else "Edit params"
             self._undo_mgr.begin_debounce(self._config, desc)
-        self._on_scene_changed()
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
         if self._param_panel._transition is not None:
             self._scene.refresh_edge_flags(self._param_panel._transition)
             self._config.sort_transitions()
+        # Emit config change immediately for autosave/other consumers, but defer the
+        # expensive full validation pass (O(n²) with large graphs) until typing pauses.
+        self.config_changed.emit()
+        self._refresh_undo_actions()
+        self._validation_timer.start()
+
+    def _deferred_validation(self) -> None:
+        """Run the expensive validation pass after a short debounce from param edits."""
+        self._refresh_errors()
+        self._update_validation_badge()
 
     def _on_select_edge_requested(self, transition) -> None:
         """Select the edge on the canvas that corresponds to *transition* and centre it."""
@@ -1431,9 +1445,10 @@ class BotCanvas(QWidget):
 
         error_lines: list[str] = []
         warning_lines: list[str] = []
+        reachable = _reachable_states(config)
         for state in config.states:
             name = state.label or state.id
-            _, _, err_reasons, warn_reasons = _validate_node(state, config)
+            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
             for r in err_reasons:
                 error_lines.append(f"{name}: {r}")
             for r in warn_reasons:
