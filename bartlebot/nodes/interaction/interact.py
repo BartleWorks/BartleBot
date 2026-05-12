@@ -7,7 +7,6 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -48,11 +47,24 @@ PARAM_SCHEMA: list[ParamField] = [
         default=[],
         required=False,
     ),
+    ParamField(
+        key="has_dialogue",
+        type="bool",
+        label="Has Dialogue",
+        help=(
+            "Whether this interaction produces dialogue. "
+            "Set to False for silent interactions (levers, collectables) to skip waiting for "
+            "dialogue that will never appear. The ambient watcher will still catch any unexpected dialogue."
+        ),
+        default=True,
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Interacts with an NPC or world object (lever, collectable, etc.) and advances through any resulting dialogue."
+        "Interacts with an NPC or world object (lever, collectable, etc.) and advances through any resulting dialogue. "
+        "Set Has Dialogue to False for silent interactions (levers, collectables) to skip the dialogue wait entirely."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -175,29 +187,19 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Pressing X to interact", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in active_clients])
 
-    # 7. Advance through dialogue; start polling immediately after X.
-    #    Only exit once no dialog is open AND at least Safety Delay seconds have
-    #    passed, so late-opening dialog windows are not missed.
+    # 7. Advance through dialogue; skip entirely for silent interactions.
+    if not params.get("has_dialogue", True):
+        machine.log("Skipping dialogue wait (has_dialogue=False)", logging.DEBUG)
+        machine.log("SUCCESS: interaction complete")
+        return "SUCCESS"
+
     machine.log("Advancing dialogue…", logging.DEBUG)
-    loop_start = asyncio.get_event_loop().time()
-    while True:
-        dialogs = await asyncio.gather(*[c.is_in_dialog() for c in active_clients])
-        elapsed = asyncio.get_event_loop().time() - loop_start
-        if not any(dialogs) and elapsed >= safety_delay:
-            break
-        if elapsed > DIALOG_TIMEOUT:
-            stuck = [i for i, d in enumerate(dialogs) if d]
-            machine.log(f"Clients still in dialog at timeout: {stuck}", logging.DEBUG)
-            machine.log(
-                f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
-                logging.WARNING,
-            )
-            return "FAILURE"
-        if any(dialogs):
-            await asyncio.gather(
-                *[node_helpers.click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(active_clients, dialogs) if d]
-            )
-        await asyncio.sleep(POLL_INTERVAL)
+    if not await node_helpers.advance_dialogue_until_clear(active_clients, safety_delay, DIALOG_TIMEOUT):
+        machine.log(
+            f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     machine.log("SUCCESS: interaction complete")
     return "SUCCESS"

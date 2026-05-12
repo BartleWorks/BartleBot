@@ -72,6 +72,11 @@ DIALOG_TIMEOUT = 60.0
 # Seconds to wait for an NPC dialog prompt to appear after triggering interaction.
 # Dialog appearance can be slow when the game is under load or zone assets are streaming.
 
+DIALOG_FAST_POLL_INTERVAL = 0.05
+# Polling interval for the ambient dialog watcher while a dialogue sequence is in progress.
+# Once a banner is dismissed, the watcher switches to this faster rate until a full
+# Safety Delay window has elapsed with no further dialogue.
+
 
 CLIENT_REFRESH_INTERVAL_IDLE = 0.1
 # Seconds between client sidebar refreshes when no bot is running.

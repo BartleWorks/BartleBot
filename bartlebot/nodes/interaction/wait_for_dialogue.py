@@ -1,12 +1,9 @@
 """Node: dismiss all dialogue and wait for the conversation to fully conclude."""
 
-import asyncio
 import logging
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import ADVANCE_DIALOG_PATH
-from bartlebot.nodes.timing import POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -65,26 +62,8 @@ async def run(machine, clients: list, params: dict) -> str:
     timeout_val: float | None = None if timeout_raw == 0.0 else timeout_raw
     safety_delay: float = machine.get_option("Safety Delay")
 
-    loop = asyncio.get_event_loop()
-    overall_start = loop.time()
-    quiet_since = overall_start  # start of the current dialogue-free window
-
-    while True:
-        now = loop.time()
-        dialogs = await asyncio.gather(*[c.is_in_dialog() for c in clients])
-
-        if not any(dialogs) and (now - quiet_since) >= safety_delay:
-            machine.log("wait_for_dialogue: SUCCESS — dialogue clear for Safety Delay", logging.DEBUG)
-            return "SUCCESS"
-
-        if timeout_val is not None and (now - overall_start) >= timeout_val:
-            machine.log(f"wait_for_dialogue: FAILURE — timed out after {timeout_raw}s", logging.WARNING)
-            return "FAILURE"
-
-        if any(dialogs):
-            await asyncio.gather(
-                *[node_helpers.click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(clients, dialogs) if d]
-            )
-            quiet_since = loop.time()
-
-        await asyncio.sleep(POLL_INTERVAL)
+    if await node_helpers.advance_dialogue_until_clear(clients, safety_delay, timeout_val):
+        machine.log("wait_for_dialogue: SUCCESS — dialogue clear for Safety Delay", logging.DEBUG)
+        return "SUCCESS"
+    machine.log(f"wait_for_dialogue: FAILURE — timed out after {timeout_raw}s", logging.WARNING)
+    return "FAILURE"

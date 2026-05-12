@@ -1,0 +1,341 @@
+{
+  "name": "Gladiator Dimachaerus",
+  "description": "Endlessly defeats Gladiator Dimachaerus in Pit of the Noxii, Mount Olympus, Aquila",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic] | bunyip[epic]\n\n### p2\nfeint[potent]@boss | purge@ally(1) | tempest[epic]\n\n### p3\nfeint@boss | any<blade>@ally(1) | tempest[any<mod_damage>]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Aquila",
+  "drops": [
+    "Alpha and Omega Ring",
+    "Amber",
+    "Aquila Atlantea Theme",
+    "Aquila Boss Combat Theme",
+    "Aquila Combat Theme",
+    "Aquila Epic Combat Theme",
+    "Aquila Olympus Theme",
+    "Aquila Tartarus Theme",
+    "Board of Gorgon Imprisonment (Level 90+)",
+    "Board of Gorgon Infamy (Level 90+)",
+    "Board of Gorgon Petrification (Level 90+)",
+    "Board of Gorgon Suffering (Level 90+)",
+    "Board of Gorgon Venom (Level 90+)",
+    "Board of Gorgon Volatility (Level 90+)",
+    "Board of Gorgon's Gaze (Level 90+)",
+    "Exalted Balance Amulet",
+    "Exalted Death Amulet",
+    "Exalted Fire Amulet",
+    "Exalted Ice Amulet",
+    "Exalted Life Amulet",
+    "Exalted Myth Amulet",
+    "Exalted Storm Amulet",
+    "Fires of Mars",
+    "Jupiter's Might",
+    "Neptune's Fury",
+    "Phoebus' Will",
+    "Pluto's Peril",
+    "Saturn's Reaping",
+    "Terminus' Strike"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        4,
+        3,
+        2,
+        1
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Level Scaling Players",
+      "type": "int_list",
+      "default": [],
+      "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Garden of Herperides",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_dungeon",
+      "label": "Enter Mount Olympus",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z01_MountOlympus",
+        "sigil_xyz": {
+          "x": -669.19,
+          "y": 4202.56,
+          "z": -89.76
+        },
+        "reset_xyz": {
+          "x": -74.08,
+          "y": 3670.58,
+          "z": -122.43
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Pit of the Noxii",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_PitOfNoxii",
+        "xyz": {
+          "x": 38.91,
+          "y": 5679.64,
+          "z": -1595.74
+        },
+        "reset_xyz": {
+          "x": -13.57,
+          "y": 6289.73,
+          "z": -1671.38
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat Gladiator Dimachaerus",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {},
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_PitOfNoxii",
+        "interact_xyz": {
+          "x": 167.02,
+          "y": -1424.12,
+          "z": 0.63
+        },
+        "reset_xyz": {
+          "x": -179.66,
+          "y": -1414.75,
+          "z": 0.89
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_5",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

@@ -59,6 +59,7 @@ class BotMachine:
         self._resume_event.set()  # not paused by default
         self._ambient_combat_lock = asyncio.Lock()
         self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
+        self._ambient_dialog_last_seen: float = 0.0  # monotonic timestamp of last dismissed banner
         self.last_result: str | None = None
         self._no_match_count: int = 0
         self._max_consecutive_same_state = max_consecutive_same_state
@@ -348,11 +349,19 @@ class BotMachine:
                     pass
 
     async def _ambient_dialog_watcher(self) -> None:
-        """Background task: dismiss any open dialog on all clients via SPACEBAR."""
+        """Background task: dismiss any open dialog on all clients.
+
+        Polls at POLL_INTERVAL normally. Once a banner is dismissed, switches to
+        DIALOG_FAST_POLL_INTERVAL until a full Safety Delay window has elapsed with
+        no further dialogue, so multi-banner conversations are advanced quickly.
+        """
         from bartlebot.nodes import node_helpers
+        from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL
 
         while not self._stop_flag.is_set():
-            await asyncio.sleep(node_helpers.POLL_INTERVAL)
+            safety_delay: float = self.get_option("Safety Delay", 3.0)
+            in_sequence = (time.monotonic() - self._ambient_dialog_last_seen) < safety_delay
+            await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL if in_sequence else node_helpers.POLL_INTERVAL)
             if not self._resume_event.is_set():
                 continue
             if not self.clients:
@@ -363,6 +372,7 @@ class BotMachine:
             )
             for i, r in enumerate(results):
                 if r is True:
+                    self._ambient_dialog_last_seen = time.monotonic()
                     self.log(f"Ambient dialog dismissed on client {i}", logging.DEBUG)
                 elif isinstance(r, Exception):
                     self.log(f"Ambient dialog watcher error on client {i}: {r}", logging.DEBUG)

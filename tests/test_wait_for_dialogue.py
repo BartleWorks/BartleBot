@@ -21,7 +21,7 @@ async def test_dialogue_dismissed_then_success():
     client = FakeClient()
     client.is_in_dialog.side_effect = [True, False]
 
-    with patch.object(wfd, "POLL_INTERVAL", 0):
+    with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
         with patch("bartlebot.nodes.node_helpers.click_by_path") as mock_click:
             result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
 
@@ -34,7 +34,7 @@ async def test_multiple_dialogues_dismissed():
     client = FakeClient()
     client.is_in_dialog.side_effect = [True, True, False]
 
-    with patch.object(wfd, "POLL_INTERVAL", 0):
+    with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
         with patch("bartlebot.nodes.node_helpers.click_by_path") as mock_click:
             result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
 
@@ -47,7 +47,7 @@ async def test_timeout_returns_failure():
     client = FakeClient()
     client.is_in_dialog.return_value = True
 
-    with patch.object(wfd, "POLL_INTERVAL", 0):
+    with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
         with patch("bartlebot.nodes.node_helpers.click_by_path"):
             result = await wfd.run(FakeMachine(), [client], {"timeout": 0.01})
 
@@ -72,7 +72,7 @@ async def test_all_clients_must_be_clear():
     busy = FakeClient()
     busy.is_in_dialog.side_effect = [True, False]
 
-    with patch.object(wfd, "POLL_INTERVAL", 0):
+    with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
         with patch("bartlebot.nodes.node_helpers.click_by_path") as mock_click:
             result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [free, busy], {})
 
@@ -97,7 +97,7 @@ async def test_timer_resets_after_dialogue():
     machine = FakeMachine()
     machine.get_option = lambda _: 0.001  # 1ms Safety Delay
 
-    with patch.object(wfd, "POLL_INTERVAL", 0):
+    with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
         with patch("bartlebot.nodes.node_helpers.click_by_path") as mock_click:
             result = await wfd.run(machine, [client], {})
 

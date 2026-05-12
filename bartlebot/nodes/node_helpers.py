@@ -13,7 +13,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     GAUNTLET_ENTRANCE_PATH,
     MESSAGE_BOX_CENTER,
 )
-from bartlebot.nodes.timing import POLL_INTERVAL  # noqa: F401 — re-exported for callers
+from bartlebot.nodes.timing import DIALOG_TIMEOUT, POLL_INTERVAL  # noqa: F401 — re-exported for callers
 
 
 async def all_in_npc_range(clients: list) -> bool:
@@ -51,6 +51,38 @@ async def dismiss_ambient_dialog_once(client) -> bool:
     if await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
         return await click_by_path(client, ADVANCE_DIALOG_PATH)
     return False
+
+
+async def advance_dialogue_until_clear(
+    clients: list,
+    safety_delay: float,
+    timeout: float | None,
+) -> bool:
+    """Advance dialogue on all clients until all are dialogue-free for safety_delay seconds.
+
+    Clicks ADVANCE_DIALOG_PATH on any client that has an open dialogue banner, then resets
+    the quiet timer. Returns True when all clients have been dialogue-free for safety_delay
+    seconds. Returns False if timeout expires while clients are still in dialogue.
+    """
+    loop = asyncio.get_event_loop()
+    overall_start = loop.time()
+    quiet_since = overall_start
+
+    while True:
+        now = loop.time()
+        dialogs = await asyncio.gather(*[c.is_in_dialog() for c in clients])
+
+        if not any(dialogs) and (now - quiet_since) >= safety_delay:
+            return True
+
+        if timeout is not None and (now - overall_start) >= timeout:
+            return False
+
+        if any(dialogs):
+            await asyncio.gather(*[click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(clients, dialogs) if d])
+            quiet_since = loop.time()
+
+        await asyncio.sleep(POLL_INTERVAL)
 
 
 async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interval: float = POLL_INTERVAL) -> None:
