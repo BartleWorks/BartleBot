@@ -50,12 +50,12 @@ _SAFETY_DELAY_OPTION = BotOptionSpec(
 )
 
 _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
-    name="Level Scaling Clients",
+    name="Level Scaling Players",
     type="int_list",
     default=[],
     description=(
-        "1-based client numbers to check/apply level scaling (e.g. '2, 3'). "
-        "Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+        "1-based player numbers to check/apply level scaling (e.g. '2, 3'). "
+        "Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     ),
 )
 
@@ -87,7 +87,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     Flow:
       1. Verify all clients are in zone. Return FAILURE if not.
-      2. Resolve scale_clients from the Level Scaling Clients bot option (1-based).
+      2. Resolve scale_clients from the Level Scaling Players bot option (1-based).
          Return SUCCESS immediately if no clients are configured.
       3. Clear any pre-existing interact prompt by teleporting to reset_xyz.
       4. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait up to Safety Delay
@@ -124,7 +124,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 2. Resolve clients_to_scale.
-    raw: list[int] = machine.get_option("Level Scaling Clients", []) or []
+    raw: list[int] = machine.get_option("Level Scaling Players", []) or []
     scale_indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else []
     if not scale_indices:
         machine.log("apply_level_scaling: no clients to scale — SUCCESS")

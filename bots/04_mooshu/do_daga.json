@@ -154,10 +154,10 @@
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
     },
     {
-      "name": "Level Scaling Clients",
+      "name": "Level Scaling Players",
       "type": "int_list",
       "default": [],
-      "description": "1-based client numbers to check/apply level scaling (e.g. '2, 3'). Empty = no clients (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+      "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     }
   ],
   "states": [

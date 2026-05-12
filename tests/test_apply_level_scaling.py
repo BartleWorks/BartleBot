@@ -61,9 +61,9 @@ async def test_one_client_wrong_zone_fails():
 
 
 async def test_all_clients_filtered_out_succeeds():
-    """Level Scaling Clients=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
+    """Level Scaling Players=[5] with only 1 client → all filtered, returns SUCCESS immediately."""
     client = FakeClient()
-    machine = FakeMachine(options={"Level Scaling Clients": [5]})
+    machine = FakeMachine(options={"Level Scaling Players": [5]})
 
     result = await als.run(machine, [client], _PARAMS)
 
@@ -76,7 +76,7 @@ async def test_prompt_never_appears_fails():
     """FAILURE when the interact prompt never shows after MAX_RETRIES attempts."""
     client = FakeClient()
     client.is_in_npc_range.return_value = False  # never appears
-    machine = FakeMachine(options={"Level Scaling Clients": [1]})
+    machine = FakeMachine(options={"Level Scaling Players": [1]})
 
     with patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
@@ -89,7 +89,7 @@ async def test_prompt_never_appears_fails():
 async def test_menu_never_appears_fails():
     """FAILURE when NPCServicesWin menu never appears after pressing X."""
     client = _ready_client()
-    machine = FakeMachine(options={"Level Scaling Clients": [1]})
+    machine = FakeMachine(options={"Level Scaling Players": [1]})
 
     with (
         patch("bartlebot.nodes.utility.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
@@ -106,7 +106,7 @@ async def test_menu_never_appears_fails():
 async def test_success():
     """Happy path: prompt appears, X pressed, menu appears and dismisses → SUCCESS."""
     client = _ready_client()
-    machine = FakeMachine(options={"Level Scaling Clients": [1]})
+    machine = FakeMachine(options={"Level Scaling Players": [1]})
 
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
@@ -118,7 +118,7 @@ async def test_success():
 
 
 async def test_empty_clients_to_scale_skips_all():
-    """Level Scaling Clients=[] (default) skips all clients — returns SUCCESS immediately."""
+    """Level Scaling Players=[] (default) skips all clients — returns SUCCESS immediately."""
     c1 = FakeClient()
     c2 = FakeClient()
 
@@ -135,7 +135,7 @@ async def test_clients_to_scale_subset():
     """Only the specified client is scaled; the other is not touched."""
     c1 = FakeClient()  # should NOT be scaled
     c2 = _ready_client()  # should be scaled
-    machine = FakeMachine(options={"Level Scaling Clients": [2]})
+    machine = FakeMachine(options={"Level Scaling Players": [2]})
 
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
         result = await als.run(machine, [c1, c2], _PARAMS)
@@ -152,7 +152,7 @@ async def test_clients_to_scale_subset():
 async def test_out_of_range_client_numbers_skipped():
     """Client numbers beyond the connected count are silently skipped."""
     client = _ready_client()
-    machine = FakeMachine(options={"Level Scaling Clients": [1, 99]})
+    machine = FakeMachine(options={"Level Scaling Players": [1, 99]})
 
     # [1, 99]: client 99 doesn't exist, only client 1 is scaled.
     with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
@@ -167,7 +167,7 @@ async def test_out_of_range_client_numbers_skipped():
 async def test_stale_prompt_cleared_before_interaction():
     """A pre-existing interact prompt is dismissed via reset_xyz before the retry loop."""
     client = FakeClient()
-    machine = FakeMachine(options={"Level Scaling Clients": [1]})
+    machine = FakeMachine(options={"Level Scaling Players": [1]})
     call_count = 0
 
     async def _npc_range():
@@ -194,7 +194,7 @@ async def test_stale_prompt_cleared_before_interaction():
 async def test_prompt_retry_then_success():
     """Prompt times out on first attempt; appears after reset on second attempt."""
     client = FakeClient()
-    machine = FakeMachine(options={"Level Scaling Clients": [1]})
+    machine = FakeMachine(options={"Level Scaling Players": [1]})
     reset_visited: list[bool] = []
 
     async def tracking_teleport(xyz):

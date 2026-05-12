@@ -1,0 +1,2800 @@
+{
+  "name": "Mount Olympus",
+  "description": "Endlessly completes Mount Olympus in Aquila. Optionally defeats Carthaginian Elephant Warrior, which drops the Fiery Skeleturion.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "default_combat_config": "bunyip[epic] | tempest[epic]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Aquila",
+  "drops": [
+    "15 Olympian Dust",
+    "16 Olympian Dust",
+    "17 Olympian Dust",
+    "18 Olympian Dust",
+    "25 Olympian Dust",
+    "Ares' Charred Spear",
+    "Ares' Spear of Bitter Cold",
+    "Ares' Spear of Destiny",
+    "Ares' Spear of Fortitude",
+    "Ares' Spear of Havoc",
+    "Ares' Spear of Valor",
+    "Ares' Windstorm Spear",
+    "Boots of Zeus' Alacrity",
+    "Boots of Zeus' Lore",
+    "Cowl of Zeus' Ire",
+    "Fiery Skeleturion",
+    "Fires of Mars",
+    "Helmet of Heavenly Gaze",
+    "Helmet of Zeus' Will",
+    "Jupiter's Might",
+    "Mythic Skeleturion",
+    "Neptune's Fury",
+    "Phoebus' Will",
+    "Pluto's Peril",
+    "Saturn's Reaping",
+    "Senator's Devious Mantle",
+    "Senator's Devious Sandals",
+    "Senator's Devious Toga",
+    "Senator's Guiding Sandals",
+    "Senator's Judicial Laurel",
+    "Senator's Judicial Shoes",
+    "Senator's Judicial Toga",
+    "Senator's Laurel of Truth",
+    "Senator's Mantle of Winter",
+    "Senator's Poetic Boots",
+    "Senator's Poetic Laurel",
+    "Senator's Poetic Toga",
+    "Senator's Radiant Laurel",
+    "Senator's Radiant Sandals",
+    "Senator's Radiant Toga",
+    "Senator's Raincloud Mantle",
+    "Senator's Raincloud Shoes",
+    "Senator's Raincloud Toga",
+    "Senator's Stirring Toga",
+    "Senator's Wintry Sandals",
+    "Senator's Wintry Toga",
+    "Sky Iron Hasta",
+    "Staff of Zeus' Immortality",
+    "Terminus' Strike",
+    "Vestment of Zeus' Aegis",
+    "Zeus' Armor of Supremacy",
+    "Zeus' Blazing Sun Raiment",
+    "Zeus' Blustering Footwraps",
+    "Zeus' Bolt of Arbitration",
+    "Zeus' Bolt of Gravity",
+    "Zeus' Boots of Rancor",
+    "Zeus' Boots of Skyfire",
+    "Zeus' Cloak of Fate",
+    "Zeus' Cloudstriders",
+    "Zeus' Falling Skies Staff",
+    "Zeus' Galea of Vitality",
+    "Zeus' Helm of Authority",
+    "Zeus' Helm of Tumult",
+    "Zeus' Lightning Striker",
+    "Zeus' Raiment of Flurries",
+    "Zeus' Robes of Judgment",
+    "Zeus' Staff of Hailstones",
+    "Zeus' Staff of Wildfires",
+    "Zeus' Thunderclap Drape",
+    "Zeus' Thunderstomp Boots",
+    "Zeus' Veil of Snowfall"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Level Scaling Players",
+      "type": "int_list",
+      "default": [
+        2
+      ],
+      "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Fail puzzle",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to fail the puzzle that Eris gives you. If failed, the puzzle will spawn the Carthaginian Elephant, which drops the Fiery Skeleturion pet."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Garden of Hesperides",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_dungeon",
+      "label": "Enter Mount Olympus",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z01_MountOlympus",
+        "sigil_xyz": {
+          "x": -669.19,
+          "y": 4202.56,
+          "z": -89.76
+        },
+        "reset_xyz": {
+          "x": -65.01,
+          "y": 3936.62,
+          "z": -120.04
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {},
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": -442.98,
+          "y": 576.25,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 5.68,
+          "y": 85.87,
+          "z": -68.29
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "interact",
+      "label": "Talk to Athena Battle Sight",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 309.4,
+          "y": 405.75,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 106.29,
+          "y": -136.35,
+          "z": -68.29
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Enter Sun Chamber",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
+        "xyz": {
+          "x": 6636.0,
+          "y": 8310.42,
+          "z": -10.14
+        },
+        "reset_xyz": {
+          "x": 5947.69,
+          "y": 8338.67,
+          "z": -10.14
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Apollo Bright One",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Immortal-Apollo",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 600.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "interact",
+      "label": "Collect first Legion Token",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
+        "interact_xyz": {
+          "x": -212.18,
+          "y": 1372.74,
+          "z": -5.4
+        },
+        "reset_xyz": {
+          "x": -183.68,
+          "y": 1044.55,
+          "z": -34.57
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_zone",
+      "label": "Exit Sun Chamber",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
+        "to_zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": -221.42,
+          "y": -2535.93,
+          "z": 109.27
+        },
+        "reset_xyz": {
+          "x": -209.51,
+          "y": -1256.01,
+          "z": 4.13
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "mark_location",
+      "label": "Mark location",
+      "position": {
+        "x": 2640.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 32.27,
+          "y": -282.45,
+          "z": -68.29
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "interact",
+      "label": "Talk to Athena Battle Sight",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 309.4,
+          "y": 405.75,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 106.29,
+          "y": -136.35,
+          "z": -68.29
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 71.9,
+          "y": 1985.96,
+          "z": -68.29
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Enter Moon Chamber",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_ArtemusRoom",
+        "xyz": {
+          "x": -6516.42,
+          "y": 8307.76,
+          "z": -10.14
+        },
+        "reset_xyz": {
+          "x": -5812.0,
+          "y": 8329.66,
+          "z": -10.14
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "handle_combat",
+      "label": "Defeat Crescent Moon Centaur",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Centaur-Artemis",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "interact",
+      "label": "Collect second Legion Token",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_ArtemusRoom",
+        "interact_xyz": {
+          "x": -192.06,
+          "y": 1529.33,
+          "z": 4.13
+        },
+        "reset_xyz": {
+          "x": -169.75,
+          "y": 952.55,
+          "z": -34.39
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "enter_zone",
+      "label": "Exit Moon Chamber",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_ArtemusRoom",
+        "to_zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": -192.19,
+          "y": -2614.9,
+          "z": 109.27
+        },
+        "reset_xyz": {
+          "x": -198.53,
+          "y": -1696.92,
+          "z": 109.27
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Sky Balcony",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 777.09,
+          "y": 12070.12,
+          "z": 318.36
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "interact",
+      "label": "Talk to Athena Battle Sight",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 309.4,
+          "y": 405.75,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 106.29,
+          "y": -136.35,
+          "z": -68.29
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 8800.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 71.9,
+          "y": 1985.96,
+          "z": -68.29
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 9240.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "handle_combat",
+      "label": "Defeat Praetorian Guard ",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "interact",
+      "label": "Collect third Legion Token",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 829.91,
+          "y": 15172.18,
+          "z": 317.76
+        },
+        "reset_xyz": {
+          "x": 821.76,
+          "y": 14690.08,
+          "z": 317.76
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_26",
+      "node_type": "interact",
+      "label": "Talk to Athena Battle Sight",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 309.4,
+          "y": 405.75,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 106.29,
+          "y": -136.35,
+          "z": -68.29
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_27",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 11440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 71.9,
+          "y": 1985.96,
+          "z": -68.29
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_28",
+      "node_type": "handle_potions",
+      "label": "Collect wisps",
+      "position": {
+        "x": 11880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "interact",
+      "label": "Talk to Eris Golden Apple",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 27.44,
+          "y": 11618.34,
+          "z": -1446.0
+        },
+        "reset_xyz": {
+          "x": -13.19,
+          "y": 12309.32,
+          "z": -1290.59
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "teleport_to_coordinates",
+      "label": "Activate puzzle",
+      "position": {
+        "x": 12760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": -19.94,
+          "y": 9460.88,
+          "z": -1671.39
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_31",
+      "node_type": "interact",
+      "label": "Activate Carthaginian Elephant",
+      "position": {
+        "x": 13200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 428.37,
+          "y": 9009.04,
+          "z": -1671.39
+        },
+        "reset_xyz": {
+          "x": -19.94,
+          "y": 9460.88,
+          "z": -1671.39
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "interact",
+      "label": "Activate Minotaur Warrior",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": -529.46,
+          "y": 9046.65,
+          "z": -1671.39
+        },
+        "reset_xyz": {
+          "x": -19.94,
+          "y": 9460.88,
+          "z": -1671.39
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "interact",
+      "label": "Activate Ophidian Archer",
+      "position": {
+        "x": 14080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": -10.4,
+          "y": 9081.32,
+          "z": -1671.39
+        },
+        "reset_xyz": {
+          "x": -19.94,
+          "y": 9460.88,
+          "z": -1671.39
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "handle_combat",
+      "label": "Defeat Carthaginian Elephant Warrior",
+      "position": {
+        "x": 14520.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "interact",
+      "label": "Talk to Athena Battle Sight",
+      "position": {
+        "x": 15400.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": 309.4,
+          "y": 405.75,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 106.29,
+          "y": -136.35,
+          "z": -68.29
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 15840.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 71.9,
+          "y": 1985.96,
+          "z": -68.29
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "collect_wisps",
+      "label": "Colect wisps",
+      "position": {
+        "x": 16280.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_38",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of the Watchful Eye",
+      "position": {
+        "x": 16720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "xyz": {
+          "x": 0.28,
+          "y": 13637.12,
+          "z": -1290.59
+        },
+        "reset_xyz": {
+          "x": -4.83,
+          "y": 13002.94,
+          "z": -1290.59
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_39",
+      "node_type": "handle_combat",
+      "label": "Defeat Elite Cyclops Guard",
+      "position": {
+        "x": 17600.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_40",
+      "node_type": "enter_zone",
+      "label": "Enter Hephaestus' Forge",
+      "position": {
+        "x": 18040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
+        "xyz": {
+          "x": -2.13,
+          "y": 4984.71,
+          "z": 200.0
+        },
+        "reset_xyz": {
+          "x": 4.56,
+          "y": 4543.75,
+          "z": 200.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_41",
+      "node_type": "interact",
+      "label": "Talk to Hephaestus Coppersmith",
+      "position": {
+        "x": 18480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
+        "interact_xyz": {
+          "x": -14.31,
+          "y": 868.71,
+          "z": 100.0
+        },
+        "reset_xyz": {
+          "x": -470.15,
+          "y": 522.05,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_42",
+      "node_type": "enter_zone",
+      "label": "Exit Hephaestus' Forge",
+      "position": {
+        "x": 18920.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "xyz": {
+          "x": 7.63,
+          "y": -1482.2,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 3.54,
+          "y": -818.27,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_43",
+      "node_type": "enter_zone",
+      "label": "Exit Hall of the Watchful Eye",
+      "position": {
+        "x": 19360.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "to_zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 7.14,
+          "y": -5005.39,
+          "z": 200.0
+        },
+        "reset_xyz": {
+          "x": 7.14,
+          "y": -4525.75,
+          "z": 200.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_44",
+      "node_type": "interact",
+      "label": "Collect first Bronze Eagle",
+      "position": {
+        "x": 19800.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": -2460.13,
+          "y": 12413.67,
+          "z": -979.53
+        },
+        "reset_xyz": {
+          "x": -2107.28,
+          "y": 12747.19,
+          "z": -979.53
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_45",
+      "node_type": "interact",
+      "label": "Collect second Bronze Eagle",
+      "position": {
+        "x": 20240.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": -1369.11,
+          "y": -1061.9,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": -841.98,
+          "y": -672.78,
+          "z": -68.29
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_46",
+      "node_type": "interact",
+      "label": "Collect third Bronze Eagle",
+      "position": {
+        "x": 20680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z01_MountOlympus",
+        "interact_xyz": {
+          "x": -5051.89,
+          "y": 6323.64,
+          "z": -10.14
+        },
+        "reset_xyz": {
+          "x": -5454.24,
+          "y": 6797.45,
+          "z": -10.14
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_47",
+      "node_type": "interact",
+      "label": "Collect fourth Bronze Eagle",
+      "position": {
+        "x": 21560.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
+        "interact_xyz": {
+          "x": 292.62,
+          "y": -2084.63,
+          "z": 109.27
+        },
+        "reset_xyz": {
+          "x": 1.43,
+          "y": -1799.52,
+          "z": 109.27
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_48",
+      "node_type": "enter_zone",
+      "label": "Enter Sun Chamber",
+      "position": {
+        "x": 21120.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
+        "xyz": {
+          "x": 6636.0,
+          "y": 8310.42,
+          "z": -10.14
+        },
+        "reset_xyz": {
+          "x": 5947.69,
+          "y": 8338.67,
+          "z": -10.14
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_49",
+      "node_type": "enter_zone",
+      "label": "Exit Sun Chamber",
+      "position": {
+        "x": 22000.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_Apollo_Room",
+        "to_zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": -221.42,
+          "y": -2535.93,
+          "z": 109.27
+        },
+        "reset_xyz": {
+          "x": -209.51,
+          "y": -1256.01,
+          "z": 4.13
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_50",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of the Watchful Eye",
+      "position": {
+        "x": 22440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "xyz": {
+          "x": 0.28,
+          "y": 13637.12,
+          "z": -1290.59
+        },
+        "reset_xyz": {
+          "x": -4.83,
+          "y": 13002.94,
+          "z": -1290.59
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_51",
+      "node_type": "enter_zone",
+      "label": "Enter Hephaestus' Forge",
+      "position": {
+        "x": 22880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
+        "xyz": {
+          "x": -2.13,
+          "y": 4984.71,
+          "z": 200.0
+        },
+        "reset_xyz": {
+          "x": 4.56,
+          "y": 4543.75,
+          "z": 200.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_52",
+      "node_type": "interact",
+      "label": "Talk to Hephaestus Coppersmith",
+      "position": {
+        "x": 23320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
+        "interact_xyz": {
+          "x": -14.31,
+          "y": 868.71,
+          "z": 100.0
+        },
+        "reset_xyz": {
+          "x": -470.15,
+          "y": 522.05,
+          "z": 0.0
+        },
+        "interact_clients": [
+          1
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_53",
+      "node_type": "enter_zone",
+      "label": "Exit Hephaestus' Forge",
+      "position": {
+        "x": 23760.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HephaestusForge",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "xyz": {
+          "x": 7.63,
+          "y": -1482.2,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 3.54,
+          "y": -818.27,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_54",
+      "node_type": "enter_zone",
+      "label": "Exit Hall of the Watchful Eye",
+      "position": {
+        "x": 24200.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "to_zone": "Aquila/AQ_Z01_MountOlympus",
+        "xyz": {
+          "x": 7.14,
+          "y": -5005.39,
+          "z": 200.0
+        },
+        "reset_xyz": {
+          "x": 7.14,
+          "y": -4525.75,
+          "z": 200.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_55",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of Battle",
+      "position": {
+        "x": 24640.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/Interiors/AQ_Z01_HallOfBattle",
+        "xyz": {
+          "x": 15.3,
+          "y": 15619.09,
+          "z": 317.76
+        },
+        "reset_xyz": {
+          "x": -14.43,
+          "y": 15041.11,
+          "z": 317.76
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_56",
+      "node_type": "handle_combat",
+      "label": "Defeat Ares Savage Spear",
+      "position": {
+        "x": 25520.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_57",
+      "node_type": "enter_zone",
+      "label": "Enter Throne Room",
+      "position": {
+        "x": 25960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_HallOfBattle",
+        "to_zone": "Aquila/Interiors/AQ_Z01_Throne_Room",
+        "xyz": {
+          "x": -16.37,
+          "y": 5008.56,
+          "z": 200.0
+        },
+        "reset_xyz": {
+          "x": -8.95,
+          "y": 4555.02,
+          "z": 200.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_58",
+      "node_type": "handle_combat",
+      "label": "Defeat Zeus Sky Father",
+      "position": {
+        "x": 26400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Immortal-Zeus-A",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_59",
+      "node_type": "enter_zone_via_object",
+      "label": "Take teleporter",
+      "position": {
+        "x": 27280.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_Throne_Room",
+        "to_zone": "Aquila/AQ_Z00_Hub",
+        "interact_xyz": {
+          "x": -1244.29,
+          "y": 742.82,
+          "z": 0.17
+        },
+        "reset_xyz": {
+          "x": -860.92,
+          "y": 131.96,
+          "z": 0.17
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_60",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 14960.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {
+        "Safety Delay": 10.0
+      }
+    },
+    {
+      "id": "state_61",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Elite Cyclops Guard",
+      "position": {
+        "x": 17160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_HallOfWatchfulEye",
+        "xyz": {
+          "x": 27.03,
+          "y": -2061.98,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_62",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Ares Savage Spear",
+      "position": {
+        "x": 25080.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z01_HallOfBattle",
+        "xyz": {
+          "x": -61.8,
+          "y": -2061.54,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_63",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 26840.0,
+        "y": -180.0
+      },
+      "params": {
+        "keep_list": [
+          "Zeus",
+          "Heavenly"
+        ],
+        "sell_crowns": true,
+        "sell_pets": false,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {},
+      "notes": "Helmet of Heavenly Gaze is the Fire Zeus hat, and is the only piece of of the Zeus gear set that does not have the word Zeus in the name."
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_18",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_20",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_21",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_22",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_22",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_25",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_27",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_27",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_6",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Fail puzzle",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Fail puzzle",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Fail puzzle",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_60",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Fail puzzle",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_60",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_35",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_36",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_36",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_61",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_43",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_44",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_45",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_46",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_48",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_49",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_47",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "state_50",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_50",
+      "dest": "state_51",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_50",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_51",
+      "dest": "state_52",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_51",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_52",
+      "dest": "state_53",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_52",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_53",
+      "dest": "state_54",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_53",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_55",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_55",
+      "dest": "state_62",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_56",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_56",
+      "dest": "state_57",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_57",
+      "dest": "state_58",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_57",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_58",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_60",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_60",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_61",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_61",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_62",
+      "dest": "state_56",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_62",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_58",
+      "dest": "state_63",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_63",
+      "dest": "state_59",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_63",
+      "dest": "state_63",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}
