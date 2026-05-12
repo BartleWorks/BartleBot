@@ -180,10 +180,7 @@ class _BotCard(QWidget):
         layout.addLayout(header)
 
         if self._meta.description:
-            desc = self._meta.description
-            if len(desc) > 120:
-                desc = desc[:120] + "…"
-            desc_lbl = QLabel(desc)
+            desc_lbl = QLabel(self._meta.description)
             desc_lbl.setWordWrap(True)
             desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
             layout.addWidget(desc_lbl)
