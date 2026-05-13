@@ -541,10 +541,10 @@ class EditScene(QGraphicsScene):
         if dlg.exec() and dlg.selected_node_type:
             self.node_type_chosen.emit(dlg.selected_node_type, pos)
 
-    def create_state_at(self, node_type: str, pos: QPointF) -> None:
+    def create_state_at(self, node_type: str, pos: QPointF) -> str | None:
         """Instantiate a state of the given node_type at pos. Called after dialog confirmation."""
         if self._config is None:
-            return
+            return None
         self._pre_edit("Create Node")
         state_id = _unique_id([s.id for s in self._config.states])
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
@@ -566,6 +566,7 @@ class EditScene(QGraphicsScene):
         if view is not None:
             view.smooth_pan_if_offscreen(node)
         self.graph_changed.emit()
+        return state_id
 
     # ------------------------------------------------------------------
     # Mouse events
@@ -799,6 +800,26 @@ class EditScene(QGraphicsScene):
                 menu.addAction(act_cr)
         elif isinstance(item, RegionItem):
             rid = item.region_id
+            scene_pos = event.scenePos()
+            add_pos = QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2)
+
+            act_add = QAction("Add State Here", menu)
+
+            def _add_state_in_region(_=None, rid=rid, pos=add_pos):
+                from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+                if self._config is None:
+                    return
+                view = self.views()[0] if self.views() else None
+                dlg = NodeBrowserDialog(view, mode="add")
+                if dlg.exec() and dlg.selected_node_type:
+                    state_id = self.create_state_at(dlg.selected_node_type, pos)
+                    if state_id:
+                        self._region_manager.add_to_region([state_id], rid)
+
+            act_add.triggered.connect(_add_state_in_region)
+            menu.addAction(act_add)
+            menu.addSeparator()
             act_rn = QAction("Rename Region", menu)
             act_rn.triggered.connect(lambda: self._region_manager.rename_region(rid))
             menu.addAction(act_rn)
