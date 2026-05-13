@@ -52,7 +52,7 @@ class _Theme:
     # Tier 2 — Semantic colors
     # ------------------------------------------------------------------
     error: str = "#CC2222"  # errors, terminal badges, required indicators
-    warning: str = "#9a6c00"  # warnings, paused-ish state, flipped badges
+    warning: str = "#9a6c00"  # warnings, paused-ish state, recovery badge
     success: str = "#33bb55"  # running, active, initial badges
 
     # ------------------------------------------------------------------

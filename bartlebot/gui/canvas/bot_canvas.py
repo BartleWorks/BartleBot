@@ -1336,6 +1336,10 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._update_validation_badge()
 
+    def refresh_recovery(self, recovery_state_id: str | None) -> None:
+        """Propagate recovery state change to the canvas node indicator."""
+        self._scene.refresh_recovery(recovery_state_id)
+
     def _on_scene_changed(self) -> None:
         if self._scene._config is not None:
             _inject_required_options(self._scene._config)
@@ -1343,6 +1347,7 @@ class BotCanvas(QWidget):
         self._refresh_node_returns()
         self._refresh_initial()
         self._refresh_terminal()
+        self._refresh_recovery()
         self._refresh_errors()
         self._update_validation_badge()
         self._minimap.fit_to_scene()
@@ -1500,6 +1505,10 @@ class BotCanvas(QWidget):
 
     def _refresh_terminal(self) -> None:
         self._scene.refresh_terminal()
+
+    def _refresh_recovery(self) -> None:
+        if self._scene._config is not None:
+            self._scene.refresh_recovery(self._scene._config.recovery_state)
 
     def _refresh_errors(self) -> None:
         self._scene.refresh_errors()

@@ -361,6 +361,7 @@ class EditScene(QGraphicsScene):
                 returns=returns,
                 is_initial=(state.id == config.initial),
                 is_terminal=(state.id not in sources),
+                is_recovery=(state.id == config.recovery_state),
                 is_error=is_error,
                 is_warning=is_warning,
                 node_type=state.node_type,
@@ -480,6 +481,11 @@ class EditScene(QGraphicsScene):
         sources = {t.source for t in self._config.transitions}
         for node_id, node in self._node_items.items():
             node.set_terminal(node_id not in sources)
+
+    def refresh_recovery(self, recovery_state_id: str | None) -> None:
+        """Update the recovery-state amber badge across all nodes."""
+        for node_id, node in self._node_items.items():
+            node.set_recovery(node_id == recovery_state_id)
 
     def refresh_errors(self) -> None:
         """Recompute and apply error/warning indicators for all nodes."""

@@ -36,6 +36,7 @@ _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circl
 
 _PLAY_RENDERER: QSvgRenderer | None = None
 _STOP_RENDERER: QSvgRenderer | None = None
+_RECOVERY_RENDERER: QSvgRenderer | None = None
 
 
 def _play_badge_renderer() -> QSvgRenderer:
@@ -64,6 +65,27 @@ def _stop_badge_renderer() -> QSvgRenderer:
         svg_bytes = svg_path.read_bytes().replace(b'fill="#404040"', b'fill="#ffffff"')
         _STOP_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
     return _STOP_RENDERER
+
+
+def _recovery_badge_renderer() -> QSvgRenderer:
+    """Lazily build a refresh-arrow SVG with white fill for the recovery badge.
+
+    White fill is safe: both light and dark themes define warning="#9a6c00" (dark amber),
+    which provides >=4.5:1 contrast against #ffffff (WCAG AA). This matches the pattern
+    used by the initial/terminal badge renderers, which also bake white fill at init time.
+    """
+    global _RECOVERY_RENDERER
+    if _RECOVERY_RENDERER is None:
+        from PyQt6.QtCore import QByteArray
+
+        svg_bytes = (
+            b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+            b'<path d="M17.65 6.35A7.96 7.96 0 0 0 12 4C7.58 4 4 7.58 4 12s3.58 8 8 8'
+            b' 8-3.58 8-8h-2a6 6 0 1 1-1.76-4.24L14 10h6V4l-2.35 2.35z" fill="#ffffff"/>'
+            b"</svg>"
+        )
+        _RECOVERY_RENDERER = QSvgRenderer(QByteArray(svg_bytes))
+    return _RECOVERY_RENDERER
 
 
 # Grid constants — shared with EditScene for drawBackground and migration script.
@@ -142,6 +164,10 @@ def _badge_terminal() -> QColor:
     return THEME.qcolor("error")
 
 
+def _badge_recovery() -> QColor:
+    return THEME.qcolor("warning")
+
+
 def _port_color() -> QColor:
     return THEME.qcolor("port_color")
 
@@ -172,6 +198,7 @@ class NodeItem(QGraphicsItem):
         returns: list[str] | None = None,
         is_initial: bool = False,
         is_terminal: bool = False,
+        is_recovery: bool = False,
         is_error: bool = False,
         is_warning: bool = False,
         node_type: str = "",
@@ -206,6 +233,7 @@ class NodeItem(QGraphicsItem):
         self._interactive = interactive
         self._is_initial = is_initial
         self._is_terminal = is_terminal
+        self._is_recovery = is_recovery
         self._is_error = is_error
         self._is_warning = is_warning
         self._returns: list[str] = list(returns) if returns else []
@@ -242,7 +270,7 @@ class NodeItem(QGraphicsItem):
         if self._is_search_match:
             margin = max(margin, 8)
         nr = self._node_rect()
-        top_extra = _BADGE_R if (self._is_initial or self._is_terminal) else 0
+        top_extra = _BADGE_R if (self._is_initial or self._is_terminal or self._is_recovery) else 0
         return QRectF(nr.x() - margin, -(margin + top_extra), NODE_W + margin * 2, NODE_H + margin * 2 + top_extra)
 
     # ------------------------------------------------------------------
@@ -345,6 +373,14 @@ class NodeItem(QGraphicsItem):
             return
         self.prepareGeometryChange()
         self._is_terminal = is_terminal
+        self.update()
+
+    def set_recovery(self, is_recovery: bool) -> None:
+        """Mark this node as the FSM recovery state (draws an amber ↺ badge)."""
+        if self._is_recovery == is_recovery:
+            return
+        self.prepareGeometryChange()
+        self._is_recovery = is_recovery
         self.update()
 
     def set_error(self, is_error: bool, reasons: list[str] | None = None) -> None:
@@ -508,6 +544,8 @@ class NodeItem(QGraphicsItem):
                 badges.append((_badge_initial(), _play_badge_renderer()))
             if self._is_terminal:
                 badges.append((_badge_terminal(), _stop_badge_renderer()))
+            if self._is_recovery:
+                badges.append((_badge_recovery(), _recovery_badge_renderer()))
             badge_x0 = nr.x()
             for i, (color, icon) in enumerate(badges):
                 cx = badge_x0 + float(i * (_BADGE_R * 2 + _BADGE_GAP))
@@ -587,6 +625,8 @@ class NodeItem(QGraphicsItem):
                 badges.append((_badge_initial(), _play_badge_renderer()))
             if self._is_terminal:
                 badges.append((_badge_terminal(), _stop_badge_renderer()))
+            if self._is_recovery:
+                badges.append((_badge_recovery(), _recovery_badge_renderer()))
             badge_x0 = nr.x()
             for i, (color, icon) in enumerate(badges):
                 cx = badge_x0 + float(i * (_BADGE_R * 2 + _BADGE_GAP))

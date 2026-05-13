@@ -375,6 +375,7 @@ class AppController(QObject):
         if self._loaded_config is not None:
             self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
+            self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)
             self._window.left_sidebar.options.set_config(self._loaded_config)
             filename = Path(self._last_save_path).name if self._last_save_path else "Untitled"
             self._window.set_bot_name(self._loaded_config.name, filename)
