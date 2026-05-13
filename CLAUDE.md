@@ -27,13 +27,6 @@ Python 3.13+ required. `pyproject.toml` enforces `^3.13`.
 - **GUI** (`bartlebot/gui/`): PyQt6 with qasync bridging async and Qt event loops
 - **Bot files**: JSON in `bots/`, validated by Pydantic models in `bartlebot/bot/schema.py`
 
-Reference docs:
-- @docs/ARCHITECTURE.md — full system overview
-- @docs/FSM_ARCHITECTURE.md — FSM design and transitions library usage
-- @docs/BOT_SCHEMA.md — JSON bot file schema
-- @docs/GUI_ARCHITECTURE.md — widget hierarchy and signal flow
-- @docs/DESIGN_REVIEW.md — quality review with open issues and roadmap
-
 Several related repos have been downloaded locally so they can be easily referenced:
 - WizWalker: C:\GitHub\wizwalker
 - WizSprinter: C:\GitHub\wizsprinter
