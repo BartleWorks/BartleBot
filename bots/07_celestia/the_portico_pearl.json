@@ -1,0 +1,272 @@
+{
+  "name": "The Portico Pearl Collector",
+  "description": "Collects Pearls and Golden Pearls in The Portico, Celestia",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "use_bartlebot_default_combat_config": true,
+  "start_location": "Anywhere in Celestia",
+  "drops": [
+    "Golden Pearl",
+    "Pearl"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Survey Camp",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_dungeon",
+      "label": "Enter The Portico",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Hub",
+        "dungeon_zone": "Celestia/CL_Z08_Temple_Of_The_Moon/MoonC1",
+        "sigil_xyz": {
+          "x": -865.03,
+          "y": 10956.36,
+          "z": -899.7
+        },
+        "reset_xyz": {
+          "x": -186.66,
+          "y": 10865.82,
+          "z": -899.7
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "collect_reagent",
+      "label": "Collect Pearl",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z08_Temple_Of_The_Moon/MoonC1",
+        "xyz": {
+          "x": 3722.32,
+          "y": 1227.6,
+          "z": -1186.73
+        },
+        "entity_names": [
+          "Pearl"
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_reagent",
+      "label": "Collect Pearl",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z08_Temple_Of_The_Moon/MoonC1",
+        "xyz": {
+          "x": -3834.48,
+          "y": 1304.89,
+          "z": -1179.23
+        },
+        "entity_names": [
+          "Pearl"
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "collect_reagent",
+      "label": "Collect Pearl",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z08_Temple_Of_The_Moon/MoonC1",
+        "xyz": {
+          "x": -4864.67,
+          "y": 8420.13,
+          "z": -1190.31
+        },
+        "entity_names": [
+          "Pearl"
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Exit The Portico",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Z08_Temple_Of_The_Moon/MoonC1",
+        "to_zone": "Celestia/CL_Hub",
+        "xyz": {
+          "x": 24.13,
+          "y": -609.65,
+          "z": -0.35
+        },
+        "reset_xyz": {
+          "x": 63.7,
+          "y": 152.86,
+          "z": -0.4
+        }
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

@@ -1,11 +1,12 @@
-﻿{
-  "name": "Flax Collector",
-  "description": "Collects Flax in Nightside",
+{
+  "name": "Nightside Frosted Flax Collector",
+  "description": "Collects Flax/Frosted Flax in Nightside, Wizard City",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
+  "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
-  "start_location": "Nightside",
+  "start_location": "Anywhere in Wizard City",
   "drops": [
     "Flax",
     "Frosted Flax"
@@ -22,15 +23,72 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "collect_reagent",
-      "label": "Collect Flax",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Commons",
       "position": {
         "x": 0,
         "y": 0.0
       },
       "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Nightside",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_NightSide",
+        "xyz": {
+          "x": 2693.27,
+          "y": 4948.15,
+          "z": 2.51
+        },
+        "reset_xyz": {
+          "x": 2903.85,
+          "y": 4588.22,
+          "z": 2.46
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "collect_reagent",
+      "label": "Collect Flax",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
         "zone": "WizardCity/WC_NightSide",
-        "entity_names": ["FrostedFlax_01"]
+        "xyz": {
+          "x": 486.69,
+          "y": -1344.1,
+          "z": -28.75
+        },
+        "entity_names": [
+          "FrostedFlax_01"
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "sleep",
+      "label": "Wait for Flax to respawn",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 3.0
       },
       "option_overrides": {}
     }
@@ -38,11 +96,33 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "state_2",
+      "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -50,7 +130,39 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": []

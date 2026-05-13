@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from wizwalker import Keycode
+from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
@@ -17,6 +17,18 @@ PARAM_SCHEMA: list[ParamField] = [
         help="Zone name all players must currently be in when this node executes.",
         default="",
         required=True,
+    ),
+    ParamField(
+        key="xyz",
+        type="xyz",
+        label="Starting XYZ",
+        help=(
+            "Optional coordinates to teleport all clients to before searching for reagents. "
+            "Leave blank to collect from the current position."
+        ),
+        default=None,
+        default_hint="No teleport — collect from current position.",
+        required=False,
     ),
     ParamField(
         key="entity_names",
@@ -35,15 +47,16 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Finds all present instances of a named reagent entity in the zone and collects them. "
+        "Optionally teleports all clients to a starting position first. "
         "Each client searches and collects independently, so clients on different servers "
         "work from their own entity lists."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "At least one entity was found and visited across all players."),
+        ReturnSpec("SUCCESS", "Spawn point processed — entities were collected, or the spawn was empty."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in the expected zone, entity_names is empty, or no matching entities were found.",
+            "Zone mismatch or entity_names is empty; the spawn could not be processed.",
         ),
     ],
     required_bot_options=[
@@ -154,16 +167,23 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("FAILURE: entity_names is empty", logging.WARNING)
         return "FAILURE"
 
-    # 3. Wait for entities to load.
+    # 3. Optional pre-teleport to spawn area.
+    xyz_data = params.get("xyz")
+    if xyz_data is not None:
+        target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
+        machine.log(
+            f"collect_reagent: teleporting to XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})",
+            logging.DEBUG,
+        )
+        await asyncio.gather(*[c.teleport(target) for c in clients])
+
+    # 4. Wait for entities to load.
     await asyncio.sleep(safety_delay)
 
-    # 4. Each client independently finds and collects its own entity list.
+    # 5. Each client independently finds and collects its own entity list.
     counts = await asyncio.gather(
         *[_collect_for_client(machine, c, i, entity_names, safety_delay) for i, c in enumerate(clients)]
     )
     total = sum(counts)
-    if total == 0:
-        machine.log(f"FAILURE: no entities matching {entity_names} found on any client", logging.WARNING)
-        return "FAILURE"
-    machine.log(f"collect_reagent: collected {total} reagent(s) across {len(clients)} client(s) — SUCCESS")
+    machine.log(f"collect_reagent: {total} reagent(s) collected across {len(clients)} client(s) — SUCCESS")
     return "SUCCESS"
