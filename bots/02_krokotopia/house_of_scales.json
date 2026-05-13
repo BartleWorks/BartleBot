@@ -5,7 +5,7 @@
   "clients": "all",
   "initial": "state_35",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nany<aoe>[epic]\n\n### p2, p3, p4\npass",
+  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\npass",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Krokotopia",
   "drops": [
@@ -159,10 +159,10 @@
       "name": "Default Combat Order",
       "type": "int_list",
       "default": [
-        1,
-        2,
+        4,
         3,
-        4
+        2,
+        1
       ],
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
     }
@@ -173,7 +173,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Upper Zigazag",
       "position": {
-        "x": 2200.0,
+        "x": 1760.0,
         "y": 0.0
       },
       "params": {
@@ -187,7 +187,7 @@
       "node_type": "interact",
       "label": "Take boat to Krokosphinx",
       "position": {
-        "x": 440.0,
+        "x": 0.0,
         "y": 180.0
       },
       "params": {
@@ -211,7 +211,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Skip boat ride",
       "position": {
-        "x": 880.0,
+        "x": 440.0,
         "y": 90.0
       },
       "params": {
@@ -235,7 +235,7 @@
       "node_type": "sleep",
       "label": "Wait for boat ride",
       "position": {
-        "x": 1320.0,
+        "x": 880.0,
         "y": 180.0
       },
       "params": {
@@ -248,7 +248,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Take ladder to Balance school",
       "position": {
-        "x": 1760.0,
+        "x": 1320.0,
         "y": 90.0
       },
       "params": {
@@ -272,7 +272,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Take statue to Upper Zigazag",
       "position": {
-        "x": 2200.0,
+        "x": 1760.0,
         "y": 180.0
       },
       "params": {
@@ -297,7 +297,7 @@
       "label": "Handle potions",
       "position": {
         "x": 2640.0,
-        "y": 0.0
+        "y": 180.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -379,7 +379,7 @@
       "label": "Teleport to Condemned Soldiers",
       "position": {
         "x": 4400.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z04_HouseOfScales",
@@ -397,7 +397,7 @@
       "label": "Defeat Condemned Soldiers",
       "position": {
         "x": 4840.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-HS-Krok_Condemned",
@@ -437,7 +437,7 @@
       "label": "Trigger dialogue",
       "position": {
         "x": 5720.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
@@ -455,7 +455,7 @@
       "label": "Defeat Condemned Manders",
       "position": {
         "x": 7040.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-HS-Mummy_Ifzt",
@@ -471,7 +471,7 @@
       "label": "Teleport to Condemned Manders",
       "position": {
         "x": 6600.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
@@ -486,10 +486,10 @@
     {
       "id": "state_17",
       "node_type": "teleport_to_coordinates",
-      "label": "Go to Izft",
+      "label": "Teleport to Izft",
       "position": {
-        "x": 7480.0,
-        "y": -90.0
+        "x": 8360.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
@@ -506,30 +506,23 @@
       "node_type": "handle_combat",
       "label": "Defeat Izft",
       "position": {
-        "x": 8800.0,
-        "y": -90.0
+        "x": 9680.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-HS-Ifzt",
         "use_bot_default": false,
-        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss\n\n### p3, p4\npass",
+        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nfeint @ boss",
         "max_duration": 0.0
       },
-      "option_overrides": {
-        "Default Combat Order": [
-          2,
-          1,
-          3,
-          4
-        ]
-      }
+      "option_overrides": {}
     },
     {
       "id": "state_19",
       "node_type": "enter_zone",
       "label": "Enter Chamber of Reeds",
       "position": {
-        "x": 9240.0,
+        "x": 11000.0,
         "y": 0.0
       },
       "params": {
@@ -553,8 +546,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger dialogue",
       "position": {
-        "x": 9680.0,
-        "y": -90.0
+        "x": 11440.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z06_ChamberOfReeds",
@@ -571,8 +564,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Pit Vipers",
       "position": {
-        "x": 10120.0,
-        "y": -90.0
+        "x": 11880.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z06_ChamberOfReeds",
@@ -589,8 +582,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Pit Vipers",
       "position": {
-        "x": 10560.0,
-        "y": -90.0
+        "x": 12320.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-HS-Ophidian_Element",
@@ -605,8 +598,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Apep",
       "position": {
-        "x": 11440.0,
-        "y": -90.0
+        "x": 13200.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z06_ChamberOfReeds",
@@ -623,30 +616,23 @@
       "node_type": "handle_combat",
       "label": "Defeat Apep",
       "position": {
-        "x": 12760.0,
-        "y": -90.0
+        "x": 14520.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-HS-Apep_Boss",
         "use_bot_default": false,
-        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss\n\n### p3, p4\npass",
+        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nfeint @ boss",
         "max_duration": 0.0
       },
-      "option_overrides": {
-        "Default Combat Order": [
-          2,
-          1,
-          3,
-          4
-        ]
-      }
+      "option_overrides": {}
     },
     {
       "id": "state_25",
       "node_type": "enter_zone",
       "label": "Enter Hall of Justice",
       "position": {
-        "x": 13640.0,
+        "x": 15400.0,
         "y": 0.0
       },
       "params": {
@@ -670,8 +656,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Ammit, the Devourer",
       "position": {
-        "x": 14080.0,
-        "y": -90.0
+        "x": 15840.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z07_HallOfJustice",
@@ -688,31 +674,24 @@
       "node_type": "handle_combat",
       "label": "Defeat Ammit, the Devourer",
       "position": {
-        "x": 14520.0,
-        "y": -90.0
+        "x": 16720.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-HS-Ammit",
         "use_bot_default": false,
-        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint @ boss\n\n### p3, p4\npass",
-        "max_duration": 0.0
+        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nfeint @ boss",
+        "max_duration": 5.0
       },
-      "option_overrides": {
-        "Default Combat Order": [
-          2,
-          1,
-          3,
-          4
-        ]
-      }
+      "option_overrides": {}
     },
     {
       "id": "state_28",
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Upper Zigazag",
       "position": {
-        "x": 14960.0,
-        "y": -90.0
+        "x": 17160.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_HS/HS_Z01_ZigazagUpper"
@@ -724,7 +703,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 15400.0,
+        "x": 17600.0,
         "y": -90.0
       },
       "params": {
@@ -741,8 +720,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 7920.0,
-        "y": -90.0
+        "x": 8800.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -754,8 +733,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 8360.0,
-        "y": -90.0
+        "x": 9240.0,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
@@ -767,8 +746,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11880.0,
-        "y": -90.0
+        "x": 13640.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -780,8 +759,8 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 12320.0,
-        "y": -90.0
+        "x": 14080.0,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
@@ -793,7 +772,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Oasis",
       "position": {
-        "x": 0.0,
+        "x": -440.0,
         "y": 180.0
       },
       "params": {
@@ -807,7 +786,7 @@
       "node_type": "check_zone",
       "label": "Check if starting in Zigazag",
       "position": {
-        "x": -440.0,
+        "x": -880.0,
         "y": 90.0
       },
       "params": {
@@ -821,8 +800,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11000.0,
-        "y": -90.0
+        "x": 12760.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -834,8 +813,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 13200.0,
-        "y": -90.0
+        "x": 14960.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -848,7 +827,107 @@
       "label": "Wait for dialogue",
       "position": {
         "x": 6160.0,
-        "y": -90.0
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_39",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_40",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_41",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "xyz": {
+          "x": 4612.48,
+          "y": 9260.85,
+          "z": 127.5
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_42",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_43",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_HS/HS_Z05_ChamberOfTheSistrum",
+        "xyz": {
+          "x": 4612.48,
+          "y": 9260.85,
+          "z": 127.5
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_44",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 16280.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -859,99 +938,23 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
+      "source": "state_1",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
+      "source": "state_1",
+      "dest": "state_40",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -959,7 +962,19 @@
       "dest": "state_11",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -967,23 +982,9 @@
       "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_11",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_11",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -991,7 +992,9 @@
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -999,7 +1002,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1007,415 +1012,9 @@
       "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_15",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_16",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_21",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_20",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_21",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_21",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_25",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_25",
-      "dest": "state_26",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_26",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_26",
-      "dest": "state_27",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_27",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_27",
-      "dest": "state_28",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_29",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_30",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_30",
-      "dest": "state_31",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_30",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_32",
-      "dest": "state_33",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_32",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_32",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
-      "dest": "state_24",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_34",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_34",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_35",
-      "dest": "state_1",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_35",
-      "dest": "state_34",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_36",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_36",
-      "dest": "state_23",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_36",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_37",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_25",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_25",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1423,15 +1022,349 @@
       "dest": "state_38",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
-      "source": "state_38",
-      "dest": "state_14",
+      "source": "state_15",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_43",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_1",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_34",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_25",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1439,8 +1372,498 @@
       "dest": "state_16",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_34",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_44",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "91cb0fad",
+      "label": "Enter House of Scales",
+      "members": [
+        "state_2",
+        "state_35",
+        "state_3",
+        "state_6",
+        "state_34",
+        "state_4",
+        "state_5",
+        "state_1",
+        "state_8",
+        "state_7"
+      ],
+      "color": 1
+    },
+    {
+      "id": "5298baa5",
+      "label": "Entrance hall",
+      "members": [
+        "state_10",
+        "state_9",
+        "state_11",
+        "state_12"
+      ],
+      "color": 2
+    },
+    {
+      "id": "430507ab",
+      "label": "Chamber of the Sistrum (Izft)",
+      "members": [
+        "state_30",
+        "state_18",
+        "state_15",
+        "state_38",
+        "state_17",
+        "state_13",
+        "state_14",
+        "state_31",
+        "state_16",
+        "state_39",
+        "state_41",
+        "state_42",
+        "state_43"
+      ],
+      "color": 3
+    },
+    {
+      "id": "7685063e",
+      "label": "Chamber of Reeds (Apep)",
+      "members": [
+        "state_19",
+        "state_21",
+        "state_37",
+        "state_32",
+        "state_20",
+        "state_22",
+        "state_36",
+        "state_33",
+        "state_24",
+        "state_23"
+      ],
+      "color": 4
+    },
+    {
+      "id": "6ad0121e",
+      "label": "Hall of Justice (Ammit the Devourer)",
+      "members": [
+        "state_27",
+        "state_25",
+        "state_29",
+        "state_26",
+        "state_28"
+      ],
+      "color": 5
+    }
+  ]
 }

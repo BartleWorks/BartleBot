@@ -221,19 +221,25 @@ class ClientManager(QObject):
                         self._on_clients_removed(removed_hwnds)
 
                     # Register any newly added known clients in _client_order.
-                    for c in clients:
-                        if c.window_handle not in cur_hwnd_set:
-                            username = self._hwnd_account_map.get(c.window_handle)
-                            if username:
-                                recovery_pos = next(
-                                    (pos for pos, u in self._pending_recovery.items() if u == username),
-                                    None,
-                                )
-                                if recovery_pos is not None:
-                                    # Recovering client — restore to original slot rather than appending.
-                                    self._client_order[recovery_pos] = username
-                                elif username not in self._client_order:
-                                    self._client_order.append(username)
+                    # Sort by window position (top→bottom, left→right) so that clients
+                    # appearing in the same poll cycle are registered in visual layout order,
+                    # not EnumWindows Z-order (which is reverse-launch-order).
+                    new_additions = sorted(
+                        [c for c in clients if c.window_handle not in cur_hwnd_set],
+                        key=lambda c: (c.window_rectangle.y1, c.window_rectangle.x1),
+                    )
+                    for c in new_additions:
+                        username = self._hwnd_account_map.get(c.window_handle)
+                        if username:
+                            recovery_pos = next(
+                                (pos for pos, u in self._pending_recovery.items() if u == username),
+                                None,
+                            )
+                            if recovery_pos is not None:
+                                # Recovering client — restore to original slot rather than appending.
+                                self._client_order[recovery_pos] = username
+                            elif username not in self._client_order:
+                                self._client_order.append(username)
 
                     ordered = self._build_ordered_clients(clients)
                     self._sync_embedded_clients(self._clients, ordered)
