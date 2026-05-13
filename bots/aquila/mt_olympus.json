@@ -92,9 +92,7 @@
     {
       "name": "Level Scaling Players",
       "type": "int_list",
-      "default": [
-        2
-      ],
+      "default": [],
       "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     },
     {
@@ -1046,7 +1044,8 @@
         },
         "interact_clients": [
           1
-        ]
+        ],
+        "has_dialogue": false
       },
       "option_overrides": {}
     },
@@ -1072,7 +1071,8 @@
         },
         "interact_clients": [
           1
-        ]
+        ],
+        "has_dialogue": false
       },
       "option_overrides": {}
     },
@@ -1098,7 +1098,8 @@
         },
         "interact_clients": [
           1
-        ]
+        ],
+        "has_dialogue": false
       },
       "option_overrides": {}
     },
@@ -1124,7 +1125,8 @@
         },
         "interact_clients": [
           1
-        ]
+        ],
+        "has_dialogue": false
       },
       "option_overrides": {}
     },
@@ -1414,7 +1416,7 @@
         "timeout": 60.0
       },
       "option_overrides": {
-        "Safety Delay": 10.0
+        "Safety Delay": 5.0
       }
     },
     {
@@ -1467,7 +1469,7 @@
           "Heavenly"
         ],
         "sell_crowns": true,
-        "sell_pets": false,
+        "sell_pets": true,
         "sell_socket_wrenches": false,
         "sell_skeleton_keys": false
       },
@@ -1700,6 +1702,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_66",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_18",
       "dest": "state_19",
       "when": "SUCCESS",
@@ -1843,6 +1855,16 @@
       "source": "state_24",
       "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_67",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2790,6 +2812,66 @@
     },
     {
       "trigger": "advance",
+      "source": "state_65",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_65",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_66",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_66",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_67",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_67",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_7",
       "dest": "state_8",
       "when": "SUCCESS",
@@ -2820,6 +2902,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_65",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_9",
       "dest": "state_10",
       "when": "SUCCESS",
@@ -2831,96 +2923,6 @@
     {
       "trigger": "advance",
       "source": "state_9",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_65",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_65",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_65",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_66",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_66",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_66",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_67",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_67",
-      "dest": "state_25",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_67",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],

@@ -772,6 +772,7 @@ class BotCanvas(QWidget):
         self._scene.node_type_chosen.connect(self._on_node_type_chosen)
         self._param_panel.structural_property_changed.connect(self._on_about_to_change)
         self._param_panel.properties_changed.connect(self._on_param_changed)
+        self._param_panel.label_committed.connect(self._on_node_label_committed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
         self._param_panel.select_edge_requested.connect(self._on_select_edge_requested)
         self._param_panel.select_state_requested.connect(self._on_select_state_requested)
@@ -1353,6 +1354,14 @@ class BotCanvas(QWidget):
     def _on_about_to_change(self, desc: str) -> None:
         if self._config is not None and self._mode == BotMode.EDIT:
             self._undo_mgr.push(self._config, desc)
+
+    def _on_node_label_committed(self) -> None:
+        state = self._param_panel._state
+        if state is None:
+            return
+        node = self._scene._node_items.get(state.id)
+        if node is not None:
+            node.set_label(state.label)
 
     def _on_param_changed(self) -> None:
         if self._config is not None and self._mode == BotMode.EDIT:

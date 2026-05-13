@@ -528,19 +528,20 @@ class NodeItem(QGraphicsItem):
             # --- Full LOD ---
             sub_label_color = QColor(THEME.text) if self._active else THEME.qcolor("text_muted")
 
-            # Info section: 2-line label layout in [0..NODE_INFO_W], always at full NODE_H height
+            # Info section: name wraps to 2 lines in [0..NODE_INFO_W], type label below
             painter.setFont(THEME.font_node_main())
-            fm = painter.fontMetrics()
-            label_text = fm.elidedText(self._label, Qt.TextElideMode.ElideRight, NODE_INFO_W - 16)
             painter.setPen(THEME.qcolor("text"))
-            painter.drawText(QRectF(8, 5, NODE_INFO_W - 16, 30), Qt.AlignmentFlag.AlignCenter, label_text)
+            _name_flags = int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignHCenter) | int(
+                Qt.TextFlag.TextWordWrap
+            )
+            painter.drawText(QRectF(8, 5, NODE_INFO_W - 16, 40), _name_flags, self._label)
 
             sub_text = self._node_type
             painter.setPen(sub_label_color)
             painter.setFont(THEME.font_node_sub())
             fm2 = painter.fontMetrics()
             sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_INFO_W - 16)
-            painter.drawText(QRectF(8, 37, NODE_INFO_W - 16, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
+            painter.drawText(QRectF(8, 47, NODE_INFO_W - 16, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
 
             if self._returns:
                 n = len(self._returns)

@@ -976,6 +976,7 @@ class _NodeTypeDelegate(QStyledItemDelegate):
 
 class _ParamPanel(QWidget):
     properties_changed = pyqtSignal()
+    label_committed = pyqtSignal()
     # Emitted for discrete structural property changes (node type switch) that need
     # an immediate undo snapshot rather than the debounced param-edit path.
     structural_property_changed = pyqtSignal(str)
@@ -1226,6 +1227,7 @@ class _ParamPanel(QWidget):
         self._stack.addWidget(edge_outer)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
+        self._node_label_edit.editingFinished.connect(self._on_label_editing_finished)
         self._node_type_combo.currentIndexChanged.connect(self._on_node_type_changed)
         self._param_form.changed.connect(self._on_param_form_changed)
         self._notes_edit.textChanged.connect(self._on_notes_changed)
@@ -1346,6 +1348,10 @@ class _ParamPanel(QWidget):
             return
         self._state.label = text or None
         self.properties_changed.emit()
+
+    def _on_label_editing_finished(self) -> None:
+        if not self._suppress and self._state is not None:
+            self.label_committed.emit()
 
     def _on_node_help(self) -> None:
         """Open the node browser in view mode for the currently displayed node type."""
