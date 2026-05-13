@@ -2,9 +2,10 @@
 
 import asyncio
 from itertools import chain, repeat
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.interaction.interact as ix
+import bartlebot.nodes.node_helpers as _nh
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -41,20 +42,20 @@ async def test_success_no_dialog():
 async def test_success_with_dialog():
     """Dialogue appears after X and is advanced with SPACE until dismissed."""
     client = _ready_client()
-    # Dialog visible on first check, False on all subsequent checks.
-    # Uses a function so the mock never exhausts — the dialog loop spins until
-    # quiet for Safety Delay (0 from FakeMachine) with POLL_INTERVAL=0.
-    _seen = []
+    # is_visible_by_path returns True on first check (dialogue visible), then False.
+    _seen: list = []
 
-    async def _dialog():
+    async def _visible(c, path):
         if not _seen:
             _seen.append(True)
             return True
         return False
 
-    client.is_in_dialog.side_effect = _dialog
-
-    with patch.object(ix, "POLL_INTERVAL", 0), patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "is_visible_by_path", side_effect=_visible),
+    ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -62,27 +63,28 @@ async def test_success_with_dialog():
 
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
+    assert Keycode.SPACEBAR in calls
 
 
 async def test_success_multiple_clients():
     """Both clients must have their dialogue dismissed before SUCCESS."""
+    c1 = _ready_client()
+    c2 = _ready_client()
+    clients = [c1, c2]
+    _seen: dict[int, list] = {id(c1): [], id(c2): []}
 
-    def _make_client():
-        c = _ready_client()
-        _seen: list = []
+    async def _visible(c, path):
+        seen = _seen[id(c)]
+        if not seen:
+            seen.append(True)
+            return True
+        return False
 
-        async def _dialog():
-            if not _seen:
-                _seen.append(True)
-                return True
-            return False
-
-        c.is_in_dialog.side_effect = _dialog
-        return c
-
-    clients = [_make_client(), _make_client()]
-
-    with patch.object(ix, "POLL_INTERVAL", 0), patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "is_visible_by_path", side_effect=_visible),
+    ):
         result = await ix.run(FakeMachine(), clients, _PARAMS)
 
     assert result == "SUCCESS"
@@ -91,6 +93,7 @@ async def test_success_multiple_clients():
     for c in clients:
         calls = [call.args[0] for call in c.send_key.call_args_list]
         assert Keycode.X in calls
+        assert Keycode.SPACEBAR in calls
 
 
 async def test_prompt_never_appears_fails():
@@ -133,12 +136,12 @@ async def test_prompt_retry_then_success():
 async def test_dialog_timeout_fails():
     """FAILURE when dialogue never clears within DIALOG_TIMEOUT."""
     client = _ready_client()
-    client.is_in_dialog.return_value = True  # never clears
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(ix, "DIALOG_TIMEOUT", 0.01),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -268,19 +271,24 @@ async def test_has_dialogue_false_skips_dialogue_wait():
     from wizwalker import Keycode
 
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
-    client.is_in_dialog.assert_not_called()
+    assert not any(call.args[0] == Keycode.SPACEBAR for call in client.send_key.call_args_list)
 
 
 async def test_has_dialogue_true_explicit_behaves_as_default():
     """has_dialogue=True (explicit) is identical to the default — dialogue phase runs normally."""
     client = _ready_client()
     params = {**_PARAMS, "has_dialogue": True}
+    vis_mock = AsyncMock(return_value=False)
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "is_visible_by_path", vis_mock),
+    ):
         result = await ix.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
-    client.is_in_dialog.assert_called()
+    vis_mock.assert_called()  # dialogue phase ran — is_visible_by_path was polled
 
 
 async def test_late_dialog_caught_within_safety_window():
@@ -288,18 +296,20 @@ async def test_late_dialog_caught_within_safety_window():
     client = _ready_client()
     call_count = 0
 
-    async def late_dialog():
+    async def _late_visible(c, path):
         nonlocal call_count
         call_count += 1
         # Each call takes real time so elapsed accumulates; dialog appears on 3rd poll.
         await asyncio.sleep(0.007)
         return call_count == 3
 
-    client.is_in_dialog.side_effect = late_dialog
-
     machine = FakeMachine(options={"Safety Delay": 0.05})
 
-    with patch.object(ix, "POLL_INTERVAL", 0), patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "is_visible_by_path", side_effect=_late_visible),
+    ):
         result = await ix.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"

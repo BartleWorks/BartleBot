@@ -5,6 +5,8 @@ import fnmatch
 import logging
 import re
 
+from wizwalker import Keycode
+
 logger = logging.getLogger(__name__)
 
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
@@ -47,9 +49,10 @@ async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTR
 
 
 async def dismiss_ambient_dialog_once(client) -> bool:
-    """If client has an advanceable dialog open, click the advance button to dismiss it. Returns True if dismissed."""
+    """If client has an advanceable dialog open, press SPACEBAR to dismiss it. Returns True if dismissed."""
     if await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
-        return await click_by_path(client, ADVANCE_DIALOG_PATH)
+        await client.send_key(Keycode.SPACEBAR, 0.1)
+        return True
     return False
 
 
@@ -60,17 +63,21 @@ async def advance_dialogue_until_clear(
 ) -> bool:
     """Advance dialogue on all clients until all are dialogue-free for safety_delay seconds.
 
-    Clicks ADVANCE_DIALOG_PATH on any client that has an open dialogue banner, then resets
-    the quiet timer. Returns True when all clients have been dialogue-free for safety_delay
-    seconds. Returns False if timeout expires while clients are still in dialogue.
+    Presses SPACEBAR on any client that has an open dialogue banner, then resets the quiet
+    timer. Polls at DIALOG_FAST_POLL_INTERVAL after a dismissal and POLL_INTERVAL during the
+    quiet phase (no dialogue detected). Returns True when all clients have been dialogue-free
+    for safety_delay seconds. Returns False if timeout expires while clients are still in
+    dialogue.
     """
+    from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL
+
     loop = asyncio.get_event_loop()
     overall_start = loop.time()
     quiet_since = overall_start
 
     while True:
         now = loop.time()
-        dialogs = await asyncio.gather(*[c.is_in_dialog() for c in clients])
+        dialogs = await asyncio.gather(*[is_visible_by_path(c, ADVANCE_DIALOG_PATH) for c in clients])
 
         if not any(dialogs) and (now - quiet_since) >= safety_delay:
             return True
@@ -79,10 +86,11 @@ async def advance_dialogue_until_clear(
             return False
 
         if any(dialogs):
-            await asyncio.gather(*[click_by_path(c, ADVANCE_DIALOG_PATH) for c, d in zip(clients, dialogs) if d])
+            await asyncio.gather(*[c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(clients, dialogs) if d])
             quiet_since = loop.time()
-
-        await asyncio.sleep(POLL_INTERVAL)
+            await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL)
+        else:
+            await asyncio.sleep(POLL_INTERVAL)
 
 
 async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interval: float = POLL_INTERVAL) -> None:
