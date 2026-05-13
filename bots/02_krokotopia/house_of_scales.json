@@ -212,7 +212,7 @@
       "label": "Skip boat ride",
       "position": {
         "x": 440.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Hub",
@@ -1178,16 +1178,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_26",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_27",
       "dest": "state_28",
       "when": "SUCCESS",
@@ -1351,16 +1341,6 @@
       "source": "state_37",
       "dest": "state_25",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_25",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1779,6 +1759,26 @@
     {
       "trigger": "advance",
       "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],

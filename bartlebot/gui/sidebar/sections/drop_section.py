@@ -140,6 +140,7 @@ class DropSection(SidebarSection):
                 table.setItem(row, 1, qty_item)
         finally:
             table.blockSignals(False)
+            table.horizontalHeader().setSortIndicator(0, Qt.SortOrder.AscendingOrder)
             table.setSortingEnabled(True)  # Qt sorts once in C++ when re-enabled
             table.setUpdatesEnabled(True)
         if search:
