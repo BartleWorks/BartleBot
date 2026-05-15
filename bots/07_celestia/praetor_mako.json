@@ -1,0 +1,753 @@
+{
+  "name": "Praetor Mako",
+  "description": "Endlessly defeats Praetor Mako in The Barbican, Celestia",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_13",
+  "recovery_state": "state_1",
+  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\npass",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Celestia",
+  "drops": [
+    "Accurate",
+    "Atavistic Balance Dirk",
+    "Atavistic Death Dirk",
+    "Atavistic Fire Dirk",
+    "Atavistic Ice Dirk",
+    "Atavistic Life Dirk",
+    "Atavistic Myth Dirk",
+    "Atavistic Storm Dirk",
+    "Balance Accurate Pin (30)",
+    "Balance Accurate Pin (60)",
+    "Banshee",
+    "Blade of Life Jade",
+    "Blight Hound",
+    "Blizzard Lizard Sapphire",
+    "Boots of Accord",
+    "Boots of Catastrophe",
+    "Boots of Celestian Totality",
+    "Brass",
+    "Bronze",
+    "Bygone Balance Dirk",
+    "Bygone Death Dirk",
+    "Bygone Fire Dirk",
+    "Bygone Ice Dirk",
+    "Bygone Life Dirk",
+    "Bygone Myth Dirk",
+    "Bygone Storm Dirk",
+    "Cat Bandit Opal",
+    "Cauliflowers",
+    "Celestian Abyss Boots",
+    "Celestian Cinder Shoes",
+    "Celestian Frostbit Footgear",
+    "Celestian Tempest Trekkers",
+    "Centaur",
+    "Cobalt",
+    "Colossus",
+    "Combustible Band",
+    "Cyclops",
+    "Cyclops Minion",
+    "Dagger of Typhoons",
+    "Darkwind",
+    "Deadly Fly Trap",
+    "Death Accurate Pin (30)",
+    "Death Accurate Pin (60)",
+    "Delicious Cookie",
+    "Devoted Vestment",
+    "Dirk of Delusion",
+    "Dragonflies",
+    "Dull Critical Opal +2",
+    "Dull Defense Sapphire +26",
+    "Dull Health Opal +51",
+    "Dull Health Opal +52",
+    "Dull Health Opal +53",
+    "Earth Walker",
+    "Everlasting Celestian Boots",
+    "Evil Snowman",
+    "Evil Snowman",
+    "Fire Accurate Pin (50)",
+    "Fire Dragon",
+    "Fire-Eye Ruby",
+    "Fish Fin",
+    "Fish on a Vine",
+    "Forest Lord",
+    "Forgotten Facade",
+    "Forsaken Headgear",
+    "Frost Giant",
+    "Gearhead Destroyer",
+    "Glowing Star Fruit",
+    "Glowing Taffy",
+    "Helephant",
+    "Helm of Burning Ambition",
+    "Hexfin's Flurry Band",
+    "Hexfin's Frostbit Bodkin",
+    "Hydra",
+    "Ice Accurate Pin (30)",
+    "Ice Accurate Pin (60)",
+    "Ice Rangers",
+    "Ice Wyvern",
+    "Icestar Stalkers",
+    "Immolate",
+    "Insightful Topper",
+    "Kraken",
+    "Kris of the Piscean Guard",
+    "Large Willow Tree",
+    "Lead",
+    "Legendary Vial",
+    "Life Accurate Pin (20)",
+    "Life Accurate Pin (60)",
+    "Locust Swarm",
+    "Maelstrom Snap Dragon",
+    "Majestic Signet",
+    "Mako's Timeless Trekkers",
+    "Mako's Wanderlust Raiment",
+    "Mass Ice Prism Sapphire",
+    "Mass Life Prism Jade",
+    "Mass Myth Prism Peridot",
+    "Minotaur",
+    "Monstrous",
+    "Myth Accurate Pin (50)",
+    "Myth Accurate Pin (60)",
+    "Nature's Wrath",
+    "Nereus's Hoarfrost Helm",
+    "Nickel",
+    "Orthrus",
+    "Phoenix",
+    "Pink Dandelion",
+    "Plain Blocking Onyx +6",
+    "Plain Blocking Peridot +6",
+    "Plain Damage Ruby +15",
+    "Plain Damage Sapphire +15",
+    "Plain Defense Opal +16",
+    "Polar Boots",
+    "Power Nova",
+    "Precision",
+    "Reckless Raiment",
+    "Rime Runners",
+    "Ring of Rapport",
+    "Ring of Rare Origins",
+    "Rising Tide Topper",
+    "Salgio's Tinder Cloak",
+    "Sandstone",
+    "Scales",
+    "Scarecrow",
+    "Seraph",
+    "Shark Tooth",
+    "Shroud of Snowfall",
+    "Silver Trumpet Vine",
+    "Skeletal Pirate",
+    "Slick-N-Slide Opal",
+    "Sniper",
+    "Sniper Talent Opal",
+    "Spectral Blast",
+    "Spicy Drumstick",
+    "Sprite",
+    "Steel",
+    "Stone Colossus",
+    "Storied Celestian Sabatons",
+    "Storm Accurate Pin (50)",
+    "Storm Lord",
+    "Storm Shark",
+    "Storm-Tooth Amethyst",
+    "Stormzilla",
+    "Storyteller's Cap",
+    "Storyteller's Tunic",
+    "Strawberry Cupcake",
+    "Sturdy Opal",
+    "Submarine Sandwich",
+    "Sunbird",
+    "Sunstone",
+    "Synthesis Cover",
+    "Thundercloud Coif",
+    "Tin",
+    "Tolerant Boots",
+    "Tragic Tunic",
+    "Triton",
+    "Turbulent Tunic",
+    "Vampire",
+    "Vengeance",
+    "Versatile Celestian Boots",
+    "Versatile Steel",
+    "Vile Outfit",
+    "Virtue Shoes",
+    "Vital Headdress",
+    "Whimsical Surcoat",
+    "Wisp Bonus Opal",
+    "Wraith",
+    "Wyldfire"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Celestia Base Camp",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Crustacean Empire",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Hub",
+        "to_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+        "xyz": {
+          "x": 2571.94,
+          "y": 16191.33,
+          "z": -948.28
+        },
+        "reset_xyz": {
+          "x": 2077.3,
+          "y": 15532.26,
+          "z": -1099.7
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to health wisps",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+        "xyz": {
+          "x": -1274.49,
+          "y": 1713.86,
+          "z": -284.36
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "sleep",
+      "label": "Wait for wisps to load",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "duration": 1.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter The Barbican",
+      "position": {
+        "x": 3520.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+        "dungeon_zone": "Celestia/Interiors/CL_Z10i4_Kingdom_Of_The_Crabs",
+        "sigil_xyz": {
+          "x": -8737.08,
+          "y": 29548.85,
+          "z": -93.14
+        },
+        "reset_xyz": {
+          "x": -8525.49,
+          "y": 28802.86,
+          "z": -93.41
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat Praetor Mako",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "CL-SharkKing-Boss-R10",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_zone",
+      "label": "Exit The Barbican",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Celestia/Interiors/CL_Z10i4_Kingdom_Of_The_Crabs",
+        "to_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+        "xyz": {
+          "x": -16.07,
+          "y": 854.72,
+          "z": 67.51
+        },
+        "reset_xyz": {
+          "x": -25.52,
+          "y": 1260.81,
+          "z": 67.46
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "check_health",
+      "label": "Check health",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "threshold": 0.8
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "check_mana",
+      "label": "Check mana",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "threshold": 0.1
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "check_zone",
+      "label": "Check starting zone",
+      "position": {
+        "x": 0.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+        "clients_to_check": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "keep_list": [
+          "Atavistic",
+          "Accurate"
+        ],
+        "sell_crowns": true,
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_6",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_8",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_6",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}
