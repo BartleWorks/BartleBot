@@ -5,7 +5,7 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "tempest[epic] | bunyip[epic]\n",
+  "default_combat_config": "any<aoe>[any<mod_damage>]\n",
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
