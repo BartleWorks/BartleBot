@@ -40,17 +40,10 @@ def test_unrelated_node_returns_empty():
 
 
 def test_quicksell_emits_warning():
-    config = _config({"node_type": "quicksell", "params": {"sell_crowns": True}})
+    config = _config({"node_type": "quicksell", "params": {}})
     warnings = collect_safety_warnings(config)
     assert len(warnings) == 1
     assert "quicksell" in warnings[0].message.lower() or "backpack" in warnings[0].message.lower()
-
-
-def test_quicksell_sell_crowns_true_shows_yes():
-    config = _config({"node_type": "quicksell", "params": {"sell_crowns": True}})
-    details = collect_safety_warnings(config)[0].details
-    crowns_row = next(v for k, v in details if "Crowns" in k)
-    assert crowns_row == "Yes"
 
 
 def test_quicksell_all_flags_false_shows_no():
@@ -58,7 +51,6 @@ def test_quicksell_all_flags_false_shows_no():
         {
             "node_type": "quicksell",
             "params": {
-                "sell_crowns": False,
                 "sell_pets": False,
                 "sell_socket_wrenches": False,
                 "sell_skeleton_keys": False,
@@ -72,11 +64,11 @@ def test_quicksell_all_flags_false_shows_no():
     assert all(v == "No" for _, v in details)
 
 
-def test_quicksell_details_cover_all_four_sell_flags():
+def test_quicksell_details_cover_sell_flags():
     config = _config({"node_type": "quicksell", "params": {}})
     details = collect_safety_warnings(config)[0].details
     keys = [k for k, _ in details]
-    assert any("Crowns" in k for k in keys)
+    assert not any("Crowns" in k for k in keys)
     assert any("Pets" in k for k in keys)
     assert any("Socket" in k for k in keys)
     assert any("Skeleton" in k for k in keys)

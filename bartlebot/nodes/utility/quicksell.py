@@ -12,7 +12,6 @@ from bartlebot.nodes.paths import (
     JEWEL_INVENTORY_SPACE_PATH,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
-    MESSAGE_BOX_RIGHT,
     QUICKSELL_ALL_BUTTON_PATH,
     QUICKSELL_ALL_TAB_PATH,
     QUICKSELL_CLOSE_BUTTON_PATH,
@@ -36,17 +35,6 @@ PARAM_SCHEMA: list[ParamField] = [
             "Partial matches count — 'hat' will keep any item with 'hat' in the name."
         ),
         default=[],
-        required=False,
-    ),
-    ParamField(
-        key="sell_crowns",
-        type="bool",
-        label="Sell Crowns Items",
-        help=(
-            "If enabled, Crowns items are included in the quicksell. "
-            "If disabled, Crowns items are excluded when Select All is clicked."
-        ),
-        default=True,
         required=False,
     ),
     ParamField(
@@ -80,7 +68,7 @@ NODE_SPEC = NodeSpec(
         "Checks if the main backpack or jewel pouch is full. "
         "If either is full, opens the quicksell UI and sells all items except those "
         "whose names match a keyword in keep_list. "
-        "sell_crowns and sell_pets control whether those item types are included."
+        "sell_pets controls whether pets are included. Crowns items are always included."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -128,8 +116,7 @@ async def run(machine, clients: list, params: dict) -> str:
       6. Wait for the shop UI to appear (QUICKSELL_ALL_BUTTON).
       7. Click the "All" tab to see all item types.
       8. Click "Select All" to check every item.
-      9. Handle the crowns dialog if it appears: confirm (YES) if sell_crowns is True,
-         decline (NO) to exclude crowns items.
+      9. Handle the crowns dialog if it appears: always confirm (YES) to include all crowns items.
       10. If sell_pets is False, switch to the Pet tab, click All to deselect pets,
           then return to the All tab.
       11. Page through the quicksell list and uncheck any item whose name matches a
@@ -145,7 +132,6 @@ async def run(machine, clients: list, params: dict) -> str:
     sell confirmation dialog did not appear.
     """
     keep_list = [k.lower() for k in (params.get("keep_list") or [])]
-    sell_crowns: bool = params.get("sell_crowns", True)
     sell_pets: bool = params.get("sell_pets", True)
     sell_socket_wrenches: bool = params.get("sell_socket_wrenches", False)
     sell_skeleton_keys: bool = params.get("sell_skeleton_keys", False)
@@ -154,13 +140,13 @@ async def run(machine, clients: list, params: dict) -> str:
     if not sell_skeleton_keys:
         keep_list.append("skeleton key")
     machine.log(
-        f"quicksell: keep_list={keep_list!r} sell_crowns={sell_crowns} sell_pets={sell_pets} "
+        f"quicksell: keep_list={keep_list!r} sell_pets={sell_pets} "
         f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
     )
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     results = await asyncio.gather(
-        *[_process_client(machine, c, keep_list, sell_crowns, sell_pets, safety_delay) for c in clients],
+        *[_process_client(machine, c, keep_list, sell_pets, safety_delay) for c in clients],
         return_exceptions=True,
     )
     if any(isinstance(r, Exception) or r == "FAILURE" for r in results):
@@ -168,9 +154,7 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
-async def _process_client(
-    machine, client, keep_list: list[str], sell_crowns: bool, sell_pets: bool, safety_delay: float
-) -> str:
+async def _process_client(machine, client, keep_list: list[str], sell_pets: bool, safety_delay: float) -> str:
     """Check both backpack types and quicksell once if either is full."""
     # Open inventory page and check fullness.
     await client.send_key(Keycode.B, 0.1)
@@ -192,12 +176,10 @@ async def _process_client(
 
     full_desc = " and ".join(t for t, f in [("inventory", inventory_full), ("jewel", jewel_full)] if f)
     machine.log(f"quicksell: {full_desc} backpack full — opening quicksell UI")
-    return await _run_quicksell(machine, client, keep_list, sell_crowns, sell_pets, safety_delay)
+    return await _run_quicksell(machine, client, keep_list, sell_pets, safety_delay)
 
 
-async def _run_quicksell(
-    machine, client, keep_list: list[str], sell_crowns: bool, sell_pets: bool, safety_delay: float
-) -> str:
+async def _run_quicksell(machine, client, keep_list: list[str], sell_pets: bool, safety_delay: float) -> str:
     """Open the quicksell UI from the jewel page and sell all unkeep-listed items."""
     # Wait for the quicksell open button to be visible, then click it.
     machine.log("quicksell: waiting for quicksell open button", logging.DEBUG)
@@ -244,7 +226,7 @@ async def _run_quicksell(
     await asyncio.sleep(POLL_INTERVAL)
 
     # Dismiss the "sell Crowns items?" dialog if it appears after selecting all items.
-    # If sell_crowns is True, confirm (center/YES); if False, decline (right/NO) to exclude them.
+    # Always confirm (YES) so all items are guaranteed checked before the keep_list page loop.
     machine.log("quicksell: waiting for crowns select dialog (optional)", logging.DEBUG)
     crowns_dialog = await node_helpers.poll_until(
         lambda: node_helpers.is_visible_by_path(client, MESSAGE_BOX_CENTER),
@@ -252,12 +234,8 @@ async def _run_quicksell(
         POLL_INTERVAL,
     )
     if crowns_dialog:
-        btn = MESSAGE_BOX_CENTER if sell_crowns else MESSAGE_BOX_RIGHT
-        machine.log(
-            f"quicksell: crowns select dialog appeared — {'including' if sell_crowns else 'excluding'} crowns items",
-            logging.DEBUG,
-        )
-        await node_helpers.click_by_path(client, btn)
+        machine.log("quicksell: crowns select dialog appeared — including crowns items", logging.DEBUG)
+        await node_helpers.click_by_path(client, MESSAGE_BOX_CENTER)
     else:
         machine.log("quicksell: crowns select dialog not present, skipping", logging.DEBUG)
 

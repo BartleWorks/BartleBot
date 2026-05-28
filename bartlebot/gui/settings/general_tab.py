@@ -144,10 +144,6 @@ class GeneralTab(QWidget):
         self._safety_delay_sb.setValue(sm.default_safety_delay)
         bot_form.addRow("Default Safety Delay:", self._safety_delay_sb)
 
-        self._sell_crowns_cb = QCheckBox()
-        self._sell_crowns_cb.setChecked(sm.get_general("default_quicksell_sell_crowns", default=True))
-        bot_form.addRow("Quicksell: Sell Crowns Items:", self._sell_crowns_cb)
-
         self._sell_pets_cb = QCheckBox()
         self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
         bot_form.addRow("Quicksell: Sell Pets:", self._sell_pets_cb)
@@ -193,7 +189,6 @@ class GeneralTab(QWidget):
         sm.set_general("auto_save_enabled", self._autosave_cb.isChecked())
         sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())
         sm.default_safety_delay = self._safety_delay_sb.value()
-        sm.set_general("default_quicksell_sell_crowns", self._sell_crowns_cb.isChecked())
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())

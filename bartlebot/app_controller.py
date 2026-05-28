@@ -197,13 +197,11 @@ class AppController(QObject):
             opt.model_copy(update={"default": delay}) if opt.name == "Safety Delay" else opt for opt in config.options
         ]
 
-        sell_crowns = sm.get_general("default_quicksell_sell_crowns", default=True)
         sell_pets = sm.get_general("default_quicksell_sell_pets", default=True)
         sell_socket_wrenches = sm.get_general("default_quicksell_sell_socket_wrenches", default=False)
         sell_skeleton_keys = sm.get_general("default_quicksell_sell_skeleton_keys", default=False)
         for state in config.states:
             if state.node_type == "quicksell":
-                state.params["sell_crowns"] = sell_crowns
                 state.params["sell_pets"] = sell_pets
                 state.params["sell_socket_wrenches"] = sell_socket_wrenches
                 state.params["sell_skeleton_keys"] = sell_skeleton_keys
