@@ -1,5 +1,5 @@
 """
-Diagnostic script to find the correct wstring offset for window text.
+Diagnostic script to assess maybe_text() correctness across control types.
 
 HOW TO USE:
   Run once per UI state you want to test, e.g.:
@@ -11,9 +11,12 @@ HOW TO USE:
 
   Run:  poetry run python scripts/probe_windowtext.py
 
-  The script walks the entire visible UI tree and reports every window where
-  offset 712 or 736 yields readable text, shown side-by-side so you can
-  compare which is correct.
+  The script walks the entire visible UI tree and for every window that has
+  readable text at offset 712 or 736 it reports:
+    - the raw read at offset 712
+    - the raw read at offset 736
+    - what maybe_text() actually returned
+  so you can spot any mismatches in the branching logic.
 """
 
 import asyncio
@@ -60,6 +63,17 @@ async def _read_wstring_raw(window, offset: int) -> tuple[str | None, str]:
         return None, f"<exception: {e}>"
 
 
+async def _call_maybe_text(window) -> tuple[str | None, str]:
+    """Call window.maybe_text() and return (result_or_None, status_string)."""
+    try:
+        text = await window.maybe_text()
+        if text:
+            return text, repr(text)
+        return None, repr(text)
+    except Exception as e:
+        return None, f"<exception: {e}>"
+
+
 async def _walk_tree(window, results: list, depth: int = 0, max_depth: int = 12):
     if depth > max_depth:
         return
@@ -75,14 +89,21 @@ async def _walk_tree(window, results: list, depth: int = 0, max_depth: int = 12)
             if text:
                 any_text = True
 
+        maybe_text_result, maybe_text_status = await _call_maybe_text(window)
+
         if any_text:
-            results.append((depth, name, type_name, readings))
+            results.append((depth, name, type_name, readings, maybe_text_result, maybe_text_status))
 
         children = await window.children()
         for child in children:
             await _walk_tree(child, results, depth + 1, max_depth)
     except Exception:
         pass
+
+
+def _correct_offset_for(type_name: str) -> int:
+    """Return the offset maybe_text() should use for this type."""
+    return 712 if type_name == "ControlText" else 736
 
 
 async def main():
@@ -106,54 +127,49 @@ async def main():
             print("No windows with readable text found at offsets 712 or 736.")
             return
 
-        # Categorise: agree (both same), 712-only, 736-only, disagree (both text but different)
-        agree, only_712, only_736, disagree = [], [], [], []
+        # Classify each result relative to Laurenz's branching logic.
+        correct, wrong, no_text = [], [], []
         for entry in results:
-            _, _, _, readings = entry
-            t712 = readings[712][0]
-            t736 = readings[736][0]
-            if t712 and t736:
-                if t712 == t736:
-                    agree.append(entry)
-                else:
-                    disagree.append(entry)
-            elif t712:
-                only_712.append(entry)
-            else:
-                only_736.append(entry)
+            _, _, type_name, readings, maybe_text_result, _ = entry
+            correct_offset = _correct_offset_for(type_name)
+            expected_text = readings[correct_offset][0]
 
-        def print_entry(depth, name, type_name, readings):
+            if not expected_text:
+                # Neither offset had text — maybe_text() returning nothing is fine.
+                no_text.append(entry)
+            elif maybe_text_result == expected_text:
+                correct.append(entry)
+            else:
+                wrong.append(entry)
+
+        def print_entry(depth, name, type_name, readings, maybe_text_result, maybe_text_status):
             indent = "  " * depth
-            print(f"{indent}[{name!r}] ({type_name})")
+            correct_offset = _correct_offset_for(type_name)
+            print(f"{indent}[{name!r}] ({type_name})  ← correct offset: {correct_offset}")
             for offset in PROBE_OFFSETS:
                 _, status = readings[offset]
-                print(f"{indent}  offset {offset}: {status}")
+                marker = " ✓" if offset == correct_offset else ""
+                print(f"{indent}  raw {offset}{marker}: {status}")
+            print(f"{indent}  maybe_text(): {maybe_text_status}")
 
         print(f"{'=' * 70}")
-        print(f"  ONLY offset 736 has text ({len(only_736)} windows) — these need 736")
+        print(f"  CORRECT — maybe_text() matches expected offset ({len(correct)} windows)")
         print(f"{'=' * 70}")
-        for entry in only_736:
+        for entry in correct:
             print_entry(*entry)
             print()
 
         print(f"{'=' * 70}")
-        print(f"  ONLY offset 712 has text ({len(only_712)} windows) — these need 712")
+        print(f"  WRONG — maybe_text() does NOT match expected offset ({len(wrong)} windows)")
         print(f"{'=' * 70}")
-        for entry in only_712:
+        for entry in wrong:
             print_entry(*entry)
             print()
 
         print(f"{'=' * 70}")
-        print(f"  BOTH offsets have text but DISAGREE ({len(disagree)} windows)")
+        print(f"  NO RAW TEXT at either offset ({len(no_text)} windows with maybe_text result)")
         print(f"{'=' * 70}")
-        for entry in disagree:
-            print_entry(*entry)
-            print()
-
-        print(f"{'=' * 70}")
-        print(f"  Both offsets agree / same text ({len(agree)} windows) — either works")
-        print(f"{'=' * 70}")
-        for entry in agree:
+        for entry in no_text:
             print_entry(*entry)
             print()
 
