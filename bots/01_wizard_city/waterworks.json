@@ -1,0 +1,2457 @@
+{
+  "name": "Waterworks",
+  "description": "Endlessly completes Waterworks in Crab Alley, Wizard City",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_16",
+  "recovery_state": "state_1",
+  "default_combat_config": "tempest[epic]",
+  "use_bartlebot_default_combat_config": false,
+  "start_location": "Anywhere in Wizard City",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Default Combat Order",
+      "type": "int_list",
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
+    },
+    {
+      "name": "Skip mobs",
+      "type": "bool",
+      "default": true
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to the Commons",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1373.34,
+          "y": -3590.64,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1311.11,
+          "y": -2802.26,
+          "z": -27.99
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -6054.32,
+          "y": -3302.17,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5251.57,
+          "y": -3295.22,
+          "z": -29.36
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Triton Avenue",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "to_zone": "WizardCity/WC_Streets/WC_Triton",
+        "xyz": {
+          "x": -7423.81,
+          "y": -422.95,
+          "z": -1397.84
+        },
+        "reset_xyz": {
+          "x": -6662.58,
+          "y": -616.32,
+          "z": -1397.84
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.8,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone_via_object",
+      "label": "Enter Crab Alley",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Triton",
+        "to_zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "interact_xyz": {
+          "x": -12571.79,
+          "y": -3277.93,
+          "z": -1394.23
+        },
+        "reset_xyz": {
+          "x": -12473.75,
+          "y": -2767.04,
+          "z": -1394.23
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "check_zone",
+      "label": "Check starting zone",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "clients_to_check": []
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_dungeon",
+      "label": "Enter Waterworks",
+      "position": {
+        "x": 2640.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "dungeon_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "sigil_xyz": {
+          "x": -2782.77,
+          "y": -2808.39,
+          "z": 34.45
+        },
+        "reset_xyz": {
+          "x": -2217.69,
+          "y": -2846.84,
+          "z": 28.69
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Talk to Glurrup",
+      "position": {
+        "x": 3080.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "interact_xyz": {
+          "x": 75.75,
+          "y": -674.72,
+          "z": 28.44
+        },
+        "reset_xyz": {
+          "x": -3.01,
+          "y": -1127.59,
+          "z": 6.84
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to vortex",
+      "position": {
+        "x": 3520.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "xyz": {
+          "x": 11.67,
+          "y": 1329.81,
+          "z": -2.19
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": -180.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "interact",
+      "label": "Use control panel",
+      "position": {
+        "x": 4400.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "interact_xyz": {
+          "x": -538.46,
+          "y": 1576.78,
+          "z": -2.17
+        },
+        "reset_xyz": {
+          "x": -866.36,
+          "y": 1525.07,
+          "z": -2.16
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Enter room 1A",
+      "position": {
+        "x": 4840.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
+        "xyz": {
+          "x": -2309.71,
+          "y": 51.58,
+          "z": -2.14
+        },
+        "reset_xyz": {
+          "x": -1520.14,
+          "y": 43.12,
+          "z": -2.15
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Enter room 1B",
+      "position": {
+        "x": 5720.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_02",
+        "xyz": {
+          "x": -1792.9,
+          "y": -11.32,
+          "z": -34.0
+        },
+        "reset_xyz": {
+          "x": -1045.72,
+          "y": -7.69,
+          "z": -48.93
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 6160.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "interact",
+      "label": "Pull lever 1/4",
+      "position": {
+        "x": 6600.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_02",
+        "interact_xyz": {
+          "x": -1471.24,
+          "y": -262.15,
+          "z": -16.13
+        },
+        "reset_xyz": {
+          "x": -1499.86,
+          "y": -262.15,
+          "z": -13.43
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "enter_zone",
+      "label": "Exit room 1B",
+      "position": {
+        "x": 7040.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_02",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
+        "xyz": {
+          "x": 1743.58,
+          "y": 16.38,
+          "z": 56.75
+        },
+        "reset_xyz": {
+          "x": 989.83,
+          "y": -9.59,
+          "z": -48.92
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "enter_zone",
+      "label": "Exit room 1A",
+      "position": {
+        "x": 7480.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "xyz": {
+          "x": 1703.39,
+          "y": 2.36,
+          "z": 43.31
+        },
+        "reset_xyz": {
+          "x": 1092.59,
+          "y": 0.4,
+          "z": -48.92
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "enter_zone",
+      "label": "Enter room 2A",
+      "position": {
+        "x": 7920.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_03",
+        "xyz": {
+          "x": 2332.11,
+          "y": 43.41,
+          "z": -2.14
+        },
+        "reset_xyz": {
+          "x": 1519.11,
+          "y": 41.35,
+          "z": -2.15
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "interact",
+      "label": "Fail puzzle",
+      "position": {
+        "x": 8360.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_03",
+        "interact_xyz": {
+          "x": -705.88,
+          "y": 48.6,
+          "z": -48.12
+        },
+        "reset_xyz": {
+          "x": -963.65,
+          "y": 604.99,
+          "z": -48.12
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 8800.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone",
+      "label": "Enter room 2B",
+      "position": {
+        "x": 9240.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_03",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_04",
+        "xyz": {
+          "x": 2070.05,
+          "y": -2032.44,
+          "z": -19.94
+        },
+        "reset_xyz": {
+          "x": 1495.93,
+          "y": -1563.44,
+          "z": -45.24
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 9680.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_04",
+        "xyz": {
+          "x": 25.17,
+          "y": -1212.6,
+          "z": -79.97
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 10120.0,
+        "y": -180.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_26",
+      "node_type": "handle_combat",
+      "label": "Defeat Luska Charmbeak",
+      "position": {
+        "x": 10560.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": false,
+        "combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic]\n\n### p2\nany<blade>@ally(1)\n\n### p3\nany<blade>[sharp]@ally(1) | any<blade>@ally(1)",
+        "max_duration": 0.0
+      },
+      "option_overrides": {
+        "Default Combat Order": [
+          2,
+          3,
+          4,
+          1
+        ]
+      }
+    },
+    {
+      "id": "state_27",
+      "node_type": "interact",
+      "label": "Pull lever 2/4",
+      "position": {
+        "x": 11000.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_04",
+        "interact_xyz": {
+          "x": 182.17,
+          "y": -5157.41,
+          "z": -104.97
+        },
+        "reset_xyz": {
+          "x": -447.76,
+          "y": -5111.69,
+          "z": -104.97
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_28",
+      "node_type": "enter_zone",
+      "label": "Exit room 2B",
+      "position": {
+        "x": 11440.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_04",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_03",
+        "xyz": {
+          "x": -39.01,
+          "y": 585.21,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -49.55,
+          "y": 122.98,
+          "z": -104.97
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "enter_zone",
+      "label": "Exit room 2A",
+      "position": {
+        "x": 12320.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_03",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "xyz": {
+          "x": -2054.25,
+          "y": 1991.84,
+          "z": -9.96
+        },
+        "reset_xyz": {
+          "x": -1617.25,
+          "y": 1576.34,
+          "z": -44.06
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 11880.0,
+        "y": -180.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_31",
+      "node_type": "enter_zone",
+      "label": "Enter room 3A",
+      "position": {
+        "x": 12760.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_05",
+        "xyz": {
+          "x": -1611.29,
+          "y": 1889.62,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": -1112.03,
+          "y": 1453.14,
+          "z": -2.16
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 13200.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "enter_zone",
+      "label": "Enter room 3B",
+      "position": {
+        "x": 13640.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_05",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_06",
+        "xyz": {
+          "x": -1863.82,
+          "y": -11.62,
+          "z": -59.34
+        },
+        "reset_xyz": {
+          "x": -966.82,
+          "y": -8.65,
+          "z": -48.93
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 14080.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "interact",
+      "label": "Pull lever 3/4",
+      "position": {
+        "x": 14520.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_06",
+        "interact_xyz": {
+          "x": -1499.65,
+          "y": -262.08,
+          "z": -13.45
+        },
+        "reset_xyz": {
+          "x": -1485.64,
+          "y": 258.1,
+          "z": -14.73
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "enter_zone",
+      "label": "Exit room 3B",
+      "position": {
+        "x": 14960.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_06",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_05",
+        "xyz": {
+          "x": 1638.37,
+          "y": -27.01,
+          "z": 24.38
+        },
+        "reset_xyz": {
+          "x": 1046.59,
+          "y": 8.86,
+          "z": -48.92
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "enter_zone",
+      "label": "Exit room 3A",
+      "position": {
+        "x": 15400.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_05",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "xyz": {
+          "x": 1607.52,
+          "y": 10.64,
+          "z": 24.37
+        },
+        "reset_xyz": {
+          "x": 1039.58,
+          "y": -6.6,
+          "z": -48.92
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_38",
+      "node_type": "enter_zone",
+      "label": "Enter room 4A",
+      "position": {
+        "x": 15840.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "xyz": {
+          "x": 1573.97,
+          "y": 1949.96,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 1126.55,
+          "y": 1469.11,
+          "z": -2.15
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_39",
+      "node_type": "interact",
+      "label": "Pull puzzle lever 1/4",
+      "position": {
+        "x": 16280.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "interact_xyz": {
+          "x": 1069.55,
+          "y": -1010.65,
+          "z": -47.25
+        },
+        "reset_xyz": {
+          "x": 1399.63,
+          "y": -1353.34,
+          "z": -45.46
+        },
+        "interact_clients": [],
+        "has_dialogue": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_40",
+      "node_type": "interact",
+      "label": "Pull puzzle lever 2/4",
+      "position": {
+        "x": 16720.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "interact_xyz": {
+          "x": 54.43,
+          "y": -1335.52,
+          "z": -48.12
+        },
+        "reset_xyz": {
+          "x": 445.91,
+          "y": -1727.08,
+          "z": -48.12
+        },
+        "interact_clients": [],
+        "has_dialogue": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_41",
+      "node_type": "interact",
+      "label": "Pull puzzle lever 3/4",
+      "position": {
+        "x": 17160.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "interact_xyz": {
+          "x": 1272.28,
+          "y": 134.33,
+          "z": -48.12
+        },
+        "reset_xyz": {
+          "x": 1327.62,
+          "y": -377.84,
+          "z": -48.12
+        },
+        "interact_clients": [],
+        "has_dialogue": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_42",
+      "node_type": "interact",
+      "label": "Pull puzzle lever 4/4",
+      "position": {
+        "x": 17600.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "interact_xyz": {
+          "x": -23.65,
+          "y": 1233.74,
+          "z": -48.12
+        },
+        "reset_xyz": {
+          "x": 503.6,
+          "y": 1200.07,
+          "z": -48.12
+        },
+        "interact_clients": [],
+        "has_dialogue": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_43",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 18040.0,
+        "y": -180.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_44",
+      "node_type": "enter_zone",
+      "label": "Enter room 4B",
+      "position": {
+        "x": 18480.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_08",
+        "xyz": {
+          "x": 2062.23,
+          "y": -2045.38,
+          "z": -21.24
+        },
+        "reset_xyz": {
+          "x": 1459.34,
+          "y": -1446.9,
+          "z": -45.24
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_45",
+      "node_type": "handle_combat",
+      "label": "Defeat enemies",
+      "position": {
+        "x": 18920.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_46",
+      "node_type": "interact",
+      "label": "Pull lever 4/4",
+      "position": {
+        "x": 19360.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_08",
+        "interact_xyz": {
+          "x": -1499.8,
+          "y": -257.08,
+          "z": -13.52
+        },
+        "reset_xyz": {
+          "x": -1484.39,
+          "y": 258.87,
+          "z": -14.84
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_47",
+      "node_type": "enter_zone",
+      "label": "Exit room 4B",
+      "position": {
+        "x": 19800.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_08",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "xyz": {
+          "x": 1710.77,
+          "y": -6.8,
+          "z": 45.74
+        },
+        "reset_xyz": {
+          "x": 1010.03,
+          "y": 2.91,
+          "z": -48.92
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_48",
+      "node_type": "enter_zone",
+      "label": "Exit room 4A",
+      "position": {
+        "x": 20680.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_07",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "xyz": {
+          "x": -1993.76,
+          "y": 1975.17,
+          "z": -10.01
+        },
+        "reset_xyz": {
+          "x": -1578.06,
+          "y": 1544.2,
+          "z": -44.26
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_49",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 20240.0,
+        "y": -180.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_50",
+      "node_type": "interact",
+      "label": "Use Control Panel",
+      "position": {
+        "x": 21120.0,
+        "y": -180.0
+      },
+      "params": {
+        "zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "interact_xyz": {
+          "x": -536.56,
+          "y": 1558.4,
+          "z": -2.17
+        },
+        "reset_xyz": {
+          "x": -986.21,
+          "y": 1463.39,
+          "z": -2.16
+        },
+        "interact_clients": [],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_51",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 21560.0,
+        "y": -180.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_52",
+      "node_type": "handle_combat",
+      "label": "Defeat Sylster Glowstorm",
+      "position": {
+        "x": 22000.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "Tri-Gauntlet-Angler",
+        "use_bot_default": false,
+        "combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic]\n\n### p2\nany<trap>@boss\n\n### p3\nany<trap>@boss",
+        "max_duration": 0.0
+      },
+      "option_overrides": {
+        "Default Combat Order": [
+          2,
+          3,
+          4,
+          1
+        ]
+      }
+    },
+    {
+      "id": "state_53",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 22440.0,
+        "y": -180.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_54",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 22880.0,
+        "y": -180.0
+      },
+      "params": {
+        "keep_list": [
+          "Judgement",
+          "Hangman",
+          "Firestarter",
+          "Frostbit",
+          "Esprit",
+          "Tricksy",
+          "Skyscream",
+          "Mastery",
+          "Savory Shroud",
+          "Tasty Tunic",
+          "Delectable Hooves"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_55",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Skip mobs",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_6",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_29",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Skip mobs",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_43",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_44",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_44",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_45",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_46",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_47",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_49",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_50",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "state_48",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "state_48",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_50",
+      "dest": "state_51",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_50",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_51",
+      "dest": "state_52",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_51",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_52",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_52",
+      "dest": "state_53",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_53",
+      "dest": "state_54",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_53",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_55",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_55",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "af7a2f79",
+      "label": "Go to Crab Alley",
+      "members": [
+        "state_2",
+        "state_3",
+        "state_1",
+        "state_4",
+        "state_5",
+        "state_8"
+      ],
+      "color": 3
+    },
+    {
+      "id": "27faafa2",
+      "label": "Enter Waterworks",
+      "members": [
+        "state_7",
+        "state_9",
+        "state_6",
+        "state_11",
+        "state_10"
+      ],
+      "color": 1
+    },
+    {
+      "id": "c798f1aa",
+      "label": "Lever 1/4",
+      "members": [
+        "state_13",
+        "state_18",
+        "state_17",
+        "state_19",
+        "state_15",
+        "state_12",
+        "state_14"
+      ],
+      "color": 2
+    },
+    {
+      "id": "68dbf8a0",
+      "label": "Lever 2/4",
+      "members": [
+        "state_26",
+        "state_23",
+        "state_22",
+        "state_27",
+        "state_21",
+        "state_20",
+        "state_24",
+        "state_25",
+        "state_29",
+        "state_28"
+      ],
+      "color": 4
+    },
+    {
+      "id": "8fa92e53",
+      "label": "Lever 3/4",
+      "members": [
+        "state_31",
+        "state_32",
+        "state_35",
+        "state_36",
+        "state_37",
+        "state_34",
+        "state_33"
+      ],
+      "color": 5
+    },
+    {
+      "id": "addddc60",
+      "label": "Lever 4/4",
+      "members": [
+        "state_39",
+        "state_44",
+        "state_40",
+        "state_43",
+        "state_42",
+        "state_38",
+        "state_46",
+        "state_48",
+        "state_49",
+        "state_47",
+        "state_41",
+        "state_45"
+      ],
+      "color": 6
+    },
+    {
+      "id": "e63cb258",
+      "label": "Defeat Sylster Glowstorm",
+      "members": [
+        "state_52",
+        "state_51",
+        "state_54",
+        "state_53",
+        "state_50"
+      ],
+      "color": 1
+    }
+  ]
+}

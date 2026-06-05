@@ -42,7 +42,6 @@ def _quicksell_details(states) -> list[tuple[str, str]]:
         prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
         p = state.params
         details += [
-            (f"{prefix}Sell Crowns Items", "Yes" if p.get("sell_crowns", True) else "No"),
             (f"{prefix}Sell Pets", "Yes" if p.get("sell_pets", True) else "No"),
             (f"{prefix}Sell Socket Wrenches", "Yes" if p.get("sell_socket_wrenches", False) else "No"),
             (f"{prefix}Sell Skeleton Keys", "Yes" if p.get("sell_skeleton_keys", False) else "No"),

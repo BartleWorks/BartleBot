@@ -28,7 +28,6 @@ class _GeneralSettings(BaseModel):
     auto_save_enabled: bool = True
     auto_save_interval_seconds: int = 300
     default_safety_delay: float = 3.0
-    default_quicksell_sell_crowns: bool = True
     default_quicksell_sell_pets: bool = True
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
@@ -73,7 +72,6 @@ _DEFAULTS: dict[str, Any] = {
         "auto_save_enabled": True,
         "auto_save_interval_seconds": 300,
         "default_safety_delay": 3.0,
-        "default_quicksell_sell_crowns": True,
         "default_quicksell_sell_pets": True,
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
