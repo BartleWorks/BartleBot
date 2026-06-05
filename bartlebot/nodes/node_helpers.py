@@ -270,7 +270,7 @@ async def none_loading(clients: list) -> bool:
 async def get_text_by_path(client, path: list[str]) -> str:
     """Return the displayed text of the UI window at path, or '' if not found.
 
-    Tries maybe_text() first; falls back to reading the wide string at offset 616,
+    Tries maybe_text() first; falls back to reading the wide string at offset 736,
     which is where control elements (item name labels, realm name labels) store text.
     """
     from wizwalker.errors import MemoryReadError
@@ -285,7 +285,7 @@ async def get_text_by_path(client, path: list[str]) -> str:
     except (ValueError, MemoryReadError):
         pass
     try:
-        text = await window.read_wide_string_from_offset(616)
+        text = await window.read_wide_string_from_offset(736)
         if text:
             return text
     except (ValueError, MemoryReadError):

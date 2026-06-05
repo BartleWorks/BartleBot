@@ -5,7 +5,7 @@
   "clients": "all",
   "initial": "state_2",
   "recovery_state": "state_1",
-  "default_combat_config": "kraken[epic]@boss | bats[epic]@boss | any<damage>@boss",
+  "default_combat_config": "### p1\nfeint@boss\n\n### p2\nkraken[\"Epic - Amulet\"]@boss | bats[epic]@boss | any<damage>@boss",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Avalon",
   "drops": [
@@ -172,7 +172,12 @@
     {
       "name": "Default Combat Order",
       "type": "int_list",
-      "default": [],
+      "default": [
+        1,
+        2,
+        3,
+        4
+      ],
       "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
     }
   ],
@@ -315,8 +320,8 @@
         "y": -90.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
+        "if_health_below": 0.5,
+        "if_mana_below": 0.5,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
