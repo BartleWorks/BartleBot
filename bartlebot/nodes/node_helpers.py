@@ -15,7 +15,11 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     GAUNTLET_ENTRANCE_PATH,
     MESSAGE_BOX_CENTER,
 )
-from bartlebot.nodes.timing import DIALOG_TIMEOUT, POLL_INTERVAL  # noqa: F401 — re-exported for callers
+from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
+    DIALOG_FAST_POLL_INTERVAL,
+    DIALOG_TIMEOUT,
+    POLL_INTERVAL,
+)
 
 
 async def all_in_npc_range(clients: list) -> bool:
@@ -69,8 +73,6 @@ async def advance_dialogue_until_clear(
     for safety_delay seconds. Returns False if timeout expires while clients are still in
     dialogue.
     """
-    from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL
-
     loop = asyncio.get_event_loop()
     overall_start = loop.time()
     quiet_since = overall_start
