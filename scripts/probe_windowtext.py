@@ -1,86 +1,88 @@
 """
-Diagnostic script to find the correct wstring offset for quicksell item names.
+Diagnostic script to find the correct wstring offset for window text.
 
 HOW TO USE:
-  1. Start Wizard101 and log in.
-  2. Open your backpack (B), switch to jewel page (Y), then open the quicksell UI.
-     Make sure at least one item is visible in the list (e.g. a Skeleton Key).
-  3. Run:  poetry run python scripts/probe_windowtext.py
-  4. Paste the output back so we can identify the correct offset.
+  Run once per UI state you want to test, e.g.:
+    - Quicksell UI open
+    - Realm-change dialog open
+    - Zone-selection list open
+    - Any message box visible
+    - Normal gameplay (world map, overworld, etc.)
+
+  Run:  poetry run python scripts/probe_windowtext.py
+
+  The script walks the entire visible UI tree and reports every window where
+  offset 712 or 736 yields readable text, shown side-by-side so you can
+  compare which is correct.
 """
 
 import asyncio
 
 from wizwalker import ClientHandler
+from wizwalker.errors import MemoryReadError
 from wizwalker.memory.memory_object import Primitive
 
+PROBE_OFFSETS = (712, 736)
 
-async def _try_read_wstring_at_offset(window, offset: int) -> str | None:
+
+async def _read_wstring_raw(window, offset: int) -> tuple[str | None, str]:
     """
-    Attempt to read a std::wstring at base_address + offset.
-    Returns the decoded string if it looks valid, else None.
-    Handles both pointer (len >= 8 bytes) and inline SSO paths.
+    Read a wstring at base+offset with no validity filter.
+    Returns (text_or_None, status_string).
+    text_or_None is set only when the result looks like real text.
     """
     try:
         base = await window.read_base_address()
         addr = base + offset
         length = await window.read_typed(addr + 16, Primitive.int32)
-        if not (1 <= length <= 80):
-            return None
 
-        byte_len = length * 2  # UTF-16-LE: 2 bytes per char
+        if length <= 0 or length > 200:
+            return None, f"<bad length {length}>"
 
+        byte_len = length * 2
         if byte_len >= 8:
             ptr = await window.read_typed(addr, Primitive.int64)
-            if ptr < 0x10000:  # null or garbage pointer
-                return None
+            if ptr < 0x10000:
+                return None, f"<null ptr, len={length}>"
             raw = await window.read_bytes(ptr, byte_len)
         else:
             raw = await window.read_bytes(addr, byte_len)
 
         text = raw.decode("utf-16-le", errors="replace")
-        # Require mostly printable, non-replacement characters
-        if text.count("�") > 1:
-            return None
-        if not all(c.isprintable() or c in ("\n", "\r", "\t") for c in text):
-            return None
-        return text
+        garbage = text.count("�") + sum(1 for c in text if not (c.isprintable() or c in "\n\r\t"))
+        if garbage > len(text) * 0.2:
+            return None, f"<garbage ({garbage} bad chars): {text!r:.40}"
+        return text, repr(text)
 
+    except (MemoryReadError, ValueError) as e:
+        return None, f"<error: {e}>"
+    except Exception as e:
+        return None, f"<exception: {e}>"
+
+
+async def _walk_tree(window, results: list, depth: int = 0, max_depth: int = 12):
+    if depth > max_depth:
+        return
+    try:
+        name = await window.name()
+        type_name = await window.maybe_read_type_name()
+
+        readings = {}
+        any_text = False
+        for offset in PROBE_OFFSETS:
+            text, status = await _read_wstring_raw(window, offset)
+            readings[offset] = (text, status)
+            if text:
+                any_text = True
+
+        if any_text:
+            results.append((depth, name, type_name, readings))
+
+        children = await window.children()
+        for child in children:
+            await _walk_tree(child, results, depth + 1, max_depth)
     except Exception:
-        return None
-
-
-async def probe_window(window, label: str, scan_start: int = 400, scan_end: int = 1000):
-    base = await window.read_base_address()
-    type_name = await window.maybe_read_type_name()
-    wname = await window.name()
-    print(f"\n{'=' * 60}")
-    print(f"  Window: {label!r}  name={wname!r}  type={type_name!r}")
-    print(f"  Base address: {hex(base)}")
-    print(f"  Scanning offsets {scan_start}..{scan_end} (step 8)...")
-    print()
-
-    hits = []
-    for offset in range(scan_start, scan_end, 8):
-        text = await _try_read_wstring_at_offset(window, offset)
-        if text:
-            hits.append((offset, text))
-            print(f"    offset {offset:4d} (0x{offset:03x}): {text!r}")
-
-    if not hits:
-        print("    (no readable strings found in range)")
-
-    return hits
-
-
-async def navigate_path(root_window, path: list[str]):
-    window = root_window
-    for segment in path:
-        try:
-            window = await window.get_child_by_name(segment)
-        except ValueError:
-            return None, segment
-    return window, None
+        pass
 
 
 async def main():
@@ -94,31 +96,66 @@ async def main():
         print(f"Found client: {client}")
         print("Activating hooks (this may take a moment)...")
         await client.activate_hooks()
-        print("Hooks active.\n")
+        print("Hooks active.")
+        print("Walking UI tree — this may take several seconds...\n")
 
-        # --- Probe the quicksell item title windows ---
-        quicksell_base = ["WorldView", "shopGUI", "buyWindow", "column0"]
-        for row in range(3):  # probe first 3 rows
-            path = quicksell_base + [f"shoplist{row}"]
-            window, failed_at = await navigate_path(client.root_window, path)
-            if window is None:
-                print(f"shoplist{row}: could not navigate to '{failed_at}' — is the quicksell UI open?")
-                continue
-            await probe_window(window, f"shoplist{row} (item title row {row})")
+        results = []
+        await _walk_tree(client.root_window, results)
 
-        # --- Also probe the jewel inventory space text (known-working reference) ---
-        jewel_path = ["WorldView", "DeckConfiguration", "JewelSpellbookPage", "inventorySpace"]
-        window, failed_at = await navigate_path(client.root_window, jewel_path)
-        if window is not None:
-            print("\n--- Reference: inventorySpace (jewel capacity, known text field) ---")
-            await probe_window(window, "inventorySpace", scan_start=400, scan_end=900)
+        if not results:
+            print("No windows with readable text found at offsets 712 or 736.")
+            return
 
-        # --- Print known offsets for comparison ---
-        print(f"\n{'=' * 60}")
-        print("Known offsets for reference:")
-        print("  maybe_text()          -> reads wstring at base + 712  (Laurenz update)")
-        print("  get_text_by_path fallback -> reads wstring at base + 616  (BartleBot node_helpers)")
-        print()
+        # Categorise: agree (both same), 712-only, 736-only, disagree (both text but different)
+        agree, only_712, only_736, disagree = [], [], [], []
+        for entry in results:
+            _, _, _, readings = entry
+            t712 = readings[712][0]
+            t736 = readings[736][0]
+            if t712 and t736:
+                if t712 == t736:
+                    agree.append(entry)
+                else:
+                    disagree.append(entry)
+            elif t712:
+                only_712.append(entry)
+            else:
+                only_736.append(entry)
+
+        def print_entry(depth, name, type_name, readings):
+            indent = "  " * depth
+            print(f"{indent}[{name!r}] ({type_name})")
+            for offset in PROBE_OFFSETS:
+                _, status = readings[offset]
+                print(f"{indent}  offset {offset}: {status}")
+
+        print(f"{'=' * 70}")
+        print(f"  ONLY offset 736 has text ({len(only_736)} windows) — these need 736")
+        print(f"{'=' * 70}")
+        for entry in only_736:
+            print_entry(*entry)
+            print()
+
+        print(f"{'=' * 70}")
+        print(f"  ONLY offset 712 has text ({len(only_712)} windows) — these need 712")
+        print(f"{'=' * 70}")
+        for entry in only_712:
+            print_entry(*entry)
+            print()
+
+        print(f"{'=' * 70}")
+        print(f"  BOTH offsets have text but DISAGREE ({len(disagree)} windows)")
+        print(f"{'=' * 70}")
+        for entry in disagree:
+            print_entry(*entry)
+            print()
+
+        print(f"{'=' * 70}")
+        print(f"  Both offsets agree / same text ({len(agree)} windows) — either works")
+        print(f"{'=' * 70}")
+        for entry in agree:
+            print_entry(*entry)
+            print()
 
 
 if __name__ == "__main__":
