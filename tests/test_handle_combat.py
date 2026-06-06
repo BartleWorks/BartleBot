@@ -9,7 +9,7 @@ from tests.conftest import FakeClient, FakeEntity, FakeMachine
 _DROP_LINE = "Art_Chat_System.dds> <>IronBloom<;Reagent>"
 
 # Params that exercise the default bot-level combat DSL path.
-_DEFAULT_PARAMS = {"enemy": "", "use_bot_default": True, "combat_config": ""}
+_DEFAULT_PARAMS = {"enemy": "", "use_default_duel_profile": True}
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
@@ -18,12 +18,12 @@ _patch_run_combat = lambda: patch(  # noqa: E731
 
 
 async def test_no_dsl_fails():
-    """No combat DSL available (use_bot_default=False, combat_config="") → FAILURE."""
+    """use_default_duel_profile=False with no duel profile assigned → no DSL → FAILURE."""
     client = FakeClient()
     result = await hc.run(
         FakeMachine(),
         [client],
-        {"enemy": "", "use_bot_default": False, "combat_config": ""},
+        {"enemy": "", "use_default_duel_profile": False},
     )
     assert result == "FAILURE"
     client.tp_to.assert_not_called()
@@ -55,7 +55,7 @@ async def test_named_enemy_uses_vague_name():
         result = await hc.run(
             FakeMachine(),
             [client],
-            {"enemy": "Cyclops", "use_bot_default": True, "combat_config": ""},
+            {"enemy": "Cyclops", "use_default_duel_profile": True},
         )
 
     assert result == "SUCCESS"
