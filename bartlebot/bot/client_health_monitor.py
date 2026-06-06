@@ -1,28 +1,51 @@
 """Background health monitoring for WizSprinter clients.
 
-Two polling loops run concurrently:
+Three polling loops run concurrently:
+- _disconnect_dialog_watcher: polls for the in-game disconnect modal every 0.25 s;
+  force-kills the process on detection so the recovery flow takes over immediately.
 - _client_status_watcher: calls zone_name() every few seconds to detect
-  clients that have crashed or are stuck on a disconnect dialog.
+  clients that have crashed or are unresponsive.
 - _loading_screen_watcher: calls is_loading() every poll interval to detect
   clients stuck in an infinite loading screen.
 
-Both loops write to a shared _flagged set so a client is never double-reported.
+All loops write to a shared _flagged set so a client is never double-reported.
 """
 
 import asyncio
+import ctypes
 import logging
 import time
 from collections.abc import Callable
 
+from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
 from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
 
 logger = logging.getLogger(__name__)
+
+
+async def _traverse_path(parent, path: list[str]):
+    """Walk a UI window tree by child name segments; return the final node or None."""
+    for segment in path:
+        match = None
+        for child in await parent.children():
+            if await child.name() == segment:
+                match = child
+                break
+        if match is None:
+            return None
+        parent = match
+    return parent
+
 
 _CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
 # Seconds between zone_name() responsiveness polls.
 
 _CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
 # Consecutive failed zone_name() calls before a client is treated as unresponsive.
+
+_DISCONNECT_KEYWORDS: frozenset[str] = frozenset({"disconnect", "connection", "network", "inactivity"})
+# Lowercase substrings matched against the disconnect modal caption text.
+# A match on any one keyword triggers force-kill and recovery.
 
 
 class ClientHealthMonitor:
@@ -59,13 +82,14 @@ class ClientHealthMonitor:
         self._flagged.clear()
 
     async def run(self) -> None:
-        """Start both health-check loops and wait until the stop flag is set."""
+        """Start all health-check loops and wait until the stop flag is set."""
+        dialog_task = asyncio.create_task(self._disconnect_dialog_watcher())
         status_task = asyncio.create_task(self._client_status_watcher())
         loading_task = asyncio.create_task(self._loading_screen_watcher())
         try:
             await self._stop_flag.wait()
         finally:
-            for t in (status_task, loading_task):
+            for t in (dialog_task, status_task, loading_task):
                 t.cancel()
                 try:
                     await t
@@ -80,6 +104,68 @@ class ClientHealthMonitor:
                 self._on_client_disconnected(hwnd)
             except Exception:
                 logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
+
+    @staticmethod
+    def _force_kill_process(pid: int) -> None:
+        """Hard-terminate a process by PID using Win32 TerminateProcess."""
+        _PROCESS_TERMINATE = 0x0001
+        handle = ctypes.windll.kernel32.OpenProcess(_PROCESS_TERMINATE, False, pid)
+        if handle:
+            ctypes.windll.kernel32.TerminateProcess(handle, 1)
+            ctypes.windll.kernel32.CloseHandle(handle)
+
+    async def _disconnect_dialog_watcher(self) -> None:
+        """Detect in-game disconnect modals and force-kill the client process.
+
+        Polls every POLL_INTERVAL seconds. When a client shows a visible
+        MessageBoxModalWindow whose caption text matches a disconnect keyword,
+        the game process is hard-killed via TerminateProcess so WizWalker's
+        remove_dead_clients() picks it up on the next _client_loop tick and
+        the existing recovery flow (relaunch + re-hook) runs automatically.
+
+        This fires well before _client_status_watcher would notice, because
+        zone_name() keeps returning the last cached zone even after the
+        disconnect dialog appears.
+        """
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(POLL_INTERVAL)
+            for client in list(self._clients_ref()):
+                hwnd = client.window_handle
+                if hwnd in self._flagged:
+                    continue
+                try:
+                    modal_visible = await self._is_disconnect_modal_visible(client)
+                except Exception:
+                    continue
+                if not modal_visible:
+                    continue
+                logger.warning(
+                    "Client hwnd=%d shows a disconnect modal — force-killing and triggering recovery",
+                    hwnd,
+                )
+                self._flagged.add(hwnd)
+                try:
+                    self._force_kill_process(client.process_id)
+                except Exception:
+                    logger.exception("Failed to force-kill process for hwnd=%d", hwnd)
+                self._fire_disconnected(hwnd)
+
+    @staticmethod
+    async def _is_disconnect_modal_visible(client) -> bool:
+        """Return True if the client shows a MessageBoxModalWindow with a disconnect caption."""
+        # Quick check: is the modal root present and visible?
+        modal = await _traverse_path(client.root_window, ["MessageBoxModalWindow"])
+        if modal is None or not await modal.is_visible():
+            return False
+        # Read the caption to confirm it's a disconnect dialog, not another modal.
+        caption_window = await _traverse_path(modal, MESSAGE_BOX_CAPTION_PATH[1:])
+        if caption_window is None:
+            return False
+        text = await caption_window.maybe_text()
+        if not text:
+            return False
+        lowered = text.lower()
+        return any(kw in lowered for kw in _DISCONNECT_KEYWORDS)
 
     async def _client_status_watcher(self) -> None:
         """Detect unresponsive clients via zone_name() polling.

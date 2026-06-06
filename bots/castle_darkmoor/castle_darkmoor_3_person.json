@@ -7,6 +7,46 @@
   "recovery_state": "state_1",
   "default_combat_config": "### p1\nfeint mass | feint@boss\n\n### p2\nfeint[potent]@boss | bunyip[\"Epic - Amulet\"] | tempest[epic]\n\n### p3\nbunyip[\"Epic - Amulet\"] | tempest[epic]",
   "use_bartlebot_default_combat_config": false,
+  "combat_profiles": [
+    {
+      "name": "Castle Darkmoor - T1 Bunyip",
+      "combat_order": [],
+      "player_decks": {},
+      "duel_profiles": {
+        "default": {
+          "name": "default",
+          "use_bartlebot_default": false,
+          "behaviors": [
+            {
+              "players": [
+                1
+              ],
+              "dsl": "feint mass | feint@boss"
+            },
+            {
+              "players": [
+                2
+              ],
+              "dsl": "feint[potent]@boss | bunyip[\"Epic - Amulet\"] | tempest[epic]"
+            },
+            {
+              "players": [
+                3
+              ],
+              "dsl": "bunyip[\"Epic - Amulet\"] | tempest[epic]"
+            }
+          ],
+          "combat_order_override": [
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      }
+    }
+  ],
+  "active_combat_profile_name": "Castle Darkmoor - T1 Bunyip",
   "start_location": "Anywhere in Wizard City or Castle Darkmoor",
   "drops": [
     "Alligator Pear",
@@ -420,8 +460,7 @@
       },
       "params": {
         "enemy": "G14-DM-Werewolf_Boss",
-        "use_bot_default": true,
-        "combat_config": "",
+        "use_default_duel_profile": true,
         "max_duration": 0.0
       },
       "option_overrides": {}
@@ -503,8 +542,7 @@
       },
       "params": {
         "enemy": "G14-DM-DeathKnight_Boss",
-        "use_bot_default": true,
-        "combat_config": "",
+        "use_default_duel_profile": true,
         "max_duration": 1200.0
       },
       "option_overrides": {}
@@ -515,7 +553,7 @@
       "label": "Wait for dialogue",
       "position": {
         "x": 5280.0,
-        "y": -90.0
+        "y": -180.0
       },
       "params": {
         "timeout": 60.0
@@ -551,8 +589,8 @@
       "node_type": "enter_zone",
       "label": "Enter Stone Skeleton Key room",
       "position": {
-        "x": 6600.0,
-        "y": -90.0
+        "x": 7480.0,
+        "y": -180.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
@@ -573,7 +611,7 @@
     {
       "id": "state_18",
       "node_type": "interact",
-      "label": "Unlock Stone Skeleton Key door",
+      "label": "P3 unlock Stone Skeleton Key door",
       "position": {
         "x": 6160.0,
         "y": -90.0
@@ -602,7 +640,7 @@
       "node_type": "interact",
       "label": "P1 open Treasure Chest",
       "position": {
-        "x": 7040.0,
+        "x": 7920.0,
         "y": -90.0
       },
       "params": {
@@ -629,7 +667,7 @@
       "node_type": "enter_zone",
       "label": "Exit Stone Skeleton Key room",
       "position": {
-        "x": 8360.0,
+        "x": 9240.0,
         "y": -90.0
       },
       "params": {
@@ -653,7 +691,7 @@
       "node_type": "enter_zone",
       "label": "Enter Observatory",
       "position": {
-        "x": 8800.0,
+        "x": 9680.0,
         "y": -90.0
       },
       "params": {
@@ -677,7 +715,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger dialogue",
       "position": {
-        "x": 9240.0,
+        "x": 10120.0,
         "y": -90.0
       },
       "params": {
@@ -695,7 +733,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 9680.0,
+        "x": 10560.0,
         "y": -90.0
       },
       "params": {
@@ -708,7 +746,7 @@
       "node_type": "interact",
       "label": "Collect Crimson Lens",
       "position": {
-        "x": 10120.0,
+        "x": 11000.0,
         "y": -90.0
       },
       "params": {
@@ -733,7 +771,7 @@
       "node_type": "interact",
       "label": "Activate Neutral Density Filter",
       "position": {
-        "x": 10560.0,
+        "x": 11440.0,
         "y": -90.0
       },
       "params": {
@@ -758,7 +796,7 @@
       "node_type": "sleep",
       "label": "Wait for puzzle to complete",
       "position": {
-        "x": 11000.0,
+        "x": 11880.0,
         "y": -90.0
       },
       "params": {
@@ -771,7 +809,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11440.0,
+        "x": 12320.0,
         "y": -90.0
       },
       "params": {
@@ -784,7 +822,7 @@
       "node_type": "enter_zone",
       "label": "Exit Observatory",
       "position": {
-        "x": 11880.0,
+        "x": 12760.0,
         "y": -90.0
       },
       "params": {
@@ -808,8 +846,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 12320.0,
-        "y": -90.0
+        "x": 13200.0,
+        "y": -180.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -825,7 +863,7 @@
       "node_type": "interact",
       "label": "P2 open Treasure Chest",
       "position": {
-        "x": 7480.0,
+        "x": 8360.0,
         "y": -90.0
       },
       "params": {
@@ -909,8 +947,8 @@
       "node_type": "interact",
       "label": "P3 open Treasure Chest",
       "position": {
-        "x": 7920.0,
-        "y": -90.0
+        "x": 8800.0,
+        "y": -180.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
@@ -926,6 +964,60 @@
         },
         "interact_clients": [
           3
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "interact",
+      "label": "P2 unlock Stone Skeleton Key door",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "interact_xyz": {
+          "x": -545.19,
+          "y": -236.15,
+          "z": 400.2
+        },
+        "reset_xyz": {
+          "x": -431.05,
+          "y": 470.83,
+          "z": 315.13
+        },
+        "interact_clients": [
+          3
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "interact",
+      "label": "P1 unlock Stone Skeleton Key door",
+      "position": {
+        "x": 7040.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "interact_xyz": {
+          "x": -545.19,
+          "y": -236.15,
+          "z": 400.2
+        },
+        "reset_xyz": {
+          "x": -431.05,
+          "y": 470.83,
+          "z": 315.13
+        },
+        "interact_clients": [
+          1
         ],
         "has_dialogue": true
       },
@@ -1150,7 +1242,7 @@
     {
       "trigger": "advance",
       "source": "state_18",
-      "dest": "state_1",
+      "dest": "state_35",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1524,6 +1616,46 @@
     {
       "trigger": "advance",
       "source": "state_34",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
