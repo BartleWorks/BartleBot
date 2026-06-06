@@ -104,7 +104,7 @@
       },
       "params": {
         "enemy": "",
-        "expose_duel_override": false,
+        "use_default_duel_profile": true,
         "max_duration": 0.0
       },
       "option_overrides": {}
