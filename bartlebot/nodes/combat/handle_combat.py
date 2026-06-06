@@ -127,10 +127,11 @@ async def run(machine, clients: list, params: dict) -> str:
 
     enemy_display = repr(enemy_name) if enemy_name else "(closest)"
     machine.log(f"handle_combat: enemy={enemy_display}, DSL source={dsl_source!r}")
-    machine.log(
-        f"Combat DSL (P1): {per_client_dsl[0][:80]}{'…' if len(per_client_dsl[0]) > 80 else ''}",
-        logging.DEBUG,
-    )
+    if per_client_dsl:
+        machine.log(
+            f"Combat DSL (P1): {per_client_dsl[0][:80]}{'…' if len(per_client_dsl[0]) > 80 else ''}",
+            logging.DEBUG,
+        )
 
     # 1. Resolve target entity for each client, retrying to allow enemies time to load.
     targets = None
