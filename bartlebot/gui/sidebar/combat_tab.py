@@ -85,7 +85,7 @@ class _PlayerDecksSection(SidebarSection):
 
 
 class _DuelProfilesSection(SidebarSection):
-    """Collapsible section with fight assignments and the duel profile library."""
+    """Collapsible section with duel assignments and the duel profile library."""
 
     duel_profiles_changed = pyqtSignal()
 
@@ -95,7 +95,7 @@ class _DuelProfilesSection(SidebarSection):
         self._config: BotConfig | None = None
         self._combat_profile: BotCombatProfile | None = None
         self._profile_widgets: dict[str, DuelProfileWidget] = {}
-        # ComboBoxes keyed by state_id for fight assignment rows
+        # ComboBoxes keyed by state_id for duel assignment rows
         self._assignment_combos: dict[str, QComboBox] = {}
 
         self._layout = QVBoxLayout()
@@ -106,7 +106,7 @@ class _DuelProfilesSection(SidebarSection):
         self.set_content_layout(self._layout)
 
     def rebuild(self, config: BotConfig | None, combat_profile: BotCombatProfile | None) -> None:
-        """Rebuild fight assignments and duel profile library widgets."""
+        """Rebuild duel assignments and duel profile library widgets."""
         self._config = config
         self._combat_profile = combat_profile
 
@@ -117,7 +117,7 @@ class _DuelProfilesSection(SidebarSection):
         self._profile_widgets.clear()
         self._assignment_combos.clear()
 
-        # Remove fight-assignment rows (everything except the no_profile_lbl)
+        # Remove duel-assignment rows (everything except the no_profile_lbl)
         while self._layout.count() > 1:
             item = self._layout.takeAt(1)
             if item and item.widget():
@@ -132,9 +132,9 @@ class _DuelProfilesSection(SidebarSection):
         all_states = _collect_all_handle_combat_states(config)
         exposed_states = _collect_exposed_states(config)
 
-        # ── Part A: Fight Assignments ─────────────────────────────────
+        # ── Part A: Duel Assignments ──────────────────────────────────
         if exposed_states:
-            assignments_lbl = QLabel("Fight Assignments")
+            assignments_lbl = QLabel("Duel Assignments")
             font = assignments_lbl.font()
             font.setBold(True)
             assignments_lbl.setFont(font)
@@ -170,7 +170,7 @@ class _DuelProfilesSection(SidebarSection):
             w.set_editable(editable)
 
     def _build_assignment_row(self, state: StateModel, combat_profile: BotCombatProfile) -> QWidget:
-        """Build one fight-assignment row: label + profile ComboBox."""
+        """Build one duel-assignment row: label + profile ComboBox."""
         row = QWidget()
         row_layout = QHBoxLayout(row)
         row_layout.setContentsMargins(0, 0, 0, 0)

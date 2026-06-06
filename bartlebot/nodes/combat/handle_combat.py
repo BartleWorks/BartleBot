@@ -27,7 +27,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Use default Duel Profile",
         help=(
-            "When unchecked, this fight appears in the Combat Tab's Fight Assignments section "
+            "When unchecked, this duel appears in the Combat Tab's Duel Assignments section "
             "where you can assign a specific reusable Duel Profile to it. "
             "When checked, the default Duel Profile is used."
         ),
