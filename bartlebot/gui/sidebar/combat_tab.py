@@ -89,7 +89,7 @@ class _DuelProfilesSection(SidebarSection):
     duel_profiles_changed = pyqtSignal()
 
     def __init__(self, parent=None):
-        super().__init__("Fight Profiles", parent)
+        super().__init__("Duel Profiles", parent)
         self._editable = True
         self._widgets: dict[str, DuelProfileWidget] = {}
 
@@ -101,7 +101,7 @@ class _DuelProfilesSection(SidebarSection):
         self.set_content_layout(self._layout)
 
     def rebuild(self, config: BotConfig | None, combat_profile: BotCombatProfile | None) -> None:
-        """Rebuild widgets to match the bot's exposed fight names and active profile."""
+        """Rebuild widgets to match the bot's exposed duel names and active profile."""
         for w in self._widgets.values():
             self._layout.removeWidget(w)
             w.deleteLater()
@@ -179,11 +179,11 @@ class _DuelProfilesSection(SidebarSection):
 
 
 def _collect_exposed_fight_names(config: BotConfig) -> list[str]:
-    """Return unique non-empty fight_profile_name values from all handle_combat nodes."""
+    """Return unique non-empty duel_profile_name values from all handle_combat nodes."""
     seen: list[str] = []
     for state in config.states:
         if state.node_type == "handle_combat":
-            name = state.params.get("fight_profile_name", "").strip()
+            name = state.params.get("duel_profile_name", "").strip()
             if name and name not in seen:
                 seen.append(name)
     return seen
@@ -262,7 +262,7 @@ class CombatTab(QWidget):
         self._combat_order_edit.setToolTip(
             "Default order clients enter combat for this profile.\n"
             "Enter player slots separated by commas, e.g. '2, 1'.\n"
-            "Can be overridden per fight in the Fight Profiles section."
+            "Can be overridden per duel in the Duel Profiles section."
         )
         self._combat_order_edit.textEdited.connect(self._on_combat_order_changed)
         order_row.addWidget(self._combat_order_edit, 1)
@@ -308,8 +308,8 @@ class CombatTab(QWidget):
         self._decks_section.set_editable(editable)
         self._duel_profiles_section.set_editable(editable)
 
-    def refresh_fight_profiles(self) -> None:
-        """Re-scan exposed fight names and rebuild the duel profiles section.
+    def refresh_duel_profiles(self) -> None:
+        """Re-scan exposed duel names and rebuild the duel profiles section.
 
         Called when the Combat tab becomes visible so it always reflects the
         current state of handle_combat nodes, even after in-session edits.

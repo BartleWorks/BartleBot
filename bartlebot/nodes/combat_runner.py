@@ -18,7 +18,7 @@ def _resolve_combat_dsl(machine, params: dict, use_bot_default: bool) -> tuple[s
     return params.get("combat_config", "").strip(), "per-node config"
 
 
-def _resolve_duel_profile_dsl(machine, fight_profile_name: str, num_clients: int) -> tuple[list[str], str]:
+def _resolve_duel_profile_dsl(machine, duel_profile_name: str, num_clients: int) -> tuple[list[str], str]:
     """Resolve per-client DSL from the named DuelProfile in the active BotCombatProfile.
 
     Returns (per_client_dsl_list, source_label).  Each entry is the DSL string
@@ -31,7 +31,7 @@ def _resolve_duel_profile_dsl(machine, fight_profile_name: str, num_clients: int
     if active_profile is None:
         return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, "BartleBot built-in default (no active combat profile)"
 
-    duel_profile = active_profile.get_duel_profile(fight_profile_name)
+    duel_profile = active_profile.get_duel_profile(duel_profile_name)
     source = f"duel profile '{duel_profile.name}'"
 
     per_client: list[str] = []
@@ -42,7 +42,7 @@ def _resolve_duel_profile_dsl(machine, fight_profile_name: str, num_clients: int
     return per_client, source
 
 
-def _resolve_combat_order(machine, fight_profile_name: str) -> list[int]:
+def _resolve_combat_order(machine, duel_profile_name: str) -> list[int]:
     """Return the combat entry order for this fight.
 
     Priority: duel profile override → active profile default → legacy bot option fallback.
@@ -52,8 +52,8 @@ def _resolve_combat_order(machine, fight_profile_name: str) -> list[int]:
     active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
 
     if active_profile is not None:
-        if fight_profile_name:
-            duel_profile = active_profile.get_duel_profile(fight_profile_name)
+        if duel_profile_name:
+            duel_profile = active_profile.get_duel_profile(duel_profile_name)
             if duel_profile.combat_order_override is not None:
                 return duel_profile.combat_order_override
         if active_profile.combat_order:

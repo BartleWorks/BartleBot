@@ -143,7 +143,7 @@
       },
       "params": {
         "enemy": "Ghost-Blue-L01",
-        "fight_profile_name": "Lost Soul (Tempest)",
+        "duel_profile_name": "Lost Soul (Tempest)",
         "use_bot_default": false,
         "combat_config": "bats@enemy",
         "max_duration": 0.0
@@ -178,7 +178,7 @@
       },
       "params": {
         "enemy": "Ghost-Blue-L01",
-        "fight_profile_name": "Lost Soul (Kraken)",
+        "duel_profile_name": "Lost Soul (Kraken)",
         "use_bot_default": false,
         "combat_config": "kraken@enemy",
         "max_duration": 0.0

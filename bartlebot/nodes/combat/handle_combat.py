@@ -23,13 +23,13 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="targets the closest available mob",
     ),
     ParamField(
-        key="fight_profile_name",
+        key="duel_profile_name",
         type="str",
-        label="Fight Profile Name",
+        label="Duel Profile Name",
         help=(
             "When set, this node resolves its DSL from the named Duel Profile in the "
             "active Bot Combat Profile. Leave empty to use the default Duel Profile. "
-            "Setting this exposes the fight in the Combat tab."
+            "Setting this exposes the duel in the Combat tab."
         ),
         default="",
         default_hint="uses the default duel profile",
@@ -110,12 +110,12 @@ async def run(machine, clients: list, params: dict) -> str:
         return max_duration > 0 and time.monotonic() - _node_start > max_duration
 
     enemy_name: str = params.get("enemy", "")
-    fight_profile_name: str = params.get("fight_profile_name", "").strip()
+    duel_profile_name: str = params.get("duel_profile_name", "").strip()
     use_bot_default: bool = params.get("use_bot_default", True)
 
     # Resolve per-client DSL list.
-    if fight_profile_name:
-        per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, fight_profile_name, len(clients))
+    if duel_profile_name:
+        per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, duel_profile_name, len(clients))
     else:
         combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_bot_default)
         if not combat_dsl:
@@ -171,7 +171,7 @@ async def run(machine, clients: list, params: dict) -> str:
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
     # 3. Teleport clients to their target (sequential or simultaneous).
-    combat_order: list[int] = _resolve_combat_order(machine, fight_profile_name)
+    combat_order: list[int] = _resolve_combat_order(machine, duel_profile_name)
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:

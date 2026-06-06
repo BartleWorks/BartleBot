@@ -116,7 +116,7 @@ class LeftSidebar(QTabWidget):
 
     def _on_tab_changed(self, index: int) -> None:
         if index == _COMBAT_TAB:
-            self.combat_tab.refresh_fight_profiles()
+            self.combat_tab.refresh_duel_profiles()
 
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config

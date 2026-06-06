@@ -66,9 +66,9 @@ class BotCombatProfile(BaseModel):
     Each profile contains:
     - combat_order: default sequential entry order (e.g. [2, 1] sends P2 first)
     - player_decks: which deck each wizard slot loads before combat
-    - duel_profiles: per-fight DSL configuration keyed by name; always
+    - duel_profiles: per-duel DSL configuration keyed by name; always
       contains a "default" entry used for handle_combat nodes that do not
-      declare a fight_profile_name.
+      declare a duel_profile_name.
     """
 
     name: str
