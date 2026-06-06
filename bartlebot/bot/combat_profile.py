@@ -29,6 +29,7 @@ class DuelProfile(BaseModel):
     name: str
     use_bartlebot_default: bool = True
     behaviors: list[CombatBehavior] = Field(default_factory=list)
+    combat_order_override: list[int] | None = None  # None = inherit from BotCombatProfile
 
     def resolve_dsl_for_client(self, client_index: int) -> str | None:
         """Return the DSL string for the given 0-based client index, or None to use built-in default.
@@ -63,6 +64,7 @@ class BotCombatProfile(BaseModel):
 
     A bot may store multiple BotCombatProfiles (e.g. "Fire Team", "Storm Team").
     Each profile contains:
+    - combat_order: default sequential entry order (e.g. [2, 1] sends P2 first)
     - player_decks: which deck each wizard slot loads before combat
     - duel_profiles: per-fight DSL configuration keyed by name; always
       contains a "default" entry used for handle_combat nodes that do not
@@ -70,6 +72,7 @@ class BotCombatProfile(BaseModel):
     """
 
     name: str
+    combat_order: list[int] = Field(default_factory=list)  # profile-level default; [] = simultaneous
     player_decks: dict[int, PlayerDeck] = Field(default_factory=dict)
     duel_profiles: dict[str, DuelProfile] = Field(default_factory=lambda: {"default": DuelProfile(name="default")})
 
@@ -106,3 +109,23 @@ class BotCombatProfile(BaseModel):
     def load(cls, path: str | Path) -> BotCombatProfile:
         with open(path, encoding="utf-8") as f:
             return cls.model_validate(json.load(f))
+
+
+# ---------------------------------------------------------------------------
+# Utility helpers for combat order UI fields
+# ---------------------------------------------------------------------------
+
+
+def parse_combat_order(text: str) -> list[int]:
+    """Parse a comma-separated order string (e.g. '2, 1') → [2, 1]. Returns [] on empty/invalid."""
+    if not text.strip():
+        return []
+    try:
+        return [int(x.strip()) for x in text.split(",") if x.strip()]
+    except ValueError:
+        return []
+
+
+def format_combat_order(order: list[int]) -> str:
+    """Format [2, 1] → '2, 1'."""
+    return ", ".join(str(x) for x in order)

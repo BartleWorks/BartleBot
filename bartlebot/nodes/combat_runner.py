@@ -42,6 +42,27 @@ def _resolve_duel_profile_dsl(machine, fight_profile_name: str, num_clients: int
     return per_client, source
 
 
+def _resolve_combat_order(machine, fight_profile_name: str) -> list[int]:
+    """Return the combat entry order for this fight.
+
+    Priority: duel profile override → active profile default → legacy bot option fallback.
+    An empty list means all clients enter simultaneously.
+    """
+    bot_cfg = machine._bot_config
+    active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
+
+    if active_profile is not None:
+        if fight_profile_name:
+            duel_profile = active_profile.get_duel_profile(fight_profile_name)
+            if duel_profile.combat_order_override is not None:
+                return duel_profile.combat_order_override
+        if active_profile.combat_order:
+            return active_profile.combat_order
+
+    # Legacy fallback for bots that stored this as a bot option before the combat profile system.
+    return machine.get_option("Default Combat Order", []) or []
+
+
 async def _run_combat(client, combat_dsl: str) -> None:
     """Run SprintyCombat for a single client using an inline DSL string."""
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415

@@ -10,13 +10,14 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QPlainTextEdit,
     QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
-from bartlebot.bot.combat_profile import CombatBehavior, DuelProfile
+from bartlebot.bot.combat_profile import CombatBehavior, DuelProfile, format_combat_order, parse_combat_order
 from bartlebot.gui.theme import THEME
 
 if TYPE_CHECKING:
@@ -169,6 +170,23 @@ class DuelProfileWidget(QWidget):
         self._use_default_chk.toggled.connect(self._on_use_default_changed)
         card_layout.addWidget(self._use_default_chk)
 
+        # ── Combat order override ─────────────────────────────────────
+        order_row = QWidget()
+        order_layout = QHBoxLayout(order_row)
+        order_layout.setContentsMargins(0, 0, 0, 0)
+        order_layout.setSpacing(6)
+        order_layout.addWidget(QLabel("Combat order override:"))
+        self._combat_order_edit = QLineEdit()
+        self._combat_order_edit.setPlaceholderText("(use profile default)")
+        self._combat_order_edit.setToolTip(
+            "Override the combat entry order for this fight only.\n"
+            "Enter player slots separated by commas, e.g. '2, 1'.\n"
+            "Leave empty to inherit from the Bot Combat Profile."
+        )
+        self._combat_order_edit.textEdited.connect(self._on_combat_order_changed)
+        order_layout.addWidget(self._combat_order_edit, 1)
+        card_layout.addWidget(order_row)
+
         # ── Behaviors container ───────────────────────────────────────
         self._behaviors_container = QWidget()
         self._behaviors_layout = QVBoxLayout(self._behaviors_container)
@@ -197,6 +215,7 @@ class DuelProfileWidget(QWidget):
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
         self._use_default_chk.setEnabled(editable)
+        self._combat_order_edit.setReadOnly(not editable)
         self._add_btn.setVisible(editable)
         self._import_btn.setEnabled(editable)
         for w in self._behavior_widgets:
@@ -214,6 +233,8 @@ class DuelProfileWidget(QWidget):
         self._suppress = True
         profile = self._duel_profile
         self._use_default_chk.setChecked(profile.use_bartlebot_default)
+        order = profile.combat_order_override
+        self._combat_order_edit.setText(format_combat_order(order) if order is not None else "")
         self._behaviors_container.setVisible(not profile.use_bartlebot_default)
         self._rebuild_behaviors()
         self._suppress = False
@@ -254,6 +275,13 @@ class DuelProfileWidget(QWidget):
                     claimed.add(player)
         if any_changed:
             self.duel_profile_changed.emit()
+
+    def _on_combat_order_changed(self, text: str) -> None:
+        if self._suppress:
+            return
+        parsed = parse_combat_order(text)
+        self._duel_profile.combat_order_override = parsed if parsed else None
+        self.duel_profile_changed.emit()
 
     def _on_use_default_changed(self, checked: bool) -> None:
         if self._suppress:

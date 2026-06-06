@@ -6,11 +6,12 @@ import time
 
 from bartlebot.nodes.combat_runner import (
     _resolve_combat_dsl,
+    _resolve_combat_order,
     _resolve_duel_profile_dsl,
     _run_combat,
     _split_combat_config,
 )
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -60,18 +61,7 @@ NODE_SPEC = NodeSpec(
             "No valid target found, no combat config available, or players failed to enter combat within the timeout.",
         ),
     ],
-    required_bot_options=[
-        BotOptionSpec(
-            name="Default Combat Order",
-            type="int_list",
-            default=[],
-            description=(
-                "Default order clients enter combat (e.g. '2, 1' sends client 2 first). "
-                "Empty = all clients enter simultaneously. Can be overridden per node "
-                "via Option Overrides."
-            ),
-        ),
-    ],
+    required_bot_options=[],
     max_consecutive_retries=5,
 )
 
@@ -99,8 +89,8 @@ async def run(machine, clients: list, params: dict) -> str:
       3. If max_duration is set and has elapsed, return FAILURE.
       4. Snapshot chat to enable drop detection after combat.
       5. Teleport clients to their targets:
-         - If Default Combat Order is set: send clients one at a time in order, waiting
-           for each to report in_battle() before sending the next.
+         - If a combat order is set (duel profile override → profile default → legacy bot option):
+           send clients one at a time in order, waiting for each to report in_battle().
          - Otherwise: teleport all clients simultaneously, retrying every _TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
       6. If max_duration is set and has elapsed, return FAILURE.
@@ -181,7 +171,7 @@ async def run(machine, clients: list, params: dict) -> str:
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
     # 3. Teleport clients to their target (sequential or simultaneous).
-    combat_order: list[int] = machine.get_option("Default Combat Order", []) or []
+    combat_order: list[int] = _resolve_combat_order(machine, fight_profile_name)
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:

@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QLabel,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -17,7 +18,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.combat_profile import BotCombatProfile, DuelProfile
+from bartlebot.bot.combat_profile import BotCombatProfile, DuelProfile, format_combat_order, parse_combat_order
 from bartlebot.combat_profile_store import (
     list_bot_profiles,
     list_duel_profiles,
@@ -254,6 +255,19 @@ class CombatTab(QWidget):
         lib_row.addStretch()
         selector_layout.addLayout(lib_row)
 
+        order_row = QHBoxLayout()
+        order_row.addWidget(QLabel("Default combat order:"))
+        self._combat_order_edit = QLineEdit()
+        self._combat_order_edit.setPlaceholderText("(simultaneous)")
+        self._combat_order_edit.setToolTip(
+            "Default order clients enter combat for this profile.\n"
+            "Enter player slots separated by commas, e.g. '2, 1'.\n"
+            "Can be overridden per fight in the Fight Profiles section."
+        )
+        self._combat_order_edit.textEdited.connect(self._on_combat_order_changed)
+        order_row.addWidget(self._combat_order_edit, 1)
+        selector_layout.addLayout(order_row)
+
         selector_section.set_content_layout(selector_layout)
         content_layout.addWidget(selector_section)
 
@@ -324,7 +338,12 @@ class CombatTab(QWidget):
                 idx = self._profile_combo.findText(active_name)
                 if idx >= 0:
                     self._profile_combo.setCurrentIndex(idx)
+        self._refresh_combat_order_field()
         self._suppress = False
+
+    def _refresh_combat_order_field(self) -> None:
+        profile = self._active_profile()
+        self._combat_order_edit.setText(format_combat_order(profile.combat_order) if profile else "")
 
     def _rebuild_duel_profiles(self) -> None:
         self._duel_profiles_section.rebuild(self._config, self._active_profile())
@@ -340,13 +359,24 @@ class CombatTab(QWidget):
         self._delete_btn.setEnabled(editable and has_profiles and len(self._config.combat_profiles) > 1)
         self._import_global_btn.setEnabled(editable)
         self._export_global_btn.setEnabled(editable and has_profiles)
+        self._combat_order_edit.setReadOnly(not (editable and has_profiles))
 
     def _on_profile_selected(self, name: str) -> None:
         if self._suppress or self._config is None or name == _NO_PROFILES_LABEL:
             return
         self._config.active_combat_profile_name = name
         self._duel_profiles_section.update_combat_profile(self._active_profile())
+        self._refresh_combat_order_field()
         self._refresh_controls()
+        self.combat_config_changed.emit()
+
+    def _on_combat_order_changed(self, text: str) -> None:
+        if self._suppress:
+            return
+        profile = self._active_profile()
+        if profile is None:
+            return
+        profile.combat_order = parse_combat_order(text)
         self.combat_config_changed.emit()
 
     def _on_content_changed(self) -> None:
