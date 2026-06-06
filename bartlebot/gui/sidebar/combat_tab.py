@@ -54,6 +54,7 @@ class _PlayerDecksSection(SidebarSection):
         layout.setSpacing(4)
 
         self._rows: list[QWidget] = []
+        self._deck_summary_labels: list[QLabel] = []
         for i in range(1, _NUM_PLAYER_SLOTS + 1):
             row = QWidget()
             row_layout = QHBoxLayout(row)
@@ -62,16 +63,17 @@ class _PlayerDecksSection(SidebarSection):
 
             lbl = QLabel(f"P{i}:")
             lbl.setFixedWidth(22)
-            self._deck_summary = QLabel("No deck loaded")
+            deck_summary = QLabel("No deck loaded")
             btn = QPushButton("Import from client")
             btn.setEnabled(False)
             btn.setToolTip("Deck import coming soon")
 
             row_layout.addWidget(lbl)
-            row_layout.addWidget(self._deck_summary, 1)
+            row_layout.addWidget(deck_summary, 1)
             row_layout.addWidget(btn)
             layout.addWidget(row)
             self._rows.append(row)
+            self._deck_summary_labels.append(deck_summary)
 
         self.set_content_layout(layout)
 

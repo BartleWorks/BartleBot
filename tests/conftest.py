@@ -103,7 +103,7 @@ class FakeMachine:
     """Minimal stub for BotMachine that records logs and drops."""
 
     def __init__(self, bot_config=None, options: dict | None = None):
-        self._bot_config = bot_config
+        self.bot_config = bot_config
         self._options = options or {}
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
