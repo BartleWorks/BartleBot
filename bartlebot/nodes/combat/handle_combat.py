@@ -81,8 +81,8 @@ async def run(machine, clients: list, params: dict) -> str:
           SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
 
     Flow:
-      1. Resolve combat DSL (per-node config if use_bot_default is off, else bot-level
-         default or built-in BartleBot default). Return FAILURE if none available.
+      1. Resolve combat DSL via the assigned Duel Profile, or the active BotCombatProfile's
+         default, or the BartleBot built-in default. Return FAILURE if none available.
       2. Resolve target entity for each client (by enemy name or closest mob), retrying
          TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
       3. If max_duration is set and has elapsed, return FAILURE.
@@ -110,16 +110,16 @@ async def run(machine, clients: list, params: dict) -> str:
 
     enemy_name: str = params.get("enemy", "")
     duel_profile_name: str = params.get("duel_profile_name", "").strip()
-    use_bot_default: bool = params.get("use_bot_default", True)
+    use_default_duel_profile: bool = params.get("use_default_duel_profile", True)
 
     # Resolve per-client DSL list.
     if duel_profile_name:
         per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, duel_profile_name, len(clients))
     else:
-        combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_bot_default)
+        combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_default_duel_profile)
         if not combat_dsl:
             machine.log(
-                "FAILURE: no combat DSL available (use_bot_default is off and per-node combat_config is empty)",
+                "FAILURE: no combat DSL available (use_default_duel_profile is off and no duel profile is assigned)",
                 logging.WARNING,
             )
             return "FAILURE"
