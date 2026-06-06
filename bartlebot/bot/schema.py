@@ -6,6 +6,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from bartlebot.bot.combat_profile import BotCombatProfile
+
 
 class XYZModel(BaseModel):
     x: float
@@ -119,10 +121,13 @@ class BotConfig(BaseModel):
     initial: str
     # Optional state to jump to after a client reconnects. If None, the bot stops on disconnect.
     recovery_state: str | None = None
-    # Inline WizSprinter combat DSL string. None = use BartleBot built-in default.
-    # use_bartlebot_default_combat_config controls whether this field is active.
+    # Deprecated: superseded by combat_profiles / active_combat_profile_name.
+    # Kept for backward compatibility while old bot files are still in use.
     default_combat_config: str | None = None
     use_bartlebot_default_combat_config: bool = True
+    # New combat profile system.
+    combat_profiles: list[BotCombatProfile] = Field(default_factory=list)
+    active_combat_profile_name: str | None = None
     start_location: str | None = None
     drops: list[str] = Field(default_factory=list)
     authors: str | None = None
@@ -139,6 +144,16 @@ class BotConfig(BaseModel):
         if self.recovery_state is not None and self.recovery_state not in ids:
             raise ValueError(f"recovery_state '{self.recovery_state}' is not in states list")
         return self
+
+    @property
+    def active_combat_profile(self) -> "BotCombatProfile | None":
+        """Return the currently selected BotCombatProfile, or None if none is set."""
+        if not self.active_combat_profile_name or not self.combat_profiles:
+            return None
+        for profile in self.combat_profiles:
+            if profile.name == self.active_combat_profile_name:
+                return profile
+        return None
 
     def sort_transitions(self) -> None:
         """Stable-sort transitions so flag-guarded edges precede plain when-only fallbacks.
@@ -211,6 +226,8 @@ class BotConfig(BaseModel):
             "transitions": trans_list,
             "default_combat_config": self.default_combat_config,
             "conditions_registry": conditions_registry,
+            "combat_profiles": [p.model_dump() for p in self.combat_profiles],
+            "active_combat_profile_name": self.active_combat_profile_name,
         }
 
     @classmethod

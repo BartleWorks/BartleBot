@@ -307,6 +307,7 @@ class AppController(QObject):
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         self._window.right_sidebar.clients.set_bot_running(True)
+        self._window.left_sidebar.set_bot_running(True)
         try:
             try:
                 with keep.running(on_fail="error"):
@@ -319,6 +320,7 @@ class AppController(QObject):
         finally:
             self._window.bot_canvas.set_idle()
             self._window.right_sidebar.clients.set_bot_running(False)
+            self._window.left_sidebar.set_bot_running(False)
             remove_gui_callback(log_cb)
             self._client_manager.set_machine(None)
             self._current_machine = None

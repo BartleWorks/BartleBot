@@ -265,7 +265,9 @@ class _DynamicParamForm(QWidget):
             placeholder = QLabel("This node type has no parameters.")
             placeholder.setStyleSheet(f"color: {THEME.text_muted};")
             self._form.insertWidget(0, placeholder)
-        # Wire disabled_by: when controller checkbox is checked, disable the target widget
+        # Wire disabled_by: disable the target widget when the controller is "active".
+        # For QCheckBox controllers: active = checked.
+        # For QLineEdit controllers: active = non-empty text.
         for field in schema:
             if field.disabled_by and field.disabled_by in self._widgets:
                 controller = self._widgets[field.disabled_by]
@@ -276,6 +278,9 @@ class _DynamicParamForm(QWidget):
                     controller.checkStateChanged.connect(
                         lambda state, w=display_w: w.setEnabled(state != Qt.CheckState.Checked)
                     )
+                elif isinstance(controller, QLineEdit):
+                    display_w.setEnabled(not controller.text().strip())
+                    controller.textChanged.connect(lambda text, w=display_w: w.setEnabled(not text.strip()))
         self._suppress = False
         self._validate_required_fields()
 

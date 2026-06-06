@@ -4,7 +4,12 @@ import asyncio
 import logging
 import time
 
-from bartlebot.nodes.combat_runner import _resolve_combat_dsl, _run_combat, _split_combat_config
+from bartlebot.nodes.combat_runner import (
+    _resolve_combat_dsl,
+    _resolve_duel_profile_dsl,
+    _run_combat,
+    _split_combat_config,
+)
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -17,25 +22,16 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="targets the closest available mob",
     ),
     ParamField(
-        key="use_bot_default",
-        type="bool",
-        label="Use bot-level default combat config",
+        key="fight_profile_name",
+        type="str",
+        label="Fight Profile Name",
         help=(
-            "When checked, the bot-level default combat config is used "
-            "(or the BartleBot built-in default if none is set). "
-            "Uncheck to supply a per-node combat config below."
+            "When set, this node resolves its DSL from the named Duel Profile in the "
+            "active Bot Combat Profile. Leave empty to use the default Duel Profile. "
+            "Setting this exposes the fight in the Combat tab."
         ),
-        default=True,
-    ),
-    ParamField(
-        key="combat_config",
-        type="text",
-        label="Combat Config",
-        help=("Combat config to use for this encounter. Only active when 'Use bot-level default' is unchecked."),
         default="",
-        default_hint="uses the bot-level or BartleBot built-in combat config",
-        placeholder="Enter combat DSL…",
-        disabled_by="use_bot_default",
+        default_hint="uses the default duel profile",
     ),
     ParamField(
         key="max_duration",
@@ -124,20 +120,26 @@ async def run(machine, clients: list, params: dict) -> str:
         return max_duration > 0 and time.monotonic() - _node_start > max_duration
 
     enemy_name: str = params.get("enemy", "")
+    fight_profile_name: str = params.get("fight_profile_name", "").strip()
     use_bot_default: bool = params.get("use_bot_default", True)
 
-    combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_bot_default)
-    if not combat_dsl:
-        machine.log(
-            "FAILURE: no combat DSL available (use_bot_default is off and per-node combat_config is empty)",
-            logging.WARNING,
-        )
-        return "FAILURE"
+    # Resolve per-client DSL list.
+    if fight_profile_name:
+        per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, fight_profile_name, len(clients))
+    else:
+        combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_bot_default)
+        if not combat_dsl:
+            machine.log(
+                "FAILURE: no combat DSL available (use_bot_default is off and per-node combat_config is empty)",
+                logging.WARNING,
+            )
+            return "FAILURE"
+        per_client_dsl = _split_combat_config(combat_dsl, len(clients))
 
     enemy_display = repr(enemy_name) if enemy_name else "(closest)"
     machine.log(f"handle_combat: enemy={enemy_display}, DSL source={dsl_source!r}")
     machine.log(
-        f"Combat DSL: {combat_dsl[:80]}{'…' if len(combat_dsl) > 80 else ''}",
+        f"Combat DSL (P1): {per_client_dsl[0][:80]}{'…' if len(per_client_dsl[0]) > 80 else ''}",
         logging.DEBUG,
     )
 
@@ -218,8 +220,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log("All clients in combat — running SprintyCombat")
 
-    # 5. Split multi-client DSL by ### pN section headers, then run SprintyCombat in parallel.
-    per_client_dsl = _split_combat_config(combat_dsl, len(clients))
+    # 5. Run SprintyCombat in parallel using the per-client DSL resolved earlier.
     await asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
 
     machine.log("SprintyCombat finished for all clients", logging.DEBUG)

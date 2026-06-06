@@ -18,6 +18,30 @@ def _resolve_combat_dsl(machine, params: dict, use_bot_default: bool) -> tuple[s
     return params.get("combat_config", "").strip(), "per-node config"
 
 
+def _resolve_duel_profile_dsl(machine, fight_profile_name: str, num_clients: int) -> tuple[list[str], str]:
+    """Resolve per-client DSL from the named DuelProfile in the active BotCombatProfile.
+
+    Returns (per_client_dsl_list, source_label).  Each entry is the DSL string
+    for the corresponding 0-based client index.  Falls back to the BartleBot
+    built-in default for any client whose DuelProfile entry is None or empty.
+    """
+    bot_cfg = machine._bot_config
+    active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
+
+    if active_profile is None:
+        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, "BartleBot built-in default (no active combat profile)"
+
+    duel_profile = active_profile.get_duel_profile(fight_profile_name)
+    source = f"duel profile '{duel_profile.name}'"
+
+    per_client: list[str] = []
+    for i in range(num_clients):
+        dsl = duel_profile.resolve_dsl_for_client(i)
+        per_client.append(dsl if dsl else BARTLEBOT_DEFAULT_COMBAT_CONFIG)
+
+    return per_client, source
+
+
 async def _run_combat(client, combat_dsl: str) -> None:
     """Run SprintyCombat for a single client using an inline DSL string."""
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
