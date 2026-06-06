@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.combat_profile import BotCombatProfile, DuelProfile, format_combat_order, parse_combat_order
+from bartlebot.bot.schema import StateModel
 from bartlebot.combat_profile_store import (
     list_bot_profiles,
     list_duel_profiles,
@@ -84,14 +85,18 @@ class _PlayerDecksSection(SidebarSection):
 
 
 class _DuelProfilesSection(SidebarSection):
-    """Collapsible section listing all exposed DuelProfileWidgets."""
+    """Collapsible section with fight assignments and the duel profile library."""
 
     duel_profiles_changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__("Duel Profiles", parent)
         self._editable = True
-        self._widgets: dict[str, DuelProfileWidget] = {}
+        self._config: BotConfig | None = None
+        self._combat_profile: BotCombatProfile | None = None
+        self._profile_widgets: dict[str, DuelProfileWidget] = {}
+        # ComboBoxes keyed by state_id for fight assignment rows
+        self._assignment_combos: dict[str, QComboBox] = {}
 
         self._layout = QVBoxLayout()
         self._layout.setSpacing(8)
@@ -101,11 +106,22 @@ class _DuelProfilesSection(SidebarSection):
         self.set_content_layout(self._layout)
 
     def rebuild(self, config: BotConfig | None, combat_profile: BotCombatProfile | None) -> None:
-        """Rebuild widgets to match the bot's exposed duel names and active profile."""
-        for w in self._widgets.values():
+        """Rebuild fight assignments and duel profile library widgets."""
+        self._config = config
+        self._combat_profile = combat_profile
+
+        # Clear all dynamic widgets
+        for w in self._profile_widgets.values():
             self._layout.removeWidget(w)
             w.deleteLater()
-        self._widgets.clear()
+        self._profile_widgets.clear()
+        self._assignment_combos.clear()
+
+        # Remove fight-assignment rows (everything except the no_profile_lbl)
+        while self._layout.count() > 1:
+            item = self._layout.takeAt(1)
+            if item and item.widget():
+                item.widget().deleteLater()
 
         if config is None or combat_profile is None:
             self._no_profile_lbl.show()
@@ -113,32 +129,153 @@ class _DuelProfilesSection(SidebarSection):
 
         self._no_profile_lbl.hide()
 
-        exposed_names = _collect_exposed_fight_names(config)
-        # Always show "default" first, then any exposed names
-        all_names = ["default"] + [n for n in exposed_names if n != "default"]
+        all_states = _collect_all_handle_combat_states(config)
+        exposed_states = _collect_exposed_states(config)
 
-        for name in all_names:
-            # Ensure the duel profile entry exists in the combat profile
-            if name not in combat_profile.duel_profiles:
-                combat_profile.duel_profiles[name] = DuelProfile(name=name)
-            w = DuelProfileWidget(name, combat_profile, self)
-            w.set_editable(self._editable)
-            w.duel_profile_changed.connect(self.duel_profiles_changed)
-            w.import_requested.connect(self._on_import_duel_profile)
-            w.export_requested.connect(self._on_export_duel_profile)
-            self._layout.addWidget(w)
-            self._widgets[name] = w
+        # ── Part A: Fight Assignments ─────────────────────────────────
+        if exposed_states:
+            assignments_lbl = QLabel("Fight Assignments")
+            font = assignments_lbl.font()
+            font.setBold(True)
+            assignments_lbl.setFont(font)
+            self._layout.addWidget(assignments_lbl)
 
-    def update_combat_profile(self, combat_profile: BotCombatProfile | None) -> None:
-        """Swap out the backing BotCombatProfile in all widgets."""
-        for w in self._widgets.values():
-            if combat_profile is not None:
-                w.set_combat_profile(combat_profile)
+            for state in exposed_states:
+                row = self._build_assignment_row(state, combat_profile)
+                self._layout.addWidget(row)
+
+        # ── Part B: Duel Profiles Library ─────────────────────────────
+        library_lbl = QLabel("Duel Profiles")
+        font = library_lbl.font()
+        font.setBold(True)
+        library_lbl.setFont(font)
+        self._layout.addWidget(library_lbl)
+
+        # Ensure "default" always exists
+        if "default" not in combat_profile.duel_profiles:
+            combat_profile.duel_profiles["default"] = DuelProfile(name="default")
+
+        profile_names = ["default"] + [n for n in combat_profile.duel_profiles if n != "default"]
+        for name in profile_names:
+            self._add_profile_widget(name, combat_profile, all_states)
+
+        new_btn = QPushButton("+ New Profile")
+        new_btn.setToolTip("Create a new reusable Duel Profile")
+        new_btn.clicked.connect(self._on_new_profile)
+        self._layout.addWidget(new_btn)
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
-        for w in self._widgets.values():
+        for w in self._profile_widgets.values():
             w.set_editable(editable)
+
+    def _build_assignment_row(self, state: StateModel, combat_profile: BotCombatProfile) -> QWidget:
+        """Build one fight-assignment row: label + profile ComboBox."""
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(6)
+
+        display = f"{state.label or state.id} ({state.id})"
+        lbl = QLabel(display)
+        lbl.setToolTip(f"State ID: {state.id}")
+        row_layout.addWidget(lbl, 1)
+
+        combo = QComboBox()
+        self._populate_combo(combo, combat_profile)
+        current = state.params.get("duel_profile_name", "").strip() or "default"
+        idx = combo.findText(current)
+        if idx >= 0:
+            combo.setCurrentIndex(idx)
+        else:
+            # Backward compat: name in params not yet in profile dict — add as option
+            combo.addItem(current)
+            combo.setCurrentText(current)
+
+        combo.currentTextChanged.connect(lambda name, sid=state.id: self._on_assignment_changed(sid, name))
+        row_layout.addWidget(combo)
+        self._assignment_combos[state.id] = combo
+        return row
+
+    def _populate_combo(self, combo: QComboBox, combat_profile: BotCombatProfile) -> None:
+        combo.clear()
+        combo.addItem("default")
+        for name in combat_profile.duel_profiles:
+            if name != "default":
+                combo.addItem(name)
+
+    def _add_profile_widget(
+        self,
+        name: str,
+        combat_profile: BotCombatProfile,
+        exposed_states: list[StateModel],
+    ) -> None:
+        w = DuelProfileWidget(name, combat_profile, exposed_states, parent=self)
+        w.set_editable(self._editable)
+        w.duel_profile_changed.connect(self.duel_profiles_changed)
+        w.import_requested.connect(self._on_import_duel_profile)
+        w.export_requested.connect(self._on_export_duel_profile)
+        w.rename_requested.connect(self._on_rename_profile)
+        w.delete_requested.connect(self._on_delete_profile)
+        self._layout.addWidget(w)
+        self._profile_widgets[name] = w
+
+    def _on_assignment_changed(self, state_id: str, profile_name: str) -> None:
+        """Update the state's duel_profile_name param when the ComboBox changes."""
+        if self._config is None:
+            return
+        for state in self._config.states:
+            if state.id == state_id:
+                state.params["duel_profile_name"] = profile_name if profile_name != "default" else ""
+                break
+        # Refresh Used-by labels in all profile widgets
+        all_states = _collect_all_handle_combat_states(self._config)
+        for w in self._profile_widgets.values():
+            w.set_exposed_states(all_states)
+        self.duel_profiles_changed.emit()
+
+    def _on_new_profile(self) -> None:
+        if self._combat_profile is None:
+            return
+        name, ok = QInputDialog.getText(self, "New Duel Profile", "Profile name:")
+        if not ok or not name.strip():
+            return
+        name = name.strip()
+        if name in self._combat_profile.duel_profiles:
+            QMessageBox.warning(self, "Duplicate name", f"A profile named '{name}' already exists.")
+            return
+        self._combat_profile.duel_profiles[name] = DuelProfile(name=name)
+        self.rebuild(self._config, self._combat_profile)
+        self.duel_profiles_changed.emit()
+
+    def _on_rename_profile(self, old_name: str, new_name: str) -> None:
+        if self._combat_profile is None:
+            return
+        if new_name in self._combat_profile.duel_profiles:
+            QMessageBox.warning(self, "Duplicate name", f"A profile named '{new_name}' already exists.")
+            # Reset the name field in the widget
+            widget = self._profile_widgets.get(old_name)
+            if widget:
+                widget._name_edit.setText(old_name)
+            return
+        # Rename the dict entry
+        profile = self._combat_profile.duel_profiles.pop(old_name)
+        profile.name = new_name
+        self._combat_profile.duel_profiles[new_name] = profile
+        # Update all exposed states that referenced the old name
+        if self._config:
+            for state in self._config.states:
+                if state.node_type == "handle_combat" and state.params.get("duel_profile_name") == old_name:
+                    state.params["duel_profile_name"] = new_name
+        self.rebuild(self._config, self._combat_profile)
+        self.duel_profiles_changed.emit()
+
+    def _on_delete_profile(self, profile_name: str) -> None:
+        if self._combat_profile is None or profile_name == "default":
+            return
+        self._combat_profile.duel_profiles.pop(profile_name, None)
+        self.rebuild(self._config, self._combat_profile)
+        self.duel_profiles_changed.emit()
 
     def _on_import_duel_profile(self, profile_name: str) -> None:
         names = list_duel_profiles()
@@ -155,19 +292,17 @@ class _DuelProfilesSection(SidebarSection):
             return
         # Rename to match the slot being imported into
         imported.name = profile_name
-        widget = self._widgets.get(profile_name)
-        if widget is None:
+        widget = self._profile_widgets.get(profile_name)
+        if widget is None or self._combat_profile is None:
             return
-        # Replace the duel profile in the backing object
-        widget._combat_profile.duel_profiles[profile_name] = imported
+        self._combat_profile.duel_profiles[profile_name] = imported
         widget._load_profile()
         self.duel_profiles_changed.emit()
 
     def _on_export_duel_profile(self, profile_name: str) -> None:
-        widget = self._widgets.get(profile_name)
-        if widget is None:
+        if self._combat_profile is None:
             return
-        profile = widget._combat_profile.get_duel_profile(profile_name)
+        profile = self._combat_profile.get_duel_profile(profile_name)
         name, ok = QInputDialog.getText(self, "Export Duel Profile", "Save as name:", text=profile_name)
         if not ok or not name.strip():
             return
@@ -178,15 +313,18 @@ class _DuelProfilesSection(SidebarSection):
             QMessageBox.critical(self, "Export failed", str(exc))
 
 
-def _collect_exposed_fight_names(config: BotConfig) -> list[str]:
-    """Return unique non-empty duel_profile_name values from all handle_combat nodes."""
-    seen: list[str] = []
-    for state in config.states:
-        if state.node_type == "handle_combat":
-            name = state.params.get("duel_profile_name", "").strip()
-            if name and name not in seen:
-                seen.append(name)
-    return seen
+def _collect_all_handle_combat_states(config: BotConfig) -> list[StateModel]:
+    """Return all handle_combat states in the config."""
+    return [s for s in config.states if s.node_type == "handle_combat"]
+
+
+def _collect_exposed_states(config: BotConfig) -> list[StateModel]:
+    """Return handle_combat states that are not using the default duel profile."""
+    return [
+        s
+        for s in config.states
+        if s.node_type == "handle_combat" and not s.params.get("use_default_duel_profile", True)
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -365,7 +503,7 @@ class CombatTab(QWidget):
         if self._suppress or self._config is None or name == _NO_PROFILES_LABEL:
             return
         self._config.active_combat_profile_name = name
-        self._duel_profiles_section.update_combat_profile(self._active_profile())
+        self._rebuild_duel_profiles()
         self._refresh_combat_order_field()
         self._refresh_controls()
         self.combat_config_changed.emit()

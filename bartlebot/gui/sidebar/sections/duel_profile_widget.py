@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import (
     QCheckBox,
     QFrame,
@@ -22,6 +22,7 @@ from bartlebot.gui.theme import THEME
 
 if TYPE_CHECKING:
     from bartlebot.bot.combat_profile import BotCombatProfile
+    from bartlebot.bot.schema import StateModel
 
 _NUM_PLAYER_SLOTS = 4
 
@@ -112,16 +113,28 @@ class DuelProfileWidget(QWidget):
 
     Emits ``duel_profile_changed`` whenever the profile data is mutated.
     Emits ``import_requested`` / ``export_requested`` for the Combat tab to handle.
+    Emits ``rename_requested(old_name, new_name)`` when the user renames the profile.
+    Emits ``delete_requested(profile_name)`` when the user deletes the profile.
     """
 
     duel_profile_changed = pyqtSignal()
     import_requested = pyqtSignal(str)  # profile_name
     export_requested = pyqtSignal(str)  # profile_name
+    rename_requested = pyqtSignal(str, str)  # old_name, new_name
+    delete_requested = pyqtSignal(str)  # profile_name
 
-    def __init__(self, profile_name: str, combat_profile: BotCombatProfile, parent=None):
+    def __init__(
+        self,
+        profile_name: str,
+        combat_profile: BotCombatProfile,
+        exposed_states: list[StateModel],
+        *,
+        parent=None,
+    ):
         super().__init__(parent)
         self._profile_name = profile_name
         self._combat_profile = combat_profile
+        self._exposed_states = exposed_states
         self._editable = False
         self._suppress = False
 
@@ -142,17 +155,27 @@ class DuelProfileWidget(QWidget):
         card_layout.setContentsMargins(6, 6, 6, 6)
         card_layout.setSpacing(4)
 
+        # ── "Used by" label ───────────────────────────────────────────
+        self._used_by_lbl = QLabel()
+        self._used_by_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._used_by_lbl.setWordWrap(True)
+        card_layout.addWidget(self._used_by_lbl)
+
         # ── Header row ────────────────────────────────────────────────
         header = QWidget()
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(4)
 
-        title = QLabel(profile_name)
-        font = title.font()
+        self._name_edit = QLineEdit(profile_name)
+        font = self._name_edit.font()
         font.setBold(True)
-        title.setFont(font)
-        header_layout.addWidget(title, 1)
+        self._name_edit.setFont(font)
+        self._name_edit.setFrame(False)
+        self._name_edit.setToolTip("Profile name — press Enter or click away to rename")
+        self._name_edit.setReadOnly(profile_name == "default")
+        self._name_edit.editingFinished.connect(self._on_name_editing_finished)
+        header_layout.addWidget(self._name_edit, 1)
 
         self._import_btn = QPushButton("Import")
         self._import_btn.setToolTip("Import a saved Duel Profile from the global library")
@@ -160,10 +183,15 @@ class DuelProfileWidget(QWidget):
         self._export_btn = QPushButton("Export")
         self._export_btn.setToolTip("Export this Duel Profile to the global library")
         self._export_btn.clicked.connect(lambda: self.export_requested.emit(self._profile_name))
+        self._delete_profile_btn = QPushButton("Delete")
+        self._delete_profile_btn.setToolTip("Delete this Duel Profile (only available when unused)")
+        self._delete_profile_btn.clicked.connect(lambda: self.delete_requested.emit(self._profile_name))
         header_layout.addWidget(self._import_btn)
         header_layout.addWidget(self._export_btn)
+        header_layout.addWidget(self._delete_profile_btn)
 
         card_layout.addWidget(header)
+        self._refresh_used_by()
 
         # ── Use BartleBot default checkbox ────────────────────────────
         self._use_default_chk = QCheckBox("Use BartleBot default")
@@ -212,14 +240,31 @@ class DuelProfileWidget(QWidget):
         self._combat_profile = combat_profile
         self._load_profile()
 
+    def set_exposed_states(self, handle_combat_states: list[StateModel]) -> None:
+        """Update the list of handle_combat states and refresh the Used-by label."""
+        self._exposed_states = handle_combat_states
+        self._refresh_used_by()
+        self._refresh_delete_btn()
+
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
         self._use_default_chk.setEnabled(editable)
         self._combat_order_edit.setReadOnly(not editable)
         self._add_btn.setVisible(editable)
         self._import_btn.setEnabled(editable)
+        if self._profile_name != "default":
+            self._name_edit.setReadOnly(not editable)
+        self._refresh_delete_btn()
         for w in self._behavior_widgets:
             w.set_editable(editable)
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._card.setStyleSheet(
+                f"QFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; background: {THEME.bg}; padding: 6px; }}"
+            )
+            self._used_by_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -228,6 +273,38 @@ class DuelProfileWidget(QWidget):
     @property
     def _duel_profile(self) -> DuelProfile:
         return self._combat_profile.get_duel_profile(self._profile_name)
+
+    def _refresh_used_by(self) -> None:
+        if self._profile_name == "default":
+            # Default profile is used by all states that have use_default_duel_profile=True (or unset)
+            matching = [s for s in self._exposed_states if s.params.get("use_default_duel_profile", True)]
+        else:
+            # Named profile is used by states explicitly assigned to it
+            matching = [
+                s
+                for s in self._exposed_states
+                if not s.params.get("use_default_duel_profile", True)
+                and s.params.get("duel_profile_name", "") == self._profile_name
+            ]
+        if matching:
+            parts = [f"{s.label or s.id} ({s.id})" for s in matching]
+            self._used_by_lbl.setText("Used by: " + ", ".join(parts))
+        else:
+            self._used_by_lbl.setText("Unused")
+        self._refresh_delete_btn()
+
+    def _refresh_delete_btn(self) -> None:
+        if self._profile_name == "default":
+            matching = [s for s in self._exposed_states if s.params.get("use_default_duel_profile", True)]
+        else:
+            matching = [
+                s
+                for s in self._exposed_states
+                if not s.params.get("use_default_duel_profile", True)
+                and s.params.get("duel_profile_name", "") == self._profile_name
+            ]
+        can_delete = self._editable and self._profile_name != "default" and not matching
+        self._delete_profile_btn.setVisible(can_delete)
 
     def _load_profile(self) -> None:
         self._suppress = True
@@ -259,6 +336,13 @@ class DuelProfileWidget(QWidget):
         idx = self._behaviors_layout.indexOf(self._add_btn)
         self._behaviors_layout.insertWidget(idx, w)
         self._behavior_widgets.append(w)
+
+    def _on_name_editing_finished(self) -> None:
+        new_name = self._name_edit.text().strip()
+        if not new_name or new_name == self._profile_name:
+            self._name_edit.setText(self._profile_name)
+            return
+        self.rename_requested.emit(self._profile_name, new_name)
 
     def _on_behavior_players_changed(self, source: _CombatBehaviorWidget) -> None:
         """Enforce mutual exclusivity: each player slot appears in at most one behavior."""

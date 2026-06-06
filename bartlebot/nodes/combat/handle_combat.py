@@ -23,16 +23,15 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="targets the closest available mob",
     ),
     ParamField(
-        key="duel_profile_name",
-        type="str",
-        label="Duel Profile Name",
+        key="use_default_duel_profile",
+        type="bool",
+        label="Use default Duel Profile",
         help=(
-            "When set, this node resolves its DSL from the named Duel Profile in the "
-            "active Bot Combat Profile. Leave empty to use the default Duel Profile. "
-            "Setting this exposes the duel in the Combat tab."
+            "When unchecked, this fight appears in the Combat Tab's Fight Assignments section "
+            "where you can assign a specific reusable Duel Profile to it. "
+            "When checked, the default Duel Profile is used."
         ),
-        default="",
-        default_hint="uses the default duel profile",
+        default=True,
     ),
     ParamField(
         key="max_duration",
