@@ -170,7 +170,7 @@ def test_botconfig_preserves_deprecated_fields():
 
 class _FakeMachineWithProfile:
     def __init__(self, bot_config):
-        self._bot_config = bot_config
+        self.bot_config = bot_config
 
     def log(self, *args, **kwargs):
         pass

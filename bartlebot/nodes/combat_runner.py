@@ -11,7 +11,7 @@ from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 def _resolve_combat_dsl(machine, params: dict, use_bot_default: bool) -> tuple[str, str]:
     """Return (dsl_string, source_label). dsl_string is empty if none can be resolved."""
     if use_bot_default:
-        bot_cfg = machine._bot_config
+        bot_cfg = machine.bot_config
         if bot_cfg is not None and not bot_cfg.use_bartlebot_default_combat_config:
             return bot_cfg.default_combat_config or "", "bot-level custom config"
         return BARTLEBOT_DEFAULT_COMBAT_CONFIG, "BartleBot built-in default"
@@ -25,7 +25,7 @@ def _resolve_duel_profile_dsl(machine, duel_profile_name: str, num_clients: int)
     for the corresponding 0-based client index.  Falls back to the BartleBot
     built-in default for any client whose DuelProfile entry is None or empty.
     """
-    bot_cfg = machine._bot_config
+    bot_cfg = machine.bot_config
     active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
 
     if active_profile is None:
@@ -48,7 +48,7 @@ def _resolve_combat_order(machine, duel_profile_name: str) -> list[int]:
     Priority: duel profile override → active profile default → legacy bot option fallback.
     An empty list means all clients enter simultaneously.
     """
-    bot_cfg = machine._bot_config
+    bot_cfg = machine.bot_config
     active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
 
     if active_profile is not None:

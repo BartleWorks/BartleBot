@@ -185,6 +185,10 @@ class BotMachine:
     # --- Public API ---
 
     @property
+    def bot_config(self) -> "BotConfig | None":
+        return self._bot_config
+
+    @property
     def is_paused(self) -> bool:
         return not self._resume_event.is_set()
 
