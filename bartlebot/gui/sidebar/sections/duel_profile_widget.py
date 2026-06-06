@@ -80,6 +80,11 @@ class _CombatBehaviorWidget(QWidget):
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
         outer.addWidget(self._dsl_edit)
 
+    @property
+    def players(self) -> list[int]:
+        """Currently checked player slots (1-based) for this behavior."""
+        return self._behavior.players
+
     def set_editable(self, editable: bool) -> None:
         for chk in self._player_chks:
             chk.setEnabled(editable)
@@ -354,12 +359,12 @@ class DuelProfileWidget(QWidget):
 
     def _on_behavior_players_changed(self, source: _CombatBehaviorWidget) -> None:
         """Enforce mutual exclusivity: each player slot appears in at most one behavior."""
-        claimed = set(source._behavior.players)
+        claimed = set(source.players)
         any_changed = False
         for w in self._behavior_widgets:
             if w is source:
                 continue
-            for player in list(w._behavior.players):
+            for player in list(w.players):
                 if player in claimed:
                     w.force_uncheck_player(player)
                     any_changed = True
