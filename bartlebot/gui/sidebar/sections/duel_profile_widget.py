@@ -240,6 +240,14 @@ class DuelProfileWidget(QWidget):
         self._combat_profile = combat_profile
         self._load_profile()
 
+    def reload(self) -> None:
+        """Reload all fields from the backing DuelProfile (e.g. after an import)."""
+        self._load_profile()
+
+    def reset_name(self, name: str) -> None:
+        """Reset the name field to *name* (e.g. after a rejected rename)."""
+        self._name_edit.setText(name)
+
     def set_exposed_states(self, handle_combat_states: list[StateModel]) -> None:
         """Update the list of handle_combat states and refresh the Used-by label."""
         self._exposed_states = handle_combat_states

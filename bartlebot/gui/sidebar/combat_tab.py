@@ -258,7 +258,7 @@ class _DuelProfilesSection(SidebarSection):
             # Reset the name field in the widget
             widget = self._profile_widgets.get(old_name)
             if widget:
-                widget._name_edit.setText(old_name)
+                widget.reset_name(old_name)
             return
         # Rename the dict entry
         profile = self._combat_profile.duel_profiles.pop(old_name)
@@ -298,7 +298,7 @@ class _DuelProfilesSection(SidebarSection):
         if widget is None or self._combat_profile is None:
             return
         self._combat_profile.duel_profiles[profile_name] = imported
-        widget._load_profile()
+        widget.reload()
         self.duel_profiles_changed.emit()
 
     def _on_export_duel_profile(self, profile_name: str) -> None:
