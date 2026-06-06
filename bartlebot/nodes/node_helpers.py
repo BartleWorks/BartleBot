@@ -164,7 +164,13 @@ async def _get_window_from_path(parent, path: list[str]):
 
 
 async def poll_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
-    """Poll condition_coro every poll_interval until it returns True or timeout expires."""
+    """Poll condition_coro every poll_interval until it returns True or timeout expires.
+
+    Always evaluates condition_coro at least once before the timeout clock starts, so a
+    condition that is already True never races against a tight deadline.
+    """
+    if await condition_coro():
+        return True
 
     async def _poll():
         while not await condition_coro():
