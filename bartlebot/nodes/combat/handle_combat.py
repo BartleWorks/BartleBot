@@ -4,8 +4,14 @@ import asyncio
 import logging
 import time
 
-from bartlebot.nodes.combat_runner import _resolve_combat_dsl, _run_combat, _split_combat_config
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.combat_runner import (
+    _resolve_combat_dsl,
+    _resolve_combat_order,
+    _resolve_duel_profile_dsl,
+    _run_combat,
+    _split_combat_config,
+)
+from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -17,25 +23,15 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="targets the closest available mob",
     ),
     ParamField(
-        key="use_bot_default",
+        key="use_default_duel_profile",
         type="bool",
-        label="Use bot-level default combat config",
+        label="Use default Duel Profile",
         help=(
-            "When checked, the bot-level default combat config is used "
-            "(or the BartleBot built-in default if none is set). "
-            "Uncheck to supply a per-node combat config below."
+            "When unchecked, this duel appears in the Combat Tab's Duel Assignments section "
+            "where you can assign a specific reusable Duel Profile to it. "
+            "When checked, the default Duel Profile is used."
         ),
         default=True,
-    ),
-    ParamField(
-        key="combat_config",
-        type="text",
-        label="Combat Config",
-        help=("Combat config to use for this encounter. Only active when 'Use bot-level default' is unchecked."),
-        default="",
-        default_hint="uses the bot-level or BartleBot built-in combat config",
-        placeholder="Enter combat DSL…",
-        disabled_by="use_bot_default",
     ),
     ParamField(
         key="max_duration",
@@ -64,18 +60,7 @@ NODE_SPEC = NodeSpec(
             "No valid target found, no combat config available, or players failed to enter combat within the timeout.",
         ),
     ],
-    required_bot_options=[
-        BotOptionSpec(
-            name="Default Combat Order",
-            type="int_list",
-            default=[],
-            description=(
-                "Default order clients enter combat (e.g. '2, 1' sends client 2 first). "
-                "Empty = all clients enter simultaneously. Can be overridden per node "
-                "via Option Overrides."
-            ),
-        ),
-    ],
+    required_bot_options=[],
     max_consecutive_retries=5,
 )
 
@@ -96,15 +81,15 @@ async def run(machine, clients: list, params: dict) -> str:
           SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
 
     Flow:
-      1. Resolve combat DSL (per-node config if use_bot_default is off, else bot-level
-         default or built-in BartleBot default). Return FAILURE if none available.
+      1. Resolve combat DSL via the assigned Duel Profile, or the active BotCombatProfile's
+         default, or the BartleBot built-in default. Return FAILURE if none available.
       2. Resolve target entity for each client (by enemy name or closest mob), retrying
          TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
       3. If max_duration is set and has elapsed, return FAILURE.
       4. Snapshot chat to enable drop detection after combat.
       5. Teleport clients to their targets:
-         - If Default Combat Order is set: send clients one at a time in order, waiting
-           for each to report in_battle() before sending the next.
+         - If a combat order is set (duel profile override → profile default → legacy bot option):
+           send clients one at a time in order, waiting for each to report in_battle().
          - Otherwise: teleport all clients simultaneously, retrying every _TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
       6. If max_duration is set and has elapsed, return FAILURE.
@@ -124,22 +109,29 @@ async def run(machine, clients: list, params: dict) -> str:
         return max_duration > 0 and time.monotonic() - _node_start > max_duration
 
     enemy_name: str = params.get("enemy", "")
-    use_bot_default: bool = params.get("use_bot_default", True)
+    duel_profile_name: str = params.get("duel_profile_name", "").strip()
+    use_default_duel_profile: bool = params.get("use_default_duel_profile", True)
 
-    combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_bot_default)
-    if not combat_dsl:
-        machine.log(
-            "FAILURE: no combat DSL available (use_bot_default is off and per-node combat_config is empty)",
-            logging.WARNING,
-        )
-        return "FAILURE"
+    # Resolve per-client DSL list.
+    if duel_profile_name:
+        per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, duel_profile_name, len(clients))
+    else:
+        combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_default_duel_profile)
+        if not combat_dsl:
+            machine.log(
+                "FAILURE: no combat DSL available (use_default_duel_profile is off and no duel profile is assigned)",
+                logging.WARNING,
+            )
+            return "FAILURE"
+        per_client_dsl = _split_combat_config(combat_dsl, len(clients))
 
     enemy_display = repr(enemy_name) if enemy_name else "(closest)"
     machine.log(f"handle_combat: enemy={enemy_display}, DSL source={dsl_source!r}")
-    machine.log(
-        f"Combat DSL: {combat_dsl[:80]}{'…' if len(combat_dsl) > 80 else ''}",
-        logging.DEBUG,
-    )
+    if per_client_dsl:
+        machine.log(
+            f"Combat DSL (P1): {per_client_dsl[0][:80]}{'…' if len(per_client_dsl[0]) > 80 else ''}",
+            logging.DEBUG,
+        )
 
     # 1. Resolve target entity for each client, retrying to allow enemies time to load.
     targets = None
@@ -179,7 +171,7 @@ async def run(machine, clients: list, params: dict) -> str:
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
     # 3. Teleport clients to their target (sequential or simultaneous).
-    combat_order: list[int] = machine.get_option("Default Combat Order", []) or []
+    combat_order: list[int] = _resolve_combat_order(machine, duel_profile_name)
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:
@@ -218,8 +210,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log("All clients in combat — running SprintyCombat")
 
-    # 5. Split multi-client DSL by ### pN section headers, then run SprintyCombat in parallel.
-    per_client_dsl = _split_combat_config(combat_dsl, len(clients))
+    # 5. Run SprintyCombat in parallel using the per-client DSL resolved earlier.
     await asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
 
     machine.log("SprintyCombat finished for all clients", logging.DEBUG)

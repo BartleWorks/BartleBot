@@ -15,7 +15,11 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     GAUNTLET_ENTRANCE_PATH,
     MESSAGE_BOX_CENTER,
 )
-from bartlebot.nodes.timing import DIALOG_TIMEOUT, POLL_INTERVAL  # noqa: F401 — re-exported for callers
+from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
+    DIALOG_FAST_POLL_INTERVAL,
+    DIALOG_TIMEOUT,
+    POLL_INTERVAL,
+)
 
 
 async def all_in_npc_range(clients: list) -> bool:
@@ -69,8 +73,6 @@ async def advance_dialogue_until_clear(
     for safety_delay seconds. Returns False if timeout expires while clients are still in
     dialogue.
     """
-    from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL
-
     loop = asyncio.get_event_loop()
     overall_start = loop.time()
     quiet_since = overall_start
@@ -162,7 +164,13 @@ async def _get_window_from_path(parent, path: list[str]):
 
 
 async def poll_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
-    """Poll condition_coro every poll_interval until it returns True or timeout expires."""
+    """Poll condition_coro every poll_interval until it returns True or timeout expires.
+
+    Always evaluates condition_coro at least once before the timeout clock starts, so a
+    condition that is already True never races against a tight deadline.
+    """
+    if await condition_coro():
+        return True
 
     async def _poll():
         while not await condition_coro():

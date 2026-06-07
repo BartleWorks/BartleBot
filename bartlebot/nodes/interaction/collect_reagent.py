@@ -53,10 +53,10 @@ NODE_SPEC = NodeSpec(
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "Spawn point processed — entities were collected, or the spawn was empty."),
+        ReturnSpec("SUCCESS", "At least one reagent was collected across all clients."),
         ReturnSpec(
             "FAILURE",
-            "Zone mismatch or entity_names is empty; the spawn could not be processed.",
+            "Zone mismatch, entity_names is empty, or no entities were collected.",
         ),
     ],
     required_bot_options=[
@@ -185,5 +185,8 @@ async def run(machine, clients: list, params: dict) -> str:
         *[_collect_for_client(machine, c, i, entity_names, safety_delay) for i, c in enumerate(clients)]
     )
     total = sum(counts)
+    if total == 0:
+        machine.log("collect_reagent: no reagents collected — FAILURE", logging.WARNING)
+        return "FAILURE"
     machine.log(f"collect_reagent: {total} reagent(s) collected across {len(clients)} client(s) — SUCCESS")
     return "SUCCESS"

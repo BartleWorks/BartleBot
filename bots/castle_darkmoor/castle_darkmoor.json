@@ -7,6 +7,43 @@
   "recovery_state": "state_1",
   "default_combat_config": "### p1\nfrenzy | lord[\"Epic - Amulet\"] | tempest[epic]\n\n### p2\nfrenzy | heqet[\"Epic - Amulet\"]@boss | tempest[epic]",
   "use_bartlebot_default_combat_config": false,
+  "combat_profiles": [
+    {
+      "name": "Castle Darkmoor - 2 max storms",
+      "combat_order": [],
+      "player_decks": {},
+      "duel_profiles": {
+        "default": {
+          "name": "default",
+          "use_bartlebot_default": true,
+          "behaviors": []
+        },
+        "Frenzy into hits - 2 max storms": {
+          "name": "Frenzy into hits - 2 max storms",
+          "use_bartlebot_default": false,
+          "behaviors": [
+            {
+              "players": [
+                1
+              ],
+              "dsl": "frenzy | lord[\"Epic - Amulet\"] | tempest[epic]"
+            },
+            {
+              "players": [
+                2
+              ],
+              "dsl": "frenzy | heqet[\"Epic - Amulet\"]@boss | tempest[epic]"
+            }
+          ],
+          "combat_order_override": [
+            1,
+            2
+          ]
+        }
+      }
+    }
+  ],
+  "active_combat_profile_name": "Castle Darkmoor - 2 max storms",
   "start_location": "Anywhere in Wizard City or Castle Darkmoor",
   "drops": [
     "Alligator Pear",
@@ -272,7 +309,7 @@
       "label": "Teleport to Castle Darkmoor",
       "position": {
         "x": 0.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/DM_Z01_CastleDarkmoor"
@@ -285,7 +322,7 @@
       "label": "Check if in Castle Darkmoor",
       "position": {
         "x": -1760.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM*",
@@ -299,7 +336,7 @@
       "label": "Enter Castle Darkmoor dungeon",
       "position": {
         "x": 1760.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z01_CastleDarkmoor",
@@ -323,7 +360,7 @@
       "label": "WizardCity*",
       "position": {
         "x": -1320.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub",
@@ -337,7 +374,7 @@
       "label": "Teleport to the Commons",
       "position": {
         "x": -880.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -350,7 +387,7 @@
       "label": "Enter Nightside",
       "position": {
         "x": -440.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -374,7 +411,7 @@
       "label": "Enter Castle Darkmoor",
       "position": {
         "x": 0.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {
         "from_zone": "WizardCity/WC_NightSide",
@@ -398,7 +435,7 @@
       "label": "Trigger dialogue",
       "position": {
         "x": 2200.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/DM_Z02_MainHall",
@@ -416,13 +453,13 @@
       "label": "Defeat Howling Chaney",
       "position": {
         "x": 3080.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-DM-Werewolf_Boss",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 0.0
+        "use_default_duel_profile": false,
+        "max_duration": 0.0,
+        "duel_profile_name": "Frenzy into hits - 2 max storms"
       },
       "option_overrides": {}
     },
@@ -432,7 +469,7 @@
       "label": "Wait for dialogue",
       "position": {
         "x": 2640.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -445,7 +482,7 @@
       "label": "Exit Main Hall",
       "position": {
         "x": 3960.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z02_MainHall",
@@ -469,7 +506,7 @@
       "label": "Collect wisps",
       "position": {
         "x": 3520.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -486,7 +523,7 @@
       "label": "Wait for dialogue",
       "position": {
         "x": 4400.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -499,13 +536,13 @@
       "label": "Defeat Sir Blackwater",
       "position": {
         "x": 4840.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-DM-DeathKnight_Boss",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 1200.0
+        "use_default_duel_profile": false,
+        "max_duration": 1200.0,
+        "duel_profile_name": "Frenzy into hits - 2 max storms"
       },
       "option_overrides": {}
     },
@@ -515,7 +552,7 @@
       "label": "Wait for dialogue",
       "position": {
         "x": 5280.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -528,7 +565,7 @@
       "label": "Enter staircase",
       "position": {
         "x": 5720.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z03_Armory",
@@ -551,7 +588,7 @@
       "node_type": "enter_zone",
       "label": "Enter Stone Skeleton Key room",
       "position": {
-        "x": 6600.0,
+        "x": 7040.0,
         "y": -90.0
       },
       "params": {
@@ -573,10 +610,10 @@
     {
       "id": "state_18",
       "node_type": "interact",
-      "label": "Unlock Stone Skeleton Key door",
+      "label": "P1 unlock Stone Skeleton Key door",
       "position": {
         "x": 6160.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
@@ -602,8 +639,8 @@
       "node_type": "interact",
       "label": "P1 open Treasure Chest",
       "position": {
-        "x": 7040.0,
-        "y": -90.0
+        "x": 7480.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
@@ -629,8 +666,8 @@
       "node_type": "enter_zone",
       "label": "Exit Stone Skeleton Key room",
       "position": {
-        "x": 7920.0,
-        "y": -90.0
+        "x": 8360.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z04_I02_SkeletonKey3",
@@ -653,8 +690,8 @@
       "node_type": "enter_zone",
       "label": "Enter Observatory",
       "position": {
-        "x": 8360.0,
-        "y": -90.0
+        "x": 8800.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
@@ -677,8 +714,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger dialogue",
       "position": {
-        "x": 8800.0,
-        "y": -90.0
+        "x": 9240.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -695,8 +732,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 9240.0,
-        "y": -90.0
+        "x": 9680.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -708,8 +745,8 @@
       "node_type": "interact",
       "label": "Collect Crimson Lens",
       "position": {
-        "x": 9680.0,
-        "y": -90.0
+        "x": 10120.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -733,8 +770,8 @@
       "node_type": "interact",
       "label": "Activate Neutral Density Filter",
       "position": {
-        "x": 10120.0,
-        "y": -90.0
+        "x": 10560.0,
+        "y": 0.0
       },
       "params": {
         "zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -758,8 +795,8 @@
       "node_type": "sleep",
       "label": "Wait for puzzle to complete",
       "position": {
-        "x": 10560.0,
-        "y": -90.0
+        "x": 11000.0,
+        "y": 0.0
       },
       "params": {
         "duration": 1.0
@@ -771,8 +808,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11000.0,
-        "y": -90.0
+        "x": 11440.0,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -784,8 +821,8 @@
       "node_type": "enter_zone",
       "label": "Exit Observatory",
       "position": {
-        "x": 11440.0,
-        "y": -90.0
+        "x": 11880.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/Interiors/DM_Z07_I01_Observatory",
@@ -808,7 +845,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 11880.0,
+        "x": 12320.0,
         "y": -90.0
       },
       "params": {
@@ -825,7 +862,7 @@
       "node_type": "interact",
       "label": "P2 open Treasure Chest",
       "position": {
-        "x": 7480.0,
+        "x": 7920.0,
         "y": -90.0
       },
       "params": {
@@ -853,7 +890,7 @@
       "label": "Collect health and mana wisps",
       "position": {
         "x": 440.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -870,7 +907,7 @@
       "label": "Handle potions",
       "position": {
         "x": 880.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -886,7 +923,7 @@
       "label": "Quicksell",
       "position": {
         "x": 1320.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "keep_list": [
@@ -901,6 +938,33 @@
         "sell_pets": true,
         "sell_socket_wrenches": false,
         "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "interact",
+      "label": "P2 unlock Stone Skeleton Key door",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "G14_DM/Interiors/DM_Z04_I01_Staircase",
+        "interact_xyz": {
+          "x": -545.19,
+          "y": -236.15,
+          "z": 400.2
+        },
+        "reset_xyz": {
+          "x": -431.05,
+          "y": 470.83,
+          "z": 315.13
+        },
+        "interact_clients": [
+          2
+        ],
+        "has_dialogue": true
       },
       "option_overrides": {}
     }
@@ -1123,7 +1187,7 @@
     {
       "trigger": "advance",
       "source": "state_18",
-      "dest": "state_1",
+      "dest": "state_34",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1168,30 +1232,6 @@
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Open Treasure Chest",
-              "negate": false
-            },
-            {
-              "option": "Skip Observatory puzzle",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
       "flag_groups_op": "OR"
     },
     {
@@ -1407,6 +1447,30 @@
     {
       "trigger": "advance",
       "source": "state_30",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Open Treasure Chest",
+              "negate": false
+            },
+            {
+              "option": "Skip Observatory puzzle",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
       "dest": "state_20",
       "when": "SUCCESS",
       "flags": [],
@@ -1477,6 +1541,26 @@
     {
       "trigger": "advance",
       "source": "state_33",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
@@ -1627,7 +1711,8 @@
         "state_16",
         "state_17",
         "state_20",
-        "state_19"
+        "state_19",
+        "state_34"
       ],
       "color": 3
     },

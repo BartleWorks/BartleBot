@@ -398,6 +398,8 @@ class MainWindow(QMainWindow):
             self.left_sidebar.switch_to_properties()
         elif tab == "bot":
             self.left_sidebar.switch_to_bot()
+        elif tab == "combat":
+            self.left_sidebar.switch_to_combat()
 
     def _open_settings(self, tab_name: str = "general") -> None:
         from bartlebot.gui.settings.settings_dialog import SettingsDialog

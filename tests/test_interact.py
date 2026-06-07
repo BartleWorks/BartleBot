@@ -29,7 +29,10 @@ async def test_success_no_dialog():
     """Happy path: prompt appears, X pressed, no dialogue window — returns SUCCESS."""
     client = _ready_client()
 
-    with patch.object(ix, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+    ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -53,7 +56,8 @@ async def test_success_with_dialog():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
         patch.object(_nh, "is_visible_by_path", side_effect=_visible),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
@@ -82,7 +86,8 @@ async def test_success_multiple_clients():
 
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
         patch.object(_nh, "is_visible_by_path", side_effect=_visible),
     ):
         result = await ix.run(FakeMachine(), clients, _PARAMS)
@@ -125,7 +130,10 @@ async def test_prompt_retry_then_success():
 
     client.is_in_npc_range.side_effect = npc_range
 
-    with patch.object(ix, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+    ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -189,7 +197,10 @@ async def test_stale_prompt_cleared_before_interaction():
 
     client.is_in_npc_range.side_effect = _npc_range
 
-    with patch.object(ix, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+    ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -217,7 +228,10 @@ async def test_interact_clients_subset():
     c2 = _ready_client()  # should interact
     params = {**_PARAMS, "interact_clients": [2]}
 
-    with patch.object(ix, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+    ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"
@@ -234,7 +248,10 @@ async def test_out_of_range_client_numbers_skipped():
     client = _ready_client()
     params = {**_PARAMS, "interact_clients": [1, 99]}
 
-    with patch.object(ix, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+    ):
         result = await ix.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
@@ -249,7 +266,10 @@ async def test_empty_interact_clients_interacts_all():
     c2 = _ready_client()
     params = {**_PARAMS, "interact_clients": []}
 
-    with patch.object(ix, "POLL_INTERVAL", 0):
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+    ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"

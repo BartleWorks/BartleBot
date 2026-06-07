@@ -18,7 +18,8 @@ async def test_no_dialogue_returns_success():
     client = FakeClient()
     # is_visible_by_path returns False by default (FakeClient.root_window.children=[])
 
-    result = await wfd.run(FakeMachine(), [client], {})
+    with patch.object(nh, "POLL_INTERVAL", 0):
+        result = await wfd.run(FakeMachine(), [client], {})
 
     assert result == "SUCCESS"
 
@@ -34,9 +35,12 @@ async def test_dialogue_dismissed_then_success():
             return True
         return False
 
-    with patch.object(nh, "is_visible_by_path", side_effect=_visible):
-        with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
-            result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
+    with (
+        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+    ):
+        result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
 
     assert result == "SUCCESS"
     assert _spacebar_count(client) == 1
@@ -51,9 +55,12 @@ async def test_multiple_dialogues_dismissed():
         _call[0] += 1
         return _call[0] <= 2  # True on first two calls, False after
 
-    with patch.object(nh, "is_visible_by_path", side_effect=_visible):
-        with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
-            result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
+    with (
+        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+    ):
+        result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [client], {})
 
     assert result == "SUCCESS"
     assert _spacebar_count(client) == 2
@@ -75,7 +82,8 @@ async def test_zero_timeout_does_not_expire():
     client = FakeClient()
     # is_visible_by_path returns False by default
 
-    result = await wfd.run(FakeMachine(), [client], {"timeout": 0.0})
+    with patch.object(nh, "POLL_INTERVAL", 0):
+        result = await wfd.run(FakeMachine(), [client], {"timeout": 0.0})
 
     assert result == "SUCCESS"
 
@@ -94,9 +102,12 @@ async def test_all_clients_must_be_clear():
             return True
         return False
 
-    with patch.object(nh, "is_visible_by_path", side_effect=_visible):
-        with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
-            result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [free, busy], {})
+    with (
+        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+    ):
+        result = await wfd.run(FakeMachine(options={"Safety Delay": 0}), [free, busy], {})
 
     assert result == "SUCCESS"
     assert _spacebar_count(free) == 0
@@ -105,7 +116,8 @@ async def test_all_clients_must_be_clear():
 
 async def test_empty_clients_returns_success():
     """No clients → no dialogue possible → SUCCESS immediately."""
-    result = await wfd.run(FakeMachine(), [], {})
+    with patch.object(nh, "POLL_INTERVAL", 0):
+        result = await wfd.run(FakeMachine(), [], {})
 
     assert result == "SUCCESS"
 
@@ -123,9 +135,12 @@ async def test_timer_resets_after_dialogue():
     machine = FakeMachine()
     machine.get_option = lambda _: 0.001  # 1ms Safety Delay
 
-    with patch.object(nh, "is_visible_by_path", side_effect=_visible):
-        with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
-            result = await wfd.run(machine, [client], {})
+    with (
+        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+    ):
+        result = await wfd.run(machine, [client], {})
 
     assert result == "SUCCESS"
     assert _spacebar_count(client) == 1  # exactly one SPACEBAR for the one dialogue window
