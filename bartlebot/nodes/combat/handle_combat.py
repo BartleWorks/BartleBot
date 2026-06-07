@@ -112,11 +112,16 @@ async def run(machine, clients: list, params: dict) -> str:
     duel_profile_name: str = params.get("duel_profile_name", "").strip()
     use_default_duel_profile: bool = params.get("use_default_duel_profile", True)
 
+    # When an explicit duel profile name is set, use it; when use_default_duel_profile is True
+    # (and no explicit override), route through the "default" duel profile in the active
+    # BotCombatProfile so its custom DSL and combat_order_override are applied.
+    effective_duel_profile = duel_profile_name or ("default" if use_default_duel_profile else "")
+
     # Resolve per-client DSL list.
-    if duel_profile_name:
-        per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, duel_profile_name, len(clients))
+    if effective_duel_profile:
+        per_client_dsl, dsl_source = _resolve_duel_profile_dsl(machine, effective_duel_profile, len(clients))
     else:
-        combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, use_default_duel_profile)
+        combat_dsl, dsl_source = _resolve_combat_dsl(machine, params, False)
         if not combat_dsl:
             machine.log(
                 "FAILURE: no combat DSL available (use_default_duel_profile is off and no duel profile is assigned)",
@@ -171,7 +176,7 @@ async def run(machine, clients: list, params: dict) -> str:
     chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
 
     # 3. Teleport clients to their target (sequential or simultaneous).
-    combat_order: list[int] = _resolve_combat_order(machine, duel_profile_name)
+    combat_order: list[int] = _resolve_combat_order(machine, effective_duel_profile)
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:

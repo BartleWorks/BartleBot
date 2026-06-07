@@ -9,8 +9,10 @@ logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, QTimer
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
+from bartlebot.bot.combat_profile import BotCombatProfile, DeckPreset, PlayerDeck
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -95,6 +97,9 @@ class AppController(QObject):
 
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
+
+        # Deck import requests from Combat tab
+        w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
 
         # Client list changes → game view renumber + start button state
         self._client_manager.clients_changed.connect(w.game_view.renumber_tiles)
@@ -272,6 +277,40 @@ class AppController(QObject):
     # Bot control
     # ------------------------------------------------------------------
 
+    def _on_import_deck_requested(self, slot: int) -> None:
+        clients = self._client_manager.clients
+        if not clients:
+            QMessageBox.warning(self._window, "No clients", "No Wizard101 clients are connected.")
+            return
+        client_idx = slot - 1
+        if client_idx >= len(clients):
+            QMessageBox.warning(self._window, "No client", f"No client connected for slot {slot}.")
+            return
+        asyncio.create_task(self._import_deck_for_slot(slot))
+
+    async def _import_deck_for_slot(self, slot: int) -> None:
+        if self._loaded_config is None:
+            return
+        combat_profile = self._loaded_config.active_combat_profile
+        if combat_profile is None:
+            return
+        clients = self._client_manager.clients
+        client_idx = slot - 1
+        if client_idx >= len(clients):
+            return
+        client = clients[client_idx]
+        logger.info("Importing deck for slot %d", slot)
+        try:
+            async with DeckBuilder(client) as db:
+                preset_dict = await db.get_deck_preset()
+        except Exception:
+            logger.exception("Failed to import deck for slot %d", slot)
+            return
+        combat_profile.player_decks[slot] = PlayerDeck(preset=DeckPreset(**preset_dict))
+        logger.info("Deck imported for slot %d: %s", slot, combat_profile.player_decks[slot].preset)
+        self._window.left_sidebar.combat_tab.refresh_deck_summaries()
+        self._on_config_changed()
+
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
             return
@@ -299,6 +338,7 @@ class AppController(QObject):
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
+        await self._apply_pre_run_decks(self._loaded_config.active_combat_profile)
         self._window.set_start_enabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
@@ -325,6 +365,31 @@ class AppController(QObject):
             self._client_manager.set_machine(None)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
+
+    async def _apply_pre_run_decks(self, combat_profile: BotCombatProfile | None) -> None:
+        """Apply saved deck presets to each connected client before the FSM starts."""
+        if combat_profile is None or not combat_profile.player_decks:
+            return
+        clients = self._client_manager.clients
+        for slot, player_deck in combat_profile.player_decks.items():
+            if player_deck.preset is None or player_deck.preset.is_empty():
+                continue
+            client_idx = slot - 1  # slots are 1-based
+            if client_idx >= len(clients):
+                logger.warning("Deck saved for slot %d but only %d client(s) connected — skipping", slot, len(clients))
+                continue
+            client = clients[client_idx]
+            preset_dict = player_deck.preset.model_dump()
+            logger.info("Applying saved deck for slot %d (%d cards)", slot, player_deck.preset.total_cards())
+            try:
+                async with DeckBuilder(client) as db:
+                    await db.set_deck_preset(preset_dict)
+            except Exception:
+                logger.warning(
+                    "Failed to fully apply deck for slot %d — run will continue with whatever was set",
+                    slot,
+                    exc_info=True,
+                )
 
     def _pause_bot(self) -> None:
         if self._current_machine:

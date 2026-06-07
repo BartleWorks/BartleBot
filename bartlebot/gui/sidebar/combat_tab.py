@@ -18,7 +18,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.combat_profile import BotCombatProfile, DuelProfile, format_combat_order, parse_combat_order
+from bartlebot.bot.combat_profile import (
+    BotCombatProfile,
+    DuelProfile,
+    PlayerDeck,
+    format_combat_order,
+    parse_combat_order,
+)
 from bartlebot.bot.schema import StateModel
 from bartlebot.combat_profile_store import (
     list_bot_profiles,
@@ -47,13 +53,15 @@ _NUM_PLAYER_SLOTS = 4
 class _PlayerDecksSection(SidebarSection):
     """Collapsible section showing one import row per player slot."""
 
+    import_requested = pyqtSignal(int)  # 1-based slot number
+
     def __init__(self, parent=None):
         super().__init__("Player Decks", parent)
 
         layout = QVBoxLayout()
         layout.setSpacing(4)
 
-        self._rows: list[QWidget] = []
+        self._import_btns: list[QPushButton] = []
         self._deck_summary_labels: list[QLabel] = []
         for i in range(1, _NUM_PLAYER_SLOTS + 1):
             row = QWidget()
@@ -63,22 +71,44 @@ class _PlayerDecksSection(SidebarSection):
 
             lbl = QLabel(f"P{i}:")
             lbl.setFixedWidth(22)
-            deck_summary = QLabel("No deck loaded")
+            deck_summary = QLabel("No deck saved")
             btn = QPushButton("Import from client")
-            btn.setEnabled(False)
-            btn.setToolTip("Deck import coming soon")
+            btn.setToolTip("Open this client's deck window and snapshot the current deck")
+            btn.clicked.connect(lambda _checked, slot=i: self.import_requested.emit(slot))
 
             row_layout.addWidget(lbl)
             row_layout.addWidget(deck_summary, 1)
             row_layout.addWidget(btn)
             layout.addWidget(row)
-            self._rows.append(row)
+            self._import_btns.append(btn)
             self._deck_summary_labels.append(deck_summary)
 
         self.set_content_layout(layout)
 
-    def set_editable(self, editable: bool) -> None:  # noqa: ARG002
-        pass  # import buttons stay disabled until deck format is defined
+    def set_editable(self, editable: bool) -> None:
+        for btn in self._import_btns:
+            btn.setEnabled(editable)
+
+    def refresh(self, player_decks: dict[int, PlayerDeck]) -> None:
+        """Update summary labels from the active combat profile's player_decks."""
+        for i, lbl in enumerate(self._deck_summary_labels):
+            slot = i + 1
+            deck = player_decks.get(slot)
+            if deck is None or deck.preset is None or deck.preset.is_empty():
+                lbl.setText("No deck saved")
+            else:
+                preset = deck.preset
+                parts = []
+                if preset.normal:
+                    total_normal = sum(preset.normal.values())
+                    parts.append(f"{total_normal} normal")
+                if preset.tc:
+                    total_tc = sum(preset.tc.values())
+                    parts.append(f"{total_tc} TC")
+                if preset.item:
+                    total_item = sum(preset.item.values())
+                    parts.append(f"{total_item} item")
+                lbl.setText(" · ".join(parts) if parts else "Empty deck")
 
 
 # ---------------------------------------------------------------------------
@@ -342,6 +372,7 @@ class CombatTab(QWidget):
     """
 
     combat_config_changed = pyqtSignal()
+    import_deck_requested = pyqtSignal(int)  # 1-based slot number
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -413,6 +444,7 @@ class CombatTab(QWidget):
 
         # ── Player Decks ─────────────────────────────────────────────
         self._decks_section = _PlayerDecksSection(self)
+        self._decks_section.import_requested.connect(self.import_deck_requested)
         content_layout.addWidget(self._decks_section)
 
         # ── Duel Profiles ─────────────────────────────────────────────
@@ -439,8 +471,13 @@ class CombatTab(QWidget):
         self._suppress = True
         self._rebuild_combo()
         self._rebuild_duel_profiles()
+        self._refresh_deck_summaries()
         self._refresh_controls()
         self._suppress = False
+
+    def refresh_deck_summaries(self) -> None:
+        """Re-read player_decks from the active profile and update summary labels."""
+        self._refresh_deck_summaries()
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
@@ -488,6 +525,10 @@ class CombatTab(QWidget):
     def _rebuild_duel_profiles(self) -> None:
         self._duel_profiles_section.rebuild(self._config, self._active_profile())
 
+    def _refresh_deck_summaries(self) -> None:
+        profile = self._active_profile()
+        self._decks_section.refresh(profile.player_decks if profile else {})
+
     def _refresh_controls(self) -> None:
         has_config = self._config is not None
         has_profiles = has_config and bool(self._config.combat_profiles)
@@ -507,6 +548,7 @@ class CombatTab(QWidget):
         self._config.active_combat_profile_name = name
         self._rebuild_duel_profiles()
         self._refresh_combat_order_field()
+        self._refresh_deck_summaries()
         self._refresh_controls()
         self.combat_config_changed.emit()
 

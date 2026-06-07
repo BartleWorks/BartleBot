@@ -6,7 +6,6 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -50,13 +49,29 @@ class DuelProfile(BaseModel):
         return None
 
 
-class PlayerDeck(BaseModel):
-    """Deck configuration for a single player slot.
+class DeckPreset(BaseModel):
+    """Saved deck configuration in WizWalker preset format.
 
-    The concrete data format is TBD pending WizWalker deck save/load work.
+    Each key maps card names to copy counts.  Mirrors the dict returned by
+    DeckBuilder.get_deck_preset(): 'normal' for main-deck spells, 'tc' for
+    treasure cards, 'item' for item cards.
     """
 
-    data: Any = None
+    normal: dict[str, int] = Field(default_factory=dict)
+    tc: dict[str, int] = Field(default_factory=dict)
+    item: dict[str, int] = Field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        return not (self.normal or self.tc or self.item)
+
+    def total_cards(self) -> int:
+        return sum(self.normal.values()) + sum(self.tc.values()) + sum(self.item.values())
+
+
+class PlayerDeck(BaseModel):
+    """Deck configuration for a single player slot."""
+
+    preset: DeckPreset | None = None
 
 
 class BotCombatProfile(BaseModel):
