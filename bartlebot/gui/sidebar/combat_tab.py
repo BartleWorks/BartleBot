@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -26,6 +26,7 @@ from bartlebot.bot.strategy_models import (
     DeckData,
     StateAssignment,
 )
+from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
@@ -56,9 +57,13 @@ _NO_STRATEGY_LABEL = "(no strategy set)"
 class _StrategyChip(QPushButton):
     """Styled chip button showing a strategy name — click to open a picker."""
 
+    _ICON_SIZE = 14
+
     def __init__(self, text: str = _NO_STRATEGY_LABEL, parent=None):
         super().__init__(text, parent)
         self._applying_style = False
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.setIconSize(QSize(self._ICON_SIZE, self._ICON_SIZE))
         self._apply_style()
 
     def set_strategy_name(self, name: str) -> None:
@@ -69,6 +74,7 @@ class _StrategyChip(QPushButton):
             return
         self._applying_style = True
         try:
+            self.setIcon(svg_icon("search", self._ICON_SIZE, tint=THEME.text_muted))
             self.setStyleSheet(
                 f"QPushButton {{ text-align: left; padding: 3px 8px; "
                 f"background: {THEME.surface}; color: {THEME.text}; "
@@ -215,8 +221,8 @@ class CombatTab(QWidget):
         self._content_layout.setContentsMargins(8, 8, 8, 8)
         self._content_layout.setSpacing(4)
 
-        # ── Bot Strategy section ─────────────────────────────────────
-        bcs_section = SidebarSection("Bot Strategy", self)
+        # ── Bot Combat Strategy section ───────────────────────────────
+        bcs_section = SidebarSection("Bot Combat Strategy", self)
         bcs_layout = QVBoxLayout()
         bcs_layout.setSpacing(4)
 
@@ -227,9 +233,11 @@ class CombatTab(QWidget):
         bcs_row.addWidget(self._bcs_chip, 1)
 
         self._bcs_menu_btn = QToolButton()
-        self._bcs_menu_btn.setText("···")
-        self._bcs_menu_btn.setToolTip("New / Rename / Duplicate / Delete")
+        self._bcs_menu_btn.setIcon(svg_icon("more_vert", 16))
+        self._bcs_menu_btn.setIconSize(QSize(16, 16))
+        self._bcs_menu_btn.setToolTip("Manage Bot Combat Strategies (New, Rename, Duplicate, Delete)")
         self._bcs_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._bcs_menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
         bcs_menu = QMenu(self._bcs_menu_btn)
         bcs_menu.addAction("New", self._on_new_bcs)
         bcs_menu.addAction("Rename", self._on_rename_bcs)
@@ -369,7 +377,7 @@ class CombatTab(QWidget):
         if self._bcs is None:
             self._bcs_chip.set_strategy_name(_NO_STRATEGY_LABEL)
         else:
-            self._bcs_chip.set_strategy_name(f"{self._bcs.name} ↗")
+            self._bcs_chip.set_strategy_name(self._bcs.name)
 
     def _refresh_default_chip(self) -> None:
         if self._bcs is None or self._bcs.default_strategy_id is None:
@@ -377,7 +385,7 @@ class CombatTab(QWidget):
             return
         dcs = next((d for d in self._all_dcs if d.id == self._bcs.default_strategy_id), None)
         if dcs:
-            self._default_chip.set_strategy_name(f"{dcs.name} ↗")
+            self._default_chip.set_strategy_name(dcs.name)
         else:
             self._default_chip.set_strategy_name("(missing strategy)")
 
@@ -421,7 +429,7 @@ class CombatTab(QWidget):
         dcs_name = _BUILT_IN_LABEL
         if dcs_id:
             dcs = next((d for d in self._all_dcs if d.id == dcs_id), None)
-            dcs_name = f"{dcs.name} ↗" if dcs else "(missing)"
+            dcs_name = dcs.name if dcs else "(missing)"
 
         chip = _StrategyChip(dcs_name)
         chip.setMaximumWidth(180)
@@ -588,4 +596,5 @@ class CombatTab(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
+            self._bcs_menu_btn.setIcon(svg_icon("more_vert", 16))
             self._no_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
