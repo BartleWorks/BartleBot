@@ -1,9 +1,10 @@
-"""Non-modal window for browsing, creating, and editing Player and Duel Combat Strategies."""
+"""Non-modal window (or modal picker dialog) for browsing and editing Combat Strategies."""
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
+    QDialog,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -20,6 +21,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.gui.strategy_library.duel_strategy_editor import DuelStrategyEditor
 from bartlebot.gui.strategy_library.player_strategy_editor import PlayerStrategyEditor
+from bartlebot.gui.theme import THEME
 from bartlebot.strategy_store import (
     delete_duel_strategy,
     delete_player_strategy,
@@ -30,19 +32,54 @@ from bartlebot.strategy_store import (
 )
 
 
-class StrategyLibraryWindow(QWidget):
-    """Non-modal window for managing PlayerCombatStrategy and DuelCombatStrategy files.
+def _apply_list_style(list_widget: QListWidget) -> None:
+    """Apply accent-border selection style to a plain QListWidget."""
+    list_widget.setStyleSheet(
+        f"QListWidget {{ border: 1px solid {THEME.border}; background: {THEME.bg}; }}"
+        f"QListWidget::item {{ padding: 4px 6px; color: {THEME.text}; }}"
+        f"QListWidget::item:hover {{ background: {THEME.node_fill}; }}"
+        f"QListWidget::item:selected {{ background: {THEME.node_fill};"
+        f" border-left: 2px solid {THEME.accent}; color: {THEME.text}; padding-left: 4px; }}"
+        f"QListWidget::item:selected:hover {{ background: {THEME.node_fill}; }}"
+    )
 
-    Emits ``strategies_changed`` when any strategy is created, renamed, or deleted,
-    so the Combat tab can refresh its picker lists.
+
+class StrategyLibraryWindow(QDialog):
+    """Browse / edit window for PlayerCombatStrategy and DuelCombatStrategy files.
+
+    Two modes:
+
+    - ``mode="browse"`` (default): free-floating non-modal window, stays open, no
+      selection buttons.  Used by the pencil/plus buttons in the Combat tab.
+    - ``mode="pick"``: modal dialog with "Use selected", "Use built-in default" (when
+      ``allow_none=True``), and "Cancel" buttons.  Call ``exec()`` and read
+      ``selected_id()`` on accept.  Strategies may be created/edited freely while the
+      dialog is open.
+
+    Emits ``strategies_changed`` whenever any strategy is saved or deleted, so the
+    Combat tab can refresh its chip labels.
     """
 
     strategies_changed = pyqtSignal()
 
-    def __init__(self, parent=None):
-        super().__init__(parent, flags=self._window_flags())
+    def __init__(
+        self,
+        mode: str = "browse",
+        current_id: str | None = None,
+        allow_none: bool = False,
+        none_label: str = "BartleBot Default Combat Strategy",
+        parent=None,
+    ):
+        if mode == "browse":
+            super().__init__(parent, Qt.WindowType.Window)
+        else:
+            super().__init__(parent)
+
+        self._mode = mode
+        self._selected_id: str | None = current_id
         self._closed = False
-        self.setWindowTitle("Strategy Library")
+
+        self.setWindowTitle("Strategy Library" if mode == "browse" else "Select Duel Strategy")
         self.setMinimumSize(620, 400)
         self.resize(720, 480)
 
@@ -55,16 +92,65 @@ class StrategyLibraryWindow(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
         layout.addWidget(self._tabs)
+
+        if mode != "browse":
+            self._use_btn = QPushButton("Use selected")
+            self._use_btn.setDefault(True)
+            self._use_btn.setEnabled(False)
+            self._use_btn.setStyleSheet(
+                f"background: {THEME.accent}; color: #ffffff; padding: 5px 18px; border-radius: 4px; font-weight: bold;"
+            )
+            self._use_btn.clicked.connect(self._on_use)
+
+            cancel_btn = QPushButton("Cancel")
+            cancel_btn.clicked.connect(self.reject)
+
+            btn_row = QHBoxLayout()
+            if allow_none:
+                none_btn = QPushButton("Use built-in default")
+                none_btn.setToolTip(none_label)
+                none_btn.clicked.connect(self._on_use_none)
+                btn_row.addWidget(none_btn)
+            btn_row.addStretch()
+            btn_row.addWidget(cancel_btn)
+            btn_row.addWidget(self._use_btn)
+            layout.addLayout(btn_row)
+
+            # Enable Use button only when a DCS item is highlighted; double-click accepts
+            self._dcs_list.currentItemChanged.connect(self._on_pick_selection_changed)
+            self._dcs_list.itemDoubleClicked.connect(lambda _item: self._on_use())
 
         self._reload_pcs()
         self._reload_dcs()
 
-    @staticmethod
-    def _window_flags():
-        from PyQt6.QtCore import Qt  # noqa: PLC0415
+        if mode != "browse":
+            # Switch to DCS tab and pre-select the current strategy
+            self._tabs.setCurrentWidget(self._dcs_tab)
+            if current_id:
+                self.focus_duel_strategy(current_id)
 
-        return Qt.WindowType.Window
+    # ------------------------------------------------------------------
+    # Pick-mode API
+    # ------------------------------------------------------------------
+
+    def selected_id(self) -> str | None:
+        """Return the UUID accepted by the user, or None for built-in default."""
+        return self._selected_id
+
+    def _on_use(self) -> None:
+        item = self._dcs_list.currentItem()
+        if item:
+            self._selected_id = item.data(0x100)
+            self.accept()
+
+    def _on_use_none(self) -> None:
+        self._selected_id = None
+        self.accept()
+
+    def _on_pick_selection_changed(self, current: QListWidgetItem | None, _previous) -> None:
+        self._use_btn.setEnabled(current is not None)
 
     # ------------------------------------------------------------------
     # PCS tab
@@ -89,6 +175,7 @@ class StrategyLibraryWindow(QWidget):
 
         self._pcs_list = QListWidget()
         self._pcs_list.currentItemChanged.connect(self._on_pcs_selected)
+        _apply_list_style(self._pcs_list)
         left_layout.addWidget(self._pcs_list, 1)
 
         btn_row = QHBoxLayout()
@@ -230,6 +317,7 @@ class StrategyLibraryWindow(QWidget):
 
         self._dcs_list = QListWidget()
         self._dcs_list.currentItemChanged.connect(self._on_dcs_selected)
+        _apply_list_style(self._dcs_list)
         left_layout.addWidget(self._dcs_list, 1)
 
         btn_row = QHBoxLayout()
@@ -399,4 +487,6 @@ class StrategyLibraryWindow(QWidget):
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
-        # Editors handle their own theme updates
+        if event.type() == QEvent.Type.StyleChange:
+            _apply_list_style(self._pcs_list)
+            _apply_list_style(self._dcs_list)

@@ -671,41 +671,46 @@ class CombatTab(QWidget):
     def _on_pick_default_dcs(self) -> None:
         if self._bcs is None:
             return
-        dlg = StrategyPickerDialog(
-            title="Pick Default Duel Strategy",
-            mode="duel",
-            strategies=self._all_dcs,
+        from bartlebot.gui.strategy_library.strategy_library_window import (  # noqa: PLC0415
+            StrategyLibraryWindow as _Lib,
+        )
+
+        dlg = _Lib(
+            mode="pick",
             current_id=self._bcs.default_strategy_id,
             allow_none=True,
             none_label=_BUILT_IN_LABEL,
             parent=self,
         )
+        dlg.strategies_changed.connect(self.refresh_strategy_data)
         if dlg.exec():
             self._bcs.default_strategy_id = dlg.selected_id()
-            self._refresh_default_chip()
             self._schedule_save()
+        self.refresh_strategy_data()
 
     def _on_pick_state_dcs(self, state_id: str) -> None:
         if self._bcs is None:
             return
-        current = self._state_dcs.get(state_id)
-        dlg = StrategyPickerDialog(
-            title="Pick Duel Strategy",
-            mode="duel",
-            strategies=self._all_dcs,
-            current_id=current,
+        from bartlebot.gui.strategy_library.strategy_library_window import (  # noqa: PLC0415
+            StrategyLibraryWindow as _Lib,
+        )
+
+        dlg = _Lib(
+            mode="pick",
+            current_id=self._state_dcs.get(state_id),
             allow_none=True,
             none_label=_BUILT_IN_LABEL,
             parent=self,
         )
+        dlg.strategies_changed.connect(self.refresh_strategy_data)
         if dlg.exec():
             chosen = dlg.selected_id()
             if chosen is None:
                 self._state_dcs.pop(state_id, None)
             else:
                 self._state_dcs[state_id] = chosen
-            self._rebuild_state_assignments()
             self._schedule_save()
+        self.refresh_strategy_data()
 
     # ------------------------------------------------------------------
     # Strategy Library access

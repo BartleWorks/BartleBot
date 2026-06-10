@@ -1,0 +1,5 @@
+{
+  "id": "d7737cad-dd49-4960-9c34-9805299397db",
+  "name": "Feint into Triton + spam",
+  "dsl": "feint[potent]@boss | triton[\"Epic - Amulet\"]@boss | any<damage>[epic]@boss"
+}
