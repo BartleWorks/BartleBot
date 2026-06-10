@@ -12,7 +12,6 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot.bot.combat_profile import BotCombatProfile, DeckPreset, PlayerDeck
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -289,14 +288,23 @@ class AppController(QObject):
         asyncio.create_task(self._import_deck_for_slot(slot))
 
     async def _import_deck_for_slot(self, slot: int) -> None:
+        from bartlebot.bot.strategy_models import DeckData  # noqa: PLC0415
+        from bartlebot.strategy_store import load_bot_strategy, save_bot_strategy  # noqa: PLC0415
+
         if self._loaded_config is None:
-            return
-        combat_profile = self._loaded_config.active_combat_profile
-        if combat_profile is None:
             return
         clients = self._client_manager.clients
         client_idx = slot - 1
         if client_idx >= len(clients):
+            return
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        if not active_bcs_id:
+            logger.warning("No active Bot Combat Strategy — deck import skipped for slot %d", slot)
+            return
+        try:
+            bcs = load_bot_strategy(active_bcs_id)
+        except Exception:
+            logger.exception("Failed to load BotCombatStrategy %s for deck import", active_bcs_id)
             return
         client = clients[client_idx]
         logger.info("Importing deck for slot %d", slot)
@@ -306,8 +314,12 @@ class AppController(QObject):
         except Exception:
             logger.exception("Failed to import deck for slot %d", slot)
             return
-        combat_profile.player_decks[slot] = PlayerDeck(preset=DeckPreset(**preset_dict))
-        logger.info("Deck imported for slot %d: %s", slot, combat_profile.player_decks[slot].preset)
+        bcs.player_decks[slot] = DeckData(**preset_dict)
+        logger.info("Deck imported for slot %d: %d cards", slot, bcs.player_decks[slot].total_cards())
+        try:
+            save_bot_strategy(bcs)
+        except Exception:
+            logger.exception("Failed to save BotCombatStrategy after deck import")
         self._window.left_sidebar.combat_tab.refresh_deck_summaries()
         self._on_config_changed()
 
@@ -321,7 +333,89 @@ class AppController(QObject):
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
             if not dlg.exec():
                 return
+
+        combat_warnings = self._collect_combat_warnings()
+        if combat_warnings:
+            msg = "\n".join(f"• {w}" for w in combat_warnings)
+            result = QMessageBox.warning(
+                self._window,
+                "Combat Configuration Warnings",
+                f"The following issues were found with the combat configuration:\n\n{msg}\n\n"
+                "The bot will run using built-in defaults for any missing strategies. Continue?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if result != QMessageBox.StandardButton.Yes:
+                return
+
         self._bot_task = asyncio.create_task(self._start_bot())
+
+    def _collect_combat_warnings(self) -> list[str]:
+        """Return a list of combat config warning strings. Empty list = no issues."""
+        from bartlebot.strategy_store import (  # noqa: PLC0415
+            load_bot_strategy,
+            load_duel_strategy,
+            load_player_strategy,
+        )
+
+        if self._loaded_config is None:
+            return []
+        warnings: list[str] = []
+        bot_id = self._loaded_config.id
+        sm = SettingsManager.instance()
+        active_bcs_id = sm.get_active_strategy(bot_id)
+
+        if not active_bcs_id:
+            warnings.append("No Bot Combat Strategy is set — will use built-in combat defaults.")
+            return warnings
+
+        try:
+            bcs = load_bot_strategy(active_bcs_id)
+        except Exception:
+            warnings.append(f"Active Bot Combat Strategy file is missing (id: {active_bcs_id[:8]}…).")
+            return warnings
+
+        num_clients = len(self._client_manager.clients)
+
+        # Check default strategy
+        if bcs.default_strategy_id:
+            try:
+                dcs = load_duel_strategy(bcs.default_strategy_id)
+                if num_clients < dcs.min_players:
+                    warnings.append(
+                        f"Default strategy '{dcs.name}' requires ≥{dcs.min_players} players "
+                        f"but only {num_clients} client(s) are connected."
+                    )
+                for assignment in dcs.player_assignments:
+                    pcs_id = assignment.player_combat_strategy_id
+                    try:
+                        load_player_strategy(pcs_id)
+                    except Exception:
+                        warnings.append(
+                            f"Player strategy file missing in default DCS '{dcs.name}' (id: {pcs_id[:8]}…)."
+                        )
+            except Exception:
+                warnings.append(f"Default Duel Strategy file is missing (id: {bcs.default_strategy_id[:8]}…).")
+
+        # Check state assignments
+        for sa in bcs.state_assignments:
+            try:
+                dcs = load_duel_strategy(sa.duel_combat_strategy_id)
+                if num_clients < dcs.min_players:
+                    warnings.append(
+                        f"State assignment DCS '{dcs.name}' requires ≥{dcs.min_players} players "
+                        f"but only {num_clients} client(s) are connected."
+                    )
+                for assignment in dcs.player_assignments:
+                    pcs_id = assignment.player_combat_strategy_id
+                    try:
+                        load_player_strategy(pcs_id)
+                    except Exception:
+                        warnings.append(f"Player strategy file missing in DCS '{dcs.name}' (id: {pcs_id[:8]}…).")
+            except Exception:
+                warnings.append(f"Assigned Duel Strategy file is missing (id: {sa.duel_combat_strategy_id[:8]}…).")
+
+        return warnings
 
     async def _start_bot(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
@@ -338,7 +432,7 @@ class AppController(QObject):
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
-        await self._apply_pre_run_decks(self._loaded_config.active_combat_profile)
+        await self._apply_pre_run_decks()
         self._window.set_start_enabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
@@ -366,21 +460,33 @@ class AppController(QObject):
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
 
-    async def _apply_pre_run_decks(self, combat_profile: BotCombatProfile | None) -> None:
+    async def _apply_pre_run_decks(self) -> None:
         """Apply saved deck presets to each connected client before the FSM starts."""
-        if combat_profile is None or not combat_profile.player_decks:
+        from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
+
+        if self._loaded_config is None:
+            return
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        if not active_bcs_id:
+            return
+        try:
+            bcs = load_bot_strategy(active_bcs_id)
+        except Exception:
+            logger.warning("Could not load BotCombatStrategy %s — skipping deck apply", active_bcs_id)
+            return
+        if not bcs.player_decks:
             return
         clients = self._client_manager.clients
-        for slot, player_deck in combat_profile.player_decks.items():
-            if player_deck.preset is None or player_deck.preset.is_empty():
+        for slot, deck_data in bcs.player_decks.items():
+            if deck_data.is_empty():
                 continue
             client_idx = slot - 1  # slots are 1-based
             if client_idx >= len(clients):
                 logger.warning("Deck saved for slot %d but only %d client(s) connected — skipping", slot, len(clients))
                 continue
             client = clients[client_idx]
-            preset_dict = player_deck.preset.model_dump()
-            logger.info("Applying saved deck for slot %d (%d cards)", slot, player_deck.preset.total_cards())
+            preset_dict = deck_data.model_dump()
+            logger.info("Applying saved deck for slot %d (%d cards)", slot, deck_data.total_cards())
             try:
                 async with DeckBuilder(client) as db:
                     await db.set_deck_preset(preset_dict)

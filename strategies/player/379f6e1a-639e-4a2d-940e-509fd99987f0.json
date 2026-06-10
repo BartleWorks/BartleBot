@@ -1,0 +1,5 @@
+{
+  "id": "379f6e1a-639e-4a2d-940e-509fd99987f0",
+  "name": "Novus attack boss into hit spam",
+  "dsl": "novus[\"Epic - Amulet\"]@boss | novus[epic]@boss | any<damage>[epic]@boss"
+}

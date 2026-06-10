@@ -389,7 +389,7 @@ class BotMachine:
         re-entry and against conflicting with intentional combat nodes.
         """
         from bartlebot.nodes import node_helpers
-        from bartlebot.nodes.combat_runner import _resolve_combat_dsl, _run_combat, _split_combat_config
+        from bartlebot.nodes.combat_runner import _run_combat, resolve_combat
         from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat
 
         while not self._stop_flag.is_set():
@@ -443,10 +443,9 @@ class BotMachine:
                         logging.WARNING,
                     )
 
-                    combat_dsl, dsl_source = _resolve_combat_dsl(self, {}, use_bot_default=True)
-                    if not combat_dsl:
-                        self.log("Ambient combat: no combat DSL available, skipping", logging.WARNING)
-                        continue
+                    per_client_dsl, _combat_order, dsl_source = resolve_combat(
+                        self, use_default_strategy=True, num_clients=len(battling)
+                    )
 
                     self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
 
@@ -455,8 +454,6 @@ class BotMachine:
                         return_exceptions=True,
                     )
                     chat_before = [s if isinstance(s, str) else "" for s in chat_before_raw]
-
-                    per_client_dsl = _split_combat_config(combat_dsl, len(battling))
                     results = await asyncio.gather(
                         *[_run_combat(c, dsl) for c, dsl in zip(battling, per_client_dsl)],
                         return_exceptions=True,
