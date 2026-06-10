@@ -1,13 +1,11 @@
 {
   "id": "5098606d-4e19-487f-9b35-905daead63b2",
   "name": "2 players - Feint stack T2 Triton",
-  "min_players": 1,
+  "min_players": 2,
   "max_players": 2,
   "combat_order": [
     1,
-    2,
-    3,
-    4
+    2
   ],
   "player_assignments": [
     {

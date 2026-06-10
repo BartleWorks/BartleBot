@@ -10,12 +10,14 @@ class PlayerListWidget(QWidget):
     """P1–P4 checkboxes with Select All / None buttons.
 
     Returns list[int] of checked 1-based player numbers via get_value().
+    Call set_max_players(n) to hide checkboxes beyond n.
     """
 
     changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._max_players = 4  # track separately — isVisible() is unreliable before the widget is shown
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
@@ -38,16 +40,28 @@ class PlayerListWidget(QWidget):
         layout.addWidget(none_btn)
 
     def get_value(self) -> list[int]:
-        return [i + 1 for i, chk in enumerate(self._checks) if chk.isChecked()]
+        return [i + 1 for i, chk in enumerate(self._checks) if i < self._max_players and chk.isChecked()]
 
     def set_value(self, value: list[int]) -> None:
         for i, chk in enumerate(self._checks):
-            chk.setChecked((i + 1) in value)
+            chk.setChecked(i < self._max_players and (i + 1) in value)
+
+    def set_max_players(self, n: int) -> None:
+        """Show only the first n checkboxes; uncheck and hide any beyond n."""
+        self._max_players = n
+        for i, chk in enumerate(self._checks):
+            chk.blockSignals(True)
+            if i >= n:
+                chk.setChecked(False)
+            chk.setVisible(i < n)
+            chk.blockSignals(False)
 
     def _select_all(self) -> None:
-        for chk in self._checks:
-            chk.setChecked(True)
+        for i, chk in enumerate(self._checks):
+            if i < self._max_players:
+                chk.setChecked(True)
 
     def _deselect_all(self) -> None:
-        for chk in self._checks:
-            chk.setChecked(False)
+        for i, chk in enumerate(self._checks):
+            if i < self._max_players:
+                chk.setChecked(False)

@@ -217,6 +217,18 @@ class CombatOrderWidget(QWidget):
         self._rebuild_chips()
         self._suppress = False
 
+    def set_max_players(self, n: int) -> None:
+        """Update the number of player slots shown. Clamps any out-of-range players from the order."""
+        if n == self._max_players:
+            return
+        self._max_players = n
+        for i, lbl in enumerate(self._header_labels):
+            lbl.setVisible(i < n)
+        self._order = [p for p in self._order if p <= n]
+        missing = [p for p in range(1, n + 1) if p not in self._order]
+        self._order = self._order + missing
+        self._rebuild_chips()
+
     def set_editable(self, enabled: bool) -> None:
         self._editable = enabled
         self._checkbox.setEnabled(enabled)

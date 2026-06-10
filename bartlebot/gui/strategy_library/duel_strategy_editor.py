@@ -32,7 +32,9 @@ class _AssignmentRow(QWidget):
 
     remove_requested = pyqtSignal(object)  # emits self
     changed = pyqtSignal()
-    players_changed = pyqtSignal(object)  # emits self after a user-driven player change
+    # Emits (self, newly_added_set) after a user-driven player change.
+    # Only newly added players are reported so exclusivity only evicts what was just claimed.
+    players_changed = pyqtSignal(object, object)
 
     def __init__(self, assignment: PlayerAssignment, all_pcs: list[PlayerCombatStrategy], parent=None):
         super().__init__(parent)
@@ -69,6 +71,14 @@ class _AssignmentRow(QWidget):
         self._all_pcs = all_pcs
         self._refresh_chip()
 
+    def set_max_players(self, n: int) -> None:
+        """Hide checkboxes beyond n and clamp assignment.players to 1..n."""
+        self._player_widget.set_max_players(n)
+        filtered = [p for p in self._assignment.players if p <= n]
+        if filtered != self._assignment.players:
+            self._assignment.players = filtered
+            self.changed.emit()
+
     def update_players_silently(self, players: list[int]) -> None:
         """Apply an externally-enforced player list without triggering exclusivity enforcement."""
         self._updating = True
@@ -80,8 +90,10 @@ class _AssignmentRow(QWidget):
     def _on_players_changed(self) -> None:
         if self._updating:
             return
+        old = set(self._assignment.players)
         self._assignment.players = self._player_widget.get_value()
-        self.players_changed.emit(self)
+        newly_added = set(self._assignment.players) - old
+        self.players_changed.emit(self, newly_added)
         self.changed.emit()
 
     def _on_pick_pcs(self) -> None:
@@ -144,6 +156,7 @@ class DuelStrategyEditor(QWidget):
         self._max_spin = QSpinBox()
         self._max_spin.setRange(1, 4)
         self._max_spin.valueChanged.connect(self._on_changed)
+        self._max_spin.valueChanged.connect(self._on_max_players_changed)
         mm_row.addWidget(self._max_spin)
         mm_row.addStretch()
         outer.addLayout(mm_row)
@@ -172,9 +185,9 @@ class DuelStrategyEditor(QWidget):
         scroll.setWidget(self._assignments_container)
         outer.addWidget(scroll, 1)
 
-        add_btn = QPushButton("+ Add assignment")
-        add_btn.clicked.connect(self._on_add_assignment)
-        outer.addWidget(add_btn)
+        self._add_btn = QPushButton("+ Add assignment")
+        self._add_btn.clicked.connect(self._on_add_assignment)
+        outer.addWidget(self._add_btn)
 
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
@@ -191,6 +204,8 @@ class DuelStrategyEditor(QWidget):
         self._order_widget.set_value(strategy.combat_order or [])
         self._rebuild_assignment_rows()
         self._suppress = False
+        self._apply_max_players_constraints(strategy.max_players)
+        self._update_add_btn()
 
     def set_pcs_list(self, all_pcs: list[PlayerCombatStrategy]) -> None:
         self._all_pcs = all_pcs
@@ -221,28 +236,36 @@ class DuelStrategyEditor(QWidget):
         self._assignments_layout.insertWidget(idx, row)
         self._rows.append(row)
 
-    def _enforce_exclusivity(self, source_row: _AssignmentRow) -> None:
-        """Remove any players claimed by source_row from all other rows."""
-        taken = set(source_row.assignment().players)
-        if not taken:
+    def _enforce_exclusivity(self, source_row: _AssignmentRow, newly_added: set) -> None:
+        """Remove newly-claimed players from all other rows."""
+        if not newly_added:
             return
         for row in self._rows:
             if row is source_row:
                 continue
             current = row.assignment().players
-            remaining = [p for p in current if p not in taken]
+            remaining = [p for p in current if p not in newly_added]
             if remaining != current:
                 row.update_players_silently(remaining)
 
     def _on_add_assignment(self) -> None:
         if not self._all_pcs or self._strategy is None:
             return
+        max_p = self._max_spin.value()
+        if len(self._rows) >= max_p:
+            return
+        # Default to players not yet claimed by any existing row
+        claimed = {p for row in self._rows for p in row.assignment().players}
+        unclaimed = [p for p in range(1, max_p + 1) if p not in claimed]
         assignment = PlayerAssignment(
-            players=[1],
+            players=unclaimed,
             player_combat_strategy_id=self._all_pcs[0].id,
         )
         self._strategy.player_assignments.append(assignment)
         self._add_row(assignment)
+        # Apply current max_players constraint to the new row
+        self._rows[-1].set_max_players(max_p)
+        self._update_add_btn()
         self._schedule_save()
 
     def _on_remove_row(self, row: _AssignmentRow) -> None:
@@ -253,7 +276,24 @@ class DuelStrategyEditor(QWidget):
         self._assignments_layout.removeWidget(row)
         row.deleteLater()
         self._rows.remove(row)
+        self._update_add_btn()
         self._schedule_save()
+
+    def _on_max_players_changed(self, value: int) -> None:
+        if self._suppress:
+            return
+        self._apply_max_players_constraints(value)
+        self._update_add_btn()
+
+    def _apply_max_players_constraints(self, n: int) -> None:
+        """Propagate max_players to order widget and all assignment rows."""
+        self._order_widget.set_max_players(n)
+        for row in self._rows:
+            row.set_max_players(n)
+
+    def _update_add_btn(self) -> None:
+        max_p = self._max_spin.value()
+        self._add_btn.setEnabled(len(self._rows) < max_p)
 
     def _on_changed(self) -> None:
         if self._suppress:
