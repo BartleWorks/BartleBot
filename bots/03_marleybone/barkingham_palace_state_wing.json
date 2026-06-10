@@ -291,7 +291,12 @@
           "y": 633.9,
           "z": 0.2
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -448,7 +453,12 @@
           "y": 564.85,
           "z": 0.2
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}

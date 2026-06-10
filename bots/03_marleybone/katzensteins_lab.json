@@ -462,7 +462,12 @@
           "y": 11689.88,
           "z": 0.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -581,7 +586,12 @@
           "y": 11339.29,
           "z": -230.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -605,7 +615,12 @@
           "y": 11339.29,
           "z": -230.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -629,7 +644,12 @@
           "y": 11339.29,
           "z": -230.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -653,7 +673,12 @@
           "y": 11339.29,
           "z": -230.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -677,7 +702,12 @@
           "y": 11689.88,
           "z": 0.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },

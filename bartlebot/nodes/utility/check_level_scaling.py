@@ -10,12 +10,9 @@ PARAM_SCHEMA: list[ParamField] = []
 
 _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     name="Level Scaling Players",
-    type="int_list",
+    type="player_list",
     default=[],
-    description=(
-        "1-based player numbers to check/apply level scaling (e.g. '2, 3'). "
-        "Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
-    ),
+    description="Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling.",
 )
 
 NODE_SPEC = NodeSpec(

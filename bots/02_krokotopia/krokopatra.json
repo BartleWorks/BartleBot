@@ -219,7 +219,7 @@
     },
     {
       "name": "Level Scaling Players",
-      "type": "int_list",
+      "type": "player_list",
       "default": [
         2,
         3,
@@ -529,7 +529,12 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     }

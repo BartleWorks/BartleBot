@@ -1068,7 +1068,12 @@
           "y": 14265.85,
           "z": -230.0
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },

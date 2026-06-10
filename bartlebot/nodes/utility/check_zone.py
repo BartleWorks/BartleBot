@@ -14,11 +14,11 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="clients_to_check",
-        type="int_list",
+        type="player_list",
         label="Players to Check",
-        help="1-based player numbers to check (e.g. '1, 2'). Leave empty to check all players.",
+        help="Which players to check zone for.",
         default=[],
-        default_hint="checks all clients",
+        required=True,
     ),
 ]
 
@@ -52,10 +52,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FALSE"
 
     # Determine which 0-based client indices to check.
-    if clients_to_check:
-        check_indices = [n - 1 for n in clients_to_check]
-    else:
-        check_indices = list(range(len(clients)))
+    check_indices = [n - 1 for n in clients_to_check if 0 < n <= len(clients)]
 
     check_clients = [clients[i] for i in check_indices]
 

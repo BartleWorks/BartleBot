@@ -15,6 +15,7 @@ _PARAMS = {
     "reset_xyz": {"x": 1.0, "y": 0.0, "z": 0.0},
     "menu_path": _MENU_PATH,
     "menu_timeout": 0.1,
+    "interact_clients": [1],
 }
 
 
@@ -196,7 +197,7 @@ async def test_multiple_clients_both_must_see_menu():
         patch.object(im, "POLL_INTERVAL", 0),
         patch.object(node_helpers, "is_visible_by_path", side_effect=_visible),
     ):
-        result = await im.run(FakeMachine(), [c1, c2], _PARAMS)
+        result = await im.run(FakeMachine(), [c1, c2], {**_PARAMS, "interact_clients": [1, 2]})
 
     assert result == "SUCCESS"
     assert len(seen) >= 2

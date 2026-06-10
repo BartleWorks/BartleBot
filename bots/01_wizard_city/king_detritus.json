@@ -440,7 +440,12 @@
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     }

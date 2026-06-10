@@ -110,7 +110,7 @@
     },
     {
       "name": "Level Scaling Players",
-      "type": "int_list",
+      "type": "player_list",
       "default": [
         1,
         2,
@@ -137,7 +137,12 @@
       },
       "params": {
         "zone": "Mirage*",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -151,7 +156,12 @@
       },
       "params": {
         "zone": "Mirage/MR_Z08_EeremPalace",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },

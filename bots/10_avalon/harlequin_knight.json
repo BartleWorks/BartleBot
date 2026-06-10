@@ -171,7 +171,7 @@
     },
     {
       "name": "Level Scaling Players",
-      "type": "int_list",
+      "type": "player_list",
       "default": [
         2,
         3,

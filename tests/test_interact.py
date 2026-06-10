@@ -12,6 +12,7 @@ _PARAMS = {
     "zone": "TestZone",
     "interact_xyz": {"x": 0.0, "y": 0.0, "z": 0.0},
     "reset_xyz": {"x": 1.0, "y": 0.0, "z": 0.0},
+    "interact_clients": [1],
 }
 
 
@@ -90,7 +91,7 @@ async def test_success_multiple_clients():
         patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
         patch.object(_nh, "is_visible_by_path", side_effect=_visible),
     ):
-        result = await ix.run(FakeMachine(), clients, _PARAMS)
+        result = await ix.run(FakeMachine(), clients, {**_PARAMS, "interact_clients": [1, 2]})
 
     assert result == "SUCCESS"
     from wizwalker import Keycode
@@ -260,23 +261,19 @@ async def test_out_of_range_client_numbers_skipped():
     assert any(call.args[0] == Keycode.X for call in client.send_key.call_args_list)
 
 
-async def test_empty_interact_clients_interacts_all():
-    """interact_clients=[] (default) interacts with every connected client."""
-    c1 = _ready_client()
-    c2 = _ready_client()
+async def test_empty_interact_clients_succeeds_immediately():
+    """interact_clients=[] means no players interact — returns SUCCESS immediately without interaction."""
+    c1 = FakeClient()
+    c2 = FakeClient()
     params = {**_PARAMS, "interact_clients": []}
 
-    with (
-        patch.object(ix, "POLL_INTERVAL", 0),
-        patch.object(_nh, "POLL_INTERVAL", 0),
-    ):
-        result = await ix.run(FakeMachine(), [c1, c2], params)
+    result = await ix.run(FakeMachine(), [c1, c2], params)
 
     assert result == "SUCCESS"
-    from wizwalker import Keycode
-
-    for c in (c1, c2):
-        assert any(call.args[0] == Keycode.X for call in c.send_key.call_args_list)
+    c1.teleport.assert_not_called()
+    c1.send_key.assert_not_called()
+    c2.teleport.assert_not_called()
+    c2.send_key.assert_not_called()
 
 
 async def test_has_dialogue_false_skips_dialogue_wait():

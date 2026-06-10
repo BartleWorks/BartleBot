@@ -37,28 +37,28 @@ async def test_no_drops_returns_false():
 async def test_matching_drop_any_client_returns_true():
     """Drop present for the only client → TRUE."""
     machine = _machine_with_drops(("IronBloom", 1, 0))
-    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"]})
+    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"], "clients_to_check": [1]})
     assert result == "TRUE"
 
 
 async def test_case_insensitive_match():
     """Item names are matched case-insensitively."""
     machine = _machine_with_drops(("ironbloom", 1, 0))
-    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"]})
+    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"], "clients_to_check": [1]})
     assert result == "TRUE"
 
 
 async def test_irrelevant_drop_returns_false():
     """Drop present but for a different item → FALSE."""
     machine = _machine_with_drops(("GoldKey", 1, 0))
-    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"]})
+    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"], "clients_to_check": [1]})
     assert result == "FALSE"
 
 
 async def test_any_item_in_list_triggers_true():
     """Second item in item_names matches → TRUE (any-match mode)."""
     machine = _machine_with_drops(("GoldKey", 1, 0))
-    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom", "GoldKey"]})
+    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom", "GoldKey"], "clients_to_check": [1]})
     assert result == "TRUE"
 
 
@@ -83,12 +83,12 @@ async def test_drop_on_correct_client_returns_true():
     assert result == "TRUE"
 
 
-async def test_empty_clients_to_check_defaults_to_all_clients():
-    """clients_to_check=[] → all clients are checked."""
+async def test_empty_clients_to_check_returns_false():
+    """clients_to_check=[] means no players to check — no match possible, returns FALSE."""
     clients = [FakeClient(), FakeClient()]
-    machine = _machine_with_drops(("IronBloom", 1, 1))  # only client 2 has the drop
+    machine = _machine_with_drops(("IronBloom", 1, 0), ("IronBloom", 1, 1))
     result = await cid.run(machine, clients, {"item_names": ["IronBloom"], "clients_to_check": []})
-    assert result == "TRUE"
+    assert result == "FALSE"
 
 
 # ---------------------------------------------------------------------------

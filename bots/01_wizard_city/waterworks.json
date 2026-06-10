@@ -170,7 +170,12 @@
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -218,7 +223,12 @@
           "y": -1127.59,
           "z": 6.84
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -274,7 +284,12 @@
           "y": 1525.07,
           "z": -2.16
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -379,7 +394,12 @@
           "y": -262.15,
           "z": -13.43
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -476,7 +496,12 @@
           "y": 604.99,
           "z": -48.12
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -595,7 +620,12 @@
           "y": -5111.69,
           "z": -104.97
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -765,7 +795,12 @@
           "y": 258.1,
           "z": -14.73
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -862,7 +897,12 @@
           "y": -1353.34,
           "z": -45.46
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": false
       },
       "option_overrides": {}
@@ -887,7 +927,12 @@
           "y": -1727.08,
           "z": -48.12
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": false
       },
       "option_overrides": {}
@@ -912,7 +957,12 @@
           "y": -377.84,
           "z": -48.12
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": false
       },
       "option_overrides": {}
@@ -937,7 +987,12 @@
           "y": 1200.07,
           "z": -48.12
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": false
       },
       "option_overrides": {}
@@ -1019,7 +1074,12 @@
           "y": 258.87,
           "z": -14.84
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -1109,7 +1169,12 @@
           "y": 1463.39,
           "z": -2.16
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}

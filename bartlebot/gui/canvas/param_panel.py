@@ -61,6 +61,54 @@ class _StrListLineEdit(QLineEdit):
     """
 
 
+class _PlayerListWidget(QWidget):
+    """P1–P4 checkboxes with Select All / None for 'player_list' param fields.
+
+    Returns list[int] of checked 1-based player numbers via get_value().
+    """
+
+    changed = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        self._checks: list[QCheckBox] = []
+        for i in range(1, 5):
+            chk = QCheckBox(f"P{i}")
+            chk.checkStateChanged.connect(self.changed)
+            layout.addWidget(chk)
+            self._checks.append(chk)
+        layout.addStretch()
+        _BTN_STYLE = "QPushButton { font-size: 10px; padding: 1px 4px; }"
+        all_btn = QPushButton("All")
+        all_btn.setFixedHeight(20)
+        all_btn.setStyleSheet(_BTN_STYLE)
+        all_btn.clicked.connect(self._select_all)
+        none_btn = QPushButton("None")
+        none_btn.setFixedHeight(20)
+        none_btn.setStyleSheet(_BTN_STYLE)
+        none_btn.clicked.connect(self._deselect_all)
+        layout.addWidget(all_btn)
+        layout.addWidget(none_btn)
+
+    def get_value(self) -> list[int]:
+        return [i + 1 for i, chk in enumerate(self._checks) if chk.isChecked()]
+
+    def set_value(self, value: list[int]) -> None:
+        for i, chk in enumerate(self._checks):
+            chk.setChecked((i + 1) in value)
+
+    def _select_all(self) -> None:
+        for chk in self._checks:
+            chk.setChecked(True)
+
+    def _deselect_all(self) -> None:
+        for chk in self._checks:
+            chk.setChecked(False)
+
+
 class _FillButton(QPushButton):
     """QPushButton that updates its label on hover to reflect fill options.
 
@@ -300,6 +348,9 @@ class _DynamicParamForm(QWidget):
             elif isinstance(widget, QLineEdit):
                 display_w = widget
                 empty = not widget.text().strip()
+            elif isinstance(widget, _PlayerListWidget):
+                display_w = widget
+                empty = len(widget.get_value()) == 0
             else:
                 # QSpinBox, QDoubleSpinBox, QCheckBox — always have a value
                 display_w = widget
@@ -314,6 +365,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
+            elif isinstance(w, _PlayerListWidget):
+                result[key] = w.get_value()
             elif isinstance(w, _IntListLineEdit):
                 result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
@@ -379,6 +432,13 @@ class _DynamicParamForm(QWidget):
             if help_text:
                 w.setToolTip(help_text)
             w.textChanged.connect(self._emit_changed)
+            return w
+        if field_type == "player_list":
+            w = _PlayerListWidget()
+            w.set_value(val if isinstance(val, list) else [])
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
             return w
         if field_type == "str_list":
             w = _StrListLineEdit()
@@ -643,6 +703,9 @@ def _make_override_widget(type_str: str, val: Any, help_text: str = "") -> QWidg
             w.setText(", ".join(str(v) for v in val))
         else:
             w.setText(str(val) if val else "")
+    elif type_str == "player_list":
+        w = _PlayerListWidget()
+        w.set_value(val if isinstance(val, list) else [])
     else:  # str
         ws = QLineEdit()
         ws.setText(str(val) if val is not None else "")
@@ -659,6 +722,8 @@ def _read_override_widget(w: QWidget) -> Any:
         return w.value()
     if isinstance(w, QDoubleSpinBox):
         return w.value()
+    if isinstance(w, _PlayerListWidget):
+        return w.get_value()
     if isinstance(w, _IntListLineEdit):
         return [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
     if isinstance(w, QLineEdit):
@@ -671,6 +736,8 @@ def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
         w.checkStateChanged.connect(lambda _: callback())
     elif isinstance(w, (QSpinBox, QDoubleSpinBox)):
         w.valueChanged.connect(lambda _: callback())
+    elif isinstance(w, _PlayerListWidget):
+        w.changed.connect(callback)
     elif isinstance(w, QLineEdit):
         w.textChanged.connect(lambda _: callback())
 
