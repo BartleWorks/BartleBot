@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -22,8 +21,6 @@ from bartlebot.bot.combat_profile import (
     BotCombatProfile,
     DuelProfile,
     PlayerDeck,
-    format_combat_order,
-    parse_combat_order,
 )
 from bartlebot.bot.schema import StateModel
 from bartlebot.combat_profile_store import (
@@ -34,6 +31,7 @@ from bartlebot.combat_profile_store import (
     save_bot_profile,
     save_duel_profile,
 )
+from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.sidebar.sections.duel_profile_widget import DuelProfileWidget
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 
@@ -426,18 +424,15 @@ class CombatTab(QWidget):
         lib_row.addStretch()
         selector_layout.addLayout(lib_row)
 
-        order_row = QHBoxLayout()
-        order_row.addWidget(QLabel("Default combat order:"))
-        self._combat_order_edit = QLineEdit()
-        self._combat_order_edit.setPlaceholderText("(simultaneous)")
-        self._combat_order_edit.setToolTip(
+        selector_layout.addWidget(QLabel("Default combat order:"))
+        self._combat_order_widget = CombatOrderWidget(empty_label="Random (enter combat simultaneously)")
+        self._combat_order_widget.setToolTip(
             "Default order clients enter combat for this profile.\n"
-            "Enter player slots separated by commas, e.g. '2, 1'.\n"
+            "Drag chips to reorder. Check the box for random simultaneous entry.\n"
             "Can be overridden per duel in the Duel Profiles section."
         )
-        self._combat_order_edit.textEdited.connect(self._on_combat_order_changed)
-        order_row.addWidget(self._combat_order_edit, 1)
-        selector_layout.addLayout(order_row)
+        self._combat_order_widget.changed.connect(self._on_combat_order_changed)
+        selector_layout.addWidget(self._combat_order_widget)
 
         selector_section.set_content_layout(selector_layout)
         content_layout.addWidget(selector_section)
@@ -520,7 +515,7 @@ class CombatTab(QWidget):
 
     def _refresh_combat_order_field(self) -> None:
         profile = self._active_profile()
-        self._combat_order_edit.setText(format_combat_order(profile.combat_order) if profile else "")
+        self._combat_order_widget.set_value(profile.combat_order if profile else [])
 
     def _rebuild_duel_profiles(self) -> None:
         self._duel_profiles_section.rebuild(self._config, self._active_profile())
@@ -540,7 +535,7 @@ class CombatTab(QWidget):
         self._delete_btn.setEnabled(editable and has_profiles and len(self._config.combat_profiles) > 1)
         self._import_global_btn.setEnabled(editable)
         self._export_global_btn.setEnabled(editable and has_profiles)
-        self._combat_order_edit.setReadOnly(not (editable and has_profiles))
+        self._combat_order_widget.set_editable(editable and has_profiles)
 
     def _on_profile_selected(self, name: str) -> None:
         if self._suppress or self._config is None or name == _NO_PROFILES_LABEL:
@@ -552,13 +547,13 @@ class CombatTab(QWidget):
         self._refresh_controls()
         self.combat_config_changed.emit()
 
-    def _on_combat_order_changed(self, text: str) -> None:
+    def _on_combat_order_changed(self) -> None:
         if self._suppress:
             return
         profile = self._active_profile()
         if profile is None:
             return
-        profile.combat_order = parse_combat_order(text)
+        profile.combat_order = self._combat_order_widget.get_value()
         self.combat_config_changed.emit()
 
     def _on_content_changed(self) -> None:
