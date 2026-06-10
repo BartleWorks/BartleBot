@@ -10,7 +10,15 @@
     {
       "name": "Test Combat Profile",
       "combat_order": [],
-      "player_decks": {},
+      "player_decks": {
+        "1": {
+          "preset": {
+            "normal": {},
+            "tc": {},
+            "item": {}
+          }
+        }
+      },
       "duel_profiles": {
         "default": {
           "name": "default",
