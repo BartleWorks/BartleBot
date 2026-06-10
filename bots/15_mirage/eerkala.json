@@ -1,103 +1,11 @@
 {
+  "id": "18872848-4255-428f-98dd-f8acd4019145",
   "name": "Eerkala",
   "description": "Endlessly defeats Eerkala in Eerem Palace, Mirage",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
-  "combat_profiles": [
-    {
-      "name": "Eerkala - 3 players, max storm hitter",
-      "combat_order": [],
-      "player_decks": {},
-      "duel_profiles": {
-        "default": {
-          "name": "default",
-          "use_bartlebot_default": false,
-          "behaviors": [
-            {
-              "players": [
-                2,
-                3,
-                4
-              ],
-              "dsl": "feint mass | feint[potent]@boss"
-            },
-            {
-              "players": [
-                1
-              ],
-              "dsl": "novus[epic]@boss | any<damage>[epic]@boss"
-            }
-          ],
-          "combat_order_override": [
-            4,
-            3,
-            2,
-            1
-          ]
-        }
-      }
-    },
-    {
-      "name": "Eerkala - 2 players both scaled",
-      "combat_order": [],
-      "player_decks": {},
-      "duel_profiles": {
-        "default": {
-          "name": "default",
-          "use_bartlebot_default": false,
-          "behaviors": [
-            {
-              "players": [
-                1
-              ],
-              "dsl": "feint mass | feint[potent]@boss"
-            },
-            {
-              "players": [
-                2
-              ],
-              "dsl": "feint@boss | triton[epic]@boss | bats[epic]@boss"
-            }
-          ],
-          "combat_order_override": [
-            1,
-            2
-          ]
-        }
-      }
-    },
-    {
-      "name": "Eerkala - 4 players scaled, storm hitter",
-      "combat_order": [],
-      "player_decks": {},
-      "duel_profiles": {
-        "default": {
-          "name": "default",
-          "use_bartlebot_default": false,
-          "behaviors": [
-            {
-              "players": [
-                1,
-                2,
-                3
-              ],
-              "dsl": "feint mass | feint[potent]@boss"
-            },
-            {
-              "players": [
-                4
-              ],
-              "dsl": "kraken[\"Epic - Amulet\"]@boss | bats[epic]@boss"
-            }
-          ]
-        }
-      }
-    }
-  ],
-  "active_combat_profile_name": "Eerkala - 2 players both scaled",
   "start_location": "Anywhere in Mirage",
   "drops": [],
   "authors": "BartleBot",
@@ -254,7 +162,7 @@
       },
       "params": {
         "enemy": "MR_Djinn_MageF_B_Boss_01",
-        "use_default_duel_profile": true,
+        "use_default_strategy": false,
         "max_duration": 600.0
       },
       "option_overrides": {}

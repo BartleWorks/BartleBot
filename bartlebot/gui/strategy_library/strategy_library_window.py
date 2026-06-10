@@ -365,6 +365,24 @@ class StrategyLibraryWindow(QWidget):
         w.setPlaceholderText("Filter…")
         return w
 
+    def focus_duel_strategy(self, dcs_id: str) -> None:
+        """Switch to the Duel Strategies tab and select the given strategy."""
+        self._tabs.setCurrentWidget(self._dcs_tab)
+        for i in range(self._dcs_list.count()):
+            item = self._dcs_list.item(i)
+            if item and item.data(0x100) == dcs_id:
+                self._dcs_list.setCurrentItem(item)
+                return
+
+    def focus_player_strategy(self, pcs_id: str) -> None:
+        """Switch to the Player Strategies tab and select the given strategy."""
+        self._tabs.setCurrentWidget(self._pcs_tab)
+        for i in range(self._pcs_list.count()):
+            item = self._pcs_list.item(i)
+            if item and item.data(0x100) == pcs_id:
+                self._pcs_list.setCurrentItem(item)
+                return
+
     def refresh(self) -> None:
         """Reload all strategy files from disk. Called when external changes occur."""
         self._reload_pcs()

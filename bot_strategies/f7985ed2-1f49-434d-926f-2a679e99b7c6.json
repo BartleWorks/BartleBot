@@ -1,0 +1,15 @@
+{
+  "id": "f7985ed2-1f49-434d-926f-2a679e99b7c6",
+  "name": "Castle Darkmoor - Turn 1 Bunyip",
+  "bot_id": "925354ea-07af-4af0-b1da-3a5804fdeae6",
+  "player_decks": {},
+  "state_assignments": [
+    {
+      "duel_combat_strategy_id": "24919860-a6f8-46be-85bb-e3a4016d2110",
+      "state_ids": [
+        "state_9",
+        "state_14"
+      ]
+    }
+  ]
+}

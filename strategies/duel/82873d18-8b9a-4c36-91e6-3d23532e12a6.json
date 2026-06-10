@@ -1,7 +1,7 @@
 {
   "id": "82873d18-8b9a-4c36-91e6-3d23532e12a6",
   "name": "4 players - Feint into Novus hit",
-  "min_players": 1,
+  "min_players": 2,
   "max_players": 4,
   "combat_order": [
     2,

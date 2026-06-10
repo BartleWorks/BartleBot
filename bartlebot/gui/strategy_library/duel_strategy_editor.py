@@ -32,11 +32,13 @@ class _AssignmentRow(QWidget):
 
     remove_requested = pyqtSignal(object)  # emits self
     changed = pyqtSignal()
+    players_changed = pyqtSignal(object)  # emits self after a user-driven player change
 
     def __init__(self, assignment: PlayerAssignment, all_pcs: list[PlayerCombatStrategy], parent=None):
         super().__init__(parent)
         self._assignment = assignment
         self._all_pcs = all_pcs
+        self._updating = False  # suppresses re-entrant enforcement
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -67,8 +69,19 @@ class _AssignmentRow(QWidget):
         self._all_pcs = all_pcs
         self._refresh_chip()
 
+    def update_players_silently(self, players: list[int]) -> None:
+        """Apply an externally-enforced player list without triggering exclusivity enforcement."""
+        self._updating = True
+        self._assignment.players = players
+        self._player_widget.set_value(players)
+        self._updating = False
+        self.changed.emit()
+
     def _on_players_changed(self) -> None:
+        if self._updating:
+            return
         self._assignment.players = self._player_widget.get_value()
+        self.players_changed.emit(self)
         self.changed.emit()
 
     def _on_pick_pcs(self) -> None:
@@ -202,10 +215,24 @@ class DuelStrategyEditor(QWidget):
         row = _AssignmentRow(assignment, self._all_pcs, parent=self._assignments_container)
         row.changed.connect(self._on_changed)
         row.remove_requested.connect(self._on_remove_row)
+        row.players_changed.connect(self._enforce_exclusivity)
         # Insert before the stretch at end
         idx = self._assignments_layout.count() - 1
         self._assignments_layout.insertWidget(idx, row)
         self._rows.append(row)
+
+    def _enforce_exclusivity(self, source_row: _AssignmentRow) -> None:
+        """Remove any players claimed by source_row from all other rows."""
+        taken = set(source_row.assignment().players)
+        if not taken:
+            return
+        for row in self._rows:
+            if row is source_row:
+                continue
+            current = row.assignment().players
+            remaining = [p for p in current if p not in taken]
+            if remaining != current:
+                row.update_players_silently(remaining)
 
     def _on_add_assignment(self) -> None:
         if not self._all_pcs or self._strategy is None:

@@ -24,6 +24,8 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
+    DuelCombatStrategy,
+    PlayerCombatStrategy,
     StateAssignment,
 )
 from bartlebot.gui.icon_utils import svg_icon
@@ -35,18 +37,22 @@ from bartlebot.strategy_store import (
     delete_bot_strategy,
     list_bot_strategies,
     list_duel_strategies,
+    list_player_strategies,
     save_bot_strategy,
+    save_duel_strategy,
 )
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+    from bartlebot.gui.strategy_library.strategy_library_window import StrategyLibraryWindow
 
 logger = logging.getLogger(__name__)
 
 _DEBOUNCE_MS = 500
 _NUM_PLAYER_SLOTS = 4
-_BUILT_IN_LABEL = "(built-in default)"
+_BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
 _NO_STRATEGY_LABEL = "(no strategy set)"
+_ICON_BTN_SIZE = 16
 
 
 # ---------------------------------------------------------------------------
@@ -184,6 +190,80 @@ def _build_state_assignments(state_dcs: dict[str, str]) -> list[StateAssignment]
     return [StateAssignment(duel_combat_strategy_id=dcs_id, state_ids=sids) for dcs_id, sids in dcs_to_states.items()]
 
 
+def _format_dcs_meta(dcs: DuelCombatStrategy) -> str:
+    """One-line summary of a DCS: player range + combat order."""
+    parts = []
+    if dcs.min_players == 1 and dcs.max_players == 4:
+        parts.append("Any players")
+    elif dcs.min_players == dcs.max_players:
+        parts.append(f"{dcs.min_players} player{'s' if dcs.min_players != 1 else ''}")
+    else:
+        parts.append(f"{dcs.min_players}–{dcs.max_players} players")
+    if dcs.combat_order:
+        parts.append(" → ".join(f"P{p}" for p in dcs.combat_order))
+    else:
+        parts.append("Simultaneous")
+    return " · ".join(parts)
+
+
+def _format_bcs_meta(bcs: BotCombatStrategy) -> str:
+    """One-line summary of a BCS: number of state overrides."""
+    n = sum(len(a.state_ids) for a in bcs.state_assignments)
+    return f"{n} state override{'s' if n != 1 else ''}" if n else "Default strategy only"
+
+
+def _format_dcs_assignments(dcs: DuelCombatStrategy, all_pcs: list[PlayerCombatStrategy]) -> str:
+    """One-line summary of player-to-PCS assignments within a DCS."""
+    if not dcs.player_assignments:
+        return "No player assignments"
+    pcs_by_id = {p.id: p.name for p in all_pcs}
+    parts = []
+    for assignment in dcs.player_assignments:
+        players = sorted(assignment.players)
+        if not players:
+            continue
+        name = pcs_by_id.get(assignment.player_combat_strategy_id, "(unknown)")
+        if len(players) == 1:
+            player_str = f"P{players[0]}"
+        elif players == list(range(players[0], players[-1] + 1)):
+            player_str = f"P{players[0]}–P{players[-1]}"
+        else:
+            player_str = ", ".join(f"P{p}" for p in players)
+        parts.append(f"{player_str}: {name}")
+    return " · ".join(parts)
+
+
+def _unique_dcs_name(base: str, existing: list[DuelCombatStrategy]) -> str:
+    """Return base if unused, otherwise base (2), (3), etc."""
+    names = {d.name for d in existing}
+    if base not in names:
+        return base
+    i = 2
+    while f"{base} ({i})" in names:
+        i += 1
+    return f"{base} ({i})"
+
+
+def _make_icon_btn(icon_name: str, tooltip: str) -> QToolButton:
+    """Small flat icon-only QToolButton."""
+    btn = QToolButton()
+    btn.setIcon(svg_icon(icon_name, _ICON_BTN_SIZE))
+    btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
+    btn.setToolTip(tooltip)
+    btn.setAutoRaise(True)
+    return btn
+
+
+def _make_meta_label(text: str = "") -> QLabel:
+    lbl = QLabel(text)
+    font = lbl.font()
+    font.setPointSize(max(font.pointSize() - 1, 7))
+    lbl.setFont(font)
+    lbl.setStyleSheet(f"color: {THEME.text_muted};")
+    lbl.setContentsMargins(2, 0, 0, 2)
+    return lbl
+
+
 # ---------------------------------------------------------------------------
 # Combat Tab
 # ---------------------------------------------------------------------------
@@ -200,12 +280,14 @@ class CombatTab(QWidget):
         self._config: BotConfig | None = None
         self._bcs: BotCombatStrategy | None = None
         self._all_bcs: list[BotCombatStrategy] = []
-        self._all_dcs = []
+        self._all_dcs: list[DuelCombatStrategy] = []
+        self._all_pcs: list[PlayerCombatStrategy] = []
         # state_id → dcs_id (working copy, flushed to BCS before save)
         self._state_dcs: dict[str, str] = {}
         self._suppress = False
         self._closed = False
-        self._library_window = None  # type: ignore[assignment]
+        self._editable = True
+        self._library_window: StrategyLibraryWindow | None = None
 
         self._save_timer = QTimer(self)
         self._save_timer.setSingleShot(True)
@@ -224,7 +306,7 @@ class CombatTab(QWidget):
         # ── Bot Combat Strategy section ───────────────────────────────
         bcs_section = SidebarSection("Bot Combat Strategy", self)
         bcs_layout = QVBoxLayout()
-        bcs_layout.setSpacing(4)
+        bcs_layout.setSpacing(2)
 
         bcs_row = QHBoxLayout()
         self._bcs_chip = _StrategyChip(_NO_STRATEGY_LABEL)
@@ -233,8 +315,8 @@ class CombatTab(QWidget):
         bcs_row.addWidget(self._bcs_chip, 1)
 
         self._bcs_menu_btn = QToolButton()
-        self._bcs_menu_btn.setIcon(svg_icon("more_vert", 16))
-        self._bcs_menu_btn.setIconSize(QSize(16, 16))
+        self._bcs_menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
+        self._bcs_menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
         self._bcs_menu_btn.setToolTip("Manage Bot Combat Strategies (New, Rename, Duplicate, Delete)")
         self._bcs_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._bcs_menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
@@ -246,23 +328,45 @@ class CombatTab(QWidget):
         bcs_menu.addAction("Delete", self._on_delete_bcs)
         self._bcs_menu_btn.setMenu(bcs_menu)
         bcs_row.addWidget(self._bcs_menu_btn)
+
         bcs_layout.addLayout(bcs_row)
+        self._bcs_meta_lbl = _make_meta_label()
+        self._bcs_meta_lbl.hide()
+        bcs_layout.addWidget(self._bcs_meta_lbl)
         bcs_section.set_content_layout(bcs_layout)
         self._content_layout.addWidget(bcs_section)
 
-        # ── Default Strategy section ──────────────────────────────────
-        default_section = SidebarSection("Default Strategy", self)
+        # ── Default Combat Strategy section ───────────────────────────
+        default_section = SidebarSection("Default Combat Strategy", self)
         default_layout = QVBoxLayout()
-        default_layout.setSpacing(4)
+        default_layout.setSpacing(2)
+
+        default_row = QHBoxLayout()
         self._default_chip = _StrategyChip(_BUILT_IN_LABEL)
         self._default_chip.setToolTip("Click to set the default Duel Strategy for unassigned states")
         self._default_chip.clicked.connect(self._on_pick_default_dcs)
-        default_layout.addWidget(self._default_chip)
+        default_row.addWidget(self._default_chip, 1)
+
+        self._default_edit_btn = _make_icon_btn("pencil", "Open this Duel Strategy in the Strategy Library")
+        self._default_edit_btn.clicked.connect(self._on_edit_default_dcs)
+        default_row.addWidget(self._default_edit_btn)
+
+        self._default_new_btn = _make_icon_btn("plus", "Create a new Duel Strategy and open it in the Strategy Library")
+        self._default_new_btn.clicked.connect(self._on_new_default_dcs_quick)
+        default_row.addWidget(self._default_new_btn)
+
+        default_layout.addLayout(default_row)
+        self._default_meta_lbl = _make_meta_label()
+        self._default_meta_lbl.hide()
+        default_layout.addWidget(self._default_meta_lbl)
+        self._default_assignments_lbl = _make_meta_label()
+        self._default_assignments_lbl.hide()
+        default_layout.addWidget(self._default_assignments_lbl)
         default_section.set_content_layout(default_layout)
         self._content_layout.addWidget(default_section)
 
-        # ── State Assignments section ─────────────────────────────────
-        self._assignments_section = SidebarSection("State Assignments", self)
+        # ── Duel Combat Strategies section ───────────────────────────
+        self._assignments_section = SidebarSection("Duel Combat Strategies", self)
         self._assignments_layout = QVBoxLayout()
         self._assignments_layout.setSpacing(4)
         self._no_assignments_lbl = QLabel("No exposed combat states")
@@ -277,11 +381,6 @@ class CombatTab(QWidget):
         self._content_layout.addWidget(self._decks_section)
 
         self._content_layout.addStretch()
-
-        # ── Open Strategy Library button ──────────────────────────────
-        self._library_btn = QPushButton("Open Strategy Library")
-        self._library_btn.clicked.connect(self._on_open_library)
-        self._content_layout.addWidget(self._library_btn)
 
         scroll_area.setWidget(content)
         outer = QVBoxLayout(self)
@@ -310,8 +409,9 @@ class CombatTab(QWidget):
         self._rebuild_state_assignments()
 
     def refresh_strategy_data(self) -> None:
-        """Reload DCS/BCS data from disk. Called when StrategyLibraryWindow signals changes."""
+        """Reload DCS/BCS/PCS data from disk. Called when StrategyLibraryWindow signals changes."""
         self._all_dcs = list_duel_strategies()
+        self._all_pcs = list_player_strategies()
         if self._config is not None:
             self._all_bcs = list_bot_strategies(self._config.id)
         self._refresh_bcs_chip()
@@ -319,11 +419,14 @@ class CombatTab(QWidget):
         self._rebuild_state_assignments()
 
     def set_editable(self, editable: bool) -> None:
+        self._editable = editable
         self._bcs_chip.setEnabled(editable)
         self._bcs_menu_btn.setEnabled(editable)
         self._default_chip.setEnabled(editable)
+        self._default_edit_btn.setEnabled(editable)
+        self._default_new_btn.setEnabled(editable)
         self._decks_section.set_editable(editable)
-        # Assignment chips updated in _rebuild_state_assignments
+        self._rebuild_state_assignments()
 
     # ------------------------------------------------------------------
     # BCS loading / saving
@@ -335,6 +438,7 @@ class CombatTab(QWidget):
         self._state_dcs = {}
         self._all_bcs = []
         self._all_dcs = list_duel_strategies()
+        self._all_pcs = list_player_strategies()
         if self._config is None:
             return
         self._all_bcs = list_bot_strategies(self._config.id)
@@ -376,18 +480,31 @@ class CombatTab(QWidget):
     def _refresh_bcs_chip(self) -> None:
         if self._bcs is None:
             self._bcs_chip.set_strategy_name(_NO_STRATEGY_LABEL)
+            self._bcs_meta_lbl.hide()
         else:
             self._bcs_chip.set_strategy_name(self._bcs.name)
+            self._bcs_meta_lbl.setText(_format_bcs_meta(self._bcs))
+            self._bcs_meta_lbl.show()
 
     def _refresh_default_chip(self) -> None:
         if self._bcs is None or self._bcs.default_strategy_id is None:
             self._default_chip.set_strategy_name(_BUILT_IN_LABEL)
+            self._default_meta_lbl.hide()
+            self._default_edit_btn.setEnabled(False)
             return
         dcs = next((d for d in self._all_dcs if d.id == self._bcs.default_strategy_id), None)
+        self._default_edit_btn.setEnabled(self._editable)
         if dcs:
             self._default_chip.set_strategy_name(dcs.name)
+            self._default_meta_lbl.setText(_format_dcs_meta(dcs))
+            self._default_meta_lbl.show()
+            assignments_text = _format_dcs_assignments(dcs, self._all_pcs)
+            self._default_assignments_lbl.setText(assignments_text)
+            self._default_assignments_lbl.show()
         else:
             self._default_chip.set_strategy_name("(missing strategy)")
+            self._default_meta_lbl.hide()
+            self._default_assignments_lbl.hide()
 
     def _refresh_deck_summaries(self) -> None:
         decks = self._bcs.player_decks if self._bcs else {}
@@ -415,27 +532,50 @@ class CombatTab(QWidget):
             self._assignments_layout.addWidget(row)
 
     def _build_assignment_row(self, state) -> QWidget:
+        outer = QWidget()
+        outer_layout = QVBoxLayout(outer)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(1)
+
+        # Top row: state label | chip | edit | new
         row = QWidget()
-        layout = QHBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(4)
 
         display = state.label or state.id
         lbl = QLabel(display)
         lbl.setToolTip(f"State ID: {state.id}")
-        layout.addWidget(lbl, 1)
+        row_layout.addWidget(lbl, 1)
 
         dcs_id = self._state_dcs.get(state.id)
-        dcs_name = _BUILT_IN_LABEL
-        if dcs_id:
-            dcs = next((d for d in self._all_dcs if d.id == dcs_id), None)
-            dcs_name = dcs.name if dcs else "(missing)"
+        dcs = next((d for d in self._all_dcs if d.id == dcs_id), None) if dcs_id else None
+        dcs_name = dcs.name if dcs else (_BUILT_IN_LABEL if not dcs_id else "(missing)")
 
         chip = _StrategyChip(dcs_name)
-        chip.setMaximumWidth(180)
+        chip.setMaximumWidth(160)
+        chip.setEnabled(self._editable)
         chip.clicked.connect(lambda _checked=False, sid=state.id: self._on_pick_state_dcs(sid))
-        layout.addWidget(chip)
-        return row
+        row_layout.addWidget(chip)
+
+        edit_btn = _make_icon_btn("pencil", "Open this Duel Strategy in the Strategy Library")
+        edit_btn.setEnabled(self._editable and dcs is not None)
+        edit_btn.clicked.connect(lambda _checked=False, sid=state.id: self._on_edit_state_dcs(sid))
+        row_layout.addWidget(edit_btn)
+
+        new_btn = _make_icon_btn("plus", "Create a new Duel Strategy and assign it to this state")
+        new_btn.setEnabled(self._editable)
+        new_btn.clicked.connect(lambda _checked=False, sid=state.id: self._on_new_state_dcs_quick(sid))
+        row_layout.addWidget(new_btn)
+
+        outer_layout.addWidget(row)
+
+        # Meta lines (player range + order, then PCS assignments)
+        if dcs is not None:
+            outer_layout.addWidget(_make_meta_label(_format_dcs_meta(dcs)))
+            outer_layout.addWidget(_make_meta_label(_format_dcs_assignments(dcs, self._all_pcs)))
+
+        return outer
 
     # ------------------------------------------------------------------
     # BCS picker / menu actions
@@ -519,7 +659,6 @@ class CombatTab(QWidget):
         to_delete = self._bcs
         self._all_bcs = [b for b in self._all_bcs if b.id != to_delete.id]
         delete_bot_strategy(to_delete.id)
-        # Activate the first remaining or clear
         self._bcs = self._all_bcs[0] if self._all_bcs else None
         self._state_dcs = _state_dcs_map(self._bcs) if self._bcs else {}
         new_active = self._bcs.id if self._bcs else None
@@ -569,18 +708,62 @@ class CombatTab(QWidget):
             self._schedule_save()
 
     # ------------------------------------------------------------------
-    # Strategy Library window
+    # Strategy Library access
     # ------------------------------------------------------------------
 
-    def _on_open_library(self) -> None:
-        from bartlebot.gui.strategy_library.strategy_library_window import StrategyLibraryWindow  # noqa: PLC0415
+    def _ensure_library(self) -> StrategyLibraryWindow:
+        from bartlebot.gui.strategy_library.strategy_library_window import (
+            StrategyLibraryWindow as _Lib,  # noqa: PLC0415
+        )
 
         if self._library_window is None or not self._library_window.isVisible():
-            self._library_window = StrategyLibraryWindow()
+            self._library_window = _Lib()
             self._library_window.strategies_changed.connect(self.refresh_strategy_data)
         self._library_window.show()
         self._library_window.raise_()
         self._library_window.activateWindow()
+        return self._library_window
+
+    def _on_edit_default_dcs(self) -> None:
+        """Open the Strategy Library focused on the current default DCS."""
+        lib = self._ensure_library()
+        if self._bcs and self._bcs.default_strategy_id:
+            lib.focus_duel_strategy(self._bcs.default_strategy_id)
+
+    def _on_new_default_dcs_quick(self) -> None:
+        """Create a new DCS with a default name, assign it as default, open it in the library."""
+        if self._bcs is None:
+            return
+        dcs = DuelCombatStrategy(name=_unique_dcs_name("New Duel Strategy", self._all_dcs))
+        save_duel_strategy(dcs)
+        self._all_dcs.append(dcs)
+        self._bcs.default_strategy_id = dcs.id
+        self._refresh_default_chip()
+        self._schedule_save()
+        lib = self._ensure_library()
+        lib.refresh()
+        lib.focus_duel_strategy(dcs.id)
+
+    def _on_edit_state_dcs(self, state_id: str) -> None:
+        """Open the Strategy Library focused on the DCS assigned to this state."""
+        lib = self._ensure_library()
+        dcs_id = self._state_dcs.get(state_id)
+        if dcs_id:
+            lib.focus_duel_strategy(dcs_id)
+
+    def _on_new_state_dcs_quick(self, state_id: str) -> None:
+        """Create a new DCS, assign it to this state, and open it in the library."""
+        if self._bcs is None:
+            return
+        dcs = DuelCombatStrategy(name=_unique_dcs_name("New Duel Strategy", self._all_dcs))
+        save_duel_strategy(dcs)
+        self._all_dcs.append(dcs)
+        self._state_dcs[state_id] = dcs.id
+        self._rebuild_state_assignments()
+        self._schedule_save()
+        lib = self._ensure_library()
+        lib.refresh()
+        lib.focus_duel_strategy(dcs.id)
 
     # ------------------------------------------------------------------
     # Theme / lifecycle
@@ -596,5 +779,11 @@ class CombatTab(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
-            self._bcs_menu_btn.setIcon(svg_icon("more_vert", 16))
+            self._bcs_menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
+            self._default_edit_btn.setIcon(svg_icon("pencil", _ICON_BTN_SIZE))
+            self._default_new_btn.setIcon(svg_icon("plus", _ICON_BTN_SIZE))
+            self._bcs_meta_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+            self._default_meta_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+            self._default_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
             self._no_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+            self._rebuild_state_assignments()
