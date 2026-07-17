@@ -48,12 +48,27 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="not set — zone entry is attempted once, no retry",
         required=False,
     ),
+    ParamField(
+        key="stagger",
+        type="bool",
+        label="Stagger Clients",
+        help=(
+            "Send the first client through the transition alone and wait for it to fully "
+            "load into the destination zone before sending the rest. Prevents clients from "
+            "being split across different realms of the destination zone. Only takes effect "
+            "when exactly 4 clients are connected — with 3 or fewer this has not been observed "
+            "to be an issue."
+        ),
+        default=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
         "Transitions all clients from one zone to another by teleporting them "
-        "into the destination zone's transition bounding box."
+        "into the destination zone's transition bounding box. Optionally staggers "
+        "the transition (lead client first, then the rest) when 4 clients are "
+        "connected, to avoid clients landing in different realms."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -89,74 +104,44 @@ async def _has_left_zone(client, zone: str) -> bool:
     return await client.zone_name() != zone
 
 
-async def run(machine, clients: list, params: dict) -> str:
+async def _transition_group(machine, group: list, from_zone: str, to_zone: str, target: XYZ, reset: XYZ | None) -> str:
+    """Teleport `group` into the transition bounding box and wait for them to arrive in to_zone.
+
+    Runs the full teleport → dismiss dungeon dialog → leave-from_zone (with reset_xyz retry) →
+    wait-for-loading → arrive-in-to_zone sequence for just the clients in `group`. Returns
+    "SUCCESS" or "FAILURE".
     """
-    APIs: client.zone_name(), client.teleport(XYZ), client.is_loading()
-
-    Flow:
-      1. Verify all clients are in from_zone. Return FAILURE if not.
-      2. asyncio.gather teleport all clients into the transition bounding box (xyz).
-      3. Dismiss any dungeon exit warning dialog that appears.
-      4. Poll until all clients have left from_zone, re-teleporting stragglers each tick.
-         If any clients time out and reset_xyz is set, teleport to reset_xyz and retry (up to MAX_RETRIES).
-      5. Wait for all loading screens to finish.
-      6. Wait for all clients to arrive in to_zone. Return FAILURE if any are not.
-
-    FAILURE: clients not in from_zone at start; zone change timed out after all retry
-    attempts; not all clients arrived in to_zone after the transition.
-    """
-    from_zone: str = params["from_zone"]
-    to_zone: str = params["to_zone"]
-    xyz_data: dict = params["xyz"]
-    target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
-
-    reset_xyz_data: dict | None = params.get("reset_xyz")
-    reset = XYZ(reset_xyz_data["x"], reset_xyz_data["y"], reset_xyz_data["z"]) if reset_xyz_data else None
-
-    machine.log(f"enter_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
-
-    # 1. Verify all clients are in from_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, from_zone) for z in zones):
-        wrong = [z for z in zones if not node_helpers.zone_matches(z, from_zone)]
-        machine.log(
-            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
-            logging.WARNING,
-        )
-        return "FAILURE"
-
     attempts = MAX_RETRIES if reset else 1
     for attempt in range(1, attempts + 1):
         if attempt > 1:
             machine.log(f"Attempt {attempt}/{attempts}…", logging.DEBUG)
 
-        # 2. Teleport all clients into the transition bounding box.
-        machine.log(f"Teleporting {len(clients)} client(s) to transition bounding box", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(target) for c in clients])
+        # Teleport the group into the transition bounding box.
+        machine.log(f"Teleporting {len(group)} client(s) to transition bounding box", logging.DEBUG)
+        await asyncio.gather(*[c.teleport(target) for c in group])
 
-        # 2b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
+        # Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
         machine.log("Checking for dungeon exit warning…", logging.DEBUG)
         await asyncio.gather(
             *[
                 node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0), POLL_INTERVAL)
-                for c in clients
+                for c in group
             ]
         )
 
-        # 3. Wait for all clients to leave from_zone (zone change triggered by bounding box).
-        #    Re-teleport only stuck clients to the trigger on each poll; clients that have
-        #    already transitioned are not disturbed.
+        # Wait for the group to leave from_zone (zone change triggered by bounding box).
+        # Re-teleport only stuck clients to the trigger on each poll; clients that have
+        # already transitioned are not disturbed.
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
         seen_left = await node_helpers.poll_each_until_seen(
-            clients,
+            group,
             check_fn=lambda c: _has_left_zone(c, from_zone),
             action_fn=lambda c: c.teleport(target),
             timeout=ZONE_CHANGE_TIMEOUT,
             poll_interval=POLL_INTERVAL,
         )
-        if len(seen_left) < len(clients):
-            stuck = [clients[i] for i in range(len(clients)) if i not in seen_left]
+        if len(seen_left) < len(group):
+            stuck = [group[i] for i in range(len(group)) if i not in seen_left]
             stuck_zones = await asyncio.gather(*[c.zone_name() for c in stuck])
             machine.log(f"Client zones at timeout: {list(stuck_zones)}", logging.DEBUG)
             if reset and attempt < attempts:
@@ -176,12 +161,12 @@ async def run(machine, clients: list, params: dict) -> str:
         # Zone change triggered — no more retries needed.
         break
 
-    # 4. Wait for loading screens to finish.
+    # Wait for loading screens to finish.
     machine.log("Zone transition triggered, waiting for loading screen to clear…", logging.DEBUG)
-    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(group), None, POLL_INTERVAL)
 
-    # 5. Wait for all clients to arrive in to_zone.
-    if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+    # Wait for the group to arrive in to_zone.
+    if (actual := await node_helpers.wait_for_zone(group, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
         machine.log(f"Zones after transition: {actual}", logging.DEBUG)
         machine.log(
             f"FAILURE: clients not in expected zone after transition (expected={to_zone!r}, got={list(set(actual))})",
@@ -189,5 +174,61 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    machine.log(f"SUCCESS: all clients in {to_zone!r}")
     return "SUCCESS"
+
+
+async def run(machine, clients: list, params: dict) -> str:
+    """
+    APIs: client.zone_name(), client.teleport(XYZ), client.is_loading()
+
+    Flow:
+      1. Verify all clients are in from_zone. Return FAILURE if not.
+      2. If stagger is enabled and exactly 4 clients are connected: transition the lead
+         client (clients[0]) alone first, then the remaining 3 — each phase running its
+         own teleport/dismiss-dialog/leave-zone/load/arrive-zone sequence (see
+         _transition_group). Otherwise all clients transition together in one phase.
+      3. Each phase: asyncio.gather teleport clients into the transition bounding box (xyz),
+         dismiss any dungeon exit warning dialog, poll until all have left from_zone
+         (re-teleporting stragglers, retrying via reset_xyz up to MAX_RETRIES on timeout),
+         wait for loading screens to finish, then wait for arrival in to_zone.
+
+    FAILURE: clients not in from_zone at start; a phase's zone change timed out after all
+    retry attempts; not all clients in a phase arrived in to_zone after the transition.
+    """
+    from_zone: str = params["from_zone"]
+    to_zone: str = params["to_zone"]
+    xyz_data: dict = params["xyz"]
+    target = XYZ(xyz_data["x"], xyz_data["y"], xyz_data["z"])
+
+    reset_xyz_data: dict | None = params.get("reset_xyz")
+    reset = XYZ(reset_xyz_data["x"], reset_xyz_data["y"], reset_xyz_data["z"]) if reset_xyz_data else None
+
+    stagger: bool = bool(params.get("stagger", False)) and len(clients) == 4
+
+    machine.log(f"enter_zone: {from_zone!r} → {to_zone!r} via XYZ({target.x:.1f}, {target.y:.1f}, {target.z:.1f})")
+
+    # 1. Verify all clients are in from_zone.
+    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
+    if not all(node_helpers.zone_matches(z, from_zone) for z in zones):
+        wrong = [z for z in zones if not node_helpers.zone_matches(z, from_zone)]
+        machine.log(
+            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
+            logging.WARNING,
+        )
+        return "FAILURE"
+
+    if stagger:
+        machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)
+        lead_result = await _transition_group(machine, clients[:1], from_zone, to_zone, target, reset)
+        if lead_result == "FAILURE":
+            machine.log("FAILURE: lead client failed to transition during staggered entry", logging.WARNING)
+            return "FAILURE"
+        machine.log("enter_zone: lead client settled in destination zone, sending remaining clients", logging.DEBUG)
+        result = await _transition_group(machine, clients[1:], from_zone, to_zone, target, reset)
+    else:
+        result = await _transition_group(machine, clients, from_zone, to_zone, target, reset)
+
+    if result == "SUCCESS":
+        machine.log(f"SUCCESS: all clients in {to_zone!r}")
+    return result
