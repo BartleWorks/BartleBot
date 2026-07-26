@@ -3,6 +3,7 @@
 PlayerCombatStrategy  — a named WizSprinter DSL string for one player
 DuelCombatStrategy    — team-level config for one type of fight
 BotCombatStrategy     — bot-specific mapping of FSM states to strategies + deck data
+DeckPreset            — named, reusable deck configuration in the global library
 
 Each top-level model is stored as an individual JSON file identified by UUID.
 """
@@ -44,6 +45,22 @@ class DeckData(BaseModel):
 
     def total_cards(self) -> int:
         return sum(self.normal.values()) + sum(self.tc.values()) + sum(self.item.values())
+
+
+class DeckPreset(BaseModel):
+    """Named, reusable deck configuration stored in the global deck library."""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    name: str
+    deck: DeckData = Field(default_factory=DeckData)
+
+    @classmethod
+    def load(cls, path: str | Path) -> DeckPreset:
+        with open(path, encoding="utf-8") as f:
+            return cls.model_validate(json.load(f))
+
+    def save(self, path: str | Path) -> None:
+        _atomic_write(self.model_dump(exclude_none=True), path)
 
 
 class PlayerAssignment(BaseModel):

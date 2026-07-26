@@ -103,9 +103,14 @@ class _StrategyChip(QPushButton):
 
 
 class _PlayerDecksSection(SidebarSection):
-    """Collapsible section showing one import row per player slot."""
+    """Collapsible section showing one import/apply row per player slot."""
 
     import_requested = pyqtSignal(int)  # 1-based slot number
+    apply_requested = pyqtSignal(int)  # 1-based slot number
+    view_requested = pyqtSignal(int)  # 1-based slot number
+    save_to_library_requested = pyqtSignal(int)  # 1-based slot number
+    load_from_library_requested = pyqtSignal(int)  # 1-based slot number
+    clear_requested = pyqtSignal(int)  # 1-based slot number
 
     def __init__(self, parent=None):
         super().__init__("Player Decks", parent)
@@ -114,39 +119,98 @@ class _PlayerDecksSection(SidebarSection):
         layout.setSpacing(4)
 
         self._import_btns: list[QPushButton] = []
+        self._apply_btns: list[QPushButton] = []
+        self._menu_btns: list[QToolButton] = []
         self._deck_summary_labels: list[QLabel] = []
+        self._decks: dict[int, DeckData] = {}
+        self._editable: bool = True
+        self._client_count: int = 0
+
         for i in range(1, _NUM_PLAYER_SLOTS + 1):
             row = QWidget()
             row_layout = QHBoxLayout(row)
             row_layout.setContentsMargins(0, 0, 0, 0)
-            row_layout.setSpacing(6)
+            row_layout.setSpacing(4)
 
             lbl = QLabel(f"P{i}:")
             lbl.setFixedWidth(22)
+
             deck_summary = QLabel("No deck saved")
-            btn = QPushButton("Import from client")
-            btn.setToolTip("Open this client's deck window and snapshot the current deck")
-            btn.clicked.connect(lambda _checked, slot=i: self.import_requested.emit(slot))
+            deck_summary.setCursor(Qt.CursorShape.PointingHandCursor)
+            deck_summary.setToolTip("Click to view deck contents")
+            deck_summary.mousePressEvent = lambda _ev, slot=i: self._on_summary_clicked(slot)
+
+            import_btn = QPushButton("Import")
+            import_btn.setToolTip("Snapshot the deck from this game client")
+            import_btn.clicked.connect(lambda _checked, slot=i: self.import_requested.emit(slot))
+
+            apply_btn = QPushButton("Apply")
+            apply_btn.setToolTip("Push the saved deck to this game client now")
+            apply_btn.clicked.connect(lambda _checked, slot=i: self.apply_requested.emit(slot))
+
+            menu_btn = QToolButton()
+            menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
+            menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
+            menu_btn.setToolTip("More deck actions")
+            menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+            menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
+            slot_menu = QMenu(menu_btn)
+            slot_menu.addAction("Save to Library", lambda _=False, slot=i: self.save_to_library_requested.emit(slot))
+            slot_menu.addAction(
+                "Load from Library", lambda _=False, slot=i: self.load_from_library_requested.emit(slot)
+            )
+            slot_menu.addSeparator()
+            slot_menu.addAction("Clear Deck", lambda _=False, slot=i: self.clear_requested.emit(slot))
+            menu_btn.setMenu(slot_menu)
 
             row_layout.addWidget(lbl)
             row_layout.addWidget(deck_summary, 1)
-            row_layout.addWidget(btn)
+            row_layout.addWidget(import_btn)
+            row_layout.addWidget(apply_btn)
+            row_layout.addWidget(menu_btn)
             layout.addWidget(row)
-            self._import_btns.append(btn)
+
+            self._import_btns.append(import_btn)
+            self._apply_btns.append(apply_btn)
+            self._menu_btns.append(menu_btn)
             self._deck_summary_labels.append(deck_summary)
 
         self.set_content_layout(layout)
 
+    def _on_summary_clicked(self, slot: int) -> None:
+        deck = self._decks.get(slot)
+        if deck is not None and not deck.is_empty():
+            self.view_requested.emit(slot)
+
     def set_editable(self, editable: bool) -> None:
-        for btn in self._import_btns:
-            btn.setEnabled(editable)
+        self._editable = editable
+        self._reapply_button_states()
+
+    def set_client_count(self, count: int) -> None:
+        self._client_count = count
+        self._reapply_button_states()
+
+    def _reapply_button_states(self) -> None:
+        for i, (import_btn, apply_btn, menu_btn) in enumerate(
+            zip(self._import_btns, self._apply_btns, self._menu_btns)
+        ):
+            slot = i + 1
+            has_client = self._editable and slot <= self._client_count
+            has_deck = self._decks.get(slot) is not None and not self._decks[slot].is_empty()
+            import_btn.setEnabled(has_client)
+            apply_btn.setEnabled(has_client and has_deck)
+            menu_btn.setEnabled(self._editable)
 
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
+        self._decks = player_decks
         for i, lbl in enumerate(self._deck_summary_labels):
             slot = i + 1
             deck = player_decks.get(slot)
-            if deck is None or deck.is_empty():
+            has_deck = deck is not None and not deck.is_empty()
+            if not has_deck:
                 lbl.setText("No deck saved")
+                lbl.setCursor(Qt.CursorShape.ArrowCursor)
+                lbl.setToolTip("")
             else:
                 parts = []
                 if deck.normal:
@@ -156,6 +220,9 @@ class _PlayerDecksSection(SidebarSection):
                 if deck.item:
                     parts.append(f"{sum(deck.item.values())} item")
                 lbl.setText(" · ".join(parts) if parts else "Empty deck")
+                lbl.setCursor(Qt.CursorShape.PointingHandCursor)
+                lbl.setToolTip("Click to view deck contents")
+        self._reapply_button_states()
 
 
 # ---------------------------------------------------------------------------
@@ -274,6 +341,7 @@ class CombatTab(QWidget):
 
     combat_config_changed = pyqtSignal()
     import_deck_requested = pyqtSignal(int)  # 1-based slot number
+    apply_deck_requested = pyqtSignal(int)  # 1-based slot number
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -378,6 +446,11 @@ class CombatTab(QWidget):
         # ── Player Decks ─────────────────────────────────────────────
         self._decks_section = _PlayerDecksSection(self)
         self._decks_section.import_requested.connect(self.import_deck_requested)
+        self._decks_section.apply_requested.connect(self.apply_deck_requested)
+        self._decks_section.view_requested.connect(self._on_view_deck)
+        self._decks_section.save_to_library_requested.connect(self._on_save_deck_to_library)
+        self._decks_section.load_from_library_requested.connect(self._on_load_deck_from_library)
+        self._decks_section.clear_requested.connect(self._on_clear_deck)
         self._content_layout.addWidget(self._decks_section)
 
         self._content_layout.addStretch()
@@ -404,6 +477,12 @@ class CombatTab(QWidget):
     def refresh_deck_summaries(self) -> None:
         self._refresh_deck_summaries()
 
+    def update_deck_slot(self, slot: int, deck: DeckData) -> None:
+        """Update the in-memory BCS deck for one slot and refresh the display."""
+        if self._bcs is not None:
+            self._bcs.player_decks[slot] = deck
+        self._refresh_deck_summaries()
+
     def refresh_duel_profiles(self) -> None:
         """Compatibility alias — refreshes state assignments when combat tab becomes visible."""
         self._rebuild_state_assignments()
@@ -427,6 +506,9 @@ class CombatTab(QWidget):
         self._default_new_btn.setEnabled(editable)
         self._decks_section.set_editable(editable)
         self._rebuild_state_assignments()
+
+    def set_client_count(self, count: int) -> None:
+        self._decks_section.set_client_count(count)
 
     # ------------------------------------------------------------------
     # BCS loading / saving
@@ -509,6 +591,79 @@ class CombatTab(QWidget):
     def _refresh_deck_summaries(self) -> None:
         decks = self._bcs.player_decks if self._bcs else {}
         self._decks_section.refresh(decks)
+
+    def _on_view_deck(self, slot: int) -> None:
+        from bartlebot.gui.deck_view_dialog import DeckViewDialog  # noqa: PLC0415
+
+        if self._bcs is None:
+            return
+        deck = self._bcs.player_decks.get(slot)
+        if deck is None or deck.is_empty():
+            return
+        dlg = DeckViewDialog(slot, deck, parent=self)
+        dlg.exec()
+
+    def _on_save_deck_to_library(self, slot: int) -> None:
+        from bartlebot.bot.strategy_models import DeckPreset  # noqa: PLC0415
+        from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
+
+        if self._bcs is None:
+            return
+        deck = self._bcs.player_decks.get(slot)
+        if deck is None or deck.is_empty():
+            QMessageBox.information(self, "No deck", f"No deck is saved for P{slot}.")
+            return
+        name, ok = QInputDialog.getText(self, "Save to Deck Library", "Preset name:")
+        if not ok or not name.strip():
+            return
+        preset = DeckPreset(name=name.strip(), deck=deck.model_copy(deep=True))
+        save_deck_preset(preset)
+        if self._library_window is not None:
+            self._library_window.reload_decks()
+            self._library_window.focus_deck_preset(preset.id)
+
+    def _on_load_deck_from_library(self, slot: int) -> None:
+        from bartlebot.gui.strategy_library.deck_preset_picker_dialog import DeckPresetPickerDialog  # noqa: PLC0415
+        from bartlebot.strategy_store import list_deck_presets  # noqa: PLC0415
+
+        presets = list_deck_presets()
+        if not presets:
+            QMessageBox.information(
+                self, "Deck Library empty", "No deck presets saved yet. Use Import and Save to Library first."
+            )
+            return
+        dlg = DeckPresetPickerDialog(presets, parent=self)
+        if not dlg.exec():
+            return
+        chosen_id = dlg.selected_id()
+        if chosen_id is None:
+            return
+        chosen = next((p for p in presets if p.id == chosen_id), None)
+        if chosen is None:
+            return
+        if self._bcs is None:
+            return
+        self._bcs.player_decks[slot] = chosen.deck.model_copy(deep=True)
+        save_bot_strategy(self._bcs)
+        self._refresh_deck_summaries()
+
+    def _on_clear_deck(self, slot: int) -> None:
+        if self._bcs is None:
+            return
+        deck = self._bcs.player_decks.get(slot)
+        if deck is None or deck.is_empty():
+            return
+        ans = QMessageBox.question(
+            self,
+            "Clear Deck",
+            f"Clear the saved deck for P{slot}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if ans != QMessageBox.StandardButton.Yes:
+            return
+        self._bcs.player_decks.pop(slot, None)
+        save_bot_strategy(self._bcs)
+        self._refresh_deck_summaries()
 
     def _rebuild_state_assignments(self) -> None:
         # Remove all dynamic rows (everything except no_assignments_lbl)

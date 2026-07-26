@@ -1,8 +1,9 @@
-"""File-based storage for the three combat strategy types.
+"""File-based storage for the three combat strategy types plus the deck preset library.
 
 Directory layout (version-controlled, relative to project root):
   strategies/player/   — PlayerCombatStrategy  files, named {uuid}.json
   strategies/duel/     — DuelCombatStrategy     files, named {uuid}.json
+  strategies/decks/    — DeckPreset             files, named {uuid}.json
   bot_strategies/      — BotCombatStrategy      files, named {uuid}.json
 
 Each function accepts an optional `root` parameter (path to the project root).
@@ -16,6 +17,7 @@ from pathlib import Path
 
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
+    DeckPreset,
     DuelCombatStrategy,
     PlayerCombatStrategy,
 )
@@ -144,4 +146,39 @@ def save_bot_strategy(s: BotCombatStrategy, root: str | Path | None = None) -> N
 
 def delete_bot_strategy(uuid: str, root: str | Path | None = None) -> None:
     path = _bot_strategy_dir(root) / f"{uuid}.json"
+    path.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Deck Preset Library
+# ---------------------------------------------------------------------------
+
+
+def _deck_preset_dir(root: str | Path | None) -> Path:
+    return _project_root(root) / "strategies" / "decks"
+
+
+def list_deck_presets(root: str | Path | None = None) -> list[DeckPreset]:
+    d = _deck_preset_dir(root)
+    if not d.exists():
+        return []
+    presets = []
+    for p in sorted(d.glob("*.json")):
+        try:
+            presets.append(DeckPreset.load(p))
+        except Exception:
+            pass
+    return presets
+
+
+def load_deck_preset(uuid: str, root: str | Path | None = None) -> DeckPreset:
+    return DeckPreset.load(_deck_preset_dir(root) / f"{uuid}.json")
+
+
+def save_deck_preset(preset: DeckPreset, root: str | Path | None = None) -> None:
+    preset.save(_deck_preset_dir(root) / f"{preset.id}.json")
+
+
+def delete_deck_preset(uuid: str, root: str | Path | None = None) -> None:
+    path = _deck_preset_dir(root) / f"{uuid}.json"
     path.unlink(missing_ok=True)

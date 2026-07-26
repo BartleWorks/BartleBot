@@ -22,6 +22,28 @@ from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
 
 
+async def _read_deck(db: DeckBuilder) -> dict:
+    """Read normal and TC cards from an open DeckBuilder, skipping item cards.
+
+    get_deck_preset() stalls and infinitely loops on _scan_all_item_pages() due
+    to unreliable is_control_grayed() on the PrevItemSpells/NextItemSpells buttons.
+    Item cards depend on equipped gear and can't meaningfully be saved/restored
+    independently, so we omit them.
+    """
+
+    def _count(lst: list) -> dict:
+        d: dict[str, int] = {}
+        for name in lst:
+            d[name] = d.get(name, 0) + 1
+        return d
+
+    await db.refresh_deck_page()
+    normal = await db.parse_deck_cards()
+    await db.view_tc_cards()
+    tc = await db.parse_deck_cards()
+    return {"normal": _count(normal), "tc": _count(tc), "item": {}}
+
+
 class AppController(QObject):
     """Owns all application-level state and wires the GUI to the bot engine."""
 
@@ -97,8 +119,9 @@ class AppController(QObject):
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
 
-        # Deck import requests from Combat tab
+        # Deck import / apply requests from Combat tab
         w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
+        w.left_sidebar.combat_tab.apply_deck_requested.connect(self._on_apply_deck_requested)
 
         # Client list changes → game view renumber + start button state
         self._client_manager.clients_changed.connect(w.game_view.renumber_tiles)
@@ -310,18 +333,61 @@ class AppController(QObject):
         logger.info("Importing deck for slot %d", slot)
         try:
             async with DeckBuilder(client) as db:
-                preset_dict = await db.get_deck_preset()
+                preset_dict = await _read_deck(db)
         except Exception:
             logger.exception("Failed to import deck for slot %d", slot)
             return
-        bcs.player_decks[slot] = DeckData(**preset_dict)
-        logger.info("Deck imported for slot %d: %d cards", slot, bcs.player_decks[slot].total_cards())
+        deck_data = DeckData(**preset_dict)
+        bcs.player_decks[slot] = deck_data
+        logger.info("Deck imported for slot %d: %d cards", slot, deck_data.total_cards())
         try:
             save_bot_strategy(bcs)
         except Exception:
             logger.exception("Failed to save BotCombatStrategy after deck import")
-        self._window.left_sidebar.combat_tab.refresh_deck_summaries()
+        self._window.left_sidebar.combat_tab.update_deck_slot(slot, deck_data)
         self._on_config_changed()
+
+    def _on_apply_deck_requested(self, slot: int) -> None:
+        clients = self._client_manager.clients
+        if not clients:
+            QMessageBox.warning(self._window, "No clients", "No Wizard101 clients are connected.")
+            return
+        client_idx = slot - 1
+        if client_idx >= len(clients):
+            QMessageBox.warning(self._window, "No client", f"No client connected for slot {slot}.")
+            return
+        asyncio.create_task(self._apply_deck_for_slot(slot))
+
+    async def _apply_deck_for_slot(self, slot: int) -> None:
+        from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
+
+        if self._loaded_config is None:
+            return
+        clients = self._client_manager.clients
+        client_idx = slot - 1
+        if client_idx >= len(clients):
+            return
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        if not active_bcs_id:
+            logger.warning("No active Bot Combat Strategy — deck apply skipped for slot %d", slot)
+            return
+        try:
+            bcs = load_bot_strategy(active_bcs_id)
+        except Exception:
+            logger.exception("Failed to load BotCombatStrategy %s for deck apply", active_bcs_id)
+            return
+        deck_data = bcs.player_decks.get(slot)
+        if deck_data is None or deck_data.is_empty():
+            logger.warning("No deck saved for slot %d — nothing to apply", slot)
+            return
+        client = clients[client_idx]
+        logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
+        try:
+            async with DeckBuilder(client) as db:
+                await db.set_deck_preset(deck_data.model_dump())
+            logger.info("Deck applied for slot %d", slot)
+        except Exception:
+            logger.exception("Failed to apply deck for slot %d", slot)
 
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
@@ -559,8 +625,9 @@ class AppController(QObject):
     def _start_enabled(self) -> bool:
         return bool(self._client_manager.clients) and self._loaded_config is not None
 
-    def _on_clients_changed(self, _clients: list) -> None:
+    def _on_clients_changed(self, clients: list) -> None:
         self._window.set_start_enabled(self._start_enabled())
+        self._window.left_sidebar.combat_tab.set_client_count(len(clients))
 
     # ------------------------------------------------------------------
     # Auto-save / crash recovery
