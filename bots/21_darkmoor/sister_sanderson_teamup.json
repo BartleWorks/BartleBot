@@ -1,12 +1,11 @@
 {
+  "id": "92258753-b396-4552-ad26-00a6895a1d04",
   "name": "Sister Sanderson (Teamup)",
-  "description": "2-person endless Sister Sanderson farmer, ~5 min per run",
+  "description": "Endlessly joins Team-Up for Sanderson House",
   "version": "2.0",
   "clients": "all",
   "initial": "state_10",
   "recovery_state": "state_10",
-  "default_combat_config": "### p1\nany<aoe>[epic] | any<blade>[sharp]@ally(0) | any<blade>@ally(0)\n\n### p2\nany<blade>[sharp]@self | any<blade>@self | lord[epic] | bunyip[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Graveholm",
   "drops": [
     "2 Outsider Relic",

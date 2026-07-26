@@ -1,0 +1,17 @@
+{
+  "id": "6337e295-45db-4cf4-ac8b-e45682276770",
+  "name": "Mass Feint into any AoE",
+  "min_players": 1,
+  "max_players": 4,
+  "player_assignments": [
+    {
+      "players": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "player_combat_strategy_id": "06297bb8-a15a-46a6-be6f-ac41241fc7d2"
+    }
+  ]
+}

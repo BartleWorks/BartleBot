@@ -1,0 +1,5 @@
+{
+  "id": "5012f01f-3829-4521-b24b-4bd4c027d247",
+  "name": "4 player Mass Feint or blade hitter",
+  "dsl": "feint mass | any<blade>[sharp]@ally(2)"
+}

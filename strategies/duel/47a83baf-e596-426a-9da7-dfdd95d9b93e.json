@@ -1,0 +1,38 @@
+{
+  "id": "47a83baf-e596-426a-9da7-dfdd95d9b93e",
+  "name": "4 players - Hall of Heroes AoE spam",
+  "min_players": 4,
+  "max_players": 4,
+  "combat_order": [
+    4,
+    3,
+    2,
+    1
+  ],
+  "player_assignments": [
+    {
+      "players": [
+        1
+      ],
+      "player_combat_strategy_id": "405f556a-acd1-426d-9a37-b92d053ee27a"
+    },
+    {
+      "players": [
+        2
+      ],
+      "player_combat_strategy_id": "28256bdf-e8cb-4fe7-947a-a92642a3dd3f"
+    },
+    {
+      "players": [
+        3
+      ],
+      "player_combat_strategy_id": "3d04d69a-60fd-4f30-97df-bd6fd6507299"
+    },
+    {
+      "players": [
+        4
+      ],
+      "player_combat_strategy_id": "84d98cb0-8fd8-4622-b61b-038f83ba37b5"
+    }
+  ]
+}

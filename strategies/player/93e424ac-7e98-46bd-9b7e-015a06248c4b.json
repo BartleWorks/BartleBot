@@ -1,0 +1,5 @@
+{
+  "id": "93e424ac-7e98-46bd-9b7e-015a06248c4b",
+  "name": "Frenzy Lord/Bunyip/Tempest",
+  "dsl": "any<aura & out_damage> | lord[\"Epic - Amulet\"][epic] | bunyip[\"Epic - Amulet\"][bunyip] | tempest[\"Epic - Amulet\"][epic]"
+}

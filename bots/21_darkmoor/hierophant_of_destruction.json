@@ -1,0 +1,653 @@
+{
+  "id": "c482e844-68c1-41e3-bbd1-1b4e36cf9ed8",
+  "name": "Hierophant of Destruction",
+  "description": "Endlessly defeats Hireophant of Destruction in Black Lagoon, Darkmoor",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_3",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Darkmoor",
+  "drops": [
+    "2 Outsider Relic",
+    "Ammut",
+    "Anubis",
+    "Balance Accurate Pin (100)",
+    "Balance Conversion Pin (180)",
+    "Barbarian's Saga",
+    "Blast Off!",
+    "Bright Critical Amethyst +44 (Ice)",
+    "Bright Critical Amethyst +48 (Life)",
+    "Bright Critical Amethyst +52 (Death)",
+    "Bright Critical Amethyst +56 (Myth)",
+    "Bright Critical Amethyst +57 (Fire)",
+    "Bright Critical Amethyst +63 (Storm)",
+    "Bright Critical Citrine +44 (Ice)",
+    "Bright Critical Citrine +52 (Death)",
+    "Bright Critical Citrine +54 (Balance)",
+    "Bright Critical Citrine +56 (Myth)",
+    "Bright Critical Citrine +57 (Fire)",
+    "Bright Critical Citrine +63 (Storm)",
+    "Bright Critical Jade +48 (Life)",
+    "Bright Critical Jade +52 (Death)",
+    "Bright Critical Jade +54 (Balance)",
+    "Bright Critical Jade +56 (Myth)",
+    "Bright Critical Jade +57 (Fire)",
+    "Bright Critical Jade +63 (Storm)",
+    "Bright Critical Onyx +44 (Ice)",
+    "Bright Critical Onyx +48 (Life)",
+    "Bright Critical Onyx +52 (Death)",
+    "Bright Critical Onyx +54 (Balance)",
+    "Bright Critical Onyx +56 (Myth)",
+    "Bright Critical Onyx +57 (Fire)",
+    "Bright Critical Onyx +63 (Storm)",
+    "Bright Critical Peridot +44 (Ice)",
+    "Bright Critical Peridot +48 (Life)",
+    "Bright Critical Peridot +52 (Death)",
+    "Bright Critical Peridot +54 (Balance)",
+    "Bright Critical Peridot +56 (Myth)",
+    "Bright Critical Peridot +57 (Fire)",
+    "Bright Critical Peridot +63 (Storm)",
+    "Bright Critical Ruby +44 (Ice)",
+    "Bright Critical Ruby +48 (Life)",
+    "Bright Critical Ruby +52 (Death)",
+    "Bright Critical Ruby +54 (Balance)",
+    "Bright Critical Ruby +56 (Myth)",
+    "Bright Critical Ruby +57 (Fire)",
+    "Bright Critical Ruby +63 (Storm)",
+    "Bright Critical Sapphire +44 (Ice)",
+    "Bright Critical Sapphire +48 (Life)",
+    "Bright Critical Sapphire +52 (Death)",
+    "Bright Critical Sapphire +54 (Balance)",
+    "Bright Critical Sapphire +56 (Myth)",
+    "Bright Critical Sapphire +57 (Fire)",
+    "Bright Critical Sapphire +63 (Storm)",
+    "Bright Damage Amethyst +10% (Ice)",
+    "Bright Damage Amethyst +10% (Life)",
+    "Bright Damage Citrine +11% (Balance)",
+    "Bright Damage Citrine +11% (Death)",
+    "Bright Damage Citrine +11% (Fire)",
+    "Bright Damage Citrine +11% (Myth)",
+    "Bright Damage Citrine +11% (Storm)",
+    "Bright Damage Jade +10% (Ice)",
+    "Bright Damage Jade +10% (Life)",
+    "Bright Damage Jade +11% (Balance)",
+    "Bright Damage Jade +11% (Death)",
+    "Bright Damage Jade +11% (Fire)",
+    "Bright Damage Jade +11% (Myth)",
+    "Bright Damage Jade +11% (Storm)",
+    "Bright Damage Onyx +10% (Ice)",
+    "Bright Damage Onyx +10% (Life)",
+    "Bright Damage Peridot +11% (Balance)",
+    "Bright Damage Peridot +11% (Death)",
+    "Bright Damage Peridot +11% (Fire)",
+    "Bright Damage Peridot +11% (Myth)",
+    "Bright Damage Peridot +11% (Storm)",
+    "Bright Damage Ruby +11% (Balance)",
+    "Bright Damage Ruby +11% (Death)",
+    "Bright Damage Ruby +11% (Fire)",
+    "Bright Damage Ruby +11% (Myth)",
+    "Bright Damage Ruby +11% (Storm)",
+    "Bright Damage Sapphire +10% (Ice)",
+    "Bright Damage Sapphire +10% (Life)",
+    "Bright Damage Sapphire +11% (Balance)",
+    "Bright Damage Sapphire +11% (Death)",
+    "Bright Damage Sapphire +11% (Fire)",
+    "Bright Damage Sapphire +11% (Myth)",
+    "Bright Damage Sapphire +11% (Storm)",
+    "Bunyip's Rage",
+    "Chameleon Clash",
+    "Chilling Abomination Amulet",
+    "Count Croakula",
+    "Dark & Stormy",
+    "Death Accurate Pin (100)",
+    "Death Conversion Pin (180)",
+    "Deathly Depths",
+    "Doomed Abomination Amulet",
+    "Drop Bear Fury",
+    "Fire Accurate Pin (100)",
+    "Fire Conversion Pin (180)",
+    "Freeze Ray",
+    "Glimpse of Infinity",
+    "Gravestorm",
+    "Grim Reader",
+    "Heqet",
+    "Ice Accurate Pin (110)",
+    "Ice Conversion Pin (180)",
+    "Improbable Gaze",
+    "Life Accurate Pin (100)",
+    "Life Conversion Pin (180)",
+    "Lord of the Jungle",
+    "Mortality",
+    "Myth Accurate Pin (100)",
+    "Myth Conversion Pin (180)",
+    "Mythic Abomination Amulet",
+    "Old One's Endgame",
+    "Outsider Relic",
+    "Phantasmania!",
+    "Polished Piercing Amethyst +6%",
+    "Polished Piercing Citrine +6%",
+    "Polished Piercing Jade +6%",
+    "Polished Piercing Onyx +6%",
+    "Polished Piercing Peridot +6%",
+    "Polished Piercing Ruby +6%",
+    "Polished Piercing Sapphire +6%",
+    "Rainbow Serpent",
+    "Sanguine Abomination Amulet",
+    "Scales of Destiny",
+    "Scary Abomination Amulet",
+    "Scholomantic Death Charm",
+    "Scholomantic Destructive Charm",
+    "Scholomantic Devilish Charm",
+    "Scholomantic Fortune Charm",
+    "Scholomantic Justice Charm",
+    "Scholomantic Strength Charm",
+    "Scholomantic Worldly Charm",
+    "Shocking Abomination Amulet",
+    "Shu",
+    "Starspawn",
+    "Storm Accurate Pin (80)",
+    "Storm Conversion Pin (180)",
+    "Taweret",
+    "Tense Abomination Amulet",
+    "The Chariot",
+    "The Emperor",
+    "The Hierophant",
+    "The Tower",
+    "The World",
+    "Thoth",
+    "Tree of Strife",
+    "Unearthly Critical Amethyst +48 (Balance)",
+    "Unearthly Critical Citrine +44 (Life)",
+    "Unearthly Critical Jade +42 (Ice)",
+    "Unearthly Damage Amethyst +10% (Balance)",
+    "Unearthly Damage Amethyst +10% (Fire)",
+    "Unearthly Damage Amethyst +10% (Myth)",
+    "Unearthly Damage Amethyst +11% (Death)",
+    "Unearthly Damage Amethyst +11% (Storm)",
+    "Unearthly Damage Citrine +9% (Ice)",
+    "Unearthly Damage Citrine +9% (Life)",
+    "Unearthly Damage Onyx +10% (Balance)",
+    "Unearthly Damage Onyx +10% (Fire)",
+    "Unearthly Damage Onyx +10% (Myth)",
+    "Unearthly Damage Onyx +11% (Death)",
+    "Unearthly Damage Onyx +11% (Storm)",
+    "Unearthly Damage Peridot +9% (Ice)",
+    "Unearthly Damage Peridot +9% (Life)",
+    "Unearthly Damage Ruby +9% (Ice)",
+    "Unearthly Damage Ruby +9% (Life)",
+    "Wheel of Fortune",
+    "Wobbegong Frenzy",
+    "Zand the Bandit"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Outsiders Camp",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z00_OutsidersCamp"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check zone",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z04_BlackLagoon",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_zone",
+      "label": "Check world",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Darkmoor/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_via_list",
+      "label": "Take Demox to Black Lagoon",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z00_OutsidersCamp",
+        "to_zone": "Darkmoor/DM_Z04_BlackLagoon",
+        "interact_xyz": {
+          "x": 1867.76,
+          "y": 1481.14,
+          "z": 0.3
+        },
+        "reset_xyz": {
+          "x": 1375.88,
+          "y": 1525.97,
+          "z": 0.3
+        },
+        "zone_list_entry": "Black Lagoon"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_dungeon",
+      "label": "Enter Bog of Vengeance",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Darkmoor/DM_Z04_BlackLagoon",
+        "dungeon_zone": "Darkmoor/Interiors/DM_Z04I08_BogOfVengeance",
+        "sigil_xyz": {
+          "x": -9154.1,
+          "y": -2425.66,
+          "z": 56.96
+        },
+        "reset_xyz": {
+          "x": -8577.4,
+          "y": -2012.5,
+          "z": 2.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Hierophant of Destruction",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_zone",
+      "label": "Exit Bog of Vengeance",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Darkmoor/Interiors/DM_Z04I08_BogOfVengeance",
+        "to_zone": "Darkmoor/DM_Z04_BlackLagoon",
+        "xyz": {
+          "x": -1289.6,
+          "y": 3195.88,
+          "z": 371.01
+        },
+        "reset_xyz": {
+          "x": -1019.81,
+          "y": 2932.83,
+          "z": 371.01
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "keep_list": [
+          "Abomination",
+          "Damage",
+          "Piercing"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_11",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

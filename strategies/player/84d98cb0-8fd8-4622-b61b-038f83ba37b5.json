@@ -1,0 +1,5 @@
+{
+  "id": "84d98cb0-8fd8-4622-b61b-038f83ba37b5",
+  "name": "Blade third position",
+  "dsl": "any<blade>[sharp]@ally(1)"
+}

@@ -1,14 +1,207 @@
 {
+  "id": "58ee99c7-79cb-4ad4-b771-fc4b2de333fa",
   "name": "Waterworks",
   "description": "Endlessly completes Waterworks in Crab Alley, Wizard City",
   "version": "1.0",
   "clients": "all",
   "initial": "state_16",
   "recovery_state": "state_1",
-  "default_combat_config": "tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Wizard City",
-  "drops": [],
+  "drops": [
+    "Accurate",
+    "Amber Dust",
+    "Amplify",
+    "Animate Skeleton Onyx",
+    "Aquamarine",
+    "Availing Hands Citrine",
+    "Baby Carrot",
+    "Balance Mastery Amulet",
+    "Balefrost",
+    "Black Widow Onyx",
+    "Blade of Ice Sapphire",
+    "Boots of Catastrophe",
+    "Boots of Esprit",
+    "Boots of Judgment",
+    "Brass",
+    "Brilliant Light Jade",
+    "Brimstone Boots",
+    "Bronze",
+    "Buff Minion Peridot",
+    "Bullheaded Peridot",
+    "Burning Pixie",
+    "Cape of Esprit",
+    "Cape of Judgment",
+    "Captain Canteloupe",
+    "Cauliflowers",
+    "Cherry Tomato",
+    "Clear Blocking Hematite +10",
+    "Clear Blocking Opal +5",
+    "Clear Critical Amethyst +10",
+    "Clear Critical Jade +10",
+    "Clear Critical Peridot +10",
+    "Clear Damage Citrine +19",
+    "Clear Damage Onyx +19",
+    "Clear Damage Peridot +19",
+    "Clear Defense Hematite +40",
+    "Cobalt",
+    "Combustible Band",
+    "Crab Apples",
+    "Cubby Broccoli",
+    "Cyclops Minion Peridot",
+    "Dagger of Typhoons",
+    "Darkwind",
+    "Dastardly Radish",
+    "Deadly Fly Trap",
+    "Death Mastery Amulet",
+    "Delectable Hooves",
+    "Delicious Cookie",
+    "Detonate Ruby",
+    "Devoted Vestment",
+    "Dimension Shift Peridot",
+    "Dirk of Delusion",
+    "Donate Power",
+    "Doom and Gloom",
+    "Dragonflies",
+    "Dragonhorned Melon",
+    "Draw Health Sapphire",
+    "Empower",
+    "Enfeeble Amethyst",
+    "Facade of Fairness",
+    "Fancy Yogurt",
+    "Fire Mastery Amulet",
+    "Firestarter's Boots",
+    "Firestarter's Cape",
+    "Firestarter's Hood",
+    "Fish Fin",
+    "Flowering Pineapple",
+    "Forgotten Facade",
+    "Fossil",
+    "Frostbit Boots",
+    "Frostbit Cape",
+    "Frostbit Footguards",
+    "Frostbit Hood",
+    "Frozen Armor Sapphire",
+    "Gargantuan",
+    "Get Sunbird Ruby",
+    "Giant",
+    "Glowing Star Fruit",
+    "Glowing Taffy",
+    "Golden Grapes",
+    "Golden Wheat Bread",
+    "Golem Minion Peridot",
+    "Great Learner Opal",
+    "Green Tomato",
+    "Hambrosia",
+    "Hangman's Boots",
+    "Hangman's Cape",
+    "Hangman's Hood",
+    "Heart o'Pixie Jade",
+    "Helm of Burning Ambition",
+    "Hexster Citrine",
+    "Hood of Esprit",
+    "Hood of Judgment",
+    "Ice Mastery Amulet",
+    "Ice Rangers",
+    "Icestar Stalkers",
+    "Insightful Topper",
+    "Kris of the Piscean Guard",
+    "Life Mastery Amulet",
+    "Lifeforce Blade",
+    "Maelstrom Snap Dragon",
+    "Majestic Signet",
+    "Mander Minion Citrine",
+    "Mass Triage Jade",
+    "Mend Minion Peridot",
+    "Merle's Whisker",
+    "Minotaur",
+    "Mithril",
+    "Mutate Snowman (Fire)",
+    "Mutate Snowman (Storm)",
+    "Mysterious Costume",
+    "Mystic Dragon Fruit",
+    "Myth Mastery Amulet",
+    "Natural Boots",
+    "Nereus's Hoarfrost Helm",
+    "Ninja Pig Opal",
+    "No Pain, No Gain Onyx",
+    "Opaque Blocking Sapphire +8",
+    "Opaque Damage Citrine +17",
+    "Opaque Damage Sapphire +17",
+    "Opaque Defense Opal +18",
+    "Pest Zapper",
+    "Pink Dandelion",
+    "Pink Jellyfish",
+    "Polar Boots",
+    "Polished Blocking Opal +6",
+    "Polished Critical Amethyst +11",
+    "Polished Critical Citrine +11",
+    "Polished Damage Onyx +21",
+    "Polished Damage Peridot +21",
+    "Polished Damage Sapphire +21",
+    "Polished Defense Opal +22",
+    "Polished Health Opal +90",
+    "Power Link Ruby",
+    "Precision",
+    "Purloin Health Talent Citrine",
+    "Purloin Power Amethyst",
+    "Reckless Raiment",
+    "Rime Runners",
+    "Ring of Rare Origins",
+    "Rising Tide Topper",
+    "Salgio's Tinder Cloak",
+    "Sanctuary",
+    "Sandstone",
+    "Savory Shroud",
+    "Scales",
+    "Shell",
+    "Shroud of Solitude",
+    "Silver",
+    "Silver Trumpet Vine",
+    "Skyscream Boots",
+    "Skyscream Cape",
+    "Skyscream Hood",
+    "Sniper",
+    "Sniper Talent Opal",
+    "Snow Drift Sapphire",
+    "Spartan Jade",
+    "Spicy Drumstick",
+    "Spirit Armor",
+    "Steel",
+    "Stone Block",
+    "Storm Elemental Opal",
+    "Storm Mastery Amulet",
+    "Stormclaw Amethyst",
+    "Storyteller's Cap",
+    "Storyteller's Tunic",
+    "Strawberry Cupcake",
+    "Submarine Sandwich",
+    "Sun Fruit",
+    "Sunbird",
+    "Sunstone",
+    "Synthesis Cover",
+    "Take Power Ruby",
+    "Talos Peridot",
+    "Tasty Tunic",
+    "Thundercloud Coif",
+    "Time Skip Sapphire",
+    "Titanium",
+    "Tolerant Boots",
+    "Tragic Tunic",
+    "Tricksy Boots",
+    "Tricksy Cape",
+    "Tricksy Hood",
+    "Tungsten",
+    "Turbulent Tunic",
+    "Typhoon Band",
+    "Unstoppable",
+    "Virtue Shoes",
+    "Virulent Plague Onyx",
+    "Vital Headdress",
+    "Whimsical Surcoat",
+    "Wraps of Rapport",
+    "Wyldfire",
+    "Yellow Corn"
+  ],
   "authors": "BartleBot",
   "options": [
     {
@@ -32,6 +225,12 @@
       "name": "Skip mobs",
       "type": "bool",
       "default": true
+    },
+    {
+      "name": "Respawn Sylster Glowstorm",
+      "type": "bool",
+      "default": true,
+      "description": "REQUIRES 4 PLAYERS TO WORK. If enabled, respawns Sylster Glowstorm by exiting and re-entering the main room."
     }
   ],
   "states": [
@@ -314,7 +513,8 @@
           "x": -1520.14,
           "y": 43.12,
           "z": -2.15
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -354,7 +554,8 @@
           "x": -1045.72,
           "y": -7.69,
           "z": -48.93
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -472,7 +673,8 @@
           "x": 1519.11,
           "y": 41.35,
           "z": -2.15
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -542,7 +744,8 @@
           "x": 1495.93,
           "y": -1563.44,
           "z": -45.24
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -587,8 +790,7 @@
       },
       "params": {
         "enemy": "",
-        "use_bot_default": false,
-        "combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic]\n\n### p2\nany<blade>@ally(1)\n\n### p3\nany<blade>[sharp]@ally(1) | any<blade>@ally(1)",
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {
@@ -715,7 +917,8 @@
           "x": -1112.03,
           "y": 1453.14,
           "z": -2.16
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -755,7 +958,8 @@
           "x": -966.82,
           "y": -8.65,
           "z": -48.93
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -873,7 +1077,8 @@
           "x": 1126.55,
           "y": 1469.11,
           "z": -2.15
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -1034,7 +1239,8 @@
           "x": 1459.34,
           "y": -1446.9,
           "z": -45.24
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -1128,7 +1334,8 @@
           "x": -1578.06,
           "y": 1544.2,
           "z": -44.26
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -1202,8 +1409,7 @@
       },
       "params": {
         "enemy": "Tri-Gauntlet-Angler",
-        "use_bot_default": false,
-        "combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic]\n\n### p2\nany<trap>@boss\n\n### p3\nany<trap>@boss",
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {
@@ -1238,13 +1444,6 @@
       },
       "params": {
         "keep_list": [
-          "Judgement",
-          "Hangman",
-          "Firestarter",
-          "Frostbit",
-          "Esprit",
-          "Tricksy",
-          "Skyscream",
           "Mastery",
           "Savory Shroud",
           "Tasty Tunic",
@@ -1270,6 +1469,72 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_56",
+      "node_type": "enter_zone",
+      "label": "Enter room 1A",
+      "position": {
+        "x": 23320.0,
+        "y": -270.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
+        "xyz": {
+          "x": -2309.71,
+          "y": 51.58,
+          "z": -2.14
+        },
+        "reset_xyz": {
+          "x": -1520.14,
+          "y": 43.12,
+          "z": -2.15
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_57",
+      "node_type": "enter_zone",
+      "label": "Exit room 1A",
+      "position": {
+        "x": 23760.0,
+        "y": -270.0
+      },
+      "params": {
+        "from_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01a",
+        "to_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "xyz": {
+          "x": 1703.39,
+          "y": 2.36,
+          "z": 43.31
+        },
+        "reset_xyz": {
+          "x": 1092.59,
+          "y": 0.4,
+          "z": -48.92
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_58",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 24200.0,
+        "y": -270.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.05,
+        "refill_potions": true,
+        "mark_zone": ""
       },
       "option_overrides": {}
     }
@@ -2298,11 +2563,21 @@
     {
       "trigger": "advance",
       "source": "state_54",
-      "dest": "state_1",
-      "when": "FAILURE",
+      "dest": "state_56",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Respawn Sylster Glowstorm",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -2312,6 +2587,26 @@
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Respawn Sylster Glowstorm",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
     },
@@ -2329,6 +2624,66 @@
       "trigger": "advance",
       "source": "state_55",
       "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_56",
+      "dest": "state_57",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_56",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_57",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_57",
+      "dest": "state_58",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_58",
+      "dest": "state_52",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_58",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

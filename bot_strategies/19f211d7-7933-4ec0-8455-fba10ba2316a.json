@@ -1,0 +1,14 @@
+{
+  "id": "19f211d7-7933-4ec0-8455-fba10ba2316a",
+  "name": "4-player Graveyard",
+  "bot_id": "28180367-db5b-476b-8404-87048baa68d6",
+  "player_decks": {},
+  "state_assignments": [
+    {
+      "duel_combat_strategy_id": "6ecde867-f943-411e-b756-95ff5ceaf3db",
+      "state_ids": [
+        "state_9"
+      ]
+    }
+  ]
+}

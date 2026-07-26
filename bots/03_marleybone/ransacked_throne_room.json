@@ -1,12 +1,11 @@
 {
+  "id": "8652dc06-b5af-48fc-a112-90c78a46dab3",
   "name": "Ransacked Throne Room",
   "description": "Endlessly completes Ransacked Throne Room in Barkingham Palace, Marleybone",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "any<aura & out_damage> | stormblade@self | lord[\"Epic - Amulet\"] | tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Marleybone",
   "drops": [],
   "authors": "BartleBot",

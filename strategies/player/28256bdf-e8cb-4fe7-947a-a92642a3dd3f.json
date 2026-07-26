@@ -1,0 +1,5 @@
+{
+  "id": "28256bdf-e8cb-4fe7-947a-a92642a3dd3f",
+  "name": "Hall of Heroes AoE group 2",
+  "dsl": "bunyip[\"Epic - Amulet\"]@enemy(5) | tempest[epic]@enemy(5) | any<aoe>[epic]@enemy(5)"
+}
