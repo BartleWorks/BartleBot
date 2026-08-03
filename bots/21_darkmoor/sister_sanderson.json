@@ -1,7 +1,7 @@
 {
   "id": "f057be81-28a0-4dc6-a058-087667c761ab",
   "name": "Sister Sanderson",
-  "description": "2-person endless Sister Sanderson farmer, ~5 min per run",
+  "description": "Endlessly farms Sister Sanderson in Graveholm, Darkmoor",
   "version": "2.0",
   "clients": "all",
   "initial": "state_7",
@@ -207,10 +207,11 @@
         "y": -90.0
       },
       "params": {
-        "if_health_below": 1.0,
+        "if_health_below": 0.5,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       },
       "option_overrides": {}
     },
@@ -279,9 +280,7 @@
         "y": -90.0
       },
       "params": {
-        "keep_list": [
-          "Abomination"
-        ],
+        "keep_list": [],
         "sell_pets": true,
         "sell_socket_wrenches": false,
         "sell_skeleton_keys": false

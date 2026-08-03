@@ -3,12 +3,5 @@
   "name": "Eerkala - 2 players scaled",
   "bot_id": "18872848-4255-428f-98dd-f8acd4019145",
   "player_decks": {},
-  "state_assignments": [
-    {
-      "duel_combat_strategy_id": "5098606d-4e19-487f-9b35-905daead63b2",
-      "state_ids": [
-        "state_7"
-      ]
-    }
-  ]
+  "state_assignments": []
 }

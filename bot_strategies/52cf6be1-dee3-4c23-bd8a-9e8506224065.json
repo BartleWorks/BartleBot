@@ -3,12 +3,5 @@
   "name": "4-player Hall of Heroes (2 max storms)",
   "bot_id": "602704e3-45d1-4232-a64a-9c012f870cf3",
   "player_decks": {},
-  "state_assignments": [
-    {
-      "duel_combat_strategy_id": "47a83baf-e596-426a-9da7-dfdd95d9b93e",
-      "state_ids": [
-        "state_6"
-      ]
-    }
-  ]
+  "state_assignments": []
 }

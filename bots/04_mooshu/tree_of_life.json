@@ -1,0 +1,1191 @@
+{
+  "id": "445d4d6c-fbd6-405d-bc82-2d45a3de87fe",
+  "name": "Tree of Life",
+  "description": "Endlessly completes the Tree of Life in Mooshu",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_3",
+  "start_location": "Anywhere in Mooshu",
+  "drops": [
+    "Accurate",
+    "Add Health Opal",
+    "Ape Grapes",
+    "Athame of the Lotus",
+    "Balance-Eye Citrine",
+    "Balance-It Citrine",
+    "Bamboo Obelisk",
+    "Band of the Primitives",
+    "Banshee",
+    "Bell Pagoda",
+    "Benign Cap",
+    "Black Mantle",
+    "Blemished Damage Amethyst +11",
+    "Blemished Damage Citrine +11",
+    "Blemished Damage Onyx +11",
+    "Blemished Damage Sapphire +11",
+    "Blemished Defense Onyx +21",
+    "Blemished Defense Opal +11",
+    "Blemished Defense Opal +12",
+    "Blemished Defense Ruby +21",
+    "Blemished Health Opal +40",
+    "Blemished Mana Opal +18",
+    "Blemished PIP Opal +4%",
+    "Blended Wool Tunic",
+    "Blood Bat",
+    "Bone",
+    "Boots of Chimes",
+    "Boots of the Verse",
+    "Brass",
+    "Brogans of Decrepitude",
+    "Cap of Consideration",
+    "Cap of Song",
+    "Cap of the Verse",
+    "Cat Tail",
+    "Cloak of Charity",
+    "Cloak of Clarity",
+    "Cloak of Concentration",
+    "Cloak of Deliberation",
+    "Cobalt",
+    "Colossus",
+    "Copper",
+    "Cowl of Cooperation",
+    "Cowl of Soul-Searching",
+    "Cowl of Sympathy",
+    "Cowl of Tact",
+    "Crunch Apple",
+    "Cyclops",
+    "Cyclops Minion",
+    "Dark Sprite",
+    "Darkwind",
+    "Dashing Cloak",
+    "Deadly Ninja Fig",
+    "Death Oni's Abstract Hat",
+    "Death Oni's Garments",
+    "Death Oni's Introverted Shoes",
+    "Death Oni's Necklace of Doom",
+    "Death Oni's Peridot Blade",
+    "Death Oni's Tunic",
+    "Death-Shot Onyx",
+    "Deathbat",
+    "Deck of the Lotus",
+    "Determined Opal",
+    "Dire Ghoul",
+    "Dirt Pile",
+    "Dream Tanto of Ages",
+    "Earth Walker",
+    "Ecstatic Garments",
+    "Ectoplasm",
+    "Energy Opal",
+    "Engrossed Hat",
+    "Engrossed Shoes",
+    "Enlivened Garment",
+    "Euphonic Cloak",
+    "Exhaust Opal",
+    "Fiery Boom Shroom",
+    "Fire Cracker",
+    "Flawed Accurate Amethyst +4%",
+    "Flawed Accurate Onyx +4%",
+    "Flawed Accurate Opal +2%",
+    "Flawed Damage Opal +5",
+    "Flawed Defense Amethyst +18",
+    "Flawed Defense Citrine +18",
+    "Flawed Defense Jade +18",
+    "Flawed Defense Onyx +18",
+    "Flawed Defense Ruby +18",
+    "Flawed Defense Sapphire +18",
+    "Flawed Health Opal +32",
+    "Flawed Health Opal +33",
+    "Flawed Mana Opal +15",
+    "Flawed Mending Opal +2%",
+    "Footwraps of Charity",
+    "Footwraps of Predicament",
+    "Friendly Shoes",
+    "Frost Obelisk",
+    "Gallant Tunic",
+    "Garment of Dilemma",
+    "Garment of Watchfulness",
+    "Garments of Chants",
+    "Garments of Generations",
+    "Garments of the Observant",
+    "Gearhead Destroyer",
+    "Ghoul",
+    "Gold Tori Gates",
+    "Golden Peanut",
+    "Golden Squash",
+    "Gong of the Oni",
+    "Haskarr's Barbarish Boots",
+    "Hat of Discontent",
+    "Hat of Niceties",
+    "Hat of the Lotus",
+    "Hat of the Nimble",
+    "Hat of the Triad",
+    "Hat of Unison",
+    "Headgear of the Sylph",
+    "Headwraps of Generations",
+    "Headwraps of Nourishment",
+    "Heedful Headwraps",
+    "Heedful Robe",
+    "Helephant",
+    "Helm of Sandcastles",
+    "Hooked Lantern",
+    "Hydra",
+    "Ice Wyvern",
+    "Ice Wyvern Sapphire",
+    "Ice-Shot Sapphire",
+    "Immersive Sandals",
+    "Imp",
+    "Impulsive Vestment",
+    "Indulgent Boots",
+    "Indulgent Vestment",
+    "Industrial Helm",
+    "Industrial Uniform",
+    "Kagemoosha's Boots",
+    "Kagemoosha's Citrine Blade",
+    "Kagemoosha's Cowl",
+    "Kagemoosha's Robe",
+    "Kagemoosha's Sandals",
+    "Kagemoosha's Shroud",
+    "Kraken Amethyst",
+    "Large Fish",
+    "Large Watermelon",
+    "Lead",
+    "Leather Straps",
+    "Leech Opal",
+    "Leprechaun",
+    "Life-Proof Jade",
+    "Lunar Tablet",
+    "Lyrical Footwraps",
+    "Lyrical Garments",
+    "Maelstrom Snap Dragon",
+    "Mask of Impression",
+    "Meteor Strike Ruby",
+    "Monstrous",
+    "MooShu Battle Theme",
+    "MooShu Haunted Theme",
+    "MooShu Mystical Theme",
+    "MooShu Plague Theme",
+    "MooShu War Theme",
+    "Myth-Away Peridot",
+    "Nature's Wrath",
+    "Nickel",
+    "Ninja Pigs",
+    "Nomoonaga's Analytical Ring",
+    "Nomoonaga's Band",
+    "Nomoonaga's Deck",
+    "Nomoonaga's Diligent Cap",
+    "Nomoonaga's Kris of Hope",
+    "Nomoonaga's Lively Garment",
+    "Nosferatu's Cloak",
+    "Nunu's Mask of the Twisted",
+    "Painful Vestment",
+    "Peculiar Boots",
+    "Pest Zapper",
+    "Pink Dandelion",
+    "Potted Bamboo Plant",
+    "Potted Heartblossom",
+    "Power Play Citrine",
+    "Problematic Headwraps",
+    "Proficient Shoes",
+    "Profound Robes",
+    "Profound Slippers",
+    "Pyrite",
+    "Quick-Witted Vestment",
+    "Ring of Regard",
+    "Robe of Cognition",
+    "Robe of Conceit",
+    "Robe of Song",
+    "Robe of the Chipper",
+    "Robe of the Lithe",
+    "Robe of the Verse",
+    "Robes of Struggling",
+    "Robes of the Triad",
+    "Samoorai",
+    "Samoorai Statue",
+    "Sandals of Hymns",
+    "Sandals of the Determined",
+    "Sandals of the Quick-Witted",
+    "Sandals of the Universe",
+    "Sapphire Ring of Power",
+    "Satyr",
+    "Scarecrow",
+    "Scorpion",
+    "Seraph",
+    "Shoes of Dilemma",
+    "Shoes of Hinderance",
+    "Shoes of Scruples",
+    "Shoes of Song",
+    "Shoes of Struggling",
+    "Shoes of the Whim",
+    "Shoes of Woe",
+    "Shroud of Chants",
+    "Shroud of Conceit",
+    "Shroud of Music",
+    "Shroud of the Opus",
+    "Silence Opal",
+    "Silver Lantern",
+    "Skeletal Pirate",
+    "Skeletal Pirate Onyx",
+    "Slippers of the Opus",
+    "Slippers of Yodels",
+    "Solar Obelisk",
+    "Spectral Blast",
+    "Speculative Tunic",
+    "Spider Silk",
+    "Sprightly Garments",
+    "Sprightly Slippers",
+    "Square Root",
+    "Square Watermelon",
+    "Statue of Hyottoko",
+    "Storm-Eye Amethyst",
+    "Stressed Mask",
+    "Stressed Sandals",
+    "Tall Boulder",
+    "Tin",
+    "Tormented Cloak",
+    "Troll",
+    "Tunic of Impression",
+    "Tunic of Melodies",
+    "Tunic of Preoccupation",
+    "Tunic of Soul-Searching",
+    "Vampire",
+    "Vestment of Arias",
+    "Vestment of Commotion",
+    "Vestment of Cooperation",
+    "Vestment of Dreaming",
+    "Vestment of Hymns",
+    "Vestment of Niceties",
+    "Vestment of the Eager",
+    "Vexing Tunic",
+    "Vigilant Cap",
+    "Vigilant Sandals",
+    "Votive Tablet",
+    "White Laugh-O-Dil",
+    "Wing Chun Dummy",
+    "Wisp Bonus Opal",
+    "Wooden Skeleton Key",
+    "Wyldfire",
+    "Zippy Shroud"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "check_zone",
+      "label": "Check if in Mooshu",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Yoshihito Temple",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Jade Palace",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Enter Rock Dojo",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Hub",
+        "to_zone": "MooShu/Interiors/MS_RockDojoT2",
+        "xyz": {
+          "x": 11518.74,
+          "y": -12981.39,
+          "z": 53.91
+        },
+        "reset_xyz": {
+          "x": 11518.76,
+          "y": -12498.38,
+          "z": -154.57
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Enter Yoshihito Temple",
+      "position": {
+        "x": 2200.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "MooShu/Interiors/MS_RockDojoT2",
+        "to_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+        "xyz": {
+          "x": -1840.39,
+          "y": 1691.98,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -1415.22,
+          "y": 1552.24,
+          "z": 0.0
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_dungeon",
+      "label": "Enter Tree of Life",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+        "dungeon_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "sigil_xyz": {
+          "x": 22340.45,
+          "y": 17011.45,
+          "z": -333.7
+        },
+        "reset_xyz": {
+          "x": 21269.32,
+          "y": 16798.13,
+          "z": -532.83
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "interact",
+      "label": "Talk to Hideo Kebo",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "interact_xyz": {
+          "x": 18.39,
+          "y": 1957.9,
+          "z": 3.74
+        },
+        "reset_xyz": {
+          "x": 12.73,
+          "y": 1413.34,
+          "z": 1.39
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Pool",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "xyz": {
+          "x": -29.23,
+          "y": 7629.23,
+          "z": -199.9
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "interact",
+      "label": "Talk to Yishin Chen",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "interact_xyz": {
+          "x": 73.1,
+          "y": 4745.22,
+          "z": 0.1
+        },
+        "reset_xyz": {
+          "x": 63.08,
+          "y": 5488.55,
+          "z": 0.1
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Enter Momoonaga's Tower",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "to_zone": "MooShu/MS_Death/Interiors/MS_Death3_T4",
+        "xyz": {
+          "x": 1289.64,
+          "y": 34987.34,
+          "z": 153.52
+        },
+        "reset_xyz": {
+          "x": 1000.68,
+          "y": 34987.51,
+          "z": 153.52
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Nomoonaga",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Pig-Death-Warrior-MSBoss-L48",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "enter_zone",
+      "label": "Exit Nomoonaga's Tower",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Death/Interiors/MS_Death3_T4",
+        "to_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "xyz": {
+          "x": 8.18,
+          "y": -1841.1,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 11.42,
+          "y": -1434.91,
+          "z": -0.0
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Talk to Yishin Chen",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "interact_xyz": {
+          "x": 73.1,
+          "y": 4745.22,
+          "z": 0.1
+        },
+        "reset_xyz": {
+          "x": 63.08,
+          "y": 5488.55,
+          "z": 0.1
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Use Tree of Life",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "interact_xyz": {
+          "x": -12.47,
+          "y": 7758.0,
+          "z": -199.9
+        },
+        "reset_xyz": {
+          "x": -2.41,
+          "y": 7020.54,
+          "z": 0.1
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "enter_zone_via_object",
+      "label": "Take portal to Spirit World",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "to_zone": "MooShu/MS_Death/Interiors/MS_Death3_SpiritWorld",
+        "interact_xyz": {
+          "x": 21.28,
+          "y": 6247.12,
+          "z": 0.1
+        },
+        "reset_xyz": {
+          "x": 10.35,
+          "y": 6878.68,
+          "z": 0.1
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Kagemoosha",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/Interiors/MS_Death3_SpiritWorld",
+        "xyz": {
+          "x": 51.46,
+          "y": 4057.67,
+          "z": -0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "handle_combat",
+      "label": "Defeat Kagemoosha",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Pig-Death-Lord-MSBoss-L49",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safety",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/Interiors/MS_Death3_SpiritWorld",
+        "xyz": {
+          "x": 51.46,
+          "y": 4057.67,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 5.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "handle_combat",
+      "label": "Defeat Death Oni",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Oni-Death-MSBoss-L61",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "keep_list": [
+          "Oni"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": true
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_7",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

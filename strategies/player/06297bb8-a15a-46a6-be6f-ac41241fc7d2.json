@@ -1,5 +1,0 @@
-{
-  "id": "06297bb8-a15a-46a6-be6f-ac41241fc7d2",
-  "name": "Mass Feint into any AoE",
-  "dsl": "feint mass | any<aoe>[\"Epic - Amulet\"] | any<aoe>[epic]"
-}

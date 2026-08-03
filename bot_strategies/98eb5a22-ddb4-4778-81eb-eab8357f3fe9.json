@@ -3,13 +3,5 @@
   "name": "4 player King Detritus (storm hitter)",
   "bot_id": "946d9fd0-1de2-4fe9-bf27-138afd3e319c",
   "player_decks": {},
-  "default_strategy_id": "6337e295-45db-4cf4-ac8b-e45682276770",
-  "state_assignments": [
-    {
-      "duel_combat_strategy_id": "33a14fce-4ba6-4297-badf-ddd1950ad7e9",
-      "state_ids": [
-        "state_12"
-      ]
-    }
-  ]
+  "state_assignments": []
 }

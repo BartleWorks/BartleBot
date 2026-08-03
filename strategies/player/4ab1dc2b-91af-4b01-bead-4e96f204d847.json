@@ -1,5 +1,0 @@
-{
-  "id": "4ab1dc2b-91af-4b01-bead-4e96f204d847",
-  "name": "4 player blade hitter",
-  "dsl": "any<blade>[sharp]@ally(2)"
-}

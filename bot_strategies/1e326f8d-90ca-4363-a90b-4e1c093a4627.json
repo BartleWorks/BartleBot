@@ -3,19 +3,5 @@
   "name": "4-player WW",
   "bot_id": "58ee99c7-79cb-4ad4-b771-fc4b2de333fa",
   "player_decks": {},
-  "default_strategy_id": "4029dbd9-af16-45a5-8e83-6d635d68b14e",
-  "state_assignments": [
-    {
-      "duel_combat_strategy_id": "24919860-a6f8-46be-85bb-e3a4016d2110",
-      "state_ids": [
-        "state_52"
-      ]
-    },
-    {
-      "duel_combat_strategy_id": "33a14fce-4ba6-4297-badf-ddd1950ad7e9",
-      "state_ids": [
-        "state_26"
-      ]
-    }
-  ]
+  "state_assignments": []
 }
