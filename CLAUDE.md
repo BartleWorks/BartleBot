@@ -151,7 +151,7 @@ For `QThread`, call `thread.quit()` and `thread.wait()` in `closeEvent` before l
 
 ## External Dependencies
 
-- **WizWalker**: low-level Wizard101 memory hooking — fork `The-World-Tree/wizwalker`, branch `deckbuilder-bvr`
+- **WizWalker**: low-level Wizard101 memory hooking — fork `The-World-Tree/wizwalker`, branch `bartlebot`
 - **WizSprinter**: safe wrappers + combat DSL — fork `The-World-Tree/wizsprinter`, branch `main`
 
 Both are pinned by exact commit `rev` in `pyproject.toml`, using HTTPS URLs so CI
@@ -192,7 +192,7 @@ git fetch laurenz
 git log --oneline HEAD..laurenz/development     # anything new?
 git merge laurenz/development                   # expect conflicts: our commits touch offsets too
 poetry run pytest                               # then smoke-test against a live client
-git push origin deckbuilder-bvr
+git push origin bartlebot
 ```
 
 Then bump the pin in this repo (see below). If Laurenz has not fixed it yet,
@@ -210,7 +210,7 @@ cd ../wizsprinter && git fetch deimos && git merge deimos/main
 Local edits do **not** affect the app until they are pushed and the pin moves:
 
 ```bash
-cd ../wizwalker && git commit -am "..." && git push origin deckbuilder-bvr
+cd ../wizwalker && git commit -am "..." && git push origin bartlebot
 cd ../BartleBot
 # update the rev in pyproject.toml to the new commit hash
 poetry lock && poetry install
@@ -225,13 +225,18 @@ poetry run pip install -e ../wizwalker    # live editing
 poetry install                            # back to the pinned commit
 ```
 
-**Tag every commit you pin.** A pinned SHA that is only reachable from a branch
-can be orphaned by a force-push or rebase, and `poetry install` then fails for
-everyone including CI. Before bumping:
+**Tag every commit you pin.** A pinned SHA reachable only from a branch tip can
+be orphaned by a force-push, rebase, or branch rename, and `poetry install` then
+fails for everyone including CI. Tag it *before* bumping the pin:
 
 ```bash
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
 ```
+
+Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are both tagged
+`bartlebot-pin-20260802` — wizwalker `1d1db0f`, wizsprinter `2118aa7`. Never
+delete a tag that an older commit of this repo still pins, or you break the
+build at that revision.
 
 I have downloaded reference files to assist in planning:
 
