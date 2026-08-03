@@ -1,7 +1,7 @@
 """Tests for bartlebot.nodes.combat_runner.resolve_combat."""
 
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
@@ -114,6 +114,75 @@ def test_full_resolution(tmp_path: Path):
     assert dsls[1] == "trap @ enemy"
     assert order == [2, 1]
     assert "Boss" in source
+
+
+def test_full_resolution_inline_dsl_skips_store(tmp_path: Path):
+    """Inline assignments resolve without ever touching the PCS store."""
+    dcs = DuelCombatStrategy(
+        name="Inline Boss",
+        combat_order=[1, 2],
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="blade @ self"),
+            PlayerAssignment(players=[2], dsl="trap @ enemy"),
+        ],
+    )
+    bcs = BotCombatStrategy(name="Farm", bot_id="bot-1", default_strategy_id=dcs.id)
+    machine = _make_machine(bot_id="bot-1")
+
+    load_pcs = Mock(side_effect=AssertionError("inline assignments must not load PCS files"))
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+    ):
+        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+
+    assert dsls == ["blade @ self", "trap @ enemy"]
+    assert order == [1, 2]
+    load_pcs.assert_not_called()
+
+
+def test_mixed_inline_and_linked_assignments(tmp_path: Path):
+    """A duel may mix inline DSL with a linked preset; only the linked one loads."""
+    pcs = PlayerCombatStrategy(name="Shared", dsl="shared_dsl")
+    dcs = DuelCombatStrategy(
+        name="Mixed",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="inline_dsl"),
+            PlayerAssignment(players=[2], player_combat_strategy_id=pcs.id),
+        ],
+    )
+    bcs = BotCombatStrategy(name="Farm", bot_id="bot-1", default_strategy_id=dcs.id)
+    machine = _make_machine(bot_id="bot-1")
+
+    load_pcs = Mock(return_value=pcs)
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+    ):
+        dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
+
+    assert dsls == ["inline_dsl", "shared_dsl"]
+    load_pcs.assert_called_once_with(pcs.id)
+
+
+def test_empty_inline_dsl_falls_back_to_builtin(tmp_path: Path):
+    """A blank inline DSL uses the built-in default rather than an empty strategy."""
+    dcs = DuelCombatStrategy(name="Blank", player_assignments=[PlayerAssignment(players=[1], dsl="")])
+    bcs = BotCombatStrategy(name="Farm", bot_id="bot-1", default_strategy_id=dcs.id)
+    machine = _make_machine(bot_id="bot-1")
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+    ):
+        dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=1)
+
+    assert dsls[0] == BARTLEBOT_DEFAULT_COMBAT_CONFIG
 
 
 def test_state_assignment_used_when_use_default_false(tmp_path: Path):

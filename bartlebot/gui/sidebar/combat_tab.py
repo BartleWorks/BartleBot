@@ -53,6 +53,7 @@ _NUM_PLAYER_SLOTS = 4
 _BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _ICON_BTN_SIZE = 16
+_DSL_PREVIEW_CHARS = 28
 
 
 # ---------------------------------------------------------------------------
@@ -279,8 +280,18 @@ def _format_bcs_meta(bcs: BotCombatStrategy) -> str:
     return f"{n} state override{'s' if n != 1 else ''}" if n else "Default strategy only"
 
 
+def _summarize_assignment_dsl(assignment, pcs_by_id: dict[str, str]) -> str:
+    """Label for one assignment: the linked preset's name, or its inline DSL truncated."""
+    if assignment.is_linked:
+        return pcs_by_id.get(assignment.player_combat_strategy_id, "(unknown)")
+    dsl = " ".join(assignment.dsl.split())
+    if not dsl:
+        return "(default)"
+    return dsl if len(dsl) <= _DSL_PREVIEW_CHARS else dsl[: _DSL_PREVIEW_CHARS - 1] + "…"
+
+
 def _format_dcs_assignments(dcs: DuelCombatStrategy, all_pcs: list[PlayerCombatStrategy]) -> str:
-    """One-line summary of player-to-PCS assignments within a DCS."""
+    """One-line summary of player assignments within a DCS."""
     if not dcs.player_assignments:
         return "No player assignments"
     pcs_by_id = {p.id: p.name for p in all_pcs}
@@ -289,7 +300,7 @@ def _format_dcs_assignments(dcs: DuelCombatStrategy, all_pcs: list[PlayerCombatS
         players = sorted(assignment.players)
         if not players:
             continue
-        name = pcs_by_id.get(assignment.player_combat_strategy_id, "(unknown)")
+        name = _summarize_assignment_dsl(assignment, pcs_by_id)
         if len(players) == 1:
             player_str = f"P{players[0]}"
         elif players == list(range(players[0], players[-1] + 1)):

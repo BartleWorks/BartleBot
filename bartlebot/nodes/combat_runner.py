@@ -26,7 +26,8 @@ def resolve_combat(
       3. Load BotCombatStrategy; if use_default_strategy=True use default_strategy_id,
          otherwise find the StateAssignment whose state_ids contains machine.state.
       4. Load DuelCombatStrategy; for each 1-based player slot (1..num_clients) find
-         the PlayerAssignment → load PlayerCombatStrategy → DSL string.
+         the PlayerAssignment → its inline DSL, or the linked PlayerCombatStrategy
+         preset's DSL if player_combat_strategy_id is set.
       5. Players with no assignment get BARTLEBOT_DEFAULT_COMBAT_CONFIG.
       6. combat_order from DuelCombatStrategy.combat_order (None → []).
 
@@ -86,10 +87,10 @@ def resolve_combat(
 
     source_label = f"duel strategy '{dcs.name}' (via {assignment_source})"
 
-    # Collect the DSL strings for each player assignment's referenced PCS.
+    # Collect the DSL strings for assignments that link a shared PCS preset.
+    # Inline assignments carry their own DSL and need no lookup.
     pcs_map: dict[str, str] = {}
-    for assignment in dcs.player_assignments:
-        pcs_id = assignment.player_combat_strategy_id
+    for pcs_id in dcs.linked_pcs_ids():
         if pcs_id not in pcs_map:
             try:
                 pcs = load_player_strategy(pcs_id)

@@ -415,6 +415,7 @@ class StrategyLibraryWindow(QDialog):
 
         self._dcs_editor = DuelStrategyEditor()
         self._dcs_editor.changed.connect(self._on_dcs_saved)
+        self._dcs_editor.presets_changed.connect(self._on_presets_changed)
         self._dcs_empty_lbl = QLabel("Select a strategy to edit")
 
         right = QWidget()
@@ -439,6 +440,12 @@ class StrategyLibraryWindow(QDialog):
         # DCS editor needs PCS list for assignment pickers
         if hasattr(self, "_dcs_editor"):
             self._dcs_editor.set_pcs_list(self._all_pcs)
+
+    def _on_presets_changed(self) -> None:
+        """A DCS assignment row promoted its inline DSL into a new preset."""
+        self._reload_pcs()
+        self._dcs_editor.set_pcs_list(self._all_pcs)
+        self.strategies_changed.emit()
 
     def _rebuild_dcs_list(self) -> None:
         query = self._dcs_filter.text().strip().lower()

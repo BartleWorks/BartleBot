@@ -452,8 +452,7 @@ class AppController(QObject):
                         f"Default strategy '{dcs.name}' requires ≥{dcs.min_players} players "
                         f"but only {num_clients} client(s) are connected."
                     )
-                for assignment in dcs.player_assignments:
-                    pcs_id = assignment.player_combat_strategy_id
+                for pcs_id in dcs.linked_pcs_ids():
                     try:
                         load_player_strategy(pcs_id)
                     except Exception:
@@ -472,8 +471,7 @@ class AppController(QObject):
                         f"State assignment DCS '{dcs.name}' requires ≥{dcs.min_players} players "
                         f"but only {num_clients} client(s) are connected."
                     )
-                for assignment in dcs.player_assignments:
-                    pcs_id = assignment.player_combat_strategy_id
+                for pcs_id in dcs.linked_pcs_ids():
                     try:
                         load_player_strategy(pcs_id)
                     except Exception:

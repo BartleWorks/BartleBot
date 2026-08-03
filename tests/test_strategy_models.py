@@ -81,6 +81,77 @@ def test_dcs_resolve_dsl_for_player():
     assert dcs.resolve_dsl_for_player(5, pcs_map) is None  # unassigned
 
 
+def test_dcs_resolve_inline_dsl():
+    """Inline assignments resolve from their own dsl, with no library lookup."""
+    dcs = DuelCombatStrategy(
+        name="Inline",
+        player_assignments=[
+            PlayerAssignment(players=[1, 2], dsl="inline_a"),
+            PlayerAssignment(players=[3], dsl="inline_b"),
+        ],
+    )
+    assert dcs.resolve_dsl_for_player(1, {}) == "inline_a"
+    assert dcs.resolve_dsl_for_player(2, {}) == "inline_a"
+    assert dcs.resolve_dsl_for_player(3, {}) == "inline_b"
+    assert dcs.resolve_dsl_for_player(4, {}) is None  # unassigned
+
+
+def test_dcs_resolve_empty_inline_dsl_is_none():
+    """An empty inline DSL falls through to the caller's built-in default."""
+    dcs = DuelCombatStrategy(name="Empty", player_assignments=[PlayerAssignment(players=[1], dsl="")])
+    assert dcs.resolve_dsl_for_player(1, {}) is None
+
+
+def test_dcs_resolve_link_wins_over_inline_dsl():
+    """When a preset is linked, the stale inline dsl is ignored."""
+    dcs = DuelCombatStrategy(
+        name="Mixed",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="stale", player_combat_strategy_id="pcs-1"),
+            PlayerAssignment(players=[2], dsl="inline"),
+        ],
+    )
+    assert dcs.resolve_dsl_for_player(1, {"pcs-1": "from_preset"}) == "from_preset"
+    assert dcs.resolve_dsl_for_player(2, {"pcs-1": "from_preset"}) == "inline"
+
+
+def test_assignment_is_linked():
+    assert PlayerAssignment(players=[1], dsl="x").is_linked is False
+    assert PlayerAssignment(players=[1], player_combat_strategy_id="pcs-1").is_linked is True
+
+
+def test_dcs_linked_pcs_ids_skips_inline():
+    dcs = DuelCombatStrategy(
+        name="Mixed",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="inline"),
+            PlayerAssignment(players=[2], player_combat_strategy_id="pcs-1"),
+            PlayerAssignment(players=[3], player_combat_strategy_id="pcs-2"),
+        ],
+    )
+    assert dcs.linked_pcs_ids() == ["pcs-1", "pcs-2"]
+
+
+def test_dcs_loads_legacy_assignment_without_dsl(tmp_path: Path):
+    """Pre-migration files have no 'dsl' key and a required PCS id — still parse."""
+    path = tmp_path / "legacy.json"
+    path.write_text(
+        json.dumps(
+            {
+                "id": "dcs-legacy",
+                "name": "Legacy",
+                "player_assignments": [{"players": [1], "player_combat_strategy_id": "pcs-1"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    loaded = DuelCombatStrategy.load(path)
+    assignment = loaded.player_assignments[0]
+    assert assignment.is_linked is True
+    assert assignment.dsl == ""
+    assert loaded.resolve_dsl_for_player(1, {"pcs-1": "legacy_dsl"}) == "legacy_dsl"
+
+
 def test_dcs_save_load_roundtrip(tmp_path: Path):
     dcs = DuelCombatStrategy(
         name="Boss Fight",
