@@ -21,7 +21,7 @@ beautifulsoup4 = "^4.0"
 # see "Changing wizwalker or wizsprinter" in CLAUDE.md for the bump workflow.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 wizwalker = {git = "https://github.com/The-World-Tree/wizwalker.git", rev = "1d1db0fefb5c6e33436ac3d96ee544913e43a66b"}
-WizSprinter = {git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "f59c0fdf0d901c278cb6f97c93e9466a69d46a0c"}
+WizSprinter = {git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "2118aa77ef530db202d51338988e0fed8c022003"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0"
