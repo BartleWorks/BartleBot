@@ -1,0 +1,1565 @@
+{
+  "id": "2286b605-efb3-4339-9efd-86c9779d6c0e",
+  "name": "Mirror Lake",
+  "description": "Endlessly completes Mirror Lake in Zafaria",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_3",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Zafaria",
+  "drops": [
+    "Absolute Zero Brim",
+    "Accelerated Learner Opal",
+    "Accurate Opal",
+    "Accurate Talent Opal",
+    "Add Health Opal",
+    "Adroit Opal",
+    "Adventurer's Shillelagh",
+    "Amahle's Striped Band",
+    "Amber Dust",
+    "Ananse's Dark Rangers",
+    "Aryanah's Golden Loop",
+    "Availing Hands",
+    "Baby Carrots",
+    "Balance-Boon Citrine",
+    "Balance-Eye Citrine",
+    "Balance-Off Citrine",
+    "Balanceblade Talent Citrine",
+    "Bananas! Opal",
+    "Baton of the Cottontail",
+    "Baxby's Noble Outfit",
+    "Baxby's Noble Trackers",
+    "Berserker's Rage Pendant",
+    "Big Energy Opal",
+    "Big Holiday Tree",
+    "Big Hurry Opal",
+    "Big Rally Opal",
+    "Big Recovery Opal",
+    "Big Sky Outfit",
+    "Big Sky Striders",
+    "Blade of Fire Ruby",
+    "Blade of Ice Sapphire",
+    "Blight Hound",
+    "Blizzard Lizard Sapphire",
+    "Blue Holiday Ornament",
+    "Bombardier Opal",
+    "Boo Pumpkin Mask",
+    "Boon Tree",
+    "Boots of Fire Dancing",
+    "Boots of Sincerity",
+    "Boss Toad Peridot",
+    "Branded Chapeau",
+    "Brass",
+    "Bronze",
+    "Bummer Opal",
+    "Bundle of Ananse's Stories",
+    "Bundle of Eternal Flame",
+    "Burning Pixie",
+    "Burning Snap Dragon",
+    "Bushfire Hat",
+    "Buttered Bread",
+    "Calculating Opal",
+    "Carol of the Bells Theme",
+    "Cat Bandit Opal",
+    "Catch Leader Opal",
+    "Catch Opal",
+    "Cauliflowers",
+    "Centaur",
+    "Chieftain's Smiling Deck",
+    "Christmas Elf",
+    "Cloak of Conformity",
+    "Cloak of Dreaming Medicine",
+    "Clock Spider Citrine",
+    "Clover of Prosperity",
+    "Cobalt",
+    "Cold At Night Cover",
+    "Cold Chieftain's Mask",
+    "Cold Snap Scepter",
+    "Color Light Strand",
+    "Colossus",
+    "Conviction Talent Opal",
+    "Cool Pumpkin Mask",
+    "Cornbread Fruit Bush",
+    "Council of Light's Band",
+    "Courageous Grower's Hat",
+    "Cowl of Thornwood",
+    "Cupig",
+    "Cyclops Minion",
+    "Cyclops Pumpkin Mask",
+    "Dancing Queen Dancers",
+    "Darajani Havoc Robes",
+    "Deadly Fly Trap",
+    "Deadly Helephant Ears",
+    "Death-Away Onyx",
+    "Death-Boon Onyx",
+    "Death-Eye Onyx",
+    "Death-Proof Onyx",
+    "Death-Shot Onyx",
+    "Deck the Halls Theme",
+    "Decorous Brim",
+    "Delicious Cookie",
+    "Deplete Opal",
+    "Disarmament Amethyst",
+    "Doctor's Firestorm Walkers",
+    "Dr. Jalapeno",
+    "Draconian Opal",
+    "Dull Piercing Opal +1%",
+    "Earth Walker",
+    "Eat My Dust Opal",
+    "Ectoplasm",
+    "Effervescent Opal",
+    "Efreet",
+    "Efreet",
+    "Electrifyin' Tunic",
+    "Elemental Defuse",
+    "Elephant Graveyard Shroud",
+    "Elissa's Chill Band",
+    "Empower",
+    "Energy Opal",
+    "Enfeeble (-3)",
+    "Espirit Chapeau",
+    "Evil Snow Peas",
+    "Expert's Socket Wrench",
+    "Face of Baobab",
+    "Fickle Pickle",
+    "Fire Dragon",
+    "Fire Dragon Ruby",
+    "Fire Lion's Storm Wraps",
+    "Fire Quenching Tunic",
+    "Fire Valley Outfit",
+    "Fire-Away Ruby",
+    "Fire-Feather Robes",
+    "Fire-Giver Ruby",
+    "Flameborn Sidhe Boots",
+    "Flameborn Sidhe Cloak",
+    "Flameborn Sidhe Cowl",
+    "Flaming Soup",
+    "Flapjacks",
+    "Forest Lord",
+    "Forest Lord",
+    "Forlorn Chapeau",
+    "Frost Giant",
+    "Frost Giant Sapphire",
+    "Frostborn Sidhe Boots",
+    "Frostborn Sidhe Cloak",
+    "Frostborn Sidhe Cowl",
+    "Frostman",
+    "Frozen Armor",
+    "Fuel",
+    "Gargantuan",
+    "Gargantuan Talent Opal",
+    "Gearhead Destroyer",
+    "Ghastly Gourd Wand",
+    "Ghost Dragon",
+    "Ghostgrass Hood",
+    "Giant Opal",
+    "Giggling Gourd Wand",
+    "Gingerbread House",
+    "Glowing Dragon Fruit",
+    "Glowing Star Fruit",
+    "Glowing Taffy",
+    "Go Humongo Peridot",
+    "Goat Cheese",
+    "Golden Apple",
+    "Golden Goose",
+    "Golden Grapes",
+    "Goofy Pumpkin Mask",
+    "Graveyard Shift",
+    "Graveyard Walkers",
+    "Great Ape's Tooth",
+    "Green Holiday Ornament",
+    "Grieving Gourd Wand",
+    "Griot's Hood",
+    "Gummy Humongofrog",
+    "Hallowe'en Hat",
+    "Hallowe'en Robe",
+    "Hallowe'en Shoes",
+    "Halt Leader Opal",
+    "Hand-Chased Box of Destiny",
+    "Hand-Chased Box of Thunder",
+    "Hand-Chased Box of Winter",
+    "Happy Holidaisy",
+    "Happy Pumpkin Mask",
+    "Hat of the Old Kings",
+    "Headdress",
+    "Helephant",
+    "Helephant Ears",
+    "Hexster Citrine",
+    "Holiday Fireplace",
+    "Holiday Wreath",
+    "Hood of Chieftain's Honor",
+    "Hood of the Forgotten",
+    "Hot and Cold Crushers",
+    "Hot and Cold Rangers",
+    "Hot-Tempered Chieftain's Mask",
+    "Huge Energy Opal",
+    "Huge Rally Opal",
+    "Hunter Prey Jacket",
+    "Hunter Prey Rangers",
+    "Hunter's Kin Garb",
+    "Hydra",
+    "Ice Wyvern",
+    "Ice-Boon Sapphire",
+    "Ice-Eye Sapphire",
+    "Ice-Proof Sapphire",
+    "Ice-Shot Sapphire",
+    "Immolate",
+    "Immunity Opal",
+    "Infallible",
+    "Infallible Opal",
+    "Infector Onyx",
+    "Insane Bolt",
+    "Inyanga's Baobab Loop",
+    "Jacket of No Worries",
+    "Jelly Baby",
+    "Jingle Bells Theme",
+    "Kallah's Dread Stone",
+    "Key Limes",
+    "Kimba's Fang",
+    "King Banana",
+    "King Parsley",
+    "Kitty Pumpkin Mask",
+    "Koko's Smoky Circle",
+    "Kola Nuts",
+    "Kraken",
+    "Krokopatra Exalted Duel",
+    "Krokopatra Master Duel",
+    "Large Snowflake",
+    "Leather Straps",
+    "Legion Shield",
+    "Leopard",
+    "Leviathan",
+    "Leviathan",
+    "Life-Boon Jade",
+    "Life-Eye Jade",
+    "Life-Proof Jade",
+    "Lion King's Balanced Pads",
+    "Long Night's Mandible",
+    "Long-Eared Bunny Wand",
+    "Lost Outsider Gear",
+    "Lovely Ladybug",
+    "Lovely Leopard",
+    "Lovestruck Stave",
+    "Lucas' Tunic of the Wars",
+    "Lucky Leprechaun",
+    "Lump of Coal",
+    "Mandisa's Star Stone",
+    "Mansa's Dream Stone",
+    "Mantle of the Grasslands",
+    "Maple Moose",
+    "Mask of Mirror Lake",
+    "Mask of the Great Patapon",
+    "Medusa",
+    "Mega Hurry Opal",
+    "Mega-Leech Opal",
+    "Mega-Upset Opal",
+    "Mend Minion Talent Peridot",
+    "Mend Talent Opal",
+    "Meowiarty Archmage Duel",
+    "Meowiarty Exalted Duel",
+    "Merle's Whisker",
+    "Milk and Cookies",
+    "Minotaur",
+    "Mint Standee",
+    "Mint Swirl",
+    "Mischievous Brim",
+    "Mummy Costume Bodywraps",
+    "Mummy Costume Footwraps",
+    "Mummy Costume Headwraps",
+    "Muscled Cat",
+    "Myth-Giver Peridot",
+    "Nemean Rock Climbers",
+    "Nergal's Burning Brand",
+    "Nganga's Strong Muti Pendant",
+    "Nickel",
+    "Nightmare",
+    "Ninja Pig Hat",
+    "Ninja Pig Robe",
+    "No Pain, No Gain Onyx",
+    "No Worries Footgear",
+    "Nutcracker",
+    "Olyphant's Balanced Jacket",
+    "Opaque Accurate Amethyst +8%",
+    "Opaque Accurate Citrine +8%",
+    "Opaque Accurate Jade +8%",
+    "Opaque Accurate Onyx +8%",
+    "Opaque Accurate Opal +4%",
+    "Opaque Accurate Peridot +8%",
+    "Opaque Accurate Ruby +8%",
+    "Opaque Accurate Sapphire +8%",
+    "Opaque Blocking Citrine +7",
+    "Opaque Blocking Jade +7",
+    "Opaque Blocking Onyx +7",
+    "Opaque Blocking Peridot +7",
+    "Opaque Blocking Ruby +7",
+    "Opaque Blocking Sapphire +7",
+    "Opaque Critical Amethyst +7",
+    "Opaque Critical Amethyst +8",
+    "Opaque Critical Citrine +7",
+    "Opaque Critical Citrine +8",
+    "Opaque Critical Jade +8",
+    "Opaque Critical Onyx +7",
+    "Opaque Critical Onyx +8",
+    "Opaque Critical Opal +4",
+    "Opaque Critical Peridot +7",
+    "Opaque Critical Ruby +7",
+    "Opaque Critical Ruby +8",
+    "Opaque Critical Sapphire +7",
+    "Opaque Critical Sapphire +8",
+    "Opaque Defense Amethyst +33",
+    "Opaque Defense Citrine +33",
+    "Opaque Defense Jade +33",
+    "Opaque Defense Onyx +33",
+    "Opaque Defense Opal +17",
+    "Opaque Defense Opal +18",
+    "Opaque Defense Ruby +33",
+    "Opaque Defense Sapphire +33",
+    "Opaque Health Opal +67",
+    "Opaque Health Opal +68",
+    "Opaque Piercing Amethyst +4%",
+    "Opaque Piercing Citrine +4%",
+    "Opaque Piercing Jade +4%",
+    "Opaque Piercing Onyx +4%",
+    "Opaque Piercing Peridot +4%",
+    "Opaque Piercing Ruby +4%",
+    "Opaque Piercing Sapphire +4%",
+    "Orange Bell Pepper",
+    "Orange Dandelion",
+    "Orthrus",
+    "Orthrus Peridot",
+    "Pet Egg",
+    "Phoenix",
+    "Piercemonger Peridot",
+    "Pilgrim Boots",
+    "Pilgrim Hat",
+    "Pilgrim Robe",
+    "Pink Jellyfish",
+    "Pipe Down! Opal",
+    "Pirate Pumpkin Mask",
+    "Plain Damage Citrine +16",
+    "Plain Damage Jade +16",
+    "Plain Damage Onyx +16",
+    "Plain Damage Peridot +16",
+    "Plain Damage Sapphire +16",
+    "Plain Defense Amethyst +32",
+    "Plain Defense Citrine +32",
+    "Plain Defense Jade +32",
+    "Plain Defense Onyx +32",
+    "Plain Defense Peridot +32",
+    "Plain Defense Ruby +32",
+    "Plain Defense Sapphire +32",
+    "Polka Dot Wrapped Gift",
+    "Polka Dot Wrapped Long Gift",
+    "Polymorph Colossus",
+    "Polymorph Elemental (Fire)",
+    "Polymorph Elemental (Storm)",
+    "Polymorph Treant",
+    "Power Link",
+    "Power Nova",
+    "Power Nova Citrine",
+    "Pride's Maul",
+    "Primal Wildclaw",
+    "Quagga Blade",
+    "Quick Stepping Boots",
+    "Ra",
+    "Radiant Star Wand",
+    "Rattlebones Exalted Duel",
+    "Rattlebones Master Duel",
+    "Razzle Dazzle Boots",
+    "Rebirth",
+    "Rebirth Jade",
+    "Red Bell Pepper",
+    "Red Holiday Ornament",
+    "Rescue Rover",
+    "Restless Boots of Oblivion",
+    "Restless Cloak of Oblivion",
+    "Restless Cowl of Oblivion",
+    "Restorative Opal",
+    "River Captain's Hood",
+    "Robes of the Cold Night",
+    "Rugged Opal",
+    "Sacred Heart Staff",
+    "Salmonberry",
+    "Santa Boots",
+    "Santa Hat",
+    "Santa Robe",
+    "Scarecrow",
+    "Scarecrow Onyx",
+    "Scary Pumpkin Mask",
+    "Scepter of the Ardent Vow",
+    "Scimitar of Substance",
+    "Scintillating Tunic",
+    "Seraph",
+    "Shaka's Lightning Loop",
+    "Shaman's Cold River Wraps",
+    "Shaman's Mythic Armor",
+    "Shaman's Winter Protection",
+    "Sharp Opal",
+    "Shatter (2 Pip)",
+    "Shh! Opal",
+    "Shiny Tomato",
+    "Sidhe Boots of Attunement",
+    "Sidhe Cloak",
+    "Sidhe Cloak of Attunement",
+    "Sidhe Cowl",
+    "Sidhe Cowl of Attunement",
+    "Sidhe Shoes",
+    "Sidhe Staff",
+    "Sinister Juju Robes",
+    "Sinister Medicine Cloak",
+    "Skeletal Dragon",
+    "Skeletal Knight",
+    "Skeletal Pirate",
+    "Skink",
+    "Sky Walking Boots",
+    "Slick-N-Slide Opal",
+    "Small Color Light Strand",
+    "Small Snowflake",
+    "Snap Dragon",
+    "Sniper Talent Opal",
+    "Snow Angel",
+    "Snow Angel",
+    "Snowball",
+    "Snowbank Boots",
+    "Snowflake Wrapped Gift",
+    "Snowglobe",
+    "Snowman",
+    "Snowman Wrapped Gift",
+    "Soul Stepping Boots",
+    "Spear of the Trade Winds",
+    "Spectral Blast",
+    "Spellbinder's Scepter",
+    "Spicy Drumstick",
+    "Spider Shadow's Stone",
+    "Spider Silk",
+    "Spider's Storied Robe",
+    "Spider's Storied Wraps",
+    "Spiral Wrapped Gift",
+    "Spirit Defuse",
+    "Spirit Drummer's Boots",
+    "Splendid Boots",
+    "Splendid Chapeau",
+    "Splendid Tunic",
+    "Spooky Bob",
+    "Squamish Boots of the Sidhe",
+    "Squamish Cloak of the Sidhe",
+    "Squamish Cowl of the Sidhe",
+    "Staff of Corn Utopia",
+    "Staff of Gracious Fortune",
+    "Staff of Shadow and Light",
+    "Staff of Solomon",
+    "Star Shard Charm",
+    "Star Wrapped Gift",
+    "Starburst Spider",
+    "Steadfast Opal",
+    "Steel",
+    "Stone Colossus",
+    "Stone Town Storm Trackers",
+    "Stone Town Topper",
+    "Stop Leader Opal",
+    "Storied Amber Shield Pendant",
+    "Storm Caller's Outfit",
+    "Storm Chaser's Outfit",
+    "Storm Lord",
+    "Storm Lord Amethyst",
+    "Storm-Eye Amethyst",
+    "Storm-Giver Amethyst",
+    "Storm-Proof Amethyst",
+    "Stormrider Hare",
+    "Stormzilla",
+    "Storyborn Boots of Mist",
+    "Storyborn Cloak of Mist",
+    "Storyborn Cowl of Mist",
+    "Strawberry Cupcake",
+    "Stun Block",
+    "Stupefy Opal",
+    "Sturdy Opal",
+    "Submarine Sandwich",
+    "Sun's Circle Cloak",
+    "Sun's Light Spear",
+    "Super-Lock Opal",
+    "Supercharge",
+    "Supercharge Opal",
+    "Talos",
+    "Tanei's Ghost Ring",
+    "The Deer Knight Rises Onyx",
+    "The Old Tusk-Tusk-Trunk",
+    "Thornwood Stalkers",
+    "Tin",
+    "Tower Shield",
+    "Tower Shield Sapphire",
+    "Tree Wrapped Gift",
+    "Triton",
+    "Trumpet Vine",
+    "Tunic of Darajani Honor",
+    "Tunic of Long Memory",
+    "Tunic of Sudden Grief",
+    "Tunic of the Paragon",
+    "Turban of the Olyphants",
+    "Turkey Hat",
+    "Twilight of the Year Wand",
+    "Ultra Charge Opal",
+    "Ultra Energy Opal",
+    "Ultra Exhaustion Opal",
+    "Unbalancer Citrine",
+    "Unbroken Spiral Robe",
+    "Uni-Corn",
+    "Unicorn",
+    "Unstoppable",
+    "Valentine Pig",
+    "Vampire",
+    "Vampire Costume Boots",
+    "Vampire Costume Coat",
+    "Vampire Costume Wig",
+    "Venus Fly Trap",
+    "Vestment of the Thornwood",
+    "Vir's Zafarite Stone",
+    "Waltzing Nutcracker Stave",
+    "Wand of Fascination",
+    "Wand of Rapt Joy",
+    "Wand of the Egg Hunter",
+    "Wand of the Gingersnapper",
+    "Wand of the Nestling",
+    "War Olyphant's Wrap",
+    "White Desparagus",
+    "White Laugh-O-Dil",
+    "White Tiger Lily",
+    "Whiteblind Tunic",
+    "Wicked Cold Clothes",
+    "Wild Monsoon Brim",
+    "Winged Deliverance",
+    "Wipeout Opal",
+    "Wise Hunter's Helmet",
+    "Witch Doctor's Juju Pendant",
+    "Witch's Dirty Tricks Stick",
+    "Wraith",
+    "Yellow Holiday Ornament",
+    "Yuletide Lg. Keeper Aquarium",
+    "Yuletide Lg. Small Fry Aquarium",
+    "Yuletide Reg. Keeper Aquarium",
+    "Yuletide Reg. Small Fry Aquarium",
+    "Yuletide Reg. Whopper Aquarium",
+    "Yuletide Spirit",
+    "Yuletide Tall Keeper Aquarium",
+    "Yuletide Tall Small Fry Aquarium",
+    "Zafaria Combat Theme",
+    "Zafaria Main Theme",
+    "Zafaria Stone Town Theme",
+    "Zafaria Tour Jacket",
+    "Zafaria Waterfront Theme",
+    "Zafaria Zamunda Theme",
+    "Zafarite Amulet",
+    "Zanga's Blade",
+    "Zebra's Hoof",
+    "Zeus Exalted Duel"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    },
+    {
+      "name": "Quicksell",
+      "type": "bool",
+      "default": true,
+      "description": "Whether or not to quicksell items"
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Baobab Crossroads",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z00_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Baobab Crossroads",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z00_Hub",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_zone",
+      "label": "Check if in Zafaria",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 440.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_dungeon",
+      "label": "Enter Mirror Lake",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Zafaria/ZF_Z00_Hub",
+        "dungeon_zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "sigil_xyz": {
+          "x": 2954.12,
+          "y": 2855.28,
+          "z": -956.42
+        },
+        "reset_xyz": {
+          "x": 3136.11,
+          "y": 2325.59,
+          "z": -1026.06
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "xyz": {
+          "x": 74.79,
+          "y": -448.09,
+          "z": -1514.03
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "interact",
+      "label": "Talk to Tse-Tse Snaketail",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "interact_xyz": {
+          "x": 73.75,
+          "y": 244.08,
+          "z": -1615.29
+        },
+        "reset_xyz": {
+          "x": 81.52,
+          "y": -295.87,
+          "z": -1560.49
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "handle_combat",
+      "label": "Defeat Tse-Tse Snaketail",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-TseTse-Main-R11-Boss",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Go to Mountain Path",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "to_zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "xyz": {
+          "x": -4045.08,
+          "y": 3977.49,
+          "z": -1121.72
+        },
+        "reset_xyz": {
+          "x": -3814.83,
+          "y": 3131.55,
+          "z": -1133.37
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "xyz": {
+          "x": -4.91,
+          "y": 11672.53,
+          "z": 285.84
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "handle_combat",
+      "label": "Defeat Spectral Guardians",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-Elephant-Spectral-Guardian-R11",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_coordinates",
+      "label": "Stop Morganthe",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "xyz": {
+          "x": 112.85,
+          "y": 9009.3,
+          "z": 285.84
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone",
+      "label": "Follow Morganthe",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "to_zone": "Zafaria/ZF_Z13_Mirror_Lake_Drained",
+        "xyz": {
+          "x": 132.54,
+          "y": 8154.58,
+          "z": 383.4
+        },
+        "reset_xyz": {
+          "x": 112.85,
+          "y": 9009.3,
+          "z": 285.84
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to bottom of the lake",
+      "position": {
+        "x": 7040.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z13_Mirror_Lake_Drained",
+        "xyz": {
+          "x": 114.57,
+          "y": -354.29,
+          "z": -1540.21
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "handle_combat",
+      "label": "Defeat Goliath Bruisers",
+      "position": {
+        "x": 7480.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-Goliath-R11-Boss-03",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "teleport_to_coordinates",
+      "label": "Enter Raised Tower",
+      "position": {
+        "x": 7920.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z13_Mirror_Lake_Drained",
+        "xyz": {
+          "x": 14.99,
+          "y": 3907.46,
+          "z": -1615.3
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 8360.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "handle_combat",
+      "label": "Defeat Starburst Spiders",
+      "position": {
+        "x": 8800.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-Spider-Model-Starburst-R11",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 9240.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "keep_list": [
+          "Sidhe Staff",
+          "Boots of Fire Dancing",
+          "Attunement",
+          "Oblivion",
+          "Flameborn",
+          "Frostborn",
+          "Storyborn",
+          "Squamish",
+          "Espirit Chapeau",
+          "Scintillating Tunic",
+          "Quick Stepping Boots",
+          "Splendid"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Quicksell",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Quicksell",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "914324fc",
+      "label": "Starburst Spiders",
+      "members": [
+        "state_21",
+        "state_23",
+        "state_20",
+        "state_22"
+      ],
+      "color": 3
+    },
+    {
+      "id": "3a4cfbfc",
+      "label": "Goliath Bruisers",
+      "members": [
+        "state_18",
+        "state_19"
+      ],
+      "color": 5
+    },
+    {
+      "id": "3116048b",
+      "label": "Spectral Guardians",
+      "members": [
+        "state_15",
+        "state_13",
+        "state_16",
+        "state_17",
+        "state_14"
+      ],
+      "color": 1
+    },
+    {
+      "id": "e281da2e",
+      "label": "Tse-Tse Snaketail",
+      "members": [
+        "state_10",
+        "state_9",
+        "state_12",
+        "state_11",
+        "state_8",
+        "state_7"
+      ],
+      "color": 2
+    },
+    {
+      "id": "2e8bae59",
+      "label": "Enter Mirror Lake",
+      "members": [
+        "state_2",
+        "state_3",
+        "state_1",
+        "state_4",
+        "state_5",
+        "state_24",
+        "state_6"
+      ],
+      "color": 4
+    }
+  ]
+}
