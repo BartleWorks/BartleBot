@@ -18,7 +18,7 @@ from bartlebot.gui.theme import THEME
 
 
 class DeckViewDialog(QDialog):
-    """Shows the cards in a DeckData in three labelled sections (Normal / TC / Item)."""
+    """Shows the normal and item cards saved in a DeckData."""
 
     def __init__(self, slot: int, deck: DeckData, parent=None):
         super().__init__(parent)
@@ -40,14 +40,10 @@ class DeckViewDialog(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
-        sections = [
-            ("Normal Cards", deck.normal),
-            ("Treasure Cards", deck.tc),
-            ("Item Cards", deck.item),
-        ]
-
+        # Treasure cards are omitted: they can be neither read nor restored, so
+        # listing them would promise a round trip that cannot happen.
         any_section = False
-        for section_name, cards in sections:
+        for section_name, cards in (("Normal Cards", deck.normal), ("Item Cards", deck.item)):
             if not cards:
                 continue
             any_section = True

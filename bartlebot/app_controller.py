@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from wakepy import ActivationError, keep
 
@@ -15,33 +18,16 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
+from bartlebot.deck_io import read_deck, write_deck
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
+from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
 
-
-async def _read_deck(db: DeckBuilder) -> dict:
-    """Read normal and TC cards from an open DeckBuilder, skipping item cards.
-
-    get_deck_preset() stalls and infinitely loops on _scan_all_item_pages() due
-    to unreliable is_control_grayed() on the PrevItemSpells/NextItemSpells buttons.
-    Item cards depend on equipped gear and can't meaningfully be saved/restored
-    independently, so we omit them.
-    """
-
-    def _count(lst: list) -> dict:
-        d: dict[str, int] = {}
-        for name in lst:
-            d[name] = d.get(name, 0) + 1
-        return d
-
-    await db.refresh_deck_page()
-    normal = await db.parse_deck_cards()
-    await db.view_tc_cards()
-    tc = await db.parse_deck_cards()
-    return {"normal": _count(normal), "tc": _count(tc), "item": {}}
+if TYPE_CHECKING:
+    pass
 
 
 class AppController(QObject):
@@ -333,9 +319,14 @@ class AppController(QObject):
         logger.info("Importing deck for slot %d", slot)
         try:
             async with DeckBuilder(client) as db:
-                preset_dict = await _read_deck(db)
+                preset_dict = await asyncio.wait_for(read_deck(db), timeout=DECK_IMPORT_TIMEOUT)
+        except TimeoutError:
+            logger.error("Deck import for slot %d timed out after %.0fs", slot, DECK_IMPORT_TIMEOUT)
+            self._warn_deck_failed("import", slot, "timed out")
+            return
         except Exception:
             logger.exception("Failed to import deck for slot %d", slot)
+            self._warn_deck_failed("import", slot, "failed — see the log for details")
             return
         deck_data = DeckData(**preset_dict)
         bcs.player_decks[slot] = deck_data
@@ -384,10 +375,24 @@ class AppController(QObject):
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
             async with DeckBuilder(client) as db:
-                await db.set_deck_preset(deck_data.model_dump())
+                await asyncio.wait_for(write_deck(db, deck_data), timeout=DECK_APPLY_TIMEOUT)
             logger.info("Deck applied for slot %d", slot)
+        except TimeoutError:
+            logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
+            self._warn_deck_failed("apply", slot, "timed out")
         except Exception:
             logger.exception("Failed to apply deck for slot %d", slot)
+            self._warn_deck_failed("apply", slot, "failed — see the log for details")
+
+    def _warn_deck_failed(self, action: str, slot: int, reason: str) -> None:
+        """Surface a deck import/apply failure instead of leaving it log-only."""
+        QMessageBox.warning(
+            self._window,
+            f"Deck {action} failed",
+            f"Deck {action} for P{slot} {reason}.\n\n"
+            "The game's deck window may be left open or partially edited — "
+            "check the client before retrying.",
+        )
 
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:

@@ -99,15 +99,15 @@ class _DeckDetailPanel(QWidget):
         if self._preset is None:
             return
 
+        # Treasure cards are omitted — never captured or applied, so showing
+        # them would misrepresent what the preset restores.
         deck = self._preset.deck
-        sections = [("Normal Cards", deck.normal), ("Treasure Cards", deck.tc), ("Item Cards", deck.item)]
         any_section = False
-        for section_name, cards in sections:
+        for section_name, cards in (("Normal Cards", deck.normal), ("Item Cards", deck.item)):
             if not cards:
                 continue
             any_section = True
-            header = QLabel(f"<b>{section_name}</b>")
-            self._cards_layout.addWidget(header)
+            self._cards_layout.addWidget(QLabel(f"<b>{section_name}</b>"))
             for name, count in sorted(cards.items()):
                 self._cards_layout.addWidget(QLabel(f"  {name} × {count}"))
 

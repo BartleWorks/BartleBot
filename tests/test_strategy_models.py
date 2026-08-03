@@ -55,8 +55,18 @@ def test_deck_data_is_empty():
 
 
 def test_deck_data_total_cards():
+    """Normal and item cards count; tc is legacy and never applied."""
     d = DeckData(normal={"Fireball": 4}, tc={"Feint": 2}, item={"Reshuffle": 1})
-    assert d.total_cards() == 7
+    assert d.total_cards() == 5
+
+
+def test_deck_data_item_only_is_not_empty():
+    assert not DeckData(item={"Reshuffle": 1}).is_empty()
+
+
+def test_deck_data_treasure_only_is_empty():
+    """A deck holding only unrestorable treasure cards counts as empty."""
+    assert DeckData(tc={"Feint": 3}).is_empty()
 
 
 # ---------------------------------------------------------------------------

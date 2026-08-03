@@ -37,17 +37,26 @@ class PlayerCombatStrategy(BaseModel):
 
 
 class DeckData(BaseModel):
-    """Embedded deck config — no id/name, always inline within BotCombatStrategy."""
+    """Embedded deck config — no id/name, always inline within BotCombatStrategy.
+
+    ``normal`` and ``item`` are both live — see :mod:`bartlebot.deck_io`.
+
+    ``tc`` is retained only so decks saved by earlier versions still parse.
+    Treasure cards cannot be read or restored: reaching the treasure card view
+    leaves the spell list in a state that breaks normal card restore.  It is
+    excluded from :meth:`is_empty` and :meth:`total_cards` so stale values in
+    old files can't make an unusable deck look populated.
+    """
 
     normal: dict[str, int] = Field(default_factory=dict)
-    tc: dict[str, int] = Field(default_factory=dict)
+    tc: dict[str, int] = Field(default_factory=dict)  # legacy — never read or applied
     item: dict[str, int] = Field(default_factory=dict)
 
     def is_empty(self) -> bool:
-        return not self.normal and not self.tc and not self.item
+        return not self.normal and not self.item
 
     def total_cards(self) -> int:
-        return sum(self.normal.values()) + sum(self.tc.values()) + sum(self.item.values())
+        return sum(self.normal.values()) + sum(self.item.values())
 
 
 class DeckPreset(BaseModel):

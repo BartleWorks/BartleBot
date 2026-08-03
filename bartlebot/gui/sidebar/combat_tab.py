@@ -213,11 +213,11 @@ class _PlayerDecksSection(SidebarSection):
                 lbl.setCursor(Qt.CursorShape.ArrowCursor)
                 lbl.setToolTip("")
             else:
+                # Treasure cards are never captured or applied, so the summary
+                # reports only what a deck apply will actually restore.
                 parts = []
                 if deck.normal:
                     parts.append(f"{sum(deck.normal.values())} normal")
-                if deck.tc:
-                    parts.append(f"{sum(deck.tc.values())} TC")
                 if deck.item:
                     parts.append(f"{sum(deck.item.values())} item")
                 lbl.setText(" · ".join(parts) if parts else "Empty deck")
