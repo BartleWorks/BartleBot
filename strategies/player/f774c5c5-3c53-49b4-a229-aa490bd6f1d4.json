@@ -1,0 +1,5 @@
+{
+  "id": "f774c5c5-3c53-49b4-a229-aa490bd6f1d4",
+  "name": "Feint Boss",
+  "dsl": "feint mass | feint[potent]@boss"
+}

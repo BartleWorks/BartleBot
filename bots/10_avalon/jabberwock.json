@@ -205,7 +205,12 @@
       },
       "params": {
         "zone": "Avalon*",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -243,7 +248,12 @@
       },
       "params": {
         "zone": "Avalon/AV_Z02_HighRoad",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },

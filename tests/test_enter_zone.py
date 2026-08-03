@@ -113,3 +113,76 @@ async def test_exit_dungeon_dialog_dismissed():
     # confirm button clicked; no keypresses
     client.send_key.assert_not_called()
     assert click_by_path_mock.called
+
+
+def _make_client():
+    c = FakeClient()
+    c.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
+    return c
+
+
+async def test_stagger_disabled_by_default():
+    """With 4 clients and stagger not set, all clients transition in a single phase."""
+    clients = [_make_client() for _ in range(4)]
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(FakeMachine(), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    for c in clients:
+        assert c.teleport.call_count == 2
+
+
+async def test_stagger_with_four_clients_sequences_lead_first():
+    """With stagger=True and 4 clients, the lead client fully transitions before the rest teleport."""
+    lead = _make_client()
+    rest = [_make_client(), _make_client(), _make_client()]
+    clients = [lead, *rest]
+    params = {**_PARAMS, "stagger": True}
+
+    def _rest_teleport_side_effect(*args, **kwargs):
+        # As soon as any follower is teleported, the lead must already be done.
+        assert lead.zone_name.call_count == 4
+
+    for c in rest:
+        c.teleport.side_effect = _rest_teleport_side_effect
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(FakeMachine(), clients, params)
+
+    assert result == "SUCCESS"
+    assert lead.teleport.call_count == 2
+    for c in rest:
+        assert c.teleport.call_count == 2
+
+
+async def test_stagger_ignored_with_three_clients():
+    """stagger=True has no effect when only 3 clients are connected."""
+    clients = [_make_client(), _make_client(), _make_client()]
+    params = {**_PARAMS, "stagger": True}
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(FakeMachine(), clients, params)
+
+    assert result == "SUCCESS"
+    for c in clients:
+        assert c.teleport.call_count == 2
+
+
+async def test_stagger_lead_failure_short_circuits():
+    """If the lead client never leaves from_zone, the rest are never teleported."""
+    lead = FakeClient()
+    lead.zone_name.return_value = "Src"  # never changes, so lead times out
+    rest = [_make_client(), _make_client(), _make_client()]
+    clients = [lead, *rest]
+    params = {**_PARAMS, "stagger": True}
+
+    with (
+        patch.object(gtz, "ZONE_CHANGE_TIMEOUT", 0.01),
+        patch.object(gtz, "POLL_INTERVAL", 0),
+    ):
+        result = await gtz.run(FakeMachine(), clients, params)
+
+    assert result == "FAILURE"
+    for c in rest:
+        c.teleport.assert_not_called()

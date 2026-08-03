@@ -9,7 +9,20 @@ from tests.conftest import FakeClient, FakeEntity, FakeMachine
 _DROP_LINE = "Art_Chat_System.dds> <>IronBloom<;Reagent>"
 
 # Params that exercise the default bot-level combat DSL path.
-_DEFAULT_PARAMS = {"enemy": "", "use_default_duel_profile": True}
+_DEFAULT_PARAMS = {"enemy": "", "use_default_strategy": True}
+
+
+# Convenience: mock resolve_combat to return a specific combat_order.
+def _patch_resolve_combat(combat_order: list[int]):
+    from unittest.mock import patch  # noqa: PLC0415
+
+    from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG  # noqa: PLC0415
+
+    return patch(
+        "bartlebot.nodes.combat.handle_combat.resolve_combat",
+        return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG, BARTLEBOT_DEFAULT_COMBAT_CONFIG], combat_order, "test"),
+    )
+
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
@@ -18,15 +31,21 @@ _patch_run_combat = lambda: patch(  # noqa: E731
 
 
 async def test_no_dsl_fails():
-    """use_default_duel_profile=False with no duel profile assigned → no DSL → FAILURE."""
+    """use_default_strategy=False with no BCS assigned → falls back to built-in default DSL."""
     client = FakeClient()
-    result = await hc.run(
-        FakeMachine(),
-        [client],
-        {"enemy": "", "use_default_duel_profile": False},
-    )
-    assert result == "FAILURE"
-    client.tp_to.assert_not_called()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(
+            FakeMachine(),
+            [client],
+            {"enemy": "", "use_default_strategy": False},
+        )
+    assert result == "SUCCESS"
 
 
 async def test_no_target_found_fails():
@@ -55,7 +74,7 @@ async def test_named_enemy_uses_vague_name():
         result = await hc.run(
             FakeMachine(),
             [client],
-            {"enemy": "Cyclops", "use_default_duel_profile": True},
+            {"enemy": "Cyclops", "use_default_strategy": True},
         )
 
     assert result == "SUCCESS"
@@ -120,15 +139,13 @@ async def test_combat_order_sequential():
     c1.tp_to.side_effect = _record_tp_c1
     c2.tp_to.side_effect = _record_tp_c2
 
-    machine = FakeMachine()
-    machine.get_option = lambda name, default=None: [2, 1] if name == "Default Combat Order" else default
-
     with (
         _patch_run_combat(),
+        _patch_resolve_combat([2, 1]),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "POLL_INTERVAL", 0),
     ):
-        result = await hc.run(machine, [c1, c2], _DEFAULT_PARAMS)
+        result = await hc.run(FakeMachine(), [c1, c2], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
     assert tp_order == [2, 1]
@@ -136,18 +153,21 @@ async def test_combat_order_sequential():
 
 async def test_combat_order_invalid_client_number_skipped():
     """combat_order referencing a client that doesn't exist is silently skipped."""
+    from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
 
-    machine = FakeMachine()
-    machine.get_option = lambda name, default=None: [5] if name == "Default Combat Order" else default
-
     with (
         _patch_run_combat(),
+        patch(
+            "bartlebot.nodes.combat.handle_combat.resolve_combat",
+            return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG], [5], "test"),
+        ),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "POLL_INTERVAL", 0),
     ):
-        result = await hc.run(machine, [client], _DEFAULT_PARAMS)
+        result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     # Client 5 doesn't exist (only 1 client), so the combat_order entry is skipped.
     assert result == "SUCCESS"

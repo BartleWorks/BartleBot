@@ -92,6 +92,26 @@ CLIENT_REFRESH_TIMEOUT = 1.0
 # zone/xyz reads take longer than this (e.g. during a zone transition),
 # that widget's refresh is cancelled rather than blocking all others.
 
+DECK_IMPORT_TIMEOUT = 120.0
+# Ceiling for snapshotting one client's deck. A full 64-card deck is read by
+# hovering each slot, so this is generously above the expected duration.
+
+DECK_ITEM_PAGE_SETTLE = 0.3
+# Pause after clicking Prev/NextItemSpells, so the new page is rendered before
+# its slots are clicked.
+
+DECK_ITEM_TOGGLE_SETTLE = 0.15
+# Pause after toggling one item card slot.
+
+DECK_APPLY_TIMEOUT = 180.0
+# Ceiling for pushing a saved deck back to a client (clear + re-add every
+# card, with spellbook page navigation between them).
+#
+# Both deck timeouts exist because DeckBuilder drives the game through UI
+# clicks and several of its loops terminate on `is_control_grayed()`, which
+# is unreliable — without a ceiling a failed read spins forever instead of
+# raising. See _read_deck / _write_deck in app_controller.py.
+
 
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.

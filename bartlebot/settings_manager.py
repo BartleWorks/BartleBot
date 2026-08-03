@@ -99,6 +99,7 @@ _DEFAULTS: dict[str, Any] = {
     "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
     "recent_zones": [],
+    "active_bot_strategies": {},  # {bot_uuid: bcs_uuid}
 }
 
 # Valid Wizard101 windowed resolutions (width, height)
@@ -372,6 +373,24 @@ class SettingsManager:
         recent = [z for z in recent if z != zone]
         recent.insert(0, zone)
         self.set("recent_zones", value=recent[:30])
+        self.save()
+
+    # ------------------------------------------------------------------
+    # Active bot strategy helpers
+    # ------------------------------------------------------------------
+
+    def get_active_strategy(self, bot_id: str) -> str | None:
+        """Return the active BotCombatStrategy UUID for the given bot, or None."""
+        return self.get("active_bot_strategies", bot_id)
+
+    def set_active_strategy(self, bot_id: str, strategy_id: str | None) -> None:
+        """Set (or clear) the active BotCombatStrategy UUID for a bot and persist."""
+        mapping = dict(self.get("active_bot_strategies") or {})
+        if strategy_id is None:
+            mapping.pop(bot_id, None)
+        else:
+            mapping[bot_id] = strategy_id
+        self.set("active_bot_strategies", value=mapping)
         self.save()
 
     # ------------------------------------------------------------------

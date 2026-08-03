@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
+from bartlebot.gui.canvas.param_panel import _PlayerListWidget
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
@@ -310,6 +311,8 @@ class OptionsSection(SidebarSection):
             widget.valueChanged.connect(_update)
         elif isinstance(widget, QDoubleSpinBox):
             widget.valueChanged.connect(_update)
+        elif isinstance(widget, _PlayerListWidget):
+            widget.changed.connect(lambda: _update(widget.get_value()))
         elif isinstance(widget, QLineEdit):
             if opt.type == "int_list":
                 widget.editingFinished.connect(
@@ -371,6 +374,9 @@ def _build_option_parts(opt) -> tuple[QWidget, QWidget, QLabel | None]:
                 ", ".join(str(v) for v in opt.default) if isinstance(opt.default, list) else str(opt.default or "")
             )
             widget = QLineEdit(val_str)
+        elif opt.type == "player_list":
+            widget = _PlayerListWidget()
+            widget.set_value(opt.default if isinstance(opt.default, list) else [])
         else:  # str
             widget = QLineEdit(str(opt.default))
 

@@ -22,7 +22,7 @@ async def test_one_client_wrong_zone_returns_false():
     clients = [FakeClient(), FakeClient()]
     clients[0].zone_name.return_value = "WizardCity/WC_Ravenwood"
     clients[1].zone_name.return_value = "WizardCity/WC_Hub"
-    result = await cz.run(FakeMachine(), clients, {"zone": "WizardCity/WC_Ravenwood"})
+    result = await cz.run(FakeMachine(), clients, {"zone": "WizardCity/WC_Ravenwood", "clients_to_check": [1, 2]})
     assert result == "FALSE"
 
 
@@ -38,7 +38,7 @@ async def test_single_client_wrong_zone_returns_false():
     """Single client not in the target zone → FALSE."""
     client = FakeClient()
     client.zone_name.return_value = "WizardCity/WC_Hub"
-    result = await cz.run(FakeMachine(), [client], {"zone": "WizardCity/WC_Ravenwood"})
+    result = await cz.run(FakeMachine(), [client], {"zone": "WizardCity/WC_Ravenwood", "clients_to_check": [1]})
     assert result == "FALSE"
 
 
@@ -84,19 +84,10 @@ async def test_clients_to_check_not_in_zone_returns_false():
     assert result == "FALSE"
 
 
-async def test_empty_clients_to_check_defaults_to_all_in_zone():
-    """clients_to_check=[] checks all clients; all in zone → TRUE."""
-    clients = [FakeClient(), FakeClient()]
-    clients[0].zone_name.return_value = "WizardCity/WC_Ravenwood"
-    clients[1].zone_name.return_value = "WizardCity/WC_Ravenwood"
-    result = await cz.run(FakeMachine(), clients, {"zone": "WizardCity/WC_Ravenwood", "clients_to_check": []})
-    assert result == "TRUE"
-
-
-async def test_empty_clients_to_check_defaults_to_all_not_in_zone():
-    """clients_to_check=[] checks all clients; one not in zone → FALSE."""
+async def test_empty_clients_to_check_returns_true():
+    """clients_to_check=[] means no players to check — vacuously TRUE."""
     clients = [FakeClient(), FakeClient()]
     clients[0].zone_name.return_value = "WizardCity/WC_Ravenwood"
     clients[1].zone_name.return_value = "WizardCity/WC_Hub"
     result = await cz.run(FakeMachine(), clients, {"zone": "WizardCity/WC_Ravenwood", "clients_to_check": []})
-    assert result == "FALSE"
+    assert result == "TRUE"

@@ -415,7 +415,12 @@
       },
       "params": {
         "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },

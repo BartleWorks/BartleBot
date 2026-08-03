@@ -50,7 +50,7 @@
     },
     {
       "name": "Level Scaling Players",
-      "type": "int_list",
+      "type": "player_list",
       "default": [],
       "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     },
@@ -158,7 +158,12 @@
           "y": -7078.24,
           "z": 504.2
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}

@@ -151,9 +151,37 @@ For `QThread`, call `thread.quit()` and `thread.wait()` in `closeEvent` before l
 
 ## External Dependencies
 
-- **WizWalker**: low-level Wizard101 memory hooking (Git branch `development` — exact commit pinned via `poetry.lock`)
-- **WizSprinter**: safe wrappers + combat DSL (pinned to commit hash in `pyproject.toml`)
-- Both are fragile to game updates. After a game patch: update the `rev` in `pyproject.toml`, run `poetry lock`, test locally.
+- **WizWalker**: low-level Wizard101 memory hooking — fork `The-World-Tree/wizwalker`, branch `deckbuilder-bvr`
+- **WizSprinter**: safe wrappers + combat DSL — fork `The-World-Tree/wizsprinter`, branch `main`
+
+Both are pinned by exact commit `rev` in `pyproject.toml` (HTTPS URLs, so CI can
+fetch them without SSH credentials). They are **forks, not upstream**: they carry
+fixes that upstream does not have, including the `SpellListControl`/
+`DeckListControl` memory offsets that `bartlebot/deck_io.py` depends on. Pointing
+these back at `Deimos-Wizard101` will break deck reads.
+
+### Changing wizwalker or wizsprinter
+
+Because they are pinned by commit rather than path, local edits do **not** take
+effect until they are pushed and the pin is bumped:
+
+```bash
+cd ../wizwalker && git commit -am "..." && git push
+cd ../BartleBot
+# update the rev in pyproject.toml to the new commit hash
+poetry lock && poetry install
+```
+
+While iterating rapidly, reinstall the local copy as editable instead of bumping
+the pin each time — remember to undo it before trusting a test run:
+
+```bash
+poetry run pip install -e ../wizwalker
+```
+
+Both libraries are fragile to game updates. After a game patch, re-derive any
+broken memory offsets with `tools/probe_item_cards.py`, then follow the bump
+steps above.
 
 I have downloaded reference files to assist in planning:
 

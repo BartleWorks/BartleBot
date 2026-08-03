@@ -1,0 +1,5 @@
+{
+  "id": "ffd734a2-312b-45cd-9e47-009287239aa2",
+  "name": "Bunyip into Tempest spam",
+  "dsl": "bunyip[\"Epic - Amulet\"] | bunyip[epic] | tempest[epic]"
+}

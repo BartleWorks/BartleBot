@@ -1,0 +1,763 @@
+{
+  "id": "584c2087-2d75-41a5-87b2-471e711f45b1",
+  "name": "Mongu Refuge",
+  "description": "Endlessly defeats Mongu brothers in Mongu Refuge, Mirage",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_3",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Mirage",
+  "drops": [
+    "Aether",
+    "Agave Leaves",
+    "Agave Nectar",
+    "Age of Reckoning",
+    "Alligator Pear Tree",
+    "Amber",
+    "Amber Dust",
+    "Angel Oak",
+    "Angora Bunny Ears",
+    "Aquamarine",
+    "Ashen Bones",
+    "Astral Shard",
+    "Astraphobia",
+    "Avenging Fossil",
+    "Baby Carrots",
+    "Bamboo Shoots",
+    "Basilisk",
+    "Beast Wellington",
+    "Beetle Cream Soda",
+    "Bell Pepper",
+    "Blue Huckleberries",
+    "Boiled Peanuts",
+    "Boom Shroom",
+    "Boon Tree",
+    "Braided Vine",
+    "Bread Fruit Bush",
+    "Celestial Calendar",
+    "Chalupacabra",
+    "Climaclysm",
+    "Clockwork Flower",
+    "Combustion",
+    "Couch Potatoes",
+    "Cycle of Life Opal",
+    "Dandelion",
+    "Deadly Helephant Ears",
+    "Deadly Ninja Fig",
+    "Desparagus (Seed)",
+    "Dr. Von's Monster",
+    "Draconium",
+    "Epic Opal",
+    "Evil Magma Peas",
+    "Evil Snow Peas",
+    "Eye Candy",
+    "Face Palm",
+    "Fickle Pickle",
+    "Fiery Boom Shroom",
+    "Fire Blossom",
+    "Fish on a Vine",
+    "Frostfang",
+    "Frozen Fly Trap",
+    "Golden Couch Potatoes",
+    "Golden Pearl",
+    "Grapes of Wrath",
+    "Green Snow Apples",
+    "Hard Boiled Beetle Eggs",
+    "Hardy Rubal Bow",
+    "Honey Sickle",
+    "Hot Cross Buns",
+    "Iridium",
+    "Ivy League",
+    "King Artorius (Balance)",
+    "King Artorius (Death)",
+    "King Artorius (Fire)",
+    "King Artorius (Ice)",
+    "King Artorius (Life)",
+    "King Artorius (Myth)",
+    "King Artorius (Storm)",
+    "King Parsley",
+    "Kobra Choker of Acumen",
+    "Kobra Choker of Amity",
+    "Kobra Choker of Demise",
+    "Kobra Choker of Fury",
+    "Kobra Choker of Mettle",
+    "Kobra Choker of Rigor",
+    "Kobra Hand of Mettle",
+    "Kobra Hand of Rigor",
+    "Laugh-O-Dil",
+    "Lord of Winter",
+    "MaCaw",
+    "Maelstrom Snap Dragon",
+    "Magnify Opal",
+    "Maltese Tiger Lily",
+    "Melting Cheese Tree",
+    "Merle's Whisker",
+    "Mirage Canyon Combat Theme",
+    "Mirage Caravan Theme",
+    "Mirage Chronoverge Theme",
+    "Mirage Den of Thieves Theme",
+    "Mirage Desert Canyons Theme",
+    "Mirage Desert Combat Theme",
+    "Mirage Jungle Combat Theme",
+    "Mirage Jungle Theme",
+    "Mirage Magic Carpet Theme",
+    "Mirage Serpent Theme",
+    "Missile Toe",
+    "Mithril",
+    "Mustachios",
+    "Namaste",
+    "Nested Fury",
+    "Ninja Fig",
+    "Orichalcum",
+    "Pink Huckleberries",
+    "Pink Laugh-O-Dil",
+    "Prickly Bear Cactus",
+    "Purple Bell Pepper",
+    "Purple Grapes of Wrath",
+    "Queen Crape Myrtle",
+    "Raging Bull",
+    "Red Bell Pepper",
+    "Red Couch Potatoes",
+    "Red Huckleberries",
+    "Reliquary Opal",
+    "Renew Opal",
+    "Rubal Bow of Conflagration",
+    "Rubal Sleetfall Bow",
+    "Rusalka's Wrath",
+    "Sabertooth",
+    "Saga of Heroes",
+    "Sand Sea Cowl of Ashes",
+    "Sand Sea Cowl of Hardiness",
+    "Sand Sea Cowl of Havoc",
+    "Sand Sea Dagger of Accord",
+    "Sand Sea Dagger of Ashes",
+    "Sand Sea Dagger of Blusters",
+    "Sand Sea Dagger of Emptiness",
+    "Sand Sea Dagger of Explosion",
+    "Sand Sea Hand of Decorum",
+    "Sand Sea Hand of Hardiness",
+    "Sand Sea Hand of Shivers",
+    "Sand Sea Outfit of Ashes",
+    "Sand Sea Outfit of Decorum",
+    "Sand Sea Outfit of Hardiness",
+    "Sand Sea Outfit of Havoc",
+    "Sand Sea Outfit of Mischief",
+    "Sand Sea Ring of Ardor",
+    "Sand Sea Ring of Blight",
+    "Sand Sea Ring of Decorum",
+    "Sand Sea Ring of Emptiness",
+    "Sand Wurm",
+    "Satyr Chow",
+    "Saw Palmetto",
+    "Scales",
+    "Scorching Scimitars",
+    "Shiny Blocking Citrine +16",
+    "Shiny Blocking Ruby +16",
+    "Shiny Critical Hematite +16",
+    "Shiny Critical Jade +16",
+    "Shiny Critical Onyx +16",
+    "Shiny Critical Ruby +16",
+    "Shiny Critical Sapphire +16",
+    "Shiny Damage Amethyst +25",
+    "Shiny Damage Citrine +26",
+    "Shiny Damage Hematite +52",
+    "Shiny Damage Onyx +26",
+    "Shiny Damage Sapphire +26",
+    "Shiny Defense Amethyst +49",
+    "Shiny Defense Amethyst +51",
+    "Shiny Defense Hematite +51",
+    "Shiny Defense Jade +51",
+    "Shiny Defense Jade +52",
+    "Shiny Defense Peridot +52",
+    "Shiny Defense Sapphire +51",
+    "Shiny Defense Sapphire +52",
+    "Shiny Health Opal +111",
+    "Shiny Health Opal +112",
+    "Shiny Health Opal +113",
+    "Shiny Mana Opal +45",
+    "Shiny Mana Opal +46",
+    "Shiny Mana Opal +47",
+    "Shiny PIP Hematite +2",
+    "Ships 'n' Queso",
+    "Silver",
+    "Silver Trumpet Vine",
+    "Sirens",
+    "Snowball Barrage",
+    "Spinysaur",
+    "Stardust",
+    "Steel",
+    "Sugar Khrystal",
+    "Sun Serpent",
+    "Sunion",
+    "Sunstone",
+    "Sword Fern",
+    "Thundering Rubal Bow",
+    "Titanium",
+    "Trumpet Vine",
+    "Tungsten",
+    "Turmeric",
+    "Turquoise",
+    "Veggie Juice",
+    "Vine",
+    "Vizier's Shoes of Apathy",
+    "Vizier's Windswept Shoes",
+    "Voltaic Durvish Armaments",
+    "White Tiger Lily",
+    "Winged Sorrow",
+    "Wings of Fate",
+    "Witch's House Call",
+    "Woolly Mammoth",
+    "Yellow Bell Pepper",
+    "Zruvan Galesh of Acumen",
+    "Zruvan Galesh of Amity",
+    "Zruvan Galesh of Flashfloods",
+    "Zruvan Galesh of Fury",
+    "Zruvan Helmet of Acumen",
+    "Zruvan Helmet of Mettle",
+    "Zruvan Helmet of Rigor"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Caravan",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Mirage/MR_Z00_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Rubal Wastes",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Mirage/MR_Z04_RubalWastes",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_zone",
+      "label": "Check if in Mirage",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Mirage/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone_via_object",
+      "label": "Take magic carpet to Rubal Wastes",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Mirage/MR_Z00_Hub",
+        "to_zone": "Mirage/MR_Z04_RubalWastes",
+        "interact_xyz": {
+          "x": -4980.61,
+          "y": -1390.33,
+          "z": 0.05
+        },
+        "reset_xyz": {
+          "x": -4550.88,
+          "y": -1661.63,
+          "z": 0.05
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Mongu Refuge",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Mirage/MR_Z04_RubalWastes",
+        "dungeon_zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
+        "sigil_xyz": {
+          "x": 4082.19,
+          "y": 4071.54,
+          "z": -2094.96
+        },
+        "reset_xyz": {
+          "x": 3841.56,
+          "y": 3466.43,
+          "z": -2088.67
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to final room",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
+        "xyz": {
+          "x": 785.92,
+          "y": -6503.3,
+          "z": -696.58
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat Mongu brothers",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "MR_Mongoose_Warrior_C_Boss_01",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_zone",
+      "label": "Exit Mongu Refuge",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
+        "to_zone": "Mirage/MR_Z04_RubalWastes",
+        "xyz": {
+          "x": -2352.05,
+          "y": 9116.85,
+          "z": 141.43
+        },
+        "reset_xyz": {
+          "x": -2329.88,
+          "y": 8535.87,
+          "z": 1.37
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to dungeon entrance",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Mirage/MR_Z04_RubalWastes",
+        "xyz": {
+          "x": 3884.07,
+          "y": 3497.69,
+          "z": -2088.67
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "keep_list": [
+          "Epic Opal"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_9",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

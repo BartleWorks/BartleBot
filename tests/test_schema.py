@@ -53,7 +53,7 @@ def test_optional_fields_have_defaults():
     assert config.description is None
     assert config.version == "1.0"
     assert config.clients == "all"
-    assert config.default_combat_config is None
+    assert config.start_location is None
 
 
 def test_state_optional_fields_have_defaults():

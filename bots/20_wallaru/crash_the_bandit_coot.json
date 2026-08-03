@@ -1,0 +1,375 @@
+{
+  "id": "d6883e18-3d81-4afe-af45-49330c9272d8",
+  "name": "Crash the Bandit Coot",
+  "description": "Endlessly defeats Crash the Bandit Coot in Wobbegong Territory, Wallaru",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_2",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Wallaru",
+  "drops": [],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Hope Springs",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Wallaru/WL_Z01_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check zone",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone_via_list",
+      "label": "Take Traveler's Truck to Wobbegong Territory",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Wallaru/WL_Z01_Hub",
+        "to_zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "interact_xyz": {
+          "x": 2931.6,
+          "y": 15619.29,
+          "z": 2.0
+        },
+        "reset_xyz": {
+          "x": 3000.0,
+          "y": 14820.0,
+          "z": 2.0
+        },
+        "zone_list_entry": "Wobbegong"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.25,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "Wallaru/WL_Z05_Wobbegong_JT"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Crash's Cave",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "dungeon_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
+        "sigil_xyz": {
+          "x": -5997.44,
+          "y": -2107.52,
+          "z": 196.93
+        },
+        "reset_xyz": {
+          "x": -5942.12,
+          "y": -2693.45,
+          "z": 193.83
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "handle_combat",
+      "label": "Defeat Crash the Bandit Coot",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "WL_Dingo_Crash_A_01",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_zone",
+      "label": "Exit Crash's Cave",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
+        "to_zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "xyz": {
+          "x": 595.54,
+          "y": -12194.17,
+          "z": -976.91
+        },
+        "reset_xyz": {
+          "x": 1110.46,
+          "y": -11332.11,
+          "z": -976.89
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "keep_list": [],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

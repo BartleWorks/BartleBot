@@ -43,7 +43,7 @@ _CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
 _CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
 # Consecutive failed zone_name() calls before a client is treated as unresponsive.
 
-_DISCONNECT_KEYWORDS: frozenset[str] = frozenset({"disconnect", "connection", "network", "inactivity"})
+_DISCONNECT_KEYWORDS: frozenset[str] = frozenset({"disconnect", "connection", "network", "inactivity", "kicked"})
 # Lowercase substrings matched against the disconnect modal caption text.
 # A match on any one keyword triggers force-kill and recovery.
 

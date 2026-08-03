@@ -1,0 +1,781 @@
+{
+  "id": "0ade3137-c083-46dc-8ed3-67a35f560687",
+  "name": "Spike the Crusher",
+  "description": "Endlessly defeats Spike the Crusher in Big Ben, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_3",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Marleybone",
+  "drops": [
+    "Admirable Shoes",
+    "Alluring Robes",
+    "Bewitching Shoes",
+    "Big Energy Opal",
+    "Brisk Cap",
+    "Bronze Gear",
+    "Cap of the Unicorn",
+    "Caramel Popcorn",
+    "Cat Burglar's Cap",
+    "Chipped Accurate Ruby +3%",
+    "Chipped Damage Ruby +8",
+    "Chipped Defense Amethyst +15",
+    "Chipped Mana Opal +11",
+    "Cloak of Clarity",
+    "Cloak of Fascination",
+    "Copper",
+    "Crossbone Gravestone",
+    "Crusher's Deathly Robe",
+    "Crusher's Dexterous Shoes",
+    "Crusher's Hat",
+    "Crusher's Milk Bottle",
+    "Crusher's Mysterious Cap",
+    "Crusher's Winter Vestment",
+    "Deer Knight Onyx",
+    "Empty Milk Cartons",
+    "Exclusive Cap",
+    "Feline's Invigorating Robe",
+    "Flawed Defense Citrine +17",
+    "Flawed Defense Opal +10",
+    "Flawed Defense Ruby +17",
+    "Garment of the Supreme",
+    "Glowing Canine Hat",
+    "Grass Post Opal",
+    "Gummy Bloodbat",
+    "Ice Trap",
+    "Infernal Drape",
+    "Iron",
+    "Jinxed Hat",
+    "Leather Straps",
+    "Medium Fish",
+    "Milk Carton",
+    "Myth Ghoul",
+    "Nickel",
+    "Redskin Peanut",
+    "Regenerate",
+    "Robe of Excellence",
+    "Robe of the Bubble",
+    "Sandstorm",
+    "Savvy Vestment",
+    "Shoes of the Chimera",
+    "Slippers of the Worrier",
+    "Spike's Amulet of Smiting",
+    "Spike's Boots of Diplomacy",
+    "Spike's Boots of Excellence",
+    "Spike's Icicle-Spiked Hat",
+    "Spike's Mechanical Visor",
+    "Spike's Robe of the Phoenix",
+    "Spike's Vestment of History",
+    "Spirit Armor",
+    "Square Watermelon",
+    "Stinky Cheese",
+    "Storm Trap",
+    "Striders of the Verge",
+    "Time of Legend Peridot",
+    "Tin",
+    "Tin Can",
+    "Tunic of Symmetry",
+    "Tunic of the Clever",
+    "Vampire",
+    "Vest of Predominance",
+    "Vestment of Assistance",
+    "Wheat Cracker",
+    "White Rat Magician"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Royal Museum",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_Museum",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_zone",
+      "label": "Check if in Marleybone",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Royal Museum",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -217.17,
+          "y": 9127.84,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -259.21,
+          "y": 8605.37,
+          "z": -0.0
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Big Ben",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "dungeon_zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "sigil_xyz": {
+          "x": -220.67,
+          "y": 4540.38,
+          "z": -350.0
+        },
+        "reset_xyz": {
+          "x": -4.06,
+          "y": 4112.19,
+          "z": -350.03
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Gearhead",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "xyz": {
+          "x": 16502.83,
+          "y": 21007.16,
+          "z": -202.88
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat Gearhead",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "Golem-Clockwork-MBBoss-L37",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "interact",
+      "label": "Spill first milk",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "interact_xyz": {
+          "x": 19674.09,
+          "y": 21225.94,
+          "z": -202.75
+        },
+        "reset_xyz": {
+          "x": 20055.01,
+          "y": 20987.48,
+          "z": -202.8
+        },
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {
+        "Safety Delay": 5.0
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "interact",
+      "label": "Spill second milk",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "interact_xyz": {
+          "x": -10516.65,
+          "y": 10829.91,
+          "z": -202.73
+        },
+        "reset_xyz": {
+          "x": -10189.9,
+          "y": 10880.21,
+          "z": -202.73
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {
+        "Safety Delay": 5.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "interact",
+      "label": "Spill third milk",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "interact_xyz": {
+          "x": 19644.49,
+          "y": 11009.54,
+          "z": -202.75
+        },
+        "reset_xyz": {
+          "x": 19826.01,
+          "y": 11222.96,
+          "z": -202.75
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {
+        "Safety Delay": 5.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Spike the Crusher",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "xyz": {
+          "x": 22625.42,
+          "y": 11994.05,
+          "z": -202.8
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Spike the Crusher",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "xyz": {
+          "x": 12490.22,
+          "y": 11998.99,
+          "z": -202.74
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "enter_zone",
+      "label": "Exit Big Ben",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -32067.12,
+          "y": 21013.26,
+          "z": -192.95
+        },
+        "reset_xyz": {
+          "x": -31410.1,
+          "y": 21011.12,
+          "z": -202.79
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "Marleybone/MB_BigBen/MB_Museum"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "keep_list": [
+          "Spike",
+          "Crusher"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {},
+      "notes": "Keeps all school design gear"
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_16",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

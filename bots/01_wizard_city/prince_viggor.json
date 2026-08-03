@@ -261,7 +261,12 @@
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Catacombs",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     }

@@ -3,64 +3,115 @@
 Extracted so that machine.py does not need to import from a specific node module.
 """
 
+import logging
 import re
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 
+logger = logging.getLogger(__name__)
 
-def _resolve_combat_dsl(machine, params: dict, use_bot_default: bool) -> tuple[str, str]:
-    """Return (dsl_string, source_label). dsl_string is empty if none can be resolved."""
-    if use_bot_default:
-        bot_cfg = machine.bot_config
-        if bot_cfg is not None and not bot_cfg.use_bartlebot_default_combat_config:
-            return bot_cfg.default_combat_config or "", "bot-level custom config"
-        return BARTLEBOT_DEFAULT_COMBAT_CONFIG, "BartleBot built-in default"
-    return params.get("combat_config", "").strip(), "per-node config"
+_BUILTIN_SOURCE = "BartleBot built-in default"
 
 
-def _resolve_duel_profile_dsl(machine, duel_profile_name: str, num_clients: int) -> tuple[list[str], str]:
-    """Resolve per-client DSL from the named DuelProfile in the active BotCombatProfile.
+def resolve_combat(
+    machine,
+    use_default_strategy: bool,
+    num_clients: int,
+) -> tuple[list[str], list[int], str]:
+    """Return (per_client_dsl, combat_order, source_label).
 
-    Returns (per_client_dsl_list, source_label).  Each entry is the DSL string
-    for the corresponding 0-based client index.  Falls back to the BartleBot
-    built-in default for any client whose DuelProfile entry is None or empty.
+    Resolution path:
+      1. Get bot_id from machine.bot_config.id.
+      2. Look up active BotCombatStrategy UUID in SettingsManager.
+      3. Load BotCombatStrategy; if use_default_strategy=True use default_strategy_id,
+         otherwise find the StateAssignment whose state_ids contains machine.state.
+      4. Load DuelCombatStrategy; for each 1-based player slot (1..num_clients) find
+         the PlayerAssignment → its inline DSL, or the linked PlayerCombatStrategy
+         preset's DSL if player_combat_strategy_id is set.
+      5. Players with no assignment get BARTLEBOT_DEFAULT_COMBAT_CONFIG.
+      6. combat_order from DuelCombatStrategy.combat_order (None → []).
+
+    Falls back to BARTLEBOT_DEFAULT_COMBAT_CONFIG at every level if any file is
+    missing, the active strategy is not set, or an error occurs.
     """
+    # Lazy imports to avoid circular imports and keep startup fast.
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+    from bartlebot.strategy_store import (  # noqa: PLC0415
+        load_bot_strategy,
+        load_duel_strategy,
+        load_player_strategy,
+    )
+
     bot_cfg = machine.bot_config
-    active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
+    if bot_cfg is None:
+        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
 
-    if active_profile is None:
-        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, "BartleBot built-in default (no active combat profile)"
+    bot_id: str = bot_cfg.id
+    sm = SettingsManager.instance()
+    active_bcs_id = sm.get_active_strategy(bot_id)
 
-    duel_profile = active_profile.get_duel_profile(duel_profile_name)
-    source = f"duel profile '{duel_profile.name}'"
+    if not active_bcs_id:
+        logger.debug("resolve_combat: no active BotCombatStrategy for bot %s — using built-in default", bot_id)
+        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
 
-    per_client: list[str] = []
-    for i in range(num_clients):
-        dsl = duel_profile.resolve_dsl_for_client(i)
-        per_client.append(dsl if dsl else BARTLEBOT_DEFAULT_COMBAT_CONFIG)
+    # Load the active BotCombatStrategy.
+    try:
+        bcs = load_bot_strategy(active_bcs_id)
+    except Exception:
+        logger.warning("resolve_combat: failed to load BotCombatStrategy %s — using built-in default", active_bcs_id)
+        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
 
-    return per_client, source
+    # Determine which DuelCombatStrategy UUID to use.
+    if use_default_strategy:
+        dcs_id = bcs.default_strategy_id
+        assignment_source = "default strategy"
+    else:
+        current_state: str = getattr(machine, "state", "")
+        dcs_id = bcs.find_dcs_id_for_state(current_state)
+        assignment_source = f"state assignment for '{current_state}'"
+        if not dcs_id:
+            # State not assigned — fall back to the BCS default.
+            dcs_id = bcs.default_strategy_id
+            assignment_source = f"default strategy (state '{current_state}' has no assignment)"
 
+    if not dcs_id:
+        logger.debug("resolve_combat: no DCS assigned (%s) — using built-in default", assignment_source)
+        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
 
-def _resolve_combat_order(machine, duel_profile_name: str) -> list[int]:
-    """Return the combat entry order for this fight.
+    # Load the DuelCombatStrategy.
+    try:
+        dcs = load_duel_strategy(dcs_id)
+    except Exception:
+        logger.warning("resolve_combat: failed to load DuelCombatStrategy %s — using built-in default", dcs_id)
+        return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
 
-    Priority: duel profile override → active profile default → legacy bot option fallback.
-    An empty list means all clients enter simultaneously.
-    """
-    bot_cfg = machine.bot_config
-    active_profile = bot_cfg.active_combat_profile if bot_cfg is not None else None
+    source_label = f"duel strategy '{dcs.name}' (via {assignment_source})"
 
-    if active_profile is not None:
-        if duel_profile_name:
-            duel_profile = active_profile.get_duel_profile(duel_profile_name)
-            if duel_profile.combat_order_override is not None:
-                return duel_profile.combat_order_override
-        if active_profile.combat_order:
-            return active_profile.combat_order
+    # Collect the DSL strings for assignments that link a shared PCS preset.
+    # Inline assignments carry their own DSL and need no lookup.
+    pcs_map: dict[str, str] = {}
+    for pcs_id in dcs.linked_pcs_ids():
+        if pcs_id not in pcs_map:
+            try:
+                pcs = load_player_strategy(pcs_id)
+                pcs_map[pcs_id] = pcs.dsl
+            except Exception:
+                logger.warning(
+                    "resolve_combat: failed to load PlayerCombatStrategy %s — affected players use built-in default",
+                    pcs_id,
+                )
+                pcs_map[pcs_id] = BARTLEBOT_DEFAULT_COMBAT_CONFIG
 
-    # Legacy fallback for bots that stored this as a bot option before the combat profile system.
-    return machine.get_option("Default Combat Order", []) or []
+    # Build per-client DSL list (1-based player numbers → 0-based client indices).
+    per_client_dsl: list[str] = []
+    for client_idx in range(num_clients):
+        player_num = client_idx + 1  # 1-based
+        dsl = dcs.resolve_dsl_for_player(player_num, pcs_map)
+        per_client_dsl.append(dsl if dsl else BARTLEBOT_DEFAULT_COMBAT_CONFIG)
+
+    combat_order: list[int] = dcs.combat_order if dcs.combat_order is not None else []
+
+    return per_client_dsl, combat_order, source_label
 
 
 async def _run_combat(client, combat_dsl: str) -> None:

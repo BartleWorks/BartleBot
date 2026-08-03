@@ -326,7 +326,12 @@
       },
       "params": {
         "zone": "G14_DM*",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -364,7 +369,12 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -760,7 +770,12 @@
           "y": -3787.21,
           "z": -11.34
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}
@@ -785,7 +800,12 @@
           "y": -2408.03,
           "z": 170.47
         },
-        "interact_clients": [],
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ],
         "has_dialogue": true
       },
       "option_overrides": {}

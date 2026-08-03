@@ -202,7 +202,12 @@
           "y": 2847.44,
           "z": 26.83
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -369,7 +374,12 @@
           "y": -3399.43,
           "z": 81.45
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },
@@ -791,7 +801,12 @@
       },
       "params": {
         "zone": "G14_HS/HS_Z01_ZigazagUpper",
-        "clients_to_check": []
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {}
     },

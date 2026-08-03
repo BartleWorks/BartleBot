@@ -875,7 +875,12 @@
           "y": 17878.9,
           "z": -65.33
         },
-        "interact_clients": []
+        "interact_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       },
       "option_overrides": {
         "Safety Delay": 1.0

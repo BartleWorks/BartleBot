@@ -39,14 +39,11 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="interact_clients",
-        type="int_list",
+        type="player_list",
         label="Interact Clients",
-        help=(
-            "1-based client numbers that should perform this interaction (e.g. '1, 3'). "
-            "Leave empty to have all clients interact."
-        ),
+        help="Which players perform this interaction.",
         default=[],
-        required=False,
+        required=True,
     ),
     ParamField(
         key="menu_path",
@@ -128,7 +125,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2. Resolve which clients should perform the interaction.
     raw: list[int] = params.get("interact_clients") or []
-    interact_indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else list(range(len(clients)))
+    interact_indices = [n - 1 for n in raw if 0 < n <= len(clients)]
     if not interact_indices:
         machine.log("interact_menu: no clients selected — SUCCESS")
         return "SUCCESS"

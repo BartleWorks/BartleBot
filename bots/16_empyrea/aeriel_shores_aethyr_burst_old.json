@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "Aethyr Burst Collector",
   "description": "Collects Aethyr Bursts in Aeriel Shores and Aeriel Jungle, Empyrea",
   "version": "1.0",
@@ -86,7 +86,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -118,7 +120,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -150,7 +154,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -182,7 +188,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -214,7 +222,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -246,7 +256,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -278,7 +290,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -292,7 +306,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -324,7 +340,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -356,7 +374,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -388,7 +408,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -420,7 +442,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     },
@@ -452,7 +476,9 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z01_Jungle",
-        "entity_names": ["AetherOre"]
+        "entity_names": [
+          "AetherOre"
+        ]
       },
       "option_overrides": {}
     }
