@@ -1235,15 +1235,17 @@ optional = false
 python-versions = ">=3.13"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 lark = ">=1.1.9"
 wizwalker = "*"
 
 [package.source]
-type = "directory"
-url = "../wizsprinter"
+type = "git"
+url = "https://github.com/The-World-Tree/wizsprinter.git"
+reference = "f59c0fdf0d901c278cb6f97c93e9466a69d46a0c"
+resolved_reference = "f59c0fdf0d901c278cb6f97c93e9466a69d46a0c"
 
 [[package]]
 name = "wizwalker"
@@ -1253,7 +1255,7 @@ optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 aiofiles = ">=23.2.1"
@@ -1267,10 +1269,12 @@ pymem = {version = "1.13.1", markers = "sys_platform == \"win32\""}
 regex = ">=2024.5.15"
 
 [package.source]
-type = "directory"
-url = "../wizwalker"
+type = "git"
+url = "https://github.com/The-World-Tree/wizwalker.git"
+reference = "1d1db0fefb5c6e33436ac3d96ee544913e43a66b"
+resolved_reference = "1d1db0fefb5c6e33436ac3d96ee544913e43a66b"
 
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "0df59ded6dad531d2e5248bd2031f78f6ef1752e89d3cc422170909f6c98ad4d"
+content-hash = "8170a73d1dad8766ddfa9d81f21aca17c931590684025287f812b9f3193c3d90"
