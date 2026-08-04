@@ -257,14 +257,31 @@ async def read_deck(db) -> dict:
     return {"normal": count_names(normal), "tc": {}, "item": active_item_counts(items)}
 
 
+async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
+    """Whether the deck currently open on ``client`` is an exact match for ``deck``."""
+    normal = await read_deck_card_names(client, deck_window)
+    items = await read_item_slots(client, deck_window)
+    return count_names(normal) == deck.normal and active_item_counts(items) == deck.item
+
+
 async def write_deck(db, deck: DeckData) -> None:
     """Restore a saved deck to the client — normal cards and item card toggles.
+
+    If the deck already open on the client is an exact match for ``deck``, skip the
+    clear/rewrite entirely — clearing and rebuilding a deck that's already correct
+    just costs time and click risk for no benefit.
 
     Item state is read *after* the deck is cleared, because ClearDeckButton may
     reset item toggles too; planning against the post-clear state is correct
     either way.
     """
     await db.refresh_deck_page()
+    deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
+
+    if await _deck_already_matches(db.client, deck_window, deck):
+        logger.info("Deck already matches saved configuration, skipping clear/rewrite")
+        return
+
     await db.clear_deck()
     await db.view_deck_cards()
 
@@ -274,7 +291,6 @@ async def write_deck(db, deck: DeckData) -> None:
         # list and rewinds the pages per card.  Re-check on a wizwalker bump.
         await db._add_all_normal_cards(deck.normal)  # noqa: SLF001
 
-    deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
     slots = await read_item_slots(db.client, deck_window)
     plan = plan_item_toggles(slots, deck.item)
     if plan:

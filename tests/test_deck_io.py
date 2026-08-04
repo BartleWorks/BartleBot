@@ -186,6 +186,7 @@ def test_plan_empty_desired_clears_all_active():
 
 async def test_write_deck_clears_then_adds_normal_cards(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
     await write_deck(db, DeckData(normal={"Tempest": 4}))
@@ -195,6 +196,7 @@ async def test_write_deck_clears_then_adds_normal_cards(monkeypatch):
 
 async def test_write_deck_empty_clears_without_adding(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
     await write_deck(db, DeckData())
@@ -204,10 +206,34 @@ async def test_write_deck_empty_clears_without_adding(monkeypatch):
 
 async def test_write_deck_ignores_legacy_treasure_cards(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
     await write_deck(db, DeckData(normal={"Tempest": 1}, tc={"Feint": 3}))
     assert db.added == {"Tempest": 1}
+
+
+async def test_write_deck_skips_when_current_deck_already_matches(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
+    db = FakeDeckBuilder()
+    deck = DeckData(normal={"Tempest": 2}, item={"Sharpened Blade - Tear": 1})
+    await write_deck(db, deck)
+    assert db.calls == ["refresh_deck_page"]
+    assert db.added is None
+
+
+async def test_write_deck_rewrites_when_item_cards_differ(monkeypatch):
+    """Even with matching normal cards, a mismatched item loadout must still trigger a rewrite."""
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
+    db = FakeDeckBuilder()
+    deck = DeckData(normal={"Tempest": 2}, item={"Sharpened Blade - Tear": 2})
+    await write_deck(db, deck)
+    assert "clear_deck" in db.calls
+    assert db.added == {"Tempest": 2}
 
 
 async def test_read_deck_never_reports_treasure_cards(monkeypatch):
@@ -223,6 +249,8 @@ async def test_read_deck_never_reports_treasure_cards(monkeypatch):
 
 async def test_write_deck_propagates_failures(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
 
     class Failing(FakeDeckBuilder):
         async def clear_deck(self) -> None:
@@ -266,6 +294,7 @@ def fake_deck_builder(monkeypatch):
         _CtxDeckBuilder,
     )
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
     return _CtxDeckBuilder
 
@@ -349,6 +378,10 @@ async def _fake_window(*_args, **_kwargs):
 
 
 async def _no_item_slots(*_args, **_kwargs):
+    return []
+
+
+async def _no_normal_cards(*_args, **_kwargs):
     return []
 
 
