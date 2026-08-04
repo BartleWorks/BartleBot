@@ -1,0 +1,51 @@
+{
+  "id": "d0eade37-dc55-482c-b6f3-dbb7993cd181",
+  "name": "Mr. Cane - 4 players w/ Ship of Fools",
+  "bot_id": "b923900e-965b-4316-826b-9e75a23c1283",
+  "player_decks": {
+    "4": {
+      "normal": {
+        "Frenzy": 1,
+        "Storm Lord - T02 - A": 1
+      },
+      "tc": {},
+      "item": {
+        "Epic - Amulet": 1
+      }
+    }
+  },
+  "default_duel_config": {
+    "min_players": 4,
+    "max_players": 4,
+    "combat_order": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "player_assignments": [
+      {
+        "players": [
+          2
+        ],
+        "dsl": "ship[epic] | feint[potent]@boss"
+      },
+      {
+        "players": [
+          1,
+          3
+        ],
+        "dsl": "",
+        "player_combat_strategy_id": "f774c5c5-3c53-49b4-a229-aa490bd6f1d4"
+      },
+      {
+        "players": [
+          4
+        ],
+        "dsl": "",
+        "player_combat_strategy_id": "df7770ce-b2f6-47e4-ad40-1d6e44b267b9"
+      }
+    ]
+  },
+  "state_assignments": []
+}

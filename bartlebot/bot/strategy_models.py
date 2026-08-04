@@ -95,29 +95,30 @@ class PlayerAssignment(BaseModel):
         return self.player_combat_strategy_id is not None
 
 
-class DuelCombatStrategy(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    name: str
+class DuelConfig(BaseModel):
+    """The reusable shape of a duel-level combat config — no identity of its own.
+
+    Split out of :class:`DuelCombatStrategy` so the same shape can live either
+    as a named library entry, or inline on a single :class:`StateAssignment` /
+    :class:`BotCombatStrategy` default — a one-off tweak for one bot that isn't
+    worth promoting to a shared file.  Mirrors the inline-vs-linked split
+    :class:`PlayerAssignment` already uses one level down.
+    """
+
     min_players: int = 1
     max_players: int = 4
     # None = all players enter combat simultaneously; list = sequential entry order (1-based)
     combat_order: list[int] | None = None
     player_assignments: list[PlayerAssignment] = Field(default_factory=list)
 
-    @classmethod
-    def load(cls, path: str | Path) -> DuelCombatStrategy:
-        with open(path, encoding="utf-8") as f:
-            return cls.model_validate(json.load(f))
-
-    def save(self, path: str | Path) -> None:
-        _atomic_write(self.model_dump(exclude_none=True), path)
-
     def resolve_dsl_for_player(self, player_num: int, pcs_map: dict[str, str]) -> str | None:
         """Return DSL for a 1-based player number, or None if unassigned/empty.
 
         Linked assignments resolve through pcs_map; inline assignments use their
         own ``dsl``.  An empty inline DSL resolves to None so the caller falls
-        back to the built-in default.
+        back to the built-in default — which also means an entirely empty
+        ``DuelConfig`` (no player_assignments at all) degrades to "built-in
+        default for everyone" with no special-casing needed.
 
         pcs_map: dict of {pcs_uuid: dsl_string} — pre-loaded PCS preset data.
         """
@@ -132,12 +133,47 @@ class DuelCombatStrategy(BaseModel):
         """UUIDs of every PlayerCombatStrategy preset this duel links to."""
         return [a.player_combat_strategy_id for a in self.player_assignments if a.player_combat_strategy_id is not None]
 
+    def is_empty(self) -> bool:
+        """True if this config has no player assignments at all.
+
+        Used to tell "a deliberately inline config with real content" apart
+        from "no real config was ever entered" — the latter is worth flagging
+        even though both resolve to the same built-in-default runtime behavior.
+        """
+        return not self.player_assignments
+
+
+class DuelCombatStrategy(DuelConfig):
+    """A named, shared DuelConfig stored in the library."""
+
+    id: str = Field(default_factory=lambda: str(uuid4()))
+    name: str
+
+    @classmethod
+    def load(cls, path: str | Path) -> DuelCombatStrategy:
+        with open(path, encoding="utf-8") as f:
+            return cls.model_validate(json.load(f))
+
+    def save(self, path: str | Path) -> None:
+        _atomic_write(self.model_dump(exclude_none=True), path)
+
 
 class StateAssignment(BaseModel):
-    """Maps a DuelCombatStrategy to one or more FSM state IDs."""
+    """One FSM state's combat override: inline, or linked to a library DuelCombatStrategy.
 
-    duel_combat_strategy_id: str  # UUID of a DuelCombatStrategy
+    Mirrors :class:`PlayerAssignment`'s pattern one level up: ``duel_config`` is
+    always present and used when unlinked; set ``duel_combat_strategy_id`` to
+    point at a shared library entry instead, which then takes precedence.
+    """
+
     state_ids: list[str]  # FSM state IDs this assignment covers
+    duel_config: DuelConfig = Field(default_factory=DuelConfig)  # inline; used when unlinked
+    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy; when set, duel_config is ignored
+
+    @property
+    def is_linked(self) -> bool:
+        """True if this assignment points at a shared DuelCombatStrategy."""
+        return self.duel_combat_strategy_id is not None
 
 
 class BotCombatStrategy(BaseModel):
@@ -146,8 +182,11 @@ class BotCombatStrategy(BaseModel):
     bot_id: str  # UUID of the BotConfig this strategy belongs to
     # 1-based player number → embedded deck data (not referenced by UUID)
     player_decks: dict[int, DeckData] = Field(default_factory=dict)
-    # DuelCombatStrategy to use for all unassigned states; None = built-in default
+    # Default duel config for unassigned states: linked library entry takes
+    # precedence over default_duel_config; an empty default_duel_config (the
+    # common case) degrades to the built-in default, same as DuelConfig.is_empty.
     default_strategy_id: str | None = None
+    default_duel_config: DuelConfig = Field(default_factory=DuelConfig)
     state_assignments: list[StateAssignment] = Field(default_factory=list)
 
     @classmethod
@@ -158,12 +197,23 @@ class BotCombatStrategy(BaseModel):
     def save(self, path: str | Path) -> None:
         _atomic_write(self.model_dump(exclude_none=True), path)
 
-    def find_dcs_id_for_state(self, state_id: str) -> str | None:
-        """Return the DCS UUID assigned to this FSM state, or None."""
+    def find_assignment_for_state(self, state_id: str) -> StateAssignment | None:
+        """Return the StateAssignment covering this FSM state, or None."""
         for assignment in self.state_assignments:
             if state_id in assignment.state_ids:
-                return assignment.duel_combat_strategy_id
+                return assignment
         return None
+
+    def find_dcs_id_for_state(self, state_id: str) -> str | None:
+        """Return the linked DCS UUID assigned to this FSM state, or None.
+
+        None covers both "no assignment exists" and "the assignment is inline"
+        — callers that only understand library ids can't do anything with an
+        inline config anyway.  Use :meth:`find_assignment_for_state` for the
+        full picture.
+        """
+        assignment = self.find_assignment_for_state(state_id)
+        return assignment.duel_combat_strategy_id if assignment else None
 
 
 # ---------------------------------------------------------------------------

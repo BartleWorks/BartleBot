@@ -745,7 +745,7 @@
       },
       "params": {
         "enemy": "ZF-TseTse-Main-R11-Boss",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {}
@@ -816,7 +816,7 @@
       },
       "params": {
         "enemy": "ZF-Elephant-Spectral-Guardian-R11",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {}
@@ -905,7 +905,7 @@
       },
       "params": {
         "enemy": "ZF-Goliath-R11-Boss-03",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {}
@@ -951,7 +951,7 @@
       },
       "params": {
         "enemy": "ZF-Spider-Model-Starburst-R11",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {}

@@ -150,7 +150,7 @@ def test_dcs_editor_emits_the_loaded_strategy_id(qapp):
 
     seen = []
     editor.changed.connect(seen.append)
-    editor._min_spin.setValue(3)
+    editor._config_editor._min_spin.setValue(3)
     editor.flush()
 
     assert seen == [dcs.id]
@@ -160,7 +160,7 @@ def test_dcs_editor_emits_the_loaded_strategy_id(qapp):
 def test_dcs_editor_clear_drops_the_pending_save(qapp):
     editor = DuelStrategyEditor()
     editor.load(DuelCombatStrategy(name="Duel A"), [])
-    editor._min_spin.setValue(2)
+    editor._config_editor._min_spin.setValue(2)
     assert editor._save_timer.isActive()
 
     seen = []
@@ -176,11 +176,11 @@ def test_dcs_editor_clear_removes_the_assignment_rows(qapp):
     editor = DuelStrategyEditor()
     dcs = DuelCombatStrategy(name="Duel A", player_assignments=[PlayerAssignment(players=[1], dsl="x")])
     editor.load(dcs, [])
-    assert editor._rows
+    assert editor._config_editor._rows
 
     editor.clear()
 
-    assert editor._rows == []
+    assert editor._config_editor._rows == []
 
 
 # ---------------------------------------------------------------------------
@@ -214,7 +214,7 @@ def test_switching_dcs_mid_edit_saves_the_edited_one(qapp, store):
 
     win = StrategyLibraryWindow()
     win.focus_duel_strategy(a.id)
-    win._dcs_editor._min_spin.setValue(4)
+    win._dcs_editor._config_editor._min_spin.setValue(4)
 
     win.focus_duel_strategy(b.id)
 
@@ -305,7 +305,7 @@ def test_deleting_a_dcs_mid_edit_does_not_resurrect_the_file(qapp, store, monkey
 
     win = StrategyLibraryWindow()
     win.focus_duel_strategy(d.id)
-    win._dcs_editor._min_spin.setValue(4)
+    win._dcs_editor._config_editor._min_spin.setValue(4)
     assert win._dcs_editor._save_timer.isActive()
 
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
@@ -346,7 +346,7 @@ def test_flush_editors_commits_both_tabs(qapp, store):
     win.focus_player_strategy(pcs.id)
     win._pcs_editor._dsl_edit.setPlainText("edited")
     win.focus_duel_strategy(dcs.id)
-    win._dcs_editor._min_spin.setValue(3)
+    win._dcs_editor._config_editor._min_spin.setValue(3)
 
     win.flush_editors()
 

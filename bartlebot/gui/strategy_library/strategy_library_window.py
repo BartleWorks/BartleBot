@@ -422,11 +422,21 @@ class StrategyLibraryWindow(QDialog):
         self._dcs_editor.presets_changed.connect(self._on_presets_changed)
         self._dcs_empty_lbl = QLabel("Select a strategy to edit")
 
+        # DuelConfigEditor (inside DuelStrategyEditor) no longer scrolls its own
+        # assignment list internally — it sizes to full content and expects
+        # whatever embeds it to provide the scrolling. The Combat tab already
+        # has an outer scroll area; this fixed-size dialog does not, so it needs
+        # its own here.
+        dcs_scroll = QScrollArea()
+        dcs_scroll.setWidgetResizable(True)
+        dcs_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        dcs_scroll.setWidget(self._dcs_editor)
+
         right = QWidget()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(8, 0, 0, 0)
         right_layout.addWidget(self._dcs_empty_lbl)
-        right_layout.addWidget(self._dcs_editor)
+        right_layout.addWidget(dcs_scroll)
         self._dcs_editor.hide()
         splitter.addWidget(right)
 

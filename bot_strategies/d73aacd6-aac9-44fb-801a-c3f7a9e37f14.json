@@ -40,13 +40,40 @@
     }
   },
   "default_strategy_id": "c15e2e2b-e4c2-43b5-86c6-c72a13f8ce85",
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
   "state_assignments": [
     {
-      "duel_combat_strategy_id": "c15e2e2b-e4c2-43b5-86c6-c72a13f8ce85",
       "state_ids": [
         "state_9",
         "state_14"
-      ]
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "dsl": "scald[\"Epic - Amulet\"][epic] | feint mass | any<blade>[sharp]@ally(1) | feint[potent]@boss | detonate all | any<aoe>[epic]",
+            "player_combat_strategy_id": "d28513b6-da91-4447-a104-fad6fc8fda8b"
+          }
+        ]
+      },
+      "duel_combat_strategy_id": "c15e2e2b-e4c2-43b5-86c6-c72a13f8ce85"
     }
   ]
 }

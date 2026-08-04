@@ -2,7 +2,51 @@
   "id": "b24ab7b4-5111-41d0-b868-7056cdb136ee",
   "name": "Mirror Lake - 4 player Scald Incindiate",
   "bot_id": "2286b605-efb3-4339-9efd-86c9779d6c0e",
-  "player_decks": {},
+  "player_decks": {
+    "1": {
+      "normal": {},
+      "tc": {},
+      "item": {
+        "Feint Mass - Amulet": 1
+      }
+    },
+    "2": {
+      "normal": {
+        "Sharpened Blade": 1,
+        "Tri Blade": 1
+      },
+      "tc": {},
+      "item": {}
+    },
+    "3": {
+      "normal": {
+        "Epic": 2,
+        "Meteor Strike": 2,
+        "Scald": 1
+      },
+      "tc": {},
+      "item": {
+        "Epic - Amulet": 1
+      }
+    },
+    "4": {
+      "normal": {},
+      "tc": {},
+      "item": {
+        "Detonate All 200 - Amulet": 1
+      }
+    }
+  },
   "default_strategy_id": "c15e2e2b-e4c2-43b5-86c6-c72a13f8ce85",
-  "state_assignments": []
+  "state_assignments": [
+    {
+      "duel_combat_strategy_id": "c15e2e2b-e4c2-43b5-86c6-c72a13f8ce85",
+      "state_ids": [
+        "state_10",
+        "state_14",
+        "state_19",
+        "state_22"
+      ]
+    }
+  ]
 }
