@@ -7,8 +7,11 @@ wrote the outgoing strategy's edits into the incoming strategy's file — the
 outgoing edits were lost and the incoming file was silently corrupted.
 
 These are real widget tests rather than pure-logic tests because the defect lives
-entirely in the signal/slot wiring.  ``monkeypatch.chdir`` isolates the strategy
-store (which resolves paths from the cwd) into ``tmp_path``.
+entirely in the signal/slot wiring.  ``StrategyLibraryWindow`` and its editors call
+the module-level ``strategy_store`` functions with no explicit ``root``, so
+isolating them means patching ``strategy_store.project_root`` — not ``chdir``,
+which the store no longer consults now that it resolves its default root via
+``bartlebot.paths.project_root()`` instead of the process cwd.
 """
 
 import sys
@@ -16,6 +19,7 @@ import sys
 import pytest
 from PyQt6.QtWidgets import QApplication
 
+from bartlebot import strategy_store as store_mod
 from bartlebot.bot.strategy_models import (
     DuelCombatStrategy,
     PlayerAssignment,
@@ -42,12 +46,12 @@ def qapp():
 
 @pytest.fixture
 def store(tmp_path, monkeypatch):
-    """Point the strategy store at an empty tmp_path for the duration of a test."""
+    """Point the strategy store's default root at an empty tmp_path for the test."""
     (tmp_path / "strategies" / "player").mkdir(parents=True)
     (tmp_path / "strategies" / "duel").mkdir(parents=True)
     (tmp_path / "strategies" / "decks").mkdir(parents=True)
     (tmp_path / "bot_strategies").mkdir(parents=True)
-    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path)
     return tmp_path
 
 

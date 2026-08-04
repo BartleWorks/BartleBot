@@ -18,8 +18,6 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.theme import THEME
 
-_NONE_UUID = "__none__"  # sentinel for "built-in default / no assignment"
-
 # Fixed card heights (contentsMargins 7+7 top/bottom, name ~16px, subtitle ~14px + 2px spacing)
 _CARD_H_WITH_SUB = 52
 _CARD_H_NO_SUB = 36

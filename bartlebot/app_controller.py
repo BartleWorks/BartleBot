@@ -82,10 +82,11 @@ class AppController(QObject):
             return
 
         if not known:
-            # The store resolves bot_strategies/ relative to the cwd, so launching
-            # from anywhere but the project root reads an empty library.  That is
-            # indistinguishable from genuinely having no strategies, and pruning
-            # on it would wipe every remembered selection the user has.  Refuse.
+            # An empty result is indistinguishable from "the store can't see
+            # bot_strategies/ at all" (wrong project_root, directory deleted,
+            # a dev checkout with no strategies yet) — and pruning on it would
+            # wipe every remembered selection the user has.  Refuse rather than
+            # guess.
             logger.debug("No bot strategies visible — skipping active-strategy prune")
             return
 
