@@ -22,11 +22,12 @@ from wizwalker.utils import (
 from bartlebot.credentials import CredentialStore
 from bartlebot.settings_manager import SettingsManager
 
-# Grid offsets for up to 4 instances: 2×2 layout matching the embed view.
-# Client 1 at anchor, Client 2 right, Client 3 below, Client 4 bottom-right.
+# Spawn anchor position. Distinct grid offsets per instance aren't needed here:
+# every window gets reparented and re-centered by ClientTile (see
+# gui/game_embed/client_tile.py) as soon as it's embedded, so the position it
+# spawns at is only ever visible for a brief moment.
 _LAUNCH_ANCHOR_X = 50
 _LAUNCH_ANCHOR_Y = 50
-_LAUNCH_GRID_OFFSETS = [(0, 0), (1, 0), (0, 1), (1, 1)]  # (col, row) multipliers
 
 
 def _patch_xml_fields(path, updates: dict[str, str]) -> None:
@@ -76,6 +77,22 @@ async def _start_and_claim_handle(known_handles: set[int]) -> int:
         await asyncio.sleep(0.1)
 
 
+async def _wait_for_n_new_handles(known_handles: set[int], n: int) -> list[int]:
+    """Poll until *n* handles beyond *known_handles* exist, then return the new ones.
+
+    Used to claim a whole batch of instances started back-to-back, instead of
+    waiting for each one individually — the account each handle ends up with
+    doesn't matter, since login credentials are just typed into whichever
+    window, so there's no need to correlate a given handle back to the
+    start_instance() call that spawned it.
+    """
+    while True:
+        new_handles = set(get_all_wizard_handles()).difference(known_handles)
+        if len(new_handles) >= n:
+            return list(new_handles)[:n]
+        await asyncio.sleep(0.1)
+
+
 async def launch_account(
     username: str,
     password: str,
@@ -103,8 +120,9 @@ async def launch_profile(profile_name: str) -> None:
     Looks up the profile in SettingsManager and retrieves passwords from
     CredentialStore (Windows Credential Manager).
 
-    Starts instances sequentially so each handle can be unambiguously claimed,
-    then logs in all accounts after a single shared wait for the login screen.
+    Starts all instances back-to-back rather than waiting for each one to
+    reach the login screen before starting the next, then logs in all
+    accounts after a single shared wait for the login screen.
 
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
@@ -132,18 +150,21 @@ async def launch_profile(profile_name: str) -> None:
         display_name = CredentialStore.display_name(username, alias)
         accounts.append((username, password, display_name))
 
-    # Start instances one at a time so each handle is unambiguously claimed
-    # before the next instance is spawned.  Patch config.xml before each spawn
-    # so the window opens at the configured resolution and grid position.
-    # A per-profile resolution overrides the global setting.
-    handles: list[int] = []
-    known = set(get_all_wizard_handles())
+    # Patch config.xml once for the whole batch (all instances read the same
+    # file at their own startup, so one shared resolution/position is enough —
+    # see the _LAUNCH_ANCHOR_X comment above for why per-instance positions
+    # aren't needed). A per-profile resolution overrides the global setting.
     profile_res = profile.get("resolution")
     w, h = tuple(profile_res) if profile_res else SettingsManager.instance().game_resolution
-    for i, _ in enumerate(accounts):
-        col, row = _LAUNCH_GRID_OFFSETS[i] if i < len(_LAUNCH_GRID_OFFSETS) else (0, 0)
-        _patch_window_config(w, h, _LAUNCH_ANCHOR_X + col * w, _LAUNCH_ANCHOR_Y + row * h)
-        handles.append(await _start_and_claim_handle(known | set(handles)))
+    _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
+
+    # Fire off every instance back-to-back, then claim the whole batch of new
+    # handles at once, instead of waiting for each instance to appear before
+    # starting the next — this is what actually made a 4-client launch slow.
+    known = set(get_all_wizard_handles())
+    for _ in accounts:
+        start_instance()
+    handles = await _wait_for_n_new_handles(known, len(accounts))
 
     # Single shared wait for all instances to reach the login screen
     await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
