@@ -4,13 +4,27 @@ Extracted so that machine.py does not need to import from a specific node module
 """
 
 import logging
-import re
+from functools import lru_cache
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 
 logger = logging.getLogger(__name__)
 
 _BUILTIN_SOURCE = "BartleBot built-in default"
+
+
+def slots_in_battle(in_battle_flags: list) -> list[int]:
+    """Return the 0-based client indices whose ``in_battle()`` came back True.
+
+    ``in_battle_flags`` is the result of a ``gather(..., return_exceptions=True)``
+    over every client, so entries may be True, False, or an Exception.  Callers
+    need the *indices* rather than the clients themselves: a client's position in
+    the full client list is its player slot, and combat DSL is resolved per slot.
+    Filtering to a shorter list of clients and then indexing positionally into the
+    resolved DSLs hands the wrong player's strategy to every client after the
+    first gap.
+    """
+    return [i for i, flag in enumerate(in_battle_flags) if flag is True]
 
 
 def resolve_combat(
@@ -114,11 +128,41 @@ def resolve_combat(
     return per_client_dsl, combat_order, source_label
 
 
-async def _run_combat(client, combat_dsl: str) -> None:
-    """Run SprintyCombat for a single client using an inline DSL string."""
-    from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
+# ---------------------------------------------------------------------------
+# DSL parsing
+# ---------------------------------------------------------------------------
+
+
+@lru_cache(maxsize=1)
+def _lark_parser():
+    """Build the wizsprinter combat grammar parser once and reuse it.
+
+    ``CombatConfigProvider.parse_config()`` rebuilds a ``Lark`` instance on every
+    call (~77 ms), and ``_run_combat`` constructs a provider per client per fight,
+    so that cost lands squarely in the hot path.  Lark parsers are reusable across
+    ``parse()`` calls and this app is single-threaded under qasync, so one shared
+    instance is safe.
+    """
+    from lark import Lark  # noqa: PLC0415
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
+        get_sprinty_grammar,
+    )
+
+    return Lark(get_sprinty_grammar())
+
+
+@lru_cache(maxsize=1)
+def _str_provider_class():
+    """Return a CombatConfigProvider subclass that accepts a DSL string.
+
+    Built lazily and cached so importing this module does not pull in wizwalker,
+    and so both ``_run_combat`` and ``validate_dsl`` share one definition.
+    """
     from wizwalker.extensions.wizsprinter.combat_backends.backend_base import (  # noqa: PLC0415
         BaseCombatBackend,
+    )
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
+        TreeToConfig,
     )
     from wizwalker.extensions.wizsprinter.combat_backends.config_backend import (  # noqa: PLC0415
         CombatConfigProvider,
@@ -133,38 +177,38 @@ async def _run_combat(client, combat_dsl: str) -> None:
             self.filename = "<inline>"
             self.config = self.parse_config(content)
 
-    provider = _StrCombatConfigProvider(combat_dsl)
-    await SprintyCombat(client, provider).wait_for_combat()
+        def parse_config(self, file_contents):
+            # Same as the parent, but against the shared parser instead of a new one.
+            tree = _lark_parser().parse(file_contents)
+            return self._expand_config(TreeToConfig().transform(tree))
+
+    return _StrCombatConfigProvider
 
 
-def _split_combat_config(dsl: str, num_clients: int) -> list[str]:
-    """Split a Deimos-style multi-client DSL into per-client config strings.
+def validate_dsl(dsl: str) -> str | None:
+    """Return a one-line parse error for ``dsl``, or None if it is valid.
 
-    Section headers of the form '### p1', '### p2', etc. (1-based, matching
-    Deimos convention) delimit per-client configs. Content before the first
-    header and clients without a matching section fall back to client 1's
-    section, or the full string if no headers exist.
+    An empty or whitespace-only DSL is reported as valid: ``resolve_dsl_for_player``
+    returns None for it and ``resolve_combat`` substitutes the built-in default, so
+    it is never executed.  A newly created preset starts empty by design and must
+    not be flagged.
+
+    Pure — no client, no Qt, no disk.  Used to surface syntax errors in the pre-run
+    warning dialog instead of mid-fight.
     """
-    pattern = re.compile(r"###\sp\s*(\d+)")
+    if not dsl or not dsl.strip():
+        return None
+    try:
+        _str_provider_class()(dsl)
+    except Exception as exc:
+        message = str(exc).strip()
+        return message.splitlines()[0] if message else exc.__class__.__name__
+    return None
 
-    lines = dsl.splitlines()
-    sections: dict[int, list[str]] = {}  # 0-indexed client → lines
-    current_idx = -1
-    current_lines: list[str] = []
 
-    for line in lines:
-        match = re.search(pattern, line)
-        if match:
-            if current_idx != -1:
-                sections[current_idx] = current_lines[:]
-            current_idx = int(match.group(1)) - 1  # 1-based → 0-based
-            current_lines = []
-        else:
-            current_lines.append(line)
+async def _run_combat(client, combat_dsl: str) -> None:
+    """Run SprintyCombat for a single client using an inline DSL string."""
+    from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 
-    if current_idx == -1:
-        # No section headers — all clients share the full config.
-        return [dsl] * num_clients
-
-    sections[current_idx] = current_lines
-    return ["\n".join(sections.get(i, sections.get(0, lines))) for i in range(num_clients)]
+    provider = _str_provider_class()(combat_dsl)
+    await SprintyCombat(client, provider).wait_for_combat()

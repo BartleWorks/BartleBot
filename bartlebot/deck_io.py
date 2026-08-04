@@ -45,7 +45,7 @@ from wizwalker.memory.memory_objects.window import (
     DynamicDeckListControl,
 )
 
-from bartlebot.nodes.timing import DECK_ITEM_PAGE_SETTLE, DECK_ITEM_TOGGLE_SETTLE
+from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_ITEM_PAGE_SETTLE, DECK_ITEM_TOGGLE_SETTLE
 
 if TYPE_CHECKING:
     from bartlebot.bot.strategy_models import DeckData
@@ -281,6 +281,32 @@ async def write_deck(db, deck: DeckData) -> None:
         logger.info("Toggling %d item card slot(s)", len(plan))
         await _apply_item_toggles(db, deck_window, plan, page_count(len(slots)))
         await _verify_item_state(db.client, deck_window, deck.item)
+
+
+async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT) -> None:
+    """Open the deck window on ``client`` and restore ``deck``, bounded by ``timeout``.
+
+    The single entry point for every deck-apply path — the manual "Apply" button and
+    the automatic pre-run apply.  Both previously had their own implementation, and
+    the pre-run one had drifted onto ``DeckBuilder.set_deck_preset()``: the very API
+    this module exists to replace (see the module docstring — it reaches the treasure
+    card view and can page forward forever), with no timeout, so a stuck apply hung
+    the run before the FSM ever started.
+
+    The ``DeckBuilder`` context is inside the timeout so a hang while *opening* the
+    deck window is bounded too, not just the write itself.
+
+    Raises ``TimeoutError`` if the apply does not finish in time; callers decide
+    whether that is fatal.
+    """
+
+    async def _open_and_write() -> None:
+        from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
+
+        async with DeckBuilder(client) as db:
+            await write_deck(db, deck)
+
+    await asyncio.wait_for(_open_and_write(), timeout=timeout)
 
 
 async def _verify_item_state(client, deck_window, desired: dict[str, int]) -> None:

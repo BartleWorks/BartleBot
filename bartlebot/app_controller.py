@@ -18,7 +18,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
-from bartlebot.deck_io import read_deck, write_deck
+from bartlebot.deck_io import apply_deck, read_deck
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -374,8 +374,7 @@ class AppController(QObject):
         client = clients[client_idx]
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
-            async with DeckBuilder(client) as db:
-                await asyncio.wait_for(write_deck(db, deck_data), timeout=DECK_APPLY_TIMEOUT)
+            await apply_deck(client, deck_data)
             logger.info("Deck applied for slot %d", slot)
         except TimeoutError:
             logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
@@ -501,7 +500,6 @@ class AppController(QObject):
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
-        await self._apply_pre_run_decks()
         self._window.set_start_enabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
@@ -512,6 +510,10 @@ class AppController(QObject):
         self._window.right_sidebar.clients.set_bot_running(True)
         self._window.left_sidebar.set_bot_running(True)
         try:
+            # Inside the try so the finally still tears down if the user stops during
+            # a slow apply, and after add_gui_callback so failures reach this run's
+            # log panel rather than the previous run's.
+            await self._apply_pre_run_decks()
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()
@@ -554,11 +556,18 @@ class AppController(QObject):
                 logger.warning("Deck saved for slot %d but only %d client(s) connected — skipping", slot, len(clients))
                 continue
             client = clients[client_idx]
-            preset_dict = deck_data.model_dump()
             logger.info("Applying saved deck for slot %d (%d cards)", slot, deck_data.total_cards())
             try:
-                async with DeckBuilder(client) as db:
-                    await db.set_deck_preset(preset_dict)
+                await apply_deck(client, deck_data)
+            except TimeoutError:
+                # Log only. This runs inside the _start_bot task, and a blocking
+                # QMessageBox from an asyncio task deadlocks the qasync loop under
+                # Python 3.13 (see CLAUDE.md).
+                logger.error(
+                    "Deck apply for slot %d timed out after %.0fs — run will continue with whatever was set",
+                    slot,
+                    DECK_APPLY_TIMEOUT,
+                )
             except Exception:
                 logger.warning(
                     "Failed to fully apply deck for slot %d — run will continue with whatever was set",

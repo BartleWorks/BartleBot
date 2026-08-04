@@ -8,6 +8,7 @@ planning that decides which item card slots to click.
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -17,12 +18,14 @@ from bartlebot.deck_io import (
     SLOTS_PER_PAGE,
     ItemSlot,
     active_item_counts,
+    apply_deck,
     count_names,
     page_count,
     plan_item_toggles,
     read_deck,
     write_deck,
 )
+from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT
 
 
 def slot(name: str, index: int, active: bool = False) -> ItemSlot:
@@ -227,6 +230,115 @@ async def test_write_deck_propagates_failures(monkeypatch):
 
     with pytest.raises(RuntimeError, match="deck window not open"):
         await write_deck(Failing(), DeckData(normal={"Tempest": 1}))
+
+
+# ---------------------------------------------------------------------------
+# apply_deck: the single entry point shared by the manual and pre-run paths
+# ---------------------------------------------------------------------------
+
+
+class _CtxDeckBuilder(FakeDeckBuilder):
+    """FakeDeckBuilder usable as `async with DeckBuilder(client)`."""
+
+    instances: list[_CtxDeckBuilder] = []
+
+    def __init__(self, client=None):
+        super().__init__()
+        self.entered = False
+        self.exited = False
+        _CtxDeckBuilder.instances.append(self)
+
+    async def __aenter__(self):
+        self.entered = True
+        return self
+
+    async def __aexit__(self, *_exc):
+        self.exited = True
+        return False
+
+
+@pytest.fixture
+def fake_deck_builder(monkeypatch):
+    """Patch the DeckBuilder that apply_deck imports lazily."""
+    _CtxDeckBuilder.instances = []
+    monkeypatch.setattr(
+        "wizwalker.extensions.scripting.deck_builder.DeckBuilder",
+        _CtxDeckBuilder,
+    )
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    return _CtxDeckBuilder
+
+
+async def test_apply_deck_opens_the_builder_and_writes(fake_deck_builder):
+    await apply_deck(object(), DeckData(normal={"Tempest": 4}))
+
+    db = fake_deck_builder.instances[0]
+    assert db.entered and db.exited
+    assert db.calls == ["refresh_deck_page", "clear_deck", "view_deck_cards", "_add_all_normal_cards"]
+    assert db.added == {"Tempest": 4}
+
+
+async def test_apply_deck_never_uses_set_deck_preset(fake_deck_builder):
+    """The pre-run path used to call DeckBuilder.set_deck_preset(), which reaches
+    the treasure card view and can page forward forever. FakeDeckBuilder raises on
+    it, so this passing means apply_deck goes through write_deck instead."""
+    await apply_deck(object(), DeckData(normal={"Tempest": 1}, item={"Sharpened Blade - Tear": 1}))
+
+    assert "set_deck_preset" not in fake_deck_builder.instances[0].calls
+
+
+async def test_apply_deck_times_out(monkeypatch):
+    """A stuck apply must not hang the run forever — this is what the pre-run path
+    was missing entirely."""
+
+    class Hanging(_CtxDeckBuilder):
+        async def refresh_deck_page(self) -> None:
+            await asyncio.sleep(60)
+
+    _CtxDeckBuilder.instances = []
+    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", Hanging)
+
+    with pytest.raises(TimeoutError):
+        await apply_deck(object(), DeckData(normal={"Tempest": 1}), timeout=0.05)
+
+
+async def test_apply_deck_closes_the_builder_on_timeout(monkeypatch):
+    """The deck window must still be released when the apply is cancelled."""
+
+    class Hanging(_CtxDeckBuilder):
+        async def refresh_deck_page(self) -> None:
+            await asyncio.sleep(60)
+
+    _CtxDeckBuilder.instances = []
+    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", Hanging)
+
+    with pytest.raises(TimeoutError):
+        await apply_deck(object(), DeckData(normal={"Tempest": 1}), timeout=0.05)
+
+    assert Hanging.instances[0].exited
+
+
+async def test_apply_deck_propagates_write_failures(fake_deck_builder, monkeypatch):
+    class Failing(_CtxDeckBuilder):
+        async def clear_deck(self) -> None:
+            raise RuntimeError("deck window not open")
+
+    _CtxDeckBuilder.instances = []
+    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", Failing)
+
+    with pytest.raises(RuntimeError, match="deck window not open"):
+        await apply_deck(object(), DeckData(normal={"Tempest": 1}))
+
+    assert Failing.instances[0].exited
+
+
+async def test_apply_deck_defaults_to_the_shared_timeout(fake_deck_builder):
+    """Both call sites rely on the default rather than passing their own."""
+    import inspect
+
+    default = inspect.signature(apply_deck).parameters["timeout"].default
+    assert default == DECK_APPLY_TIMEOUT
 
 
 # -- monkeypatch helpers ---------------------------------------------------
