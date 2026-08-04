@@ -250,7 +250,10 @@ class _AssignmentRow(QWidget):
 class DuelStrategyEditor(QWidget):
     """Edit a DuelCombatStrategy: name, min/max players, combat order, player assignments."""
 
-    changed = pyqtSignal()
+    # Emitted after debounce with the id of the strategy the edits belong to.
+    # See PlayerStrategyEditor.changed — the id is what keeps a late-firing save
+    # from being applied to whichever strategy the user selected in the meantime.
+    changed = pyqtSignal(str)
     presets_changed = pyqtSignal()  # a row promoted its inline DSL to a new library preset
 
     def __init__(self, parent=None):
@@ -342,6 +345,18 @@ class DuelStrategyEditor(QWidget):
         if self._save_timer.isActive():
             self._save_timer.stop()
             self._flush()
+
+    def clear(self) -> None:
+        """Detach from the loaded strategy and drop any pending save.
+
+        Call this before deleting the strategy being edited — otherwise the
+        debounce timer fires afterwards and writes the file back out.
+        """
+        self._save_timer.stop()
+        self._strategy = None
+        self._suppress = True
+        self._rebuild_assignment_rows()
+        self._suppress = False
 
     def _rebuild_assignment_rows(self) -> None:
         for row in self._rows:
@@ -439,7 +454,7 @@ class DuelStrategyEditor(QWidget):
         self._strategy.max_players = self._max_spin.value()
         order = self._order_widget.get_value()
         self._strategy.combat_order = order if order else None
-        self.changed.emit()
+        self.changed.emit(self._strategy.id)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)

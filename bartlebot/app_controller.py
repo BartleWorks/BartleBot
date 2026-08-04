@@ -146,8 +146,18 @@ class AppController(QObject):
     async def run(self) -> None:
         self._client_manager.start()
         quit_event = asyncio.Event()
+        # Connected before quit_event so debounced edits land while the widgets
+        # are still alive.
+        self._app.aboutToQuit.connect(self._flush_pending_edits)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
+
+    def _flush_pending_edits(self) -> None:
+        """Commit debounced combat edits that the 500 ms timer has not fired for yet."""
+        try:
+            self._window.left_sidebar.combat_tab.flush_pending_save()
+        except Exception:
+            logger.exception("Failed to flush pending combat edits on quit")
 
     # ------------------------------------------------------------------
     # File operations

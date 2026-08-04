@@ -364,7 +364,6 @@ class CombatTab(QWidget):
         # state_id → dcs_id (working copy, flushed to BCS before save)
         self._state_dcs: dict[str, str] = {}
         self._suppress = False
-        self._closed = False
         self._editable = True
         self._library_window: StrategyLibraryWindow | None = None
 
@@ -476,6 +475,9 @@ class CombatTab(QWidget):
     # ------------------------------------------------------------------
 
     def set_config(self, config: BotConfig | None) -> None:
+        # Commit the outgoing bot's pending BCS edit before _bcs is replaced —
+        # otherwise the timer fires against the newly loaded bot's strategy.
+        self.flush_pending_save()
         self._config = config
         self._suppress = True
         self._load_bcs()
@@ -562,9 +564,22 @@ class CombatTab(QWidget):
         self.combat_config_changed.emit()
 
     def _save_bcs_immediate(self) -> None:
+        """Save unconditionally — for mutations that bypass the debounce timer."""
         if self._save_timer.isActive():
             self._save_timer.stop()
         self._save_bcs()
+
+    def flush_pending_save(self) -> None:
+        """Commit any debounced edit — this tab's BCS and any open Strategy Library.
+
+        A no-op when nothing is pending, so it is safe to call on every config
+        load and before every strategy switch.
+        """
+        if self._library_window is not None and self._library_window.isVisible():
+            self._library_window.flush_editors()
+        if self._save_timer.isActive():
+            self._save_timer.stop()
+            self._save_bcs()
 
     # ------------------------------------------------------------------
     # UI refresh
@@ -750,6 +765,8 @@ class CombatTab(QWidget):
     def _on_pick_bcs(self) -> None:
         if self._config is None:
             return
+        # Pending edits belong to the strategy being replaced, not the new one.
+        self.flush_pending_save()
         dlg = StrategyPickerDialog(
             title="Pick Bot Combat Strategy",
             mode="bot",
@@ -822,6 +839,10 @@ class CombatTab(QWidget):
         )
         if ans != QMessageBox.StandardButton.Yes:
             return
+        # Drop rather than flush any pending edit: it belongs to the strategy
+        # being deleted, and letting the timer survive would apply it to whichever
+        # strategy we fall back to below.
+        self._save_timer.stop()
         to_delete = self._bcs
         self._all_bcs = [b for b in self._all_bcs if b.id != to_delete.id]
         delete_bot_strategy(to_delete.id)
@@ -888,7 +909,9 @@ class CombatTab(QWidget):
         )
 
         if self._library_window is None or not self._library_window.isVisible():
-            self._library_window = _Lib()
+            # Parented so it is destroyed with the main window and does not keep
+            # the app alive after everything else has closed.
+            self._library_window = _Lib(parent=self)
             self._library_window.strategies_changed.connect(self.refresh_strategy_data)
         self._library_window.show()
         self._library_window.raise_()
@@ -940,12 +963,9 @@ class CombatTab(QWidget):
     # Theme / lifecycle
     # ------------------------------------------------------------------
 
-    def closeEvent(self, event) -> None:
-        self._closed = True
-        if self._save_timer.isActive():
-            self._save_timer.stop()
-            self._save_bcs()
-        super().closeEvent(event)
+    # No closeEvent: this tab lives inside a QTabWidget and is never closed as a
+    # window, so one would never fire.  Pending edits are flushed via
+    # flush_pending_save(), which AppController calls on aboutToQuit.
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
