@@ -1,4 +1,5 @@
 {
+  "id": "5af15f2c-a778-4e07-81b8-cd66b1df16b3",
   "name": "The Zocalo Red Mandrake Collector",
   "description": "Collects Red Mandrake/Blood Moss in The Zocalo, Azteca",
   "version": "1.0",
@@ -63,7 +64,9 @@
           "y": -9594.95,
           "z": 82.23
         },
-        "entity_names": ["Mandrake"]
+        "entity_names": [
+          "Mandrake"
+        ]
       },
       "option_overrides": {}
     },
@@ -82,7 +85,9 @@
           "y": 3559.13,
           "z": 0.56
         },
-        "entity_names": ["Mandrake"]
+        "entity_names": [
+          "Mandrake"
+        ]
       },
       "option_overrides": {}
     },
@@ -101,7 +106,9 @@
           "y": 8298.36,
           "z": 276.01
         },
-        "entity_names": ["Mandrake"]
+        "entity_names": [
+          "Mandrake"
+        ]
       },
       "option_overrides": {}
     },
@@ -120,7 +127,9 @@
           "y": 7240.0,
           "z": 0.0
         },
-        "entity_names": ["Mandrake"]
+        "entity_names": [
+          "Mandrake"
+        ]
       },
       "option_overrides": {}
     },
@@ -139,7 +148,9 @@
           "y": 1581.5,
           "z": 0.68
         },
-        "entity_names": ["Mandrake"]
+        "entity_names": [
+          "Mandrake"
+        ]
       },
       "option_overrides": {}
     }

@@ -1,6 +1,6 @@
 """Integration tests: exercises the seams between config, machine, and nodes.
 
-These tests cover four integration boundaries that existing unit tests leave untested:
+These tests cover five integration boundaries that existing unit tests leave untested:
 
   1. Config pipeline: BotConfig.to_machine_config() produces the correct structure
      that BotMachine expects (condition strings, flag registry, round-trip save/load).
@@ -10,6 +10,8 @@ These tests cover four integration boundaries that existing unit tests leave unt
      (_flag_X, _flag_compound_X) are evaluated correctly by the live FSM.
   4. Real node execution through the FSM: enter_zone returns SUCCESS/FAILURE and
      the machine routes those results through real transitions from a real BotConfig.
+  5. Shipped bot corpus health: every file under bots/ carries a stable, unique id
+     and uses no legacy node params.
 
 What is NOT tested here (by design):
   - AppController / GUI: requires QApplication, high setup cost for wiring logic.
@@ -17,6 +19,8 @@ What is NOT tested here (by design):
 """
 
 import asyncio
+import json
+from collections import Counter
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -591,3 +595,55 @@ async def test_stop_after_client_error_induced_pause():
 
     assert machine.is_stopped
     assert machine.state == "state_a"
+
+
+# ---------------------------------------------------------------------------
+# Part 5: Shipped bot corpus health
+# ---------------------------------------------------------------------------
+
+
+def _all_bot_files() -> list[Path]:
+    files = sorted(_BOTS_DIR.rglob("*.json"))
+    assert files, f"no bot files found under {_BOTS_DIR}"
+    return files
+
+
+def _load_raw(path: Path) -> dict:
+    """Parse a bot file as raw JSON — BotConfig.load() would mask a missing id."""
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def test_every_bot_file_has_an_id():
+    """A bot without `id` gets a fresh uuid4 on every load (BotConfig.id has a
+    default_factory), so it can never bind a combat strategy that survives a
+    restart — SettingsManager.get_active_strategy() and list_bot_strategies() both
+    key off it. Migrated by scripts/migrate_bot_ids.py."""
+    missing = [p.relative_to(_BOTS_DIR).as_posix() for p in _all_bot_files() if not _load_raw(p).get("id")]
+
+    assert not missing, f"bot files with no id: {missing}"
+
+
+def test_bot_ids_are_unique():
+    """Two bots sharing an id conflate onto one BotCombatStrategy."""
+    ids = [_load_raw(p).get("id") for p in _all_bot_files()]
+    duplicates = {bot_id: count for bot_id, count in Counter(ids).items() if bot_id and count > 1}
+
+    assert not duplicates, f"bot ids used by more than one file: {duplicates}"
+
+
+def test_no_bot_uses_legacy_combat_params():
+    """`use_default_duel_profile` is honored by the Combat tab's fallback but not by
+    handle_combat, so a bot still carrying it silently ignores its per-state strategy
+    assignments at runtime."""
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for state in _load_raw(path).get("states") or []:
+            params = state.get("params")
+            if not isinstance(params, dict):
+                continue
+            for legacy in ("use_default_duel_profile", "duel_profile_name"):
+                if legacy in params:
+                    offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {legacy}")
+
+    assert not offenders, f"bot states with legacy combat params: {offenders}"

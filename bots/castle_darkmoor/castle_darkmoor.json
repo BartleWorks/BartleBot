@@ -1,4 +1,5 @@
 {
+  "id": "03586335-4865-4616-82bf-eed06c5a8741",
   "name": "Castle Darkmoor",
   "description": "Endlessly farms Castle Darkmoor, optionally collecting the Treasure Chest in the Stone Skeleton Key room.",
   "version": "1.0",
@@ -467,9 +468,8 @@
       },
       "params": {
         "enemy": "G14-DM-Werewolf_Boss",
-        "use_default_duel_profile": false,
         "max_duration": 0.0,
-        "duel_profile_name": "Frenzy into hits - 2 max storms"
+        "use_default_strategy": false
       },
       "option_overrides": {}
     },
@@ -550,9 +550,8 @@
       },
       "params": {
         "enemy": "G14-DM-DeathKnight_Boss",
-        "use_default_duel_profile": false,
         "max_duration": 1200.0,
-        "duel_profile_name": "Frenzy into hits - 2 max storms"
+        "use_default_strategy": false
       },
       "option_overrides": {}
     },
