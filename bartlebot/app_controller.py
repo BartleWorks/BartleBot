@@ -10,7 +10,7 @@ from wakepy import ActivationError, keep
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import QObject, QTimer
+from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
@@ -18,6 +18,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
+from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import apply_deck, read_deck
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
@@ -421,69 +422,22 @@ class AppController(QObject):
         self._bot_task = asyncio.create_task(self._start_bot())
 
     def _collect_combat_warnings(self) -> list[str]:
-        """Return a list of combat config warning strings. Empty list = no issues."""
-        from bartlebot.strategy_store import (  # noqa: PLC0415
-            load_bot_strategy,
-            load_duel_strategy,
-            load_player_strategy,
-        )
+        """Return a list of combat config warning strings. Empty list = no issues.
 
+        Parsing every distinct DSL takes a noticeable moment on a large library,
+        so this runs under a wait cursor.
+        """
         if self._loaded_config is None:
             return []
-        warnings: list[str] = []
-        bot_id = self._loaded_config.id
-        sm = SettingsManager.instance()
-        active_bcs_id = sm.get_active_strategy(bot_id)
 
-        if not active_bcs_id:
-            warnings.append("No Bot Combat Strategy is set — will use built-in combat defaults.")
-            return warnings
-
-        try:
-            bcs = load_bot_strategy(active_bcs_id)
-        except Exception:
-            warnings.append(f"Active Bot Combat Strategy file is missing (id: {active_bcs_id[:8]}…).")
-            return warnings
-
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
         num_clients = len(self._client_manager.clients)
 
-        # Check default strategy
-        if bcs.default_strategy_id:
-            try:
-                dcs = load_duel_strategy(bcs.default_strategy_id)
-                if num_clients < dcs.min_players:
-                    warnings.append(
-                        f"Default strategy '{dcs.name}' requires ≥{dcs.min_players} players "
-                        f"but only {num_clients} client(s) are connected."
-                    )
-                for pcs_id in dcs.linked_pcs_ids():
-                    try:
-                        load_player_strategy(pcs_id)
-                    except Exception:
-                        warnings.append(
-                            f"Player strategy file missing in default DCS '{dcs.name}' (id: {pcs_id[:8]}…)."
-                        )
-            except Exception:
-                warnings.append(f"Default Duel Strategy file is missing (id: {bcs.default_strategy_id[:8]}…).")
-
-        # Check state assignments
-        for sa in bcs.state_assignments:
-            try:
-                dcs = load_duel_strategy(sa.duel_combat_strategy_id)
-                if num_clients < dcs.min_players:
-                    warnings.append(
-                        f"State assignment DCS '{dcs.name}' requires ≥{dcs.min_players} players "
-                        f"but only {num_clients} client(s) are connected."
-                    )
-                for pcs_id in dcs.linked_pcs_ids():
-                    try:
-                        load_player_strategy(pcs_id)
-                    except Exception:
-                        warnings.append(f"Player strategy file missing in DCS '{dcs.name}' (id: {pcs_id[:8]}…).")
-            except Exception:
-                warnings.append(f"Assigned Duel Strategy file is missing (id: {sa.duel_combat_strategy_id[:8]}…).")
-
-        return warnings
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            return collect_combat_warnings(active_bcs_id, num_clients)
+        finally:
+            QApplication.restoreOverrideCursor()
 
     async def _start_bot(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
