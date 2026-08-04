@@ -10,6 +10,7 @@ Checks performed:
   - every referenced Duel Combat Strategy file loads
   - every linked Player Combat Strategy file loads
   - enough clients are connected for each strategy's ``min_players``
+  - every combat state that asked for its own strategy actually has one
   - every DSL that could actually run parses
 
 The DSL check is the reason this runs before the bot starts.  A syntax error
@@ -18,7 +19,7 @@ otherwise surfaces inside SprintyCombat mid-fight, several minutes into a run.
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from bartlebot.bot.strategy_models import BotCombatStrategy, DuelCombatStrategy
 from bartlebot.nodes.combat_runner import validate_dsl
@@ -28,8 +29,33 @@ from bartlebot.strategy_store import (
     load_player_strategy,
 )
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from bartlebot.bot.schema import BotConfig, StateModel
+
 # Strategy UUIDs are too long to show in a dialog; enough to grep the filename by.
 _ID_PREVIEW = 8
+
+
+def exposed_combat_states(config: BotConfig) -> list[StateModel]:
+    """Return the ``handle_combat`` states that opted out of the bot default.
+
+    ``use_default_strategy: false`` is how a bot file says "this fight is
+    special — give it its own Duel Strategy".  It is the portable half of the
+    combat config: it ships with the bot and means the same thing for every
+    user, while the strategy that satisfies it stays personal.
+
+    ``use_default_duel_profile`` is the pre-v3 spelling.  The bots in this repo
+    were migrated by ``scripts/migrate_bot_ids.py``, but users' own bots were
+    not, so the old name is still honored on read.
+    """
+    return [
+        s
+        for s in config.states
+        if s.node_type == "handle_combat"
+        and not s.params.get("use_default_strategy", s.params.get("use_default_duel_profile", True))
+    ]
 
 
 def _short(uuid: str) -> str:
@@ -51,13 +77,15 @@ def _format_players(players: list[int]) -> str:
 def collect_combat_warnings(
     active_bcs_id: str | None,
     num_clients: int,
+    config: BotConfig | None = None,
     root: str | Path | None = None,
 ) -> list[str]:
     """Return human-readable warnings about the combat config. Empty means no issues.
 
     ``active_bcs_id`` is the Bot Combat Strategy selected for the bot about to run.
-    ``root`` is the project root passed through to the strategy store; None uses
-    its default.
+    ``config`` is the bot itself; when given, its exposed combat states are checked
+    for an assignment.  ``root`` is the project root passed through to the strategy
+    store; None uses its default.
     """
     if not active_bcs_id:
         return ["No Bot Combat Strategy is set — will use built-in combat defaults."]
@@ -88,8 +116,27 @@ def collect_combat_warnings(
         pcs_dsl = _load_linked_presets(dcs, label, root, warnings)
         _collect_dsls(dcs, pcs_dsl, dsl_sources)
 
+    if config is not None:
+        warnings.extend(_unassigned_state_warnings(config, bcs))
+
     warnings.extend(_validate_dsls(dsl_sources))
     return warnings
+
+
+def _unassigned_state_warnings(config: BotConfig, bcs: BotCombatStrategy) -> list[str]:
+    """Report combat states that asked for their own strategy but never got one.
+
+    These are not errors — the state falls back to the bot default, or to the
+    built-in default when there isn't one.  But the bot author marked the fight
+    as needing special handling, so silently running the generic strategy is
+    almost never what the user wants, and nothing else surfaces it.
+    """
+    fallback = "will use the bot's default strategy" if bcs.default_strategy_id else "will use built-in combat defaults"
+    return [
+        f"Combat state '{state.label or state.id}' has no Duel Strategy assigned — {fallback}."
+        for state in exposed_combat_states(config)
+        if bcs.find_dcs_id_for_state(state.id) is None
+    ]
 
 
 def _referenced_strategies(bcs: BotCombatStrategy) -> list[tuple[str, str]]:

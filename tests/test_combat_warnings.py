@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
@@ -18,7 +19,11 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
     StateAssignment,
 )
-from bartlebot.combat_warnings import _format_players, collect_combat_warnings
+from bartlebot.combat_warnings import (
+    _format_players,
+    collect_combat_warnings,
+    exposed_combat_states,
+)
 from bartlebot.strategy_store import (
     save_bot_strategy,
     save_duel_strategy,
@@ -376,3 +381,174 @@ def test_multiple_problem_kinds_are_all_reported(tmp_path: Path):
 )
 def test_format_players(players, expected):
     assert _format_players(players) == expected
+
+
+# ---------------------------------------------------------------------------
+# Unassigned combat states (5a)
+# ---------------------------------------------------------------------------
+
+
+def _config(*states: tuple[str, str | None, bool]) -> BotConfig:
+    """Build a BotConfig from (state_id, label, uses_bot_default) triples."""
+    return BotConfig(
+        name="Test Bot",
+        initial="s0",
+        states=[StateModel(id="s0", node_type="sleep")]
+        + [
+            StateModel(
+                id=sid,
+                node_type="handle_combat",
+                label=label,
+                params={"use_default_strategy": default},
+            )
+            for sid, label, default in states
+        ],
+        transitions=[],
+    )
+
+
+def test_exposed_state_without_an_assignment_is_reported(tmp_path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id)
+    config = _config(("s1", "Defeat Howling Chaney", False))
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+
+    assert warnings == [
+        "Combat state 'Defeat Howling Chaney' has no Duel Strategy assigned — will use the bot's default strategy."
+    ]
+
+
+def test_states_using_the_bot_default_are_not_reported(tmp_path):
+    """use_default_strategy: true means the author is happy with the default."""
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id)
+    config = _config(("s1", "Ordinary mobs", True))
+
+    assert collect_combat_warnings(bcs.id, 1, config, root=tmp_path) == []
+
+
+def test_exposed_state_with_an_assignment_is_not_reported(tmp_path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    bcs = _bcs(
+        tmp_path,
+        default_strategy_id=dcs.id,
+        state_assignments=[StateAssignment(duel_combat_strategy_id=dcs.id, state_ids=["s1"])],
+    )
+    config = _config(("s1", "Defeat Howling Chaney", False))
+
+    assert collect_combat_warnings(bcs.id, 1, config, root=tmp_path) == []
+
+
+def test_unassigned_state_names_the_builtin_fallback_when_there_is_no_default(tmp_path):
+    bcs = _bcs(tmp_path)
+    config = _config(("s1", "Defeat Howling Chaney", False))
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+
+    assert warnings == [
+        "Combat state 'Defeat Howling Chaney' has no Duel Strategy assigned — will use built-in combat defaults."
+    ]
+
+
+def test_unlabelled_state_falls_back_to_its_id(tmp_path):
+    bcs = _bcs(tmp_path)
+    config = _config(("state_9", None, False))
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+
+    assert "'state_9'" in _joined(warnings)
+
+
+def test_every_unassigned_state_is_reported_separately(tmp_path):
+    bcs = _bcs(tmp_path)
+    config = _config(("s1", "Howling Chaney", False), ("s2", "Sir Blackwater", False))
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+
+    assert len(warnings) == 2
+    assert "Howling Chaney" in _joined(warnings)
+    assert "Sir Blackwater" in _joined(warnings)
+
+
+def test_partially_assigned_bot_reports_only_the_gap(tmp_path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    bcs = _bcs(
+        tmp_path,
+        state_assignments=[StateAssignment(duel_combat_strategy_id=dcs.id, state_ids=["s1"])],
+    )
+    config = _config(("s1", "Howling Chaney", False), ("s2", "Sir Blackwater", False))
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+
+    assert len(warnings) == 1
+    assert "Sir Blackwater" in warnings[0]
+
+
+def test_legacy_use_default_duel_profile_is_still_honored(tmp_path):
+    """Users' un-migrated bots use the pre-v3 param name."""
+    bcs = _bcs(tmp_path)
+    config = BotConfig(
+        name="Legacy Bot",
+        initial="s1",
+        states=[
+            StateModel(
+                id="s1",
+                node_type="handle_combat",
+                label="Old Boss",
+                params={"use_default_duel_profile": False},
+            )
+        ],
+        transitions=[],
+    )
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+
+    assert "Old Boss" in _joined(warnings)
+
+
+def test_omitting_the_config_skips_the_state_check(tmp_path):
+    """The parameter is optional — callers without a config get the old behavior."""
+    bcs = _bcs(tmp_path)
+    assert collect_combat_warnings(bcs.id, 1, root=tmp_path) == []
+
+
+def test_no_active_strategy_short_circuits_before_the_state_check(tmp_path):
+    config = _config(("s1", "Howling Chaney", False))
+    warnings = collect_combat_warnings(None, 1, config, root=tmp_path)
+    assert len(warnings) == 1
+    assert "No Bot Combat Strategy is set" in warnings[0]
+
+
+def test_state_warnings_come_with_dsl_warnings(tmp_path):
+    """A bot can have both problems at once; neither suppresses the other."""
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_BROKEN_DSL)])
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id)
+    config = _config(("s1", "Howling Chaney", False))
+
+    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+    joined = _joined(warnings)
+
+    assert "has no Duel Strategy assigned" in joined
+    assert "does not parse" in joined
+
+
+# ---------------------------------------------------------------------------
+# exposed_combat_states
+# ---------------------------------------------------------------------------
+
+
+def test_exposed_combat_states_ignores_non_combat_nodes():
+    config = _config(("s1", "Boss", False))
+    assert [s.id for s in exposed_combat_states(config)] == ["s1"]
+
+
+def test_exposed_combat_states_defaults_missing_param_to_using_the_default():
+    """A handle_combat state with no param at all is not exposed."""
+    config = BotConfig(
+        name="B",
+        initial="s1",
+        states=[StateModel(id="s1", node_type="handle_combat")],
+        transitions=[],
+    )
+    assert exposed_combat_states(config) == []

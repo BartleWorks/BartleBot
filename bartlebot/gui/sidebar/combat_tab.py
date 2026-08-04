@@ -28,6 +28,7 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
     StateAssignment,
 )
+from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
@@ -229,16 +230,6 @@ class _PlayerDecksSection(SidebarSection):
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _collect_exposed_states(config: BotConfig):
-    """Return handle_combat states that do NOT use the default strategy."""
-    return [
-        s
-        for s in config.states
-        if s.node_type == "handle_combat"
-        and not s.params.get("use_default_strategy", s.params.get("use_default_duel_profile", True))
-    ]
 
 
 def _state_dcs_map(bcs: BotCombatStrategy) -> dict[str, str]:
@@ -702,7 +693,7 @@ class CombatTab(QWidget):
             self._no_assignments_lbl.show()
             return
 
-        exposed = _collect_exposed_states(self._config)
+        exposed = exposed_combat_states(self._config)
         if not exposed:
             self._no_assignments_lbl.show()
             return

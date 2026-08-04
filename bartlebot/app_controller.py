@@ -63,7 +63,35 @@ class AppController(QObject):
         self._wire()
         self._window.show()
         self._reconfigure_autosave_timer()
+        self._prune_dead_strategy_settings()
         self._check_crash_recovery()
+
+    def _prune_dead_strategy_settings(self) -> None:
+        """Drop remembered strategy selections whose BCS file is gone.
+
+        Entries accumulate one per bot ever opened, and survive deleting the
+        strategy they point at.  Best-effort: a failure here must not stop the
+        app from starting.
+        """
+        from bartlebot.strategy_store import list_all_bot_strategies  # noqa: PLC0415
+
+        try:
+            known = {bcs.id for bcs in list_all_bot_strategies()}
+        except Exception:
+            logger.exception("Failed to enumerate bot strategies; skipping settings prune")
+            return
+
+        if not known:
+            # The store resolves bot_strategies/ relative to the cwd, so launching
+            # from anywhere but the project root reads an empty library.  That is
+            # indistinguishable from genuinely having no strategies, and pruning
+            # on it would wipe every remembered selection the user has.  Refuse.
+            logger.debug("No bot strategies visible — skipping active-strategy prune")
+            return
+
+        removed = SettingsManager.instance().prune_active_strategies(known)
+        if removed:
+            logger.info("Pruned %d dead active-strategy setting(s)", removed)
 
     # ------------------------------------------------------------------
     # Wiring
@@ -445,7 +473,7 @@ class AppController(QObject):
 
         QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
         try:
-            return collect_combat_warnings(active_bcs_id, num_clients)
+            return collect_combat_warnings(active_bcs_id, num_clients, self._loaded_config)
         finally:
             QApplication.restoreOverrideCursor()
 
