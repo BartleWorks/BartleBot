@@ -103,6 +103,13 @@ DECK_ITEM_PAGE_SETTLE = 0.3
 DECK_ITEM_TOGGLE_SETTLE = 0.15
 # Pause after toggling one item card slot.
 
+LAUNCH_STAGGER_DELAY = 1.0
+# Seconds to wait between starting successive Wizard101 instances, and between
+# successive auto-login attempts, in a multi-account launch profile. The
+# login server intermittently rejects logins that arrive in too-tight
+# succession; this spaces them out enough to avoid that without giving up
+# most of the benefit of launching a team in parallel.
+
 DECK_APPLY_TIMEOUT = 180.0
 # Ceiling for pushing a saved deck back to a client (clear + re-add every
 # card, with spellbook page navigation between them).

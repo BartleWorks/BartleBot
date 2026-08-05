@@ -20,6 +20,7 @@ from wizwalker.utils import (
 )
 
 from bartlebot.credentials import CredentialStore
+from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
 from bartlebot.settings_manager import SettingsManager
 
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
@@ -158,17 +159,25 @@ async def launch_profile(profile_name: str) -> None:
     w, h = tuple(profile_res) if profile_res else SettingsManager.instance().game_resolution
     _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
 
-    # Fire off every instance back-to-back, then claim the whole batch of new
-    # handles at once, instead of waiting for each instance to appear before
-    # starting the next — this is what actually made a 4-client launch slow.
+    # Fire off every instance with a short stagger between spawns, then claim
+    # the whole batch of new handles at once — much faster than waiting for
+    # each instance to fully reach the login screen before starting the next,
+    # while the stagger still avoids hitting the process spawn / login server
+    # in one tight burst.
     known = set(get_all_wizard_handles())
-    for _ in accounts:
+    for i, _ in enumerate(accounts):
         start_instance()
+        if i < len(accounts) - 1:
+            await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
     handles = await _wait_for_n_new_handles(known, len(accounts))
 
     # Single shared wait for all instances to reach the login screen
     await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
 
-    for handle, (username, password, display_name) in zip(handles, accounts):
+    # Stagger login attempts too — the login server intermittently rejects
+    # logins that arrive in too-tight succession.
+    for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
         instance_login(handle, username, password)
         set_window_title(handle, f"[{display_name}] Wizard101")
+        if i < len(accounts) - 1:
+            await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
