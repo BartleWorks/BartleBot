@@ -63,6 +63,37 @@ GRID_COLUMNS = 8
 GRID_ROWS = 2
 SLOTS_PER_PAGE = GRID_COLUMNS * GRID_ROWS
 
+# --- tiered spell names ---------------------------------------------------
+# The game names tier/path variants "Storm Lord - T05 - A": base name, tier
+# number, then the upgrade path.  wizwalker splits on the same marker.
+TIER_MARKER = " - T"
+
+
+@dataclass(frozen=True)
+class TieredName:
+    """A parsed "Storm Lord - T05 - A" spell name.
+
+    ``tier`` and ``path`` are None for a plain, untiered spell, in which case
+    ``base`` is the whole name.
+    """
+
+    base: str
+    tier: int | None = None
+    path: str | None = None
+
+    @property
+    def is_tiered(self) -> bool:
+        return self.tier is not None
+
+
+@dataclass(frozen=True)
+class NormalCardPlan:
+    """What of a saved deck's normal cards this account can actually supply."""
+
+    addable: dict[str, int]  # names to hand to the deck builder, as-is
+    substitutions: dict[str, str]  # requested name → the owned variant used instead
+    missing: list[str]  # requested names this account cannot supply at all
+
 
 @dataclass(frozen=True)
 class ItemSlot:
@@ -85,6 +116,100 @@ class ItemSlot:
 # ---------------------------------------------------------------------------
 # Pure planning helpers — no game access, directly unit tested
 # ---------------------------------------------------------------------------
+
+
+def parse_tiered_name(name: str) -> TieredName:
+    """Split "Storm Lord - T05 - A" into base / tier / path.
+
+    Anything that does not carry the tier marker, or whose tier is not a number,
+    is treated as a plain spell name — the game does ship oddly-named cards, and
+    guessing wrong here would mean substituting one spell for an unrelated one.
+    """
+    marker = name.find(TIER_MARKER)
+    if marker == -1:
+        return TieredName(base=name)
+    base = name[:marker]
+    remainder = name[marker + len(TIER_MARKER) :]
+    tier_text, _, path = remainder.partition(" - ")
+    if not tier_text.isdigit():
+        return TieredName(base=name)
+    return TieredName(base=base, tier=int(tier_text), path=path or None)
+
+
+def resolve_tier(requested: str, owned: list[str]) -> str | None:
+    """Return the best owned variant for ``requested``, or None if there is none.
+
+    Exact match wins.  Otherwise the highest owned tier *below* the requested one
+    is used: a strategy written around Storm Lord T05 still works with T03, it
+    just hits softer, and that is far better than the wizard entering the fight
+    without the spell at all.
+
+    Path is never crossed.  "- A" and "- B" are the two upgrade branches of the
+    same spell and do genuinely different things — a top-path Storm Lord is not a
+    weaker bottom-path one — so substituting across them would silently change
+    what the strategy does rather than merely weaken it.
+
+    Tiers above the requested one are not used either.  The saved deck is the
+    author's statement of what the strategy was tuned for; quietly upgrading
+    could break a pip budget the DSL depends on.
+    """
+    if requested in owned:
+        return requested
+    want = parse_tiered_name(requested)
+    if not want.is_tiered:
+        return None
+
+    candidates = []
+    for name in owned:
+        have = parse_tiered_name(name)
+        if not have.is_tiered or have.base != want.base or have.path != want.path:
+            continue
+        if have.tier <= want.tier:
+            candidates.append((have.tier, name))
+    if not candidates:
+        return None
+    return max(candidates)[1]
+
+
+def plan_normal_cards(desired: dict[str, int], available: list[str]) -> NormalCardPlan:
+    """Split a saved deck's normal cards into what this account can and cannot supply.
+
+    Runs *before* the deck is cleared.  wizwalker's ``_add_all_normal_cards``
+    raises on the first name it cannot place, and ``write_deck`` clears the deck
+    first — so a single unowned card used to leave the wizard with an empty deck
+    and a log line claiming the run would "continue with whatever was set".
+    Filtering up front turns that into a partial deck, matching how item cards
+    have always behaved (see ``plan_item_toggles``).
+
+    Tiered names are kept when their *base* spell is owned; which variants the
+    account actually has cannot be read until the tier flyout is opened, so that
+    resolution happens later, in ``_resolve_tier_substitutions``.
+    """
+    owned = set(available)
+    addable: dict[str, int] = {}
+    missing: list[str] = []
+    for name, count in desired.items():
+        if count <= 0:
+            continue
+        if name in owned or parse_tiered_name(name).base in owned:
+            addable[name] = count
+        else:
+            missing.append(name)
+    return NormalCardPlan(addable=addable, substitutions={}, missing=sorted(missing))
+
+
+def apply_substitutions(addable: dict[str, int], substitutions: dict[str, str]) -> dict[str, int]:
+    """Rewrite a plan's card names to the variants actually owned.
+
+    Counts are merged, since two requested tiers can resolve to the same owned
+    one (a deck asking for T05 and T04 of the same spell on an account that only
+    has T03 ends up wanting two T03s).
+    """
+    result: dict[str, int] = {}
+    for name, count in addable.items():
+        resolved = substitutions.get(name, name)
+        result[resolved] = result.get(resolved, 0) + count
+    return result
 
 
 def count_names(names: list[str]) -> dict[str, int]:
@@ -247,6 +372,98 @@ async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages
 # ---------------------------------------------------------------------------
 
 
+async def _spell_list_names(db) -> list[str]:
+    """Template names of every card in the account's spell list, in list order.
+
+    Order matters: ``calcuate_position_of_card_in_page`` derives a card's page
+    and slot from its index here, so this must stay a positional list rather
+    than a set.
+    """
+    names: list[str] = []
+    for spell in await db.get_graphical_spell_cards():
+        template = await spell.spell_template()
+        names.append(await template.name() if template else "")
+    return names
+
+
+async def _owned_tier_variants(db) -> list[str]:
+    """Template names currently shown in the open tier flyout."""
+    names: list[str] = []
+    for spell in await db.get_graphical_tiered_spell_cards():
+        if not spell:
+            continue
+        template = await spell.spell_template()
+        if template:
+            name = await template.name()
+            if name:
+                names.append(name)
+    return names
+
+
+async def _close_tier_flyout(db) -> None:
+    """Dismiss the tier flyout, falling back to a full deck-page refresh."""
+    try:
+        close_btn = await _maybe_get_named_window(db._deck_config_window, "CloseTSMPUnlockedPageButton")  # noqa: SLF001
+        async with db.client.mouse_handler:
+            await db.client.mouse_handler.click_window(close_btn)
+    except Exception:
+        logger.debug("Tier flyout close button unavailable, refreshing the deck page", exc_info=True)
+        await db.refresh_deck_page()
+
+
+async def _resolve_tier_substitutions(db, plan: NormalCardPlan, spell_names: list[str]) -> NormalCardPlan:
+    """Map each requested tiered variant onto one this account actually owns.
+
+    Which tiers a wizard has unlocked is only legible once the flyout for that
+    base spell is open, so this costs one open/close per distinct base spell.
+    Only decks naming a tiered card pay it.
+
+    Any failure here degrades to leaving the plan untouched rather than
+    propagating: a wrong guess costs one card, while an exception at this point
+    would abort the whole apply and — since the caller clears the deck straight
+    afterwards — is exactly the empty-deck failure this all exists to prevent.
+    """
+    tiered = {name for name in plan.addable if parse_tiered_name(name).is_tiered}
+    if not tiered:
+        return plan
+
+    substitutions: dict[str, str] = {}
+    missing = list(plan.missing)
+    by_base: dict[str, list[str]] = {}
+    for name in sorted(tiered):
+        by_base.setdefault(parse_tiered_name(name).base, []).append(name)
+
+    for base, requested_names in by_base.items():
+        try:
+            page_idx, card_idx = db.calcuate_position_of_card_in_page(spell_names, base)
+            position = await db.calculate_card_position(card_idx)
+            await db._go_to_spell_page(page_idx)  # noqa: SLF001
+            async with db.client.mouse_handler:
+                await db.client.mouse_handler.click(*position)
+            owned = await _owned_tier_variants(db)
+            await _close_tier_flyout(db)
+        except Exception:
+            logger.warning("Could not read tier variants for '%s' — using the saved names as-is", base, exc_info=True)
+            continue
+
+        for name in requested_names:
+            resolved = resolve_tier(name, owned)
+            if resolved is None:
+                logger.warning(
+                    "No usable tier of '%s' on this account (deck wants '%s', account has %s) — skipping",
+                    base,
+                    name,
+                    ", ".join(owned) or "none",
+                )
+                plan.addable.pop(name, None)
+                missing.append(name)
+            elif resolved != name:
+                logger.info("Substituting '%s' for '%s' — the highest tier this account owns", resolved, name)
+                substitutions[name] = resolved
+
+    return NormalCardPlan(addable=plan.addable, substitutions=substitutions, missing=sorted(missing))
+
+
 async def read_deck(db) -> dict:
     """Snapshot the normal deck and active item cards from an open DeckBuilder."""
     await db.refresh_deck_page()
@@ -271,6 +488,14 @@ async def write_deck(db, deck: DeckData) -> None:
     clear/rewrite entirely — clearing and rebuilding a deck that's already correct
     just costs time and click risk for no benefit.
 
+    Normal cards this account does not own are dropped *before* the clear, and
+    tiered cards fall back to the highest owned tier.  Both matter because
+    ``_add_all_normal_cards`` raises on the first name it cannot place: with the
+    clear already done, one unowned card left the wizard holding an empty deck
+    while the caller logged that the run would "continue with whatever was set".
+    A partial deck is a far better outcome, and is what item cards have always
+    done.
+
     Item state is read *after* the deck is cleared, because ClearDeckButton may
     reset item toggles too; planning against the post-clear state is correct
     either way.
@@ -282,14 +507,26 @@ async def write_deck(db, deck: DeckData) -> None:
         logger.info("Deck already matches saved configuration, skipping clear/rewrite")
         return
 
+    # Everything that can fail on a name is resolved while the deck is still
+    # intact, so a bad plan costs cards rather than the whole deck.
+    normal: dict[str, int] = {}
+    if deck.normal:
+        await db.view_deck_cards()
+        spell_names = await _spell_list_names(db)
+        plan = plan_normal_cards(deck.normal, spell_names)
+        plan = await _resolve_tier_substitutions(db, plan, spell_names)
+        if plan.missing:
+            logger.warning("Cards in the saved deck are not on this account, skipped: %s", ", ".join(plan.missing))
+        normal = apply_substitutions(plan.addable, plan.substitutions)
+
     await db.clear_deck()
     await db.view_deck_cards()
 
-    if deck.normal:
+    if normal:
         # Private upstream method: it precomputes every card position and makes
         # one forward sweep, where the public add_by_name() re-reads the spell
         # list and rewinds the pages per card.  Re-check on a wizwalker bump.
-        await db._add_all_normal_cards(deck.normal)  # noqa: SLF001
+        await db._add_all_normal_cards(normal)  # noqa: SLF001
 
     slots = await read_item_slots(db.client, deck_window)
     plan = plan_item_toggles(slots, deck.item)
