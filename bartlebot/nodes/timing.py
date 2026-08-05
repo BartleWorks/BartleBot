@@ -110,6 +110,12 @@ LAUNCH_STAGGER_DELAY = 1.0
 # succession; this spaces them out enough to avoid that without giving up
 # most of the benefit of launching a team in parallel.
 
+WISP_COLLECT_TIMEOUT = 10.0
+# Ceiling on how long a single client may spend collecting wisps for one
+# resource (health or mana). Guards against a game bug where a client's
+# displayed max HP can read far above actual, making calc_health_ratio()
+# never clear the threshold and the collection loop spin indefinitely.
+
 DECK_APPLY_TIMEOUT = 180.0
 # Ceiling for pushing a saved deck back to a client (clear + re-add every
 # card, with spellbook page navigation between them).

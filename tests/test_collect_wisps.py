@@ -123,6 +123,38 @@ async def test_both_collect_and_fail_check():
     assert client.tp_to_closest_health_wisp.call_count == 2
 
 
+async def test_timeout_stops_infinite_collection():
+    """Health ratio never rises (simulates the max-HP display bug) → timeout ends the loop."""
+    client = FakeClient()
+    client.calc_health_ratio.return_value = 0.1  # never crosses if_health_below
+    client.calc_mana_ratio.return_value = 1.0
+    client.tp_to_closest_health_wisp.return_value = True  # wisps always "found"
+
+    params = {**_DEFAULT_PARAMS, "timeout": 0.05, "fail_if_health_below": 0.0}
+
+    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+        result = await cw.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    assert client.tp_to_closest_health_wisp.call_count > 0
+
+
+async def test_zero_timeout_does_not_limit_collection():
+    """timeout=0 means no limit; collection still stops once wisps run out."""
+    client = FakeClient()
+    client.calc_health_ratio.side_effect = [0.5, 1.0, 1.0]
+    client.calc_mana_ratio.return_value = 1.0
+    client.tp_to_closest_health_wisp.return_value = True
+
+    params = {**_DEFAULT_PARAMS, "timeout": 0.0}
+
+    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+        result = await cw.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    client.tp_to_closest_health_wisp.assert_called_once()
+
+
 async def test_zero_collect_threshold_skips_collection():
     """if_health_below=0.0 → health wisp loop is entirely skipped."""
     client = FakeClient()
