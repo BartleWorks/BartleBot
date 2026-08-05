@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -16,6 +17,7 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -31,10 +33,16 @@ from bartlebot.bot.strategy_models import (
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.gui.icon_utils import svg_icon
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection
+from bartlebot.gui.sidebar.sidebar_section import (
+    DISCLOSURE_PX,
+    NEST_INDENT_PX,
+    SidebarSection,
+    disclosure_pixmap,
+)
 from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
     delete_bot_strategy,
@@ -55,9 +63,19 @@ _DEBOUNCE_MS = 500
 _NUM_PLAYER_SLOTS = 4
 _BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
 _NO_STRATEGY_LABEL = "(no strategy set)"
-_NOT_CONFIGURED_LABEL = "Not configured"
+_NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 _ICON_BTN_SIZE = 16
 _DSL_PREVIEW_CHARS = 28
+
+# What an *unset* binding falls back to.  These differ by level and the
+# distinction is not cosmetic: an empty state override does NOT fall through to
+# the built-in default, it falls through to this bot strategy's own Default
+# Combat Strategy — see resolve_combat(), which reaches for
+# ``bcs.default_strategy_id`` / ``bcs.default_duel_config`` before the built-in.
+# Labelling both levels "BartleBot Default Combat Strategy" told the user the
+# bot default would be skipped, and contradicted the pre-run warning text.
+_STATE_INHERIT_LABEL = "(bot default)"
+_STATE_INHERIT_META = "No override — uses the Default Combat Strategy above"
 
 
 # ---------------------------------------------------------------------------
@@ -66,19 +84,49 @@ _DSL_PREVIEW_CHARS = 28
 
 
 class _StrategyChip(QPushButton):
-    """Styled chip button showing a strategy name — click to open a picker."""
+    """Styled chip button showing a strategy name — click to open a picker.
+
+    Strategy names are user-supplied and routinely long ("Heretical Academy
+    4-player single decks"), so the chip elides rather than letting a
+    QPushButton's size hint — which is always its full text width — set the
+    minimum width of the sidebar it sits in.  ``QSizePolicy.Policy.Ignored``
+    drops the size hint out of the layout's minimum-width calculation entirely;
+    eliding then keeps the visible text readable in whatever width remains.
+    """
 
     _ICON_SIZE = 14
+    # Room the icon and the horizontal padding take, subtracted before eliding.
+    _CHROME_PX = 28
 
     def __init__(self, text: str = _NO_STRATEGY_LABEL, parent=None):
         super().__init__(text, parent)
         self._applying_style = False
+        self._full_text = text
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setIconSize(QSize(self._ICON_SIZE, self._ICON_SIZE))
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self._apply_style()
+        self._apply_elide()
 
     def set_strategy_name(self, name: str) -> None:
-        self.setText(name)
+        self._full_text = name
+        self._apply_elide()
+
+    def strategy_name(self) -> str:
+        """The untruncated name, regardless of what is currently visible."""
+        return self._full_text
+
+    def _apply_elide(self) -> None:
+        avail = max(self.width() - self._CHROME_PX, 1)
+        metrics = QFontMetrics(self.font())
+        elided = metrics.elidedText(self._full_text, Qt.TextElideMode.ElideRight, avail)
+        # QAbstractButton.setText short-circuits when the text is unchanged, so
+        # the setText → relayout → resizeEvent → setText path converges.
+        self.setText(elided)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._apply_elide()
 
     def _apply_style(self) -> None:
         if self._applying_style:
@@ -86,12 +134,16 @@ class _StrategyChip(QPushButton):
         self._applying_style = True
         try:
             self.setIcon(svg_icon("search", self._ICON_SIZE, tint=THEME.text_muted))
+            # This widget is fully QSS-drawn already, so it needs its own
+            # disabled rule — the palette's Disabled group can't reach through a
+            # stylesheet that hard-codes background and border.
             self.setStyleSheet(
                 f"QPushButton {{ text-align: left; padding: 3px 8px; "
                 f"background: {THEME.surface}; color: {THEME.text}; "
                 f"border: 1px solid {THEME.border}; border-radius: 3px; }}"
                 f"QPushButton:hover {{ border-color: {THEME.accent}; }}"
-                f"QPushButton:disabled {{ color: {THEME.text_muted}; }}"
+                f"QPushButton:disabled {{ background: {THEME.surface_disabled}; "
+                f"color: {THEME.text_disabled}; border-color: {THEME.surface_disabled}; }}"
             )
         finally:
             self._applying_style = False
@@ -100,6 +152,7 @@ class _StrategyChip(QPushButton):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             self._apply_style()
+            self._apply_elide()
 
 
 # ---------------------------------------------------------------------------
@@ -196,15 +249,40 @@ class _PlayerDecksSection(SidebarSection):
         self._reapply_button_states()
 
     def _reapply_button_states(self) -> None:
+        """Enable/disable each row's buttons, and say *why* when disabled.
+
+        A disabled control that keeps its enabled tooltip ("Push the saved deck
+        to this game client now") tells the user what the button would do but
+        never why it won't — which is the actual question. Every disabled state
+        here has exactly one cause, so it can just be named.
+        """
         for i, (import_btn, apply_btn, menu_btn) in enumerate(
             zip(self._import_btns, self._apply_btns, self._menu_btns)
         ):
             slot = i + 1
             has_client = self._editable and slot <= self._client_count
             has_deck = self._decks.get(slot) is not None and not self._decks[slot].is_empty()
+
             import_btn.setEnabled(has_client)
+            if has_client:
+                import_btn.setToolTip("Snapshot the deck from this game client")
+            elif not self._editable:
+                import_btn.setToolTip("Locked while the bot is running")
+            else:
+                import_btn.setToolTip(f"No game client connected for P{slot}")
+
             apply_btn.setEnabled(has_client and has_deck)
+            if has_client and has_deck:
+                apply_btn.setToolTip("Push the saved deck to this game client now")
+            elif not self._editable:
+                apply_btn.setToolTip("Locked while the bot is running")
+            elif not has_client:
+                apply_btn.setToolTip(f"No game client connected for P{slot}")
+            else:
+                apply_btn.setToolTip(f"No deck saved for P{slot} — use Import first")
+
             menu_btn.setEnabled(self._editable)
+            menu_btn.setToolTip("More deck actions" if self._editable else "Locked while the bot is running")
 
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
         self._decks = player_decks
@@ -313,12 +391,20 @@ def _make_icon_btn(icon_name: str, tooltip: str) -> QToolButton:
     return btn
 
 
-def _make_meta_label(text: str = "") -> QLabel:
-    lbl = QLabel(text)
+def _make_meta_label(text: str = "") -> ElidedLabel:
+    """One-line muted summary line, elided to whatever width the sidebar has.
+
+    Elided rather than wrapped on purpose: these lines summarise a duel config
+    whose DSL previews run to well over a hundred characters, and wrapping them
+    would trade the horizontal scrollbar for three or four stacked lines per
+    collapsed panel — the opposite of what a collapsed summary is for.  The full
+    text is always in the tooltip.
+    """
+    lbl = ElidedLabel(text)
     font = lbl.font()
     font.setPointSize(max(font.pointSize() - 1, 7))
     lbl.setFont(font)
-    lbl.setStyleSheet(f"color: {THEME.text_muted};")
+    apply_muted_color(lbl)
     lbl.setContentsMargins(2, 0, 0, 2)
     return lbl
 
@@ -359,6 +445,65 @@ class _DefaultBinding:
 # ---------------------------------------------------------------------------
 
 
+class _DisclosureRow(QWidget):
+    """Arrow + title that behaves as one click target, like a SidebarSection header.
+
+    Deliberately not a QToolButton: an auto-raise button brings its own hover
+    frame, pressed state and checked highlight, which made a nested duel panel
+    look like a different kind of control from the section header directly above
+    it rather than one level down from it.  Same glyph, same size, same
+    treatment at every depth — only the indent and the tint change.
+    """
+
+    clicked = pyqtSignal()
+
+    def __init__(self, title: str, parent=None):
+        super().__init__(parent)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+
+        self._arrow = QLabel()
+        self._arrow.setFixedSize(DISCLOSURE_PX, DISCLOSURE_PX)
+        layout.addWidget(self._arrow)
+
+        # Elided: this is the FSM state's label, which the bot author writes
+        # freely ("Defeat Preceptor of Order").  It is the only part of a
+        # collapsed panel whose width scales with user data.
+        self._title_lbl = ElidedLabel(title)
+        layout.addWidget(self._title_lbl)
+
+        self._interactive = True
+        self.set_expanded(False)
+
+    def set_title(self, title: str) -> None:
+        self._title_lbl.setText(title)
+
+    def title(self) -> str:
+        return self._title_lbl.text()
+
+    def set_expanded(self, expanded: bool) -> None:
+        # Nested level: muted tint against the section header's icon_tint.
+        self._arrow.setPixmap(disclosure_pixmap(expanded, tint=THEME.text_muted))
+
+    def set_interactive(self, interactive: bool, reason: str = "") -> None:
+        """Show or withdraw the expand affordance entirely.
+
+        When there is nothing to expand (the binding is linked to a library
+        entry) the arrow is *hidden* rather than shown greyed out — an
+        affordance that is never offered needs no disabled styling, and the
+        empty slot keeps the titles aligned.
+        """
+        self._interactive = interactive
+        self._arrow.setVisible(interactive)
+        self.setCursor(Qt.CursorShape.PointingHandCursor if interactive else Qt.CursorShape.ArrowCursor)
+        self.setToolTip("Expand to edit this duel config inline" if interactive else reason)
+
+    def mousePressEvent(self, event) -> None:  # noqa: ARG002
+        if self._interactive:
+            self.clicked.emit()
+
+
 class _DuelBindingPanel(QWidget):
     """One duel-config binding: inline (expand to edit directly) or linked to a
     library DuelCombatStrategy (compact summary + edit-in-library).
@@ -367,37 +512,47 @@ class _DuelBindingPanel(QWidget):
     same actions, same layout, in both places.  Operates on any ``binding``
     object shaped like ``StateAssignment``: ``duel_config``,
     ``duel_combat_strategy_id`` (settable), ``is_linked``.
+
+    ``empty_label`` / ``empty_meta`` differ between the two uses because the
+    fallback genuinely differs: an unset *default* drops to the built-in
+    strategy, while an unset *state override* drops to the bot's default first.
     """
 
     changed = pyqtSignal()
     presets_changed = pyqtSignal()  # a new library DCS or PCS was created
     edit_in_library_requested = pyqtSignal(str)  # dcs_id
 
-    def __init__(self, title: str, parent=None):
+    def __init__(
+        self,
+        title: str,
+        empty_label: str = _BUILT_IN_LABEL,
+        empty_meta: str = _NOT_CONFIGURED_LABEL,
+        parent=None,
+    ):
         super().__init__(parent)
         self._binding = None
         self._all_dcs: list[DuelCombatStrategy] = []
         self._all_pcs: list[PlayerCombatStrategy] = []
         self._expanded = False
         self._editable = True
+        self._empty_label = empty_label
+        self._empty_meta = empty_meta
 
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
+        # Indented one level: this panel is a child of the enclosing
+        # SidebarSection, and the inset is what makes that relationship visible.
+        outer.setContentsMargins(NEST_INDENT_PX, 0, 0, 0)
         outer.setSpacing(1)
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(4)
 
-        self._toggle_btn = _make_icon_btn("arrow_right", "Expand to edit inline")
-        self._toggle_btn.setCheckable(True)
-        self._toggle_btn.clicked.connect(self._on_toggle)
-        header.addWidget(self._toggle_btn)
+        self._disclosure = _DisclosureRow(title)
+        self._disclosure.clicked.connect(self._on_toggle)
+        header.addWidget(self._disclosure)
 
-        self._title_lbl = QLabel(title)
-        header.addWidget(self._title_lbl)
-
-        self._chip = _StrategyChip(_BUILT_IN_LABEL)
+        self._chip = _StrategyChip(empty_label)
         self._chip.setMaximumWidth(160)
         self._chip.setToolTip("Click to link a Duel Strategy from the library")
         self._chip.clicked.connect(self._on_pick_link)
@@ -424,7 +579,14 @@ class _DuelBindingPanel(QWidget):
         self._config_editor = DuelConfigEditor()
         self._config_editor.changed.connect(self.changed)
         self._config_editor.presets_changed.connect(self.presets_changed)
-        outer.addWidget(self._config_editor)
+        # Indented one level below this panel's own header, continuing the
+        # "deeper == further right" rule the section headers establish.
+        editor_row = QHBoxLayout()
+        editor_row.setContentsMargins(0, 0, 0, 0)
+        editor_row.setSpacing(0)
+        editor_row.addSpacing(NEST_INDENT_PX)
+        editor_row.addWidget(self._config_editor, 1)
+        outer.addLayout(editor_row)
         self._config_editor.hide()
 
     # -- data -----------------------------------------------------------
@@ -446,7 +608,36 @@ class _DuelBindingPanel(QWidget):
         self._editable = editable
         self._chip.setEnabled(editable)
         self._menu_btn.setEnabled(editable)
-        self._toggle_btn.setEnabled(editable and self._binding is not None and not self._binding.is_linked)
+        self._menu_btn.setToolTip("Strategy actions" if editable else "Locked while the bot is running")
+        # The inline editor has to be locked too.  Disabling only the chip, menu
+        # and disclosure left an already-expanded panel fully editable mid-run —
+        # min/max players, combat order drag, DSL text and add/remove assignment
+        # all stayed live, and the debounce timer happily persisted them.
+        self._config_editor.set_editable(editable)
+        self._refresh_disclosure()
+
+    @property
+    def is_expanded(self) -> bool:
+        return self._expanded
+
+    def set_expanded(self, expanded: bool) -> None:
+        """Expand or collapse the inline editor. No-op when there is nothing to expand."""
+        if self._binding is None or self._binding.is_linked:
+            return
+        self._expanded = expanded
+        self._refresh()
+
+    def _refresh_disclosure(self) -> None:
+        """Sync the expand affordance to whether expanding is currently possible."""
+        if self._binding is None:
+            self._disclosure.set_interactive(False)
+        elif self._binding.is_linked:
+            self._disclosure.set_interactive(False, "Linked to a Duel Strategy in the library — unlink to edit it here")
+        elif not self._editable:
+            self._disclosure.set_interactive(False, "Locked while the bot is running")
+        else:
+            self._disclosure.set_interactive(True)
+        self._disclosure.set_expanded(self._expanded)
 
     def _linked_dcs(self):
         if self._binding is None or not self._binding.is_linked:
@@ -461,8 +652,7 @@ class _DuelBindingPanel(QWidget):
 
         if self._binding.is_linked:
             dcs = self._linked_dcs()
-            self._toggle_btn.setEnabled(False)
-            self._toggle_btn.setChecked(False)
+            self._expanded = False
             self._config_editor.hide()
             if dcs is not None:
                 self._chip.set_strategy_name(dcs.name)
@@ -474,37 +664,39 @@ class _DuelBindingPanel(QWidget):
                 self._chip.set_strategy_name("(missing strategy)")
                 self._meta_lbl.hide()
                 self._assignments_lbl.hide()
+            self._refresh_disclosure()
             return
 
         # Inline
-        self._toggle_btn.setEnabled(self._editable)
-        self._toggle_btn.setChecked(self._expanded)
-        self._toggle_btn.setIcon(svg_icon("arrow_down" if self._expanded else "arrow_right", _ICON_BTN_SIZE))
         config = self._binding.duel_config
         empty = config.is_empty()
-        self._chip.set_strategy_name(_BUILT_IN_LABEL if empty else "(custom)")
+        self._chip.set_strategy_name(self._empty_label if empty else "(custom)")
         if self._expanded:
             self._meta_lbl.hide()
             self._assignments_lbl.hide()
             self._config_editor.load(config, self._all_pcs)
+            self._config_editor.set_editable(self._editable)
             self._config_editor.show()
         else:
             self._config_editor.hide()
             if empty:
-                self._meta_lbl.setText(_NOT_CONFIGURED_LABEL)
+                self._meta_lbl.setText(self._empty_meta)
                 self._meta_lbl.show()
                 self._assignments_lbl.hide()
             else:
+                # The meta line carries min/max players *and* the combat order,
+                # so a fight whose order differs from its neighbours (Balaur
+                # entering P1→P2→P4→P3) is visible without expanding anything.
                 self._meta_lbl.setText(_format_dcs_meta(config))
                 self._meta_lbl.show()
                 self._assignments_lbl.setText(_format_dcs_assignments(config, self._all_pcs))
                 self._assignments_lbl.show()
+        self._refresh_disclosure()
 
     # -- actions ----------------------------------------------------------
 
     def _on_toggle(self) -> None:
-        self._expanded = self._toggle_btn.isChecked()
-        self._refresh()
+        self.set_expanded(not self._expanded)
 
     def _on_pick_link(self) -> None:
         if self._binding is None:
@@ -515,7 +707,7 @@ class _DuelBindingPanel(QWidget):
             strategies=self._all_dcs,
             current_id=self._binding.duel_combat_strategy_id,
             allow_none=True,
-            none_label=_BUILT_IN_LABEL,
+            none_label=self._empty_label,
             parent=self,
         )
         if dlg.exec():
@@ -580,10 +772,10 @@ class _DuelBindingPanel(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
-            self._toggle_btn.setIcon(svg_icon("arrow_down" if self._expanded else "arrow_right", _ICON_BTN_SIZE))
+            self._disclosure.set_expanded(self._expanded)
             self._menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-            self._meta_lbl.setStyleSheet(f"color: {THEME.text_muted};")
-            self._assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+            apply_muted_color(self._meta_lbl)
+            apply_muted_color(self._assignments_lbl)
 
 
 # ---------------------------------------------------------------------------
@@ -664,7 +856,10 @@ class CombatTab(QWidget):
         default_section = SidebarSection("Default Combat Strategy", self)
         default_layout = QVBoxLayout()
         default_layout.setSpacing(2)
-        self._default_panel = _DuelBindingPanel("Default")
+        # The bot default is the last stop before the built-in strategy, so its
+        # empty label names the built-in one.  State panels below say something
+        # different — see _STATE_INHERIT_LABEL.
+        self._default_panel = _DuelBindingPanel("Default", _BUILT_IN_LABEL, _NOT_CONFIGURED_LABEL)
         self._default_panel.changed.connect(self._schedule_save)
         self._default_panel.presets_changed.connect(self._on_presets_changed)
         self._default_panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
@@ -811,12 +1006,49 @@ class CombatTab(QWidget):
         # dict keyed by id() in case a loaded file grouped several state_ids
         # under one shared StateAssignment object.
         kept = {id(a): a for a in self._state_bindings.values() if a.is_linked or not a.duel_config.is_empty()}
-        self._bcs.state_assignments = list(kept.values())
+        self._bcs.state_assignments = self._prune_orphans(list(kept.values()))
         try:
             save_bot_strategy(self._bcs)
         except Exception:
             logger.exception("Failed to save BotCombatStrategy %s", self._bcs.id)
         self.combat_config_changed.emit()
+
+    def _prune_orphans(self, assignments: list[StateAssignment]) -> list[StateAssignment]:
+        """Drop state ids that no longer exist in the bot, and any assignment left empty.
+
+        Deleting a node used to leave its assignment behind forever, because
+        bindings are seeded from the strategy file and never checked against the
+        bot's actual states.  Those orphans are not merely clutter: state ids are
+        recycled, so a stale assignment lies in wait for whatever node is created
+        next and hands it a duel strategy nobody asked for.  ``_unique_id`` no
+        longer recycles ids, which closes that door for new bots; this closes it
+        for strategy files written before that change.
+
+        Only runs when a config is loaded — with no bot to compare against,
+        every assignment would look orphaned.
+        """
+        if self._config is None:
+            return assignments
+        live_ids = {s.id for s in self._config.states}
+        pruned: list[StateAssignment] = []
+        for assignment in assignments:
+            kept_ids = [sid for sid in assignment.state_ids if sid in live_ids]
+            if not kept_ids:
+                logger.info(
+                    "Dropping combat assignment for deleted state(s) %s from strategy %s",
+                    ", ".join(assignment.state_ids),
+                    self._bcs.id if self._bcs else "?",
+                )
+                continue
+            if kept_ids != assignment.state_ids:
+                logger.info(
+                    "Dropping deleted state(s) %s from a combat assignment in strategy %s",
+                    ", ".join(sid for sid in assignment.state_ids if sid not in live_ids),
+                    self._bcs.id if self._bcs else "?",
+                )
+                assignment.state_ids = kept_ids
+            pruned.append(assignment)
+        return pruned
 
     def _save_bcs_immediate(self) -> None:
         """Save unconditionally — for mutations that bypass the debounce timer."""
@@ -960,7 +1192,12 @@ class CombatTab(QWidget):
         self._no_assignments_lbl.hide()
         for state in exposed:
             binding = self._ensure_state_binding(state.id)
-            panel = _DuelBindingPanel(state.label or state.id, parent=self._assignments_section)
+            panel = _DuelBindingPanel(
+                state.label or state.id,
+                _STATE_INHERIT_LABEL,
+                _STATE_INHERIT_META,
+                parent=self._assignments_section,
+            )
             panel.load(binding, self._all_dcs, self._all_pcs)
             panel.set_editable(self._editable)
             panel.changed.connect(self._schedule_save)

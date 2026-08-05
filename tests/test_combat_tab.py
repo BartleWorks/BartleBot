@@ -15,7 +15,7 @@ import sys
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QInputDialog, QMessageBox, QScrollArea
 
 from bartlebot import strategy_store as store_mod
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -26,7 +26,14 @@ from bartlebot.bot.strategy_models import (
     PlayerAssignment,
     StateAssignment,
 )
-from bartlebot.gui.sidebar.combat_tab import CombatTab, _DefaultBinding, _DuelBindingPanel
+from bartlebot.gui.sidebar.combat_tab import (
+    _BUILT_IN_LABEL,
+    _NOT_CONFIGURED_LABEL,
+    _STATE_INHERIT_LABEL,
+    CombatTab,
+    _DefaultBinding,
+    _DuelBindingPanel,
+)
 
 
 @pytest.fixture(scope="session")
@@ -73,9 +80,10 @@ def test_panel_shows_linked_strategy_name_and_meta(qapp):
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [dcs], [])
 
-    assert panel._chip.text() == "Frenzy AoE"
+    assert panel._chip.strategy_name() == "Frenzy AoE"
     assert panel._meta_lbl.isVisible()
-    assert not panel._toggle_btn.isEnabled()
+    # Nothing to expand: the affordance is withdrawn, not shown greyed out.
+    assert not panel._disclosure._interactive
 
 
 def test_panel_shows_missing_strategy_when_linked_id_not_found(qapp):
@@ -83,7 +91,7 @@ def test_panel_shows_missing_strategy_when_linked_id_not_found(qapp):
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [], [])
 
-    assert "(missing strategy)" in panel._chip.text()
+    assert "(missing strategy)" in panel._chip.strategy_name()
 
 
 def test_panel_shows_not_configured_when_unlinked_and_empty(qapp):
@@ -91,9 +99,9 @@ def test_panel_shows_not_configured_when_unlinked_and_empty(qapp):
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [], [])
 
-    assert panel._chip.text() == "BartleBot Default Combat Strategy"
-    assert panel._meta_lbl.text() == "Not configured"
-    assert panel._toggle_btn.isEnabled()
+    assert panel._chip.strategy_name() == "BartleBot Default Combat Strategy"
+    assert panel._meta_lbl.text() == _NOT_CONFIGURED_LABEL
+    assert panel._disclosure._interactive
 
 
 def test_panel_shows_custom_preview_when_unlinked_and_nonempty(qapp):
@@ -103,7 +111,7 @@ def test_panel_shows_custom_preview_when_unlinked_and_nonempty(qapp):
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [], [])
 
-    assert panel._chip.text() == "(custom)"
+    assert panel._chip.strategy_name() == "(custom)"
     assert "P1" in panel._assignments_lbl.text()
 
 
@@ -128,8 +136,7 @@ def test_expanding_an_unlinked_panel_shows_the_config_editor(qapp):
     panel.load(binding, [], [])
     assert not panel._config_editor.isVisibleTo(panel)
 
-    panel._toggle_btn.setChecked(True)
-    panel._on_toggle()
+    panel.set_expanded(True)
 
     assert panel._config_editor.isVisibleTo(panel)
 
@@ -138,8 +145,7 @@ def test_editing_inline_config_while_expanded_mutates_the_binding_live(qapp):
     binding = StateAssignment(state_ids=["s1"])
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [], [])
-    panel._toggle_btn.setChecked(True)
-    panel._on_toggle()
+    panel.set_expanded(True)
 
     panel._config_editor._min_spin.setValue(3)
 
@@ -150,8 +156,7 @@ def test_editing_inline_config_emits_changed(qapp):
     binding = StateAssignment(state_ids=["s1"])
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [], [])
-    panel._toggle_btn.setChecked(True)
-    panel._on_toggle()
+    panel.set_expanded(True)
 
     seen = []
     panel.changed.connect(lambda: seen.append(True))
@@ -164,28 +169,27 @@ def test_reload_resets_expand_state(qapp):
     binding = StateAssignment(state_ids=["s1"])
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [], [])
-    panel._toggle_btn.setChecked(True)
-    panel._on_toggle()
-    assert panel._expanded
+    panel.set_expanded(True)
+    assert panel.is_expanded
 
     panel.load(StateAssignment(state_ids=["s2"]), [], [])
 
-    assert not panel._expanded
+    assert not panel.is_expanded
     assert not panel._config_editor.isVisibleTo(panel)
 
 
-def test_linked_panel_disables_toggle_even_if_previously_expanded(qapp):
+def test_linked_panel_withdraws_expand_affordance_even_if_previously_expanded(qapp):
     dcs = DuelCombatStrategy(name="Boss DCS")
     binding = StateAssignment(state_ids=["s1"])
     panel = _DuelBindingPanel("Boss")
     panel.load(binding, [dcs], [])
-    panel._toggle_btn.setChecked(True)
-    panel._on_toggle()
+    panel.set_expanded(True)
 
     linked = StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id)
     panel.load(linked, [dcs], [])
 
-    assert not panel._toggle_btn.isEnabled()
+    assert not panel._disclosure._interactive
+    assert not panel.is_expanded
     assert not panel._config_editor.isVisibleTo(panel)
 
 
@@ -547,8 +551,7 @@ def test_inline_state_binding_with_content_is_persisted(qapp, store):
     tab.set_config(config)
 
     panel = tab._state_panels["state_9"]
-    panel._toggle_btn.setChecked(True)
-    panel._on_toggle()
+    panel.set_expanded(True)
     panel._config_editor._on_add_assignment()
     tab._save_bcs()
 
@@ -617,3 +620,281 @@ def test_promote_on_a_state_panel_propagates_to_the_default_panels_library(qapp,
         state_panel._on_promote()
 
     assert any(d.name == "Shared Preset" for d in tab._default_panel._all_dcs)
+
+
+# ---------------------------------------------------------------------------
+# Fallback labelling — state overrides inherit the bot default, not the built-in
+# ---------------------------------------------------------------------------
+
+
+def test_state_panel_says_it_inherits_the_bot_default_not_the_builtin(qapp, store):
+    """An empty state override falls through to the BCS default first.
+
+    resolve_combat() reaches for bcs.default_strategy_id / default_duel_config
+    before the built-in strategy, and the pre-run warning says so too. Labelling
+    the state chip "BartleBot Default Combat Strategy" claimed the bot default
+    would be skipped.
+    """
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    store_mod.save_bot_strategy(bcs)
+
+    tab = CombatTab()
+    config = _config()
+    config.id = "bot-1"
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().set_active_strategy("bot-1", bcs.id)
+    tab.set_config(config)
+
+    state_chip = tab._state_panels["state_9"]._chip.strategy_name()
+    default_chip = tab._default_panel._chip.strategy_name()
+
+    assert state_chip == _STATE_INHERIT_LABEL
+    assert default_chip == _BUILT_IN_LABEL
+    assert state_chip != default_chip
+
+
+# ---------------------------------------------------------------------------
+# Orphan pruning — assignments for deleted states must not linger
+# ---------------------------------------------------------------------------
+
+
+def test_save_prunes_assignments_for_states_the_bot_no_longer_has(qapp, store):
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(
+                state_ids=["state_9"],
+                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="live")]),
+            ),
+            StateAssignment(
+                state_ids=["state_404"],  # node was deleted from the bot
+                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="orphan")]),
+            ),
+        ],
+    )
+    store_mod.save_bot_strategy(bcs)
+
+    tab = CombatTab()
+    config = _config()
+    config.id = "bot-1"
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().set_active_strategy("bot-1", bcs.id)
+    tab.set_config(config)
+    tab._save_bcs()
+
+    kept = {sid for a in tab._bcs.state_assignments for sid in a.state_ids}
+    assert kept == {"state_9"}
+
+
+def test_save_prunes_only_the_dead_ids_from_a_shared_assignment(qapp, store):
+    """A multi-state assignment keeps its live states and loses only the dead one."""
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(
+                state_ids=["state_9", "state_404"],
+                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")]),
+            )
+        ],
+    )
+    store_mod.save_bot_strategy(bcs)
+
+    tab = CombatTab()
+    config = _config()
+    config.id = "bot-1"
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().set_active_strategy("bot-1", bcs.id)
+    tab.set_config(config)
+    tab._save_bcs()
+
+    assert [a.state_ids for a in tab._bcs.state_assignments] == [["state_9"]]
+
+
+def test_prune_is_skipped_when_no_config_is_loaded(qapp, store):
+    """With no bot to compare against, every assignment would look orphaned."""
+    tab = CombatTab()
+    assignments = [StateAssignment(state_ids=["state_9"])]
+
+    assert tab._prune_orphans(assignments) == assignments
+
+
+# ---------------------------------------------------------------------------
+# Edit lock reaches the inline editor
+# ---------------------------------------------------------------------------
+
+
+def test_set_editable_false_locks_an_expanded_inline_editor(qapp):
+    """Disabling only the chip/menu/disclosure left the expanded editor writable mid-run."""
+    binding = StateAssignment(state_ids=["s1"])
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [], [])
+    panel.set_expanded(True)
+    panel._config_editor._on_add_assignment()
+
+    panel.set_editable(False)
+
+    editor = panel._config_editor
+    assert not editor._min_spin.isEnabled()
+    assert not editor._max_spin.isEnabled()
+    assert not editor._add_btn.isEnabled()
+    assert editor._rows[0]._dsl_edit.isReadOnly()
+    assert not editor._rows[0]._player_widget.isEnabled()
+
+
+def test_set_editable_true_restores_an_inline_row(qapp):
+    binding = StateAssignment(state_ids=["s1"])
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [], [])
+    panel.set_expanded(True)
+    panel._config_editor._on_add_assignment()
+
+    panel.set_editable(False)
+    panel.set_editable(True)
+
+    assert not panel._config_editor._rows[0]._dsl_edit.isReadOnly()
+    assert panel._config_editor._min_spin.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Sidebar width — long DSL summaries must not force a horizontal scrollbar
+# ---------------------------------------------------------------------------
+
+
+def test_long_assignment_summaries_do_not_widen_the_tab(qapp, store):
+    """Regression: three duels of inline DSL demanded ~1173 px in a 220 px sidebar."""
+    long_dsl = "{1} shatter@boss {2} empower {3} monster@boss {4} feint[potent]@boss"
+    bcs = BotCombatStrategy(
+        name="A rather long bot combat strategy name that goes on",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(
+                state_ids=["state_9"],
+                duel_config=DuelConfig(
+                    player_assignments=[
+                        PlayerAssignment(players=[1], dsl=long_dsl),
+                        PlayerAssignment(players=[2, 3], dsl=long_dsl),
+                        PlayerAssignment(players=[4], dsl=long_dsl),
+                    ]
+                ),
+            )
+        ],
+    )
+    store_mod.save_bot_strategy(bcs)
+
+    tab = CombatTab()
+    config = _config()
+    config.id = "bot-1"
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().set_active_strategy("bot-1", bcs.id)
+    tab.set_config(config)
+
+    scroll_content = tab.findChild(QScrollArea).widget()
+    assert scroll_content.minimumSizeHint().width() < 400
+
+
+# ---------------------------------------------------------------------------
+# Disabled controls explain themselves
+# ---------------------------------------------------------------------------
+
+
+def test_apply_deck_tooltip_names_the_missing_client(qapp):
+    tab = CombatTab()
+    tab.set_client_count(0)
+
+    apply_btn = tab._decks_section._apply_btns[0]
+    assert not apply_btn.isEnabled()
+    assert "No game client connected for P1" in apply_btn.toolTip()
+
+
+def test_apply_deck_tooltip_names_the_missing_deck_when_a_client_is_present(qapp):
+    tab = CombatTab()
+    tab.set_client_count(4)
+
+    apply_btn = tab._decks_section._apply_btns[0]
+    assert not apply_btn.isEnabled()
+    assert "No deck saved for P1" in apply_btn.toolTip()
+
+
+def test_deck_tooltips_name_the_run_lock(qapp):
+    tab = CombatTab()
+    tab.set_client_count(4)
+
+    tab.set_editable(False)
+
+    assert "Locked while the bot is running" in tab._decks_section._import_btns[0].toolTip()
+    assert "Locked while the bot is running" in tab._decks_section._apply_btns[0].toolTip()
+
+
+def test_linked_panel_disclosure_tooltip_says_why_it_cannot_expand(qapp):
+    dcs = DuelCombatStrategy(name="Boss DCS")
+    binding = StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id)
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [dcs], [])
+
+    assert "unlink" in panel._disclosure.toolTip().lower()
+
+
+def test_locked_panel_disclosure_tooltip_says_the_bot_is_running(qapp):
+    binding = StateAssignment(state_ids=["s1"])
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [], [])
+
+    panel.set_editable(False)
+
+    assert "Locked while the bot is running" in panel._disclosure.toolTip()
+
+
+# ---------------------------------------------------------------------------
+# Disclosure affordance is consistent across nesting levels
+# ---------------------------------------------------------------------------
+
+
+def test_nested_disclosure_uses_the_same_glyph_size_as_a_section_header(qapp):
+    """A 16 px triangle in a QToolButton beside a 10 px one on a QLabel read as
+    two unrelated controls rather than two levels of the same one."""
+    from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX
+
+    panel = _DuelBindingPanel("Boss")
+    panel.load(StateAssignment(state_ids=["s1"]), [], [])
+
+    assert panel._disclosure._arrow.width() == DISCLOSURE_PX
+    assert panel._disclosure._arrow.height() == DISCLOSURE_PX
+
+
+def test_nested_panel_is_indented_below_its_section(qapp):
+    """Depth is shown by indentation, since the glyph itself no longer varies."""
+    from bartlebot.gui.sidebar.sidebar_section import NEST_INDENT_PX
+
+    panel = _DuelBindingPanel("Boss")
+
+    assert panel.layout().contentsMargins().left() == NEST_INDENT_PX
+
+
+def test_clicking_the_disclosure_row_toggles_expansion(qapp):
+    binding = StateAssignment(state_ids=["s1"])
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [], [])
+
+    panel._disclosure.clicked.emit()
+    assert panel.is_expanded
+
+    panel._disclosure.clicked.emit()
+    assert not panel.is_expanded
+
+
+def test_a_linked_panel_ignores_expand_requests(qapp):
+    dcs = DuelCombatStrategy(name="Boss DCS")
+    binding = StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id)
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [dcs], [])
+
+    panel.set_expanded(True)
+
+    assert not panel.is_expanded
+    assert not panel._config_editor.isVisibleTo(panel)

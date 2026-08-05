@@ -60,6 +60,13 @@ class _Theme:
     # ------------------------------------------------------------------
     text_muted: str = "#6b6b6b"  # secondary text: labels, hints, descriptions
     text_subtle: str = "#555555"  # sub-headers, third-level text
+    # Disabled controls.  Deliberately dimmer than ``text_muted``: that token is
+    # the colour of *enabled* secondary text, so reusing it for the disabled
+    # palette group made a disabled button indistinguishable from an enabled one
+    # carrying a hint label.  Pairing it with ``surface_disabled`` means disabled
+    # reads as a change of shape (flatter, recessed), not just a change of shade.
+    text_disabled: str = "#a8adb8"
+    surface_disabled: str = "#e4e7ec"  # button/base fill for the Disabled palette group
 
     # ------------------------------------------------------------------
     # Node: Neutral (default / hover / selected)
@@ -243,12 +250,22 @@ class _Theme:
         p.setColor(QPalette.ColorRole.Link, QColor(self.accent))
         p.setColor(QPalette.ColorRole.LinkVisited, QColor(self.accent))
 
-        # Disabled group
-        muted = QColor(self.text_muted)
-        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, muted)
-        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, muted)
-        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, muted)
-        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, muted)
+        # Disabled group.  Both the text *and* the fill shift, so a disabled
+        # control reads as recessed rather than merely dimmer — text alone was
+        # not a strong enough signal (text_disabled vs text is a shade apart,
+        # and both are legible).  Done through the palette rather than QSS on
+        # purpose: a QSS ``background`` rule on QPushButton makes
+        # QStyleSheetStyle take over drawing the button in *every* state, which
+        # would change how enabled buttons look across the whole app.
+        disabled_text = QColor(self.text_disabled)
+        disabled_fill = QColor(self.surface_disabled)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_text)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_text)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_text)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, disabled_text)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Button, disabled_fill)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, disabled_fill)
+        p.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Highlight, disabled_fill)
 
         return p
 
@@ -381,6 +398,8 @@ DARK = _Theme(
     # Text variants
     text_muted="#9e9e9e",  # lightened from #808080 — was 3.5:1 on bg, now ~5.5:1
     text_subtle="#999999",
+    text_disabled="#5a5a5a",  # ~2.4:1 on surface_disabled — legible as "off", not as content
+    surface_disabled="#262629",  # between bg and surface: a disabled button sinks into the panel
     # Node: Neutral
     node_fill="#3c3c3c",
     node_fill_hover="#454545",

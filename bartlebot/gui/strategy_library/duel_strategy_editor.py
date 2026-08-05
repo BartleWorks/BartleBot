@@ -30,6 +30,7 @@ from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.strategy_store import save_player_strategy
 
@@ -112,6 +113,7 @@ class _AssignmentRow(QWidget):
         self._all_pcs = all_pcs
         self._updating = False  # suppresses re-entrant enforcement
         self._suppress_dsl = False
+        self._editable = True
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -127,8 +129,9 @@ class _AssignmentRow(QWidget):
         self._player_widget.changed.connect(self._on_players_changed)
         top.addWidget(self._player_widget)
 
-        self._link_lbl = QLabel()
-        self._link_lbl.setToolTip("This assignment uses a shared preset from the Player Strategies tab")
+        # Elided: preset names are user-supplied, and a plain QLabel would make
+        # a long one the minimum width of every panel this row sits in.
+        self._link_lbl = ElidedLabel()
         top.addWidget(self._link_lbl, 1)
 
         self._menu_btn = QToolButton()
@@ -143,11 +146,11 @@ class _AssignmentRow(QWidget):
         self._menu_btn.setMenu(self._menu)
         top.addWidget(self._menu_btn)
 
-        remove_btn = QPushButton("×")
-        remove_btn.setFixedWidth(24)
-        remove_btn.setToolTip("Remove this assignment")
-        remove_btn.clicked.connect(lambda: self.remove_requested.emit(self))
-        top.addWidget(remove_btn)
+        self._remove_btn = QPushButton("×")
+        self._remove_btn.setFixedWidth(24)
+        self._remove_btn.setToolTip("Remove this assignment")
+        self._remove_btn.clicked.connect(lambda: self.remove_requested.emit(self))
+        top.addWidget(self._remove_btn)
 
         layout.addLayout(top)
 
@@ -166,6 +169,19 @@ class _AssignmentRow(QWidget):
         self._all_pcs = all_pcs
         self._refresh_mode()
 
+    def set_editable(self, editable: bool) -> None:
+        """Lock or unlock every control in this row (used while a bot is running)."""
+        self._editable = editable
+        self._player_widget.setEnabled(editable)
+        self._menu_btn.setEnabled(editable)
+        self._menu_btn.setToolTip("Preset actions" if editable else "Locked while the bot is running")
+        self._remove_btn.setEnabled(editable)
+        self._remove_btn.setToolTip("Remove this assignment" if editable else "Locked while the bot is running")
+        # Goes through _refresh_mode rather than setReadOnly directly: read-only
+        # is also how *linked* rows are rendered, and _refresh_mode is the single
+        # place that reconciles the two reasons a row can be non-writable.
+        self._refresh_mode()
+
     # -- mode / display ------------------------------------------------
 
     def _linked_pcs(self) -> PlayerCombatStrategy | None:
@@ -182,6 +198,9 @@ class _AssignmentRow(QWidget):
                 pcs = self._linked_pcs()
                 name = pcs.name if pcs else "(missing preset)"
                 self._link_lbl.setText(f"🔗 {name}")
+                # Set after setText: ElidedLabel defaults the tooltip to the full
+                # text, and this says the same thing plus where to go to edit it.
+                self._link_lbl.setToolTip(f"{name} — shared preset from the Player Strategies tab")
                 self._link_lbl.show()
                 self._dsl_edit.setPlainText(pcs.dsl if pcs else "")
                 self._dsl_edit.setReadOnly(True)
@@ -189,7 +208,7 @@ class _AssignmentRow(QWidget):
                 self._link_lbl.clear()
                 self._link_lbl.hide()
                 self._dsl_edit.setPlainText(self._assignment.dsl)
-                self._dsl_edit.setReadOnly(False)
+                self._dsl_edit.setReadOnly(not self._editable)
         finally:
             self._suppress_dsl = False
         self._apply_style()
@@ -265,7 +284,7 @@ class _AssignmentRow(QWidget):
         self._dsl_edit.setStyleSheet(
             f"QPlainTextEdit {{ background: {bg}; color: {THEME.text}; border: 1px solid {THEME.border}; }}"
         )
-        self._link_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+        apply_muted_color(self._link_lbl)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -318,6 +337,7 @@ class DuelConfigEditor(QWidget):
         self._all_pcs: list[PlayerCombatStrategy] = []
         self._suppress = False
         self._rows: list[_AssignmentRow] = []
+        self._editable = True
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -385,6 +405,21 @@ class DuelConfigEditor(QWidget):
         for row in self._rows:
             row.set_pcs_list(all_pcs)
 
+    def set_editable(self, editable: bool) -> None:
+        """Lock or unlock every control, including rows added later.
+
+        Needed because this editor is embedded in the Combat tab, which locks
+        itself while a bot runs.  Without it, an expanded inline config stayed
+        fully writable mid-run.
+        """
+        self._editable = editable
+        self._min_spin.setEnabled(editable)
+        self._max_spin.setEnabled(editable)
+        self._order_widget.set_editable(editable)
+        for row in self._rows:
+            row.set_editable(editable)
+        self._update_add_btn()
+
     def clear(self) -> None:
         """Detach from the loaded config — no pending state to drop, unlike the
         debounced editors, since every edit here is already live on the config.
@@ -405,6 +440,7 @@ class DuelConfigEditor(QWidget):
 
     def _add_row(self, assignment: PlayerAssignment) -> None:
         row = _AssignmentRow(assignment, self._all_pcs, parent=self._assignments_container)
+        row.set_editable(self._editable)
         row.changed.connect(self._on_changed)
         row.remove_requested.connect(self._on_remove_row)
         row.players_changed.connect(self._enforce_exclusivity)
@@ -468,8 +504,24 @@ class DuelConfigEditor(QWidget):
             row.set_max_players(n)
 
     def _update_add_btn(self) -> None:
+        """Enable the add button, and name the reason when it is off.
+
+        There are only two, and neither is guessable from a button that simply
+        stops responding: the player slots are all spoken for, or the whole
+        editor is locked because a bot is running.
+        """
         max_p = self._max_spin.value()
-        self._add_btn.setEnabled(len(self._rows) < max_p)
+        room = len(self._rows) < max_p
+        self._add_btn.setEnabled(self._editable and room)
+        if not self._editable:
+            self._add_btn.setToolTip("Locked while the bot is running")
+        elif not room:
+            self._add_btn.setToolTip(
+                f"Every player slot (P1–P{max_p}) already has an assignment — "
+                f"raise Max players, or remove an assignment first"
+            )
+        else:
+            self._add_btn.setToolTip("Add a player assignment to this duel config")
 
     def _on_changed(self) -> None:
         if self._suppress or self._config is None:

@@ -280,3 +280,94 @@ def test_auto_height_text_edit_shrinks_back_down_when_widened(qapp):
     wide_height = edit.height()
 
     assert wide_height < narrow_height
+
+
+# ---------------------------------------------------------------------------
+# Edit lock — the Combat tab locks this editor while a bot is running
+# ---------------------------------------------------------------------------
+
+
+def test_set_editable_false_disables_every_control(qapp):
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor.set_editable(False)
+
+    assert not editor._min_spin.isEnabled()
+    assert not editor._max_spin.isEnabled()
+    assert not editor._add_btn.isEnabled()
+    assert editor._rows[0]._dsl_edit.isReadOnly()
+    assert not editor._rows[0]._player_widget.isEnabled()
+    assert not editor._rows[0]._remove_btn.isEnabled()
+    assert not editor._rows[0]._menu_btn.isEnabled()
+
+
+def test_set_editable_true_reenables_an_inline_row(qapp):
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor.set_editable(False)
+    editor.set_editable(True)
+
+    assert not editor._rows[0]._dsl_edit.isReadOnly()
+    assert editor._add_btn.isEnabled()
+
+
+def test_a_linked_row_stays_read_only_after_being_reenabled(qapp):
+    """Linked rows are read-only for their own reason; unlocking must not override it."""
+    pcs = PlayerCombatStrategy(name="Preset", dsl="blade")
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)])
+    editor = DuelConfigEditor()
+    editor.load(config, [pcs])
+
+    editor.set_editable(False)
+    editor.set_editable(True)
+
+    assert editor._rows[0]._dsl_edit.isReadOnly()
+
+
+def test_rows_added_while_locked_are_locked_too(qapp):
+    config = DuelConfig()
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+    editor.set_editable(False)
+
+    # Bypasses the disabled button the way a stray signal would.
+    editor._on_add_assignment()
+
+    assert editor._rows[0]._dsl_edit.isReadOnly()
+
+
+# ---------------------------------------------------------------------------
+# Disabled controls explain themselves
+# ---------------------------------------------------------------------------
+
+
+def test_add_button_tooltip_names_the_reason_when_slots_are_full(qapp):
+    config = DuelConfig(max_players=2)
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+    editor._on_add_assignment()
+    editor._on_add_assignment()
+
+    assert not editor._add_btn.isEnabled()
+    assert "already has an assignment" in editor._add_btn.toolTip()
+
+
+def test_add_button_tooltip_names_the_lock_when_a_bot_is_running(qapp):
+    editor = DuelConfigEditor()
+    editor.load(DuelConfig(), [])
+
+    editor.set_editable(False)
+
+    assert "Locked while the bot is running" in editor._add_btn.toolTip()
+
+
+def test_add_button_tooltip_describes_the_action_when_enabled(qapp):
+    editor = DuelConfigEditor()
+    editor.load(DuelConfig(), [])
+
+    assert editor._add_btn.isEnabled()
+    assert "Add a player assignment" in editor._add_btn.toolTip()

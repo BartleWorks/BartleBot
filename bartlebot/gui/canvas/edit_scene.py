@@ -177,10 +177,26 @@ def _dist(a: QPointF, b: QPointF) -> float:
 
 
 def _unique_id(existing: list[str]) -> str:
-    i = 1
-    while f"state_{i}" in existing:
-        i += 1
-    return f"state_{i}"
+    """Return a fresh ``state_N`` id, numbered above every id already in use.
+
+    Deliberately *not* the lowest free number.  Combat configuration binds to
+    state ids — ``BotCombatStrategy.state_assignments`` stores raw ``state_N``
+    strings, and ``resolve_combat`` looks the running state up by id at fight
+    time.  Recycling the id of a deleted node therefore hands that node's duel
+    strategy to whatever unrelated node is created next, with nothing in the UI
+    to show it happened; the wrong strategy simply runs, minutes into a bot run.
+
+    Ids that don't fit the ``state_N`` pattern (hand-authored bot files may use
+    anything) are ignored when picking the number but still can't be collided
+    with, since the result always carries the ``state_`` prefix and a number
+    above every numbered id present.
+    """
+    highest = 0
+    for state_id in existing:
+        suffix = state_id.removeprefix("state_")
+        if suffix != state_id and suffix.isdigit():
+            highest = max(highest, int(suffix))
+    return f"state_{highest + 1}"
 
 
 def _inject_required_options(config: BotConfig) -> None:

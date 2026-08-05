@@ -46,9 +46,12 @@ class _PlayerChip(QFrame):
 
     def _refresh_style(self) -> None:
         if not self._enabled_visual:
-            bg = THEME.bg
-            text_color = THEME.text_muted
-            border = THEME.border
+            # Matches the app-wide disabled palette (surface_disabled /
+            # text_disabled) rather than inventing a third "off" look — these
+            # chips sit inches from real disabled buttons in the combat tab.
+            bg = THEME.surface_disabled
+            text_color = THEME.text_disabled
+            border = THEME.surface_disabled
             border_width = "1px"
         else:
             bg = THEME.surface

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -20,6 +21,30 @@ from bartlebot.gui.theme import THEME
 _PLACEHOLDER = "—"
 _QWIDGETSIZE_MAX = 16777215  # Qt's QWIDGETSIZE_MAX
 
+# ---------------------------------------------------------------------------
+# Disclosure (collapse/expand) affordance
+# ---------------------------------------------------------------------------
+#
+# Every collapsible header in the app draws its triangle at this one size, as a
+# plain QLabel pixmap on a click-through row.  Nesting depth is expressed by
+# indentation and label weight, never by a different glyph size or a different
+# widget class — a 16 px triangle inside an auto-raise QToolButton next to a
+# 10 px triangle on a QLabel reads as two unrelated controls rather than as two
+# levels of the same one.
+
+DISCLOSURE_PX = 10
+#: Left inset applied per level of nesting inside a SidebarSection body.
+NEST_INDENT_PX = 12
+
+
+def disclosure_pixmap(expanded: bool, tint: str | None = None) -> QPixmap:
+    """Triangle for a collapsible header: down when *expanded*, right when collapsed.
+
+    *tint* defaults to ``THEME.icon_tint`` (top-level headers); nested headers
+    pass ``THEME.text_muted`` so depth is legible at a glance.
+    """
+    return svg_pixmap("arrow_down" if expanded else "arrow_right", DISCLOSURE_PX, tint=tint or THEME.icon_tint)
+
 
 # ---------------------------------------------------------------------------
 # Section header
@@ -33,16 +58,15 @@ class _SectionHeader(QWidget):
         super().__init__(parent)
 
         self._expanded = True
-        from bartlebot.gui.theme import THEME
 
-        self._pixmap_down = svg_pixmap("arrow_down", 10, tint=THEME.icon_tint)
-        self._pixmap_right = svg_pixmap("arrow_right", 10, tint=THEME.icon_tint)
+        self._pixmap_down = disclosure_pixmap(True)
+        self._pixmap_right = disclosure_pixmap(False)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.arrow = QLabel()
-        self.arrow.setFixedSize(10, 10)
+        self.arrow.setFixedSize(DISCLOSURE_PX, DISCLOSURE_PX)
         self.arrow.setPixmap(self._pixmap_down)
 
         self.label = QLabel(title)
@@ -65,8 +89,8 @@ class _SectionHeader(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
-            self._pixmap_down = svg_pixmap("arrow_down", 10, tint=THEME.icon_tint)
-            self._pixmap_right = svg_pixmap("arrow_right", 10, tint=THEME.icon_tint)
+            self._pixmap_down = disclosure_pixmap(True)
+            self._pixmap_right = disclosure_pixmap(False)
             self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
 
 
