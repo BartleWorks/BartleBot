@@ -6,8 +6,6 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nany<blade>[sharp]@ally(0) | any<blade>@ally(0)",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Marleybone",
   "drops": [
     "Azoth",
@@ -429,7 +427,8 @@
           "x": 32.91,
           "y": 1767.96,
           "z": -23.64
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -495,7 +494,8 @@
           "x": -11.22,
           "y": 1408.52,
           "z": 0.2
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -590,7 +590,8 @@
           "x": -6.8,
           "y": 2169.71,
           "z": 0.2
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -783,6 +784,16 @@
       "source": "state_16",
       "dest": "state_1",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1043,16 +1054,6 @@
       "source": "state_9",
       "dest": "state_1",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

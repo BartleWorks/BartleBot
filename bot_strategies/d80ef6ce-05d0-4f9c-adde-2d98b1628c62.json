@@ -1,0 +1,161 @@
+{
+  "id": "d80ef6ce-05d0-4f9c-adde-2d98b1628c62",
+  "name": "Heretical Academy 4-player single decks",
+  "bot_id": "f44ad615-8530-4b6e-8f5f-5d52cb20e9d9",
+  "player_decks": {
+    "1": {
+      "normal": {
+        "Empower": 1,
+        "Feint": 3,
+        "Katzenstein's Monster - T05 - B": 1
+      },
+      "tc": {},
+      "item": {
+        "Pet - Shatter": 1,
+        "Feint Mass - Amulet": 1
+      }
+    },
+    "2": {
+      "normal": {
+        "Potent Trap": 4,
+        "Feint": 4
+      },
+      "tc": {},
+      "item": {}
+    },
+    "3": {
+      "normal": {
+        "Epic": 2,
+        "Feint": 1,
+        "Kraken - T02 - C": 2,
+        "Novus Storm - T03 - B": 1
+      },
+      "tc": {},
+      "item": {
+        "Potent Trap - Tear": 1
+      }
+    },
+    "4": {
+      "normal": {
+        "Epic": 1,
+        "Novus Storm - T04 - B": 1,
+        "Scion of Storm": 1,
+        "Elemental Weakness": 2
+      },
+      "tc": {},
+      "item": {
+        "Empower": 1
+      }
+    }
+  },
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_10"
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1
+            ],
+            "dsl": "{1} shatter@boss\n{2} empower\n{3} monster@boss"
+          },
+          {
+            "players": [
+              2,
+              3
+            ],
+            "dsl": "{1} pass\n{2} pass\n{3} feint[potent]@boss"
+          },
+          {
+            "players": [
+              4
+            ],
+            "dsl": "{1} weakness@boss\n{2} empower\n{3} scion[epic]@boss"
+          }
+        ]
+      }
+    },
+    {
+      "state_ids": [
+        "state_26"
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1,
+              2,
+              3
+            ],
+            "dsl": "feint mass | feint[potent]@boss | novus[epic]@boss"
+          },
+          {
+            "players": [
+              4
+            ],
+            "dsl": "novus[epic]@boss"
+          }
+        ]
+      }
+    },
+    {
+      "state_ids": [
+        "state_31"
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          4,
+          3
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1,
+              2
+            ],
+            "dsl": "{1} pass\n\"Feint\"[potent]@enemy(0) | feint mass"
+          },
+          {
+            "players": [
+              4
+            ],
+            "dsl": "{1} pass\nweakness@enemy(0) | novus[epic]@enemy(0)"
+          },
+          {
+            "players": [
+              3
+            ],
+            "dsl": "{1} pass\n{2} kraken[epic]@enemy(0)\n{3} kraken[epic]@enemy(0)\n{4} pass\n{5} novus@enemy(0)"
+          }
+        ]
+      }
+    }
+  ]
+}

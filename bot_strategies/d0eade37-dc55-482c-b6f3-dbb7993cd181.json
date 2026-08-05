@@ -12,6 +12,30 @@
       "item": {
         "Epic - Amulet": 1
       }
+    },
+    "1": {
+      "normal": {},
+      "tc": {},
+      "item": {
+        "Feint Mass - Amulet": 1
+      }
+    },
+    "2": {
+      "normal": {
+        "Epic": 1,
+        "Potent Trap": 1,
+        "Feint": 1,
+        "Ship of Fools - T02 - A": 1
+      },
+      "tc": {},
+      "item": {}
+    },
+    "3": {
+      "normal": {
+        "Feint": 1
+      },
+      "tc": {},
+      "item": {}
     }
   },
   "default_duel_config": {
