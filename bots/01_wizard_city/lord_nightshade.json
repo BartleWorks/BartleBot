@@ -514,7 +514,9 @@
         "x": 4400,
         "y": 0.0
       },
-      "params": {},
+      "params": {
+        "timeout": 10.0
+      },
       "option_overrides": {}
     },
     {

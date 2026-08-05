@@ -191,7 +191,9 @@
         "x": 1320.0,
         "y": 90.0
       },
-      "params": {},
+      "params": {
+        "timeout": 10.0
+      },
       "option_overrides": {}
     },
     {

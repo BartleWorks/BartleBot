@@ -463,7 +463,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -533,7 +534,9 @@
         "x": 880,
         "y": 0.0
       },
-      "params": {},
+      "params": {
+        "timeout": 10.0
+      },
       "option_overrides": {}
     }
   ],
