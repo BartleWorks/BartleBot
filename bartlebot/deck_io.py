@@ -45,7 +45,13 @@ from wizwalker.memory.memory_objects.window import (
     DynamicDeckListControl,
 )
 
-from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_ITEM_PAGE_SETTLE, DECK_ITEM_TOGGLE_SETTLE
+from bartlebot.nodes.timing import (
+    DECK_APPLY_TIMEOUT,
+    DECK_FUSION_CLICK_SETTLE,
+    DECK_FUSION_FLYOUT_SETTLE,
+    DECK_ITEM_PAGE_SETTLE,
+    DECK_ITEM_TOGGLE_SETTLE,
+)
 
 if TYPE_CHECKING:
     from bartlebot.bot.strategy_models import DeckData
@@ -63,15 +69,32 @@ GRID_COLUMNS = 8
 GRID_ROWS = 2
 SLOTS_PER_PAGE = GRID_COLUMNS * GRID_ROWS
 
-# --- tiered spell names ---------------------------------------------------
-# The game names tier/path variants "Storm Lord - T05 - A": base name, tier
-# number, then the upgrade path.  wizwalker splits on the same marker.
+# --- tiered ("fusion") spell names ----------------------------------------
+# Variants are named "Novus Storm - T05 - A": base name, tier, upgrade path.
+# wizwalker splits on the same marker.
 TIER_MARKER = " - T"
+
+# A spellbook entry whose path is this is not a castable variant at all — it is
+# the *root* of a fusion tree, and clicking it opens the variant flyout.  Probed
+# against a live client (tools/probe_spell_list.py): a wizard owning Novus Storm
+# at both T05-A and T05-B lists "Novus Storm - T01 - Base" in the spellbook, and
+# only the flyout names the two real variants.
+FUSION_ROOT_PATH = "Base"
+
+# Both routing paths substitute tiers, and a wizard reading the log should not
+# have to notice that two differently-worded lines mean the same thing.
+_SUBSTITUTION_MSG = "Using '%s' in place of '%s' — the highest tier this wizard has unlocked"
+
+# NOTE: SpellTemplate.spell_base() looks like it should give the base name and
+# does not — the same probe returned "Ammit" for "Soul Burner - T03 - B",
+# "Giant" for "Sharpened Blade" and "Storm Trap" for "Windstorm".  It is some
+# internal derived-from field.  Parsing template.name() is the only reliable
+# route to a base name.
 
 
 @dataclass(frozen=True)
 class TieredName:
-    """A parsed "Storm Lord - T05 - A" spell name.
+    """A parsed "Novus Storm - T05 - A" spell name.
 
     ``tier`` and ``path`` are None for a plain, untiered spell, in which case
     ``base`` is the whole name.
@@ -85,14 +108,33 @@ class TieredName:
     def is_tiered(self) -> bool:
         return self.tier is not None
 
+    @property
+    def is_fusion_root(self) -> bool:
+        """True for "… - T01 - Base": a placeholder, not something castable.
+
+        Clicking one in the spellbook opens the variant flyout instead of adding
+        a card, which is the difference between a wizard who has unlocked
+        several variants and one who has unlocked exactly one.
+        """
+        return self.path == FUSION_ROOT_PATH
+
 
 @dataclass(frozen=True)
 class NormalCardPlan:
     """What of a saved deck's normal cards this account can actually supply."""
 
-    addable: dict[str, int]  # names to hand to the deck builder, as-is
-    substitutions: dict[str, str]  # requested name → the owned variant used instead
-    missing: list[str]  # requested names this account cannot supply at all
+    addable: dict[str, int]  # cards this wizard can supply, before routing
+    missing: list[str]  # requested names with no matching spellbook entry at all
+
+
+@dataclass(frozen=True)
+class CardRouting:
+    """How each supplyable card must be added, and what changed on the way."""
+
+    direct: dict[str, int]  # exact spellbook entries — safe for the deck builder
+    fusion: dict[str, int]  # needs its variant flyout opened; resolved at click time
+    substitutions: dict[str, str]  # requested name → the entry used instead
+    unresolvable: list[str]  # matched a base, but no usable variant
 
 
 @dataclass(frozen=True)
@@ -144,10 +186,11 @@ def resolve_tier(requested: str, owned: list[str]) -> str | None:
     just hits softer, and that is far better than the wizard entering the fight
     without the spell at all.
 
-    Path is never crossed.  "- A" and "- B" are the two upgrade branches of the
-    same spell and do genuinely different things — a top-path Storm Lord is not a
-    weaker bottom-path one — so substituting across them would silently change
-    what the strategy does rather than merely weaken it.
+    Path is never crossed.  The suffix after the tier ("- A", "- B", "- C", and
+    however many the game adds later) selects an upgrade *branch*, not a rank:
+    two spells at the same tier on different paths do genuinely different things.
+    Substituting across them would silently change what the strategy does rather
+    than merely weaken it, so paths are compared for equality and never ordered.
 
     Tiers above the requested one are not used either.  The saved deck is the
     author's statement of what the strategy was tuned for; quietly upgrading
@@ -184,32 +227,86 @@ def plan_normal_cards(desired: dict[str, int], available: list[str]) -> NormalCa
     Tiered names are kept when their *base* spell is owned; which variants the
     account actually has cannot be read until the tier flyout is opened, so that
     resolution happens later, in ``_resolve_tier_substitutions``.
+
+    Matching is base-to-base, not name-to-base.  wizwalker assumes a tiered
+    spell sits in the spellbook under its bare base name ("Novus Storm"), but a
+    spellbook that instead lists the wizard's current variant ("Novus Storm -
+    T04 - B") would fail that lookup and make an owned spell look unowned.
+    Reducing *both* sides to their base makes the match hold either way — see
+    ``tools/probe_spell_list.py``, which dumps what the list really contains.
     """
     owned = set(available)
+    owned_bases = {parse_tiered_name(entry).base for entry in available}
     addable: dict[str, int] = {}
     missing: list[str] = []
     for name, count in desired.items():
         if count <= 0:
             continue
-        if name in owned or parse_tiered_name(name).base in owned:
+        if name in owned or parse_tiered_name(name).base in owned_bases:
             addable[name] = count
         else:
             missing.append(name)
-    return NormalCardPlan(addable=addable, substitutions={}, missing=sorted(missing))
+    return NormalCardPlan(addable=addable, missing=sorted(missing))
 
 
-def apply_substitutions(addable: dict[str, int], substitutions: dict[str, str]) -> dict[str, int]:
-    """Rewrite a plan's card names to the variants actually owned.
+def partition_addable(addable: dict[str, int], available: list[str]) -> CardRouting:
+    """Split cards by how they must be added, and report what was substituted.
 
-    Counts are merged, since two requested tiers can resolve to the same owned
-    one (a deck asking for T05 and T04 of the same spell on an account that only
-    has T03 ends up wanting two T03s).
+    Three cases, because the spellbook represents a tiered spell in two very
+    different ways depending on how many variants the wizard has unlocked:
+
+    *direct* — the name is already an exact spellbook entry, or resolves to one.
+        A wizard who has unlocked exactly one variant sees it listed outright
+        ("Novus Storm - T04 - B"), so a deck asking for T05-B resolves down to
+        that entry and it can simply be clicked.  Plain untiered cards land here
+        too.  These are safe to hand to wizwalker's ``_add_all_normal_cards``,
+        which takes its no-op "name in spell_names" branch and cannot raise.
+
+    *fusion* — the spellbook entry is a "… - T01 - Base" root, so the real
+        variants are only visible once its flyout is open.  wizwalker cannot add
+        these at all: its tiered branch looks up the *bare* base ("Novus Storm"),
+        which no build lists.  ``_add_fusion_cards`` handles them instead.
+
+    *unresolvable* — no spellbook entry shares the base, or the only unlocked
+        variant is on another path or a higher tier than asked for.
+
+    Splitting up front is what keeps ``_add_all_normal_cards`` from ever seeing
+    a name it would raise on, which matters because it runs after the clear.
+
+    ``substitutions`` records every card whose name changed on the way into
+    *direct*.  It is returned rather than logged because this function is pure;
+    ``write_deck`` reports it.  Without that the single-variant path swapped a
+    tier silently — the deck the wizard ends up holding is not the deck that was
+    saved, and nothing said so.
     """
-    result: dict[str, int] = {}
+    entries = {parse_tiered_name(entry).base: entry for entry in available}
+    direct: dict[str, int] = {}
+    fusion: dict[str, int] = {}
+    substitutions: dict[str, str] = {}
+    unresolvable: list[str] = []
+
     for name, count in addable.items():
-        resolved = substitutions.get(name, name)
-        result[resolved] = result.get(resolved, 0) + count
-    return result
+        if name in available:
+            direct[name] = direct.get(name, 0) + count
+            continue
+        entry = entries.get(parse_tiered_name(name).base)
+        if entry is None:
+            unresolvable.append(name)
+        elif parse_tiered_name(entry).is_fusion_root:
+            fusion[name] = fusion.get(name, 0) + count
+        elif (resolved := resolve_tier(name, [entry])) is not None:
+            direct[resolved] = direct.get(resolved, 0) + count
+            if resolved != name:
+                substitutions[name] = resolved
+        else:
+            unresolvable.append(name)
+
+    return CardRouting(
+        direct=direct,
+        fusion=fusion,
+        substitutions=substitutions,
+        unresolvable=sorted(unresolvable),
+    )
 
 
 def count_names(names: list[str]) -> dict[str, int]:
@@ -411,57 +508,73 @@ async def _close_tier_flyout(db) -> None:
         await db.refresh_deck_page()
 
 
-async def _resolve_tier_substitutions(db, plan: NormalCardPlan, spell_names: list[str]) -> NormalCardPlan:
-    """Map each requested tiered variant onto one this account actually owns.
+async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) -> None:
+    """Add fusion variants by opening each root's flyout and clicking inside it.
 
-    Which tiers a wizard has unlocked is only legible once the flyout for that
-    base spell is open, so this costs one open/close per distinct base spell.
-    Only decks naming a tiered card pay it.
+    wizwalker cannot do this.  Its tiered branch locates the base spell by its
+    *bare* name ("Novus Storm"), but the spellbook lists a fusion root as
+    "Novus Storm - T01 - Base", so the lookup misses and it raises — after the
+    deck has already been cleared.
 
-    Any failure here degrades to leaving the plan untouched rather than
-    propagating: a wrong guess costs one card, while an exception at this point
-    would abort the whole apply and — since the caller clears the deck straight
-    afterwards — is exactly the empty-deck failure this all exists to prevent.
+    Resolution happens here rather than before the clear because the flyout is
+    the only place the unlocked variants are legible, and opening it twice (once
+    to read, once to click) would double the click cost for no benefit: nothing
+    below raises, so a failure costs the affected cards and nothing more.
+
+    One flyout open/close per distinct base spell, regardless of how many
+    variants or copies of it the deck asks for.
     """
-    tiered = {name for name in plan.addable if parse_tiered_name(name).is_tiered}
-    if not tiered:
-        return plan
+    by_base: dict[str, dict[str, int]] = {}
+    for name, count in wanted.items():
+        by_base.setdefault(parse_tiered_name(name).base, {})[name] = count
+    entries = {parse_tiered_name(entry).base: entry for entry in spell_names}
 
-    substitutions: dict[str, str] = {}
-    missing = list(plan.missing)
-    by_base: dict[str, list[str]] = {}
-    for name in sorted(tiered):
-        by_base.setdefault(parse_tiered_name(name).base, []).append(name)
-
-    for base, requested_names in by_base.items():
+    for base, requested in by_base.items():
+        entry = entries.get(base)
+        if entry is None:  # partition_addable only routes cards here when it exists
+            continue
         try:
-            page_idx, card_idx = db.calcuate_position_of_card_in_page(spell_names, base)
+            page_idx, card_idx = db.calcuate_position_of_card_in_page(spell_names, entry)
             position = await db.calculate_card_position(card_idx)
             await db._go_to_spell_page(page_idx)  # noqa: SLF001
             async with db.client.mouse_handler:
                 await db.client.mouse_handler.click(*position)
+            # The click is what populates the variant list; reading straight
+            # away can return the previous spell's variants, or nothing.
+            await asyncio.sleep(DECK_FUSION_FLYOUT_SETTLE)
             owned = await _owned_tier_variants(db)
-            await _close_tier_flyout(db)
         except Exception:
-            logger.warning("Could not read tier variants for '%s' — using the saved names as-is", base, exc_info=True)
+            logger.warning("Could not open the variant list for '%s' — its cards are skipped", base, exc_info=True)
             continue
 
-        for name in requested_names:
-            resolved = resolve_tier(name, owned)
-            if resolved is None:
-                logger.warning(
-                    "No usable tier of '%s' on this account (deck wants '%s', account has %s) — skipping",
-                    base,
-                    name,
-                    ", ".join(owned) or "none",
-                )
-                plan.addable.pop(name, None)
-                missing.append(name)
-            elif resolved != name:
-                logger.info("Substituting '%s' for '%s' — the highest tier this account owns", resolved, name)
-                substitutions[name] = resolved
+        try:
+            await _click_fusion_variants(db, requested, owned, base)
+        except Exception:
+            logger.warning("Failed while adding variants of '%s'", base, exc_info=True)
+        finally:
+            await _close_tier_flyout(db)
 
-    return NormalCardPlan(addable=plan.addable, substitutions=substitutions, missing=sorted(missing))
+
+async def _click_fusion_variants(db, requested: dict[str, int], owned: list[str], base: str) -> None:
+    """Click each requested variant inside the already-open flyout."""
+    for name, count in requested.items():
+        resolved = resolve_tier(name, owned)
+        if resolved is None:
+            logger.warning(
+                "No usable variant of '%s' for this wizard (deck wants '%s', unlocked: %s) — skipping",
+                base,
+                name,
+                ", ".join(owned) or "none",
+            )
+            continue
+        if resolved != name:
+            logger.info(_SUBSTITUTION_MSG, resolved, name)
+        _page, variant_idx = db.calcuate_position_of_card_in_page(owned, resolved)
+        variant_position = await db.calculate_tiered_spell_card_position(variant_idx)
+        async with db.client.mouse_handler:
+            for _ in range(count):
+                await db.client.mouse_handler.click(*variant_position)
+                await asyncio.sleep(DECK_FUSION_CLICK_SETTLE)
 
 
 async def read_deck(db) -> dict:
@@ -488,13 +601,13 @@ async def write_deck(db, deck: DeckData) -> None:
     clear/rewrite entirely — clearing and rebuilding a deck that's already correct
     just costs time and click risk for no benefit.
 
-    Normal cards this account does not own are dropped *before* the clear, and
-    tiered cards fall back to the highest owned tier.  Both matter because
-    ``_add_all_normal_cards`` raises on the first name it cannot place: with the
-    clear already done, one unowned card left the wizard holding an empty deck
-    while the caller logged that the run would "continue with whatever was set".
-    A partial deck is a far better outcome, and is what item cards have always
-    done.
+    Which cards can be placed is worked out *before* the clear, because
+    ``_add_all_normal_cards`` raises on the first name it cannot place and by
+    then the deck is gone: one unplaceable card used to leave the wizard holding
+    an empty deck while the caller logged that the run would "continue with
+    whatever was set".  If nothing at all can be placed the deck is left
+    untouched, since clearing is only ever worth doing as the first half of a
+    rewrite.
 
     Item state is read *after* the deck is cleared, because ClearDeckButton may
     reset item toggles too; planning against the post-clear state is correct
@@ -507,26 +620,58 @@ async def write_deck(db, deck: DeckData) -> None:
         logger.info("Deck already matches saved configuration, skipping clear/rewrite")
         return
 
-    # Everything that can fail on a name is resolved while the deck is still
-    # intact, so a bad plan costs cards rather than the whole deck.
-    normal: dict[str, int] = {}
+    spell_names: list[str] = []
+    direct: dict[str, int] = {}
+    fusion: dict[str, int] = {}
     if deck.normal:
         await db.view_deck_cards()
         spell_names = await _spell_list_names(db)
         plan = plan_normal_cards(deck.normal, spell_names)
-        plan = await _resolve_tier_substitutions(db, plan, spell_names)
-        if plan.missing:
-            logger.warning("Cards in the saved deck are not on this account, skipped: %s", ", ".join(plan.missing))
-        normal = apply_substitutions(plan.addable, plan.substitutions)
+        routing = partition_addable(plan.addable, spell_names)
+        direct, fusion = routing.direct, routing.fusion
+        # Substitutions for *fusion* cards are reported by _add_fusion_cards,
+        # which is where they are decided; these are the ones settled here.
+        for requested, used in sorted(routing.substitutions.items()):
+            logger.info(_SUBSTITUTION_MSG, used, requested)
+        skipped = sorted(plan.missing + routing.unresolvable)
+        if skipped:
+            logger.warning(
+                "Cards in the saved deck could not be matched against this wizard's spellbook, skipped: %s",
+                ", ".join(skipped),
+            )
+            # The spellbook is the evidence for that claim, so log it alongside:
+            # "card not owned" and "card owned under a name we failed to match"
+            # are indistinguishable from the warning above, and the second is a
+            # bug in our matching rather than anything the user can act on.
+            logger.debug("Spellbook holds %d entries: %s", len(spell_names), ", ".join(spell_names) or "(none)")
+
+    if deck.normal and not direct and not fusion:
+        # Clearing is only ever worth doing as the first half of a rewrite.  With
+        # nothing to put back, going ahead would strip the wizard's deck to
+        # nothing and leave them entering combat with no cards — strictly worse
+        # than the deck they already had, which at least someone chose.  An
+        # empty or unmatchable spellbook read is far more likely to be our bug
+        # than a genuine account with none of these cards.
+        logger.error(
+            "Not applying the saved deck: none of its %d card type(s) could be matched, "
+            "so clearing would leave this wizard with an empty deck. Leaving the current deck untouched.",
+            len(deck.normal),
+        )
+        return
 
     await db.clear_deck()
     await db.view_deck_cards()
 
-    if normal:
+    if direct:
         # Private upstream method: it precomputes every card position and makes
         # one forward sweep, where the public add_by_name() re-reads the spell
         # list and rewinds the pages per card.  Re-check on a wizwalker bump.
-        await db._add_all_normal_cards(normal)  # noqa: SLF001
+        # Every name here is an exact spellbook entry, so it takes the plain
+        # branch and its raising tiered path is never reached.
+        await db._add_all_normal_cards(direct)  # noqa: SLF001
+
+    if fusion:
+        await _add_fusion_cards(db, fusion, spell_names)
 
     slots = await read_item_slots(db.client, deck_window)
     plan = plan_item_toggles(slots, deck.item)

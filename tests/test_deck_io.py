@@ -9,6 +9,7 @@ planning that decides which item card slots to click.
 from __future__ import annotations
 
 import asyncio
+import logging
 from types import SimpleNamespace
 
 import pytest
@@ -19,10 +20,10 @@ from bartlebot.deck_io import (
     ItemSlot,
     active_item_counts,
     apply_deck,
-    apply_substitutions,
     count_names,
     page_count,
     parse_tiered_name,
+    partition_addable,
     plan_item_toggles,
     plan_normal_cards,
     read_deck,
@@ -260,7 +261,7 @@ async def test_write_deck_skips_unowned_cards_instead_of_emptying_the_deck(monke
 
 
 async def test_write_deck_adds_nothing_when_no_card_is_owned(monkeypatch):
-    """Degrades to "deck left cleared" rather than raising out of the apply."""
+    """Degrades to leaving the deck alone rather than raising out of the apply."""
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
     monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
@@ -269,7 +270,7 @@ async def test_write_deck_adds_nothing_when_no_card_is_owned(monkeypatch):
     await write_deck(db, DeckData(normal={"Firestorm Blade": 4}))
 
     assert db.added is None
-    assert "clear_deck" in db.calls
+    assert "clear_deck" not in db.calls
 
 
 async def test_write_deck_empty_clears_without_adding(monkeypatch):
@@ -612,63 +613,60 @@ def test_plan_normal_on_an_empty_deck():
 
 
 # ---------------------------------------------------------------------------
-# apply_substitutions
+# Fusion spells: the two shapes a tiered spell takes in the spellbook
 # ---------------------------------------------------------------------------
+#
+# Probed against a live client (tools/probe_spell_list.py).  The spellbook NEVER
+# lists a bare base name, which is exactly the assumption wizwalker's tiered
+# branch is built on:
+#
+#   several variants unlocked -> "Novus Storm - T01 - Base"
+#       a fusion *root*; clicking it opens the variant flyout, the only place
+#       the real variants are legible.
+#   exactly one unlocked      -> "Novus Storm - T04 - B"
+#       the variant itself, listed outright; there is no flyout to open, and
+#       clicking it would add the card.
+
+_VARIANT_CLICK_BASE = 1000  # keeps flyout click positions distinguishable
 
 
-def test_apply_substitutions_rewrites_names():
-    result = apply_substitutions(
-        {"Storm Lord - T05 - A": 1, "Tempest": 2},
-        {"Storm Lord - T05 - A": "Storm Lord - T03 - A"},
-    )
+class _FakeMouse:
+    def __init__(self):
+        self.clicks: list[tuple[int, int]] = []
 
-    assert result == {"Storm Lord - T03 - A": 1, "Tempest": 2}
+    async def __aenter__(self):
+        return self
 
+    async def __aexit__(self, *_exc):
+        return False
 
-def test_apply_substitutions_merges_counts_that_collapse_onto_one_variant():
-    """T05 and T04 both falling back to T03 must want two T03s, not one."""
-    result = apply_substitutions(
-        {"Storm Lord - T05 - A": 1, "Storm Lord - T04 - A": 2},
-        {"Storm Lord - T05 - A": "Storm Lord - T03 - A", "Storm Lord - T04 - A": "Storm Lord - T03 - A"},
-    )
+    async def click(self, x, y):
+        self.clicks.append((x, y))
 
-    assert result == {"Storm Lord - T03 - A": 3}
+    async def click_window(self, *_args, **_kwargs):
+        return None
 
 
-def test_apply_substitutions_is_a_no_op_without_substitutions():
-    addable = {"Tempest": 2}
+class FusionRootDeckBuilder(FakeDeckBuilder):
+    """A wizard with several variants unlocked: the spellbook shows the root."""
 
-    assert apply_substitutions(addable, {}) == addable
-
-
-# ---------------------------------------------------------------------------
-# Tier substitution through write_deck
-# ---------------------------------------------------------------------------
-
-
-class TieredDeckBuilder(FakeDeckBuilder):
-    """FakeDeckBuilder that also serves a tier flyout.
-
-    ``owned_tiers`` is what the flyout shows once the base spell is clicked --
-    the only place tier ownership is legible, which is why the substitution runs
-    at apply time rather than being planned from the saved deck alone.
-    """
-
-    owned_tiers: list[str] = ["Storm Lord - T01 - A", "Storm Lord - T03 - A"]
+    spell_list = ["Tempest", "Frenzy", "Novus Storm - T01 - Base"]
+    #: What the flyout lists once the root is clicked.
+    owned_tiers = ["Novus Storm - T05 - A", "Novus Storm - T05 - B"]
 
     def __init__(self):
         super().__init__()
         self._deck_config_window = object()
-        self.client = SimpleNamespace(
-            root_window=object(),
-            mouse_handler=_FakeMouse(),
-        )
+        self.client = SimpleNamespace(root_window=object(), mouse_handler=_FakeMouse())
 
     def calcuate_position_of_card_in_page(self, cards: list, name: str) -> tuple[int, int]:
         return 0, cards.index(name) + 1
 
     async def calculate_card_position(self, card_index: int) -> tuple[int, int]:
         return (card_index, 0)
+
+    async def calculate_tiered_spell_card_position(self, card_number: int) -> tuple[int, int]:
+        return (_VARIANT_CLICK_BASE + card_number, 0)
 
     async def _go_to_spell_page(self, page: int) -> None:
         self.calls.append(f"_go_to_spell_page:{page}")
@@ -682,19 +680,25 @@ class TieredDeckBuilder(FakeDeckBuilder):
 
         return [_spell(n) for n in self.owned_tiers]
 
+    @property
+    def fusion_added(self) -> dict[str, int]:
+        """Variant name -> copies clicked inside the flyout."""
+        counts: dict[str, int] = {}
+        for x, _y in self.client.mouse_handler.clicks:
+            if x < _VARIANT_CLICK_BASE:
+                continue
+            name = self.owned_tiers[x - _VARIANT_CLICK_BASE - 1]
+            counts[name] = counts.get(name, 0) + 1
+        return counts
 
-class _FakeMouse:
-    async def __aenter__(self):
-        return self
 
-    async def __aexit__(self, *_exc):
-        return False
+class SingleVariantDeckBuilder(FusionRootDeckBuilder):
+    """A wizard with exactly one variant unlocked: the spellbook shows it directly."""
 
-    async def click(self, *_args, **_kwargs):
-        return None
+    spell_list = ["Tempest", "Frenzy", "Novus Storm - T04 - B"]
 
-    async def click_window(self, *_args, **_kwargs):
-        return None
+    async def get_graphical_tiered_spell_cards(self) -> list:
+        raise AssertionError("must not open a flyout for a spell with only one variant")
 
 
 def _tier_patches(monkeypatch):
@@ -703,78 +707,293 @@ def _tier_patches(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
 
 
-async def test_write_deck_substitutes_a_lower_owned_tier(monkeypatch):
-    """A T05 deck on a T03 account gets T03, not an empty deck."""
+# -- single unlocked variant: added directly, no flyout ---------------------
+
+
+async def test_single_variant_is_added_without_opening_a_flyout(monkeypatch):
+    """The reported case: deck wants T05-B, this wizard has only T04-B.
+
+    Clicking the spellbook entry of a one-variant spell ADDS it rather than
+    opening anything, so the flyout must not be touched.
+    """
     _tier_patches(monkeypatch)
-    db = TieredDeckBuilder()
+    db = SingleVariantDeckBuilder()
 
-    await write_deck(db, DeckData(normal={"Storm Lord - T05 - A": 1, "Tempest": 3}))
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4, "Tempest": 3}))
 
-    assert db.added == {"Storm Lord - T03 - A": 1, "Tempest": 3}
+    assert db.added == {"Novus Storm - T04 - B": 4, "Tempest": 3}
 
 
-async def test_write_deck_keeps_an_exactly_owned_tier(monkeypatch):
+async def test_single_variant_on_another_path_is_skipped(monkeypatch):
     _tier_patches(monkeypatch)
-    db = TieredDeckBuilder()
-    db.owned_tiers = ["Storm Lord - T03 - A", "Storm Lord - T05 - A"]
+    db = SingleVariantDeckBuilder()
 
-    await write_deck(db, DeckData(normal={"Storm Lord - T05 - A": 1}))
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 4, "Tempest": 3}))
 
-    assert db.added == {"Storm Lord - T05 - A": 1}
+    assert db.added == {"Tempest": 3}
 
 
-async def test_write_deck_drops_a_tiered_card_with_no_usable_variant(monkeypatch):
-    """Only the wrong-path variant is owned, so the card is skipped, not swapped."""
+async def test_single_variant_above_the_requested_tier_is_skipped(monkeypatch):
+    """Never upgrade: the saved deck states what the strategy was tuned for."""
     _tier_patches(monkeypatch)
-    db = TieredDeckBuilder()
-    db.owned_tiers = ["Storm Lord - T05 - B"]
+    db = SingleVariantDeckBuilder()
 
-    await write_deck(db, DeckData(normal={"Storm Lord - T05 - A": 1, "Tempest": 2}))
+    await write_deck(db, DeckData(normal={"Novus Storm - T02 - B": 4, "Tempest": 3}))
 
-    assert db.added == {"Tempest": 2}
+    assert db.added == {"Tempest": 3}
 
 
-async def test_write_deck_opens_the_flyout_once_per_base_spell(monkeypatch):
-    """Two tiers of one spell must not cost two open/close cycles."""
+# -- fusion root: resolved and clicked inside the flyout --------------------
+
+
+async def test_fusion_root_adds_the_exact_variant_through_the_flyout(monkeypatch):
+    """wizwalker cannot do this at all -- it looks up the bare "Novus Storm"."""
     _tier_patches(monkeypatch)
-    db = TieredDeckBuilder()
-    db.owned_tiers = ["Storm Lord - T01 - A", "Storm Lord - T03 - A"]
+    db = FusionRootDeckBuilder()
 
-    await write_deck(db, DeckData(normal={"Storm Lord - T03 - A": 1, "Storm Lord - T01 - A": 2}))
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4, "Tempest": 3}))
+
+    assert db.fusion_added == {"Novus Storm - T05 - B": 4}
+    # The root is not a placeable card, so it must never reach the deck builder.
+    assert db.added == {"Tempest": 3}
+
+
+async def test_fusion_root_substitutes_a_lower_unlocked_tier(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T01 - B", "Novus Storm - T03 - B"]
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2}))
+
+    assert db.fusion_added == {"Novus Storm - T03 - B": 2}
+
+
+async def test_fusion_root_never_crosses_paths(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T05 - A", "Novus Storm - T05 - C"]
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2, "Tempest": 1}))
+
+    assert db.fusion_added == {}
+    assert db.added == {"Tempest": 1}
+
+
+async def test_fusion_root_opens_the_flyout_once_per_base_spell(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 1, "Novus Storm - T05 - B": 2}))
 
     assert db.calls.count("get_graphical_tiered_spell_cards") == 1
+    assert db.fusion_added == {"Novus Storm - T05 - A": 1, "Novus Storm - T05 - B": 2}
 
 
-async def test_write_deck_merges_tiers_collapsing_onto_one_variant(monkeypatch):
-    _tier_patches(monkeypatch)
-    db = TieredDeckBuilder()
-    db.owned_tiers = ["Storm Lord - T01 - A"]
-
-    await write_deck(db, DeckData(normal={"Storm Lord - T05 - A": 1, "Storm Lord - T03 - A": 2}))
-
-    assert db.added == {"Storm Lord - T01 - A": 3}
-
-
-async def test_write_deck_survives_an_unreadable_flyout(monkeypatch):
-    """A probe failure must not abort the apply -- the deck is cleared right after."""
+async def test_fusion_root_survives_an_unreadable_flyout(monkeypatch):
+    """Runs after the clear, so it must never raise -- the deck is already gone."""
     _tier_patches(monkeypatch)
 
-    class BrokenFlyout(TieredDeckBuilder):
+    class BrokenFlyout(FusionRootDeckBuilder):
         async def get_graphical_tiered_spell_cards(self):
-            raise RuntimeError("tier list window missing")
+            raise RuntimeError("variant list window missing")
 
     db = BrokenFlyout()
 
-    await write_deck(db, DeckData(normal={"Storm Lord - T05 - A": 1, "Tempest": 2}))
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4, "Tempest": 3}))
 
-    # Falls back to the saved names untouched rather than losing the whole deck.
-    assert db.added == {"Storm Lord - T05 - A": 1, "Tempest": 2}
+    assert db.added == {"Tempest": 3}
 
 
-async def test_write_deck_skips_the_flyout_when_no_tiered_cards_are_wanted(monkeypatch):
+async def test_no_flyout_is_opened_when_no_fusion_cards_are_wanted(monkeypatch):
     _tier_patches(monkeypatch)
-    db = TieredDeckBuilder()
+    db = FusionRootDeckBuilder()
 
     await write_deck(db, DeckData(normal={"Tempest": 4}))
 
     assert "get_graphical_tiered_spell_cards" not in db.calls
+
+
+async def test_a_fusion_only_deck_that_cannot_resolve_still_clears_once(monkeypatch):
+    """Accepted edge case.
+
+    Whether a fusion card resolves is only knowable with the flyout open, which
+    is necessarily after the clear -- so this one case can still end with an
+    empty deck. It is logged, and it costs one wasted clear rather than a
+    silently wrong deck.
+    """
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T05 - A"]
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4}))
+
+    assert db.fusion_added == {}
+    assert "clear_deck" in db.calls
+
+
+# ---------------------------------------------------------------------------
+# Never clear a deck we cannot refill
+# ---------------------------------------------------------------------------
+
+
+async def test_write_deck_leaves_the_deck_alone_when_nothing_matches(monkeypatch):
+    """The reported failure: an unmatched deck cleared the wizard out entirely.
+
+    Clearing is only the first half of a rewrite. With nothing to put back, the
+    wizard is strictly better off with the deck they already had.
+    """
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4}))
+
+    assert "clear_deck" not in db.calls
+    assert db.added is None
+
+
+async def test_write_deck_leaves_the_deck_alone_when_the_spellbook_reads_empty(monkeypatch):
+    """An empty spellbook is far more likely our failed read than a real account."""
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    db.spell_list = []
+
+    await write_deck(db, DeckData(normal={"Tempest": 4}))
+
+    assert "clear_deck" not in db.calls
+
+
+async def test_write_deck_proceeds_when_at_least_one_card_matches(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+
+    await write_deck(db, DeckData(normal={"Tempest": 2, "Novus Storm - T05 - B": 4}))
+
+    assert "clear_deck" in db.calls
+    assert db.added == {"Tempest": 2}
+
+
+# ---------------------------------------------------------------------------
+# Spellbook naming: match base-to-base, not name-to-base
+# ---------------------------------------------------------------------------
+
+
+def test_plan_normal_matches_a_spellbook_listing_a_tier_variant():
+    """wizwalker assumes the spellbook lists the bare base name.
+
+    If a build instead lists the wizard's current variant, that assumption makes
+    an owned spell look unowned -- the reported Novus Storm failure.
+    """
+    plan = plan_normal_cards({"Novus Storm - T05 - B": 4}, ["Novus Storm - T04 - B"])
+
+    assert plan.addable == {"Novus Storm - T05 - B": 4}
+    assert plan.missing == []
+
+
+def test_plan_normal_still_matches_a_spellbook_listing_a_bare_base():
+    plan = plan_normal_cards({"Novus Storm - T05 - B": 4}, ["Novus Storm"])
+
+    assert plan.addable == {"Novus Storm - T05 - B": 4}
+
+
+def test_plan_normal_does_not_match_a_different_base():
+    plan = plan_normal_cards({"Novus Storm - T05 - B": 4}, ["Storm Lord - T04 - B"])
+
+    assert plan.missing == ["Novus Storm - T05 - B"]
+
+
+@pytest.mark.parametrize("path", ["A", "B", "C"])
+def test_resolve_tier_handles_any_number_of_upgrade_paths(path: str):
+    """Paths are compared for equality, never ordered, so C works like A and B."""
+    owned = [f"Novus Storm - T01 - {path}", f"Novus Storm - T03 - {path}"]
+
+    assert resolve_tier(f"Novus Storm - T05 - {path}", owned) == f"Novus Storm - T03 - {path}"
+
+
+def test_resolve_tier_does_not_cross_between_three_paths():
+    owned = ["Novus Storm - T05 - A", "Novus Storm - T05 - C"]
+
+    assert resolve_tier("Novus Storm - T05 - B", owned) is None
+
+
+# ---------------------------------------------------------------------------
+# Substitutions are reported, on both routing paths
+# ---------------------------------------------------------------------------
+#
+# A substituted deck is not the deck that was saved. Reporting it was missing
+# for the single-variant path, which is the one that swaps most often: it is
+# what a wizard who has simply not maxed a spell hits on every apply.
+
+
+def test_partition_reports_a_substitution_it_made():
+    routing = partition_addable({"Novus Storm - T05 - B": 4}, ["Novus Storm - T04 - B"])
+
+    assert routing.direct == {"Novus Storm - T04 - B": 4}
+    assert routing.substitutions == {"Novus Storm - T05 - B": "Novus Storm - T04 - B"}
+
+
+def test_partition_reports_no_substitution_for_an_exact_match():
+    routing = partition_addable({"Tempest": 4}, ["Tempest"])
+
+    assert routing.substitutions == {}
+
+
+def test_partition_does_not_pre_report_fusion_substitutions():
+    """Which variant a fusion root resolves to is only known with the flyout open."""
+    routing = partition_addable({"Novus Storm - T05 - B": 4}, ["Novus Storm - T01 - Base"])
+
+    assert routing.fusion == {"Novus Storm - T05 - B": 4}
+    assert routing.substitutions == {}
+
+
+async def test_single_variant_substitution_is_logged(monkeypatch, caplog):
+    """The reported gap: this path swapped the tier without saying so."""
+    _tier_patches(monkeypatch)
+    db = SingleVariantDeckBuilder()
+
+    with caplog.at_level(logging.INFO, logger="bartlebot.deck_io"):
+        await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4}))
+
+    assert "Novus Storm - T04 - B" in caplog.text
+    assert "Novus Storm - T05 - B" in caplog.text
+    assert "in place of" in caplog.text
+
+
+async def test_fusion_substitution_is_logged(monkeypatch, caplog):
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T03 - B"]
+
+    with caplog.at_level(logging.INFO, logger="bartlebot.deck_io"):
+        await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2}))
+
+    assert "Novus Storm - T03 - B" in caplog.text
+    assert "in place of" in caplog.text
+
+
+async def test_both_paths_word_the_substitution_identically(monkeypatch, caplog):
+    """One wording, so a reader does not have to learn that two lines mean the same."""
+    _tier_patches(monkeypatch)
+
+    with caplog.at_level(logging.INFO, logger="bartlebot.deck_io"):
+        await write_deck(SingleVariantDeckBuilder(), DeckData(normal={"Novus Storm - T05 - B": 1}))
+    direct_line = next(m for m in caplog.messages if "in place of" in m)
+
+    caplog.clear()
+    fusion_db = FusionRootDeckBuilder()
+    fusion_db.owned_tiers = ["Novus Storm - T04 - B"]
+    with caplog.at_level(logging.INFO, logger="bartlebot.deck_io"):
+        await write_deck(fusion_db, DeckData(normal={"Novus Storm - T05 - B": 1}))
+    fusion_line = next(m for m in caplog.messages if "in place of" in m)
+
+    assert direct_line == fusion_line
+
+
+async def test_an_exact_match_logs_no_substitution(monkeypatch, caplog):
+    """No crying wolf on a wizard whose spells already match the strategy."""
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+
+    with caplog.at_level(logging.INFO, logger="bartlebot.deck_io"):
+        await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4, "Tempest": 2}))
+
+    assert "in place of" not in caplog.text

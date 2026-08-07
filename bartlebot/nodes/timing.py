@@ -103,6 +103,15 @@ DECK_ITEM_PAGE_SETTLE = 0.3
 DECK_ITEM_TOGGLE_SETTLE = 0.15
 # Pause after toggling one item card slot.
 
+DECK_FUSION_FLYOUT_SETTLE = 0.3
+# Pause after clicking a fusion-root spell ("Novus Storm - T01 - Base") before
+# reading TieredSpellMPUnlockedList. The variant list is populated by the click,
+# so reading immediately can return the previous spell's variants or nothing.
+
+DECK_FUSION_CLICK_SETTLE = 0.05
+# Pause between repeat clicks on one fusion variant, matching the cadence
+# wizwalker uses when adding copies of an ordinary card.
+
 LAUNCH_STAGGER_DELAY = 1.0
 # Seconds to wait between starting successive Wizard101 instances, and between
 # successive auto-login attempts, in a multi-account launch profile. The
