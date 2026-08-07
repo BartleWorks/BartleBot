@@ -377,7 +377,7 @@
       "name": "Level Scaling Players",
       "type": "player_list",
       "default": [
-        1,
+        2,
         3
       ],
       "description": "Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling."
@@ -391,7 +391,7 @@
     {
       "name": "Quicksell (keep nothing)",
       "type": "bool",
-      "default": false,
+      "default": true,
       "description": "Whether or not to quicksell, including Merciless gear, but keeping skeleton keys and socket wrenches."
     }
   ],

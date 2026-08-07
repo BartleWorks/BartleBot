@@ -16,8 +16,8 @@
     "2": {
       "normal": {
         "Epic": 2,
-        "Meteor Strike": 2,
-        "Phantasmania - T03 - A": 1
+        "Bunyips Rage - T04 - A": 1,
+        "Tempest": 2
       },
       "tc": {},
       "item": {
@@ -37,8 +37,8 @@
     "4": {
       "normal": {
         "Epic": 2,
-        "Bunyips Rage - T04 - A": 1,
-        "Tempest": 2
+        "Meteor Strike": 2,
+        "Phantasmania - T03 - A": 1
       },
       "tc": {},
       "item": {
@@ -76,7 +76,7 @@
             "players": [
               2
             ],
-            "dsl": "phantasmania[\"Epic - Amulet\"] @ enemy(0) | meteor[epic] @ enemy"
+            "dsl": "bunyip[\"Epic - Amulet\"] @ enemy(0) | tempest[epic] @ enemy"
           },
           {
             "players": [
@@ -88,7 +88,7 @@
             "players": [
               4
             ],
-            "dsl": "bunyip[\"Epic - Amulet\"] @ enemy(4) | tempest[epic] @ enemy"
+            "dsl": "phantasmania[\"Epic - Amulet\"] @ enemy(4) | meteor[epic] @ enemy"
           }
         ]
       }
