@@ -863,8 +863,12 @@ def test_nested_disclosure_uses_the_same_glyph_size_as_a_section_header(qapp):
     panel = _DuelBindingPanel("Boss")
     panel.load(StateAssignment(state_ids=["s1"]), [], [])
 
+    # The label is a full line tall so the glyph lines up with the first fight
+    # in a multi-fight group; the glyph itself is what must not vary by depth.
+    glyph = panel._disclosure._arrow.pixmap()
+    assert glyph.width() == DISCLOSURE_PX
+    assert glyph.height() == DISCLOSURE_PX
     assert panel._disclosure._arrow.width() == DISCLOSURE_PX
-    assert panel._disclosure._arrow.height() == DISCLOSURE_PX
 
 
 def test_nested_panel_is_indented_below_its_section(qapp):
@@ -898,3 +902,512 @@ def test_a_linked_panel_ignores_expand_requests(qapp):
 
     assert not panel.is_expanded
     assert not panel._config_editor.isVisibleTo(panel)
+
+
+# ---------------------------------------------------------------------------
+# Group titles: one line per fight
+# ---------------------------------------------------------------------------
+#
+# A panel now covers a group of fights rather than exactly one. The membership
+# is listed vertically instead of joined and elided, because a truncated list
+# hides which fights an edit is about to reach.
+
+
+def test_a_single_fight_panel_shows_one_title_line(qapp):
+    """The common case must look exactly as it did before grouping."""
+    panel = _DuelBindingPanel("Defeat Balaur")
+
+    assert panel.titles() == ["Defeat Balaur"]
+    assert panel._disclosure.title() == "Defeat Balaur"
+
+
+def test_every_fight_in_a_group_gets_its_own_line(qapp):
+    panel = _DuelBindingPanel("Boss")
+
+    panel.set_titles(["Tse-Tse", "Spectral", "Goliath", "Starburst"])
+
+    row = panel._disclosure
+    visible = [lbl.full_text() for lbl in row._title_lbls if lbl.isVisibleTo(row)]
+    assert visible == ["Tse-Tse", "Spectral", "Goliath", "Starburst"]
+
+
+def test_no_fight_is_hidden_by_a_long_neighbour(qapp):
+    """Eliding happens per line, so each name keeps its own tooltip."""
+    panel = _DuelBindingPanel("Boss")
+    long_name = "Defeat " + "Extremely Verbose Boss Name " * 5
+
+    panel.set_titles([long_name, "Defeat Balaur"])
+
+    assert panel.titles() == [long_name, "Defeat Balaur"]
+    assert panel._disclosure._title_lbls[1].toolTip() == "Defeat Balaur"
+
+
+def test_shrinking_a_group_hides_the_surplus_lines(qapp):
+    panel = _DuelBindingPanel("Boss")
+    panel.set_titles(["A", "B", "C"])
+
+    panel.set_titles(["A"])
+
+    row = panel._disclosure
+    assert panel.titles() == ["A"]
+    assert [lbl.isVisibleTo(row) for lbl in row._title_lbls] == [True, False, False]
+
+
+def test_growing_a_group_reuses_existing_labels(qapp):
+    """Membership changes while the panel is on screen; destroying widgets
+    mid-refresh is what interrupted in-progress edits before."""
+    panel = _DuelBindingPanel("Boss")
+    first = panel._disclosure._title_lbls[0]
+
+    panel.set_titles(["A", "B"])
+
+    assert panel._disclosure._title_lbls[0] is first
+
+
+def test_title_returns_the_first_fight(qapp):
+    panel = _DuelBindingPanel("Boss")
+    panel.set_titles(["Tse-Tse", "Spectral"])
+
+    assert panel._disclosure.title() == "Tse-Tse"
+
+
+# ---------------------------------------------------------------------------
+# Membership action
+# ---------------------------------------------------------------------------
+
+
+def test_a_state_panel_offers_applies_to(qapp):
+    panel = _DuelBindingPanel("Boss", supports_membership=True)
+    panel.load(StateAssignment(state_ids=["s1"]), [], [])
+
+    panel._rebuild_menu()
+
+    assert any("Applies to" in a.text() for a in panel._menu.actions())
+
+
+def test_the_default_panel_offers_no_applies_to(qapp):
+    """The Default Combat Strategy has no state_ids — it is the fallback for
+    every fight no group claims."""
+    bcs = BotCombatStrategy(name="B", bot_id="bot-1")
+    panel = _DuelBindingPanel("Default")
+    panel.load(_DefaultBinding(bcs), [], [])
+
+    panel._rebuild_menu()
+
+    assert not any("Applies to" in a.text() for a in panel._menu.actions())
+
+
+def test_applies_to_is_offered_for_a_linked_group_too(qapp):
+    dcs = DuelCombatStrategy(name="Shared")
+    panel = _DuelBindingPanel("Boss", supports_membership=True)
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+
+    panel._rebuild_menu()
+
+    texts = [a.text() for a in panel._menu.actions()]
+    assert any("Applies to" in t for t in texts)
+    assert any("Unlink" in t for t in texts)
+
+
+def test_applies_to_emits_membership_requested(qapp):
+    dcs = DuelCombatStrategy(name="Shared")
+    panel = _DuelBindingPanel("Boss", supports_membership=True)
+    # Configured, so the action is enabled — an unassigned fight has nothing to share.
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+    panel._rebuild_menu()
+    seen = []
+    panel.membership_requested.connect(lambda: seen.append(True))
+
+    next(a for a in panel._menu.actions() if "Applies to" in a.text()).trigger()
+
+    assert seen == [True]
+
+
+# ---------------------------------------------------------------------------
+# CombatTab — grouping
+# ---------------------------------------------------------------------------
+#
+# One Duel Strategy, one row, however many fights use it. The old arrangement
+# drew one panel per fight and backed several of them with the same object, so
+# editing one silently edited all of them while the rest showed stale summaries.
+
+
+def _multi_config(*labels: str) -> BotConfig:
+    """A bot with one exposed combat state per label, ids state_1..state_N."""
+    states = [StateModel(id="s0", node_type="sleep")]
+    states += [
+        StateModel(
+            id=f"state_{i}",
+            node_type="handle_combat",
+            label=label,
+            params={"use_default_strategy": False},
+        )
+        for i, label in enumerate(labels, start=1)
+    ]
+    return BotConfig(name="Multi Bot", initial="s0", states=states, transitions=[])
+
+
+def _tab_with(bcs: BotCombatStrategy, config: BotConfig) -> CombatTab:
+    from bartlebot.settings_manager import SettingsManager
+
+    config.id = bcs.bot_id
+    store_mod.save_bot_strategy(bcs)
+    SettingsManager.instance().set_active_strategy(config.id, bcs.id)
+    tab = CombatTab()
+    tab.set_config(config)
+    return tab
+
+
+def _linked_bcs(dcs_id: str, *groups: list[str]) -> BotCombatStrategy:
+    return BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=list(g), duel_combat_strategy_id=dcs_id) for g in groups],
+    )
+
+
+def _saved_dcs(name: str = "Shared") -> DuelCombatStrategy:
+    dcs = DuelCombatStrategy(name=name)
+    store_mod.save_duel_strategy(dcs)
+    return dcs
+
+
+def test_fights_sharing_a_strategy_draw_one_panel(qapp, store):
+    """Mirror Lake: four fights, one Scald Incindiate, one row."""
+    dcs = _saved_dcs("Scald Incindiate")
+    bcs = _linked_bcs(dcs.id, ["state_1", "state_2", "state_3", "state_4"])
+    tab = _tab_with(bcs, _multi_config("Tse-Tse", "Spectral", "Goliath", "Starburst"))
+
+    assert len(tab._group_panels()) == 1
+    assert tab._group_panels()[0].titles() == ["Tse-Tse", "Spectral", "Goliath", "Starburst"]
+
+
+def test_every_fight_in_a_group_resolves_to_the_same_panel(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1", "state_2"]), _multi_config("A", "B"))
+
+    assert tab._state_panels["state_1"] is tab._state_panels["state_2"]
+
+
+def test_separate_assignments_naming_one_strategy_are_drawn_once(qapp, store):
+    """The shape bot_strategies/f77a6a91 is in: two rows before, one now."""
+    dcs = _saved_dcs("AoE spam")
+    bcs = _linked_bcs(dcs.id, ["state_1"], ["state_2"])
+    tab = _tab_with(bcs, _multi_config("Chief Whip", "Noxious Gas Golem"))
+
+    assert len(tab._group_panels()) == 1
+    assert tab._group_panels()[0].titles() == ["Chief Whip", "Noxious Gas Golem"]
+
+
+def test_unassigned_fights_stay_on_their_own_rows(qapp, store):
+    """Not collapsed: giving one fight a strategy must stay a single click."""
+    tab = _tab_with(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B", "C"))
+
+    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"], ["C"]]
+
+
+def test_configured_groups_are_drawn_above_unassigned_fights(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_2"]), _multi_config("A", "B", "C"))
+
+    assert [p.titles() for p in tab._group_panels()] == [["B"], ["A"], ["C"]]
+
+
+def test_the_divider_appears_only_with_fights_on_both_sides(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
+
+    assert not tab._group_divider.isHidden()
+
+
+def test_no_divider_when_every_fight_is_unassigned(qapp, store):
+    tab = _tab_with(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    assert tab._group_divider.isHidden()
+
+
+def test_no_divider_when_every_fight_is_configured(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1", "state_2"]), _multi_config("A", "B"))
+
+    assert tab._group_divider.isHidden()
+
+
+def test_the_divider_survives_a_rebuild(qapp, store):
+    """It is persistent so its themed stylesheet is not rebuilt away."""
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
+    divider = tab._group_divider
+
+    tab._rebuild_state_assignments()
+
+    assert tab._group_divider is divider
+    assert not divider.isHidden()
+
+
+# ---------------------------------------------------------------------------
+# CombatTab — regrouping when a link changes
+# ---------------------------------------------------------------------------
+
+
+def test_linking_a_fight_to_an_in_use_strategy_merges_the_rows(qapp, store):
+    """The whole point: pick a strategy another row uses and they become one."""
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
+    assert len(tab._group_panels()) == 2
+
+    loose = tab._state_panels["state_2"]
+    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = dcs.id
+        loose._on_pick_link()
+
+    assert len(tab._group_panels()) == 1
+    assert tab._group_panels()[0].titles() == ["A", "B"]
+    assert tab._state_panels["state_1"] is tab._state_panels["state_2"]
+
+
+def test_a_merged_group_is_saved_as_one_assignment(qapp, store):
+    dcs = _saved_dcs()
+    bcs = _linked_bcs(dcs.id, ["state_1"])
+    tab = _tab_with(bcs, _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = dcs.id
+        tab._state_panels["state_2"]._on_pick_link()
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert len(saved.state_assignments) == 1
+    assert saved.state_assignments[0].state_ids == ["state_1", "state_2"]
+
+
+def test_clearing_a_link_moves_the_whole_group_below_the_divider(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1"], ["state_2"]), _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = None
+        tab._group_panels()[0]._on_pick_link()
+
+    # Both fights unlinked together — they were one group.
+    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"]]
+    assert tab._group_divider.isHidden()
+
+
+def test_typing_in_the_inline_editor_does_not_rebuild_the_panels(qapp, store):
+    """changed fires per keystroke; a rebuild there would destroy the editor."""
+    tab = _tab_with(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    panel = tab._state_panels["state_1"]
+    panel.set_expanded(True)
+
+    panel._config_editor._min_spin.setValue(3)
+
+    assert tab._state_panels["state_1"] is panel
+    assert panel.is_expanded
+
+
+# ---------------------------------------------------------------------------
+# CombatTab — Applies to...
+# ---------------------------------------------------------------------------
+
+
+def test_applies_to_adds_a_fight_to_the_group(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
+    assignment = tab._state_bindings["state_1"]
+
+    with patch("bartlebot.gui.sidebar.applies_to_dialog.AppliesToDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_ids.return_value = ["state_1", "state_2"]
+        tab._on_edit_membership(assignment)
+
+    assert tab._group_panels()[0].titles() == ["A", "B"]
+    assert tab._state_bindings["state_2"] is assignment
+
+
+def test_applies_to_cancel_changes_nothing(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
+    assignment = tab._state_bindings["state_1"]
+
+    with patch("bartlebot.gui.sidebar.applies_to_dialog.AppliesToDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = False
+        MockDlg.return_value.selected_ids.return_value = ["state_1", "state_2"]
+        tab._on_edit_membership(assignment)
+
+    assert assignment.state_ids == ["state_1"]
+
+
+def test_removing_a_fight_from_an_inline_group_keeps_its_config(qapp, store):
+    """Decision: the departing fight deep-copies the DSL so it goes on working."""
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(
+                state_ids=["state_1", "state_2"],
+                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
+            )
+        ],
+    )
+    tab = _tab_with(bcs, _multi_config("A", "B"))
+    assignment = tab._state_bindings["state_1"]
+
+    with patch("bartlebot.gui.sidebar.applies_to_dialog.AppliesToDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_ids.return_value = ["state_1"]
+        tab._on_edit_membership(assignment)
+
+    detached = tab._state_bindings["state_2"]
+    assert detached is not assignment
+    assert detached.duel_config.player_assignments[0].dsl == "blade"
+    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"]]
+
+
+def test_membership_edits_are_saved_immediately(qapp, store):
+    """Structural, so it bypasses the debounce timer."""
+    dcs = _saved_dcs()
+    bcs = _linked_bcs(dcs.id, ["state_1"])
+    tab = _tab_with(bcs, _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.applies_to_dialog.AppliesToDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_ids.return_value = ["state_1", "state_2"]
+        tab._on_edit_membership(tab._state_bindings["state_1"])
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert saved.state_assignments[0].state_ids == ["state_1", "state_2"]
+
+
+def test_binding_descriptions_match_the_chip_wording(qapp, store):
+    dcs = _saved_dcs("Scald Incindiate")
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(state_ids=["state_1"], duel_combat_strategy_id=dcs.id),
+            StateAssignment(
+                state_ids=["state_2"],
+                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")]),
+            ),
+        ],
+    )
+    tab = _tab_with(bcs, _multi_config("A", "B", "C"))
+
+    assert tab._describe_state_binding("state_1") == "Scald Incindiate"
+    assert tab._describe_state_binding("state_2") == "(custom)"
+    assert tab._describe_state_binding("state_3") == _STATE_INHERIT_LABEL
+
+
+def _applies_to(panel):
+    panel._rebuild_menu()
+    return next(a for a in panel._menu.actions() if "Applies to" in a.text())
+
+
+def test_applies_to_is_disabled_on_an_unassigned_fight(qapp):
+    """A group of fights holding no config is what split_unconfigured undoes,
+    so offering it would look like an edit that quietly reverted itself."""
+    panel = _DuelBindingPanel("Boss", supports_membership=True)
+    panel.load(StateAssignment(state_ids=["s1"]), [], [])
+
+    action = _applies_to(panel)
+
+    assert not action.isEnabled()
+    assert "nothing to share" in action.toolTip()
+
+
+def test_applies_to_is_enabled_once_a_fight_has_an_inline_config(qapp):
+    binding = StateAssignment(
+        state_ids=["s1"],
+        duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
+    )
+    panel = _DuelBindingPanel("Boss", supports_membership=True)
+    panel.load(binding, [], [])
+
+    assert _applies_to(panel).isEnabled()
+
+
+def test_applies_to_is_enabled_on_a_linked_group(qapp):
+    dcs = DuelCombatStrategy(name="Shared")
+    panel = _DuelBindingPanel("Boss", supports_membership=True)
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+
+    assert _applies_to(panel).isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Grouping rail
+# ---------------------------------------------------------------------------
+#
+# Stacked fight names read as a list, but not necessarily as a list that means
+# "all of these use the strategy on the right". The rail is what says so.
+
+
+def test_no_rail_is_drawn_beside_a_single_fight(qapp):
+    """It would claim a group that does not exist."""
+    panel = _DuelBindingPanel("Defeat Balaur")
+
+    assert not panel._rail.is_active()
+
+
+def test_a_rail_is_drawn_once_fights_are_grouped(qapp):
+    panel = _DuelBindingPanel("Boss")
+
+    panel.set_titles(["Defeat Izft", "Defeat Apep", "Defeat Ammit"])
+
+    assert panel._rail.is_active()
+
+
+def test_the_rail_goes_away_when_a_group_drops_to_one_fight(qapp):
+    panel = _DuelBindingPanel("Boss")
+    panel.set_titles(["A", "B"])
+
+    panel.set_titles(["A"])
+
+    assert not panel._rail.is_active()
+
+
+def test_the_rail_column_is_reserved_whether_or_not_it_is_drawn(qapp):
+    """Nothing shifts between a one-fight row and a four-fight row — the same
+    reason the withdrawn disclosure arrow keeps its slot."""
+    single = _DuelBindingPanel("Only")
+    grouped = _DuelBindingPanel("Boss")
+    grouped.set_titles(["A", "B"])
+
+    assert single._rail.width() == grouped._rail.width()
+
+
+def test_the_default_panel_never_shows_a_rail(qapp):
+    bcs = BotCombatStrategy(name="B", bot_id="bot-1")
+    panel = _DuelBindingPanel("Default")
+    panel.load(_DefaultBinding(bcs), [], [])
+
+    assert not panel._rail.is_active()
+
+
+def test_the_rail_brackets_the_whole_panel_not_just_the_names(qapp):
+    """It spans the summary and the inline editor too, so it says "this block is
+    one group" rather than "these names belong together"."""
+    binding = StateAssignment(state_ids=["s1", "s2"])
+    panel = _DuelBindingPanel("Boss")
+    panel.set_titles(["A", "B"])
+    panel.load(binding, [], [])
+    panel.set_expanded(True)
+    panel.resize(panel.sizeHint())
+
+    assert panel._rail.height() >= panel._disclosure.height()
+
+
+def test_a_grouped_panel_in_the_tab_gets_a_rail(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_with(_linked_bcs(dcs.id, ["state_1", "state_2"]), _multi_config("A", "B"))
+
+    assert tab._group_panels()[0]._rail.is_active()
+
+
+def test_unassigned_rows_get_no_rail(qapp, store):
+    tab = _tab_with(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    assert [p._rail.is_active() for p in tab._group_panels()] == [False, False]

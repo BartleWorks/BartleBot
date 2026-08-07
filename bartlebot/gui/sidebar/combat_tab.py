@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from functools import partial
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFontMetrics
+from PyQt6.QtGui import QColor, QFontMetrics, QPainter
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -30,6 +31,12 @@ from bartlebot.bot.strategy_models import (
     DuelConfig,
     PlayerCombatStrategy,
     StateAssignment,
+)
+from bartlebot.combat_grouping import (
+    apply_membership,
+    build_bindings,
+    group_bindings,
+    state_label,
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.gui.icon_utils import svg_icon
@@ -76,6 +83,11 @@ _DSL_PREVIEW_CHARS = 28
 # bot default would be skipped, and contradicted the pre-run warning text.
 _STATE_INHERIT_LABEL = "(bot default)"
 _STATE_INHERIT_META = "No override — uses the Default Combat Strategy above"
+_UNASSIGNED_DIVIDER = "Using the bot default"
+
+_RAIL_WIDTH_PX = 2  # the drawn rule
+_RAIL_SLOT_PX = 3  # column reserved for it, drawn or not
+_RAIL_GAP_PX = 5  # breathing room between the rule and the content it brackets
 
 
 # ---------------------------------------------------------------------------
@@ -445,14 +457,62 @@ class _DefaultBinding:
 # ---------------------------------------------------------------------------
 
 
+class _GroupRail(QWidget):
+    """Vertical rule bracketing a panel whose fights share one Duel Strategy.
+
+    Several fight names stacked in a header read as a list, but not necessarily
+    as a list that means "all of these use the strategy on the right".  The rail
+    is what says so, and it spans the panel's whole height — the fights, the
+    summary and the inline editor — so the claim is "this entire block is one
+    group", not merely "these names belong together".
+
+    The column is reserved whether or not the rule is drawn, so a one-fight
+    panel and a four-fight panel keep their contents on the same left edge.
+    Same reasoning as the disclosure arrow's slot, which survives being
+    withdrawn precisely so the titles stay aligned.
+
+    THEME is read at paint time, so this needs no ``changeEvent`` hook to
+    survive a theme switch.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._active = False
+        self.setFixedWidth(_RAIL_SLOT_PX)
+
+    def is_active(self) -> bool:
+        return self._active
+
+    def set_active(self, active: bool) -> None:
+        if active != self._active:
+            self._active = active
+            self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: ARG002, N802 — Qt naming
+        if not self._active:
+            return
+        painter = QPainter(self)
+        # THEME.border, not an accent: the rail is structure, and it must not
+        # compete with the fight names it is grouping.
+        painter.fillRect(0, 0, _RAIL_WIDTH_PX, self.height(), QColor(THEME.border))
+        painter.end()
+
+
 class _DisclosureRow(QWidget):
-    """Arrow + title that behaves as one click target, like a SidebarSection header.
+    """Arrow + one title line per fight, behaving as one click target.
 
     Deliberately not a QToolButton: an auto-raise button brings its own hover
     frame, pressed state and checked highlight, which made a nested duel panel
     look like a different kind of control from the section header directly above
     it rather than one level down from it.  Same glyph, same size, same
     treatment at every depth — only the indent and the tint change.
+
+    A panel now covers a *group* of fights, so the title is a list.  The fights
+    are stacked vertically rather than joined into one elided string: a joined
+    title truncates, and a membership list that ends early hides which fights an
+    edit is about to reach.  One line each also lets a long name elide against
+    its own width, with its own tooltip, instead of eating the space its
+    neighbours needed.
     """
 
     clicked = pyqtSignal()
@@ -463,24 +523,55 @@ class _DisclosureRow(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
+        # Boxed to one line's height and centred within it, so the glyph lines up
+        # with the *first* fight rather than floating against the whole stack.
         self._arrow = QLabel()
-        self._arrow.setFixedSize(DISCLOSURE_PX, DISCLOSURE_PX)
-        layout.addWidget(self._arrow)
+        self._arrow.setFixedSize(DISCLOSURE_PX, QFontMetrics(self.font()).height())
+        self._arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._arrow, 0, Qt.AlignmentFlag.AlignTop)
 
-        # Elided: this is the FSM state's label, which the bot author writes
-        # freely ("Defeat Preceptor of Order").  It is the only part of a
-        # collapsed panel whose width scales with user data.
-        self._title_lbl = ElidedLabel(title)
-        layout.addWidget(self._title_lbl)
+        # Elided per line: these are FSM state labels, which the bot author
+        # writes freely ("Defeat Preceptor of Order").  They are the only part of
+        # a collapsed panel whose width scales with user data.
+        self._titles_layout = QVBoxLayout()
+        self._titles_layout.setContentsMargins(0, 0, 0, 0)
+        self._titles_layout.setSpacing(0)
+        layout.addLayout(self._titles_layout, 1)
+
+        self._title_lbls: list[ElidedLabel] = []
+        self._titles: list[str] = []
+        self.set_title(title)
 
         self._interactive = True
         self.set_expanded(False)
 
     def set_title(self, title: str) -> None:
-        self._title_lbl.setText(title)
+        self.set_titles([title])
+
+    def set_titles(self, titles: list[str]) -> None:
+        """Show one line per fight, reusing label widgets across refreshes.
+
+        Surplus labels are hidden rather than destroyed: membership changes
+        while the panel is on screen, and deleting widgets mid-refresh is how
+        the old per-state rebuild interrupted in-progress edits.
+        """
+        self._titles = list(titles)
+        while len(self._title_lbls) < len(self._titles):
+            lbl = ElidedLabel()
+            self._titles_layout.addWidget(lbl)
+            self._title_lbls.append(lbl)
+        for lbl, text in zip(self._title_lbls, self._titles):
+            lbl.setText(text)
+            lbl.show()
+        for lbl in self._title_lbls[len(self._titles) :]:
+            lbl.hide()
 
     def title(self) -> str:
-        return self._title_lbl.text()
+        """The first fight's label — what a single-fight panel shows."""
+        return self._titles[0] if self._titles else ""
+
+    def titles(self) -> list[str]:
+        return list(self._titles)
 
     def set_expanded(self, expanded: bool) -> None:
         # Nested level: muted tint against the section header's icon_tint.
@@ -521,6 +612,12 @@ class _DuelBindingPanel(QWidget):
     changed = pyqtSignal()
     presets_changed = pyqtSignal()  # a new library DCS or PCS was created
     edit_in_library_requested = pyqtSignal(str)  # dcs_id
+    membership_requested = pyqtSignal()  # user asked to edit which fights this group covers
+    # Linking, unlinking or promoting can change how panels *group*: picking a
+    # strategy another panel already uses merges the two.  Kept separate from
+    # ``changed``, which fires on every keystroke in the inline DSL editor and
+    # must never trigger a rebuild that would destroy the editor being typed in.
+    linkage_changed = pyqtSignal()
 
     def __init__(
         self,
@@ -528,6 +625,7 @@ class _DuelBindingPanel(QWidget):
         empty_label: str = _BUILT_IN_LABEL,
         empty_meta: str = _NOT_CONFIGURED_LABEL,
         parent=None,
+        supports_membership: bool = False,
     ):
         super().__init__(parent)
         self._binding = None
@@ -537,12 +635,22 @@ class _DuelBindingPanel(QWidget):
         self._editable = True
         self._empty_label = empty_label
         self._empty_meta = empty_meta
+        # False for the Default Combat Strategy, which has no state_ids to edit —
+        # it is the fallback for every fight that no group claims.
+        self._supports_membership = supports_membership
 
-        outer = QVBoxLayout(self)
         # Indented one level: this panel is a child of the enclosing
         # SidebarSection, and the inset is what makes that relationship visible.
-        outer.setContentsMargins(NEST_INDENT_PX, 0, 0, 0)
+        spine = QHBoxLayout(self)
+        spine.setContentsMargins(NEST_INDENT_PX, 0, 0, 0)
+        spine.setSpacing(_RAIL_GAP_PX)
+        self._rail = _GroupRail()
+        spine.addWidget(self._rail)
+
+        outer = QVBoxLayout()
+        outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(1)
+        spine.addLayout(outer, 1)
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
@@ -556,7 +664,10 @@ class _DuelBindingPanel(QWidget):
         self._chip.setMaximumWidth(160)
         self._chip.setToolTip("Click to link a Duel Strategy from the library")
         self._chip.clicked.connect(self._on_pick_link)
-        header.addWidget(self._chip, 1)
+        # Top-aligned against the first fight: the chip describes the whole
+        # group, so centring it against a four-line title would leave it
+        # floating beside no particular fight.
+        header.addWidget(self._chip, 1, Qt.AlignmentFlag.AlignTop)
 
         self._menu_btn = QToolButton()
         self._menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
@@ -565,9 +676,11 @@ class _DuelBindingPanel(QWidget):
         self._menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
         self._menu = QMenu(self._menu_btn)
+        # A disabled action has to be able to say why — see _rebuild_menu.
+        self._menu.setToolTipsVisible(True)
         self._menu.aboutToShow.connect(self._rebuild_menu)
         self._menu_btn.setMenu(self._menu)
-        header.addWidget(self._menu_btn)
+        header.addWidget(self._menu_btn, 0, Qt.AlignmentFlag.AlignTop)
 
         outer.addLayout(header)
 
@@ -597,6 +710,15 @@ class _DuelBindingPanel(QWidget):
         self._all_pcs = all_pcs
         self._expanded = False
         self._refresh()
+
+    def set_titles(self, titles: list[str]) -> None:
+        """Name every fight this panel governs, one per line."""
+        self._disclosure.set_titles(titles)
+        # A rail beside a single fight would claim a group that does not exist.
+        self._rail.set_active(len(titles) > 1)
+
+    def titles(self) -> list[str]:
+        return self._disclosure.titles()
 
     def set_libraries(self, all_dcs: list[DuelCombatStrategy], all_pcs: list[PlayerCombatStrategy]) -> None:
         """Update the reference lists without disturbing expand state or in-progress edits."""
@@ -715,6 +837,7 @@ class _DuelBindingPanel(QWidget):
             self._expanded = False
             self._refresh()
             self.changed.emit()
+            self.linkage_changed.emit()
 
     def _rebuild_menu(self) -> None:
         self._menu.clear()
@@ -726,6 +849,18 @@ class _DuelBindingPanel(QWidget):
         else:
             action = self._menu.addAction("Save as preset…", self._on_promote)
             action.setEnabled(not self._binding.duel_config.is_empty())
+        if self._supports_membership:
+            # Separated: everything above changes *what* this group does, this
+            # changes *which* fights it does it to.
+            self._menu.addSeparator()
+            action = self._menu.addAction("Applies to…", self.membership_requested.emit)
+            # Nothing to share yet, and a group of fights holding no config is
+            # exactly what split_unconfigured pulls back apart — so offering it
+            # here would look like an edit that quietly undid itself.
+            configured = self._binding.is_linked or not self._binding.duel_config.is_empty()
+            action.setEnabled(configured)
+            if not configured:
+                action.setToolTip("Give this fight a strategy first — there is nothing to share yet")
 
     def _on_unlink(self) -> None:
         """Fork the linked strategy's fields back into this binding as an inline copy."""
@@ -740,6 +875,7 @@ class _DuelBindingPanel(QWidget):
         self._binding.duel_combat_strategy_id = None
         self._refresh()
         self.changed.emit()
+        self.linkage_changed.emit()
 
     def _on_edit_in_library(self) -> None:
         if self._binding is not None and self._binding.duel_combat_strategy_id:
@@ -767,6 +903,7 @@ class _DuelBindingPanel(QWidget):
         self._expanded = False
         self._refresh()
         self.changed.emit()
+        self.linkage_changed.emit()
         self.presets_changed.emit()
 
     def changeEvent(self, event: QEvent) -> None:
@@ -875,6 +1012,12 @@ class CombatTab(QWidget):
         self._no_assignments_lbl = QLabel("No exposed combat states")
         self._no_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
         self._assignments_layout.addWidget(self._no_assignments_lbl)
+        # Separates configured groups from the fights that fall through to the
+        # bot default.  Persistent rather than rebuilt so its themed stylesheet
+        # survives a rebuild; ``_rebuild_state_assignments`` re-places it.
+        self._group_divider = QLabel(_UNASSIGNED_DIVIDER)
+        self._group_divider.setStyleSheet(f"color: {THEME.text_muted};")
+        self._group_divider.hide()
         self._assignments_section.set_content_layout(self._assignments_layout)
         self._content_layout.addWidget(self._assignments_section)
 
@@ -938,8 +1081,13 @@ class CombatTab(QWidget):
             self._all_bcs = list_bot_strategies(self._config.id)
         self._refresh_bcs_chip()
         self._default_panel.set_libraries(self._all_dcs, self._all_pcs)
-        for panel in self._state_panels.values():
+        for panel in self._group_panels():
             panel.set_libraries(self._all_dcs, self._all_pcs)
+
+    def _group_panels(self) -> list[_DuelBindingPanel]:
+        """Each panel once — ``_state_panels`` maps every fight in a group to the
+        same widget, so its values repeat."""
+        return list(dict.fromkeys(self._state_panels.values()))
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
@@ -947,7 +1095,7 @@ class CombatTab(QWidget):
         self._bcs_menu_btn.setEnabled(editable)
         self._decks_section.set_editable(editable)
         self._default_panel.set_editable(editable)
-        for panel in self._state_panels.values():
+        for panel in self._group_panels():
             panel.set_editable(editable)
 
     def set_client_count(self, count: int) -> None:
@@ -976,9 +1124,7 @@ class CombatTab(QWidget):
             if active_id != self._bcs.id:
                 SettingsManager.instance().set_active_strategy(self._config.id, self._bcs.id)
         if self._bcs is not None:
-            for assignment in self._bcs.state_assignments:
-                for sid in assignment.state_ids:
-                    self._state_bindings[sid] = assignment
+            self._state_bindings = build_bindings(self._bcs.state_assignments)
 
     def _ensure_state_binding(self, state_id: str) -> StateAssignment:
         """Return this state's binding, creating an empty in-memory one if absent.
@@ -1166,19 +1312,27 @@ class CombatTab(QWidget):
         self._refresh_deck_summaries()
 
     def _rebuild_state_assignments(self) -> None:
-        """Full rebuild: destroys and recreates one panel per exposed state.
+        """Full rebuild: destroys and recreates one panel per *group* of fights.
 
-        Only call this when the *set* of exposed states may have changed
-        (config load, or the FSM canvas edited states while this tab was
-        hidden) — it destroys existing panel widgets, which would interrupt an
-        in-progress inline edit.  Data-only refreshes go through
-        ``refresh_strategy_data`` / panel.set_libraries instead.
+        A Duel Strategy is drawn once however many fights use it — several
+        panels backed by one ``StateAssignment`` was the old arrangement, and it
+        meant editing any of them silently edited all of them while the others
+        went on showing stale summaries.
+
+        Only call this when the set of exposed states, or the way they group, may
+        have changed (config load, a strategy relinked, membership edited) — it
+        destroys existing panel widgets, which would interrupt an in-progress
+        inline edit.  Data-only refreshes go through ``refresh_strategy_data`` /
+        panel.set_libraries instead.
         """
         while self._assignments_layout.count() > 1:
             item = self._assignments_layout.takeAt(1)
-            if item and item.widget():
-                item.widget().deleteLater()
+            widget = item.widget() if item else None
+            # The divider outlives the rebuild — it is re-placed below.
+            if widget is not None and widget is not self._group_divider:
+                widget.deleteLater()
         self._state_panels.clear()
+        self._group_divider.hide()
 
         if self._config is None:
             self._no_assignments_lbl.show()
@@ -1191,20 +1345,93 @@ class CombatTab(QWidget):
 
         self._no_assignments_lbl.hide()
         for state in exposed:
-            binding = self._ensure_state_binding(state.id)
+            self._ensure_state_binding(state.id)
+        groups = group_bindings(self._state_bindings, exposed)
+
+        # Only worth a divider when there is something on both sides of it.
+        show_divider = any(g.is_configured for g in groups) and any(not g.is_configured for g in groups)
+        divider_placed = False
+
+        for group in groups:
+            if show_divider and not divider_placed and not group.is_configured:
+                self._assignments_layout.addWidget(self._group_divider)
+                self._group_divider.show()
+                divider_placed = True
+
             panel = _DuelBindingPanel(
-                state.label or state.id,
+                "",
                 _STATE_INHERIT_LABEL,
                 _STATE_INHERIT_META,
                 parent=self._assignments_section,
+                supports_membership=True,
             )
-            panel.load(binding, self._all_dcs, self._all_pcs)
+            panel.set_titles([state_label(s) for s in group.states])
+            panel.load(group.assignment, self._all_dcs, self._all_pcs)
             panel.set_editable(self._editable)
             panel.changed.connect(self._schedule_save)
             panel.presets_changed.connect(self._on_presets_changed)
             panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
+            panel.linkage_changed.connect(self._on_linkage_changed)
+            panel.membership_requested.connect(partial(self._on_edit_membership, group.assignment))
             self._assignments_layout.addWidget(panel)
-            self._state_panels[state.id] = panel
+            # Keyed per state, so every fight in a group resolves to its panel.
+            for state in group.states:
+                self._state_panels[state.id] = panel
+
+    def _on_linkage_changed(self) -> None:
+        """A panel linked, unlinked or promoted — groups may have merged or split."""
+        self._regroup_bindings()
+        self._rebuild_state_assignments()
+        self._save_bcs_immediate()
+
+    def _regroup_bindings(self) -> None:
+        """Re-merge bindings that now share a Duel Strategy.
+
+        Linking a fight to a strategy another panel already uses leaves two
+        objects naming one strategy; ``build_bindings`` folds them together so
+        the next rebuild draws a single row, which is the whole point.
+        """
+        distinct = list({id(a): a for a in self._state_bindings.values()}.values())
+        self._state_bindings = build_bindings(distinct)
+
+    def _on_edit_membership(self, assignment: StateAssignment) -> None:
+        """Show "Applies to…" for one group and commit the result."""
+        if self._config is None:
+            return
+        from bartlebot.gui.sidebar.applies_to_dialog import AppliesToDialog  # noqa: PLC0415
+
+        exposed = exposed_combat_states(self._config)
+        dlg = AppliesToDialog(
+            strategy_name=self._describe_binding_of(assignment),
+            exposed=exposed,
+            chosen_ids=list(assignment.state_ids),
+            describe=self._describe_state_binding,
+            parent=self,
+        )
+        if not dlg.exec():
+            return
+        apply_membership(self._state_bindings, assignment, dlg.selected_ids())
+        # Re-asserts both invariants before anything is drawn from the result.
+        self._regroup_bindings()
+        self._rebuild_state_assignments()
+        # Structural, so it bypasses the debounce: a half-applied membership is
+        # not something to leave sitting on a timer.
+        self._save_bcs_immediate()
+
+    def _describe_state_binding(self, state_id: str) -> str:
+        binding = self._state_bindings.get(state_id)
+        if binding is None:
+            return _STATE_INHERIT_LABEL
+        return self._describe_binding_of(binding)
+
+    def _describe_binding_of(self, binding: StateAssignment) -> str:
+        """The same words the panel's chip uses, so the dialog reads as the same thing."""
+        if binding.is_linked:
+            dcs = next((d for d in self._all_dcs if d.id == binding.duel_combat_strategy_id), None)
+            return dcs.name if dcs is not None else "(missing strategy)"
+        if binding.duel_config.is_empty():
+            return _STATE_INHERIT_LABEL
+        return "(custom)"
 
     def _on_presets_changed(self) -> None:
         """A panel promoted its inline config to a new library DuelCombatStrategy."""
@@ -1235,11 +1462,7 @@ class CombatTab(QWidget):
             chosen = dlg.selected_id()
             if chosen:
                 self._bcs = next((b for b in self._all_bcs if b.id == chosen), None)
-                self._state_bindings = {}
-                if self._bcs is not None:
-                    for assignment in self._bcs.state_assignments:
-                        for sid in assignment.state_ids:
-                            self._state_bindings[sid] = assignment
+                self._state_bindings = build_bindings(self._bcs.state_assignments) if self._bcs else {}
                 SettingsManager.instance().set_active_strategy(self._config.id, chosen)
                 self._rebuild_state_assignments()
                 self._refresh_bcs_chip()
@@ -1283,10 +1506,7 @@ class CombatTab(QWidget):
         save_bot_strategy(new_bcs)
         self._all_bcs.append(new_bcs)
         self._bcs = new_bcs
-        self._state_bindings = {}
-        for assignment in new_bcs.state_assignments:
-            for sid in assignment.state_ids:
-                self._state_bindings[sid] = assignment
+        self._state_bindings = build_bindings(new_bcs.state_assignments)
         SettingsManager.instance().set_active_strategy(self._config.id, new_bcs.id)
         self._rebuild_state_assignments()
         self._refresh_bcs_chip()
@@ -1311,11 +1531,7 @@ class CombatTab(QWidget):
         self._all_bcs = [b for b in self._all_bcs if b.id != to_delete.id]
         delete_bot_strategy(to_delete.id)
         self._bcs = self._all_bcs[0] if self._all_bcs else None
-        self._state_bindings = {}
-        if self._bcs is not None:
-            for assignment in self._bcs.state_assignments:
-                for sid in assignment.state_ids:
-                    self._state_bindings[sid] = assignment
+        self._state_bindings = build_bindings(self._bcs.state_assignments) if self._bcs else {}
         new_active = self._bcs.id if self._bcs else None
         SettingsManager.instance().set_active_strategy(self._config.id, new_active)
         self._rebuild_state_assignments()
@@ -1356,3 +1572,4 @@ class CombatTab(QWidget):
             self._bcs_menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
             self._bcs_meta_lbl.setStyleSheet(f"color: {THEME.text_muted};")
             self._no_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+            self._group_divider.setStyleSheet(f"color: {THEME.text_muted};")
