@@ -1,7 +1,97 @@
 {
   "id": "52cf6be1-dee3-4c23-bd8a-9e8506224065",
-  "name": "4-player Hall of Heroes (2 max storms)",
+  "name": "4-player Hall of Heroes (2 players scaled)",
   "bot_id": "602704e3-45d1-4232-a64a-9c012f870cf3",
-  "player_decks": {},
-  "state_assignments": []
+  "player_decks": {
+    "1": {
+      "normal": {
+        "Sharpened Blade": 3,
+        "Tri Blade": 3
+      },
+      "tc": {},
+      "item": {
+        "Feint Mass - Amulet": 1
+      }
+    },
+    "2": {
+      "normal": {
+        "Epic": 2,
+        "Meteor Strike": 2,
+        "Phantasmania - T03 - A": 1
+      },
+      "tc": {},
+      "item": {
+        "Epic - Amulet": 1
+      }
+    },
+    "3": {
+      "normal": {
+        "Sharpened Blade": 3,
+        "Tri Blade": 3
+      },
+      "tc": {},
+      "item": {
+        "Feint Mass - Amulet": 1
+      }
+    },
+    "4": {
+      "normal": {
+        "Epic": 2,
+        "Bunyips Rage - T04 - A": 1,
+        "Tempest": 2
+      },
+      "tc": {},
+      "item": {
+        "Epic - Amulet": 1
+      }
+    }
+  },
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_6"
+      ],
+      "duel_config": {
+        "min_players": 1,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1
+            ],
+            "dsl": "feint mass @ enemy(0) | any<blade>[sharp] @ ally(0)"
+          },
+          {
+            "players": [
+              2
+            ],
+            "dsl": "phantasmania[\"Epic - Amulet\"] @ enemy(0) | meteor[epic] @ enemy"
+          },
+          {
+            "players": [
+              3
+            ],
+            "dsl": "feint mass @ enemy(4) | any<blade>[sharp] @ ally(2)"
+          },
+          {
+            "players": [
+              4
+            ],
+            "dsl": "bunyip[\"Epic - Amulet\"] @ enemy(4) | tempest[epic] @ enemy"
+          }
+        ]
+      }
+    }
+  ]
 }

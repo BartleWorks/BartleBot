@@ -6,8 +6,6 @@
   "clients": "all",
   "initial": "state_35",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\npass",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Krokotopia",
   "drops": [
     "Ancient Rebus Headgear",
