@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
@@ -45,6 +45,7 @@ from wizwalker.memory.memory_objects.window import (
     DynamicDeckListControl,
 )
 
+from bartlebot.card_kinds import classify_effects
 from bartlebot.nodes.timing import (
     DECK_APPLY_TIMEOUT,
     DECK_FUSION_CLICK_SETTLE,
@@ -135,6 +136,39 @@ class CardRouting:
     fusion: dict[str, int]  # needs its variant flyout opened; resolved at click time
     substitutions: dict[str, str]  # requested name → the entry used instead
     unresolvable: list[str]  # matched a base, but no usable variant
+
+
+@dataclass
+class DeckApplyReport:
+    """What actually happened to the deck, so the caller can say so.
+
+    A partial apply used to be indistinguishable from a clean one: ``write_deck``
+    returned ``None`` and wrote its findings to the log, so a wizard missing
+    three of a shared deck's cards got a half-built deck and no indication that
+    anything was wrong.  Saved decks name specific spells, and a deck built for
+    someone else's wizard routinely names cards this one does not have — a
+    different school's hitter cannot be substituted at all — so this is the
+    normal case for a shared strategy, not an edge case.
+    """
+
+    substitutions: dict[str, str] = field(default_factory=dict)  # requested name → what was used
+    skipped: list[str] = field(default_factory=list)  # requested names that never made it in
+    # Skipped card → cards of the same kind this wizard *does* own.  Nothing is
+    # substituted automatically: only the user knows which of their blades suits
+    # the hitter the strategy was built around.
+    alternatives: dict[str, list[str]] = field(default_factory=dict)
+    kinds: dict[str, str] = field(default_factory=dict)  # skipped card → its recorded kind
+    applied: bool = True  # False when nothing was placeable and the deck was left alone
+    unchanged: bool = False  # already matched, so no clear/rewrite was needed
+
+    @property
+    def is_clean(self) -> bool:
+        """True when every card the deck asked for went in under its own name."""
+        return not self.substitutions and not self.skipped
+
+    def merge(self, substitutions: dict[str, str], skipped: list[str]) -> None:
+        self.substitutions.update(substitutions)
+        self.skipped = sorted(set(self.skipped) | set(skipped))
 
 
 @dataclass(frozen=True)
@@ -378,7 +412,31 @@ async def _control_for(client, deck_window, window_name: str):
     return DynamicDeckListControl(client.hook_handler, await window.read_base_address())
 
 
-async def _entry_name(control, address: int) -> str | None:
+async def _template_kind(template) -> str | None:
+    """Classify a spell from its template's effects, or None if it cannot be read.
+
+    Never raises: a card whose kind we cannot work out is simply unlabelled, and
+    losing a label is not worth failing a deck import over.
+    """
+    try:
+        effects = await template.effects()
+        readings = []
+        for effect in effects or []:
+            readings.append(
+                (
+                    await effect.effect_type(),
+                    await effect.effect_target(),
+                    await effect.effect_param(),
+                    await effect.num_rounds(),
+                )
+            )
+        return classify_effects(readings)
+    except Exception:
+        logger.debug("Could not classify a spell template", exc_info=True)
+        return None
+
+
+async def _entry_card(control, address: int, classify: bool) -> tuple[str, str | None] | None:
     entry = DeckListControlSpellEntry(control.hook_handler, address)
     graphical = await entry.graphical_spell()
     if not graphical:
@@ -386,23 +444,41 @@ async def _entry_name(control, address: int) -> str | None:
     template = await graphical.spell_template()
     if not template:
         return None
-    return (await template.name()) or None
+    name = (await template.name()) or None
+    if not name:
+        return None
+    return name, (await _template_kind(template) if classify else None)
+
+
+async def _entry_name(control, address: int) -> str | None:
+    card = await _entry_card(control, address, classify=False)
+    return card[0] if card else None
+
+
+async def read_deck_cards(client, deck_window, *, classify: bool = False) -> list[tuple[str, str | None]]:
+    """Every card in the normal deck as ``(name, kind)``, in slot order.
+
+    ``classify`` is off by default because it costs an extra effects read per
+    card and only the *import* path needs it — the equality check in
+    ``_deck_already_matches`` runs on every apply and cares only about names.
+    """
+    control = await _control_for(client, deck_window, "CardsInDeck")
+    begin, count = await _entry_vector(control)
+    cards: list[tuple[str, str | None]] = []
+    for idx in range(count):
+        try:
+            card = await _entry_card(control, begin + idx * ENTRY_STRIDE, classify)
+        except Exception:
+            logger.debug("Unreadable deck entry at index %d", idx, exc_info=True)
+            continue
+        if card:
+            cards.append(card)
+    return cards
 
 
 async def read_deck_card_names(client, deck_window) -> list[str]:
     """Names of every card in the normal deck, in slot order."""
-    control = await _control_for(client, deck_window, "CardsInDeck")
-    begin, count = await _entry_vector(control)
-    names: list[str] = []
-    for idx in range(count):
-        try:
-            name = await _entry_name(control, begin + idx * ENTRY_STRIDE)
-        except Exception:
-            logger.debug("Unreadable deck entry at index %d", idx, exc_info=True)
-            continue
-        if name:
-            names.append(name)
-    return names
+    return [name for name, _kind in await read_deck_cards(client, deck_window)]
 
 
 async def read_item_slots(client, deck_window) -> list[ItemSlot]:
@@ -469,6 +545,50 @@ async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages
 # ---------------------------------------------------------------------------
 
 
+def suggest_alternatives(
+    skipped: list[str],
+    deck: DeckData,
+    owned_kinds: dict[str, str],
+) -> dict[str, list[str]]:
+    """For each skipped card of a known kind, the wizard's own cards of that kind.
+
+    Cards already in the deck are excluded — offering one the deck is about to
+    place anyway is not a substitution, just noise.  Skipped cards with no
+    recorded kind (an attack spell, or a deck saved before kinds existed) get no
+    entry: there is nothing useful to say about a missing Storm hitter to a Fire
+    wizard, and inventing a suggestion would be worse than silence.
+    """
+    out: dict[str, list[str]] = {}
+    for name in skipped:
+        kind = deck.card_kinds.get(name)
+        if not kind:
+            continue
+        matches = sorted(owned for owned, owned_kind in owned_kinds.items() if owned_kind == kind and owned != name)
+        if matches:
+            out[name] = matches
+    return out
+
+
+async def _spell_list_kinds(db) -> dict[str, str]:
+    """Name → kind for every classifiable card in the account's spell list.
+
+    Only called once an apply has already skipped something, so its extra
+    per-spell effects reads never touch the path where the deck applies cleanly.
+    """
+    kinds: dict[str, str] = {}
+    for spell in await db.get_graphical_spell_cards():
+        template = await spell.spell_template()
+        if not template:
+            continue
+        name = await template.name()
+        if not name or name in kinds:
+            continue
+        kind = await _template_kind(template)
+        if kind:
+            kinds[name] = kind
+    return kinds
+
+
 async def _spell_list_names(db) -> list[str]:
     """Template names of every card in the account's spell list, in list order.
 
@@ -508,7 +628,7 @@ async def _close_tier_flyout(db) -> None:
         await db.refresh_deck_page()
 
 
-async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) -> None:
+async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) -> tuple[dict[str, str], list[str]]:
     """Add fusion variants by opening each root's flyout and clicking inside it.
 
     wizwalker cannot do this.  Its tiered branch locates the base spell by its
@@ -523,7 +643,12 @@ async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) 
 
     One flyout open/close per distinct base spell, regardless of how many
     variants or copies of it the deck asks for.
+
+    Returns ``(substitutions, skipped)`` across every base, so a partial result
+    here reaches the user rather than stopping at the log.
     """
+    substitutions: dict[str, str] = {}
+    skipped: list[str] = []
     by_base: dict[str, dict[str, int]] = {}
     for name, count in wanted.items():
         by_base.setdefault(parse_tiered_name(name).base, {})[name] = count
@@ -532,6 +657,7 @@ async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) 
     for base, requested in by_base.items():
         entry = entries.get(base)
         if entry is None:  # partition_addable only routes cards here when it exists
+            skipped.extend(requested)
             continue
         try:
             page_idx, card_idx = db.calcuate_position_of_card_in_page(spell_names, entry)
@@ -545,18 +671,35 @@ async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) 
             owned = await _owned_tier_variants(db)
         except Exception:
             logger.warning("Could not open the variant list for '%s' — its cards are skipped", base, exc_info=True)
+            skipped.extend(requested)
             continue
 
         try:
-            await _click_fusion_variants(db, requested, owned, base)
+            base_subs, base_skipped = await _click_fusion_variants(db, requested, owned, base)
+            substitutions.update(base_subs)
+            skipped.extend(base_skipped)
         except Exception:
             logger.warning("Failed while adding variants of '%s'", base, exc_info=True)
+            # Which of this base's cards made it in before the failure is not
+            # knowable, so report the lot rather than claim a clean partial.
+            skipped.extend(requested)
         finally:
             await _close_tier_flyout(db)
 
+    return substitutions, skipped
 
-async def _click_fusion_variants(db, requested: dict[str, int], owned: list[str], base: str) -> None:
-    """Click each requested variant inside the already-open flyout."""
+
+async def _click_fusion_variants(
+    db, requested: dict[str, int], owned: list[str], base: str
+) -> tuple[dict[str, str], list[str]]:
+    """Click each requested variant inside the already-open flyout.
+
+    Returns ``(substitutions, skipped)``.  Which variant a fusion card resolves
+    to is only knowable with the flyout open, so this is the only place those
+    two facts exist — the caller cannot recompute them.
+    """
+    substitutions: dict[str, str] = {}
+    skipped: list[str] = []
     for name, count in requested.items():
         resolved = resolve_tier(name, owned)
         if resolved is None:
@@ -566,25 +709,39 @@ async def _click_fusion_variants(db, requested: dict[str, int], owned: list[str]
                 name,
                 ", ".join(owned) or "none",
             )
+            skipped.append(name)
             continue
         if resolved != name:
             logger.info(_SUBSTITUTION_MSG, resolved, name)
+            substitutions[name] = resolved
         _page, variant_idx = db.calcuate_position_of_card_in_page(owned, resolved)
         variant_position = await db.calculate_tiered_spell_card_position(variant_idx)
         async with db.client.mouse_handler:
             for _ in range(count):
                 await db.client.mouse_handler.click(*variant_position)
                 await asyncio.sleep(DECK_FUSION_CLICK_SETTLE)
+    return substitutions, skipped
 
 
 async def read_deck(db) -> dict:
-    """Snapshot the normal deck and active item cards from an open DeckBuilder."""
+    """Snapshot the normal deck and active item cards from an open DeckBuilder.
+
+    Card kinds are recorded here and nowhere else: this wizard owns every card
+    in the deck, so its templates are readable, and a wizard the deck is later
+    applied to will not own the ones that matter.
+    """
     await db.refresh_deck_page()
     deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
-    normal = await read_deck_card_names(db.client, deck_window)
+    cards = await read_deck_cards(db.client, deck_window, classify=True)
     items = await read_item_slots(db.client, deck_window)
-    logger.debug("Read deck: %d normal cards, %d item card slots", len(normal), len(items))
-    return {"normal": count_names(normal), "tc": {}, "item": active_item_counts(items)}
+    kinds = {name: kind for name, kind in cards if kind}
+    logger.debug("Read deck: %d normal cards, %d item card slots, %d classified", len(cards), len(items), len(kinds))
+    return {
+        "normal": count_names([name for name, _ in cards]),
+        "tc": {},
+        "item": active_item_counts(items),
+        "card_kinds": kinds,
+    }
 
 
 async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
@@ -594,8 +751,12 @@ async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
     return count_names(normal) == deck.normal and active_item_counts(items) == deck.item
 
 
-async def write_deck(db, deck: DeckData) -> None:
+async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     """Restore a saved deck to the client — normal cards and item card toggles.
+
+    Returns a :class:`DeckApplyReport` describing what was substituted and what
+    was skipped, so a partial apply can be shown to the user rather than left in
+    the log for them to find afterwards.
 
     If the deck already open on the client is an exact match for ``deck``, skip the
     clear/rewrite entirely — clearing and rebuilding a deck that's already correct
@@ -613,12 +774,14 @@ async def write_deck(db, deck: DeckData) -> None:
     reset item toggles too; planning against the post-clear state is correct
     either way.
     """
+    report = DeckApplyReport()
     await db.refresh_deck_page()
     deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
 
     if await _deck_already_matches(db.client, deck_window, deck):
         logger.info("Deck already matches saved configuration, skipping clear/rewrite")
-        return
+        report.unchanged = True
+        return report
 
     spell_names: list[str] = []
     direct: dict[str, int] = {}
@@ -634,6 +797,7 @@ async def write_deck(db, deck: DeckData) -> None:
         for requested, used in sorted(routing.substitutions.items()):
             logger.info(_SUBSTITUTION_MSG, used, requested)
         skipped = sorted(plan.missing + routing.unresolvable)
+        report.merge(routing.substitutions, skipped)
         if skipped:
             logger.warning(
                 "Cards in the saved deck could not be matched against this wizard's spellbook, skipped: %s",
@@ -644,6 +808,13 @@ async def write_deck(db, deck: DeckData) -> None:
             # are indistinguishable from the warning above, and the second is a
             # bug in our matching rather than anything the user can act on.
             logger.debug("Spellbook holds %d entries: %s", len(spell_names), ", ".join(spell_names) or "(none)")
+            report.kinds = {name: deck.card_kinds[name] for name in skipped if name in deck.card_kinds}
+            if report.kinds:
+                try:
+                    report.alternatives = suggest_alternatives(skipped, deck, await _spell_list_kinds(db))
+                except Exception:
+                    # Cosmetic: the skip is already reported, this only enriches it.
+                    logger.debug("Could not gather alternatives for skipped cards", exc_info=True)
 
     if deck.normal and not direct and not fusion:
         # Clearing is only ever worth doing as the first half of a rewrite.  With
@@ -657,7 +828,8 @@ async def write_deck(db, deck: DeckData) -> None:
             "so clearing would leave this wizard with an empty deck. Leaving the current deck untouched.",
             len(deck.normal),
         )
-        return
+        report.applied = False
+        return report
 
     await db.clear_deck()
     await db.view_deck_cards()
@@ -671,7 +843,8 @@ async def write_deck(db, deck: DeckData) -> None:
         await db._add_all_normal_cards(direct)  # noqa: SLF001
 
     if fusion:
-        await _add_fusion_cards(db, fusion, spell_names)
+        fusion_subs, fusion_skipped = await _add_fusion_cards(db, fusion, spell_names)
+        report.merge(fusion_subs, fusion_skipped)
 
     slots = await read_item_slots(db.client, deck_window)
     plan = plan_item_toggles(slots, deck.item)
@@ -680,8 +853,10 @@ async def write_deck(db, deck: DeckData) -> None:
         await _apply_item_toggles(db, deck_window, plan, page_count(len(slots)))
         await _verify_item_state(db.client, deck_window, deck.item)
 
+    return report
 
-async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT) -> None:
+
+async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT) -> DeckApplyReport:
     """Open the deck window on ``client`` and restore ``deck``, bounded by ``timeout``.
 
     The single entry point for every deck-apply path — the manual "Apply" button and
@@ -695,16 +870,17 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
     deck window is bounded too, not just the write itself.
 
     Raises ``TimeoutError`` if the apply does not finish in time; callers decide
-    whether that is fatal.
+    whether that is fatal.  Otherwise returns the :class:`DeckApplyReport` from
+    ``write_deck``, which is what the caller shows the user.
     """
 
-    async def _open_and_write() -> None:
+    async def _open_and_write() -> DeckApplyReport:
         from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
 
         async with DeckBuilder(client) as db:
-            await write_deck(db, deck)
+            return await write_deck(db, deck)
 
-    await asyncio.wait_for(_open_and_write(), timeout=timeout)
+    return await asyncio.wait_for(_open_and_write(), timeout=timeout)
 
 
 async def _verify_item_state(client, deck_window, desired: dict[str, int]) -> None:

@@ -51,6 +51,13 @@ class DeckData(BaseModel):
     normal: dict[str, int] = Field(default_factory=dict)
     tc: dict[str, int] = Field(default_factory=dict)  # legacy — never read or applied
     item: dict[str, int] = Field(default_factory=dict)
+    # Card name → "blade"/"charm"/"ward"/"trap"/"aura", recorded at import time
+    # from the authoring wizard's spell templates.  Used only to explain a
+    # failed apply ("Inferno Blade — a blade; you have Storm Blade"), since the
+    # applying wizard does not own the card and so cannot classify it.  Empty
+    # for decks saved before this existed, and for cards in none of the
+    # categories — a missing entry costs a label, nothing more.
+    card_kinds: dict[str, str] = Field(default_factory=dict)
 
     def is_empty(self) -> bool:
         return not self.normal and not self.item

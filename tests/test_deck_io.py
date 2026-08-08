@@ -28,6 +28,7 @@ from bartlebot.deck_io import (
     plan_normal_cards,
     read_deck,
     resolve_tier,
+    suggest_alternatives,
     write_deck,
 )
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT
@@ -317,7 +318,7 @@ async def test_write_deck_rewrites_when_item_cards_differ(monkeypatch):
 
 async def test_read_deck_never_reports_treasure_cards(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
-    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
     db = FakeDeckBuilder()
     result = await read_deck(db)
@@ -477,6 +478,11 @@ async def _fake_item_slots(*_args, **_kwargs):
 
 async def _fake_deck_names(*_args, **_kwargs):
     return ["Tempest", "Tempest"]
+
+
+async def _fake_deck_cards(*_args, **_kwargs):
+    """(name, kind) pairs, as read_deck sees them — Tempest is an attack, so unclassified."""
+    return [("Tempest", None), ("Tempest", None)]
 
 
 # ---------------------------------------------------------------------------
@@ -997,3 +1003,166 @@ async def test_an_exact_match_logs_no_substitution(monkeypatch, caplog):
         await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 4, "Tempest": 2}))
 
     assert "in place of" not in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# DeckApplyReport
+# ---------------------------------------------------------------------------
+#
+# A partial apply used to be indistinguishable from a clean one: write_deck
+# returned None and logged, so a wizard missing three of a shared deck's cards
+# got a half-built deck and no sign anything was wrong.
+
+
+async def test_a_clean_apply_reports_nothing_to_say(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+
+    report = await write_deck(FakeDeckBuilder(), DeckData(normal={"Tempest": 4}))
+
+    assert report.is_clean
+    assert report.applied is True
+
+
+async def test_skipped_cards_reach_the_caller(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+
+    report = await write_deck(FakeDeckBuilder(), DeckData(normal={"Tempest": 2, "Inferno Blade": 3}))
+
+    assert report.skipped == ["Inferno Blade"]
+    assert not report.is_clean
+
+
+async def test_a_tier_substitution_reaches_the_caller(monkeypatch):
+    _tier_patches(monkeypatch)
+
+    report = await write_deck(SingleVariantDeckBuilder(), DeckData(normal={"Novus Storm - T05 - B": 4}))
+
+    assert report.substitutions == {"Novus Storm - T05 - B": "Novus Storm - T04 - B"}
+    assert not report.is_clean
+
+
+async def test_a_fusion_substitution_reaches_the_caller(monkeypatch):
+    """Decided inside the flyout, so nothing above can recompute it."""
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T03 - B"]
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2}))
+
+    assert report.substitutions == {"Novus Storm - T05 - B": "Novus Storm - T03 - B"}
+
+
+async def test_an_unresolvable_fusion_card_is_reported_as_skipped(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T05 - A"]  # wrong path
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2, "Tempest": 1}))
+
+    assert "Novus Storm - T05 - B" in report.skipped
+
+
+async def test_an_unreadable_flyout_reports_its_cards_as_skipped(monkeypatch):
+    """Runs after the clear, so those cards really are gone from the deck."""
+    _tier_patches(monkeypatch)
+
+    class BrokenFlyout(FusionRootDeckBuilder):
+        async def get_graphical_tiered_spell_cards(self):
+            raise RuntimeError("variant list window missing")
+
+    report = await write_deck(BrokenFlyout(), DeckData(normal={"Novus Storm - T05 - B": 4, "Tempest": 3}))
+
+    assert report.skipped == ["Novus Storm - T05 - B"]
+
+
+async def test_an_untouched_deck_reports_that_it_was_untouched(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+
+    report = await write_deck(FakeDeckBuilder(), DeckData(normal={"Inferno Blade": 3}))
+
+    assert report.applied is False
+    assert report.skipped == ["Inferno Blade"]
+
+
+async def test_a_matching_deck_reports_unchanged(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+
+    report = await write_deck(FakeDeckBuilder(), DeckData(normal={"Tempest": 2}))
+
+    assert report.unchanged is True
+    assert report.is_clean
+
+
+# ---------------------------------------------------------------------------
+# Card kinds and alternatives
+# ---------------------------------------------------------------------------
+
+
+def test_alternatives_offer_this_wizards_cards_of_the_same_kind():
+    deck = DeckData(normal={"Inferno Blade": 3}, card_kinds={"Inferno Blade": "blade"})
+
+    out = suggest_alternatives(["Inferno Blade"], deck, {"Storm Blade": "blade", "Feint": "trap"})
+
+    assert out == {"Inferno Blade": ["Storm Blade"]}
+
+
+def test_alternatives_are_not_offered_for_an_unclassified_card():
+    """An attack spell has no stand-in; silence beats a wrong suggestion."""
+    deck = DeckData(normal={"Tempest": 3})
+
+    assert suggest_alternatives(["Tempest"], deck, {"Storm Blade": "blade"}) == {}
+
+
+def test_alternatives_skip_the_card_that_was_requested():
+    deck = DeckData(normal={"Storm Blade": 3}, card_kinds={"Storm Blade": "blade"})
+
+    out = suggest_alternatives(["Storm Blade"], deck, {"Storm Blade": "blade"})
+
+    assert out == {}
+
+
+def test_alternatives_are_empty_when_the_wizard_has_none_of_that_kind():
+    deck = DeckData(normal={"Inferno Blade": 3}, card_kinds={"Inferno Blade": "blade"})
+
+    assert suggest_alternatives(["Inferno Blade"], deck, {"Feint": "trap"}) == {}
+
+
+def test_alternatives_are_sorted_so_the_message_is_stable():
+    deck = DeckData(normal={"Inferno Blade": 1}, card_kinds={"Inferno Blade": "blade"})
+
+    out = suggest_alternatives(["Inferno Blade"], deck, {"Storm Blade": "blade", "Balanceblade": "blade"})
+
+    assert out["Inferno Blade"] == ["Balanceblade", "Storm Blade"]
+
+
+async def test_a_skipped_card_carries_its_recorded_kind_into_the_report(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    deck = DeckData(normal={"Tempest": 2, "Inferno Blade": 3}, card_kinds={"Inferno Blade": "blade"})
+
+    report = await write_deck(FakeDeckBuilder(), deck)
+
+    assert report.kinds == {"Inferno Blade": "blade"}
+
+
+async def test_a_deck_saved_before_kinds_existed_still_applies(monkeypatch):
+    """card_kinds is absent from every deck saved so far."""
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    db = FakeDeckBuilder()
+
+    report = await write_deck(db, DeckData(normal={"Tempest": 2, "Inferno Blade": 3}))
+
+    assert db.added == {"Tempest": 2}
+    assert report.kinds == {}
+    assert report.alternatives == {}

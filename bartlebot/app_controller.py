@@ -19,7 +19,7 @@ from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
-from bartlebot.deck_io import apply_deck, read_deck
+from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -414,7 +414,7 @@ class AppController(QObject):
         client = clients[client_idx]
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
-            await apply_deck(client, deck_data)
+            report = await apply_deck(client, deck_data)
             logger.info("Deck applied for slot %d", slot)
         except TimeoutError:
             logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
@@ -422,16 +422,85 @@ class AppController(QObject):
         except Exception:
             logger.exception("Failed to apply deck for slot %d", slot)
             self._warn_deck_failed("apply", slot, "failed — see the log for details")
+        else:
+            self._report_deck_apply(slot, report)
+
+    def _report_deck_apply(self, slot: int, report: DeckApplyReport) -> None:
+        """Tell the user when the deck that went on is not the deck that was saved.
+
+        Saved decks name specific spells, so a deck built on another wizard
+        routinely asks for cards this one does not have — a different school's
+        hitter cannot be substituted at all.  Staying silent about that produced
+        a half-built deck that looked like a success.
+
+        Nothing is shown for a clean apply, which is the common case when the
+        deck and the wizard are the same one it was saved from.
+        """
+        if report.is_clean:
+            return
+
+        lines: list[str] = []
+        if report.substitutions:
+            lines.append("Used a lower tier than the deck asked for:")
+            lines += [f"    {used}  (deck wanted {req})" for req, used in sorted(report.substitutions.items())]
+        if report.skipped:
+            if lines:
+                lines.append("")
+            lines.append("Not in this wizard's spellbook, so left out:")
+            lines += [f"    {self._describe_skipped(name, report)}" for name in report.skipped]
+            lines.append("")
+            lines.append("Swap in this wizard's own cards and re-import the deck to fix this.")
+
+        if not report.applied:
+            title = f"Deck for P{slot} not applied"
+            body = "None of the saved deck's cards are in this wizard's spellbook, so the current deck was left alone."
+            self._show_deck_notice(title, f"{body}\n\n" + "\n".join(lines), warn=True)
+            return
+
+        self._show_deck_notice(f"Deck applied for P{slot}, with changes", "\n".join(lines), warn=bool(report.skipped))
+
+    @staticmethod
+    def _describe_skipped(name: str, report: DeckApplyReport) -> str:
+        """One line for a skipped card: what it was, and what could stand in.
+
+        The kind and the alternatives are only known for blades, traps, wards,
+        charms and auras — the interchangeable ones.  A missing attack spell
+        gets its name and nothing else, which is the honest answer: a Fire
+        wizard has no stand-in for a Storm hitter.
+        """
+        from bartlebot.card_kinds import describe_kind  # noqa: PLC0415
+
+        kind = describe_kind(report.kinds.get(name))
+        line = f"{name} — {kind}" if kind else name
+        options = report.alternatives.get(name)
+        if options:
+            line += f"; you have {', '.join(options)}"
+        return line
 
     def _warn_deck_failed(self, action: str, slot: int, reason: str) -> None:
         """Surface a deck import/apply failure instead of leaving it log-only."""
-        QMessageBox.warning(
-            self._window,
+        self._show_deck_notice(
             f"Deck {action} failed",
             f"Deck {action} for P{slot} {reason}.\n\n"
             "The game's deck window may be left open or partially edited — "
             "check the client before retrying.",
+            warn=True,
         )
+
+    def _show_deck_notice(self, title: str, body: str, *, warn: bool) -> None:
+        """Show a deck dialog *after* the calling task has finished.
+
+        Both callers run inside an ``asyncio.Task``, and a blocking QMessageBox
+        there is the Python 3.13 re-entrancy trap described in CLAUDE.md: the
+        dialog re-enters Qt's event loop while the task's frame is still on the
+        Python stack, and any task woken meanwhile is left permanently stuck.
+        That is what froze the client sidebar for the duration of a bot run.
+
+        Deferring through the Qt event loop means the dialog opens once the task
+        has returned and no task is mid-execution, so blocking is safe again.
+        """
+        box = QMessageBox.warning if warn else QMessageBox.information
+        QTimer.singleShot(0, lambda: box(self._window, title, body))
 
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
