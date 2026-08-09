@@ -1,0 +1,98 @@
+{
+  "id": "fc45bf14-d0c0-4a3f-a9dc-9697e7af231b",
+  "name": "Mr. Stone - 4 player Scald Incindiate w/ backup",
+  "bot_id": "ec84c156-b0f2-4afd-95a8-a3c11b1bcc2d",
+  "player_decks": {
+    "1": {
+      "normal": {
+        "Potent Trap": 2,
+        "Feint": 2
+      },
+      "tc": {},
+      "item": {
+        "Wand-Death-180": 1
+      },
+      "card_kinds": {
+        "Feint": "trap"
+      }
+    },
+    "2": {
+      "normal": {
+        "Feint": 2
+      },
+      "tc": {},
+      "item": {
+        "Potent Trap - Tear": 1,
+        "Pet - Feint": 1
+      },
+      "card_kinds": {
+        "Feint": "trap"
+      }
+    },
+    "3": {
+      "normal": {
+        "Epic": 1,
+        "Meteor Strike": 1,
+        "Scald": 1,
+        "Frenzy": 1
+      },
+      "tc": {},
+      "item": {
+        "Epic - Amulet": 1
+      },
+      "card_kinds": {
+        "Frenzy": "aura"
+      }
+    },
+    "4": {
+      "normal": {},
+      "tc": {},
+      "item": {
+        "Detonate All 200 - Amulet": 1
+      },
+      "card_kinds": {}
+    }
+  },
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_7"
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "player_assignments": [
+          {
+            "players": [
+              1
+            ],
+            "dsl": "{1} feint[potent] @ boss\n{2} wand @ boss\n{3} pass\n{4} feint[potent] @ boss\npass"
+          },
+          {
+            "players": [
+              2
+            ],
+            "dsl": "{1} \"Feint\"[potent] @ boss\n{2} pass\n{3} feint @ boss\n{4} feint @ boss\npass"
+          },
+          {
+            "players": [
+              3
+            ],
+            "dsl": "{1} scald[\"Epic - Amulet\"]\n{2} pass\n{3} frenzy\n{4} meteor[epic]\npass"
+          },
+          {
+            "players": [
+              4
+            ],
+            "dsl": "{1} detonate all\npass"
+          }
+        ]
+      }
+    }
+  ]
+}
