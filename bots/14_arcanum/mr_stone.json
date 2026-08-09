@@ -1,0 +1,415 @@
+{
+  "id": "ec84c156-b0f2-4afd-95a8-a3c11b1bcc2d",
+  "name": "Mr. Stone",
+  "description": "Endlessly defeats Mr. Stone in Cursed Repository, Arcanum",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_2",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Arcanum",
+  "drops": [
+    "Ammut",
+    "Arcticzilla",
+    "Balance Accurate Pin (100)",
+    "Balance Conversion Pin (160)",
+    "Barbarian's Saga",
+    "Blast Off!",
+    "Broken Branch Loss Cards",
+    "Broken Branch Loss Mask",
+    "Broken Branch Luckless Cards",
+    "Broken Branch Luckless Mask",
+    "Broken Branch Neglect Cards",
+    "Broken Branch Neglect Mask",
+    "Broken Branch Panic Cards",
+    "Broken Branch Panic Mask",
+    "Broken Branch Rage Cards",
+    "Broken Branch Rage Mask",
+    "Broken Branch Sorrow Cards",
+    "Broken Branch Sorrow Mask",
+    "Broken Branch Terror Cards",
+    "Broken Branch Terror Mask",
+    "Bunyip's Rage",
+    "Cards of False Promises",
+    "Cards of the Burnt Forest",
+    "Cards of the Changing Tide",
+    "Cards of the Coldhearted",
+    "Cards of the Doomed",
+    "Cards of the Living Lie",
+    "Cards of the Turning Wheel",
+    "Chameleon Clash",
+    "Cobalt",
+    "Count Croakula",
+    "Dark & Stormy",
+    "Darkmoor Castle Theme",
+    "Darkmoor Tragedy Theme",
+    "Death Accurate Pin (100)",
+    "Death Conversion Pin (160)",
+    "Death Conversion Pin (170)",
+    "Deathly Depths",
+    "Drop Bear Fury",
+    "Ectoplasm",
+    "Fire Accurate Pin (100)",
+    "Flawless Blocking Jade +24",
+    "Flawless Blocking Peridot +24",
+    "Flawless Critical Amethyst +23",
+    "Flawless Critical Citrine +23",
+    "Flawless Critical Onyx +24",
+    "Flawless Critical Peridot +24",
+    "Flawless Critical Sapphire +23",
+    "Flawless Critical Sapphire +24",
+    "Gravestorm",
+    "Harmattan Maxios",
+    "Heqet",
+    "Improbable Gaze",
+    "Mask of False Promises",
+    "Mask of the Burnt Forest",
+    "Mask of the Changing Tide",
+    "Mask of the Coldhearted",
+    "Mask of the Doomed",
+    "Mask of the Living Lie",
+    "Mask of the Turning Wheel",
+    "Mortality",
+    "Myth Accurate Pin (100)",
+    "Old One's Endgame",
+    "Phantasmania!",
+    "Polished Piercing Jade +6%",
+    "Polished Piercing Onyx +6%",
+    "Polished Piercing Ruby +6%",
+    "Raging Bull",
+    "Rusalka's Wrath",
+    "Scales of Destiny",
+    "Shu",
+    "Snowball Barrage",
+    "Starspawn",
+    "Storm Accurate Pin (80)",
+    "Taweret",
+    "The Chariot",
+    "The Hierophant",
+    "The Tower",
+    "The World",
+    "Thoth",
+    "Unearthly Critical Onyx +44 (Life)",
+    "Unearthly Critical Ruby +42 (Ice)",
+    "Unearthly Critical Sapphire +48 (Balance)",
+    "Unearthly Damage Citrine +11% (Storm)",
+    "Unearthly Damage Peridot +10% (Fire)",
+    "Unearthly Damage Ruby +9% (Ice)",
+    "Wobbegong Frenzy",
+    "Zand the Bandit"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Panopticon",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Arcanum/AR_Z01_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Arcanum",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Arcanum/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_zone",
+      "label": "Check if in Panopticon",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Arcanum/AR_Z01_Hub",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_dungeon",
+      "label": "Enter Cursed Repository",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Arcanum/AR_Z01_Hub",
+        "dungeon_zone": "Arcanum/Interiors/AR_Z01_CursedRepository",
+        "sigil_xyz": {
+          "x": -4160.88,
+          "y": -749.08,
+          "z": -105.24
+        },
+        "reset_xyz": {
+          "x": -3373.58,
+          "y": -1053.46,
+          "z": -105.18
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 440.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 0.1,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Mr. Stone",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Arcanum/Interiors/AR_Z01_CursedRepository",
+        "xyz": {
+          "x": -4.19,
+          "y": -7423.41,
+          "z": -2.6
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "handle_combat",
+      "label": "Defeat Mr. Stone",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "DM_Gargoyle_Base_C_01",
+        "use_default_strategy": false,
+        "max_duration": 300.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_zone",
+      "label": "Exit Cursed Repository",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Arcanum/Interiors/AR_Z01_CursedRepository",
+        "to_zone": "Arcanum/AR_Z01_Hub",
+        "xyz": {
+          "x": -0.21,
+          "y": 244.56,
+          "z": 5.12
+        },
+        "reset_xyz": {
+          "x": -12.67,
+          "y": -75.57,
+          "z": -2.6
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_5",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

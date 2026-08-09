@@ -1,12 +1,11 @@
 {
+  "id": "04cbebbb-6821-4d6b-aef0-10449d911660",
   "name": "House of Scales",
   "description": "Endlessly completes the House of Scales in Zigazag",
   "version": "1.0",
   "clients": "all",
   "initial": "state_35",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\npass",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Krokotopia",
   "drops": [
     "Ancient Rebus Headgear",
@@ -521,8 +520,7 @@
       },
       "params": {
         "enemy": "G14-HS-Ifzt",
-        "use_bot_default": false,
-        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nfeint @ boss",
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {}
@@ -631,8 +629,7 @@
       },
       "params": {
         "enemy": "G14-HS-Apep_Boss",
-        "use_bot_default": false,
-        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nfeint @ boss",
+        "use_default_strategy": false,
         "max_duration": 0.0
       },
       "option_overrides": {}
@@ -689,8 +686,7 @@
       },
       "params": {
         "enemy": "G14-HS-Ammit",
-        "use_bot_default": false,
-        "combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2, p3, p4\nfeint @ boss",
+        "use_default_strategy": false,
         "max_duration": 5.0
       },
       "option_overrides": {}
@@ -721,7 +717,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -862,7 +859,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -879,7 +877,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -914,7 +913,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

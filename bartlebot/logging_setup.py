@@ -4,7 +4,8 @@ import logging.handlers
 import platform
 import sys
 from collections.abc import Callable
-from pathlib import Path
+
+from bartlebot.paths import project_root
 
 _FORMATTER = logging.Formatter(
     "[%(asctime)s] [%(levelname)-7s] %(name)s: %(message)s",
@@ -39,7 +40,7 @@ _gui_bridge = _GuiBridgeHandler()
 
 def configure_logging() -> None:
     """Call once at startup before any other bartlebot imports."""
-    log_dir = Path(__file__).parent.parent / "logs"
+    log_dir = project_root() / "logs"
     log_dir.mkdir(exist_ok=True)
 
     session_name = datetime.datetime.now().strftime("bartlebot_%Y-%m-%d_%H-%M-%S.log")

@@ -1,4 +1,5 @@
 {
+  "id": "31aac867-868b-4c8d-b64c-c48e929893db",
   "name": "Crimson Fields (Yakedo + War Oni)",
   "description": "Completes the entire Crimson Fields dungeon, optionally defeating Yakedo.",
   "version": "2.0",
@@ -1177,7 +1178,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -1211,7 +1213,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

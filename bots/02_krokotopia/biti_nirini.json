@@ -1,4 +1,5 @@
 {
+  "id": "93b8cbf2-5bcf-4c99-bc42-4bf74288923f",
   "name": "Biti Nirini",
   "description": "Endlessly farms Biti Nirini in Royal Hall, Krokotopia",
   "version": "1.0",
@@ -295,7 +296,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -631,7 +633,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

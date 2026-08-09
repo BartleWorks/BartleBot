@@ -389,7 +389,7 @@ class BotMachine:
         re-entry and against conflicting with intentional combat nodes.
         """
         from bartlebot.nodes import node_helpers
-        from bartlebot.nodes.combat_runner import _run_combat, resolve_combat
+        from bartlebot.nodes.combat_runner import _run_combat, resolve_combat, slots_in_battle
         from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat
 
         while not self._stop_flag.is_set():
@@ -416,8 +416,10 @@ class BotMachine:
                 *[c.in_battle() for c in clients],
                 return_exceptions=True,
             )
-            battling = [c for c, f in zip(clients, in_battle_flags) if f is True]
-            if not battling:
+            # Track slots (indices into `clients`), not just the clients themselves —
+            # a client's index is its player slot, and combat DSL is resolved per slot.
+            battling_slots = slots_in_battle(in_battle_flags)
+            if not battling_slots:
                 continue
 
             try:
@@ -439,40 +441,48 @@ class BotMachine:
                         self.log("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
 
                     self.log(
-                        f"Ambient combat detected on {len(battling)} client(s) — handling",
+                        f"Ambient combat detected on client(s) {battling_slots} — handling",
                         logging.WARNING,
                     )
 
+                    # Resolve for every client so per_client_dsl is indexed by slot;
+                    # resolving for only the battling ones would give client 3 the
+                    # DSL configured for player 1.
                     per_client_dsl, _combat_order, dsl_source = resolve_combat(
-                        self, use_default_strategy=True, num_clients=len(battling)
+                        self, use_default_strategy=True, num_clients=len(clients)
                     )
 
                     self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
 
+                    battling = [clients[i] for i in battling_slots]
                     chat_before_raw = await asyncio.gather(
                         *[snapshot_chat(c) for c in battling],
                         return_exceptions=True,
                     )
                     chat_before = [s if isinstance(s, str) else "" for s in chat_before_raw]
                     results = await asyncio.gather(
-                        *[_run_combat(c, dsl) for c, dsl in zip(battling, per_client_dsl)],
+                        *[_run_combat(clients[i], per_client_dsl[i]) for i in battling_slots],
                         return_exceptions=True,
                     )
-                    for i, r in enumerate(results):
+                    for pos, r in enumerate(results):
                         if isinstance(r, Exception):
-                            self.log(f"Ambient combat: error on client {i}: {r}", logging.DEBUG)
+                            self.log(
+                                f"Ambient combat: error on client {battling_slots[pos]}: {r}",
+                                logging.DEBUG,
+                            )
 
                     self.log("Ambient combat: SprintyCombat finished", logging.DEBUG)
 
-                    for i, (client, before) in enumerate(zip(battling, chat_before)):
+                    for pos, (client, before) in enumerate(zip(battling, chat_before)):
+                        slot = battling_slots[pos]
                         try:
                             after = await snapshot_chat(client)
                             for item_name in extract_new_drops(before, after):
-                                self.on_drop(item_name, 1, self.clients.index(client))
+                                self.on_drop(item_name, 1, slot)
                                 self.log(f"Ambient combat drop: {item_name}")
                         except Exception as exc:
                             self.log(
-                                f"Ambient combat: drop detection error on client {i}: {exc}",
+                                f"Ambient combat: drop detection error on client {slot}: {exc}",
                                 logging.DEBUG,
                             )
             finally:

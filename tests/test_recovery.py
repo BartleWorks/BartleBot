@@ -39,11 +39,14 @@ class RecoveryHarness:
     _run_recovery_queue = ClientManager._run_recovery_queue
     _reconnect_client = ClientManager._reconnect_client
     _build_ordered_clients = ClientManager._build_ordered_clients
+    _assign_slot = ClientManager._assign_slot
+    _sync_embedded_clients = ClientManager._sync_embedded_clients
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
         self._client_order: list[str | None] = []
         self._pending_recovery: dict[int, str] = {}
+        self._vacated_slots: dict[str, int] = {}
         self._recovery_in_progress: bool = False
         self._recovery_task = None
         self._clients: list = []

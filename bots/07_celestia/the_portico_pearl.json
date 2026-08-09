@@ -1,11 +1,11 @@
 {
+  "id": "c2c6ea55-93d8-4d01-9a9a-c591d38c114c",
   "name": "The Portico Pearl Collector",
   "description": "Collects Pearls and Golden Pearls in The Portico, Celestia",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Celestia",
   "drops": [
     "Golden Pearl",
@@ -199,16 +199,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_4",
       "dest": "state_5",
       "when": "SUCCESS",
@@ -219,29 +209,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_5",
       "dest": "state_6",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -261,6 +231,36 @@
       "trigger": "advance",
       "source": "state_6",
       "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

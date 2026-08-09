@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import jitter
+from bartlebot.nodes.timing import WISP_COLLECT_TIMEOUT, jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -30,6 +30,18 @@ PARAM_SCHEMA: list[ParamField] = [
         ),
         default=1.0,
         default_hint="collect mana wisps whenever not at full mana",
+    ),
+    ParamField(
+        key="timeout",
+        type="float",
+        label="Timeout (seconds, 0 = no limit)",
+        help=(
+            "Maximum seconds to spend collecting each resource (health and mana each get "
+            "their own window). Bounds the collection loop in case a stale or bugged health/mana "
+            "ratio reading never crosses the threshold. Set to 0 to wait indefinitely."
+        ),
+        default=WISP_COLLECT_TIMEOUT,
+        default_hint="10s",
     ),
     ParamField(
         key="fail_if_health_below",
@@ -75,10 +87,10 @@ NODE_SPEC = NodeSpec(
     description=(
         "Collects health and mana wisps after combat if clients are below specified "
         "thresholds. Teleports each client to the nearest wisp repeatedly until the "
-        "threshold is met or no more wisps are in range. By default, skips wisps within "
-        "700 units of an enemy to avoid re-entering combat. Returns FAILURE if any client "
-        "is still below the configured fail thresholds after collection — useful for "
-        "routing to a potion fallback node."
+        "threshold is met, no more wisps are in range, or the per-resource timeout expires. "
+        "By default, skips wisps within 700 units of an enemy to avoid re-entering combat. "
+        "Returns FAILURE if any client is still below the configured fail thresholds after "
+        "collection — useful for routing to a potion fallback node."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -103,26 +115,33 @@ async def run(machine, clients: list, params: dict) -> str:
 
     Flow:
       1. For each client (in parallel), collect health wisps while health < if_health_below.
-         Stop when no more wisps are in range (tp_to_closest_health_wisp returns False).
+         Stop when no more wisps are in range (tp_to_closest_health_wisp returns False) or
+         the timeout for this resource expires.
       2. For each client (in parallel), collect mana wisps while mana < if_mana_below.
-         Stop when no more wisps are in range.
+         Stop when no more wisps are in range or the timeout expires.
       3. Re-check all ratios. Return FAILURE if any client's health is still below
          fail_if_health_below or mana is still below fail_if_mana_below.
 
-    FAILURE: any client is still below a fail threshold after wisps are exhausted.
+    FAILURE: any client is still below a fail threshold after wisps are exhausted or the
+    timeout expires — e.g. a stale/bugged health ratio reading that never crosses the threshold.
     """
     if_health_below: float = params.get("if_health_below", 1.0)
     if_mana_below: float = params.get("if_mana_below", 1.0)
+    timeout_raw: float = params.get("timeout", WISP_COLLECT_TIMEOUT)
+    timeout_val: float | None = None if timeout_raw == 0.0 else timeout_raw
     fail_if_health_below: float = params.get("fail_if_health_below", 0.5)
     fail_if_mana_below: float = params.get("fail_if_mana_below", 0.5)
     only_safe: bool = params.get("only_safe", True)
 
     machine.log(
         f"collect_wisps: collect_health<{if_health_below}, collect_mana<{if_mana_below}, "
-        f"fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}, only_safe={only_safe}"
+        f"timeout={timeout_raw}, fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}, "
+        f"only_safe={only_safe}"
     )
 
-    await asyncio.gather(*[_collect_for_client(c, if_health_below, if_mana_below, only_safe) for c in clients])
+    await asyncio.gather(
+        *[_collect_for_client(c, if_health_below, if_mana_below, timeout_val, only_safe) for c in clients]
+    )
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
@@ -160,17 +179,29 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _collect_for_client(client, if_health_below: float, if_mana_below: float, only_safe: bool) -> None:
-    """Collect health and mana wisps for a single client until thresholds are met."""
+async def _collect_for_client(
+    client, if_health_below: float, if_mana_below: float, timeout_val: float | None, only_safe: bool
+) -> None:
+    """Collect health and mana wisps for a single client until thresholds are met.
+
+    Health and mana each get their own timeout window, so one client's stuck resource
+    reading can't eat into the other resource's collection time.
+    """
     if if_health_below > 0.0:
+        loop_start = asyncio.get_event_loop().time()
         while await client.calc_health_ratio() < if_health_below:
+            if timeout_val is not None and asyncio.get_event_loop().time() - loop_start > timeout_val:
+                break
             found = await client.tp_to_closest_health_wisp(only_safe=only_safe)
             if not found:
                 break
             await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
 
     if if_mana_below > 0.0:
+        loop_start = asyncio.get_event_loop().time()
         while await client.calc_mana_ratio() < if_mana_below:
+            if timeout_val is not None and asyncio.get_event_loop().time() - loop_start > timeout_val:
+                break
             found = await client.tp_to_closest_mana_wisp(only_safe=only_safe)
             if not found:
                 break

@@ -54,7 +54,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players have exited combat successfully."),
         ReturnSpec(
             "FAILURE",
-            "No valid target found, no combat config available, or players failed to enter combat within the timeout.",
+            "No valid target found, or players failed to enter combat within the timeout.",
         ),
     ],
     required_bot_options=[],
@@ -78,23 +78,24 @@ async def run(machine, clients: list, params: dict) -> str:
           SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
 
     Flow:
-      1. Resolve combat DSL via the assigned Duel Profile, or the active BotCombatProfile's
-         default, or the BartleBot built-in default. Return FAILURE if none available.
+      1. Resolve combat DSL via the Duel Combat Strategy assigned to this state, or the
+         active Bot Combat Strategy's default, or the BartleBot built-in default.
       2. Resolve target entity for each client (by enemy name or closest mob), retrying
          TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
       3. If max_duration is set and has elapsed, return FAILURE.
       4. Snapshot chat to enable drop detection after combat.
       5. Teleport clients to their targets:
-         - If a combat order is set (duel profile override → profile default → legacy bot option):
-           send clients one at a time in order, waiting for each to report in_battle().
+         - If the resolved Duel Combat Strategy sets a combat order: send clients one at
+           a time in that order, waiting for each to report in_battle().
          - Otherwise: teleport all clients simultaneously, retrying every _TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
       6. If max_duration is set and has elapsed, return FAILURE.
       7. Run SprintyCombat for all clients in parallel until combat ends.
       8. Diff chat to detect drops; report each via machine.on_drop().
 
-    FAILURE: no combat DSL available; target not found after retries; max_duration exceeded;
-    clients did not enter combat within ENTER_COMBAT_TIMEOUT.
+    FAILURE: target not found after retries; max_duration exceeded; clients did not enter
+    combat within ENTER_COMBAT_TIMEOUT.  DSL resolution itself cannot fail — resolve_combat
+    falls back to the built-in default at every level.
     """
     from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
 

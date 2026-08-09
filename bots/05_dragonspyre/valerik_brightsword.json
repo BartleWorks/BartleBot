@@ -1,4 +1,5 @@
 {
+  "id": "4e3c1dd6-f8c3-48b5-a3ce-6514af55800b",
   "name": "Valerik Brightsword",
   "description": "Endlessly farms Valerik Brightsword in The Crucible, Dragonspyre.",
   "version": "1.0",
@@ -244,7 +245,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -260,7 +262,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

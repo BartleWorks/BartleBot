@@ -1,0 +1,823 @@
+{
+  "id": "21c704ee-857c-4622-9af3-cb2ec9714022",
+  "name": "Barkingham Palace Main Hall",
+  "description": "Endlessly completes Main Hall in Barkingham Palace, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_3",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Marleybone",
+  "drops": [
+    "13 Royal Brooch",
+    "15 Royal Brooch",
+    "Amulet of the Misty Palace",
+    "Barkingham Cinder Smock",
+    "Barkingham Fog Coat",
+    "Barkingham Frostbreaker",
+    "Barkingham Hearthfire Relic",
+    "Barkingham Robe of Repose",
+    "Barkingham Vial of Numbing",
+    "Ceremonial Array of Triumph",
+    "Clean Sweep",
+    "Crown Jewel Necklace",
+    "Crown's Charm of Adroitness",
+    "Empire's Torc of Calamity",
+    "Enfield Trickster's Ampul",
+    "Grenadier's Vial of Tumult",
+    "Hound's Choker of Squalls",
+    "Jackall & Hound",
+    "Jackall's Vial of Duplicity",
+    "Jacques Scratches!",
+    "Lanyon Scratcher's Bauble",
+    "Life Potbelly",
+    "Locket of the Opera Nova",
+    "Mark of Meowiarty",
+    "Mycroft's Medallion",
+    "Necklace of the Monarchy",
+    "Ornament of Mesmerization",
+    "Outfit of the Forlorn Watch",
+    "Palace Guard's Firebreaker",
+    "Palace Guard's Rain Gear",
+    "Pops' Knuckles",
+    "Queen's Jewel of Barkingham",
+    "Raiment of the Royal Flame",
+    "Ratstabber",
+    "Royal Ceremonial Snowgear",
+    "Royal Coat of Alliance",
+    "Royal Coat of Wit",
+    "Royal Outfit of Remembrance",
+    "Royal Uniform of Accord",
+    "Royal Uniform of Whirlwind",
+    "Royal Vestment of Charisma",
+    "Sherlock's Lens of Hegemony",
+    "Smock of Barkingham Brio",
+    "Torc of the Woman",
+    "Vial of the Palace Menace",
+    "Watson's Amulet of Purpose",
+    "Whiplash",
+    "Yeoman's Ampul of Winter",
+    "Yeoman's Cloak of Reverie",
+    "Yeoman's Robe of Bounty",
+    "Yeoman's Vestment of Unity",
+    "Yeoman's Winter Uniform"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Barkingham Palace",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "check_zone",
+      "label": "Check if in Marleybone",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Barkingham Palace",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": 7123.4,
+          "y": 1315.09,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 6640.42,
+          "y": 1310.45,
+          "z": -0.0
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true,
+        "timeout": 10.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_dungeon",
+      "label": "Enter Main Hall",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "dungeon_zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+        "sigil_xyz": {
+          "x": 208.89,
+          "y": -8494.42,
+          "z": -4257.88
+        },
+        "reset_xyz": {
+          "x": -16.8,
+          "y": -7648.48,
+          "z": -4453.28
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Main Hall",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+        "xyz": {
+          "x": 23.22,
+          "y": -914.84,
+          "z": 0.2
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "handle_combat",
+      "label": "Defeat Corrupted Grenadiers",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-BP-Corrupted_Grenadiers",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Go to next room",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z11_MainHall_02",
+        "xyz": {
+          "x": 1.44,
+          "y": 1613.17,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 3.15,
+          "y": 1164.97,
+          "z": 0.2
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Chief Whip",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-BP-Dog_Police_Boss",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact",
+      "label": "Talk to Bulldog Sergeant Major",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z11_MainHall_02",
+        "interact_xyz": {
+          "x": -35.16,
+          "y": 198.63,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 261.78,
+          "y": -144.69,
+          "z": 0.2
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Go to next room",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z11_MainHall_02",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
+        "xyz": {
+          "x": 17.56,
+          "y": 1617.51,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 11.85,
+          "y": 1207.75,
+          "z": 0.2
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "handle_combat",
+      "label": "Defeat Noxious Gas Golem",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "G14-BP-Golem_Steel_Boss",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
+        "xyz": {
+          "x": 2.41,
+          "y": -2630.12,
+          "z": 3.86
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "interact",
+      "label": "Talk to Chief Whip",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
+        "interact_xyz": {
+          "x": -576.69,
+          "y": -1314.01,
+          "z": 3.86
+        },
+        "reset_xyz": {
+          "x": -22.97,
+          "y": -1304.59,
+          "z": 3.86
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 7040.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": -1296.38,
+          "y": -1506.46,
+          "z": 3.86
+        },
+        "reset_xyz": {
+          "x": -757.76,
+          "y": -1520.25,
+          "z": 3.86
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "keep_list": [
+          "Potbelly"
+        ],
+        "sell_pets": true,
+        "sell_socket_wrenches": false,
+        "sell_skeleton_keys": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_5",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

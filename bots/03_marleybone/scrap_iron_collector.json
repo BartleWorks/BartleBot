@@ -1,0 +1,305 @@
+{
+  "id": "b7620dd3-ad14-4322-94e4-5e18168e14a2",
+  "name": "Scrap Iron Collector",
+  "description": "Endlessly collects Scrap Iron and Mist Wood in Counterweight West, Royal Museum, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "start_location": "Anywhere in Marleybone",
+  "drops": [
+    "Mist Wood",
+    "Scrap Iron"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "check_zone",
+      "label": "Check if in Marleybone",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_zone",
+      "label": "Check if in Royal Museum",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_Museum",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Royal Museum",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -211.98,
+          "y": 9126.11,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": -259.21,
+          "y": 8605.37,
+          "z": -0.0
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_dungeon",
+      "label": "Enter Counterweight West",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "dungeon_zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "sigil_xyz": {
+          "x": -869.31,
+          "y": 6168.7,
+          "z": 250.0
+        },
+        "reset_xyz": {
+          "x": -1289.33,
+          "y": 5948.02,
+          "z": 250.03
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "collect_reagent",
+      "label": "Collect Scrap Iron & Mist Wood",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "xyz": {
+          "x": 7.62,
+          "y": -4866.65,
+          "z": -0.0
+        },
+        "entity_names": [
+          "Scraplron",
+          "Wood"
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Exit Counterweight West",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -5.55,
+          "y": -5236.35,
+          "z": 10.01
+        },
+        "reset_xyz": {
+          "x": 4.45,
+          "y": -4814.07,
+          "z": -0.0
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_5",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

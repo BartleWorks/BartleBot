@@ -1,0 +1,250 @@
+"""Grouping of per-fight combat bindings for display and editing.
+
+One Duel Strategy is shown once, however many fights use it.  That is the whole
+idea here, and it is a *display* rule with an editing rule attached: because the
+group is the unit on screen, editing it edits every fight in it — which is the
+intended behaviour, not an accident to be defended against.
+
+The previous arrangement drew one panel per exposed combat state and handed
+several of them the *same* ``StateAssignment`` object.  Mirror Lake rendered
+four identical panels backed by one object: editing any of them silently edited
+all four, and the other three kept displaying the stale summary until the tab
+was rebuilt from disk.  Collapsing to one panel per group removes the class of
+bug entirely — there is no sibling widget left to disagree with.
+
+Everything here is pure and Qt-free so it can be tested without a QApplication,
+matching :mod:`bartlebot.combat_warnings` next door.
+
+Grouping key
+------------
+Linked bindings group by ``duel_combat_strategy_id``; inline bindings never
+group with anything.  Two fights that happen to hold identical inline DSL are
+still two independent configs, and merging them would be a guess about intent
+that nothing in the file supports.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from bartlebot.bot.strategy_models import StateAssignment
+
+if TYPE_CHECKING:
+    from bartlebot.bot.schema import StateModel
+
+
+@dataclass
+class BindingGroup:
+    """One Duel Strategy and every exposed fight bound to it."""
+
+    assignment: StateAssignment
+    states: list[StateModel] = field(default_factory=list)
+
+    @property
+    def is_configured(self) -> bool:
+        """True if this group actually says something.
+
+        Matches ``resolve_combat`` and ``_unassigned_state_warnings``: an
+        unlinked assignment with an empty ``duel_config`` is indistinguishable
+        from no assignment at all, and falls back the same way.
+        """
+        return self.assignment.is_linked or not self.assignment.duel_config.is_empty()
+
+    @property
+    def state_ids(self) -> list[str]:
+        return [s.id for s in self.states]
+
+
+def merge_linked(assignments: list[StateAssignment]) -> list[StateAssignment]:
+    """Collapse assignments sharing a Duel Strategy onto one object.
+
+    Files written before grouping existed can hold several separate
+    ``StateAssignment`` entries all pointing at the same library strategy —
+    ``bot_strategies/f77a6a91-….json`` has two — because the old editor created
+    one per fight.  They mean exactly what a single grouped assignment means, so
+    they are folded together on read.
+
+    The *first* occurrence survives and absorbs the others' state ids, so
+    ordering follows the file.  Inline assignments are passed through untouched:
+    they have no shared identity to merge on.
+
+    Mutates the surviving assignments' ``state_ids`` in place — callers pass
+    freshly loaded models, and the merged result is what should be written back
+    on the next save.
+    """
+    first_by_dcs: dict[str, StateAssignment] = {}
+    merged: list[StateAssignment] = []
+
+    for assignment in assignments:
+        dcs_id = assignment.duel_combat_strategy_id
+        if dcs_id is None:
+            merged.append(assignment)
+            continue
+        first = first_by_dcs.get(dcs_id)
+        if first is None:
+            first_by_dcs[dcs_id] = assignment
+            merged.append(assignment)
+            continue
+        for state_id in assignment.state_ids:
+            if state_id not in first.state_ids:
+                first.state_ids.append(state_id)
+
+    return merged
+
+
+def split_unconfigured(assignments: list[StateAssignment]) -> list[StateAssignment]:
+    """Give every fight in a *saying-nothing* group its own binding.
+
+    Groups exist to share a config.  One that holds no config shares nothing, so
+    keeping several fights in it only costs them the thing decision 1 preserved:
+    an unassigned fight is configured with one click on its own row, and a fight
+    buried in a shared empty group would have to be dug out through "Applies
+    to…" first.
+
+    Reachable by clearing a multi-fight group's chip — the whole group unlinks
+    together — and from a file holding a grouped assignment that was emptied.
+    Costs nothing on disk either way: ``_save_bcs`` already drops bindings that
+    are neither linked nor holding real inline content.
+    """
+    split: list[StateAssignment] = []
+    for assignment in assignments:
+        says_nothing = not assignment.is_linked and assignment.duel_config.is_empty()
+        if says_nothing and len(assignment.state_ids) > 1:
+            split.extend(StateAssignment(state_ids=[sid]) for sid in assignment.state_ids)
+        else:
+            split.append(assignment)
+    return split
+
+
+def build_bindings(assignments: list[StateAssignment]) -> dict[str, StateAssignment]:
+    """Map every bound state id to its assignment, one shared object per group.
+
+    Replaces the ``for sid in assignment.state_ids`` seeding loop that was
+    duplicated across four call sites in ``CombatTab``.  A state id listed by
+    more than one assignment (only reachable from a hand-edited file) resolves
+    to the last one, which is also what ``find_assignment_for_state`` would have
+    picked up to the point of the first match — close enough for a file that is
+    already inconsistent.
+
+    Merging and splitting are both applied here so the two invariants the
+    sidebar relies on hold everywhere it is called: one row per strategy, and
+    one row per unassigned fight.
+    """
+    bindings: dict[str, StateAssignment] = {}
+    for assignment in split_unconfigured(merge_linked(assignments)):
+        for state_id in assignment.state_ids:
+            bindings[state_id] = assignment
+    return bindings
+
+
+def group_bindings(bindings: dict[str, StateAssignment], exposed: list[StateModel]) -> list[BindingGroup]:
+    """Return one group per distinct binding, in display order.
+
+    Configured groups come first, ordered by their earliest member's position in
+    the FSM; unassigned fights follow individually, also in FSM order.  Keeping
+    the unassigned ones separate rather than collapsing them into a single "uses
+    the bot default" row is deliberate: giving one fight a strategy is the most
+    common action in this panel, and it stays a single click on that fight's own
+    row.
+
+    States absent from ``bindings`` are skipped.  Callers seed a placeholder for
+    every exposed state before grouping, so this only bites on a caller that
+    forgot — better a missing row than a crash in a sidebar rebuild.
+    """
+    groups: dict[int, BindingGroup] = {}
+    order: list[int] = []
+
+    for state in exposed:
+        assignment = bindings.get(state.id)
+        if assignment is None:
+            continue
+        key = id(assignment)
+        group = groups.get(key)
+        if group is None:
+            group = BindingGroup(assignment=assignment)
+            groups[key] = group
+            order.append(key)
+        group.states.append(state)
+
+    ordered = [groups[key] for key in order]
+    # Stable partition: FSM order is preserved within each half.
+    return [g for g in ordered if g.is_configured] + [g for g in ordered if not g.is_configured]
+
+
+def state_label(state: StateModel) -> str:
+    """Display name for one fight — the bot author's label, or the raw id.
+
+    A group lists its fights vertically, one label per line, rather than joining
+    them into a single elided string.  A joined title truncates, and a truncated
+    membership list is the one thing this panel must not do: a fight you cannot
+    see is bound to a strategy you are about to edit.  One line each also means a
+    long name elides against its own width and carries its own tooltip, instead
+    of consuming the space its neighbours needed.
+    """
+    return state.label or state.id
+
+
+def apply_membership(
+    bindings: dict[str, StateAssignment],
+    assignment: StateAssignment,
+    chosen_ids: list[str],
+) -> None:
+    """Set which fights belong to ``assignment``, updating ``bindings`` in place.
+
+    ``chosen_ids`` is the complete desired membership, as returned by the
+    "Applies to…" dialog.  Fights are moved in from whatever group currently
+    holds them, and fights no longer chosen are detached per :func:`detach_state`.
+    """
+    chosen = list(dict.fromkeys(chosen_ids))
+    leaving = [sid for sid in assignment.state_ids if sid not in chosen]
+    joining = [sid for sid in chosen if sid not in assignment.state_ids]
+
+    for state_id in leaving:
+        detach_state(bindings, assignment, state_id)
+
+    for state_id in joining:
+        current = bindings.get(state_id)
+        # A fight moving between groups keeps nothing: it is about to be given
+        # the destination group's config, so copying the one it is leaving would
+        # only create an orphan nobody asked for.
+        if current is not None and current is not assignment:
+            _remove_state(current, state_id)
+        if state_id not in assignment.state_ids:
+            assignment.state_ids.append(state_id)
+        bindings[state_id] = assignment
+
+
+def detach_state(
+    bindings: dict[str, StateAssignment],
+    assignment: StateAssignment,
+    state_id: str,
+) -> StateAssignment:
+    """Split one fight out of a group and return its new standalone binding.
+
+    What the departing fight keeps depends on how the group was configured, and
+    the asymmetry is forced rather than chosen:
+
+    * **inline** — the config is deep-copied onto the new binding, so the fight
+      goes on working exactly as before and can now be edited independently.
+      Nothing else holds that config; dropping it would destroy work.
+    * **linked** — the fight falls back to the bot default.  It cannot keep the
+      link: a separate assignment naming the same strategy is precisely what
+      :func:`merge_linked` folds back together, so it would rejoin the group it
+      just left.  Nothing is lost either way — the strategy is still in the
+      library, one click away on the fight's own chip.
+    """
+    _remove_state(assignment, state_id)
+    if assignment.is_linked:
+        detached = StateAssignment(state_ids=[state_id])
+    else:
+        detached = StateAssignment(
+            state_ids=[state_id],
+            duel_config=assignment.duel_config.model_copy(deep=True),
+        )
+    bindings[state_id] = detached
+    return detached
+
+
+def _remove_state(assignment: StateAssignment, state_id: str) -> None:
+    assignment.state_ids = [sid for sid in assignment.state_ids if sid != state_id]

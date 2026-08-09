@@ -1,7 +1,7 @@
 {
   "id": "28180367-db5b-476b-8404-87048baa68d6",
-  "name": "Castle Darkmoor",
-  "description": "Endlessly farms Castle Darkmoor, optionally collecting the Treasure Chest in the Stone Skeleton Key room.",
+  "name": "Graveyard",
+  "description": "Endlessly farms Graveyard in Castle Darkmoor.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_2",
@@ -390,7 +390,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -498,11 +499,12 @@
         "y": 0.0
       },
       "params": {
-        "if_health_below": 0.5,
+        "if_health_below": 1.0,
         "if_mana_below": 0.5,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -544,7 +546,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     }

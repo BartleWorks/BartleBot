@@ -1,4 +1,5 @@
 {
+  "id": "8d2430a2-cceb-4123-b09a-85617b70b0df",
   "name": "Oakheart",
   "description": "Defeats Oakheart",
   "version": "1.0",
@@ -340,7 +341,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

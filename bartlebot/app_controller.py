@@ -10,7 +10,7 @@ from wakepy import ActivationError, keep
 
 logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import QObject, QTimer
+from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
@@ -18,7 +18,8 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
-from bartlebot.deck_io import read_deck, write_deck
+from bartlebot.combat_warnings import collect_combat_warnings
+from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -62,7 +63,36 @@ class AppController(QObject):
         self._wire()
         self._window.show()
         self._reconfigure_autosave_timer()
+        self._prune_dead_strategy_settings()
         self._check_crash_recovery()
+
+    def _prune_dead_strategy_settings(self) -> None:
+        """Drop remembered strategy selections whose BCS file is gone.
+
+        Entries accumulate one per bot ever opened, and survive deleting the
+        strategy they point at.  Best-effort: a failure here must not stop the
+        app from starting.
+        """
+        from bartlebot.strategy_store import list_all_bot_strategies  # noqa: PLC0415
+
+        try:
+            known = {bcs.id for bcs in list_all_bot_strategies()}
+        except Exception:
+            logger.exception("Failed to enumerate bot strategies; skipping settings prune")
+            return
+
+        if not known:
+            # An empty result is indistinguishable from "the store can't see
+            # bot_strategies/ at all" (wrong project_root, directory deleted,
+            # a dev checkout with no strategies yet) — and pruning on it would
+            # wipe every remembered selection the user has.  Refuse rather than
+            # guess.
+            logger.debug("No bot strategies visible — skipping active-strategy prune")
+            return
+
+        removed = SettingsManager.instance().prune_active_strategies(known)
+        if removed:
+            logger.info("Pruned %d dead active-strategy setting(s)", removed)
 
     # ------------------------------------------------------------------
     # Wiring
@@ -145,8 +175,18 @@ class AppController(QObject):
     async def run(self) -> None:
         self._client_manager.start()
         quit_event = asyncio.Event()
+        # Connected before quit_event so debounced edits land while the widgets
+        # are still alive.
+        self._app.aboutToQuit.connect(self._flush_pending_edits)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
+
+    def _flush_pending_edits(self) -> None:
+        """Commit debounced combat edits that the 500 ms timer has not fired for yet."""
+        try:
+            self._window.left_sidebar.combat_tab.flush_pending_save()
+        except Exception:
+            logger.exception("Failed to flush pending combat edits on quit")
 
     # ------------------------------------------------------------------
     # File operations
@@ -374,8 +414,7 @@ class AppController(QObject):
         client = clients[client_idx]
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
-            async with DeckBuilder(client) as db:
-                await asyncio.wait_for(write_deck(db, deck_data), timeout=DECK_APPLY_TIMEOUT)
+            report = await apply_deck(client, deck_data)
             logger.info("Deck applied for slot %d", slot)
         except TimeoutError:
             logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
@@ -383,16 +422,85 @@ class AppController(QObject):
         except Exception:
             logger.exception("Failed to apply deck for slot %d", slot)
             self._warn_deck_failed("apply", slot, "failed — see the log for details")
+        else:
+            self._report_deck_apply(slot, report)
+
+    def _report_deck_apply(self, slot: int, report: DeckApplyReport) -> None:
+        """Tell the user when the deck that went on is not the deck that was saved.
+
+        Saved decks name specific spells, so a deck built on another wizard
+        routinely asks for cards this one does not have — a different school's
+        hitter cannot be substituted at all.  Staying silent about that produced
+        a half-built deck that looked like a success.
+
+        Nothing is shown for a clean apply, which is the common case when the
+        deck and the wizard are the same one it was saved from.
+        """
+        if report.is_clean:
+            return
+
+        lines: list[str] = []
+        if report.substitutions:
+            lines.append("Used a lower tier than the deck asked for:")
+            lines += [f"    {used}  (deck wanted {req})" for req, used in sorted(report.substitutions.items())]
+        if report.skipped:
+            if lines:
+                lines.append("")
+            lines.append("Not in this wizard's spellbook, so left out:")
+            lines += [f"    {self._describe_skipped(name, report)}" for name in report.skipped]
+            lines.append("")
+            lines.append("Swap in this wizard's own cards and re-import the deck to fix this.")
+
+        if not report.applied:
+            title = f"Deck for P{slot} not applied"
+            body = "None of the saved deck's cards are in this wizard's spellbook, so the current deck was left alone."
+            self._show_deck_notice(title, f"{body}\n\n" + "\n".join(lines), warn=True)
+            return
+
+        self._show_deck_notice(f"Deck applied for P{slot}, with changes", "\n".join(lines), warn=bool(report.skipped))
+
+    @staticmethod
+    def _describe_skipped(name: str, report: DeckApplyReport) -> str:
+        """One line for a skipped card: what it was, and what could stand in.
+
+        The kind and the alternatives are only known for blades, traps, wards,
+        charms and auras — the interchangeable ones.  A missing attack spell
+        gets its name and nothing else, which is the honest answer: a Fire
+        wizard has no stand-in for a Storm hitter.
+        """
+        from bartlebot.card_kinds import describe_kind  # noqa: PLC0415
+
+        kind = describe_kind(report.kinds.get(name))
+        line = f"{name} — {kind}" if kind else name
+        options = report.alternatives.get(name)
+        if options:
+            line += f"; you have {', '.join(options)}"
+        return line
 
     def _warn_deck_failed(self, action: str, slot: int, reason: str) -> None:
         """Surface a deck import/apply failure instead of leaving it log-only."""
-        QMessageBox.warning(
-            self._window,
+        self._show_deck_notice(
             f"Deck {action} failed",
             f"Deck {action} for P{slot} {reason}.\n\n"
             "The game's deck window may be left open or partially edited — "
             "check the client before retrying.",
+            warn=True,
         )
+
+    def _show_deck_notice(self, title: str, body: str, *, warn: bool) -> None:
+        """Show a deck dialog *after* the calling task has finished.
+
+        Both callers run inside an ``asyncio.Task``, and a blocking QMessageBox
+        there is the Python 3.13 re-entrancy trap described in CLAUDE.md: the
+        dialog re-enters Qt's event loop while the task's frame is still on the
+        Python stack, and any task woken meanwhile is left permanently stuck.
+        That is what froze the client sidebar for the duration of a bot run.
+
+        Deferring through the Qt event loop means the dialog opens once the task
+        has returned and no task is mid-execution, so blocking is safe again.
+        """
+        box = QMessageBox.warning if warn else QMessageBox.information
+        QTimer.singleShot(0, lambda: box(self._window, title, body))
 
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
@@ -422,69 +530,22 @@ class AppController(QObject):
         self._bot_task = asyncio.create_task(self._start_bot())
 
     def _collect_combat_warnings(self) -> list[str]:
-        """Return a list of combat config warning strings. Empty list = no issues."""
-        from bartlebot.strategy_store import (  # noqa: PLC0415
-            load_bot_strategy,
-            load_duel_strategy,
-            load_player_strategy,
-        )
+        """Return a list of combat config warning strings. Empty list = no issues.
 
+        Parsing every distinct DSL takes a noticeable moment on a large library,
+        so this runs under a wait cursor.
+        """
         if self._loaded_config is None:
             return []
-        warnings: list[str] = []
-        bot_id = self._loaded_config.id
-        sm = SettingsManager.instance()
-        active_bcs_id = sm.get_active_strategy(bot_id)
 
-        if not active_bcs_id:
-            warnings.append("No Bot Combat Strategy is set — will use built-in combat defaults.")
-            return warnings
-
-        try:
-            bcs = load_bot_strategy(active_bcs_id)
-        except Exception:
-            warnings.append(f"Active Bot Combat Strategy file is missing (id: {active_bcs_id[:8]}…).")
-            return warnings
-
+        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
         num_clients = len(self._client_manager.clients)
 
-        # Check default strategy
-        if bcs.default_strategy_id:
-            try:
-                dcs = load_duel_strategy(bcs.default_strategy_id)
-                if num_clients < dcs.min_players:
-                    warnings.append(
-                        f"Default strategy '{dcs.name}' requires ≥{dcs.min_players} players "
-                        f"but only {num_clients} client(s) are connected."
-                    )
-                for pcs_id in dcs.linked_pcs_ids():
-                    try:
-                        load_player_strategy(pcs_id)
-                    except Exception:
-                        warnings.append(
-                            f"Player strategy file missing in default DCS '{dcs.name}' (id: {pcs_id[:8]}…)."
-                        )
-            except Exception:
-                warnings.append(f"Default Duel Strategy file is missing (id: {bcs.default_strategy_id[:8]}…).")
-
-        # Check state assignments
-        for sa in bcs.state_assignments:
-            try:
-                dcs = load_duel_strategy(sa.duel_combat_strategy_id)
-                if num_clients < dcs.min_players:
-                    warnings.append(
-                        f"State assignment DCS '{dcs.name}' requires ≥{dcs.min_players} players "
-                        f"but only {num_clients} client(s) are connected."
-                    )
-                for pcs_id in dcs.linked_pcs_ids():
-                    try:
-                        load_player_strategy(pcs_id)
-                    except Exception:
-                        warnings.append(f"Player strategy file missing in DCS '{dcs.name}' (id: {pcs_id[:8]}…).")
-            except Exception:
-                warnings.append(f"Assigned Duel Strategy file is missing (id: {sa.duel_combat_strategy_id[:8]}…).")
-
-        return warnings
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            return collect_combat_warnings(active_bcs_id, num_clients, self._loaded_config)
+        finally:
+            QApplication.restoreOverrideCursor()
 
     async def _start_bot(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
@@ -501,7 +562,6 @@ class AppController(QObject):
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
-        await self._apply_pre_run_decks()
         self._window.set_start_enabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
@@ -512,6 +572,10 @@ class AppController(QObject):
         self._window.right_sidebar.clients.set_bot_running(True)
         self._window.left_sidebar.set_bot_running(True)
         try:
+            # Inside the try so the finally still tears down if the user stops during
+            # a slow apply, and after add_gui_callback so failures reach this run's
+            # log panel rather than the previous run's.
+            await self._apply_pre_run_decks()
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()
@@ -554,11 +618,18 @@ class AppController(QObject):
                 logger.warning("Deck saved for slot %d but only %d client(s) connected — skipping", slot, len(clients))
                 continue
             client = clients[client_idx]
-            preset_dict = deck_data.model_dump()
             logger.info("Applying saved deck for slot %d (%d cards)", slot, deck_data.total_cards())
             try:
-                async with DeckBuilder(client) as db:
-                    await db.set_deck_preset(preset_dict)
+                await apply_deck(client, deck_data)
+            except TimeoutError:
+                # Log only. This runs inside the _start_bot task, and a blocking
+                # QMessageBox from an asyncio task deadlocks the qasync loop under
+                # Python 3.13 (see CLAUDE.md).
+                logger.error(
+                    "Deck apply for slot %d timed out after %.0fs — run will continue with whatever was set",
+                    slot,
+                    DECK_APPLY_TIMEOUT,
+                )
             except Exception:
                 logger.warning(
                     "Failed to fully apply deck for slot %d — run will continue with whatever was set",

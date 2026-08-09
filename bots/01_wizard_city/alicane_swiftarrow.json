@@ -1,4 +1,5 @@
 {
+  "id": "150c358a-c8d6-4d32-bc3a-8f50c5e8270a",
   "name": "Alicane Swiftarrow",
   "description": "Endlessly farms Alicane Swiftarrow in Firecat Alley",
   "version": "1.0",
@@ -300,7 +301,9 @@
         "x": 3520.0,
         "y": -90.0
       },
-      "params": {},
+      "params": {
+        "timeout": 10.0
+      },
       "option_overrides": {}
     },
     {

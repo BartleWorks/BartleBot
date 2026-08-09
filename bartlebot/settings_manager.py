@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
 
@@ -392,6 +393,27 @@ class SettingsManager:
             mapping[bot_id] = strategy_id
         self.set("active_bot_strategies", value=mapping)
         self.save()
+
+    def prune_active_strategies(self, known_strategy_ids: Iterable[str]) -> int:
+        """Drop remembered selections whose BotCombatStrategy file no longer exists.
+
+        Returns the number of entries removed.
+
+        Deliberately prunes on the *strategy* id only, never the bot id.
+        ``bot_strategies/`` is the single authoritative home for BCS files, so a
+        strategy id matching nothing there is definitively dead.  A bot id, by
+        contrast, may simply belong to a bot saved outside ``bots/`` that the
+        user has not opened this session — dropping those would silently break
+        the binding for every bot kept elsewhere on disk.
+        """
+        mapping = self.get("active_bot_strategies") or {}
+        known = set(known_strategy_ids)
+        kept = {bot_id: sid for bot_id, sid in mapping.items() if sid in known}
+        removed = len(mapping) - len(kept)
+        if removed:
+            self.set("active_bot_strategies", value=kept)
+            self.save()
+        return removed
 
     # ------------------------------------------------------------------
     # Window sizing helper

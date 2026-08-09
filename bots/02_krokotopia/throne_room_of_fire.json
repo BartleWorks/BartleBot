@@ -1,4 +1,5 @@
 {
+  "id": "267ba97c-16bd-41ce-bf87-7ad7a94b9545",
   "name": "Throne Room of Fire",
   "description": "Endlessly completes the Throne Room of Fire in Krokotopia",
   "version": "1.0",
@@ -410,7 +411,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     }

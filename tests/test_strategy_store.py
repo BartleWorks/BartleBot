@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from bartlebot import strategy_store as store_mod
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
@@ -126,3 +127,29 @@ def test_list_skips_corrupt_file(tmp_path: Path):
     d.mkdir(parents=True)
     (d / "bad.json").write_text("{not valid json}")
     assert list_bot_strategies("any", tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# Default root (Phase 0 regression guard)
+# ---------------------------------------------------------------------------
+
+
+def test_default_root_ignores_cwd(monkeypatch, tmp_path):
+    """The bug this store used to have: an explicit root beats cwd, and cwd
+    alone must never silently redirect it — that emptied the library for
+    anyone who launched the app from outside the project root.
+    """
+    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path / "not-the-real-root")
+    monkeypatch.chdir(tmp_path)  # must have no effect on the default root
+    assert list_player_strategies() == []
+
+    real_default = tmp_path / "not-the-real-root"
+    save_player_strategy(PlayerCombatStrategy(name="A", dsl=""), real_default)
+    assert len(list_player_strategies()) == 1
+
+
+def test_explicit_root_overrides_project_root(monkeypatch, tmp_path):
+    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path / "wrong")
+    save_player_strategy(PlayerCombatStrategy(name="A", dsl=""), tmp_path / "explicit")
+    assert len(list_player_strategies(tmp_path / "explicit")) == 1
+    assert list_player_strategies() == []

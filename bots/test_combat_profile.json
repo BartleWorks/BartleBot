@@ -1,4 +1,5 @@
 {
+  "id": "90c3b071-3d9f-4811-894f-45f86d40b82d",
   "name": "Combat Profile Tester",
   "description": "Tests combat profiles",
   "version": "1.0",
@@ -112,8 +113,8 @@
       },
       "params": {
         "enemy": "",
-        "use_default_duel_profile": true,
-        "max_duration": 0.0
+        "max_duration": 0.0,
+        "use_default_strategy": true
       },
       "option_overrides": {}
     }

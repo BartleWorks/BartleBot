@@ -7,8 +7,8 @@ Directory layout (version-controlled, relative to project root):
   bot_strategies/      — BotCombatStrategy      files, named {uuid}.json
 
 Each function accepts an optional `root` parameter (path to the project root).
-When omitted it defaults to the current working directory, which is correct
-when the app is launched from the project root.
+When omitted it defaults to :func:`bartlebot.paths.project_root`, so callers get
+the correct directory regardless of the process's current working directory.
 """
 
 from __future__ import annotations
@@ -21,10 +21,11 @@ from bartlebot.bot.strategy_models import (
     DuelCombatStrategy,
     PlayerCombatStrategy,
 )
+from bartlebot.paths import project_root
 
 
 def _project_root(root: str | Path | None) -> Path:
-    return Path(root) if root is not None else Path.cwd()
+    return Path(root) if root is not None else project_root()
 
 
 # ---------------------------------------------------------------------------

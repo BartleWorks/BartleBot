@@ -1,4 +1,5 @@
 {
+  "id": "9b60d90c-6276-491e-b5eb-d1739158d79c",
   "name": "Jade Oni",
   "description": "Endlessly farms the Jade Oni",
   "version": "1.0",
@@ -307,7 +308,8 @@
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -391,7 +393,8 @@
         "if_health_below": 0.8,
         "if_mana_below": 0.8,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

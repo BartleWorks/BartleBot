@@ -328,17 +328,21 @@ class StrategyLibraryWindow(QDialog):
                 self._pcs_empty_lbl.hide()
                 return
 
-    def _on_pcs_saved(self) -> None:
-        current_item = self._pcs_list.currentItem()
-        if current_item is None:
-            return
-        uuid = current_item.data(0x100)
-        for pcs in self._all_pcs:
-            if pcs.id == uuid:
-                save_player_strategy(pcs)
-                current_item.setText(pcs.name)
-                self.strategies_changed.emit()
-                return
+    def _on_pcs_saved(self, uuid: str) -> None:
+        """Persist the strategy the editor was editing, identified by ``uuid``.
+
+        Deliberately does *not* consult ``currentItem()``: selecting a different
+        strategy flushes the editor, and by then the list has already moved on,
+        so the pending edits would be written to the newly selected file.
+        """
+        pcs = next((p for p in self._all_pcs if p.id == uuid), None)
+        if pcs is None:
+            return  # deleted out from under a pending save — nothing to resurrect
+        save_player_strategy(pcs)
+        item = self._find_item(self._pcs_list, uuid)
+        if item is not None:
+            item.setText(pcs.name)
+        self.strategies_changed.emit()
 
     def _on_new_pcs(self) -> None:
         name, ok = QInputDialog.getText(self, "New Player Strategy", "Name:")
@@ -348,12 +352,9 @@ class StrategyLibraryWindow(QDialog):
         save_player_strategy(pcs)
         self._all_pcs.append(pcs)
         self._rebuild_pcs_list()
-        # Select newly created item
-        for i in range(self._pcs_list.count()):
-            item = self._pcs_list.item(i)
-            if item and item.data(0x100) == pcs.id:
-                self._pcs_list.setCurrentItem(item)
-                break
+        item = self._find_item(self._pcs_list, pcs.id)
+        if item is not None:
+            self._pcs_list.setCurrentItem(item)
         self.strategies_changed.emit()
 
     def _on_delete_pcs(self) -> None:
@@ -369,6 +370,9 @@ class StrategyLibraryWindow(QDialog):
         )
         if ans != QMessageBox.StandardButton.Yes:
             return
+        # Detach the editor first: a debounce timer still pending here would fire
+        # after the unlink and write the file straight back.
+        self._pcs_editor.clear()
         delete_player_strategy(uuid)
         self._all_pcs = [p for p in self._all_pcs if p.id != uuid]
         self._rebuild_pcs_list()
@@ -418,11 +422,21 @@ class StrategyLibraryWindow(QDialog):
         self._dcs_editor.presets_changed.connect(self._on_presets_changed)
         self._dcs_empty_lbl = QLabel("Select a strategy to edit")
 
+        # DuelConfigEditor (inside DuelStrategyEditor) no longer scrolls its own
+        # assignment list internally — it sizes to full content and expects
+        # whatever embeds it to provide the scrolling. The Combat tab already
+        # has an outer scroll area; this fixed-size dialog does not, so it needs
+        # its own here.
+        dcs_scroll = QScrollArea()
+        dcs_scroll.setWidgetResizable(True)
+        dcs_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        dcs_scroll.setWidget(self._dcs_editor)
+
         right = QWidget()
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(8, 0, 0, 0)
         right_layout.addWidget(self._dcs_empty_lbl)
-        right_layout.addWidget(self._dcs_editor)
+        right_layout.addWidget(dcs_scroll)
         self._dcs_editor.hide()
         splitter.addWidget(right)
 
@@ -478,17 +492,16 @@ class StrategyLibraryWindow(QDialog):
                 self._dcs_empty_lbl.hide()
                 return
 
-    def _on_dcs_saved(self) -> None:
-        current_item = self._dcs_list.currentItem()
-        if current_item is None:
-            return
-        uuid = current_item.data(0x100)
-        for dcs in self._all_dcs:
-            if dcs.id == uuid:
-                save_duel_strategy(dcs)
-                current_item.setText(dcs.name)
-                self.strategies_changed.emit()
-                return
+    def _on_dcs_saved(self, uuid: str) -> None:
+        """Persist the strategy the editor was editing — see ``_on_pcs_saved``."""
+        dcs = next((d for d in self._all_dcs if d.id == uuid), None)
+        if dcs is None:
+            return  # deleted out from under a pending save
+        save_duel_strategy(dcs)
+        item = self._find_item(self._dcs_list, uuid)
+        if item is not None:
+            item.setText(dcs.name)
+        self.strategies_changed.emit()
 
     def _on_new_dcs(self) -> None:
         name, ok = QInputDialog.getText(self, "New Duel Strategy", "Name:")
@@ -498,11 +511,9 @@ class StrategyLibraryWindow(QDialog):
         save_duel_strategy(dcs)
         self._all_dcs.append(dcs)
         self._rebuild_dcs_list()
-        for i in range(self._dcs_list.count()):
-            item = self._dcs_list.item(i)
-            if item and item.data(0x100) == dcs.id:
-                self._dcs_list.setCurrentItem(item)
-                break
+        item = self._find_item(self._dcs_list, dcs.id)
+        if item is not None:
+            self._dcs_list.setCurrentItem(item)
         self.strategies_changed.emit()
 
     def _on_delete_dcs(self) -> None:
@@ -518,6 +529,8 @@ class StrategyLibraryWindow(QDialog):
         )
         if ans != QMessageBox.StandardButton.Yes:
             return
+        # See _on_delete_pcs — detach before unlinking so no pending save resurrects it.
+        self._dcs_editor.clear()
         delete_duel_strategy(uuid)
         self._all_dcs = [d for d in self._all_dcs if d.id != uuid]
         self._rebuild_dcs_list()
@@ -534,6 +547,15 @@ class StrategyLibraryWindow(QDialog):
         if index == 1:
             self._dcs_editor.set_pcs_list(self._all_pcs)
 
+    @staticmethod
+    def _find_item(list_widget: QListWidget, uuid: str) -> QListWidgetItem | None:
+        """Return the row carrying ``uuid``, or None if it is filtered out or gone."""
+        for i in range(list_widget.count()):
+            item = list_widget.item(i)
+            if item is not None and item.data(0x100) == uuid:
+                return item
+        return None
+
     def _make_filter(self):
         from PyQt6.QtWidgets import QLineEdit  # noqa: PLC0415
 
@@ -544,20 +566,16 @@ class StrategyLibraryWindow(QDialog):
     def focus_duel_strategy(self, dcs_id: str) -> None:
         """Switch to the Duel Strategies tab and select the given strategy."""
         self._tabs.setCurrentWidget(self._dcs_tab)
-        for i in range(self._dcs_list.count()):
-            item = self._dcs_list.item(i)
-            if item and item.data(0x100) == dcs_id:
-                self._dcs_list.setCurrentItem(item)
-                return
+        item = self._find_item(self._dcs_list, dcs_id)
+        if item is not None:
+            self._dcs_list.setCurrentItem(item)
 
     def focus_player_strategy(self, pcs_id: str) -> None:
         """Switch to the Player Strategies tab and select the given strategy."""
         self._tabs.setCurrentWidget(self._pcs_tab)
-        for i in range(self._pcs_list.count()):
-            item = self._pcs_list.item(i)
-            if item and item.data(0x100) == pcs_id:
-                self._pcs_list.setCurrentItem(item)
-                return
+        item = self._find_item(self._pcs_list, pcs_id)
+        if item is not None:
+            self._pcs_list.setCurrentItem(item)
 
     def refresh(self) -> None:
         """Reload all strategy files from disk. Called when external changes occur."""
@@ -697,23 +715,28 @@ class StrategyLibraryWindow(QDialog):
     def focus_deck_preset(self, preset_id: str) -> None:
         """Switch to the Deck Presets tab and select the given preset."""
         self._tabs.setCurrentWidget(self._decks_tab)
-        for i in range(self._decks_list.count()):
-            item = self._decks_list.item(i)
-            if item and item.data(0x100) == preset_id:
-                self._decks_list.setCurrentItem(item)
-                return
+        item = self._find_item(self._decks_list, preset_id)
+        if item is not None:
+            self._decks_list.setCurrentItem(item)
 
     # ------------------------------------------------------------------
     # Lifecycle
     # ------------------------------------------------------------------
 
-    def closeEvent(self, event) -> None:
-        self._closed = True
-        # Flush any pending edits before closing
+    def flush_editors(self) -> None:
+        """Commit any debounced edits in either strategy editor immediately.
+
+        Public so the owner can flush before the app quits — closing the window
+        is not the only way edits go out of scope.
+        """
         if hasattr(self, "_pcs_editor"):
             self._pcs_editor.flush()
         if hasattr(self, "_dcs_editor"):
             self._dcs_editor.flush()
+
+    def closeEvent(self, event) -> None:
+        self._closed = True
+        self.flush_editors()
         super().closeEvent(event)
 
     def changeEvent(self, event: QEvent) -> None:

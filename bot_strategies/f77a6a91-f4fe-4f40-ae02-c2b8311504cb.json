@@ -1,0 +1,36 @@
+{
+  "id": "f77a6a91-f4fe-4f40-ae02-c2b8311504cb",
+  "name": "Main Hall - 4 player AoE spam",
+  "bot_id": "21c704ee-857c-4622-9af3-cb2ec9714022",
+  "player_decks": {},
+  "default_strategy_id": "1f185f4b-a42f-4a51-86f2-c23e48726d13",
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_12"
+      ],
+      "duel_config": {
+        "min_players": 1,
+        "max_players": 4,
+        "player_assignments": []
+      },
+      "duel_combat_strategy_id": "1f185f4b-a42f-4a51-86f2-c23e48726d13"
+    },
+    {
+      "state_ids": [
+        "state_15"
+      ],
+      "duel_config": {
+        "min_players": 1,
+        "max_players": 4,
+        "player_assignments": []
+      },
+      "duel_combat_strategy_id": "1f185f4b-a42f-4a51-86f2-c23e48726d13"
+    }
+  ]
+}

@@ -13,7 +13,16 @@ from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
+from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+
+
+def _shorten_recent_path(path: str, root: Path) -> str:
+    """Display a recent-file path relative to the project root when possible."""
+    try:
+        return str(Path(path).relative_to(root))
+    except ValueError:
+        return path
 
 
 class MainWindow(QMainWindow):
@@ -257,12 +266,9 @@ class MainWindow(QMainWindow):
         if not paths:
             self._update_recent_placeholder()
             return
-        cwd = Path.cwd()
+        root = project_root()
         for path in paths:
-            try:
-                label = str(Path(path).relative_to(cwd))
-            except ValueError:
-                label = path
+            label = _shorten_recent_path(path, root)
             action = QAction(label, self)
             action.triggered.connect(lambda _checked, p=path: self.open_recent_requested.emit(p))
             self._recent_menu.addAction(action)

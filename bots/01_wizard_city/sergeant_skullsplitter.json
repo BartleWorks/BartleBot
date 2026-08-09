@@ -1,4 +1,5 @@
 {
+  "id": "2e21c0d6-b25a-43a6-8c21-7529a97f0e57",
   "name": "Sergeant Skullsplitter",
   "description": "Endlessly farms Sergeant Skullsplitter in Triton Avenue",
   "version": "1.0",
@@ -273,7 +274,9 @@
         "x": 3520,
         "y": 0.0
       },
-      "params": {},
+      "params": {
+        "timeout": 10.0
+      },
       "option_overrides": {}
     },
     {

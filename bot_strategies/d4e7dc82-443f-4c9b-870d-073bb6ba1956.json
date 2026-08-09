@@ -3,5 +3,11 @@
   "name": "4-player State Wing",
   "bot_id": "3f5a60dd-2211-4e72-bfb7-d57dcf90b850",
   "player_decks": {},
+  "default_strategy_id": "1f185f4b-a42f-4a51-86f2-c23e48726d13",
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
   "state_assignments": []
 }

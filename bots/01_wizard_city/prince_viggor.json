@@ -1,4 +1,5 @@
 {
+  "id": "0a255052-7037-4be8-9789-4125611ae786",
   "name": "Prince Viggor",
   "description": "Endlessly farms Prince Viggor in Wizard City Catacombs",
   "version": "1.0",
@@ -190,7 +191,9 @@
         "x": 1320.0,
         "y": 90.0
       },
-      "params": {},
+      "params": {
+        "timeout": 10.0
+      },
       "option_overrides": {}
     },
     {

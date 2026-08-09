@@ -48,6 +48,9 @@ class ClientManager(QObject):
         self._client_order: list[str | None] = []
         # Slots pending recovery: original_position → username
         self._pending_recovery: dict[int, str] = {}
+        # Slot each username last occupied, remembered across a disconnect so a client
+        # that comes back outside the recovery flow reclaims its original position.
+        self._vacated_slots: dict[str, int] = {}
         self._recovery_in_progress: bool = False
         # Last known window resolution per username; used by recovery to restore original size.
         self._client_resolutions: dict[str, tuple[int, int]] = {}
@@ -146,8 +149,8 @@ class ClientManager(QObject):
 
         self._refresh_account_map(self._clients)
         username = self._hwnd_account_map.get(hwnd)
-        if username and username not in self._client_order:
-            self._client_order.append(username)
+        if username:
+            self._assign_slot(username)
 
         prev_without = [c for c in self._clients if c.window_handle != hwnd]
         self._sync_embedded_clients(prev_without, self._clients)
@@ -238,8 +241,9 @@ class ClientManager(QObject):
                             if recovery_pos is not None:
                                 # Recovering client — restore to original slot rather than appending.
                                 self._client_order[recovery_pos] = username
-                            elif username not in self._client_order:
-                                self._client_order.append(username)
+                                self._vacated_slots.pop(username, None)
+                            else:
+                                self._assign_slot(username)
 
                     ordered = self._build_ordered_clients(clients)
                     self._sync_embedded_clients(self._clients, ordered)
@@ -308,6 +312,11 @@ class ClientManager(QObject):
             orig_pos = next((i for i, u in enumerate(self._client_order) if u == username), None)
             if orig_pos is not None:
                 self._client_order[orig_pos] = None
+                # Remember the slot even when recovery is queued: recovery can be
+                # abandoned (launch failure, login timeout) while the client still
+                # shows up later, and it should reclaim this slot rather than be
+                # appended past the end of the ordering.
+                self._vacated_slots[username] = orig_pos
                 if machine is not None and not machine.is_stopped:
                     self._pending_recovery[orig_pos] = username
                     logger.warning(
@@ -323,6 +332,30 @@ class ClientManager(QObject):
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
                 self._recovery_task = asyncio.create_task(self._run_recovery_queue())
+
+    def _assign_slot(self, username: str) -> None:
+        """Place *username* into _client_order without growing the ordering needlessly.
+
+        Preference order: the slot this client last occupied, then any slot left empty
+        by a client that disconnected, and only then a new slot at the end.
+
+        Appending unconditionally is what caused slot drift: a disconnect always nulls
+        the client's slot, but recovery does not always run (bot stopped) or always
+        succeed (login timeout). Each such round left a permanent hole and appended the
+        returning client past the end, so the ordering grew past the client count —
+        four clients reporting slots 0-4.
+        """
+        if username in self._client_order:
+            return
+        prev_slot = self._vacated_slots.pop(username, None)
+        if prev_slot is not None and prev_slot < len(self._client_order) and self._client_order[prev_slot] is None:
+            self._client_order[prev_slot] = username
+            return
+        free = next((i for i, u in enumerate(self._client_order) if u is None), None)
+        if free is not None:
+            self._client_order[free] = username
+        else:
+            self._client_order.append(username)
 
     def _build_ordered_clients(self, live_clients: list) -> list:
         """Build the client list in _client_order order; unknown-account clients go at the end."""
@@ -341,30 +374,40 @@ class ClientManager(QObject):
         return ordered
 
     def _sync_embedded_clients(self, prev_clients: list, new_clients: list) -> None:
-        prev_map = {c.window_handle: i for i, c in enumerate(prev_clients)}
-        new_map = {c.window_handle: i for i, c in enumerate(new_clients)}
-        # Unembed removed clients
-        for hwnd, idx in prev_map.items():
-            if hwnd not in new_map:
+        """Reconcile the game view's tiles with the new client ordering.
+
+        Runs in two phases: every slot whose occupant changes is vacated first, then
+        the new occupants are embedded. This ordering matters because GameView keys
+        its tiles by slot index, not by HWND — `unembed_client(idx)` tears down
+        whatever tile currently sits at `idx`. Interleaving unembeds and embeds (the
+        obvious per-client loop) lets one client's unembed destroy a tile another
+        client was already moved into, and `embed_client` silently no-ops when its
+        slot is still occupied. Either way a game window is left floating unembedded.
+
+        Multi-client recovery is where this bites: clients come back one at a time and
+        _build_ordered_clients compacts out the not-yet-recovered slots, so every step
+        renumbers the clients that already returned.
+        """
+        prev_by_idx = {i: c.window_handle for i, c in enumerate(prev_clients)}
+        new_by_idx = {i: c.window_handle for i, c in enumerate(new_clients)}
+
+        # Phase 1 — vacate every slot that is losing its current occupant.
+        for idx, hwnd in sorted(prev_by_idx.items()):
+            if new_by_idx.get(idx) != hwnd:
                 try:
                     self._game_view.unembed_client(idx)
                 except Exception:
-                    pass
-        # Move clients that changed slot index
-        for hwnd, new_idx in new_map.items():
-            if hwnd in prev_map and prev_map[hwnd] != new_idx:
-                try:
-                    self._game_view.unembed_client(prev_map[hwnd])
-                    self._game_view.embed_client(hwnd, new_idx)
-                except Exception:
-                    pass
-        # Embed newly added clients
-        for hwnd, idx in new_map.items():
-            if hwnd not in prev_map:
+                    # Routine when the window is already gone (crash), so keep it quiet.
+                    logger.debug("unembed_client(%d) failed", idx, exc_info=True)
+
+        # Phase 2 — fill the vacated slots. Every index reached here is free: it was
+        # either unembedded above or never occupied.
+        for idx, hwnd in sorted(new_by_idx.items()):
+            if prev_by_idx.get(idx) != hwnd:
                 try:
                     self._game_view.embed_client(hwnd, idx)
                 except Exception:
-                    pass
+                    logger.exception("embed_client(hwnd=%d, idx=%d) failed", hwnd, idx)
 
     # ------------------------------------------------------------------
     # Recovery

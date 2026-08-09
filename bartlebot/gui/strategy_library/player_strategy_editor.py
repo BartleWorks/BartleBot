@@ -20,7 +20,11 @@ _DEBOUNCE_MS = 500
 class PlayerStrategyEditor(QWidget):
     """Edit the name and DSL of a PlayerCombatStrategy.  Auto-saves after ``_DEBOUNCE_MS`` ms."""
 
-    changed = pyqtSignal()  # emitted when any field changes (after debounce)
+    # Emitted after debounce with the id of the strategy the edits belong to.
+    # The id matters: a debounced edit lands *after* the user may have already
+    # selected a different strategy in the list, so the receiver must save the
+    # strategy that was being edited, not whatever is currently highlighted.
+    changed = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -62,6 +66,19 @@ class PlayerStrategyEditor(QWidget):
             self._save_timer.stop()
             self._flush()
 
+    def clear(self) -> None:
+        """Detach from the loaded strategy and drop any pending save.
+
+        Call this before deleting the strategy being edited — otherwise the
+        debounce timer fires afterwards and writes the file back out.
+        """
+        self._save_timer.stop()
+        self._strategy = None
+        self._suppress = True
+        self._name_edit.clear()
+        self._dsl_edit.clear()
+        self._suppress = False
+
     def _on_changed(self) -> None:
         if self._suppress or self._strategy is None:
             return
@@ -73,7 +90,7 @@ class PlayerStrategyEditor(QWidget):
             return
         self._strategy.name = self._name_edit.text().strip() or self._strategy.name
         self._strategy.dsl = self._dsl_edit.toPlainText()
-        self.changed.emit()
+        self.changed.emit(self._strategy.id)
 
     def _apply_style(self) -> None:
         self._dsl_edit.setStyleSheet(

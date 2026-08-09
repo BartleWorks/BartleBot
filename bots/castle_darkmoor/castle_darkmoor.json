@@ -1,49 +1,11 @@
 {
+  "id": "03586335-4865-4616-82bf-eed06c5a8741",
   "name": "Castle Darkmoor",
   "description": "Endlessly farms Castle Darkmoor, optionally collecting the Treasure Chest in the Stone Skeleton Key room.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_2",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nfrenzy | lord[\"Epic - Amulet\"] | tempest[epic]\n\n### p2\nfrenzy | heqet[\"Epic - Amulet\"]@boss | tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
-  "combat_profiles": [
-    {
-      "name": "Castle Darkmoor - 2 max storms",
-      "combat_order": [],
-      "player_decks": {},
-      "duel_profiles": {
-        "default": {
-          "name": "default",
-          "use_bartlebot_default": true,
-          "behaviors": []
-        },
-        "Frenzy into hits - 2 max storms": {
-          "name": "Frenzy into hits - 2 max storms",
-          "use_bartlebot_default": false,
-          "behaviors": [
-            {
-              "players": [
-                1
-              ],
-              "dsl": "frenzy | lord[\"Epic - Amulet\"] | tempest[epic]"
-            },
-            {
-              "players": [
-                2
-              ],
-              "dsl": "frenzy | heqet[\"Epic - Amulet\"]@boss | tempest[epic]"
-            }
-          ],
-          "combat_order_override": [
-            1,
-            2
-          ]
-        }
-      }
-    }
-  ],
-  "active_combat_profile_name": "Castle Darkmoor - 2 max storms",
   "start_location": "Anywhere in Wizard City or Castle Darkmoor",
   "drops": [
     "Alligator Pear",
@@ -467,9 +429,8 @@
       },
       "params": {
         "enemy": "G14-DM-Werewolf_Boss",
-        "use_default_duel_profile": false,
         "max_duration": 0.0,
-        "duel_profile_name": "Frenzy into hits - 2 max storms"
+        "use_default_strategy": false
       },
       "option_overrides": {}
     },
@@ -523,7 +484,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -550,9 +512,8 @@
       },
       "params": {
         "enemy": "G14-DM-DeathKnight_Boss",
-        "use_default_duel_profile": false,
         "max_duration": 1200.0,
-        "duel_profile_name": "Frenzy into hits - 2 max storms"
+        "use_default_strategy": false
       },
       "option_overrides": {}
     },
@@ -873,7 +834,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },
@@ -917,7 +879,8 @@
         "if_mana_below": 1.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "only_safe": true,
+        "timeout": 10.0
       },
       "option_overrides": {}
     },

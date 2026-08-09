@@ -53,6 +53,7 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,18 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
         )
     except Exception:
         return None
+
+
+def _resolve_bots_dir(configured: str, root: Path) -> Path:
+    """Resolve the configured bot library path against the project root.
+
+    The setting (default ``"bots"``) is meant relative to the project, not to
+    wherever the process happened to be launched from — resolving it against
+    the cwd silently emptied the library for anyone who launched elsewhere.
+    An absolute override is returned unchanged.
+    """
+    configured_path = Path(configured)
+    return configured_path if configured_path.is_absolute() else root / configured_path
 
 
 def _format_category(dir_name: str) -> str:
@@ -343,7 +356,7 @@ class _BotLibraryPanel(QWidget):
         self._all_metas = []
         self._category_map = {}
 
-        bots_dir = Path(sm.get("canvas", "bot_library_path", default="bots"))
+        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
         if bots_dir.is_dir():
             for subdir in sorted(bots_dir.iterdir()):
                 if not subdir.is_dir():
