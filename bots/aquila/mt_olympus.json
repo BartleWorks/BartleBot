@@ -97,17 +97,6 @@
       "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     },
     {
-      "name": "Default Combat Order",
-      "type": "int_list",
-      "default": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
-    },
-    {
       "name": "Fail puzzle",
       "type": "bool",
       "default": false,

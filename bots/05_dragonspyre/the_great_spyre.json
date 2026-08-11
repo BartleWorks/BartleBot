@@ -32,15 +32,6 @@
       "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
     },
     {
-      "name": "Default Combat Order",
-      "type": "int_list",
-      "default": [
-        2,
-        1
-      ],
-      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
-    },
-    {
       "name": "Defeat Gurtok Firebender",
       "type": "bool",
       "default": false,
@@ -508,12 +499,7 @@
         "use_bot_default": false,
         "combat_config": "### p1\ntempest[epic]\n\n### p2\npass"
       },
-      "option_overrides": {
-        "Default Combat Order": [
-          1,
-          2
-        ]
-      }
+      "option_overrides": {}
     },
     {
       "id": "state_31",

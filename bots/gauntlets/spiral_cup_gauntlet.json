@@ -110,17 +110,6 @@
       "description": "Seconds to wait after interacting before verifying elixir status."
     },
     {
-      "name": "Default Combat Order",
-      "type": "int_list",
-      "default": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
-    },
-    {
       "name": "Defeat final boss",
       "type": "bool",
       "default": true,

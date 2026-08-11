@@ -178,17 +178,6 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to summon and defeat Yakedo, an optional secret boss that drops school design gear."
-    },
-    {
-      "name": "Default Combat Order",
-      "type": "int_list",
-      "default": [
-        1,
-        2,
-        3,
-        4
-      ],
-      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
     }
   ],
   "states": [
@@ -985,9 +974,7 @@
         "use_bot_default": false,
         "combat_config": "### p1\n{1} pass\n{2} pass\n{3} tempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
       },
-      "option_overrides": {
-        "Default Combat Order": []
-      }
+      "option_overrides": {}
     },
     {
       "id": "state_36",
@@ -1020,9 +1007,7 @@
         "use_bot_default": false,
         "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
       },
-      "option_overrides": {
-        "Default Combat Order": []
-      }
+      "option_overrides": {}
     },
     {
       "id": "state_37",

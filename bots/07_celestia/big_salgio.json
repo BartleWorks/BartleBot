@@ -280,12 +280,6 @@
       "type": "float",
       "default": 3.0,
       "description": "Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open."
-    },
-    {
-      "name": "Default Combat Order",
-      "type": "int_list",
-      "default": [],
-      "description": "Default order clients enter combat (e.g. '2, 1' sends client 2 first). Empty = all clients enter simultaneously. Can be overridden per node via Option Overrides."
     }
   ],
   "states": [
