@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
+    FRIENDS_LIST_WINDOW_NAME,
+    FRIENDS_LIST_WINDOW_NAMES,
     GAUNTLET_ENTRANCE_PATH,
     MESSAGE_BOX_CENTER,
 )
@@ -19,6 +21,8 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
     DIALOG_TIMEOUT,
     POLL_INTERVAL,
+    WINDOW_CLOSE_RETRY_INTERVAL,
+    WINDOW_CLOSE_TIMEOUT,
 )
 
 
@@ -133,11 +137,38 @@ async def diagnose_path(client, path: list[str]) -> str:
 
 
 async def is_visible_by_path(client, path: list[str]) -> bool:
-    """Return True if the UI window at path exists and is currently visible."""
+    """Return True if the UI window at path exists and is currently visible.
+
+    IMPORTANT: a window's is_visible() flag is its OWN flag — it does not account for its
+    parents. A button inside a hidden window commonly still reports visible=True, so
+    reading a child to infer whether its container is open gives a constant answer.
+    Observed directly: wndFriendsList reads visible=False while its btnFriendListClose
+    reads visible=True, before and after the friends list is ever opened
+    (tools/probe_friends_list.py).
+
+    So: to ask "is this panel open?", read the panel's own path, not a control inside it.
+    """
     window = await _get_window_from_path(client.root_window, path)
     if window is None:
         return False
     return await window.is_visible()
+
+
+async def is_named_window_visible(client, name: str) -> bool:
+    """Return True if any window with this name is visible.
+
+    For windows that are located by name rather than by a fixed path — the friends list
+    is opened and read as "NewFriendsListWindow", whose parent chain is not recorded.
+    """
+    try:
+        windows = await client.root_window.get_windows_with_name(name)
+    except Exception:
+        logger.debug("Could not search for window %r", name, exc_info=True)
+        return False
+    for window in windows:
+        if await window.is_visible():
+            return True
+    return False
 
 
 async def is_enabled_by_path(client, path: list[str]) -> bool:
@@ -152,6 +183,11 @@ async def _get_window_from_path(parent, path: list[str]):
     """Traverse the UI window tree by a sequence of child names.
 
     Returns the matching Window object, or None if the path cannot be followed.
+
+    Backtracks across same-named siblings: if two children share a name and only the
+    second one leads to the rest of the path, the second is returned. This is what makes
+    ambiguous names like Wizard101's duplicate `ButtonLayout` windows safe to path
+    through, as long as one branch alone completes the path.
     """
     if not path:
         return parent
@@ -283,6 +319,54 @@ async def get_text_by_path(client, path: list[str]) -> str:
     return await window.maybe_text() or ""
 
 
+async def click_until_gone(
+    client,
+    path: list[str],
+    is_open=None,
+    timeout: float = WINDOW_CLOSE_TIMEOUT,
+    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+) -> bool:
+    """Click the button at `path` until the thing it closes is gone. Returns True once it is.
+
+    A single click is not reliable: another window can sit on top of the button and swallow
+    the click, and the game can drop clicks sent during an animation. Retrying until the
+    target is actually gone turns "we clicked it" into "it actually closed".
+
+    `is_open` is an async predicate for "the thing is still open". It MUST test the panel
+    itself, not the close button, because a control inside a hidden window still reports
+    visible=True — polling the button gives a constant answer and guarantees a timeout.
+    See is_visible_by_path() for the observed evidence.
+
+    It defaults to the button's own visibility, which is only correct for controls that
+    genuinely disappear with their window; pass an explicit predicate otherwise.
+
+    The predicate is evaluated before each click, so an already-closed panel costs one read
+    and no clicks — important because these buttons often sit on toggles, where a stray
+    click would reopen what was just closed.
+
+    Returns False if the panel is still open when the timeout expires.
+    """
+    if is_open is None:
+
+        async def is_open():
+            return await is_visible_by_path(client, path)
+
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    while True:
+        if not await is_open():
+            return True
+        await click_by_path(client, path)
+        if loop.time() >= deadline:
+            break
+        await asyncio.sleep(poll_interval)
+
+    still_open = await is_open()
+    if still_open:
+        logger.warning("Window closed via %s is still open after %.0fs of retries", "/".join(path), timeout)
+    return not still_open
+
+
 async def click_by_path(client, path: list[str]) -> bool:
     """Click the UI window at path if it exists and is enabled (not grayed out).
     Returns True if found, enabled, and clicked. Returns False if not found or grayed."""
@@ -294,3 +378,204 @@ async def click_by_path(client, path: list[str]) -> bool:
     async with client.mouse_handler:
         await client.mouse_handler.click_window(window)
     return True
+
+
+# ---------------------------------------------------------------------------
+# Friends list
+#
+# The friends list has no per-row window — rows are one block of markup text in
+# `listFriends`, clicked by computing a pixel offset. WizWalker already solves this, so
+# these helpers wrap its (private) routines rather than re-deriving the row geometry.
+# Depending on underscore-prefixed names across a library boundary is normally a bad
+# trade, but both libraries are pinned by exact commit in pyproject.toml, so they cannot
+# shift without a deliberate pin bump.
+#
+# Callers must hold `async with client.mouse_handler` around every function here.
+# ---------------------------------------------------------------------------
+
+
+async def open_friends_list(client):
+    """Open the compact friends list if it is not already open, and return its window.
+
+    Opens NewFriendsListWindow specifically. The game's other friends list, wndFriendsList,
+    is a separate window reached from this one — see paths.FRIENDS_LIST_WINDOW_NAMES. The
+    name/profile code reads the compact list, so this deliberately opens only that one.
+
+    Raises ValueError if the window cannot be found even after clicking the button.
+    """
+    from wizwalker.extensions.scripting.utils import _maybe_get_named_window  # noqa: PLC0415
+
+    try:
+        friends_window = await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
+        if not await friends_window.is_visible():
+            btn = await _maybe_get_named_window(client.root_window, "btnFriends")
+            await client.mouse_handler.click_window(btn)
+        return friends_window
+    except ValueError:
+        # The window does not exist at all until the list has been opened once.
+        btn = await _maybe_get_named_window(client.root_window, "btnFriends")
+        await client.mouse_handler.click_window(btn)
+        return await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
+
+
+async def press_key_until_gone(
+    client,
+    key: Keycode,
+    is_open,
+    timeout: float = WINDOW_CLOSE_TIMEOUT,
+    poll_interval: float = WINDOW_CLOSE_RETRY_INTERVAL,
+) -> bool:
+    """Press `key` until `is_open()` reports the panel has closed. Returns True once gone.
+
+    The keyboard counterpart to click_until_gone, and preferable for panels that have a
+    keyboard toggle: a keypress goes to the client as a whole, so unlike a click it cannot
+    land on the wrong window — which is the failure mode every close bug here has had.
+
+    `is_open` must test the panel itself; see click_until_gone for why a close button's own
+    visibility is useless for this.
+
+    The predicate is checked before each press, because these keys are toggles: pressing
+    one on an already-closed panel reopens it.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    while True:
+        if not await is_open():
+            return True
+        await client.send_key(key, 0.1)
+        if loop.time() >= deadline:
+            break
+        await asyncio.sleep(poll_interval)
+
+    still_open = await is_open()
+    if still_open:
+        logger.warning("Panel toggled by %s is still open after %.0fs of retries", key, timeout)
+    return not still_open
+
+
+async def is_friends_list_open(client) -> bool:
+    """Return True if EITHER friends-list window is showing.
+
+    There are two independent friends-list windows (see paths.FRIENDS_LIST_WINDOW_NAMES):
+    the compact NewFriendsListWindow and the larger wndFriendsList. Only one is on screen
+    at a time, and F cycles between them, so a check against a single name will report the
+    list closed while the other one is still up.
+    """
+    for name in FRIENDS_LIST_WINDOW_NAMES:
+        if await is_named_window_visible(client, name):
+            return True
+    return False
+
+
+async def close_friends_list(client) -> bool:
+    """Close the friends list, retrying until it is gone. Never raises.
+
+    Closed with the F toggle rather than a close button. F cycles
+    closed -> NewFriendsListWindow -> wndFriendsList -> closed, so pressing it until
+    neither window is visible handles whichever list the client happens to be showing.
+
+    A close button cannot do this job: btnFriendListClose belongs to wndFriendsList and
+    does not close NewFriendsListWindow. It appeared to work earlier only because the two
+    windows put their close buttons in the same place, so the click sometimes landed on
+    whichever list was actually up.
+    """
+    try:
+        return await press_key_until_gone(
+            client,
+            Keycode.F,
+            is_open=lambda: is_friends_list_open(client),
+        )
+    except Exception:
+        logger.debug("Could not close the friends list", exc_info=True)
+        return False
+
+
+async def resolve_friend_name(client, friend_name_lower: str) -> str:
+    """Return the exact-case friend name matching the lowercased search term.
+
+    Opens the online friends list (if not already open) and scans the full list text with a
+    case-insensitive comparison. The list window's text contains every online friend
+    regardless of the current scroll position, so pagination is not a concern here.
+
+    WizWalker's friend lookups compare names case-sensitively, so callers must resolve the
+    exact casing through this function before handing a name to them.
+
+    Raises ValueError if no friends are online or no entry matches the search term.
+    """
+    from wizwalker.extensions.scripting.utils import (  # noqa: PLC0415
+        _cycle_to_online_friends,
+        _friend_list_entry,
+        _maybe_get_named_window,
+    )
+
+    friends_window = await open_friends_list(client)
+    await _cycle_to_online_friends(client, friends_window)
+
+    friends_list = await _maybe_get_named_window(friends_window, "listFriends")
+    list_text = await friends_list.maybe_text()
+
+    if not list_text:
+        raise ValueError("No friends online")
+
+    for entry in _friend_list_entry.finditer(list_text):
+        if entry.group("name").lower() == friend_name_lower:
+            return entry.group("name")
+
+    raise ValueError(f"Could not find friend matching {friend_name_lower!r} in online friends list")
+
+
+async def open_friend_profile(client, name: str):
+    """Open a friend's profile popup from the friends list and return the wndCharacter window.
+
+    This is the first half of WizWalker's teleport_to_friend_from_list — it locates the
+    friend, paginates to their row and clicks it, but stops at the profile popup instead of
+    going on to teleport. That popup carries the per-player action buttons (go to friend,
+    add/remove friend, add to group).
+
+    `name` is matched case-insensitively. WizWalker's own lookup compares names with ==,
+    so the exact casing is resolved here first, from the list text this function already
+    reads — no extra UI work. Without that, a name whose casing differs even slightly from
+    the friends list (e.g. one detected from the character page) silently fails to match.
+
+    Raises ValueError if no friends are online or the name is not in the list.
+    """
+    from wizwalker.extensions.scripting.utils import (  # noqa: PLC0415
+        _click_on_friend,
+        _cycle_friends_list,
+        _cycle_to_online_friends,
+        _friend_list_entry,
+        _maybe_get_named_window,
+    )
+
+    friends_window = await open_friends_list(client)
+    await _cycle_to_online_friends(client, friends_window)
+
+    friends_list = await _maybe_get_named_window(friends_window, "listFriends")
+    list_text = await friends_list.maybe_text()
+    if not list_text:
+        raise ValueError("No friends online")
+
+    wanted = name.lower()
+    exact_name = next(
+        (e.group("name") for e in _friend_list_entry.finditer(list_text) if e.group("name").lower() == wanted),
+        name,
+    )
+    if exact_name != name:
+        logger.debug("Resolved friend name %r to %r from the friends list", name, exact_name)
+
+    right_button = await _maybe_get_named_window(friends_window, "btnArrowDown")
+    page_number = await _maybe_get_named_window(friends_window, "PageNumber")
+    page_text = await page_number.maybe_text()
+    current_page, _ = map(
+        int,
+        page_text.replace("<center>", "").replace("</center>", "").replace(" ", "").split("/"),
+    )
+
+    friend, friend_index = await _cycle_friends_list(
+        client, right_button, friends_list, None, None, exact_name, current_page
+    )
+    if friend is None:
+        raise ValueError(f"Could not find friend {exact_name!r} in online friends list")
+
+    await _click_on_friend(client, friends_list, friend_index)
+    return await _maybe_get_named_window(client.root_window, "wndCharacter")

@@ -185,47 +185,5 @@ async def _teleport_with_mouse(client, friend_name_lower: str) -> None:
     Raises ValueError if no friends are online or the name is not found.
     """
     async with client.mouse_handler:
-        exact_name = await _resolve_exact_friend_name(client, friend_name_lower)
+        exact_name = await node_helpers.resolve_friend_name(client, friend_name_lower)
         await teleport_to_friend_from_list(client, name=exact_name)
-
-
-async def _resolve_exact_friend_name(client, friend_name_lower: str) -> str:
-    """Return the exact-case friend name matching the lowercased search term.
-
-    Opens the online friends list (if not already open) and scans the full list text
-    with a case-insensitive comparison.  The list window's text contains all friends
-    regardless of the current scroll position, so pagination is not a concern here.
-
-    Raises ValueError if no friends are online or no entry matches the search term.
-    """
-    # Import WizWalker internals needed to navigate the friends UI.
-    from wizwalker.extensions.scripting.utils import (  # noqa: PLC0415
-        _cycle_to_online_friends,
-        _friend_list_entry,
-        _maybe_get_named_window,
-    )
-
-    # Open the friends list window if it isn't already visible.
-    try:
-        friends_window = await _maybe_get_named_window(client.root_window, "NewFriendsListWindow")
-        if not await friends_window.is_visible():
-            btn = await _maybe_get_named_window(client.root_window, "btnFriends")
-            await client.mouse_handler.click_window(btn)
-    except ValueError:
-        btn = await _maybe_get_named_window(client.root_window, "btnFriends")
-        await client.mouse_handler.click_window(btn)
-        friends_window = await _maybe_get_named_window(client.root_window, "NewFriendsListWindow")
-
-    await _cycle_to_online_friends(client, friends_window)
-
-    friends_list = await _maybe_get_named_window(friends_window, "listFriends")
-    list_text = await friends_list.maybe_text()
-
-    if not list_text:
-        raise ValueError("No friends online")
-
-    for entry in _friend_list_entry.finditer(list_text):
-        if entry.group("name").lower() == friend_name_lower:
-            return entry.group("name")
-
-    raise ValueError(f"Could not find friend matching {friend_name_lower!r} in online friends list")

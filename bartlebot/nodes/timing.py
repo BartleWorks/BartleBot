@@ -135,6 +135,38 @@ DECK_APPLY_TIMEOUT = 180.0
 # raising. See _read_deck / _write_deck in app_controller.py.
 
 
+GROUP_INVITE_TIMEOUT = 15.0
+# Seconds to wait for the group invitation modal to appear on the invited client after
+# the inviter clicks "Add to Group". The invite is relayed by the server, so this covers
+# a full round-trip rather than just a local UI update.
+
+GROUP_VERIFY_TIMEOUT = 15.0
+# Seconds to wait for the social window to open by itself on an invited client after the
+# invitation is accepted, which is the game's own signal that the join went through. The
+# join is a server round-trip, so this covers more than a local UI update.
+
+GROUP_ADD_RETRIES = 2
+# Attempts to add one client to the group before giving up on that client. A failed add
+# usually means a missed click or a dropped invite, both of which a retry fixes; anything
+# that survives two attempts is a real problem (not friended, not online) that retrying
+# will not solve.
+
+WINDOW_CLOSE_TIMEOUT = 6.0
+# Ceiling on repeatedly clicking a window's close button until the window is gone.
+# A close click can be swallowed when another window sits on top of the button, or when
+# the game is mid-animation, so one click is not reliable — but a window that will not
+# close after several seconds is stuck, not slow.
+
+WINDOW_CLOSE_RETRY_INTERVAL = 0.4
+# Pause between close attempts. Long enough for the game to process the previous click
+# and repaint before the next one, short enough that a normal close still feels instant.
+
+GROUP_UI_SETTLE = 1.0
+# Pause after clicking a friends-list or profile button, so the resulting window is
+# rendered before it is read or clicked. Matches the sleep WizWalker uses between its own
+# friends-list clicks.
+
+
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.
 

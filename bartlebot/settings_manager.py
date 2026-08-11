@@ -32,6 +32,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_pets: bool = True
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
+    auto_group_players: bool = True
 
 
 class _GameEmbedSettings(BaseModel):
@@ -76,6 +77,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_pets": True,
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
+        "auto_group_players": True,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -250,6 +252,15 @@ class SettingsManager:
     @default_safety_delay.setter
     def default_safety_delay(self, value: float) -> None:
         self.set_general("default_safety_delay", value)
+
+    @property
+    def auto_group_players(self) -> bool:
+        """Whether to form an in-game group at run start and after a client recovers."""
+        return bool(self.get_general("auto_group_players", default=True))
+
+    @auto_group_players.setter
+    def auto_group_players(self, value: bool) -> None:
+        self.set_general("auto_group_players", bool(value))
 
     @property
     def accounts(self) -> list[dict]:

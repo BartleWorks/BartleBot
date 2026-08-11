@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
+from bartlebot import group_manager, wizard_names
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -575,7 +576,7 @@ class AppController(QObject):
             # Inside the try so the finally still tears down if the user stops during
             # a slow apply, and after add_gui_callback so failures reach this run's
             # log panel rather than the previous run's.
-            await self._apply_pre_run_decks()
+            await self._run_pre_run_setup()
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()
@@ -592,6 +593,52 @@ class AppController(QObject):
             self._client_manager.set_machine(None)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
+
+    async def _run_pre_run_setup(self) -> None:
+        """Prepare every connected client before the FSM starts.
+
+        Each step must catch its own failures and log rather than raise: a setup problem
+        should degrade the run, not cancel it. None of them may show a blocking dialog
+        either — this runs inside the _start_bot asyncio task, where a modal .exec()
+        deadlocks the qasync loop under Python 3.13 (see CLAUDE.md).
+        """
+        await self._apply_pre_run_decks()
+        await self._form_pre_run_group()
+
+    async def _form_pre_run_group(self) -> None:
+        """Put all clients into one in-game group, if the user has that enabled.
+
+        Group membership is lost whenever a client logs off or crashes, and it is what
+        guarantees the first turn in combat, so it is re-established at the start of every
+        run rather than assumed to have survived from the last one.
+        """
+        if not SettingsManager.instance().auto_group_players:
+            return
+
+        clients = self._client_manager.clients
+        if len(clients) < 2:
+            logger.debug("Skipping pre-run grouping — fewer than two clients connected")
+            return
+
+        try:
+            # Survey once and hand the result to form_group. Each survey opens and closes
+            # the social window on every client, so letting form_group re-read would
+            # double the slowest and most failure-prone part of this.
+            flags = await group_manager.read_group_flags(clients)
+            if all(flags):
+                logger.debug("Skipping pre-run grouping — all clients are already in a group")
+                return
+            names = await wizard_names.resolve_names(clients)
+            result = await group_manager.form_group(clients, names, flags=flags)
+            if result.success:
+                logger.info("Pre-run grouping: %s", result.summary())
+            else:
+                logger.warning(
+                    "Pre-run grouping did not fully succeed (%s) — the run will continue ungrouped",
+                    result.summary(),
+                )
+        except Exception:
+            logger.warning("Pre-run grouping failed — the run will continue ungrouped", exc_info=True)
 
     async def _apply_pre_run_decks(self) -> None:
         """Apply saved deck presets to each connected client before the FSM starts."""
