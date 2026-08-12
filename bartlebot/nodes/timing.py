@@ -187,6 +187,19 @@ GROUP_UI_SETTLE = 1.0
 # Pause after clicking a friends-list or profile button, so the resulting window is
 # rendered before it is read or clicked. Matches the sleep WizWalker uses between its own
 # friends-list clicks.
+#
+# Used where there is nothing specific to wait FOR: before checking whether the "already in
+# a group" popup appeared, where absence is the expected outcome so no amount of polling
+# can conclude early — and after switching to the social window's Group tab, where NO
+# element distinguishes that tab from the others. That second one is not an unexplored
+# shortcut: tools/probe_group_tab.py swept every tab and every window under the social
+# window and came back empty (2026-08-11, and see paths.py).
+#
+# So this is the largest fixed cost in a group membership survey and it cannot be polled
+# away. Nor should it be shortened — 1.0 s is what reliably covers the page populating
+# under load, and a survey that misreads membership sends spurious invites. It is
+# concurrent across clients (see group_manager.read_group_flags), so it costs one second
+# for the whole fleet rather than one per client, which is where the win came from instead.
 
 
 def jitter(base: float, factor: float = 0.2) -> float:

@@ -129,6 +129,15 @@ async def _open_social_window(client) -> bool:
     The button is used in preference to the Ctrl+A shortcut because WizWalker's
     send_hotkey does not reliably deliver the modifier: the game receives a bare "A" and
     the character strafes instead.
+
+    The tab click is followed by a fixed sleep rather than a poll for something on the
+    Group page, and neither is it skipped when the window may already be on that tab.
+    Both would need a way to tell which tab is showing, and there is none: GroupPageNumber
+    reads visible=True on every tab, and tools/probe_group_tab.py then swept all of them
+    without finding any property that separates Group from the rest (see paths.py). Do not
+    reintroduce either optimisation without a fresh probe run — an indicator that is
+    always true makes this function return immediately, so the window never reaches the
+    Group tab and membership is read off whichever page happened to be showing.
     """
     if not await node_helpers.is_visible_by_path(client, SOCIAL_WINDOW_PATH):
         await node_helpers.click_by_path(client, SOCIAL_BUTTON_PATH)
@@ -192,13 +201,23 @@ async def is_in_group(client) -> bool:
 
 
 async def read_group_flags(clients: list) -> list[bool]:
-    """Return whether each client is in a group.
+    """Return whether each client is in a group, positionally aligned with `clients`.
 
-    Checked sequentially rather than gathered: each check drives the UI with a hotkey and
-    clicks, and WizWalker's reads are synchronous on the event loop anyway, so running them
-    concurrently would interleave keypresses across clients for no speed gain.
+    Checked concurrently. Every input this sends is addressed to one window handle —
+    _open_social_window clicks the HUD button rather than pressing Ctrl+A, and
+    click_by_path goes through client.mouse_handler, whose mouseless hook writes into that
+    client's own memory — so the clients cannot interfere with each other. This is the same
+    isolation that lets the pre-run deck applies run concurrently.
+
+    The win is large because almost all of the elapsed time is asyncio.sleep, not blocking
+    memory reads: one GROUP_UI_SETTLE per client plus the retry pauses inside
+    close_social_window. Those overlap perfectly; only the ReadProcessMemory calls
+    serialise on the loop thread.
+
+    No return_exceptions is needed — is_in_group already absorbs every failure and answers
+    False, so one unreadable client cannot cancel the survey for the rest.
     """
-    return [await is_in_group(c) for c in clients]
+    return list(await asyncio.gather(*(is_in_group(c) for c in clients)))
 
 
 async def is_grouped(clients: list) -> bool:

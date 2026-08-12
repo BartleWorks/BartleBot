@@ -243,6 +243,20 @@ SOCIAL_WINDOW_PATH = ["WorldView", "SocialSystemsWindow"]
 SOCIAL_GROUP_TAB_PATH = ["WorldView", "SocialSystemsWindow", "TabLayout", "Tab_Group"]
 GROUP_WINDOW_CLOSE_PATH = ["WorldView", "SocialSystemsWindow", "CloseSocialSystemsButton"]
 
+# NOTE: there is deliberately no "is the Group tab showing?" path here, and this is a
+# settled negative result rather than a gap.
+#
+# GroupPageNumber (["WorldView", "SocialSystemsWindow", "GroupLayout", "GroupPageNumber"])
+# is the obvious candidate — it lives in the Group page's own layout — but it reads
+# visible=True on every tab. That is the hazard is_visible_by_path documents: a window's
+# is_visible() flag is its own and ignores its parents.
+#
+# tools/probe_group_tab.py then swept EVERY tab, recording 13 properties for every window
+# under SocialSystemsWindow, and found nothing that holds a value on the Group tab it does
+# not also hold on some other tab (2026-08-11). So the selected tab cannot be read at all,
+# and _open_social_window clicks Tab_Group unconditionally and then sleeps. Re-run the
+# probe after a game update before assuming that is still true.
+
 # Whether this wizard is in a group is read from the Leave Group button: the game HIDES it
 # when ungrouped rather than graying it, so check visibility, not enabled-ness. Verified
 # with tools/probe_group_ui.py.

@@ -22,6 +22,7 @@ from bartlebot.nodes.paths import (
     INVITE_TO_GROUP_BUTTON_PATH,
     LEAVE_GROUP_BUTTON_PATH,
     SOCIAL_BUTTON_PATH,
+    SOCIAL_GROUP_TAB_PATH,
     SOCIAL_WINDOW_PATH,
 )
 from tests.conftest import FakeClient
@@ -46,6 +47,11 @@ class FakeUI:
     def __init__(self):
         self.grouped: dict[FakeClient, bool] = {}
         self.social_open: dict[FakeClient, bool] = {}
+        # High-water mark of how many clients had the social window open at the same
+        # moment. read_group_flags surveys concurrently, so this reaching N is the
+        # observable proof that the checks overlapped rather than ran one after another.
+        self.max_social_open_at_once = 0
+        self.group_tab_clicks: list[FakeClient] = []
         self.already_in_other_group: set[FakeClient] = set()
         self.popup_showing: dict[FakeClient, bool] = {}
         self.closed_group_window_on: list[FakeClient] = []
@@ -74,6 +80,10 @@ class FakeUI:
         self._by_name: dict[str, FakeClient] = {}
         self._awaiting: dict[FakeClient, FakeClient] = {}  # target -> inviting leader
         self._pending_name: str | None = None
+
+    def _set_social_open(self, client, value: bool) -> None:
+        self.social_open[client] = value
+        self.max_social_open_at_once = max(self.max_social_open_at_once, sum(self.social_open.values()))
 
     def _swallow(self, client, path) -> bool:
         """Return True if this close click should be discarded rather than take effect."""
@@ -135,10 +145,13 @@ class FakeUI:
     async def click_by_path(self, client, path) -> bool:
         if path == INVITE_TO_GROUP_BUTTON_PATH:
             self.invite_sent = True
+        if path == SOCIAL_GROUP_TAB_PATH:
+            self.group_tab_clicks.append(client)
+            return True
         if path == SOCIAL_BUTTON_PATH:
             self.social_button_clicks.append(client)
             if self.social_button_works:
-                self.social_open[client] = not self.social_open.get(client, False)
+                self._set_social_open(client, not self.social_open.get(client, False))
             return True
         if path == INVITE_TO_GROUP_BUTTON_PATH:
             self.invited_names.append(self._pending_name)
@@ -155,7 +168,7 @@ class FakeUI:
             # Forming a group puts the INVITER in it as well, not just the invitee.
             for member in (client, leader):
                 self.grouped[member] = True
-                self.social_open[member] = True  # the game opens it on joining
+                self._set_social_open(member, True)  # the game opens it on joining
             return True
         if path == ALREADY_IN_GROUP_DISMISS_PATH:
             self.popup_showing[client] = False
@@ -163,7 +176,7 @@ class FakeUI:
         if path == GROUP_WINDOW_CLOSE_PATH:
             self.closed_group_window_on.append(client)
             if not self._swallow(client, path):
-                self.social_open[client] = False
+                self._set_social_open(client, False)
             return True
         if path == CHARACTER_PROFILE_CLOSE_PATH:
             if self.social_open.get(client, False):
@@ -327,6 +340,63 @@ async def test_is_in_group_never_raises(ui):
             patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=RuntimeError("client gone")))
         )
         assert await gm.is_in_group(client) is False
+
+
+async def test_is_in_group_selects_the_group_tab(ui):
+    """Membership is read off the Group page, so the window must be switched to it.
+
+    No assertion that the switch is SKIPPED when the window is already on that tab: the
+    game gives us no way to tell which tab is showing (see tools/probe_group_tab.py), so
+    the click is unconditional by necessity.
+    """
+    client = ui.make_client(grouped=True)
+
+    await _run_with(ui, lambda: gm.is_in_group(client))
+    assert ui.group_tab_clicks == [client]
+
+
+async def test_read_group_flags_is_positionally_aligned_with_clients(ui):
+    """The flags index into `names` in form_group, so gather's ordering guarantee matters."""
+    a = ui.make_client(grouped=False)
+    b = ui.make_client(grouped=True)
+    c = ui.make_client(grouped=False)
+
+    assert await _run_with(ui, lambda: gm.read_group_flags([a, b, c])) == [False, True, False]
+
+
+async def test_read_group_flags_checks_clients_concurrently(ui):
+    """Sequential checks would never have two social windows open at the same instant.
+
+    Overlap only exists where a check actually WAITS. Here that is the GROUP_UI_SETTLE
+    after the tab click — patched to 0 in the fixture, but asyncio.sleep(0) still yields,
+    which is all the overlap needs.
+    """
+    clients = [ui.make_client(grouped=True) for _ in range(4)]
+
+    await _run_with(ui, lambda: gm.read_group_flags(clients))
+
+    assert ui.max_social_open_at_once == len(clients)
+    # And every window it opened was closed again, despite the overlap.
+    assert not any(ui.social_open.values())
+
+
+async def test_read_group_flags_survives_one_unreadable_client(ui):
+    """One dead client must not cancel the survey for the rest — see is_in_group."""
+    good = ui.make_client(grouped=True)
+    bad = ui.make_client(grouped=True)
+
+    real_is_visible = ui.is_visible_by_path
+
+    async def explode_for_bad(client, path):
+        if client is bad:
+            raise RuntimeError("client gone")
+        return await real_is_visible(client, path)
+
+    with ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=explode_for_bad)))
+        assert await gm.read_group_flags([good, bad]) == [True, False]
 
 
 async def test_is_grouped_requires_every_client(ui):
