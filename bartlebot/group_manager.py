@@ -20,6 +20,17 @@ game patch. Until that is fixed upstream, membership is read from the Leave Grou
 in the social window, which is *visible* only while grouped — the game hides it when
 ungrouped rather than graying it, so enabled-ness says nothing.
 
+That button answers "am I in a group?" but not "which group?", and two clients in two
+different groups both read True. The Group tab's roster closes that gap: it lists the
+member names, and since a wizard belongs to at most one group, two clients showing the
+same member set are necessarily in the same group. The roster is read on the same window
+visit as the button, so it costs a handful of memory reads rather than a second survey.
+
+Knowing the shape of a split is also what makes it repairable. The game refuses an invite
+to a player who is already in a group, so form_group dissolves every group except the
+largest one (see leave_group and _dissolve_other_groups) and then invites the freed
+clients into it — the same invite path any ungrouped client takes.
+
 Deliberately free of Qt and FSM dependencies so that the form_group node, AppController
 and ClientManager can all call it, and so it can be tested without either.
 
@@ -31,6 +42,7 @@ import logging
 import weakref
 from dataclasses import dataclass, field
 
+from bartlebot import wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,
@@ -38,12 +50,14 @@ from bartlebot.nodes.paths import (
     CHARACTER_PROFILE_PATH,
     FRIENDS_LIST_WINDOW_NAMES,
     GROUP_INVITE_ACCEPT_PATH,
+    GROUP_ROSTER_LINES,
     GROUP_WINDOW_CLOSE_PATH,
     INVITE_TO_GROUP_BUTTON_PATH,
     LEAVE_GROUP_BUTTON_PATH,
     SOCIAL_BUTTON_PATH,
     SOCIAL_GROUP_TAB_PATH,
     SOCIAL_WINDOW_PATH,
+    group_member_name_path,
 )
 from bartlebot.nodes.timing import (
     GROUP_ADD_RETRIES,
@@ -98,6 +112,19 @@ class AlreadyInAnotherGroup(Exception):
     """
 
 
+@dataclass(frozen=True)
+class GroupState:
+    """One client's view of its own group, as read from the social window's Group tab.
+
+    `roster` holds the wizard names the Group tab lists, in line order, and is empty when
+    the roster could not be read — which is not the same as an empty group, so it must not
+    be interpreted as one. See same_group.
+    """
+
+    grouped: bool = False
+    roster: tuple[str, ...] = ()
+
+
 @dataclass
 class GroupResult:
     """Outcome of a form_group call."""
@@ -105,12 +132,18 @@ class GroupResult:
     success: bool
     added: list[str] = field(default_factory=list)
     failed: list[str] = field(default_factory=list)
+    # Clients taken out of a different group so they could be invited into this one. Worth
+    # reporting separately from `added`: it is the only part of a regroup that removes
+    # someone from a group they were happily in, including players who are not ours.
+    left: list[str] = field(default_factory=list)
     reason: str = ""
 
     def summary(self) -> str:
-        if self.success and not self.added:
+        if self.success and not self.added and not self.left:
             return "all clients were already grouped"
         parts = []
+        if self.left:
+            parts.append(f"moved {', '.join(self.left)} out of another group")
         if self.added:
             parts.append(f"added {', '.join(self.added)}")
         if self.failed:
@@ -140,6 +173,15 @@ async def _open_social_window(client) -> bool:
     Group tab and membership is read off whichever page happened to be showing.
     """
     if not await node_helpers.is_visible_by_path(client, SOCIAL_WINDOW_PATH):
+        # An open friends list covers the social HUD button, so the click lands on the list
+        # instead and the social window never appears — which failed the whole pre-run
+        # grouping when a run was started with the large list left up. Checked rather than
+        # closed unconditionally: when nothing is open this costs two name lookups and no
+        # input, and pressing F on a closed list would open one.
+        if await node_helpers.is_friends_list_open(client):
+            logger.debug("Friends list is covering the social button; closing it first")
+            await node_helpers.close_friends_list(client)
+
         await node_helpers.click_by_path(client, SOCIAL_BUTTON_PATH)
         opened = await node_helpers.poll_until(
             lambda: node_helpers.is_visible_by_path(client, SOCIAL_WINDOW_PATH),
@@ -170,38 +212,126 @@ async def close_social_window(client) -> None:
         logger.debug("Could not close the social window", exc_info=True)
 
 
-async def is_in_group(client) -> bool:
-    """Return True when this client is currently in a group.
+async def _read_roster(client) -> tuple[str, ...]:
+    """Read the wizard names listed on the Group tab. The social window must be open.
 
-    Read from the *visibility* of the Leave Group button on the social window's Group tab.
-    The game hides that button when you are not in a group rather than graying it, so
-    visibility is the discriminator — confirmed with tools/probe_group_ui.py.
+    Returns them in line order with blanks dropped. Never raises: an unreadable roster
+    yields (), which every caller treats as "cannot tell" rather than as "empty group".
+
+    Lines are read to GROUP_ROSTER_LINES rather than stopping at the first blank one,
+    because an empty slot in the middle of the list would otherwise truncate the members
+    after it. A line beyond the ones the game drew simply resolves to no window.
+    """
+    names: list[str] = []
+    for line in range(1, GROUP_ROSTER_LINES + 1):
+        try:
+            raw = await node_helpers.get_text_by_path(client, group_member_name_path(line))
+        except Exception:
+            logger.debug("Could not read group roster line %d", line, exc_info=True)
+            continue
+        name = wizard_names.strip_markup(raw)
+        if not name:
+            continue
+        if name.casefold() in _ROSTER_PLACEHOLDERS:
+            logger.debug("Ignoring placeholder text %r on group roster line %d", name, line)
+            continue
+        names.append(name)
+    return tuple(names)
+
+
+# Text that appears in a roster NameText but is not a player.
+#
+# The first empty slot is not blank: it is an invitation prompt ("Invite someone by
+# clicking here!"), and its NameText carries "Left" — apparently leftover placeholder text
+# from the game's own layout. It shows up on every client, in every group, so a two-wizard
+# group reads as three members.
+#
+# Matched exactly rather than by any property of the string. An earlier version filtered on
+# names containing a space, on the theory that every wizard has a given name and a surname;
+# that is wrong, a wizard can have no surname at all, and the rule would have dropped real
+# players from the roster.
+#
+# Leaving the junk in is not an option either, and not merely untidy: a constant entry pads
+# every roster to at least one member, which defeats two of the fail-safes here. same_group
+# treats a non-empty roster as one it managed to read, so two clients whose real member
+# lines failed would compare equal on the junk alone and report a confident "same group";
+# and _warn_on_disagreement counts roster entries to notice that one of the two membership
+# reads has broken.
+#
+# If another placeholder turns up after a game update it will show up as a phantom member
+# in the split-group log line. tools/probe_group_roster.py prints the raw text of every
+# line, which is how to identify it; add it here.
+_ROSTER_PLACEHOLDERS = frozenset({"left"})
+
+
+async def read_group_state(client) -> GroupState:
+    """Return this client's membership flag and group roster in one social-window visit.
+
+    Membership is read from the *visibility* of the Leave Group button on the social
+    window's Group tab. The game hides that button when you are not in a group rather than
+    graying it, so visibility is the discriminator — confirmed with tools/probe_group_ui.py.
 
     Visibility specifically, not is_enabled_by_path: that helper returns True for any
     window that merely exists and is not grayed, and the whole SocialSystemsWindow subtree
     exists in the UI tree whether or not the window is open. Using it here reported every
     client as grouped, always.
 
-    This opens and closes the window, so it costs a few clicks — call it to make a
-    decision, not in a polling loop.
+    The roster is read on the same visit because the expensive part is getting the window
+    open and settled — GROUP_UI_SETTLE dominates, and the roster adds only a handful of
+    memory reads on top of a window that is already showing. Reading it separately would
+    double the cost of the slowest and most failure-prone step for no benefit.
 
-    Returns False on any failure: the caller's next move is the same either way (try to
-    add this client), and one unreadable client must not abort a regroup for the rest.
+    Returns a blank state on any failure: the caller's next move is the same either way
+    (try to add this client), and one unreadable client must not abort a regroup for the
+    rest.
     """
     try:
         if not await _open_social_window(client):
             logger.debug("Social window did not open; treating client as ungrouped")
-            return False
-        return await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH)
+            return GroupState()
+        grouped = await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH)
+        state = GroupState(grouped=grouped, roster=await _read_roster(client))
+        _warn_on_disagreement(state)
+        return state
     except Exception:
         logger.debug("Could not read group membership", exc_info=True)
-        return False
+        return GroupState()
     finally:
         await close_social_window(client)
 
 
-async def read_group_flags(clients: list) -> list[bool]:
-    """Return whether each client is in a group, positionally aligned with `clients`.
+def _warn_on_disagreement(state: GroupState) -> None:
+    """Log when the Leave Group button and the roster tell different stories.
+
+    They are independent reads of the same fact, so a disagreement means one of them has
+    stopped working — most likely a game update moved a path. Neither is trusted over the
+    other here; the point is to surface the breakage rather than let membership quietly
+    become wrong.
+    """
+    if state.grouped and len(state.roster) < 2:
+        logger.warning(
+            "Leave Group button says grouped but the roster lists %d member(s) — "
+            "one of those reads is broken (see tools/probe_group_roster.py)",
+            len(state.roster),
+        )
+    elif not state.grouped and len(state.roster) > 1:
+        logger.warning(
+            "Roster lists %d members but the Leave Group button says ungrouped — "
+            "one of those reads is broken (see tools/probe_group_roster.py)",
+            len(state.roster),
+        )
+
+
+async def is_in_group(client) -> bool:
+    """Return True when this client is currently in a group.
+
+    Says nothing about *which* group — see same_group for that.
+    """
+    return (await read_group_state(client)).grouped
+
+
+async def read_group_states(clients: list) -> list[GroupState]:
+    """Return each client's group state, positionally aligned with `clients`.
 
     Checked concurrently. Every input this sends is addressed to one window handle —
     _open_social_window clicks the HUD button rather than pressing Ctrl+A, and
@@ -214,39 +344,157 @@ async def read_group_flags(clients: list) -> list[bool]:
     close_social_window. Those overlap perfectly; only the ReadProcessMemory calls
     serialise on the loop thread.
 
-    No return_exceptions is needed — is_in_group already absorbs every failure and answers
-    False, so one unreadable client cannot cancel the survey for the rest.
+    No return_exceptions is needed — read_group_state already absorbs every failure and
+    answers a blank state, so one unreadable client cannot cancel the survey for the rest.
     """
-    return list(await asyncio.gather(*(is_in_group(c) for c in clients)))
+    return list(await asyncio.gather(*(read_group_state(c) for c in clients)))
+
+
+async def read_group_flags(clients: list) -> list[bool]:
+    """Return whether each client is in a group, positionally aligned with `clients`."""
+    return [state.grouped for state in await read_group_states(clients)]
+
+
+def same_group(states: list[GroupState]) -> bool | None:
+    """Return whether every client is in ONE group. None when it cannot be determined.
+
+    Two clients are in the same group exactly when their rosters list the same members: a
+    wizard belongs to at most one group, so two distinct groups have disjoint — and
+    therefore unequal — member sets. That makes set equality a complete test, and one that
+    needs no wizard names of our own and does not care which line a member appears on.
+    Both of those matter: names cost a character-page open each, and the meaning of any
+    particular line is a game-layout detail that a patch can reorder.
+
+    Returns None rather than a guess when any client's roster is unreadable, since empty
+    sets compare equal and would otherwise report a confident "same group" precisely when
+    nothing could be read at all. Callers should treat None as "carry on as before" — it
+    is the state the code was in before rosters were readable.
+    """
+    if len(states) < 2:
+        return None
+    if any(not state.roster for state in states):
+        return None
+    first = _roster_key(states[0])
+    return all(_roster_key(state) == first for state in states[1:])
+
+
+def _roster_key(state: GroupState) -> frozenset[str]:
+    """Return a roster as a case-insensitive set, for comparison between clients."""
+    return frozenset(name.casefold() for name in state.roster)
+
+
+def describe_groups(states: list[GroupState]) -> str:
+    """Render the distinct groups these clients are in, for a log line or an error.
+
+    Deduplicated by member set: every member of a group reads the same roster, so listing
+    one per client showed four rosters for two groups and buried the actual shape of the
+    problem. Ordering within a group is left as read (each client sees itself first).
+    """
+    distinct: list[tuple[str, ...]] = []
+    seen: set[frozenset[str]] = set()
+    for state in states:
+        key = _roster_key(state)
+        if key in seen:
+            continue
+        seen.add(key)
+        distinct.append(state.roster)
+    return " vs ".join("[" + ", ".join(roster) + "]" if roster else "[unreadable]" for roster in distinct)
 
 
 async def is_grouped(clients: list) -> bool:
-    """Return True when every client reports being in a group.
+    """Return True when every client is in a group, and in the same one where readable.
 
     A single client is never considered grouped — a group of one confers no benefit, and
     treating it as grouped would suppress the regroup that adds the others back.
 
-    Note this cannot prove they are in the SAME group; the UI exposes only a per-client
-    yes/no. In practice a client in someone else's group is caught at invite time, when
-    the game reports it is already grouped and the add is recorded as a failure.
+    A split group (everyone grouped, but not with each other) reads as False, so callers
+    that use this to decide whether to regroup will act on it. When the rosters cannot be
+    read this falls back to the per-client yes/no, which cannot see a split.
     """
     if len(clients) < 2:
         return False
-    return all(await read_group_flags(clients))
+    states = await read_group_states(clients)
+    if not all(state.grouped for state in states):
+        return False
+    return same_group(states) is not False
 
 
-def _choose_leader(flags: list[bool], leader_index: int) -> int:
+async def leave_group(client) -> bool:
+    """Take this client out of its group. True once it is out, including if it never was.
+
+    Used to repair a split: the game refuses an invitation to a player who is already in a
+    group, so one of the two groups has to be dissolved before anyone can be moved.
+
+    Finding the button already gone is success, not failure. Wizard101 dissolves a
+    two-player group when *either* player leaves, so in the common case of two pairs only
+    one client actually clicks anything and its partner is already out by the time this
+    reaches it. That is also why membership is re-read here rather than assumed from the
+    survey: the click that frees this client may have been made on a different one.
+    """
+    try:
+        if not await _open_social_window(client):
+            logger.debug("Social window did not open; cannot leave the group")
+            return False
+        if not await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH):
+            return True
+
+        await node_helpers.click_by_path(client, LEAVE_GROUP_BUTTON_PATH)
+        # Leaving is a server round-trip, so the button does not vanish on the click.
+        return await node_helpers.poll_until(
+            lambda: _left_the_group(client),
+            timeout=GROUP_VERIFY_TIMEOUT,
+            poll_interval=POLL_INTERVAL,
+        )
+    except Exception:
+        logger.warning("Failed to leave the group", exc_info=True)
+        return False
+    finally:
+        await close_social_window(client)
+
+
+async def _left_the_group(client) -> bool:
+    """Whether the Leave Group button has gone, i.e. this client is no longer grouped."""
+    return not await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH)
+
+
+def _group_members(states: list[GroupState]) -> dict[frozenset[str], list[int]]:
+    """Map each distinct group to the indices of our clients in it.
+
+    Clients whose roster could not be read are left out entirely — they cannot be assigned
+    to a group, and guessing would risk dissolving the wrong one.
+    """
+    groups: dict[frozenset[str], list[int]] = {}
+    for idx, state in enumerate(states):
+        if state.grouped and state.roster:
+            groups.setdefault(_roster_key(state), []).append(idx)
+    return groups
+
+
+def _choose_leader(states: list[GroupState], leader_index: int) -> int:
     """Return the index of the client that should send invitations.
 
-    Prefers a client that is already in a group, so a group that merely lost one member is
-    rebuilt by inviting that member back rather than by tearing the existing group down.
-    Falls back to `leader_index` when nobody is grouped (e.g. at bot start, or when the
-    leader itself crashed and the group dissolved).
+    Prefers the group holding the MOST of our clients, because every other group has to be
+    dissolved before its members can be invited across — picking the smaller one in a 3+1
+    split would make three wizards leave and rejoin instead of one. `leader_index` wins
+    ties, so the caller's preference still decides when the choice is free.
+
+    Falls back to the first client in any group when rosters are unreadable, and to
+    `leader_index` when nobody is grouped (at bot start, or when the leader crashed and the
+    group dissolved with it).
     """
-    if flags[leader_index]:
+    groups = _group_members(states)
+    if groups:
+        largest = max(len(members) for members in groups.values())
+        contenders = [members for members in groups.values() if len(members) == largest]
+        for members in contenders:
+            if leader_index in members:
+                return leader_index
+        return contenders[0][0]
+
+    if states[leader_index].grouped:
         return leader_index
-    for idx, grouped in enumerate(flags):
-        if grouped:
+    for idx, state in enumerate(states):
+        if state.grouped:
             return idx
     return leader_index
 
@@ -256,15 +504,20 @@ async def form_group(
     names: list[str | None],
     leader_index: int = 0,
     log=None,
-    flags: list[bool] | None = None,
+    states: list[GroupState] | None = None,
 ) -> GroupResult:
     """Ensure every client is in one shared group, inviting whoever is missing.
+
+    Clients found in a *different* group are taken out of it first — the game refuses an
+    invitation to a player who is already grouped. That is a real change to the game state
+    and can remove players who are not ours from a group they were in, so it is logged at
+    WARNING and reported in GroupResult.left.
 
     `names` holds each client's wizard name, positionally aligned with `clients`; a None
     entry means the name is unknown and that client cannot be located in the leader's
     friends list, so it is reported as failed rather than silently skipped.
 
-    `flags` optionally supplies membership already read by the caller, saving a second
+    `states` optionally supplies group state already read by the caller, saving a second
     survey — each one opens and closes the social window on every client, so re-reading
     doubles both the time and the number of chances for a flaky UI read. They are ignored
     (and re-read) if another form_group call was in progress, since it may have changed
@@ -293,12 +546,75 @@ async def form_group(
 
     lock = _form_group_lock()
     # If we have to wait, another call is changing group membership right now, so any
-    # flags the caller read beforehand are stale and must be re-read inside the lock.
+    # states the caller read beforehand are stale and must be re-read inside the lock.
     contended = lock.locked()
     if contended:
         _log("Another group formation is already running — waiting for it to finish", logging.DEBUG)
     async with lock:
-        return await _form_group_locked(clients, names, leader_index, _log, None if contended else flags)
+        return await _form_group_locked(clients, names, leader_index, _log, None if contended else states)
+
+
+def _in_leader_group(state: GroupState, leader_state: GroupState) -> bool:
+    """Whether this client is demonstrably in the leader's group, not merely in *a* group.
+
+    Falls back to the plain membership flag when either roster is unreadable, which is the
+    behaviour this had before rosters existed: assume a grouped client is in our group.
+    Guessing the other way would tear down a working group whenever a roster read failed.
+    """
+    if not state.grouped:
+        return False
+    if not state.roster or not leader_state.roster:
+        return True
+    return _roster_key(state) == _roster_key(leader_state)
+
+
+async def _dissolve_other_groups(
+    clients: list,
+    states: list[GroupState],
+    leader_idx: int,
+    _log,
+) -> list[GroupState]:
+    """Make every client in a group other than the leader's leave it.
+
+    Returns updated states with the freed clients marked ungrouped, so the invite loop that
+    follows picks them up. Nothing is re-surveyed: another full pass would open and close
+    the social window on every client, and each leave is already confirmed individually.
+
+    Members of a doomed group are handled one at a time, not concurrently. Wizard101
+    dissolves a two-player group when either player leaves, so the second client's Leave
+    button is usually gone by the time its turn comes — leave_group treats that as success
+    and clicks nothing. Doing them in parallel would race that dissolve instead of riding
+    it, which is where the "only one wizard needs to leave" saving comes from.
+
+    Does nothing when the leader's own roster is unreadable: without it there is no way to
+    tell which group is the one being kept, and dissolving the wrong one is worse than
+    leaving the split in place for the invite loop to report.
+    """
+    leader_state = states[leader_idx]
+    if not leader_state.roster:
+        return states
+
+    leader_key = _roster_key(leader_state)
+    doomed: dict[frozenset[str], list[int]] = {}
+    for key, members in _group_members(states).items():
+        if key != leader_key:
+            doomed[key] = members
+    if not doomed:
+        return states
+
+    updated = list(states)
+    for members in doomed.values():
+        roster = states[members[0]].roster
+        # Worth saying out loud: a group can contain players who are not ours, and they
+        # lose their group here too.
+        _log(f"Dissolving group [{', '.join(roster)}] so its members can join the leader's", logging.WARNING)
+        for idx in members:
+            if await leave_group(clients[idx]):
+                updated[idx] = GroupState()
+            # A client that could not leave keeps its old state, so the invite loop still
+            # tries it and the game's refusal is what reports the failure. Recording it
+            # here as well would name it twice in the result.
+    return updated
 
 
 async def _form_group_locked(
@@ -306,25 +622,32 @@ async def _form_group_locked(
     names: list[str | None],
     leader_index: int,
     _log,
-    flags: list[bool] | None,
+    states: list[GroupState] | None,
 ) -> GroupResult:
     """Body of form_group. Must only be called while _form_group_lock is held."""
-    if flags is None:
-        flags = await read_group_flags(clients)
-    if all(flags):
+    if states is None:
+        states = await read_group_states(clients)
+    if all(state.grouped for state in states) and same_group(states) is not False:
         _log("All clients are already in a group — nothing to do", logging.DEBUG)
         return GroupResult(success=True)
 
-    leader_idx = _choose_leader(flags, leader_index)
+    leader_idx = _choose_leader(states, leader_index)
     leader = clients[leader_idx]
     _log(f"Rebuilding group: leader is client {leader_idx} ({names[leader_idx] or 'unknown'})")
 
     result = GroupResult(success=True)
 
+    # An invitation to a player who is already in a group is refused by the game, so any
+    # client sitting in a different group has to be freed before it can be invited across.
+    before = states
+    states = await _dissolve_other_groups(clients, states, leader_idx, _log)
+    result.left = [
+        names[i] or f"client {i}" for i in range(len(clients)) if before[i].grouped and not states[i].grouped
+    ]
+    leader_state = states[leader_idx]
+
     for idx, client in enumerate(clients):
-        if idx == leader_idx or flags[idx]:
-            # Already grouped. If it is in a *different* group the invite would be
-            # rejected anyway, and the game tells us so at invite time.
+        if idx == leader_idx or _in_leader_group(states[idx], leader_state):
             continue
 
         name = names[idx]
@@ -334,7 +657,7 @@ async def _form_group_locked(
             result.failed.append(f"client {idx}")
             continue
 
-        if await _add_one(leader, client, name, _log):
+        if await _add_one(leader, client, name, _log, names[leader_idx]):
             result.added.append(name)
         else:
             result.success = False
@@ -361,11 +684,11 @@ async def _form_group_locked(
     return result
 
 
-async def _add_one(leader, target, name: str, log) -> bool:
+async def _add_one(leader, target, name: str, log, leader_name: str | None = None) -> bool:
     """Invite one client into the leader's group. Returns True once the UI confirms it."""
     for attempt in range(1, GROUP_ADD_RETRIES + 1):
         try:
-            if await _invite_and_accept(leader, target, name, log):
+            if await _invite_and_accept(leader, target, name, log, leader_name):
                 log(f"Added {name} to the group")
                 return True
             log(f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {name} did not take effect", logging.DEBUG)
@@ -388,8 +711,8 @@ async def _add_one(leader, target, name: str, log) -> bool:
     return False
 
 
-async def _invite_and_accept(leader, target, name: str, log) -> bool:
-    """Run one full invite exchange and report whether the target ended up grouped."""
+async def _invite_and_accept(leader, target, name: str, log, leader_name: str | None = None) -> bool:
+    """Run one full invite exchange and report whether the target joined the leader's group."""
     async with leader.mouse_handler:
         await node_helpers.open_friend_profile(leader, name)
         await asyncio.sleep(jitter(GROUP_UI_SETTLE))
@@ -434,7 +757,25 @@ async def _invite_and_accept(leader, target, name: str, log) -> bool:
     # The social window it needs is already open here, so this costs one click, not two.
     # Cleanup is left to _add_one's `finally`, which runs on the failure paths too —
     # closing here as well would double up and mask ordering bugs in the cleanup.
-    return await is_in_group(target)
+    state = await read_group_state(target)
+    if not state.grouped:
+        return False
+
+    # Grouped is not the same as grouped WITH US. The target could have accepted somebody
+    # else's invitation in the moment between our click and this read, which the flag alone
+    # cannot see. The roster can: the leader has to be listed on it.
+    if leader_name and state.roster and not _lists(state.roster, leader_name):
+        log(
+            f"{name} joined a group that does not contain {leader_name} (roster: {', '.join(state.roster)})",
+            logging.WARNING,
+        )
+        return False
+    return True
+
+
+def _lists(roster: tuple[str, ...], name: str) -> bool:
+    """Whether `name` appears on this roster, compared case-insensitively."""
+    return name.casefold() in {member.casefold() for member in roster}
 
 
 async def _visible_windows(client) -> str:

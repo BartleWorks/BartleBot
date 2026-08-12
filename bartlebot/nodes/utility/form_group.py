@@ -73,9 +73,11 @@ async def run(machine, clients: list, params: dict) -> str:
          of one confers no benefit and there is nobody to invite.
       2. Resolve every client's wizard name (cached; detected via the character page when
          unknown).
-      3. Delegate to group_manager.form_group, which skips clients already in a group,
-         sends an invitation to each remaining client, and confirms the join by checking
-         that the Leave Group button became enabled on that client.
+      3. Delegate to group_manager.form_group, which skips clients already in the leader's
+         group, takes any client that is in a DIFFERENT group out of it first, sends an
+         invitation to each remaining client, and confirms the join by checking both that
+         the Leave Group button became visible on that client and that the leader appears
+         on its group roster — grouped is not the same as grouped with us.
       4. Map the result onto SUCCESS / FAILURE according to require_all.
 
     FAILURE: a player could not be added and require_all is set; or no group was formed

@@ -211,7 +211,8 @@ CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCh
 # because both windows place a close button in the same spot, so the click sometimes hit
 # whichever list happened to be showing. Verified with tools/probe_friends_list.py.
 FRIENDS_LIST_WINDOW_NAME = "NewFriendsListWindow"
-FRIENDS_LIST_WINDOW_NAMES = ("NewFriendsListWindow", "wndFriendsList")
+LARGE_FRIENDS_LIST_WINDOW_NAME = "wndFriendsList"
+FRIENDS_LIST_WINDOW_NAMES = (FRIENDS_LIST_WINDOW_NAME, LARGE_FRIENDS_LIST_WINDOW_NAME)
 
 # Group invite button in the friends-list profile popup.
 #
@@ -264,6 +265,23 @@ GROUP_WINDOW_CLOSE_PATH = ["WorldView", "SocialSystemsWindow", "CloseSocialSyste
 # This is the UI replacement for SocialSystemsManager.group_gid(), which reads a dead
 # object on the current game build (see tools/probe_group_offsets.py).
 LEAVE_GROUP_BUTTON_PATH = ["WorldView", "SocialSystemsWindow", "LeftButtonLayout", "LeavePartyButton"]
+
+# Group roster on the Group tab: one line per member, each carrying a NameText label.
+#
+# This is what makes "are these clients in the SAME group?" answerable at all. The Leave
+# Group button above is a per-client yes/no and two clients in two different groups both
+# read True, so membership alone cannot distinguish one group from two.
+#
+# GROUP_ROSTER_LINES is Wizard101's group cap. Reading a line beyond it simply returns no
+# window, so an over-estimate costs a wasted read rather than a wrong answer — but see
+# tools/probe_group_roster.py, which checks for a Line beyond the cap after a game update.
+GROUP_ROSTER_LINES = 4
+
+
+def group_member_name_path(line: int) -> list[str]:
+    """Return the path to the wizard name on group roster line `line` (1-based)."""
+    return ["WorldView", "SocialSystemsWindow", "GroupLayout", "SubGroupLayout", f"Line{line}", "NameText"]
+
 
 # Shown to the INVITER when the player they invited is already in a group.
 ALREADY_IN_GROUP_DISMISS_PATH = MESSAGE_BOX_RIGHT

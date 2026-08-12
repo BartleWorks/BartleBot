@@ -13,8 +13,22 @@ import bartlebot.client_manager as cm
 import bartlebot.group_manager as gm
 import bartlebot.wizard_names as wn
 from bartlebot.client_manager import ClientManager
-from bartlebot.group_manager import GroupResult
+from bartlebot.group_manager import GroupResult, GroupState
 from tests.conftest import FakeClient
+
+# Both hooks survey group state before deciding whether to regroup. These stand in for the
+# survey's two interesting answers: nobody grouped, and everybody in ONE group. A pair of
+# grouped clients with mismatched rosters is a *split* group, which is not "already
+# grouped" — that case is covered in test_group_manager.
+UNGROUPED = [GroupState(), GroupState()]
+ONE_GROUP = [
+    GroupState(grouped=True, roster=("W0", "W1")),
+    GroupState(grouped=True, roster=("W1", "W0")),
+]
+SPLIT = [
+    GroupState(grouped=True, roster=("W0", "Stranger One")),
+    GroupState(grouped=True, roster=("W1", "Stranger Two")),
+]
 
 
 class RegroupHarness:
@@ -57,7 +71,7 @@ async def test_regroup_runs_when_clients_are_ungrouped(settings):
     harness = RegroupHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(return_value=[False, False])),
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)),
         patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=True, added=["W1"]))) as form,
     ):
         await harness._regroup_after_recovery()
@@ -70,7 +84,7 @@ async def test_regroup_skips_when_already_grouped(settings):
     harness = RegroupHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(return_value=[True, True])),
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=ONE_GROUP)),
         patch.object(gm, "form_group", new=AsyncMock()) as form,
     ):
         await harness._regroup_after_recovery()
@@ -78,12 +92,26 @@ async def test_regroup_skips_when_already_grouped(settings):
     form.assert_not_called()
 
 
+async def test_regroup_runs_when_clients_are_in_separate_groups(settings):
+    """Both clients report grouped, so the per-client check alone would skip the regroup
+    and leave the fleet split — losing the first turn it exists to guarantee."""
+    harness = RegroupHarness(_clients())
+
+    with (
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=SPLIT)),
+        patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=False))) as form,
+    ):
+        await harness._regroup_after_recovery()
+
+    form.assert_awaited_once()
+
+
 async def test_regroup_skips_when_the_setting_is_off(settings):
     settings.auto_group_players = False
     harness = RegroupHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(return_value=[False, False])) as grouped,
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)) as grouped,
         patch.object(gm, "form_group", new=AsyncMock()) as form,
     ):
         await harness._regroup_after_recovery()
@@ -106,7 +134,7 @@ async def test_regroup_failure_does_not_stop_the_bot(settings):
     harness = RegroupHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(return_value=[False, False])),
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)),
         patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=False, failed=["W1"]))),
     ):
         await harness._regroup_after_recovery()
@@ -119,7 +147,7 @@ async def test_regroup_exception_does_not_propagate(settings):
     harness = RegroupHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(side_effect=RuntimeError("UI read exploded"))),
+        patch.object(gm, "read_group_states", new=AsyncMock(side_effect=RuntimeError("UI read exploded"))),
         patch.object(gm, "form_group", new=AsyncMock()),
     ):
         await harness._regroup_after_recovery()
@@ -174,8 +202,21 @@ async def test_pre_run_grouping_runs_when_ungrouped(app_settings):
     harness = PreRunHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(return_value=[False, False])),
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)),
         patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=True))) as form,
+    ):
+        await harness._form_pre_run_group()
+
+    form.assert_awaited_once()
+
+
+async def test_pre_run_grouping_runs_when_clients_are_in_separate_groups(app_settings):
+    """As above, at the other call site — a split group must not read as "already done"."""
+    harness = PreRunHarness(_clients())
+
+    with (
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=SPLIT)),
+        patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=False))) as form,
     ):
         await harness._form_pre_run_group()
 
@@ -196,7 +237,7 @@ async def test_pre_run_grouping_skips_when_already_grouped(app_settings):
     harness = PreRunHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(return_value=[True, True])),
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=ONE_GROUP)),
         patch.object(gm, "form_group", new=AsyncMock()) as form,
     ):
         await harness._form_pre_run_group()
@@ -209,7 +250,7 @@ async def test_pre_run_grouping_failure_does_not_abort_the_run(app_settings):
     harness = PreRunHarness(_clients())
 
     with (
-        patch.object(gm, "read_group_flags", new=AsyncMock(side_effect=RuntimeError("boom"))),
+        patch.object(gm, "read_group_states", new=AsyncMock(side_effect=RuntimeError("boom"))),
         patch.object(gm, "form_group", new=AsyncMock()),
     ):
         await harness._form_pre_run_group()  # must not raise

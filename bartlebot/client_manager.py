@@ -479,12 +479,12 @@ class ClientManager(QObject):
         try:
             # Survey once and hand the result to form_group — see the matching comment in
             # AppController._form_pre_run_group.
-            flags = await group_manager.read_group_flags(clients)
-            if all(flags):
-                logger.debug("Skipping post-recovery grouping — all clients are already in a group")
+            states = await group_manager.read_group_states(clients)
+            if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
+                logger.debug("Skipping post-recovery grouping — all clients are already in one group")
                 return
             names = await wizard_names.resolve_names(clients)
-            result = await group_manager.form_group(clients, names, flags=flags)
+            result = await group_manager.form_group(clients, names, states=states)
             if result.success:
                 logger.info("Post-recovery grouping: %s", result.summary())
             else:

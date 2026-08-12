@@ -624,12 +624,12 @@ class AppController(QObject):
             # Survey once and hand the result to form_group. Each survey opens and closes
             # the social window on every client, so letting form_group re-read would
             # double the slowest and most failure-prone part of this.
-            flags = await group_manager.read_group_flags(clients)
-            if all(flags):
-                logger.debug("Skipping pre-run grouping — all clients are already in a group")
+            states = await group_manager.read_group_states(clients)
+            if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
+                logger.debug("Skipping pre-run grouping — all clients are already in one group")
                 return
             names = await wizard_names.resolve_names(clients)
-            result = await group_manager.form_group(clients, names, flags=flags)
+            result = await group_manager.form_group(clients, names, states=states)
             if result.success:
                 logger.info("Pre-run grouping: %s", result.summary())
             else:

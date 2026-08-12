@@ -40,8 +40,13 @@ _MARKUP_TAG = re.compile(r"<[^>]*>")
 _CHARACTER_PAGE_SETTLE = 0.5
 
 
-def _strip_markup(raw: str | None) -> str:
-    """Return window text with KI colour markup removed and whitespace collapsed."""
+def strip_markup(raw: str | None) -> str:
+    """Return window text with KI colour markup removed and whitespace collapsed.
+
+    Public because every wizard name read out of the UI needs the same treatment wherever
+    it comes from — the character page here, the combat nameplate below, and the group
+    roster in bartlebot.group_manager.
+    """
     if not raw:
         return ""
     return " ".join(_MARKUP_TAG.sub("", raw).split())
@@ -89,7 +94,7 @@ async def _read_title_scroll(client) -> str | None:
         if windows:
             children = await windows[0].children()
             if children:
-                name = _strip_markup(await children[0].maybe_text())
+                name = strip_markup(await children[0].maybe_text())
                 if name:
                     return name
         if asyncio.get_event_loop().time() >= deadline:
@@ -161,7 +166,7 @@ async def capture_from_combat(client) -> str | None:
     try:
         for member in await client.combat_handler.get_members():
             if await member.is_client():
-                name = _strip_markup(await member.name())
+                name = strip_markup(await member.name())
                 return name or None
     except Exception:
         logger.debug("Could not read the wizard name from combat", exc_info=True)

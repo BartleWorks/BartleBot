@@ -54,12 +54,12 @@ def _client_without_page() -> FakeClient:
     ],
 )
 def test_strip_markup(raw, expected):
-    assert wn._strip_markup(raw) == expected
+    assert wn.strip_markup(raw) == expected
 
 
 def test_strip_markup_handles_attribute_changes():
     """A fixed [8:-9] slice (as Deimos uses) breaks when the tag length changes."""
-    assert wn._strip_markup("<Color;12,34,56;extra>Name Here</Color>") == "Name Here"
+    assert wn.strip_markup("<Color;12,34,56;extra>Name Here</Color>") == "Name Here"
 
 
 # ---------------------------------------------------------------------------

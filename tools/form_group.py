@@ -23,8 +23,10 @@ USAGE
     # Form the group with a specific leader (1-based, matching the printed list).
     poetry run python tools/form_group.py --leader 2
 
-Start with --check. It exercises the membership read (social button, Group tab, Leave
-Group button) on its own, which is the part most likely to misbehave, and makes no changes.
+Start with --check. It exercises the group read (social button, Group tab, Leave Group
+button, member roster) on its own, which is the part most likely to misbehave, and makes
+no changes. It also reports whether the clients are in one group or several — the roster
+is what distinguishes those, since the Leave Group button reads True in both cases.
 
 Every step is logged. Pass -q to see only the result.
 """
@@ -76,13 +78,29 @@ async def _detect_names(clients: list) -> list[str | None]:
     return names
 
 
-async def _survey(clients: list) -> list[bool]:
-    """Report which clients are currently in a group."""
+async def _survey(clients: list) -> list[group_manager.GroupState]:
+    """Report which clients are currently in a group, and who each one is grouped with."""
     print("\nChecking group membership (social button -> Group tab -> Leave Group button)...")
-    flags = await group_manager.read_group_flags(clients)
-    for i, (client, grouped) in enumerate(zip(clients, flags)):
-        print(f"  {_label(client, i):<34} {'IN A GROUP' if grouped else 'not grouped'}")
-    return flags
+    states = await group_manager.read_group_states(clients)
+    for i, (client, state) in enumerate(zip(clients, states)):
+        status = "IN A GROUP" if state.grouped else "not grouped"
+        roster = ", ".join(state.roster) if state.roster else "<roster unreadable>"
+        print(f"  {_label(client, i):<34} {status:<12} {roster}")
+    return states
+
+
+def _report_same_group(states: list[group_manager.GroupState]) -> None:
+    """Print the verdict on whether every client is in ONE group."""
+    verdict = group_manager.same_group(states)
+    if verdict is True:
+        print("\nEvery client is in the SAME group — the rosters list identical members.")
+    elif verdict is False:
+        print("\nClients are in SEPARATE groups — their rosters do not match. Running without")
+        print("--check will dissolve all but the largest group and invite its members across.")
+        print("Note that dissolving a group also drops any players in it who are not ours.")
+    else:
+        print("\nEvery client reports being in a group, but at least one roster could not be read,")
+        print("so this cannot tell whether it is the same group. Run tools/probe_group_roster.py.")
 
 
 async def main() -> int:
@@ -117,14 +135,14 @@ async def main() -> int:
             return 0
 
         if args.check:
-            flags = await _survey(clients)
+            states = await _survey(clients)
+            ungrouped = sum(1 for s in states if not s.grouped)
             if len(clients) < 2:
                 print("\nOnly one client — a group needs at least two.")
-            elif all(flags):
-                print("\nEvery client reports being in a group.")
-                print("Note: this cannot prove they are in the SAME group — the UI only exposes a per-client yes/no.")
+            elif ungrouped:
+                print(f"\n{ungrouped} client(s) are not in a group. Run without --check to form one.")
             else:
-                print(f"\n{flags.count(False)} client(s) are not in a group. Run without --check to form one.")
+                _report_same_group(states)
             return 0
 
         if len(clients) < 2:
@@ -150,13 +168,17 @@ async def main() -> int:
         print("SUCCESS" if result.success else "INCOMPLETE")
         print("=" * 70)
         print(f"  {result.summary()}")
+        if result.left:
+            print(f"  left another group: {', '.join(result.left)}")
         if result.added:
             print(f"  added:  {', '.join(result.added)}")
         if result.failed:
             print(f"  failed: {', '.join(result.failed)}")
 
         print("\nVerifying final state...")
-        await _survey(clients)
+        final = await _survey(clients)
+        if all(s.grouped for s in final):
+            _report_same_group(final)
 
         return 0 if result.success else 1
     finally:

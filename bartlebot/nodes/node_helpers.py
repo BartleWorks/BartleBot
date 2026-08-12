@@ -15,6 +15,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     FRIENDS_LIST_WINDOW_NAME,
     FRIENDS_LIST_WINDOW_NAMES,
     GAUNTLET_ENTRANCE_PATH,
+    LARGE_FRIENDS_LIST_WINDOW_NAME,
     MESSAGE_BOX_CENTER,
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
@@ -404,6 +405,16 @@ async def open_friends_list(client):
     Raises ValueError if the window cannot be found even after clicking the button.
     """
     from wizwalker.extensions.scripting.utils import _maybe_get_named_window  # noqa: PLC0415
+
+    # The large list has to be cleared, not clicked past. Visibility is judged below from
+    # NewFriendsListWindow alone, so from the large list this reads "closed" and clicks
+    # btnFriends anyway — and what the game does with that click was never established
+    # (issue #96). Closing first replaces an unknown with the known-good closed state, at
+    # the cost of one extra toggle in a case that only arises when a list was left open by
+    # hand.
+    if await is_named_window_visible(client, LARGE_FRIENDS_LIST_WINDOW_NAME):
+        logger.debug("Large friends list is open; closing it before opening the compact one")
+        await close_friends_list(client)
 
     try:
         friends_window = await _maybe_get_named_window(client.root_window, FRIENDS_LIST_WINDOW_NAME)
