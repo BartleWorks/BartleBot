@@ -125,6 +125,28 @@ WISP_COLLECT_TIMEOUT = 10.0
 # displayed max HP can read far above actual, making calc_health_ratio()
 # never clear the threshold and the collection loop spin indefinitely.
 
+DECK_PAGE_OPEN_TIMEOUT = 5.0
+# Ceiling on waiting for the deck page to appear after pressing P. Measured at
+# 190-270 ms across four clients, so this is a generous margin that only matters
+# when the keypress was swallowed entirely.
+
+DECK_PAGE_POLL = 0.02
+# How often to re-check for the deck window while waiting for it to open. Much
+# finer than POLL_INTERVAL because the wait itself is only ~200 ms — polling at a
+# quarter second would more than double it.
+
+DECK_SETTLE_TIMEOUT = 15.0
+# Ceiling on waiting for a rewritten deck to read back as expected before the
+# deck page is closed. Cards are added by clicking, and the list the game shows
+# lags the clicks — closing the page too early left cards out of the deck even
+# though every click landed. Generous because this only elapses in full when the
+# deck is never going to match, which is already being reported as a warning.
+
+DECK_SETTLE_POLL = 0.1
+# How often to re-read the deck while waiting for it to settle. Each poll is two
+# memory reads, so this is fine-grained enough to close promptly without adding
+# meaningful load.
+
 DECK_APPLY_TIMEOUT = 180.0
 # Ceiling for pushing a saved deck back to a client (clear + re-add every
 # card, with spellbook page navigation between them).
