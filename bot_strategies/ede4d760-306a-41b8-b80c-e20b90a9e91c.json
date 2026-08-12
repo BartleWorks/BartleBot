@@ -1,0 +1,95 @@
+{
+  "id": "ede4d760-306a-41b8-b80c-e20b90a9e91c",
+  "name": "Copy Qhat - 4-player all scaled",
+  "bot_id": "7df93e5f-0fc1-4c07-88af-feaaf64635b8",
+  "player_decks": {
+    "1": {
+      "normal": {
+        "Feint": 2
+      },
+      "tc": {},
+      "item": {
+        "Feint Mass - Amulet": 1
+      },
+      "card_kinds": {
+        "Feint": "trap"
+      }
+    },
+    "2": {
+      "normal": {
+        "Sharpened Blade": 1,
+        "Firestorm Blade": 4
+      },
+      "tc": {},
+      "item": {
+        "Pet - Sharpened Blade": 1,
+        "Sharpened Blade - Tear": 1
+      },
+      "card_kinds": {
+        "Firestorm Blade": "blade"
+      }
+    },
+    "3": {
+      "normal": {
+        "Potent Trap": 3,
+        "Feint": 3
+      },
+      "tc": {},
+      "item": {},
+      "card_kinds": {
+        "Feint": "trap"
+      }
+    },
+    "4": {
+      "normal": {
+        "Epic": 2,
+        "Glowbug_Squall": 1,
+        "Tempest": 2
+      },
+      "tc": {},
+      "item": {
+        "Epic - Amulet": 1
+      },
+      "card_kinds": {}
+    }
+  },
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_13"
+      ],
+      "duel_config": {
+        "min_players": 1,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              4
+            ],
+            "dsl": "glowbug[\"Epic - Amulet\"] | tempest[epic]"
+          },
+          {
+            "players": [
+              1,
+              2,
+              3
+            ],
+            "dsl": "",
+            "player_combat_strategy_id": "e948ac4e-4f06-4488-9629-d840db458d05"
+          }
+        ]
+      }
+    }
+  ]
+}

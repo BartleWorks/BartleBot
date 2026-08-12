@@ -1,6 +1,4 @@
 {
-  "id": "65519587-ef87-4aa4-8f24-c5ad199e4c86",
-  "name": "4-player Sister Sanderson",
   "min_players": 1,
   "max_players": 4,
   "combat_order": [
@@ -26,5 +24,7 @@
       "dsl": "",
       "player_combat_strategy_id": "5687c15b-739a-403c-a89f-0d12695e461e"
     }
-  ]
+  ],
+  "id": "65519587-ef87-4aa4-8f24-c5ad199e4c86",
+  "name": "4-player turn 2 AoE (no single Feint)"
 }
