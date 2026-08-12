@@ -62,6 +62,11 @@ class FakeDeckBuilder:
         self.calls: list[str] = []
         self.added: dict[str, int] | None = None
         self.client = SimpleNamespace(root_window=object())
+        # Real DeckBuilder constructs this False and open_deck_page() never sets
+        # it; whoever opens the page is responsible for saying so. Direct
+        # write_deck tests stand in for a properly-opened page, so True here —
+        # _CtxDeckBuilder resets it to False to test that apply_deck does its part.
+        self._on_deck_page = True
 
     async def refresh_deck_page(self) -> None:
         self.calls.append("refresh_deck_page")
@@ -79,6 +84,10 @@ class FakeDeckBuilder:
         self.calls.append("clear_deck")
 
     async def view_deck_cards(self) -> None:
+        # Mirrors the real implementation: a False flag here does not mean "do
+        # nothing", it means "click through to the treasure card view".
+        if not self._on_deck_page:
+            raise AssertionError("view_deck_cards() with _on_deck_page False would switch to the treasure card view")
         self.calls.append("view_deck_cards")
 
     async def _add_all_normal_cards(self, section: dict[str, int]) -> None:
@@ -223,7 +232,6 @@ async def test_write_deck_clears_then_adds_normal_cards(monkeypatch):
     db = FakeDeckBuilder()
     await write_deck(db, DeckData(normal={"Tempest": 4}))
     assert db.calls == [
-        "refresh_deck_page",
         "view_deck_cards",
         "get_graphical_spell_cards",
         "clear_deck",
@@ -280,7 +288,7 @@ async def test_write_deck_empty_clears_without_adding(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
     db = FakeDeckBuilder()
     await write_deck(db, DeckData())
-    assert db.calls == ["refresh_deck_page", "clear_deck", "view_deck_cards"]
+    assert db.calls == ["clear_deck", "view_deck_cards"]
     assert db.added is None
 
 
@@ -300,7 +308,9 @@ async def test_write_deck_skips_when_current_deck_already_matches(monkeypatch):
     db = FakeDeckBuilder()
     deck = DeckData(normal={"Tempest": 2}, item={"Sharpened Blade - Tear": 1})
     await write_deck(db, deck)
-    assert db.calls == ["refresh_deck_page"]
+    # No builder calls at all: the matching deck is recognised from two memory
+    # reads, without touching the UI.
+    assert db.calls == []
     assert db.added is None
 
 
@@ -358,6 +368,9 @@ class _CtxDeckBuilder(FakeDeckBuilder):
 
     async def __aenter__(self):
         self.entered = True
+        # As the real open_deck_page() leaves it: on the deck page in fact, but
+        # not in the flag. apply_deck must set it before write_deck runs.
+        self._on_deck_page = False
         return self
 
     async def __aexit__(self, *_exc):
@@ -385,7 +398,6 @@ async def test_apply_deck_opens_the_builder_and_writes(fake_deck_builder):
     db = fake_deck_builder.instances[0]
     assert db.entered and db.exited
     assert db.calls == [
-        "refresh_deck_page",
         "view_deck_cards",
         "get_graphical_spell_cards",
         "clear_deck",
@@ -393,6 +405,18 @@ async def test_apply_deck_opens_the_builder_and_writes(fake_deck_builder):
         "_add_all_normal_cards",
     ]
     assert db.added == {"Tempest": 4}
+
+
+async def test_apply_deck_marks_the_page_before_writing(fake_deck_builder):
+    """open_deck_page() clicks the Deck tab but leaves _on_deck_page False, so
+    apply_deck must set it. Without that, write_deck's view_deck_cards() call
+    switches to the treasure card view and corrupts the spell list — which is
+    exactly what dropping the redundant refresh_deck_page() exposed."""
+    await apply_deck(object(), DeckData(normal={"Tempest": 1}))
+
+    db = fake_deck_builder.instances[0]
+    assert db._on_deck_page
+    assert "view_deck_cards" in db.calls
 
 
 async def test_apply_deck_never_uses_set_deck_preset(fake_deck_builder):
@@ -404,35 +428,32 @@ async def test_apply_deck_never_uses_set_deck_preset(fake_deck_builder):
     assert "set_deck_preset" not in fake_deck_builder.instances[0].calls
 
 
-async def test_apply_deck_times_out(monkeypatch):
+class _HangingDeckBuilder(_CtxDeckBuilder):
+    """Stalls partway through the write, after the context has been entered."""
+
+    async def view_deck_cards(self) -> None:
+        await asyncio.sleep(60)
+
+
+async def test_apply_deck_times_out(fake_deck_builder, monkeypatch):
     """A stuck apply must not hang the run forever — this is what the pre-run path
     was missing entirely."""
-
-    class Hanging(_CtxDeckBuilder):
-        async def refresh_deck_page(self) -> None:
-            await asyncio.sleep(60)
-
     _CtxDeckBuilder.instances = []
-    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", Hanging)
+    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", _HangingDeckBuilder)
 
     with pytest.raises(TimeoutError):
         await apply_deck(object(), DeckData(normal={"Tempest": 1}), timeout=0.05)
 
 
-async def test_apply_deck_closes_the_builder_on_timeout(monkeypatch):
+async def test_apply_deck_closes_the_builder_on_timeout(fake_deck_builder, monkeypatch):
     """The deck window must still be released when the apply is cancelled."""
-
-    class Hanging(_CtxDeckBuilder):
-        async def refresh_deck_page(self) -> None:
-            await asyncio.sleep(60)
-
     _CtxDeckBuilder.instances = []
-    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", Hanging)
+    monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", _HangingDeckBuilder)
 
     with pytest.raises(TimeoutError):
         await apply_deck(object(), DeckData(normal={"Tempest": 1}), timeout=0.05)
 
-    assert Hanging.instances[0].exited
+    assert _HangingDeckBuilder.instances[0].exited
 
 
 async def test_apply_deck_propagates_write_failures(fake_deck_builder, monkeypatch):

@@ -29,7 +29,7 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
-    pass
+    from bartlebot.bot.strategy_models import DeckData
 
 
 class AppController(QObject):
@@ -657,6 +657,7 @@ class AppController(QObject):
         if not bcs.player_decks:
             return
         clients = self._client_manager.clients
+        pending = []
         for slot, deck_data in bcs.player_decks.items():
             if deck_data.is_empty():
                 continue
@@ -664,25 +665,49 @@ class AppController(QObject):
             if client_idx >= len(clients):
                 logger.warning("Deck saved for slot %d but only %d client(s) connected — skipping", slot, len(clients))
                 continue
-            client = clients[client_idx]
             logger.info("Applying saved deck for slot %d (%d cards)", slot, deck_data.total_cards())
-            try:
-                await apply_deck(client, deck_data)
-            except TimeoutError:
-                # Log only. This runs inside the _start_bot task, and a blocking
-                # QMessageBox from an asyncio task deadlocks the qasync loop under
-                # Python 3.13 (see CLAUDE.md).
-                logger.error(
-                    "Deck apply for slot %d timed out after %.0fs — run will continue with whatever was set",
-                    slot,
-                    DECK_APPLY_TIMEOUT,
-                )
-            except Exception:
-                logger.warning(
-                    "Failed to fully apply deck for slot %d — run will continue with whatever was set",
-                    slot,
-                    exc_info=True,
-                )
+            pending.append(self._apply_one_pre_run_deck(clients[client_idx], slot, deck_data))
+        if not pending:
+            return
+        # Concurrently, because applying four decks in sequence is four times the
+        # wait for no reason: every input WizWalker sends is addressed to a single
+        # window handle (send_key -> timed_send_key(self.window_handle, ...),
+        # MouseHandler -> SendMessageW(self.client.window_handle, ...)), the
+        # mouseless hook writes into each client's own memory, and nothing anywhere
+        # touches the foreground window. So the clients cannot interfere.
+        #
+        # The win is smaller than N: memory reads are synchronous ReadProcessMemory
+        # on the loop thread and SendMessageW blocks until the target game's message
+        # pump answers, so only the sleeps actually overlap. Measured at 1.88x for
+        # four clients (tools/probe_deck_apply_timing.py).
+        #
+        # Each task swallows its own failures, so no return_exceptions is needed and
+        # one bad client cannot cancel the others' applies half-finished.
+        await asyncio.gather(*pending)
+
+    async def _apply_one_pre_run_deck(self, client, slot: int, deck_data: DeckData) -> None:
+        """Apply one slot's deck, absorbing any failure.
+
+        Never raises: these run concurrently under a single gather, and a deck that
+        will not apply is a degraded run, not a cancelled one.
+        """
+        try:
+            await apply_deck(client, deck_data)
+        except TimeoutError:
+            # Log only. This runs inside the _start_bot task, and a blocking
+            # QMessageBox from an asyncio task deadlocks the qasync loop under
+            # Python 3.13 (see CLAUDE.md).
+            logger.error(
+                "Deck apply for slot %d timed out after %.0fs — run will continue with whatever was set",
+                slot,
+                DECK_APPLY_TIMEOUT,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to fully apply deck for slot %d — run will continue with whatever was set",
+                slot,
+                exc_info=True,
+            )
 
     def _pause_bot(self) -> None:
         if self._current_machine:

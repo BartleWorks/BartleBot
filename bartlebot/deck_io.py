@@ -773,9 +773,16 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     Item state is read *after* the deck is cleared, because ClearDeckButton may
     reset item toggles too; planning against the post-clear state is correct
     either way.
+
+    The deck page is assumed to be open and on the deck tab already: the only
+    caller is ``apply_deck``, whose ``DeckBuilder`` context manager has just done
+    exactly that.  This used to open with ``refresh_deck_page()``, which — because
+    ``_deck_open`` is True by then — pressed P twice to close and reopen the window
+    ``__aenter__`` had only just opened.  That cost two blocking keypresses and then
+    a lookup of a window mid-open-animation, which is precisely the case
+    ``_maybe_get_named_window`` answers by sleeping through its 1.6 s retry ladder.
     """
     report = DeckApplyReport()
-    await db.refresh_deck_page()
     deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
 
     if await _deck_already_matches(db.client, deck_window, deck):
@@ -878,6 +885,17 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
         from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
 
         async with DeckBuilder(client) as db:
+            # open_deck_page() has just clicked the "Deck" tab, so we are on the
+            # deck page — but it never records that, leaving _on_deck_page at the
+            # False it was constructed with.  view_deck_cards() reads that flag and
+            # would "correct" it by clicking through to the treasure card view,
+            # which corrupts the spell list (see the module docstring).
+            #
+            # refresh_deck_page() used to set the flag as a side effect, which is
+            # the only reason this was ever safe.  Dropping that redundant reopen
+            # means saying it outright.  The real fix belongs in open_deck_page();
+            # until the fork is bumped, assert it here.
+            db._on_deck_page = True  # noqa: SLF001
             return await write_deck(db, deck)
 
     return await asyncio.wait_for(_open_and_write(), timeout=timeout)
