@@ -255,11 +255,6 @@ class ClientManager(QObject):
                 # Update the account map for any clients whose titles are now known.
                 self._refresh_account_map(clients)
 
-                # Keep wizard names current: notice character switches, and read the name
-                # for any client that does not have one. One uint64 read per client per
-                # cycle, plus a behavior walk only on a genuine miss.
-                await self._refresh_wizard_names(clients)
-
                 # Compare by HWND set to detect additions and removals.
                 new_hwnd_set = {c.window_handle for c in clients}
                 cur_hwnd_set = {c.window_handle for c in self._clients}
@@ -298,6 +293,19 @@ class ClientManager(QObject):
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit(self._clients)
                     self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
+                # Keep wizard names current: notice character switches, and read the name
+                # for any client that does not have one. One uint64 read per client per
+                # cycle, plus a behavior walk only on a genuine miss.
+                #
+                # Runs *after* the client list is rebuilt above, and over self._clients
+                # rather than the handler's list, for two reasons: the game tiles are keyed
+                # by position in self._clients, so emitting the handler's order would put
+                # names on the wrong tiles once a user reorders players; and tiles for
+                # newly appeared clients are only created by the sync above, so emitting
+                # first would announce names to tiles that do not exist yet — and the next
+                # tick would see no change and stay quiet.
+                await self._refresh_wizard_names(self._clients)
 
                 await asyncio.sleep(1.0)
 

@@ -161,6 +161,11 @@ class ClientTile(QWidget):
             self._wizard_name = name
             self.update()
 
+    @property
+    def wizard_name(self) -> str | None:
+        """The wizard name currently shown on this tile, if any."""
+        return self._wizard_name
+
     def unembed(self) -> None:
         """Restore the game window to its original parent and style."""
         if self._game_thread_id and self._game_thread_id != self._my_thread_id:

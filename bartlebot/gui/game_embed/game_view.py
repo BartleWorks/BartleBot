@@ -248,6 +248,10 @@ class GameView(QWidget):
         super().__init__(parent)
         self._tiles: dict[int, ClientTile] = {}
         self._detached_tiles: dict[int, DetachedTile] = {}
+        # Last known wizard name per client index. Kept so a tile created later — a new
+        # client, or a detach/reattach — gets its name immediately instead of waiting for
+        # the name to change again, which for a stable character never happens.
+        self._wizard_names: list = []
         self._detached_hwnds: dict[int, int] = {}  # client_idx → hwnd
 
         # Placeholder shown when no clients are embedded or detached
@@ -285,6 +289,7 @@ class GameView(QWidget):
             return  # already embedded
         label = f"Player {client_idx + 1}"
         tile = ClientTile(hwnd, label, parent=self)
+        tile.set_wizard_name(self._wizard_name_for(client_idx))
         self._tiles[client_idx] = tile
         tile.detach_requested.connect(lambda idx=client_idx: self._detach_client(idx))
         tile.show()
@@ -359,10 +364,17 @@ class GameView(QWidget):
         A None entry clears the name rather than leaving a stale one on screen — that is
         what a character switch looks like before the new name has been read.
         """
+        self._wizard_names = list(names)
         for idx, name in enumerate(names):
             tile = self._tiles.get(idx) or self._detached_tiles.get(idx)
             if tile is not None:
                 tile.set_wizard_name(name)
+
+    def _wizard_name_for(self, client_idx: int) -> str | None:
+        """The last known wizard name for a slot, or None if there is not one yet."""
+        if 0 <= client_idx < len(self._wizard_names):
+            return self._wizard_names[client_idx]
+        return None
 
     def renumber_tiles(self, clients: list) -> None:
         """Re-key _tiles and update labels to match current list positions."""
@@ -379,6 +391,12 @@ class GameView(QWidget):
                 tile.detach_requested.connect(lambda idx=new_idx: self._detach_client(idx))
                 new_tiles[new_idx] = tile
         self._tiles = new_tiles
+        # A tile carries its own wizard name and follows its client through a reorder, so
+        # the tiles stay correct on their own -- but the by-index list here would not, and
+        # it is what a newly created tile reads from. Rebuild it from the tiles.
+        self._wizard_names = [
+            new_tiles[i].wizard_name if i in new_tiles else self._wizard_name_for(i) for i in range(len(clients))
+        ]
         self._recompute_geometry()
         self._update_minimum_size()
 
@@ -476,6 +494,7 @@ class GameView(QWidget):
 
     def _create_detached_tile(self, idx: int, label: str) -> None:
         dtile = DetachedTile(label, parent=self)
+        dtile.set_wizard_name(self._wizard_name_for(idx))
         dtile.reattach_requested.connect(lambda i=idx: self.reattach_client(i))
         dtile.show()
         self._detached_tiles[idx] = dtile
