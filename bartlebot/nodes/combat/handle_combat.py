@@ -4,6 +4,7 @@ import asyncio
 import logging
 import time
 
+from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
     _run_combat,
     resolve_combat,
@@ -15,7 +16,12 @@ PARAM_SCHEMA: list[ParamField] = [
         key="enemy",
         type="str",
         label="Enemy Name",
-        help=("Entity name of the enemy to initiate combat with. Leave empty to use the closest available mob."),
+        help=(
+            "Entity name of the enemy to initiate combat with. Plain text matches any name "
+            "containing it, so 'Cyclops' finds 'Cyclops/CyclopsMinion'. Wildcards (* ? []) "
+            "match the whole name instead, so use '*Bandit*' to match anywhere and 'Bandit*' "
+            "to match only names starting with it. Leave empty to use the closest available mob."
+        ),
         default="",
         default_hint="targets the closest available mob",
     ),
@@ -226,7 +232,7 @@ async def run(machine, clients: list, params: dict) -> str:
 async def _find_target(client, enemy_name: str):
     """Return the closest matching entity, or None if not found."""
     if enemy_name:
-        return await client.find_closest_by_vague_name(enemy_name)
+        return await node_helpers.find_closest_entity_by_name(client, enemy_name)
     return await client.find_closest_mob()
 
 

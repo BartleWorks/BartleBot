@@ -85,6 +85,31 @@ async def test_named_enemy_uses_vague_name():
     client.find_closest_mob.assert_not_called()
 
 
+async def test_wildcard_enemy_name_searches_by_predicate():
+    """Issue #58: a '*' in the enemy field used to be matched literally, so it found nothing."""
+    client = FakeClient()
+    client.find_closest_by_predicate.return_value = FakeEntity("Bandit/BanditThug")
+    client.in_battle.return_value = True
+
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(
+            FakeMachine(),
+            [client],
+            {"enemy": "*Bandit*", "use_default_strategy": True},
+        )
+
+    assert result == "SUCCESS"
+    assert client.find_closest_by_predicate.call_count >= 1
+    # The literal pattern must never reach WizSprinter's substring matcher, which is
+    # exactly what made wildcards fail before.
+    client.find_closest_by_vague_name.assert_not_called()
+    client.find_closest_mob.assert_not_called()
+
+
 async def test_timeout_entering_combat_fails():
     """Clients never enter battle within the timeout window → FAILURE."""
     client = FakeClient()

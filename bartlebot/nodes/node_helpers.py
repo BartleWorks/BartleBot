@@ -5,7 +5,7 @@ import fnmatch
 import logging
 import re
 
-from wizwalker import Keycode
+from wizwalker import Keycode, MemoryReadError
 
 logger = logging.getLogger(__name__)
 
@@ -249,6 +249,61 @@ async def poll_each_until_seen(
         await asyncio.sleep(poll_interval)
 
 
+def has_glob(pattern: str) -> bool:
+    """Return True when pattern contains glob metacharacters (* ? [)."""
+    return "*" in pattern or "?" in pattern or "[" in pattern
+
+
+def entity_name_matches(actual: str, pattern: str) -> bool:
+    """Return True when an entity's template name matches pattern.
+
+    Two modes, chosen by the pattern itself, mirroring zone_matches():
+
+      * No metacharacters — case-insensitive *substring* match, which is what
+        WizSprinter's get_base_entities_with_vague_name() does. "Cyclops" finds
+        "Cyclops/CyclopsMinion". Every existing bot file relies on this.
+      * With metacharacters — case-insensitive glob against the *whole* name, so
+        "*Bandit*" matches anywhere but "Bandit*" only matches names that start
+        with it. Anchoring is the point: substring matching alone cannot express
+        "starts with", and a pattern that silently meant the same thing either
+        way would make the wildcard decorative.
+
+    A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
+    literal character, so "[unclosed" simply matches names containing that text
+    (anchored, like any other pattern). No fallback is needed.
+    """
+    if actual is None:
+        return False
+    if has_glob(pattern):
+        return fnmatch.fnmatch(actual.lower(), pattern.lower())
+    return pattern.lower() in actual.lower()
+
+
+async def find_closest_entity_by_name(client, pattern: str):
+    """Return the closest entity whose template name matches pattern, or None.
+
+    Plain names delegate to WizSprinter's find_closest_by_vague_name() so the
+    long-standing path is untouched; only a pattern carrying metacharacters takes
+    the predicate route, which is the same search with our matcher in place of
+    WizSprinter's hardcoded substring test.
+    """
+    if not has_glob(pattern):
+        return await client.find_closest_by_vague_name(pattern)
+
+    async def _matches(entity) -> bool:
+        # An entity can despawn mid-scan; WizSprinter's own vague-name predicate
+        # would propagate that and abandon the whole search, so skip it instead.
+        try:
+            template = await entity.object_template()
+            if template is None:
+                return False
+            return entity_name_matches(await template.object_name(), pattern)
+        except (ValueError, MemoryReadError):
+            return False
+
+    return await client.find_closest_by_predicate(_matches)
+
+
 def zone_matches(actual: str, pattern: str) -> bool:
     """Return True when actual matches pattern.
 
@@ -262,7 +317,7 @@ def zone_matches(actual: str, pattern: str) -> bool:
     """
     if actual is None:
         return False
-    if "*" in pattern or "?" in pattern or "[" in pattern:
+    if has_glob(pattern):
         try:
             matched = fnmatch.fnmatchcase(actual, pattern)
         except re.error:

@@ -3,8 +3,17 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from wizwalker import MemoryReadError
 
-from bartlebot.nodes.node_helpers import _get_window_from_path, all_in_zone, all_left_zone, zone_matches
+from bartlebot.nodes.node_helpers import (
+    _get_window_from_path,
+    all_in_zone,
+    all_left_zone,
+    entity_name_matches,
+    find_closest_entity_by_name,
+    zone_matches,
+)
+from tests.conftest import FakeClient, FakeEntity
 
 # ---------------------------------------------------------------------------
 # zone_matches — pure function, no async
@@ -55,6 +64,123 @@ def test_zone_matches_malformed_pattern_falls_back_to_exact():
     # "[unclosed" is an invalid glob — should not raise, falls back to equality
     assert zone_matches("WizardCity/WC_Hub", "[unclosed") is False
     assert zone_matches("[unclosed", "[unclosed") is True
+
+
+# ---------------------------------------------------------------------------
+# entity_name_matches — pure function, no async
+# ---------------------------------------------------------------------------
+
+
+def test_entity_name_plain_is_substring():
+    # The long-standing behaviour every existing bot file depends on.
+    assert entity_name_matches("Cyclops/CyclopsMinion", "Cyclops") is True
+    assert entity_name_matches("Cyclops/CyclopsMinion", "Minion") is True
+
+
+def test_entity_name_plain_is_case_insensitive():
+    assert entity_name_matches("Cyclops/CyclopsMinion", "cyclops") is True
+
+
+def test_entity_name_plain_miss():
+    assert entity_name_matches("Cyclops/CyclopsMinion", "Kraken") is False
+
+
+def test_entity_name_wildcard_anchors_the_whole_name():
+    # The bug behind #58: a wildcard used to be a literal character that matched
+    # nothing. It now globs, and anchored, so a leading "*" is load-bearing.
+    assert entity_name_matches("Bandit/BanditThug", "*Bandit*") is True
+    assert entity_name_matches("Bandit/BanditThug", "Bandit*") is True
+    assert entity_name_matches("Krokotopia/BanditThug", "Bandit*") is False
+
+
+def test_entity_name_wildcard_is_case_insensitive():
+    assert entity_name_matches("Bandit/BanditThug", "*bandit*") is True
+
+
+def test_entity_name_question_mark():
+    assert entity_name_matches("Rank3", "Rank?") is True
+    assert entity_name_matches("Rank30", "Rank?") is False
+
+
+def test_entity_name_none_actual_returns_false():
+    assert entity_name_matches(None, "Cyclops") is False
+    assert entity_name_matches(None, "*Cyclops*") is False
+
+
+def test_entity_name_malformed_pattern_is_literal_not_an_error():
+    # fnmatch treats an unbalanced bracket as a literal, so this must not raise
+    # and must behave like any other anchored pattern.
+    assert entity_name_matches("[unclosed", "[unclosed") is True
+    assert entity_name_matches("a [unclosed name", "[unclosed") is False
+    assert entity_name_matches("a [unclosed name", "*[unclosed*") is True
+
+
+# ---------------------------------------------------------------------------
+# find_closest_entity_by_name — async
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_find_closest_plain_name_uses_vague_name():
+    """A plain name must keep taking WizSprinter's own path, untouched."""
+    client = FakeClient()
+    client.find_closest_by_vague_name.return_value = FakeEntity("Cyclops/CyclopsMinion")
+
+    found = await find_closest_entity_by_name(client, "Cyclops")
+
+    assert found is not None
+    client.find_closest_by_vague_name.assert_awaited_once_with("Cyclops")
+    client.find_closest_by_predicate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_find_closest_wildcard_uses_predicate():
+    client = FakeClient()
+    client.find_closest_by_predicate.return_value = FakeEntity("Bandit/BanditThug")
+
+    found = await find_closest_entity_by_name(client, "*Bandit*")
+
+    assert found is not None
+    client.find_closest_by_vague_name.assert_not_awaited()
+    client.find_closest_by_predicate.assert_awaited_once()
+
+
+async def _predicate_from(client):
+    """Return the predicate handed to find_closest_by_predicate."""
+    return client.find_closest_by_predicate.await_args.args[0]
+
+
+@pytest.mark.asyncio
+async def test_wildcard_predicate_accepts_and_rejects_by_name():
+    client = FakeClient()
+    await find_closest_entity_by_name(client, "Bandit*")
+    predicate = await _predicate_from(client)
+
+    assert await predicate(FakeEntity("BanditThug")) is True
+    assert await predicate(FakeEntity("Krokotopia/BanditThug")) is False
+
+
+@pytest.mark.asyncio
+async def test_wildcard_predicate_skips_entity_that_despawned():
+    """A dead entity mid-scan is skipped, not allowed to abort the whole search."""
+    client = FakeClient()
+    await find_closest_entity_by_name(client, "Bandit*")
+    predicate = await _predicate_from(client)
+
+    gone = FakeEntity("BanditThug")
+    gone.object_template = AsyncMock(side_effect=MemoryReadError("read failed"))
+    assert await predicate(gone) is False
+
+
+@pytest.mark.asyncio
+async def test_wildcard_predicate_skips_entity_without_a_template():
+    client = FakeClient()
+    await find_closest_entity_by_name(client, "Bandit*")
+    predicate = await _predicate_from(client)
+
+    templateless = FakeEntity("BanditThug")
+    templateless.object_template = AsyncMock(return_value=None)
+    assert await predicate(templateless) is False
 
 
 # ---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ _FAKED_METHODS = frozenset(
         "send_key",
         "find_closest_mob",
         "find_closest_by_vague_name",
+        "find_closest_by_predicate",
         "tp_to",
         "in_battle",
         "calc_health_ratio",
@@ -76,6 +77,7 @@ class FakeClient:
         self.send_key = AsyncMock()
         self.find_closest_mob = AsyncMock(return_value=None)
         self.find_closest_by_vague_name = AsyncMock(return_value=None)
+        self.find_closest_by_predicate = AsyncMock(return_value=None)
         self.tp_to = AsyncMock()
         self.in_battle = AsyncMock(return_value=False)
         self.body = MagicMock()
@@ -115,6 +117,11 @@ class FakeEntity:
     def __init__(self, name: str = "TestEnemy/TestEnemy"):
         self.object_name = AsyncMock(return_value=name)
         self.location = AsyncMock(return_value=XYZ(100.0, 200.0, 0.0))
+        # Real entities expose their name through the template, not directly; predicate
+        # searches read it that way, so the two must report the same name.
+        template = MagicMock()
+        template.object_name = self.object_name
+        self.object_template = AsyncMock(return_value=template)
 
 
 class FakeMachine:
