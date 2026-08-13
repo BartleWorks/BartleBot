@@ -161,6 +161,10 @@ class AppController(QObject):
         self._client_manager.clients_changed.connect(w.game_view.renumber_tiles)
         self._client_manager.clients_changed.connect(self._on_clients_changed)
 
+        # Wizard names → game tile pills. The sidebar reads the cache directly in its own
+        # refresh loop, so it needs no connection here.
+        self._client_manager.wizard_names_changed.connect(w.game_view.set_wizard_names)
+
         # All clients (active + unhooked) → sidebar rebuild
         self._client_manager.all_clients_changed.connect(
             lambda active, unhooked: w.right_sidebar.clients.set_all_clients(active, unhooked)

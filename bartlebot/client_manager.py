@@ -20,11 +20,14 @@ class ClientManager(QObject):
 
     Signals:
         clients_changed: Emitted whenever the live client list changes.
+        wizard_names_changed: Emitted with the per-client wizard names when they change.
         recovery_error:  Emitted when recovery cannot proceed due to a user-fixable error.
     """
 
     clients_changed = pyqtSignal(list)
     all_clients_changed = pyqtSignal(list, list)  # (active_clients, unhooked_clients)
+    # list[str | None], positionally aligned with the live client list.
+    wizard_names_changed = pyqtSignal(list)
     recovery_error = pyqtSignal(str)
 
     def __init__(
@@ -42,6 +45,8 @@ class ClientManager(QObject):
         self._get_recovery_state = get_recovery_state
 
         self._clients: list = []
+        # Last announced wizard names, so the signal fires on change rather than per tick.
+        self._last_wizard_names: list = []
         # Maps window_handle → username for all clients seen this session.
         self._hwnd_account_map: dict[int, str] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
@@ -250,10 +255,10 @@ class ClientManager(QObject):
                 # Update the account map for any clients whose titles are now known.
                 self._refresh_account_map(clients)
 
-                # Notice character switches, so a cached wizard name never outlives the
-                # character it belongs to. One uint64 read per client per cycle; the
-                # expensive detection only runs when something actually asks for a name.
-                await self._refresh_wizard_identities(clients)
+                # Keep wizard names current: notice character switches, and read the name
+                # for any client that does not have one. One uint64 read per client per
+                # cycle, plus a behavior walk only on a genuine miss.
+                await self._refresh_wizard_names(clients)
 
                 # Compare by HWND set to detect additions and removals.
                 new_hwnd_set = {c.window_handle for c in clients}
@@ -314,22 +319,33 @@ class ClientManager(QObject):
                 logger.exception("Client loop error")
                 await asyncio.sleep(3.0)
 
-    async def _refresh_wizard_identities(self, clients: list) -> None:
-        """Invalidate cached wizard names for any client that changed character.
+    async def _refresh_wizard_names(self, clients: list) -> None:
+        """Keep cached wizard names current, and announce them when they change.
 
-        The window handle the name cache is keyed by survives a character switch, so
-        without this a cached name goes on naming the previous wizard for the rest of the
-        session — which is what sends a group invite to the wrong character.
+        Two jobs. Character switches invalidate a cached name: the window handle the cache
+        is keyed by survives a switch, so without this a cached name goes on naming the
+        previous wizard for the rest of the session — which is what sends a group invite to
+        the wrong character. And any client without a name gets one read from memory, so
+        the sidebar and the game tiles have something to show without anything having asked.
 
-        Never raises: a name going stale degrades grouping, but an exception here would
-        take down the client loop that owns hook lifecycle and crash recovery.
+        Memory only — never the character page. Filling a label is not worth opening the
+        character UI on a live client.
+
+        Never raises: a stale name degrades grouping, but an exception here would take down
+        the client loop that owns hook lifecycle and crash recovery.
         """
         from bartlebot import wizard_names  # noqa: PLC0415
 
         try:
-            await wizard_names.refresh_identities(clients)
+            changed = await wizard_names.fill_names_from_memory(clients)
         except Exception:
-            logger.debug("Could not refresh wizard identities", exc_info=True)
+            logger.debug("Could not refresh wizard names", exc_info=True)
+            return
+
+        names = [wizard_names.cached_name(c) for c in clients]
+        if changed or names != self._last_wizard_names:
+            self._last_wizard_names = names
+            self.wizard_names_changed.emit(list(names))
 
     def _refresh_account_map(self, live_clients: list) -> None:
         """For each live client with an unrecognised HWND, try to match window title to an account."""

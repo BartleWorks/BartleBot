@@ -352,6 +352,18 @@ class GameView(QWidget):
     def has_detached(self) -> bool:
         return bool(self._detached_hwnds)
 
+    def set_wizard_names(self, names: list) -> None:
+        """Show each client's wizard name on its tile pill.
+
+        `names` is positionally aligned with the live client list, matching the tile keys.
+        A None entry clears the name rather than leaving a stale one on screen — that is
+        what a character switch looks like before the new name has been read.
+        """
+        for idx, name in enumerate(names):
+            tile = self._tiles.get(idx) or self._detached_tiles.get(idx)
+            if tile is not None:
+                tile.set_wizard_name(name)
+
     def renumber_tiles(self, clients: list) -> None:
         """Re-key _tiles and update labels to match current list positions."""
         hwnd_to_old_idx = {tile._hwnd: old_idx for old_idx, tile in self._tiles.items()}
@@ -360,8 +372,7 @@ class GameView(QWidget):
             old_idx = hwnd_to_old_idx.get(client.window_handle)
             if old_idx is not None and old_idx in self._tiles:
                 tile = self._tiles[old_idx]
-                tile._label = f"Player {new_idx + 1}"
-                tile.update()
+                tile.set_label(f"Player {new_idx + 1}")
                 # Reconnect detach_requested with the updated index so the detach
                 # button targets the correct slot after a client reorder.
                 tile.detach_requested.disconnect()

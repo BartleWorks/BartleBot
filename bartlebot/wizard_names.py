@@ -159,6 +159,7 @@ def forget(client) -> None:
 def clear_cache() -> None:
     """Drop every cached name. Intended for tests and for a full client reset."""
     _cache.clear()
+    _memory_misses.clear()
 
 
 def _handle(client) -> int:
@@ -277,6 +278,38 @@ async def read_name_from_memory(client) -> str | None:
     if name:
         logger.debug("Read wizard name %r from memory", name)
     return name
+
+
+# Characters whose name memory could not resolve, as (handle, character_id). Without this,
+# a client whose name the shipped tables do not know would pay the behavior-list walk on
+# every client-loop tick, forever. Keyed by character id so a switch retries automatically:
+# swapping to a character the tables *do* know must resolve immediately.
+_memory_misses: set[tuple[int, int]] = set()
+
+
+async def fill_names_from_memory(clients: list) -> bool:
+    """Cache any unknown wizard name that memory can supply. Returns True if any was new.
+
+    The display path. Deliberately does *not* fall back to the character page: a sidebar
+    label is not worth opening and closing the character UI on a live client, which would
+    flash the game window every time a name happened to be unknown. Surfaces that need a
+    name badly enough to pay for keypresses call resolve_names instead.
+    """
+    ids = await refresh_identities(clients)
+    learned = False
+    for client, character_id in zip(clients, ids):
+        if character_id == NO_CHARACTER or cached_name(client):
+            continue
+        key = (_handle(client), character_id)
+        if key in _memory_misses:
+            continue
+        name = await read_name_from_memory(client)
+        if name:
+            remember(client, name, character_id)
+            learned = True
+        else:
+            _memory_misses.add(key)
+    return learned
 
 
 async def resolve_names(clients: list) -> list[str | None]:

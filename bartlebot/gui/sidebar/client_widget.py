@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker import XYZ
 
+from bartlebot import wizard_names
 from bartlebot.gui.sidebar.sidebar_section import field_label
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 
@@ -39,6 +40,7 @@ class ClientWidget(QWidget):
         self._index = index
         self._is_unhooked = False
         self._in_freecam = False
+        self._last_wizard = _PLACEHOLDER
         self._last_zone = _PLACEHOLDER
         self._last_xyz = _PLACEHOLDER
         self._last_mob = _PLACEHOLDER
@@ -96,6 +98,15 @@ class ClientWidget(QWidget):
         title_row.addWidget(title, 1)
         title_row.addWidget(btn_down)
         layout.addLayout(title_row)
+
+        # Wizard row. Read from the name cache rather than detected here: detection can
+        # cost keypresses, and a sidebar label must never move the game UI.
+        self._wizard_label = ElidedLabel(_PLACEHOLDER)
+        wizard_row = self._row()
+        wizard_row.addWidget(field_label("Wizard"))
+        wizard_row.addWidget(self._wizard_label, 1)
+        wizard_row.addWidget(self._copy_button("Copy wizard name", self._copy_wizard))
+        layout.addLayout(wizard_row)
 
         # Zone row — elided from the LEFT, because a zone path's tail
         # (…/WC_Streets/Interior) is what distinguishes it; the prefix is shared.
@@ -208,6 +219,9 @@ class ClientWidget(QWidget):
     # Copy helpers
     # ------------------------------------------------------------------
 
+    def _copy_wizard(self) -> None:
+        pyperclip.copy(self._last_wizard)
+
     def _copy_zone(self) -> None:
         pyperclip.copy(self._last_zone)
 
@@ -292,6 +306,12 @@ class ClientWidget(QWidget):
                 return
         except Exception:
             pass
+
+        # Wizard name — a dict lookup in the shared cache, no memory read of its own.
+        # ClientManager's loop is what fills it, so the card shows whatever is known and
+        # never triggers detection on its own.
+        self._last_wizard = wizard_names.cached_name(self._client) or _PLACEHOLDER
+        self._wizard_label.setText(self._last_wizard)
 
         # Zone
         try:
