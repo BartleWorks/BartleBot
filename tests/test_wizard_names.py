@@ -1,5 +1,6 @@
 """Unit tests for wizard name detection and caching."""
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -70,7 +71,7 @@ def test_strip_markup_handles_attribute_changes():
 async def test_detect_reads_and_cleans_the_title():
     client = _client_with_title("<Color;FFFFFFFF>Wolf Deathblade</Color>")
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
         assert await wn.detect_wizard_name(client) == "Wolf Deathblade"
 
 
@@ -78,7 +79,7 @@ async def test_detect_closes_the_character_page():
     """Two C presses: one to open, one to close."""
     client = _client_with_title("Wolf Deathblade")
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
         await wn.detect_wizard_name(client)
 
     assert client.send_key.await_count == 2
@@ -88,7 +89,7 @@ async def test_detect_closes_the_page_even_when_reading_fails():
     """Leaving the character page open would obscure the HUD for every later node."""
     client = _client_without_page()
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
         assert await wn.detect_wizard_name(client) is None
 
     assert client.send_key.await_count == 2
@@ -97,14 +98,14 @@ async def test_detect_closes_the_page_even_when_reading_fails():
 async def test_detect_returns_none_when_the_page_never_appears():
     client = _client_without_page()
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
         assert await wn.detect_wizard_name(client) is None
 
 
 async def test_detect_returns_none_on_empty_title():
     client = _client_with_title("")
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
         assert await wn.detect_wizard_name(client) is None
 
 
@@ -123,7 +124,7 @@ async def test_detect_never_raises_on_a_broken_client():
 async def test_resolve_names_detects_once_and_caches():
     client = _client_with_title("Wolf Deathblade")
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
         first = await wn.resolve_names([client])
         second = await wn.resolve_names([client])
 
@@ -137,22 +138,63 @@ async def test_resolve_names_keeps_positional_alignment_with_unknowns():
     known = _client_with_title("Wolf Deathblade")
     unknown = _client_without_page()
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0), patch.object(wn, "TRIGGER_TIMEOUT", 0):
         names = await wn.resolve_names([known, unknown])
 
     assert names == ["Wolf Deathblade", None]
 
 
+async def test_resolve_names_detects_concurrently():
+    """Every client must reach the page read before any of them finishes.
+
+    The barrier only releases once all three arrive, so a sequential implementation
+    deadlocks here and trips the timeout rather than quietly costing three settles.
+    """
+    barrier = asyncio.Barrier(3)
+
+    def _barriered_client() -> FakeClient:
+        c = FakeClient()
+
+        async def _get_windows(_name):
+            await barrier.wait()
+            return [_title_window("Wolf Deathblade")]
+
+        c.root_window.get_windows_with_name = AsyncMock(side_effect=_get_windows)
+        return c
+
+    clients = [_barriered_client() for _ in range(3)]
+
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        names = await asyncio.wait_for(wn.resolve_names(clients), timeout=5)
+
+    assert names == ["Wolf Deathblade"] * 3
+
+
+async def test_resolve_names_only_detects_the_uncached_clients():
+    cached = _client_with_title("Wolf Deathblade")
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        await wn.resolve_names([cached])
+
+    fresh = _client_with_title("Iridian Spellthief")
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        names = await wn.resolve_names([cached, fresh])
+
+    assert names == ["Wolf Deathblade", "Iridian Spellthief"]
+    # The cached client was not re-opened: still just its original two keypresses.
+    assert cached.send_key.await_count == 2
+    assert fresh.send_key.await_count == 2
+
+
 async def test_a_relaunched_client_is_redetected():
     """A recovered client has a new window handle, so its name is confirmed afresh."""
     original = _client_with_title("Wolf Deathblade")
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
         await wn.resolve_names([original])
 
     relaunched = _client_with_title("Wolf Deathblade")
     assert wn.cached_name(relaunched) is None
 
-    with patch.object(wn, "_CHARACTER_PAGE_SETTLE", 0):
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
         assert await wn.resolve_names([relaunched]) == ["Wolf Deathblade"]
     assert relaunched.send_key.await_count == 2
 

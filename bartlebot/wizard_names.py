@@ -25,7 +25,7 @@ import re
 from wizwalker import Keycode
 
 from bartlebot.nodes.paths import CHARACTER_PAGE_TITLE_WINDOW
-from bartlebot.nodes.timing import TRIGGER_TIMEOUT, jitter
+from bartlebot.nodes.timing import CHARACTER_PAGE_SETTLE, TRIGGER_TIMEOUT, jitter
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +34,6 @@ logger = logging.getLogger(__name__)
 # Deimos strips this with a fixed [8:-9] slice, which breaks the moment the tag carries
 # different attributes. Strip every <...> tag instead and keep what is left.
 _MARKUP_TAG = re.compile(r"<[^>]*>")
-
-# Seconds to wait for the character page to render after pressing C. The page is a local
-# UI panel with no server round-trip, so this only needs to cover a frame or two.
-_CHARACTER_PAGE_SETTLE = 0.5
 
 
 def strip_markup(raw: str | None) -> str:
@@ -66,7 +62,7 @@ async def detect_wizard_name(client) -> str | None:
     """
     try:
         await client.send_key(Keycode.C, 0.1)
-        await asyncio.sleep(jitter(_CHARACTER_PAGE_SETTLE))
+        await asyncio.sleep(jitter(CHARACTER_PAGE_SETTLE))
 
         name = await _read_title_scroll(client)
         if name:
@@ -140,19 +136,28 @@ async def resolve_names(clients: list) -> list[str | None]:
     """Return each client's wizard name, detecting and caching any that are unknown.
 
     The returned list is positionally aligned with `clients`; an entry is None when that
-    client's name could not be determined. Detection runs sequentially rather than
-    gathered: it drives the UI with keypresses, and WizWalker's memory reads are
-    synchronous on the event loop anyway, so concurrency would buy nothing while making
-    several clients fight over the character page at once.
+    client's name could not be determined.
+
+    Detection is gathered across the clients that need it, for the same reason the pre-run
+    deck applies and the group-membership survey are: there is no shared character page to
+    contend over. Each client is its own process with its own UI, and send_key posts to a
+    single window handle, so the keypresses cannot cross. Almost all of the elapsed time is
+    the CHARACTER_PAGE_SETTLE sleep plus the poll pauses in _read_title_scroll, and those
+    overlap perfectly; only the ReadProcessMemory calls serialise on the loop thread.
+
+    No return_exceptions is needed — detect_wizard_name absorbs every failure and answers
+    None, so one unreadable client cannot cancel detection for the rest.
     """
-    names: list[str | None] = []
-    for client in clients:
-        name = cached_name(client)
-        if name is None:
-            name = await detect_wizard_name(client)
-            if name:
-                remember(client, name)
-        names.append(name)
+    names: list[str | None] = [cached_name(c) for c in clients]
+    unknown = [i for i, name in enumerate(names) if name is None]
+    if not unknown:
+        return names
+
+    detected = await asyncio.gather(*(detect_wizard_name(clients[i]) for i in unknown))
+    for i, name in zip(unknown, detected):
+        if name:
+            remember(clients[i], name)
+            names[i] = name
     return names
 
 

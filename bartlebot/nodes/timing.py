@@ -202,6 +202,17 @@ GROUP_UI_SETTLE = 1.0
 # for the whole fleet rather than one per client, which is where the win came from instead.
 
 
+CHARACTER_PAGE_SETTLE = 0.5
+# Pause after pressing C, so the character page is rendered before its title is read.
+# Unlike GROUP_UI_SETTLE this is not the floor on the operation: it is followed by a poll
+# for the title window (wizard_names._read_title_scroll), so a slow render is recovered
+# rather than misread. It only needs to cover the common case — the page is a local UI
+# panel with no server round-trip, so a frame or two is enough.
+#
+# Concurrent across clients (see wizard_names.resolve_names), so a fleet pays it once
+# rather than once per client.
+
+
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.
 
