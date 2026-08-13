@@ -18,8 +18,11 @@ from PyQt6.QtWidgets import (
 from wizwalker import XYZ
 
 from bartlebot.gui.sidebar.sidebar_section import field_label
+from bartlebot.gui.widgets.elided_label import ElidedLabel
 
 _MOB_INTERVAL = 5.0  # seconds between closest-mob refreshes
+_PLACEHOLDER = "—"
+_COPY_BTN_WIDTH = 48
 
 
 class ClientWidget(QWidget):
@@ -36,9 +39,9 @@ class ClientWidget(QWidget):
         self._index = index
         self._is_unhooked = False
         self._in_freecam = False
-        self._last_zone = "—"
-        self._last_xyz = "—"
-        self._last_mob = "—"
+        self._last_zone = _PLACEHOLDER
+        self._last_xyz = _PLACEHOLDER
+        self._last_mob = _PLACEHOLDER
         self._last_mob_time: float = 0.0
         self._build_ui(index, total)
 
@@ -46,12 +49,29 @@ class ClientWidget(QWidget):
     # UI construction
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _row() -> QHBoxLayout:
+        """A card row: no margins of its own, since the card's outer layout insets it."""
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
+        return row
+
+    @staticmethod
+    def _copy_button(tooltip: str, on_click) -> QPushButton:
+        """Narrow copy button. The inline field prefix beside it says what it copies."""
+        btn = QPushButton("Copy")
+        btn.setFixedWidth(_COPY_BTN_WIDTH)
+        btn.setToolTip(tooltip)
+        btn.clicked.connect(on_click)
+        return btn
+
     def _build_ui(self, index: int, total: int) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(6, 4, 6, 4)
+        layout.setContentsMargins(6, 3, 6, 3)
         layout.setSpacing(4)
 
-        # Title row with move up/down buttons and hook toggle
+        # Title row with move up/down buttons
         title_text = f"Player {index + 1}" if index >= 0 else "Player (unhooked)"
         title = QLabel(title_text)
         font = QFont()
@@ -71,85 +91,68 @@ class ClientWidget(QWidget):
         btn_down.setEnabled(index < total - 1)
         btn_down.clicked.connect(lambda: self.move_down.emit(index))
 
-        title_row = QHBoxLayout()
+        title_row = self._row()
         title_row.addWidget(btn_up)
         title_row.addWidget(title, 1)
         title_row.addWidget(btn_down)
         layout.addLayout(title_row)
 
-        # Zone row
-        layout.addWidget(field_label("Current Zone"))
-        self._zone_label = QLabel("—")
-        self._zone_label.setWordWrap(True)
-        self._zone_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        copy_zone_btn = QPushButton("Copy Zone")
-        copy_zone_btn.setFixedWidth(80)
-        copy_zone_btn.clicked.connect(self._copy_zone)
-        zone_row = QHBoxLayout()
+        # Zone row — elided from the LEFT, because a zone path's tail
+        # (…/WC_Streets/Interior) is what distinguishes it; the prefix is shared.
+        self._zone_label = ElidedLabel(_PLACEHOLDER, elide_mode=Qt.TextElideMode.ElideLeft)
+        zone_row = self._row()
+        zone_row.addWidget(field_label("Zone"))
         zone_row.addWidget(self._zone_label, 1)
-        zone_row.addWidget(copy_zone_btn)
+        zone_row.addWidget(self._copy_button("Copy zone name", self._copy_zone))
         layout.addLayout(zone_row)
 
-        # XYZ row — three independent labels so each has its own layout height
-        layout.addWidget(field_label("Current XYZ"))
-
-        def _xyz_val_label(text: str) -> QLabel:
-            lbl = QLabel(text)
-            lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-            return lbl
-
-        self._x_label = _xyz_val_label("X=—")
-        self._y_label = _xyz_val_label("Y=—")
-        self._z_label = _xyz_val_label("Z=—")
-
-        xyz_labels = QVBoxLayout()
-        xyz_labels.setSpacing(0)
-        xyz_labels.addWidget(self._x_label)
-        xyz_labels.addWidget(self._y_label)
-        xyz_labels.addWidget(self._z_label)
-
-        copy_xyz_btn = QPushButton("Copy XYZ")
-        copy_xyz_btn.setFixedWidth(80)
-        copy_xyz_btn.clicked.connect(self._copy_xyz)
-        xyz_row = QHBoxLayout()
-        xyz_row.addLayout(xyz_labels, 1)
-        xyz_row.addWidget(copy_xyz_btn, 0, Qt.AlignmentFlag.AlignTop)
+        # XYZ row. An ElidedLabel, not a word-wrapped QLabel: a wrapped QLabel
+        # reports a 26 px sizeHint (and heightForWidth of 40) for a single 12 px
+        # line, which made this row visibly taller than its neighbours and pushed
+        # the value below its prefix. All three data rows use the same widget so
+        # they share one line height and centre alike.
+        self._xyz_label = ElidedLabel(f"X={_PLACEHOLDER}  Y={_PLACEHOLDER}  Z={_PLACEHOLDER}")
+        xyz_row = self._row()
+        xyz_row.addWidget(field_label("XYZ"))
+        xyz_row.addWidget(self._xyz_label, 1)
+        xyz_row.addWidget(self._copy_button("Copy XYZ as JSON", self._copy_xyz))
         layout.addLayout(xyz_row)
 
-        # Freecam controls
-        layout.addWidget(field_label("Freecam Controls"))
+        # Closest enemy row
+        self._mob_label = ElidedLabel(_PLACEHOLDER)
+        mob_row = self._row()
+        mob_row.addWidget(field_label("Enemy"))
+        mob_row.addWidget(self._mob_label, 1)
+        mob_row.addWidget(self._copy_button("Copy closest enemy name", self._copy_mob))
+        layout.addLayout(mob_row)
+
+        # Freecam controls — both buttons share one row, below the data rows so
+        # the three read as a block rather than being split by a pair of buttons.
         self._freecam_btn = QPushButton("Enter Freecam")
         self._freecam_btn.clicked.connect(lambda: asyncio.ensure_future(self._toggle_freecam()))
-        layout.addWidget(self._freecam_btn)
 
         self._tp_btn = QPushButton("TP to Freecam")
         self._tp_btn.setEnabled(False)
         self._tp_btn.clicked.connect(lambda: asyncio.ensure_future(self._tp_to_freecam()))
-        layout.addWidget(self._tp_btn)
 
-        # Closest enemy row
-        layout.addWidget(field_label("Closest Enemy"))
-        self._mob_label = QLabel("—")
-        self._mob_label.setWordWrap(True)
-        self._mob_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        copy_mob_btn = QPushButton("Copy Mob")
-        copy_mob_btn.setFixedWidth(80)
-        copy_mob_btn.clicked.connect(self._copy_mob)
-        mob_row = QHBoxLayout()
-        mob_row.addWidget(self._mob_label, 1)
-        mob_row.addWidget(copy_mob_btn)
-        layout.addLayout(mob_row)
+        freecam_row = self._row()
+        freecam_row.addWidget(self._freecam_btn, 1)
+        freecam_row.addWidget(self._tp_btn, 1)
+        layout.addLayout(freecam_row)
 
-        # Tool buttons
-        tool_row = QHBoxLayout()
+        # Tool buttons. A QPushButton's minimum width is its label width and it
+        # clips rather than elides, so these three labels set the floor for how
+        # narrow the whole card can go — "Entity Browser"/"UI Tree Browser" alone
+        # demanded 376 px inside a 300 px panel. The tooltips carry the full name.
+        tool_row = self._row()
 
-        entity_btn = QPushButton("Entity Browser")
-        entity_btn.setToolTip("Inspect nearby entities for this player")
+        entity_btn = QPushButton("Entities")
+        entity_btn.setToolTip("Entity Browser — inspect nearby entities for this player")
         entity_btn.clicked.connect(self._open_entity_browser)
         tool_row.addWidget(entity_btn)
 
-        ui_tree_btn = QPushButton("UI Tree Browser")
-        ui_tree_btn.setToolTip("Inspect the live WizWalker UI window tree for this player")
+        ui_tree_btn = QPushButton("UI Tree")
+        ui_tree_btn.setToolTip("UI Tree Browser — inspect the live WizWalker UI window tree for this player")
         ui_tree_btn.clicked.connect(self._open_ui_tree)
         tool_row.addWidget(ui_tree_btn)
 
@@ -178,6 +181,11 @@ class ClientWidget(QWidget):
     @property
     def is_unhooked(self) -> bool:
         return self._is_unhooked
+
+    @property
+    def last_zone(self) -> str:
+        """Most recent zone name read by refresh(), or the placeholder if unknown."""
+        return self._last_zone
 
     def set_unhooked(self, unhooked: bool) -> None:
         self._is_unhooked = unhooked
@@ -287,9 +295,9 @@ class ClientWidget(QWidget):
 
         # Zone
         try:
-            zone = await self._client.zone_name() or "—"
+            zone = await self._client.zone_name() or _PLACEHOLDER
         except Exception:
-            zone = "—"
+            zone = _PLACEHOLDER
         self._last_zone = zone
         self._zone_label.setText(zone)
 
@@ -300,16 +308,13 @@ class ClientWidget(QWidget):
                 pos = await free.position()
             else:
                 pos = await self._client.body.position()
+            # Copy format is JSON at 2dp; the display format is 1dp and space-separated.
             xyz_dict = {"x": round(pos.x, 2), "y": round(pos.y, 2), "z": round(pos.z, 2)}
             self._last_xyz = json.dumps(xyz_dict)
-            self._x_label.setText(f"X={pos.x:.1f}")
-            self._y_label.setText(f"Y={pos.y:.1f}")
-            self._z_label.setText(f"Z={pos.z:.1f}")
+            self._xyz_label.setText(f"X={pos.x:.1f}  Y={pos.y:.1f}  Z={pos.z:.1f}")
         except Exception:
-            self._last_xyz = "—"
-            self._x_label.setText("X=—")
-            self._y_label.setText("Y=—")
-            self._z_label.setText("Z=—")
+            self._last_xyz = _PLACEHOLDER
+            self._xyz_label.setText(f"X={_PLACEHOLDER}  Y={_PLACEHOLDER}  Z={_PLACEHOLDER}")
 
         # Closest mob — throttled to once every _MOB_INTERVAL seconds
         now = time.monotonic()
@@ -317,8 +322,8 @@ class ClientWidget(QWidget):
             self._last_mob_time = now
             try:
                 mob = await self._client.find_closest_mob()
-                name = await mob.object_name() if mob else "—"
-                self._last_mob = name or "—"
+                name = await mob.object_name() if mob else _PLACEHOLDER
+                self._last_mob = name or _PLACEHOLDER
             except Exception:
-                self._last_mob = "—"
+                self._last_mob = _PLACEHOLDER
             self._mob_label.setText(self._last_mob)

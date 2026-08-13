@@ -87,6 +87,14 @@ CLIENT_REFRESH_INTERVAL_RUN = 0.5
 # WizWalker memory reads are synchronous (blocking) calls, so fewer GUI
 # reads per second means less interference with the running bot's reads.
 
+CLIENT_REFRESH_INTERVAL_HIDDEN = 2.0
+# Seconds between client sidebar refreshes while the Players tab is not the
+# current tab. Deliberately slower than the run interval, and visibility is
+# checked before bot state: hidden-and-running is the highest-contention,
+# lowest-value combination, since nothing is on screen to update. Polling does
+# not stop entirely because AppController's zone-dropdown getter reads each
+# widget's cached zone, and a frozen cache would offer zones nobody is in.
+
 CLIENT_REFRESH_TIMEOUT = 1.0
 # Per-widget timeout for a single refresh cycle. If any one client's
 # zone/xyz reads take longer than this (e.g. during a zone transition),

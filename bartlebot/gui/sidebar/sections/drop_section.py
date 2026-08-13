@@ -1,4 +1,4 @@
-"""Sidebar section: per-client drop tables with CSV export."""
+"""Drops tab content: per-client drop tables with CSV export."""
 
 import csv
 
@@ -13,28 +13,30 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 
+class DropSection(QWidget):
+    """Per-client drop tables with search and CSV export.
 
-class DropSection(SidebarSection):
-    """Collapsible 'Drops' section with per-client drop tables and CSV export."""
-
-    _expanded_v_policy = QSizePolicy.Policy.Expanding
+    Added straight to RightSidebar's Drops tab rather than wrapped in a scroll
+    area — the tables scroll internally — so this widget owns the padding inside
+    the tab pane.
+    """
 
     def __init__(self, parent=None):
-        super().__init__("Drops", parent)
+        super().__init__(parent)
 
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
-        self.body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
 
         self._tables: list[QTableWidget] = []
         self._data: list[dict[str, int]] = []  # backing store; one dict per client
         self._pending: set[int] = set()  # client indices that need a table rebuild
         self._flush_scheduled = False
 
-        layout = QVBoxLayout()
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(4)
 
         self._search = QLineEdit()
@@ -51,8 +53,6 @@ class DropSection(SidebarSection):
         export_btn = QPushButton("Export CSV")
         export_btn.clicked.connect(self._export_csv)
         layout.addWidget(export_btn)
-
-        self.set_content_layout(layout)
 
     # ------------------------------------------------------------------
     # Public API
