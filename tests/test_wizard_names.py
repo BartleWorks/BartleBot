@@ -206,6 +206,137 @@ def test_remember_ignores_empty_names():
 
 
 # ---------------------------------------------------------------------------
+# character switch detection
+# ---------------------------------------------------------------------------
+
+
+def _set_character_id(client: FakeClient, character_id: int) -> None:
+    client.client_object.read_value_from_offset = AsyncMock(return_value=character_id)
+
+
+async def test_read_character_id_returns_the_value():
+    client = FakeClient()
+    _set_character_id(client, 12345)
+    assert await wn.read_character_id(client) == 12345
+
+
+async def test_read_character_id_survives_a_failed_read():
+    client = FakeClient()
+    client.client_object.read_value_from_offset = AsyncMock(side_effect=RuntimeError("boom"))
+    assert await wn.read_character_id(client) == wn.NO_CHARACTER
+
+
+async def test_switching_character_drops_the_cached_name():
+    client = FakeClient()
+    _set_character_id(client, 111)
+    wn.remember(client, "Wolf Deathblade", 111)
+
+    _set_character_id(client, 222)
+    assert await wn.refresh_identity(client) == 222
+    assert wn.cached_name(client) is None, "the name belonged to the previous character"
+
+
+async def test_staying_on_the_same_character_keeps_the_cached_name():
+    client = FakeClient()
+    _set_character_id(client, 111)
+    wn.remember(client, "Wolf Deathblade", 111)
+
+    await wn.refresh_identity(client)
+    assert wn.cached_name(client) == "Wolf Deathblade"
+
+
+async def test_character_select_does_not_drop_the_cached_name():
+    """A zero id means character select or mid-login, not a switch to a different wizard."""
+    client = FakeClient()
+    _set_character_id(client, 111)
+    wn.remember(client, "Wolf Deathblade", 111)
+
+    _set_character_id(client, wn.NO_CHARACTER)
+    assert await wn.refresh_identity(client) == wn.NO_CHARACTER
+    assert wn.cached_name(client) == "Wolf Deathblade"
+
+
+async def test_an_unreadable_id_does_not_drop_the_cached_name():
+    """A loading screen must not throw away a good name once per client-loop cycle."""
+    client = FakeClient()
+    _set_character_id(client, 111)
+    wn.remember(client, "Wolf Deathblade", 111)
+
+    client.client_object.read_value_from_offset = AsyncMock(side_effect=RuntimeError("boom"))
+    await wn.refresh_identity(client)
+    assert wn.cached_name(client) == "Wolf Deathblade"
+
+
+async def test_a_name_cached_without_an_id_adopts_the_live_one():
+    """capture_from_combat has no id to give; that must not read as a switch."""
+    client = FakeClient()
+    _set_character_id(client, 111)
+    wn.remember(client, "Wolf Deathblade")  # no character_id
+    assert wn.cached_character_id(client) == wn.NO_CHARACTER
+
+    await wn.refresh_identity(client)
+    assert wn.cached_name(client) == "Wolf Deathblade"
+    assert wn.cached_character_id(client) == 111, "adopting the id makes the next switch detectable"
+
+
+async def test_adopted_id_makes_the_following_switch_detectable():
+    client = FakeClient()
+    _set_character_id(client, 111)
+    wn.remember(client, "Wolf Deathblade")
+    await wn.refresh_identity(client)
+
+    _set_character_id(client, 222)
+    await wn.refresh_identity(client)
+    assert wn.cached_name(client) is None
+
+
+async def test_refresh_identity_on_an_uncached_client_is_harmless():
+    client = FakeClient()
+    _set_character_id(client, 111)
+    assert await wn.refresh_identity(client) == 111
+    assert wn.cached_name(client) is None
+
+
+async def test_refresh_identities_is_positionally_aligned():
+    a, b = FakeClient(), FakeClient()
+    _set_character_id(a, 111)
+    _set_character_id(b, 222)
+    assert await wn.refresh_identities([a, b]) == [111, 222]
+
+
+async def test_resolve_names_redetects_after_a_character_switch():
+    """The whole point: a switch must not be answered from a cache naming the old wizard."""
+    client = _client_with_title("Wolf Deathblade")
+    _set_character_id(client, 111)
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        assert await wn.resolve_names([client]) == ["Wolf Deathblade"]
+    assert client.send_key.await_count == 2
+
+    client.root_window.get_windows_with_name = AsyncMock(return_value=[_title_window("Fire Stormblade")])
+    _set_character_id(client, 222)
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        assert await wn.resolve_names([client]) == ["Fire Stormblade"]
+    assert client.send_key.await_count == 4, "the switch forced a fresh character-page read"
+
+
+async def test_resolve_names_records_the_character_id_it_detected():
+    client = _client_with_title("Wolf Deathblade")
+    _set_character_id(client, 111)
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        await wn.resolve_names([client])
+    assert wn.cached_character_id(client) == 111
+
+
+async def test_resolve_names_still_caches_across_calls_on_one_character():
+    client = _client_with_title("Wolf Deathblade")
+    _set_character_id(client, 111)
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        await wn.resolve_names([client])
+        await wn.resolve_names([client])
+    assert client.send_key.await_count == 2, "no re-detection while the character is unchanged"
+
+
+# ---------------------------------------------------------------------------
 # capture_from_combat
 # ---------------------------------------------------------------------------
 

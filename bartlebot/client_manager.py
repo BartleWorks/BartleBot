@@ -250,6 +250,11 @@ class ClientManager(QObject):
                 # Update the account map for any clients whose titles are now known.
                 self._refresh_account_map(clients)
 
+                # Notice character switches, so a cached wizard name never outlives the
+                # character it belongs to. One uint64 read per client per cycle; the
+                # expensive detection only runs when something actually asks for a name.
+                await self._refresh_wizard_identities(clients)
+
                 # Compare by HWND set to detect additions and removals.
                 new_hwnd_set = {c.window_handle for c in clients}
                 cur_hwnd_set = {c.window_handle for c in self._clients}
@@ -308,6 +313,23 @@ class ClientManager(QObject):
                 self.all_clients_changed.emit([], list(self._unhooked_clients))
                 logger.exception("Client loop error")
                 await asyncio.sleep(3.0)
+
+    async def _refresh_wizard_identities(self, clients: list) -> None:
+        """Invalidate cached wizard names for any client that changed character.
+
+        The window handle the name cache is keyed by survives a character switch, so
+        without this a cached name goes on naming the previous wizard for the rest of the
+        session — which is what sends a group invite to the wrong character.
+
+        Never raises: a name going stale degrades grouping, but an exception here would
+        take down the client loop that owns hook lifecycle and crash recovery.
+        """
+        from bartlebot import wizard_names  # noqa: PLC0415
+
+        try:
+            await wizard_names.refresh_identities(clients)
+        except Exception:
+            logger.debug("Could not refresh wizard identities", exc_info=True)
 
     def _refresh_account_map(self, live_clients: list) -> None:
         """For each live client with an unrecognised HWND, try to match window title to an account."""

@@ -1,12 +1,13 @@
 """Detection of a client's own wizard (character) name.
 
-Wizard101 exposes no character-name field in memory: ClientObject.display_name() and
-object_name() resolve through the object *template* ("Player"), CharacterRegistry holds
-only quest ids, and the on-disk config files (preferences.xml / config.xml) contain
-graphics settings only. The registry value HKCU\\SOFTWARE\\KingsIsle\\Wizard101\\UserName
-is the *account* login, not the wizard, so it cannot say which character is logged in.
+No *string* field in memory holds the name: ClientObject.display_name() and object_name()
+resolve through the object *template* ("Player"), CharacterRegistry holds only quest ids,
+and the on-disk config files contain graphics settings. The registry value
+HKCU\\SOFTWARE\\KingsIsle\\Wizard101\\UserName is the *account* login, not the wizard.
 
-That leaves two UI-derived routes, both implemented here:
+The name is nonetheless in memory, as three indices into the game's own name tables packed
+into WizPlayerNameBehavior.m_nameKeys — see bartlebot.name_tables, which decodes it. Wiring
+that in as the primary route is still to come; today the two UI routes below do the work:
 
   detect_wizard_name()   opens the character page and reads its title. Works any time,
                          but costs two keypresses and a UI read.
@@ -14,8 +15,8 @@ That leaves two UI-derived routes, both implemented here:
                          all — but only valid during a duel.
 
 Names are needed so one client can find another in its friends list; see
-bartlebot.group_manager. Callers are expected to cache the result (ClientManager keys it
-by account username, which survives a crash), not to call these on a hot path.
+bartlebot.group_manager. Callers use the cache here rather than calling detection on a hot
+path.
 """
 
 import asyncio
@@ -23,6 +24,7 @@ import logging
 import re
 
 from wizwalker import Keycode
+from wizwalker.memory.memory_object import Primitive
 
 from bartlebot.nodes.paths import CHARACTER_PAGE_TITLE_WINDOW
 from bartlebot.nodes.timing import CHARACTER_PAGE_SETTLE, TRIGGER_TIMEOUT, jitter
@@ -106,20 +108,51 @@ async def _read_title_scroll(client) -> str | None:
 # it confirms the expected character actually came back, rather than trusting a name
 # cached before the crash. The cache exists only to avoid re-opening the character page on
 # every call, so losing an entry costs one page open, never correctness.
+#
+# Each entry also carries the character id it was read from, because a window handle alone
+# cannot tell that the user switched characters in place — the handle survives a switch and
+# the cached name would go on naming the previous wizard indefinitely. refresh_identity()
+# drops an entry whose character id has moved.
 # ---------------------------------------------------------------------------
 
-_cache: dict[int, str] = {}
+# ClientObject.m_characterId. Reliable identity: it holds steady through zone changes,
+# reads 0 at character select, and takes the new value on switch.
+CHARACTER_ID_OFFSET = 0x1C0
+
+# Character id meaning "no character right now" — character select, or a client that is not
+# far enough through login to answer. Never treat it as a switch: a loading screen would
+# then throw away a perfectly good name once a second.
+NO_CHARACTER = 0
+
+_cache: dict[int, tuple[int, str]] = {}
 
 
 def cached_name(client) -> str | None:
     """Return this client's cached wizard name without performing any detection."""
-    return _cache.get(_handle(client))
+    entry = _cache.get(_handle(client))
+    return entry[1] if entry else None
 
 
-def remember(client, name: str) -> None:
-    """Store a wizard name discovered by some other route (e.g. capture_from_combat)."""
+def cached_character_id(client) -> int:
+    """Return the character id the cached name was read from, or NO_CHARACTER."""
+    entry = _cache.get(_handle(client))
+    return entry[0] if entry else NO_CHARACTER
+
+
+def remember(client, name: str, character_id: int = NO_CHARACTER) -> None:
+    """Store a wizard name discovered by some other route (e.g. capture_from_combat).
+
+    ``character_id`` ties the name to the character it belongs to. Omitting it still caches
+    the name — callers that have no id should not be forced to invent one — and the next
+    refresh_identity() adopts whatever id is live rather than treating the gap as a switch.
+    """
     if name:
-        _cache[_handle(client)] = name
+        _cache[_handle(client)] = (character_id, name)
+
+
+def forget(client) -> None:
+    """Drop this client's cached name."""
+    _cache.pop(_handle(client), None)
 
 
 def clear_cache() -> None:
@@ -130,6 +163,53 @@ def clear_cache() -> None:
 def _handle(client) -> int:
     """Return a stable per-client cache key, falling back to object identity."""
     return getattr(client, "window_handle", None) or id(client)
+
+
+async def read_character_id(client) -> int:
+    """Return this client's character id, or NO_CHARACTER if it cannot be read.
+
+    One uint64 read, cheap enough to poll every client-loop cycle. Failures are common and
+    uninteresting — a client mid-teardown or not yet hooked — so they answer NO_CHARACTER
+    rather than raising.
+    """
+    try:
+        return await client.client_object.read_value_from_offset(CHARACTER_ID_OFFSET, Primitive.uint64)
+    except Exception:
+        logger.debug("Could not read the character id", exc_info=True)
+        return NO_CHARACTER
+
+
+async def refresh_identity(client) -> int:
+    """Drop this client's cached name if it is now on a different character.
+
+    Returns the live character id (NO_CHARACTER when unreadable). Cheap by design: the id
+    is one read, and the expensive name detection only happens afterwards, for clients that
+    no longer have a valid cached name.
+    """
+    character_id = await read_character_id(client)
+    if character_id == NO_CHARACTER:
+        # At character select or mid-login. Keep the cached name: the user is most likely
+        # coming back to the same character, and if not, the next read catches it.
+        return NO_CHARACTER
+
+    entry = _cache.get(_handle(client))
+    if entry is None:
+        return character_id
+
+    known_id, name = entry
+    if known_id == NO_CHARACTER:
+        # Cached by a route that had no id to give. Adopt the live one so the *next*
+        # switch is detectable, rather than treating this as a switch itself.
+        _cache[_handle(client)] = (character_id, name)
+    elif known_id != character_id:
+        logger.debug("Character switch detected (%s -> %s); dropping cached name", known_id, character_id)
+        forget(client)
+    return character_id
+
+
+async def refresh_identities(clients: list) -> list[int]:
+    """refresh_identity across clients, concurrently. Positionally aligned with `clients`."""
+    return list(await asyncio.gather(*(refresh_identity(c) for c in clients)))
 
 
 async def resolve_names(clients: list) -> list[str | None]:
@@ -148,6 +228,10 @@ async def resolve_names(clients: list) -> list[str | None]:
     No return_exceptions is needed — detect_wizard_name absorbs every failure and answers
     None, so one unreadable client cannot cancel detection for the rest.
     """
+    # Check for character switches first, so a client that swapped since the last call is
+    # re-detected rather than answered from a cache naming its previous wizard.
+    ids = await refresh_identities(clients)
+
     names: list[str | None] = [cached_name(c) for c in clients]
     unknown = [i for i, name in enumerate(names) if name is None]
     if not unknown:
@@ -156,7 +240,7 @@ async def resolve_names(clients: list) -> list[str | None]:
     detected = await asyncio.gather(*(detect_wizard_name(clients[i]) for i in unknown))
     for i, name in zip(unknown, detected):
         if name:
-            remember(clients[i], name)
+            remember(clients[i], name, ids[i])
             names[i] = name
     return names
 
