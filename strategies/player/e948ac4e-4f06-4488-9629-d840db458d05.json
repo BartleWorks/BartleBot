@@ -1,0 +1,5 @@
+{
+  "id": "e948ac4e-4f06-4488-9629-d840db458d05",
+  "name": "Feint or blade fourth player",
+  "dsl": "feint mass | feint[potent]@boss | any<blade>[sharp]@ally(2)"
+}

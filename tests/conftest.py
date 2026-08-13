@@ -14,10 +14,11 @@ from wizwalker.extensions.wizsprinter import SprintyClient
 # pin in pyproject.toml is bumped, any renamed or removed method will cause an
 # immediate ImportError here rather than silently passing stale tests.
 #
-# The four MagicMock attributes — body, root_window, stats, mouse_handler —
-# are instance attributes set in WizWalker's Client.__init__, not class-level
-# attributes, so hasattr(SprintyClient, name) cannot see them.  They are
-# excluded from this check and must be verified manually when the pin changes.
+# The MagicMock attributes — body, root_window, stats, mouse_handler,
+# combat_handler — are instance attributes set in WizWalker's Client.__init__,
+# not class-level attributes, so hasattr(SprintyClient, name) cannot see them.
+# They are excluded from this check and must be verified manually when the pin
+# changes.
 # ---------------------------------------------------------------------------
 _FAKED_METHODS = frozenset(
     {
@@ -58,7 +59,15 @@ class FakeClient:
     side_effect sequences, or assert call counts without any Wizard101 process.
     """
 
+    _next_handle = 1000
+
     def __init__(self):
+        # Distinct per instance so wizard_names' handle-keyed cache treats each FakeClient
+        # as a separate client, the way real windows behave.
+        FakeClient._next_handle += 1
+        self.window_handle = FakeClient._next_handle
+        self.combat_handler = MagicMock()
+        self.combat_handler.get_members = AsyncMock(return_value=[])
         self.zone_name = AsyncMock(return_value="TestZone")
         self.teleport = AsyncMock()
         self.is_loading = AsyncMock(return_value=False)

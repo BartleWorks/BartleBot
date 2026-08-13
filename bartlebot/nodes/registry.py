@@ -41,6 +41,8 @@ from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_leve
 from bartlebot.nodes.utility.check_level_scaling import run as check_level_scaling_run
 from bartlebot.nodes.utility.check_zone import NODE_SPEC as _check_zone_spec
 from bartlebot.nodes.utility.check_zone import run as check_zone_run
+from bartlebot.nodes.utility.form_group import NODE_SPEC as _form_group_spec
+from bartlebot.nodes.utility.form_group import run as form_group_run
 from bartlebot.nodes.utility.quicksell import NODE_SPEC as _quicksell_spec
 from bartlebot.nodes.utility.quicksell import run as quicksell_run
 from bartlebot.nodes.utility.sleep import NODE_SPEC as _sleep_spec
@@ -88,6 +90,7 @@ NODE_REGISTRY: dict = {
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
     "check_zone": check_zone_run,
+    "form_group": form_group_run,
 }
 
 NODE_SPECS: dict[str, NodeSpec] = {
@@ -120,6 +123,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
     "check_zone": _check_zone_spec,
+    "form_group": _form_group_spec,
 }
 
 # Convenience alias — param schemas derived from NODE_SPECS so there is one source of truth
@@ -178,6 +182,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "check_if_dropped",
             "check_level_scaling",
             "check_zone",
+            "form_group",
             "quicksell",
             "sleep",
         ],

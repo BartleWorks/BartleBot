@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
+from bartlebot import group_manager, wizard_names
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -28,7 +29,7 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
-    pass
+    from bartlebot.bot.strategy_models import DeckData
 
 
 class AppController(QObject):
@@ -575,7 +576,7 @@ class AppController(QObject):
             # Inside the try so the finally still tears down if the user stops during
             # a slow apply, and after add_gui_callback so failures reach this run's
             # log panel rather than the previous run's.
-            await self._apply_pre_run_decks()
+            await self._run_pre_run_setup()
             try:
                 with keep.running(on_fail="error"):
                     await machine.run()
@@ -592,6 +593,52 @@ class AppController(QObject):
             self._client_manager.set_machine(None)
             self._current_machine = None
             self._window.set_start_enabled(self._start_enabled())
+
+    async def _run_pre_run_setup(self) -> None:
+        """Prepare every connected client before the FSM starts.
+
+        Each step must catch its own failures and log rather than raise: a setup problem
+        should degrade the run, not cancel it. None of them may show a blocking dialog
+        either — this runs inside the _start_bot asyncio task, where a modal .exec()
+        deadlocks the qasync loop under Python 3.13 (see CLAUDE.md).
+        """
+        await self._apply_pre_run_decks()
+        await self._form_pre_run_group()
+
+    async def _form_pre_run_group(self) -> None:
+        """Put all clients into one in-game group, if the user has that enabled.
+
+        Group membership is lost whenever a client logs off or crashes, and it is what
+        guarantees the first turn in combat, so it is re-established at the start of every
+        run rather than assumed to have survived from the last one.
+        """
+        if not SettingsManager.instance().auto_group_players:
+            return
+
+        clients = self._client_manager.clients
+        if len(clients) < 2:
+            logger.debug("Skipping pre-run grouping — fewer than two clients connected")
+            return
+
+        try:
+            # Survey once and hand the result to form_group. Each survey opens and closes
+            # the social window on every client, so letting form_group re-read would
+            # double the slowest and most failure-prone part of this.
+            states = await group_manager.read_group_states(clients)
+            if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
+                logger.debug("Skipping pre-run grouping — all clients are already in one group")
+                return
+            names = await wizard_names.resolve_names(clients)
+            result = await group_manager.form_group(clients, names, states=states)
+            if result.success:
+                logger.info("Pre-run grouping: %s", result.summary())
+            else:
+                logger.warning(
+                    "Pre-run grouping did not fully succeed (%s) — the run will continue ungrouped",
+                    result.summary(),
+                )
+        except Exception:
+            logger.warning("Pre-run grouping failed — the run will continue ungrouped", exc_info=True)
 
     async def _apply_pre_run_decks(self) -> None:
         """Apply saved deck presets to each connected client before the FSM starts."""
@@ -610,6 +657,7 @@ class AppController(QObject):
         if not bcs.player_decks:
             return
         clients = self._client_manager.clients
+        pending = []
         for slot, deck_data in bcs.player_decks.items():
             if deck_data.is_empty():
                 continue
@@ -617,25 +665,49 @@ class AppController(QObject):
             if client_idx >= len(clients):
                 logger.warning("Deck saved for slot %d but only %d client(s) connected — skipping", slot, len(clients))
                 continue
-            client = clients[client_idx]
             logger.info("Applying saved deck for slot %d (%d cards)", slot, deck_data.total_cards())
-            try:
-                await apply_deck(client, deck_data)
-            except TimeoutError:
-                # Log only. This runs inside the _start_bot task, and a blocking
-                # QMessageBox from an asyncio task deadlocks the qasync loop under
-                # Python 3.13 (see CLAUDE.md).
-                logger.error(
-                    "Deck apply for slot %d timed out after %.0fs — run will continue with whatever was set",
-                    slot,
-                    DECK_APPLY_TIMEOUT,
-                )
-            except Exception:
-                logger.warning(
-                    "Failed to fully apply deck for slot %d — run will continue with whatever was set",
-                    slot,
-                    exc_info=True,
-                )
+            pending.append(self._apply_one_pre_run_deck(clients[client_idx], slot, deck_data))
+        if not pending:
+            return
+        # Concurrently, because applying four decks in sequence is four times the
+        # wait for no reason: every input WizWalker sends is addressed to a single
+        # window handle (send_key -> timed_send_key(self.window_handle, ...),
+        # MouseHandler -> SendMessageW(self.client.window_handle, ...)), the
+        # mouseless hook writes into each client's own memory, and nothing anywhere
+        # touches the foreground window. So the clients cannot interfere.
+        #
+        # The win is smaller than N: memory reads are synchronous ReadProcessMemory
+        # on the loop thread and SendMessageW blocks until the target game's message
+        # pump answers, so only the sleeps actually overlap. Measured at 1.88x for
+        # four clients (tools/probe_deck_apply_timing.py).
+        #
+        # Each task swallows its own failures, so no return_exceptions is needed and
+        # one bad client cannot cancel the others' applies half-finished.
+        await asyncio.gather(*pending)
+
+    async def _apply_one_pre_run_deck(self, client, slot: int, deck_data: DeckData) -> None:
+        """Apply one slot's deck, absorbing any failure.
+
+        Never raises: these run concurrently under a single gather, and a deck that
+        will not apply is a degraded run, not a cancelled one.
+        """
+        try:
+            await apply_deck(client, deck_data)
+        except TimeoutError:
+            # Log only. This runs inside the _start_bot task, and a blocking
+            # QMessageBox from an asyncio task deadlocks the qasync loop under
+            # Python 3.13 (see CLAUDE.md).
+            logger.error(
+                "Deck apply for slot %d timed out after %.0fs — run will continue with whatever was set",
+                slot,
+                DECK_APPLY_TIMEOUT,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to fully apply deck for slot %d — run will continue with whatever was set",
+                slot,
+                exc_info=True,
+            )
 
     def _pause_bot(self) -> None:
         if self._current_machine:

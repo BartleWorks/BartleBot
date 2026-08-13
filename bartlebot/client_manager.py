@@ -433,7 +433,12 @@ class ClientManager(QObject):
                     return
                 self._pending_recovery.pop(orig_pos, None)
 
-            # All pending clients are back in-game — jump to recovery state and resume.
+            # All pending clients are back in-game — regroup, then jump to recovery state
+            # and resume. Grouping happens while the FSM is still paused so no node is
+            # competing for the mouse, and before the state jump so the bot resumes with
+            # the group already restored.
+            await self._regroup_after_recovery()
+
             machine = self._machine
             if machine and not machine.is_stopped:
                 recovery_state = self._get_recovery_state()
@@ -449,6 +454,46 @@ class ClientManager(QObject):
                     machine.stop()
         finally:
             self._recovery_in_progress = False
+
+    async def _regroup_after_recovery(self) -> None:
+        """Rebuild the in-game group after a recovery, if the user has that enabled.
+
+        A crashed client is dropped from its group by the game and comes back ungrouped,
+        which silently costs the fleet the guaranteed first turn in combat. Grouping is
+        done through the friends list, which works across zones, so this runs correctly
+        wherever the recovered client happens to have landed.
+
+        Never raises and never stops the bot: running ungrouped is a degraded run, but
+        stopping outright turns one crash into a dead overnight session.
+        """
+        from bartlebot import group_manager, wizard_names  # noqa: PLC0415
+
+        if not SettingsManager.instance().auto_group_players:
+            return
+
+        clients = list(self._clients)
+        if len(clients) < 2:
+            logger.debug("Skipping post-recovery grouping — fewer than two clients connected")
+            return
+
+        try:
+            # Survey once and hand the result to form_group — see the matching comment in
+            # AppController._form_pre_run_group.
+            states = await group_manager.read_group_states(clients)
+            if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
+                logger.debug("Skipping post-recovery grouping — all clients are already in one group")
+                return
+            names = await wizard_names.resolve_names(clients)
+            result = await group_manager.form_group(clients, names, states=states)
+            if result.success:
+                logger.info("Post-recovery grouping: %s", result.summary())
+            else:
+                logger.warning(
+                    "Post-recovery grouping did not fully succeed (%s) — the bot will resume ungrouped",
+                    result.summary(),
+                )
+        except Exception:
+            logger.warning("Post-recovery grouping failed — the bot will resume ungrouped", exc_info=True)
 
     async def _reconnect_client(self, orig_pos: int, username: str) -> None:
         """Relaunch a disconnected client, navigate to in-game, then resume the FSM.

@@ -41,6 +41,7 @@ class RecoveryHarness:
     _build_ordered_clients = ClientManager._build_ordered_clients
     _assign_slot = ClientManager._assign_slot
     _sync_embedded_clients = ClientManager._sync_embedded_clients
+    _regroup_after_recovery = ClientManager._regroup_after_recovery
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}

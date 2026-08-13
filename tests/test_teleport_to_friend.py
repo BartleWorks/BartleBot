@@ -18,9 +18,9 @@ _TELEPORT_OK = patch(
     new_callable=AsyncMock,
 )
 
-# Patch _resolve_exact_friend_name to bypass WizWalker internals.
+# Patch the shared friends-list resolver to bypass WizWalker internals.
 # Returns the exact-case friend name (simulating a successful friends list lookup).
-_RESOLVE_OK = patch.object(ttf, "_resolve_exact_friend_name", new=AsyncMock(return_value=_FRIEND))
+_RESOLVE_OK = patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value=_FRIEND))
 
 # Default dialog patch: no friend-busy dialog visible.
 _NO_DIALOG = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
@@ -80,15 +80,15 @@ async def test_one_client_already_there_is_skipped():
 
 
 async def test_friend_name_is_lowercased():
-    """friend_name is lowercased before being passed to _resolve_exact_friend_name."""
+    """friend_name is lowercased before being passed to resolve_friend_name."""
     client = _client_needs_tp()
 
     with _TELEPORT_OK, _NO_DIALOG, patch.object(ttf, "POLL_INTERVAL", 0):
-        resolve = patch.object(ttf, "_resolve_exact_friend_name", new=AsyncMock(return_value=_FRIEND))
+        resolve = patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value=_FRIEND))
         with resolve as mock_resolve:
             await ttf.run(FakeMachine(), [client], {"friend_name": "WizardFriend", "to_zone": _TO_ZONE})
 
-    # _resolve_exact_friend_name receives the lowercased input name.
+    # resolve_friend_name receives the lowercased input name.
     assert mock_resolve.call_args[0][1] == "wizardfriend"
 
 
@@ -134,13 +134,13 @@ async def test_mouse_handler_context_activated():
 
 
 async def test_friend_not_found_returns_failure():
-    """FAILURE when _resolve_exact_friend_name raises ValueError (friend not on list)."""
+    """FAILURE when resolve_friend_name raises ValueError (friend not on list)."""
     client = FakeClient()
     client.zone_name = AsyncMock(return_value=_FROM_ZONE)
 
     not_found = patch.object(
-        ttf,
-        "_resolve_exact_friend_name",
+        nh,
+        "resolve_friend_name",
         new=AsyncMock(side_effect=ValueError("Could not find friend")),
     )
     with not_found:
@@ -150,13 +150,13 @@ async def test_friend_not_found_returns_failure():
 
 
 async def test_no_friends_online_returns_failure():
-    """FAILURE when _resolve_exact_friend_name raises ValueError (no friends online)."""
+    """FAILURE when resolve_friend_name raises ValueError (no friends online)."""
     client = FakeClient()
     client.zone_name = AsyncMock(return_value=_FROM_ZONE)
 
     no_friends = patch.object(
-        ttf,
-        "_resolve_exact_friend_name",
+        nh,
+        "resolve_friend_name",
         new=AsyncMock(side_effect=ValueError("No friends online")),
     )
     with no_friends:
@@ -308,7 +308,7 @@ async def test_straggler_retry_raises_value_error_returns_failure():
 
     with (
         _TELEPORT_OK,
-        patch.object(ttf, "_resolve_exact_friend_name", side_effect=resolve_side_effect),
+        patch.object(nh, "resolve_friend_name", side_effect=resolve_side_effect),
         _NO_DIALOG,
         patch.object(ttf, "POLL_INTERVAL", 0),
         patch.object(ttf, "TRIGGER_TIMEOUT", 0),  # collapse grace period so straggler fires immediately

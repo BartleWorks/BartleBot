@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot.nodes.node_helpers import all_in_zone, all_left_zone, zone_matches
+from bartlebot.nodes.node_helpers import _get_window_from_path, all_in_zone, all_left_zone, zone_matches
 
 # ---------------------------------------------------------------------------
 # zone_matches — pure function, no async
@@ -128,3 +128,265 @@ async def test_all_left_zone_wildcard_same_prefix_as_destination():
     # zone too, all_left_zone stays False even after the zone transition.
     clients = [_make_client("WizardCity/WC_GreatSpyre_DF3"), _make_client("WizardCity/WC_GreatSpyre_DF3")]
     assert await all_left_zone(clients, "WizardCity/*") is False
+
+
+# ---------------------------------------------------------------------------
+# _get_window_from_path — traversal across ambiguously named siblings
+#
+# Wizard101 reuses window names between siblings: wndCharacter has two children both
+# named "ButtonLayout", only one of which holds the group invite button. These tests
+# pin the backtracking that makes INVITE_TO_GROUP_BUTTON_PATH resolve correctly.
+# ---------------------------------------------------------------------------
+
+
+def _make_window(name: str, children: list | None = None):
+    from unittest.mock import MagicMock
+
+    w = MagicMock()
+    w.name = AsyncMock(return_value=name)
+    w.children = AsyncMock(return_value=list(children or []))
+    return w
+
+
+async def test_get_window_backtracks_past_a_dead_end_sibling():
+    """The first same-named sibling does not lead anywhere; the second does."""
+    target = _make_window("btnInvite")
+    root = _make_window(
+        "root",
+        [
+            _make_window(
+                "wndCharacter",
+                [
+                    _make_window("ButtonLayout", [_make_window("btnSomethingElse")]),
+                    _make_window("ButtonLayout", [target]),
+                ],
+            )
+        ],
+    )
+
+    found = await _get_window_from_path(root, ["wndCharacter", "ButtonLayout", "btnInvite"])
+    assert found is target
+
+
+async def test_get_window_returns_none_when_no_sibling_completes_the_path():
+    root = _make_window(
+        "root",
+        [
+            _make_window(
+                "wndCharacter",
+                [
+                    _make_window("ButtonLayout", [_make_window("btnOther")]),
+                    _make_window("ButtonLayout", [_make_window("btnAnother")]),
+                ],
+            )
+        ],
+    )
+
+    assert await _get_window_from_path(root, ["wndCharacter", "ButtonLayout", "btnInvite"]) is None
+
+
+# ---------------------------------------------------------------------------
+# click_until_gone — close buttons need retrying
+#
+# A single close click is unreliable: an overlapping window can swallow it, and clicks
+# sent mid-animation get dropped. Retrying until the button itself disappears turns
+# "we clicked it" into "it actually closed".
+# ---------------------------------------------------------------------------
+
+
+class _Closeable:
+    """A window that needs `clicks_needed` clicks before it disappears."""
+
+    def __init__(self, clicks_needed: int):
+        self.clicks_needed = clicks_needed
+        self.clicks = 0
+
+    @property
+    def visible(self) -> bool:
+        return self.clicks < self.clicks_needed
+
+
+def _closeable_patches(target: _Closeable):
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    async def is_visible(_client, _path):
+        return target.visible
+
+    async def click(_client, _path):
+        target.clicks += 1
+        return True
+
+    return (
+        patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=is_visible)),
+        patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=click)),
+    )
+
+
+async def test_click_until_gone_retries_until_the_window_closes():
+    from contextlib import ExitStack
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    window = _Closeable(clicks_needed=3)
+    with ExitStack() as stack:
+        for p in _closeable_patches(window):
+            stack.enter_context(p)
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"], timeout=5, poll_interval=0)
+
+    assert result is True
+    assert window.clicks == 3
+
+
+async def test_click_until_gone_does_not_click_an_already_closed_window():
+    """These paths are often toggles — a stray click would reopen what we just closed."""
+    from contextlib import ExitStack
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    window = _Closeable(clicks_needed=0)
+    with ExitStack() as stack:
+        for p in _closeable_patches(window):
+            stack.enter_context(p)
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"], timeout=5, poll_interval=0)
+
+    assert result is True
+    assert window.clicks == 0
+
+
+async def test_click_until_gone_returns_false_when_it_never_closes():
+    from contextlib import ExitStack
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    window = _Closeable(clicks_needed=999)
+    with ExitStack() as stack:
+        for p in _closeable_patches(window):
+            stack.enter_context(p)
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"], timeout=0.05, poll_interval=0.01)
+
+    assert result is False
+    assert window.clicks > 0
+
+
+async def test_click_until_gone_uses_the_supplied_predicate_not_the_button():
+    """A close button reports visible=True even inside a hidden window, so polling the
+    button never terminates. The caller must be able to poll the window instead."""
+    from contextlib import ExitStack
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    window_open = {"value": True}
+    clicks = {"count": 0}
+
+    async def button_always_visible(_client, _path):
+        return True  # the trap: the button never disappears
+
+    async def click(_client, _path):
+        clicks["count"] += 1
+        window_open["value"] = False
+        return True
+
+    async def window_is_open():
+        return window_open["value"]
+
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=button_always_visible))
+        )
+        stack.enter_context(patch.object(nh_mod, "click_by_path", new=AsyncMock(side_effect=click)))
+        result = await nh_mod.click_until_gone(
+            None, ["Some", "Close"], is_open=window_is_open, timeout=5, poll_interval=0
+        )
+
+    assert result is True
+    assert clicks["count"] == 1, "should stop as soon as the WINDOW closed"
+
+
+async def test_click_until_gone_without_a_predicate_polls_the_button_and_times_out():
+    """Documents why the predicate exists: the default is wrong for permanently-visible
+    close buttons, which is the situation in the friends list."""
+    from contextlib import ExitStack
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    async def button_always_visible(_client, _path):
+        return True
+
+    with ExitStack() as stack:
+        stack.enter_context(
+            patch.object(nh_mod, "is_visible_by_path", new=AsyncMock(side_effect=button_always_visible))
+        )
+        stack.enter_context(patch.object(nh_mod, "click_by_path", new=AsyncMock(return_value=True)))
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"], timeout=0.05, poll_interval=0.01)
+
+    assert result is False
+
+
+# ---------------------------------------------------------------------------
+# open_friends_list and the two friends-list windows
+# ---------------------------------------------------------------------------
+
+
+async def _open_friends_list_with(visible_names: set[str]) -> list[str]:
+    """Run open_friends_list against a fake tree and return the actions it took."""
+    from contextlib import ExitStack
+    from unittest.mock import MagicMock, patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    actions: list[str] = []
+    client = MagicMock()
+    client.root_window = MagicMock()
+
+    compact = MagicMock()
+    compact.is_visible = AsyncMock(return_value="NewFriendsListWindow" in visible_names)
+
+    async def named_visible(_client, name):
+        return name in visible_names
+
+    async def closer(_client):
+        actions.append("close")
+        visible_names.clear()
+        compact.is_visible = AsyncMock(return_value=False)
+        return True
+
+    async def maybe_get(_root, name):
+        return compact if name == "NewFriendsListWindow" else MagicMock()
+
+    async def click_window(_btn):
+        actions.append("click btnFriends")
+
+    client.mouse_handler.click_window = AsyncMock(side_effect=click_window)
+
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(nh_mod, "is_named_window_visible", new=AsyncMock(side_effect=named_visible)))
+        stack.enter_context(patch.object(nh_mod, "close_friends_list", new=AsyncMock(side_effect=closer)))
+        stack.enter_context(
+            patch("wizwalker.extensions.scripting.utils._maybe_get_named_window", new=AsyncMock(side_effect=maybe_get))
+        )
+        await nh_mod.open_friends_list(client)
+
+    return actions
+
+
+async def test_open_friends_list_closes_the_large_list_first():
+    """Issue #96: visibility is judged from the compact window alone, so from the LARGE list
+    this read "closed" and clicked btnFriends anyway — and what the game does with that
+    click was never established. Close first, so the state is known."""
+    actions = await _open_friends_list_with({"wndFriendsList"})
+    assert actions == ["close", "click btnFriends"]
+
+
+async def test_open_friends_list_does_not_touch_a_list_that_is_already_compact():
+    """The normal path must stay one read and no input: the list is reused between invites."""
+    actions = await _open_friends_list_with({"NewFriendsListWindow"})
+    assert actions == []
+
+
+async def test_open_friends_list_clicks_when_nothing_is_open():
+    actions = await _open_friends_list_with(set())
+    assert actions == ["click btnFriends"]

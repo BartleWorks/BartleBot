@@ -125,6 +125,28 @@ WISP_COLLECT_TIMEOUT = 10.0
 # displayed max HP can read far above actual, making calc_health_ratio()
 # never clear the threshold and the collection loop spin indefinitely.
 
+DECK_PAGE_OPEN_TIMEOUT = 5.0
+# Ceiling on waiting for the deck page to appear after pressing P. Measured at
+# 190-270 ms across four clients, so this is a generous margin that only matters
+# when the keypress was swallowed entirely.
+
+DECK_PAGE_POLL = 0.02
+# How often to re-check for the deck window while waiting for it to open. Much
+# finer than POLL_INTERVAL because the wait itself is only ~200 ms — polling at a
+# quarter second would more than double it.
+
+DECK_SETTLE_TIMEOUT = 15.0
+# Ceiling on waiting for a rewritten deck to read back as expected before the
+# deck page is closed. Cards are added by clicking, and the list the game shows
+# lags the clicks — closing the page too early left cards out of the deck even
+# though every click landed. Generous because this only elapses in full when the
+# deck is never going to match, which is already being reported as a warning.
+
+DECK_SETTLE_POLL = 0.1
+# How often to re-read the deck while waiting for it to settle. Each poll is two
+# memory reads, so this is fine-grained enough to close promptly without adding
+# meaningful load.
+
 DECK_APPLY_TIMEOUT = 180.0
 # Ceiling for pushing a saved deck back to a client (clear + re-add every
 # card, with spellbook page navigation between them).
@@ -133,6 +155,62 @@ DECK_APPLY_TIMEOUT = 180.0
 # clicks and several of its loops terminate on `is_control_grayed()`, which
 # is unreliable — without a ceiling a failed read spins forever instead of
 # raising. See _read_deck / _write_deck in app_controller.py.
+
+
+GROUP_INVITE_TIMEOUT = 15.0
+# Seconds to wait for the group invitation modal to appear on the invited client after
+# the inviter clicks "Add to Group". The invite is relayed by the server, so this covers
+# a full round-trip rather than just a local UI update.
+
+GROUP_VERIFY_TIMEOUT = 15.0
+# Seconds to wait for the social window to open by itself on an invited client after the
+# invitation is accepted, which is the game's own signal that the join went through. The
+# join is a server round-trip, so this covers more than a local UI update.
+
+GROUP_ADD_RETRIES = 2
+# Attempts to add one client to the group before giving up on that client. A failed add
+# usually means a missed click or a dropped invite, both of which a retry fixes; anything
+# that survives two attempts is a real problem (not friended, not online) that retrying
+# will not solve.
+
+WINDOW_CLOSE_TIMEOUT = 6.0
+# Ceiling on repeatedly clicking a window's close button until the window is gone.
+# A close click can be swallowed when another window sits on top of the button, or when
+# the game is mid-animation, so one click is not reliable — but a window that will not
+# close after several seconds is stuck, not slow.
+
+WINDOW_CLOSE_RETRY_INTERVAL = 0.4
+# Pause between close attempts. Long enough for the game to process the previous click
+# and repaint before the next one, short enough that a normal close still feels instant.
+
+GROUP_UI_SETTLE = 1.0
+# Pause after clicking a friends-list or profile button, so the resulting window is
+# rendered before it is read or clicked. Matches the sleep WizWalker uses between its own
+# friends-list clicks.
+#
+# Used where there is nothing specific to wait FOR: before checking whether the "already in
+# a group" popup appeared, where absence is the expected outcome so no amount of polling
+# can conclude early — and after switching to the social window's Group tab, where NO
+# element distinguishes that tab from the others. That second one is not an unexplored
+# shortcut: tools/probe_group_tab.py swept every tab and every window under the social
+# window and came back empty (2026-08-11, and see paths.py).
+#
+# So this is the largest fixed cost in a group membership survey and it cannot be polled
+# away. Nor should it be shortened — 1.0 s is what reliably covers the page populating
+# under load, and a survey that misreads membership sends spurious invites. It is
+# concurrent across clients (see group_manager.read_group_flags), so it costs one second
+# for the whole fleet rather than one per client, which is where the win came from instead.
+
+
+CHARACTER_PAGE_SETTLE = 0.5
+# Pause after pressing C, so the character page is rendered before its title is read.
+# Unlike GROUP_UI_SETTLE this is not the floor on the operation: it is followed by a poll
+# for the title window (wizard_names._read_title_scroll), so a slow render is recovered
+# rather than misread. It only needs to cover the common case — the page is a local UI
+# panel with no server round-trip, so a frame or two is enough.
+#
+# Concurrent across clients (see wizard_names.resolve_names), so a fleet pays it once
+# rather than once per client.
 
 
 def jitter(base: float, factor: float = 0.2) -> float:

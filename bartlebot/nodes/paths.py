@@ -181,6 +181,116 @@ def quicksell_item_checkbox_path(row: int) -> list[str]:
     return ["WorldView", "shopGUI", "buyWindow", "column1", f"num{row}"]
 
 
+# Friends list and player profile popup
+#
+# The profile popup (wndCharacter) is opened by clicking a friend's row in the
+# friends list — see node_helpers.open_friend_profile(). Its ButtonLayout holds
+# the per-player actions (go to friend, add/remove friend, add to group, …).
+FRIENDS_LIST_BUTTON_PATH = ["WorldView", "windowHUD", "btnFriends"]
+CHARACTER_PROFILE_PATH = ["WorldView", "windowHUD", "wndCharacter"]
+CHARACTER_PROFILE_NAME_PATH = ["WorldView", "windowHUD", "wndCharacter", "lblCharacterName"]
+CHARACTER_PROFILE_CLOSE_PATH = ["WorldView", "windowHUD", "wndCharacter", "btnCharacterClose"]
+
+# The game has TWO entirely separate friends-list windows, each its own UI subtree. Only
+# one is ever on screen, which is what made this confusing to diagnose:
+#
+#   NewFriendsListWindow  the compact list. Opened from nothing by pressing F or clicking
+#                         btnFriends. This is the one node_helpers.open_friends_list()
+#                         opens and the one the name/profile code reads.
+#   wndFriendsList        the larger, more detailed list. Opened from the compact list by
+#                         pressing F again, or clicking its "More Friends" button.
+#
+# F cycles: closed -> NewFriendsListWindow -> wndFriendsList -> closed. So "the friends
+# list is open" means EITHER window is visible — see FRIENDS_LIST_WINDOW_NAMES, which
+# node_helpers.close_friends_list() presses F against until both are gone.
+#
+# There is NO close-button path constant here on purpose. The obvious candidate,
+# WorldView/windowHUD/wndFriendsList/btnFriendListClose, closes only the larger window and
+# does NOT close NewFriendsListWindow: with nothing overlapping it, clicking it left the
+# compact list open through a full retry cycle. It seemed to work in earlier testing only
+# because both windows place a close button in the same spot, so the click sometimes hit
+# whichever list happened to be showing. Verified with tools/probe_friends_list.py.
+FRIENDS_LIST_WINDOW_NAME = "NewFriendsListWindow"
+LARGE_FRIENDS_LIST_WINDOW_NAME = "wndFriendsList"
+FRIENDS_LIST_WINDOW_NAMES = (FRIENDS_LIST_WINDOW_NAME, LARGE_FRIENDS_LIST_WINDOW_NAME)
+
+# Group invite button in the friends-list profile popup.
+#
+# Note that wndCharacter has TWO children named "ButtonLayout", so this path is ambiguous
+# by name — but only one of them contains btnInvite, and _get_window_from_path backtracks
+# out of a branch that does not complete the path, so it resolves correctly.
+INVITE_TO_GROUP_BUTTON_PATH = ["WorldView", "windowHUD", "wndCharacter", "ButtonLayout", "btnInvite"]
+
+# Group invitation prompt shown to the invited player. This is its own window, NOT the
+# shared MessageBoxModalWindow, so accepting it cannot be confused with any other dialog
+# that happens to be open — no caption check is needed to disambiguate it.
+GROUP_INVITE_ACCEPT_PATH = [
+    "PartyInviteWindow",
+    "messageBoxBG",
+    "messageBoxLayout",
+    "AdjustmentWindow",
+    "Layout",
+    "centerButton",
+]
+
+# Social systems window. It also opens by itself on both players after a group is created
+# or joined, which is what confirms an invite was accepted.
+#
+# Opened by clicking the HUD button rather than its Ctrl+A shortcut: WizWalker's
+# send_hotkey does not reliably deliver the modifier, so Ctrl+A arrives as a bare "A" and
+# the character strafes instead of the window opening.
+SOCIAL_BUTTON_PATH = ["WorldView", "windowHUD", "SocialSystemsContainer", "SocialButton"]
+SOCIAL_WINDOW_PATH = ["WorldView", "SocialSystemsWindow"]
+SOCIAL_GROUP_TAB_PATH = ["WorldView", "SocialSystemsWindow", "TabLayout", "Tab_Group"]
+GROUP_WINDOW_CLOSE_PATH = ["WorldView", "SocialSystemsWindow", "CloseSocialSystemsButton"]
+
+# NOTE: there is deliberately no "is the Group tab showing?" path here, and this is a
+# settled negative result rather than a gap.
+#
+# GroupPageNumber (["WorldView", "SocialSystemsWindow", "GroupLayout", "GroupPageNumber"])
+# is the obvious candidate — it lives in the Group page's own layout — but it reads
+# visible=True on every tab. That is the hazard is_visible_by_path documents: a window's
+# is_visible() flag is its own and ignores its parents.
+#
+# tools/probe_group_tab.py then swept EVERY tab, recording 13 properties for every window
+# under SocialSystemsWindow, and found nothing that holds a value on the Group tab it does
+# not also hold on some other tab (2026-08-11). So the selected tab cannot be read at all,
+# and _open_social_window clicks Tab_Group unconditionally and then sleeps. Re-run the
+# probe after a game update before assuming that is still true.
+
+# Whether this wizard is in a group is read from the Leave Group button: the game HIDES it
+# when ungrouped rather than graying it, so check visibility, not enabled-ness. Verified
+# with tools/probe_group_ui.py.
+#
+# This is the UI replacement for SocialSystemsManager.group_gid(), which reads a dead
+# object on the current game build (see tools/probe_group_offsets.py).
+LEAVE_GROUP_BUTTON_PATH = ["WorldView", "SocialSystemsWindow", "LeftButtonLayout", "LeavePartyButton"]
+
+# Group roster on the Group tab: one line per member, each carrying a NameText label.
+#
+# This is what makes "are these clients in the SAME group?" answerable at all. The Leave
+# Group button above is a per-client yes/no and two clients in two different groups both
+# read True, so membership alone cannot distinguish one group from two.
+#
+# GROUP_ROSTER_LINES is Wizard101's group cap. Reading a line beyond it simply returns no
+# window, so an over-estimate costs a wasted read rather than a wrong answer — but see
+# tools/probe_group_roster.py, which checks for a Line beyond the cap after a game update.
+GROUP_ROSTER_LINES = 4
+
+
+def group_member_name_path(line: int) -> list[str]:
+    """Return the path to the wizard name on group roster line `line` (1-based)."""
+    return ["WorldView", "SocialSystemsWindow", "GroupLayout", "SubGroupLayout", f"Line{line}", "NameText"]
+
+
+# Shown to the INVITER when the player they invited is already in a group.
+ALREADY_IN_GROUP_DISMISS_PATH = MESSAGE_BOX_RIGHT
+
+# Character page (opened with the C key) — used to read this client's own wizard name.
+# Located by name search rather than a fixed path: the page's parent chain is not recorded
+# anywhere, and a guessed path would fail silently. See wizard_names.detect_wizard_name().
+CHARACTER_PAGE_TITLE_WINDOW = "TitleScroll"
+
 # Zone selection list UI (e.g., kiosk or NPC offering zone teleport options)
 UNIVERSE_NEXT_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "rightButton"]
 UNIVERSE_PREV_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "leftButton"]

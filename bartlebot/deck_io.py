@@ -35,9 +35,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from wizwalker import Keycode
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.memory.memory_object import Primitive
 from wizwalker.memory.memory_objects.window import (
@@ -52,6 +55,10 @@ from bartlebot.nodes.timing import (
     DECK_FUSION_FLYOUT_SETTLE,
     DECK_ITEM_PAGE_SETTLE,
     DECK_ITEM_TOGGLE_SETTLE,
+    DECK_PAGE_OPEN_TIMEOUT,
+    DECK_PAGE_POLL,
+    DECK_SETTLE_POLL,
+    DECK_SETTLE_TIMEOUT,
 )
 
 if TYPE_CHECKING:
@@ -341,6 +348,36 @@ def partition_addable(addable: dict[str, int], available: list[str]) -> CardRout
         substitutions=substitutions,
         unresolvable=sorted(unresolvable),
     )
+
+
+def expected_normal_deck(
+    direct: dict[str, int],
+    fusion: dict[str, int],
+    fusion_substitutions: dict[str, str],
+    fusion_skipped: list[str],
+) -> dict[str, int]:
+    """The normal deck a completed write should produce, keyed by spellbook name.
+
+    This is deliberately *not* the deck that was asked for.  Cards this wizard
+    cannot supply were dropped before the clear, and a tiered card may have gone
+    in under a lower tier — but both of those are known by the time the write
+    finishes, so the end state is known exactly.  That is what lets the settle
+    wait for a match instead of waiting out a timeout on every apply.
+
+    ``direct`` is already keyed by the entry that was clicked, since
+    ``partition_addable`` resolves substitutions into it.  ``fusion`` is keyed by
+    the *requested* name, because its variants only become visible once the
+    flyout is open, so those are renamed here from what ``_add_fusion_cards``
+    reported.
+    """
+    expected = dict(direct)
+    skipped = set(fusion_skipped)
+    for requested, count in fusion.items():
+        if requested in skipped:
+            continue
+        used = fusion_substitutions.get(requested, requested)
+        expected[used] = expected.get(used, 0) + count
+    return expected
 
 
 def count_names(names: list[str]) -> dict[str, int]:
@@ -751,6 +788,107 @@ async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
     return count_names(normal) == deck.normal and active_item_counts(items) == deck.item
 
 
+async def _find_deck_window(client):
+    """The DeckConfiguration window if the deck page is open, else None.
+
+    ``retries=0`` because this asks a question whose answer is usually "no", and
+    the default ladder spends 1.6 s sleeping to say so.
+    """
+    try:
+        return await _maybe_get_named_window(client.root_window, "DeckConfiguration", retries=0)
+    except ValueError:
+        return None
+
+
+async def _wait_for_page(client, *, present: bool):
+    """Poll until the deck page is open (or gone). Returns the window, or None.
+
+    Returns whatever the last read saw if the deadline passes, so callers see the
+    real state rather than an exception.
+    """
+    deadline = time.perf_counter() + DECK_PAGE_OPEN_TIMEOUT
+    while True:
+        window = await _find_deck_window(client)
+        if (window is not None) == present or time.perf_counter() >= deadline:
+            return window
+        await asyncio.sleep(DECK_PAGE_POLL)
+
+
+@asynccontextmanager
+async def deck_page_open(client):
+    """Open the deck page with a keypress and nothing else, yielding its window.
+
+    ``DeckBuilder.open_deck_page`` also clicks the "Deck" tab and the "Cards_All"
+    school filter, and neither is needed to *read* a deck: ``Cards_All`` filters
+    ``AllPageSpellList`` (the spells available to add), while ``CardsInDeck`` and
+    ``ItemSpells`` are separate controls that ignore it.  Verified on four clients
+    with ``tools/probe_bare_deck_open.py`` — identical results, 3.2 s down to 0.3 s.
+
+    Those clicks are still required before *writing*, where the filter genuinely
+    determines which spells the spellbook offers, so this is a read-only door.
+
+    No mouse handler is taken.  ``send_key`` is a plain ``SendMessageW`` to the
+    window handle and the mouseless hook only governs cursor position, so wrapping
+    the keypress the way ``open_deck_page`` does buys nothing and costs ~180 ms of
+    hook activate/deactivate.
+
+    A page found already open is closed and reopened first.  Opening the deck page
+    always lands on the deck itself — wizwalker's own ``close_deck_page`` notes
+    "the next time you open deck, it has to be on deck page" — but a page someone
+    left open could be on any of its sub-pages: the treasure card view, which may
+    reuse ``CardsInDeck`` and would then be read as the normal deck, or Gardening,
+    Fishing, Cantrips or Castle Magic.  Reopening costs two keypresses and makes
+    the sub-page a non-question.  It never fires in the pre-run case, where the
+    page starts closed.
+
+    The page is left closed, whether or not it started that way.  An open deck
+    page overlays the screen and swallows clicks aimed at what is behind it, so
+    leaving one up to preserve how we found it would trade a tidy invariant for a
+    class of missed clicks later in the run.  The one exception is the give-up
+    path below, where the page is already not responding to P; the caller's full
+    path closes it on the way out.
+    """
+    was_open = await _find_deck_window(client) is not None
+
+    if was_open:
+        await client.send_key(Keycode.P)
+        if await _wait_for_page(client, present=False) is not None:
+            # It would not close. Pressing P again would toggle something we
+            # cannot predict, so stop here and let the caller take the full path,
+            # which knows how to put the page right.
+            logger.debug("Deck page did not close when asked; skipping the bare-keypress read")
+            yield None
+            return
+
+    await client.send_key(Keycode.P)
+    window = await _wait_for_page(client, present=True)
+
+    try:
+        yield window
+    finally:
+        # Only if it actually opened: pressing P after a keypress that did nothing
+        # would open the page, not close it.
+        if window is not None:
+            await client.send_key(Keycode.P)
+
+
+async def deck_matches(client, deck: DeckData) -> bool:
+    """Whether ``client``'s deck already matches ``deck``, without opening the UI properly.
+
+    Never raises.  A failed read means "cannot confirm a match", which sends the
+    caller down the full path — slower, but correct.
+    """
+    try:
+        async with deck_page_open(client) as deck_window:
+            if deck_window is None:
+                logger.debug("Deck page did not open for the fast match check")
+                return False
+            return await _deck_already_matches(client, deck_window, deck)
+    except Exception:
+        logger.debug("Fast deck match check failed, falling back to the full apply", exc_info=True)
+        return False
+
+
 async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     """Restore a saved deck to the client — normal cards and item card toggles.
 
@@ -773,9 +911,16 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     Item state is read *after* the deck is cleared, because ClearDeckButton may
     reset item toggles too; planning against the post-clear state is correct
     either way.
+
+    The deck page is assumed to be open and on the deck tab already: the only
+    caller is ``apply_deck``, whose ``DeckBuilder`` context manager has just done
+    exactly that.  This used to open with ``refresh_deck_page()``, which — because
+    ``_deck_open`` is True by then — pressed P twice to close and reopen the window
+    ``__aenter__`` had only just opened.  That cost two blocking keypresses and then
+    a lookup of a window mid-open-animation, which is precisely the case
+    ``_maybe_get_named_window`` answers by sleeping through its 1.6 s retry ladder.
     """
     report = DeckApplyReport()
-    await db.refresh_deck_page()
     deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
 
     if await _deck_already_matches(db.client, deck_window, deck):
@@ -842,6 +987,8 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
         # branch and its raising tiered path is never reached.
         await db._add_all_normal_cards(direct)  # noqa: SLF001
 
+    fusion_subs: dict[str, str] = {}
+    fusion_skipped: list[str] = []
     if fusion:
         fusion_subs, fusion_skipped = await _add_fusion_cards(db, fusion, spell_names)
         report.merge(fusion_subs, fusion_skipped)
@@ -851,8 +998,15 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     if plan:
         logger.info("Toggling %d item card slot(s)", len(plan))
         await _apply_item_toggles(db, deck_window, plan, page_count(len(slots)))
-        await _verify_item_state(db.client, deck_window, deck.item)
 
+    # Last thing before the caller closes the page: the game's card list lags the
+    # clicks that filled it, and closing early loses the stragglers.
+    await _settle_deck(
+        db.client,
+        deck_window,
+        expected_normal_deck(direct, fusion, fusion_subs, fusion_skipped),
+        deck.item,
+    )
     return report
 
 
@@ -869,6 +1023,13 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
     The ``DeckBuilder`` context is inside the timeout so a hang while *opening* the
     deck window is bounded too, not just the write itself.
 
+    A deck that already matches is settled first, by ``deck_matches``, which opens
+    the page with a bare keypress and reads it.  That is ~0.3 s against ~3.2 s for
+    the full open, and restarting a bot after editing it is the common case.  Only
+    a real rewrite pays for the tab clicks.  The check is skipped for an empty
+    ``deck`` — matching nothing is not a meaningful question, and ``write_deck``
+    has its own handling for it.
+
     Raises ``TimeoutError`` if the apply does not finish in time; callers decide
     whether that is fatal.  Otherwise returns the :class:`DeckApplyReport` from
     ``write_deck``, which is what the caller shows the user.
@@ -877,26 +1038,88 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
     async def _open_and_write() -> DeckApplyReport:
         from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
 
-        async with DeckBuilder(client) as db:
+        if not deck.is_empty() and await deck_matches(client, deck):
+            logger.info("Deck already matches saved configuration, skipping the deck UI entirely")
+            report = DeckApplyReport()
+            report.unchanged = True
+            return report
+
+        # One mouse_handler for the whole write. Each `async with client.mouse_handler`
+        # inside DeckBuilder would otherwise activate and unhook MouselessCursorMoveHook
+        # on its own — ~180 ms a time, four times per open/close cycle. The handler is
+        # ref-counted precisely so an outer hold collapses those into one.
+        async with client.mouse_handler, DeckBuilder(client) as db:
+            # open_deck_page() has just clicked the "Deck" tab, so we are on the
+            # deck page — but it never records that, leaving _on_deck_page at the
+            # False it was constructed with.  view_deck_cards() reads that flag and
+            # would "correct" it by clicking through to the treasure card view,
+            # which corrupts the spell list (see the module docstring).
+            #
+            # refresh_deck_page() used to set the flag as a side effect, which is
+            # the only reason this was ever safe.  Dropping that redundant reopen
+            # means saying it outright.  The real fix belongs in open_deck_page();
+            # until the fork is bumped, assert it here.
+            db._on_deck_page = True  # noqa: SLF001
             return await write_deck(db, deck)
 
     return await asyncio.wait_for(_open_and_write(), timeout=timeout)
 
 
-async def _verify_item_state(client, deck_window, desired: dict[str, int]) -> None:
-    """Log a warning if the item cards did not end up as requested.
+async def _settle_deck(client, deck_window, expected_normal: dict[str, int], desired_item: dict[str, int]) -> bool:
+    """Wait until the deck reads back as expected, before the page is closed.
 
-    A mismatch is not raised: the normal deck is already in place by this point,
-    and a partially-applied item set is better reported than rolled back.
+    Cards go into the deck by clicking, and the list the game renders lags those
+    clicks.  Closing the page on the last click meant a deck could come out short
+    even though every card was found and every click landed — the apply looked
+    clean and the wizard entered combat missing cards.
+
+    Both halves of the end state are known by the time this runs (see
+    :func:`expected_normal_deck`), so this waits for a *match* rather than for a
+    fixed delay, and returns as soon as the game agrees.  The timeout is only
+    reached when the deck is never going to match.
+
+    Item cards are checked in the same loop, filtered to the ones this account
+    actually grants — a saved deck naming item cards from gear the wizard is no
+    longer wearing is expected, not a failure.
+
+    Never raises, and a False return is not fatal: the cards are already placed,
+    and a partially-applied deck is better reported than rolled back.
     """
-    try:
-        slots = await read_item_slots(client, deck_window)
-    except Exception:
-        logger.debug("Could not verify item card state", exc_info=True)
-        return
+    deadline = time.perf_counter() + DECK_SETTLE_TIMEOUT
+    normal: dict[str, int] | None = None
+    item: dict[str, int] | None = None
+    expected_item: dict[str, int] = {}
 
-    actual = active_item_counts(slots)
-    available = {s.name for s in slots}
-    expected = {name: n for name, n in desired.items() if name in available and n > 0}
-    if actual != expected:
-        logger.warning("Item cards after apply: %s (expected %s)", actual or "{}", expected or "{}")
+    while True:
+        try:
+            normal = count_names(await read_deck_card_names(client, deck_window))
+            slots = await read_item_slots(client, deck_window)
+            item = active_item_counts(slots)
+            available = {s.name for s in slots}
+            expected_item = {name: n for name, n in desired_item.items() if name in available and n > 0}
+        except Exception:
+            # A read can fail mid-update; that is exactly what we are waiting out.
+            logger.debug("Could not read the deck while waiting for it to settle", exc_info=True)
+        else:
+            if normal == expected_normal and item == expected_item:
+                logger.debug("Deck settled: %s", normal or "{}")
+                return True
+
+        if time.perf_counter() >= deadline:
+            break
+        await asyncio.sleep(DECK_SETTLE_POLL)
+
+    if normal != expected_normal:
+        logger.warning(
+            "Deck did not settle within %.0fs — closing anyway. Deck holds %s, expected %s",
+            DECK_SETTLE_TIMEOUT,
+            normal if normal is not None else "(unreadable)",
+            expected_normal or "{}",
+        )
+    if item != expected_item:
+        logger.warning(
+            "Item cards after apply: %s (expected %s)",
+            item if item is not None else "(unreadable)",
+            expected_item or "{}",
+        )
+    return False

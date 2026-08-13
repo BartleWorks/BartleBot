@@ -144,6 +144,18 @@ class GeneralTab(QWidget):
         self._safety_delay_sb.setValue(sm.default_safety_delay)
         bot_form.addRow("Default Safety Delay:", self._safety_delay_sb)
 
+        self._auto_group_cb = QCheckBox()
+        self._auto_group_cb.setChecked(sm.auto_group_players)
+        self._auto_group_cb.setToolTip(
+            "Put all players into one in-game group at the start of every run, and again "
+            "after any player crashes or is closed.\n\n"
+            "Group members get health and mana wisps after combat and always take the first "
+            "turn in battle. Crashing removes a player from the group, so without this a bot "
+            "that relies on going first becomes unreliable after a crash.\n\n"
+            "Requires every account to be on the other accounts' friends lists in-game."
+        )
+        bot_form.addRow("Automatically group players:", self._auto_group_cb)
+
         self._sell_pets_cb = QCheckBox()
         self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
         bot_form.addRow("Quicksell: Sell Pets:", self._sell_pets_cb)
@@ -189,6 +201,7 @@ class GeneralTab(QWidget):
         sm.set_general("auto_save_enabled", self._autosave_cb.isChecked())
         sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())
         sm.default_safety_delay = self._safety_delay_sb.value()
+        sm.auto_group_players = self._auto_group_cb.isChecked()
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())
