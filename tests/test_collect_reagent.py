@@ -46,14 +46,18 @@ async def test_blank_entity_names_fails():
     client.teleport.assert_not_called()
 
 
-async def test_no_entities_found_fails():
-    """FAILURE when no matching entities are found on any client."""
+async def test_no_entities_found_succeeds():
+    """An empty spawn is a normal outcome, not an error — SUCCESS with nothing collected.
+
+    Spawns are random, so a failure here would be indistinguishable from a real
+    problem and would send routes to their recovery branch on an ordinary pass.
+    """
     client = FakeClient()
     client.get_base_entities_with_vague_name.return_value = []
 
     result = await cr.run(FakeMachine(), [client], _PARAMS)
 
-    assert result == "FAILURE"
+    assert result == "SUCCESS"
     client.teleport.assert_not_called()
 
 
@@ -155,16 +159,22 @@ async def test_multiple_entity_names_combined():
     assert len(x_presses) == 2
 
 
-async def test_entity_found_no_prompt_fails():
-    """Entity found but no prompt appears within the poll window — total = 0 → FAILURE."""
+async def test_entity_found_no_prompt_still_succeeds():
+    """Entity found but no prompt appears — the reagent was taken by someone else mid-teleport.
+
+    Also an ordinary outcome in a shared realm, so it does not fail the node.
+    """
     client = FakeClient()
     client.get_base_entities_with_vague_name.return_value = [_entity()]
     client.is_in_npc_range.return_value = False  # prompt never appears
 
-    with patch.object(cr, "POLL_INTERVAL", 0):
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch(_AVAIL, new=AsyncMock(return_value=False)),
+    ):
         result = await cr.run(FakeMachine(), [client], _PARAMS)
 
-    assert result == "FAILURE"
+    assert result == "SUCCESS"
     client.teleport.assert_called_once()
     client.send_key.assert_not_called()
 

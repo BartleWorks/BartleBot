@@ -49,14 +49,19 @@ NODE_SPEC = NodeSpec(
         "Finds all present instances of a named reagent entity in the zone and collects them. "
         "Optionally teleports all clients to a starting position first. "
         "Each client searches and collects independently, so clients on different servers "
-        "work from their own entity lists."
+        "work from their own entity lists. "
+        "An empty spawn is a normal outcome, not a failure — the node succeeds with nothing collected."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "At least one reagent was collected across all clients."),
+        ReturnSpec(
+            "SUCCESS",
+            "The zone was searched. Includes finding nothing — reagent spawns are random, "
+            "so an empty pass is expected and the route should carry on to its next stop.",
+        ),
         ReturnSpec(
             "FAILURE",
-            "Zone mismatch, entity_names is empty, or no entities were collected.",
+            "The search could not be performed: a client is in the wrong zone, or entity_names is empty.",
         ),
     ],
     required_bot_options=[
@@ -207,9 +212,13 @@ async def run(machine, clients: list, params: dict) -> str:
     counts = await asyncio.gather(
         *[_collect_for_client(machine, c, i, entity_names, safety_delay) for i, c in enumerate(clients)]
     )
+    # Reagent spawns are random, so an empty pass is a normal outcome rather than an
+    # error. Reporting it as FAILURE made it indistinguishable from a real problem
+    # like a wrong-zone client, and sent routes back to their recovery branch instead
+    # of on to their next stop. FAILURE is now reserved for the checks above.
     total = sum(counts)
     if total == 0:
-        machine.log("collect_reagent: no reagents collected — FAILURE", logging.WARNING)
-        return "FAILURE"
-    machine.log(f"collect_reagent: {total} reagent(s) collected across {len(clients)} client(s) — SUCCESS")
+        machine.log(f"collect_reagent: no reagents present in {zone!r} — nothing to collect, SUCCESS")
+    else:
+        machine.log(f"collect_reagent: {total} reagent(s) collected across {len(clients)} client(s) — SUCCESS")
     return "SUCCESS"
