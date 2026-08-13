@@ -29,9 +29,11 @@ _MARK_OK = patch.object(mark_location, "run", new=AsyncMock(return_value="SUCCES
 _RECALL_OK = patch.object(teleport_to_marked_location, "run", new=AsyncMock(return_value="SUCCESS"))
 _ZONES_OK = patch.object(enter_zone, "run", new=AsyncMock(return_value="SUCCESS"))
 
-# Patch the private helpers so run() tests don't need to drive their internals.
+# Patch the travel helpers so run() tests don't need to drive their internals. These are
+# reached through navigate_to_potion_vendor(), which run() calls; patching the module
+# attributes still intercepts them because it looks them up by global name.
 _HOME_OK = patch(
-    "bartlebot.nodes.combat.handle_potions._teleport_home_and_verify_dorm",
+    "bartlebot.nodes.combat.handle_potions.teleport_home_and_verify_dorm",
     new=AsyncMock(return_value=True),
 )
 _SHOP_FN_OK = patch(
@@ -259,7 +261,7 @@ async def test_mark_location_failure_returns_failure():
 async def test_home_teleport_failure_returns_failure():
     client = _depleted_client()
     home_fail = patch(
-        "bartlebot.nodes.combat.handle_potions._teleport_home_and_verify_dorm",
+        "bartlebot.nodes.combat.handle_potions.teleport_home_and_verify_dorm",
         new=AsyncMock(return_value=False),
     )
 
@@ -545,7 +547,84 @@ async def test_home_repressed_for_lagging_client():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# _teleport_home_and_verify_dorm — the castle unequip wrapper around the above
+# navigate_to_potion_vendor / close_potion_shop — the public route API, which
+# tools/dry_run_potion_route.py drives so the route can be tested without buying
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+async def test_navigate_runs_the_whole_route_in_order():
+    client = FakeClient()
+    order: list[str] = []
+
+    async def record_home(machine, clients):
+        order.append("home")
+        return True
+
+    async def record_zone(machine, clients, params):
+        order.append(params["to_zone"])
+        return "SUCCESS"
+
+    async def record_shop(machine, clients):
+        order.append("shop")
+        return True
+
+    home = patch.object(hp, "teleport_home_and_verify_dorm", new=AsyncMock(side_effect=record_home))
+    zones = patch.object(enter_zone, "run", new=AsyncMock(side_effect=record_zone))
+    shop = patch.object(hp, "_open_potion_shop", new=AsyncMock(side_effect=record_shop))
+
+    with home, zones, shop:
+        assert await hp.navigate_to_potion_vendor(FakeMachine(), [client]) is True
+
+    assert order == ["home", RAVEN, COMMONS, "shop"]
+
+
+async def test_navigate_stops_at_the_first_failed_step():
+    """A failed dorm hop must not go on to walk the Ravenwood route from the wrong zone."""
+    client = FakeClient()
+    home = patch.object(hp, "teleport_home_and_verify_dorm", new=AsyncMock(return_value=False))
+    zones = patch.object(enter_zone, "run", new=AsyncMock(return_value="SUCCESS"))
+
+    with home, zones as z:
+        assert await hp.navigate_to_potion_vendor(FakeMachine(), [client]) is False
+
+    z.assert_not_awaited()
+
+
+async def test_navigate_reports_failure_when_the_shop_will_not_open():
+    client = FakeClient()
+    home = patch.object(hp, "teleport_home_and_verify_dorm", new=AsyncMock(return_value=True))
+    zones = patch.object(enter_zone, "run", new=AsyncMock(return_value="SUCCESS"))
+    shop = patch.object(hp, "_open_potion_shop", new=AsyncMock(return_value=False))
+
+    with home, zones, shop:
+        assert await hp.navigate_to_potion_vendor(FakeMachine(), [client]) is False
+
+
+async def test_close_potion_shop_clicks_until_the_window_is_gone():
+    """One click can be swallowed mid-animation, so it repeats until the shop reports closed."""
+    client = FakeClient()
+    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, True, False]))
+    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with visible, click as c, patch.object(hp, "_EXIT_CLICK_INTERVAL", 0):
+        await hp.close_potion_shop(client)
+
+    assert c.await_count == 2
+
+
+async def test_close_potion_shop_does_nothing_when_already_closed():
+    client = FakeClient()
+    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
+    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with visible, click as c:
+        await hp.close_potion_shop(client)
+
+    c.assert_not_awaited()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# teleport_home_and_verify_dorm — the castle unequip wrapper around the above
 # ══════════════════════════════════════════════════════════════════════════════
 
 
@@ -563,7 +642,7 @@ async def test_castle_is_unequipped_before_home_and_restored_after():
     press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
 
     with unequip as u, equip as e, press:
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp.teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     assert result is True
     u.assert_awaited_once_with(client)
@@ -577,7 +656,7 @@ async def test_castle_is_restored_even_when_home_fails():
     press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=False))
 
     with unequip, equip as e, press:
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp.teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     assert result is False
     e.assert_awaited_once_with(client, "Red Barn Farm")
@@ -589,7 +668,7 @@ async def test_castle_is_restored_even_when_home_raises():
     press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(side_effect=RuntimeError("boom")))
 
     with unequip, equip as e, press, pytest.raises(RuntimeError):
-        await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        await hp.teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     e.assert_awaited_once_with(client, "Red Barn Farm")
 
@@ -601,7 +680,7 @@ async def test_no_castle_equipped_skips_the_restore():
     press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
 
     with unequip, equip as e, press:
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp.teleport_home_and_verify_dorm(FakeMachine(), [client])
 
     assert result is True
     e.assert_not_awaited()
@@ -615,7 +694,7 @@ async def test_failed_restore_warns_but_does_not_fail_the_step():
     press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
 
     with unequip, equip, press:
-        result = await hp._teleport_home_and_verify_dorm(machine, [client])
+        result = await hp.teleport_home_and_verify_dorm(machine, [client])
 
     assert result is True
     assert any("Red Barn Farm" in str(entry) for entry in machine.logs)
@@ -630,7 +709,7 @@ async def test_only_clients_with_castles_are_restored():
     press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
 
     with unequip, equip as e, press:
-        await hp._teleport_home_and_verify_dorm(FakeMachine(), [c_castle, c_dorm])
+        await hp.teleport_home_and_verify_dorm(FakeMachine(), [c_castle, c_dorm])
 
     e.assert_awaited_once_with(c_castle, "Red Barn Farm")
 

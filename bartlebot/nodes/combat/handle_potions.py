@@ -277,50 +277,8 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("FAILURE: mark_location failed for one or more clients", logging.WARNING)
         return "FAILURE"
 
-    # 7. Teleport home and verify dorm zone.
-    machine.log("Teleporting buying clients home…")
-    if not await _teleport_home_and_verify_dorm(machine, buying_clients):
-        machine.log("FAILURE: could not reach dorm after teleporting home", logging.WARNING)
-        return "FAILURE"
-
-    # 8. Navigate Dorm → Ravenwood.
-    machine.log("Navigating Dorm → Ravenwood…")
-    if (
-        await enter_zone.run(
-            machine,
-            buying_clients,
-            {
-                "from_zone": DORM_ZONE,
-                "to_zone": RAVENWOOD_ZONE,
-                "xyz": _DORM_EXIT_XYZ,
-            },
-        )
-        != "SUCCESS"
-    ):
-        machine.log("FAILURE: Dorm → Ravenwood failed", logging.WARNING)
-        return "FAILURE"
-
-    # 9. Navigate Ravenwood → Commons.
-    machine.log("Navigating Ravenwood → Commons…")
-    if (
-        await enter_zone.run(
-            machine,
-            buying_clients,
-            {
-                "from_zone": RAVENWOOD_ZONE,
-                "to_zone": COMMONS_ZONE,
-                "xyz": _RAVENWOOD_EXIT_XYZ,
-            },
-        )
-        != "SUCCESS"
-    ):
-        machine.log("FAILURE: Ravenwood → Commons failed", logging.WARNING)
-        return "FAILURE"
-
-    # 10. Approach Hilda and open the potion shop.
-    machine.log("Opening potion shop at Hilda Brewer…")
-    if not await _open_potion_shop(machine, buying_clients):
-        machine.log("FAILURE: could not open potion shop", logging.WARNING)
+    # 7-10. Travel to Hilda Brewer and open her shop.
+    if not await navigate_to_potion_vendor(machine, buying_clients):
         return "FAILURE"
 
     # 11. Buy potions for each buying client (parallel; each client manages their own shop window).
@@ -341,10 +299,72 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
+# ── Navigation ─────────────────────────────────────────────────────────────────
+
+
+async def navigate_to_potion_vendor(machine, clients: list) -> bool:
+    """Take clients from wherever they are to Hilda Brewer, with her shop window open.
+
+    Steps 7-10 of run(): unequip castles and HOME to the dorm, Dorm → Ravenwood, Ravenwood →
+    Commons, then approach Hilda and press X. Returns True only when the shop is open on
+    every client; logs the reason and returns False otherwise.
+
+    Public because this is the whole interesting part of handle_potions and the part that
+    breaks — buying is a few clicks in a window that is already open. tools/dry_run_potion_route.py
+    drives exactly this, so the route can be exercised without a client that actually needs
+    potions and without spending gold.
+    """
+    machine.log("Teleporting clients home…")
+    if not await teleport_home_and_verify_dorm(machine, clients):
+        machine.log("FAILURE: could not reach dorm after teleporting home", logging.WARNING)
+        return False
+
+    machine.log("Navigating Dorm → Ravenwood…")
+    if (
+        await enter_zone.run(
+            machine,
+            clients,
+            {"from_zone": DORM_ZONE, "to_zone": RAVENWOOD_ZONE, "xyz": _DORM_EXIT_XYZ},
+        )
+        != "SUCCESS"
+    ):
+        machine.log("FAILURE: Dorm → Ravenwood failed", logging.WARNING)
+        return False
+
+    machine.log("Navigating Ravenwood → Commons…")
+    if (
+        await enter_zone.run(
+            machine,
+            clients,
+            {"from_zone": RAVENWOOD_ZONE, "to_zone": COMMONS_ZONE, "xyz": _RAVENWOOD_EXIT_XYZ},
+        )
+        != "SUCCESS"
+    ):
+        machine.log("FAILURE: Ravenwood → Commons failed", logging.WARNING)
+        return False
+
+    machine.log("Opening potion shop at Hilda Brewer…")
+    if not await _open_potion_shop(machine, clients):
+        machine.log("FAILURE: could not open potion shop", logging.WARNING)
+        return False
+
+    return True
+
+
+async def close_potion_shop(client) -> None:
+    """Click Exit until the potion shop window is gone.
+
+    One click is not enough: the button can be swallowed while the shop is mid-animation.
+    """
+    while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
+        await node_helpers.click_by_path(client, POTION_EXIT_PATH)
+        await asyncio.sleep(_EXIT_CLICK_INTERVAL)
+
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
+async def teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     """
     Press HOME and verify all clients end up in DORM_ZONE.
 
@@ -503,9 +523,7 @@ async def _buy_potions_for_client(machine, client) -> None:
         await node_helpers.click_by_path(client, POTION_BUY_PATH)
         await asyncio.sleep(_SHOP_CLICK_DELAY)
 
-        while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
-            await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-            await asyncio.sleep(_EXIT_CLICK_INTERVAL)
+        await close_potion_shop(client)
 
         charge_after = await client.stats.potion_charge()
         machine.log(f"Charge after buy: {charge_after}/{max_potions}", logging.DEBUG)
