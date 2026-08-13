@@ -278,16 +278,12 @@ def entity_name_matches(actual: str, pattern: str) -> bool:
     return pattern.lower() in actual.lower()
 
 
-async def find_closest_entity_by_name(client, pattern: str):
-    """Return the closest entity whose template name matches pattern, or None.
+def entity_name_predicate(pattern: str):
+    """Build an async predicate matching entities against pattern by template name.
 
-    Plain names delegate to WizSprinter's find_closest_by_vague_name() so the
-    long-standing path is untouched; only a pattern carrying metacharacters takes
-    the predicate route, which is the same search with our matcher in place of
-    WizSprinter's hardcoded substring test.
+    Suitable for WizSprinter's find_closest_by_predicate() and
+    get_base_entities_with_predicate().
     """
-    if not has_glob(pattern):
-        return await client.find_closest_by_vague_name(pattern)
 
     async def _matches(entity) -> bool:
         # An entity can despawn mid-scan; WizSprinter's own vague-name predicate
@@ -300,7 +296,31 @@ async def find_closest_entity_by_name(client, pattern: str):
         except (ValueError, MemoryReadError):
             return False
 
-    return await client.find_closest_by_predicate(_matches)
+    return _matches
+
+
+async def find_closest_entity_by_name(client, pattern: str):
+    """Return the closest entity whose template name matches pattern, or None.
+
+    Plain names delegate to WizSprinter's find_closest_by_vague_name() so the
+    long-standing path is untouched; only a pattern carrying metacharacters takes
+    the predicate route, which is the same search with our matcher in place of
+    WizSprinter's hardcoded substring test.
+    """
+    if not has_glob(pattern):
+        return await client.find_closest_by_vague_name(pattern)
+    return await client.find_closest_by_predicate(entity_name_predicate(pattern))
+
+
+async def find_entities_by_name(client, pattern: str) -> list:
+    """Return every entity whose template name matches pattern.
+
+    The list counterpart of find_closest_entity_by_name(), with the same split:
+    plain names go through WizSprinter untouched, wildcards through our matcher.
+    """
+    if not has_glob(pattern):
+        return await client.get_base_entities_with_vague_name(pattern)
+    return await client.get_base_entities_with_predicate(entity_name_predicate(pattern))
 
 
 def zone_matches(actual: str, pattern: str) -> bool:

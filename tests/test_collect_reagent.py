@@ -61,6 +61,25 @@ async def test_no_entities_found_succeeds():
     client.teleport.assert_not_called()
 
 
+async def test_wildcard_entity_name_searches_by_predicate():
+    """Wildcards in reagent names glob, the same as the enemy name field (#58)."""
+    client = FakeClient()
+    client.get_base_entities_with_predicate.return_value = [_entity()]
+    client.is_in_npc_range.side_effect = [True, False]
+
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch(_SNAP, new=AsyncMock(return_value="")),
+        patch(_EXTRACT, return_value=[]),
+    ):
+        result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["*Fungi*"]})
+
+    assert result == "SUCCESS"
+    client.teleport.assert_called_once()
+    # The literal pattern must never reach WizSprinter's substring matcher.
+    client.get_base_entities_with_vague_name.assert_not_called()
+
+
 async def test_success_immediate_prompt():
     """Entity found, prompt appears immediately — X is pressed and SUCCESS returned."""
     client = FakeClient()

@@ -42,6 +42,7 @@ _FAKED_METHODS = frozenset(
         "tp_to_closest_mana_wisp",
         "backpack_space",
         "get_base_entities_with_vague_name",
+        "get_base_entities_with_predicate",
     }
 )
 for _method in _FAKED_METHODS:
@@ -100,6 +101,7 @@ class FakeClient:
         self.mouse_handler.__aexit__ = AsyncMock(return_value=False)
         self.mouse_handler.click_window = AsyncMock()
         self.get_base_entities_with_vague_name = AsyncMock(return_value=[])
+        self.get_base_entities_with_predicate = AsyncMock(return_value=[])
         # Distinct per instance, like window_handle, so each FakeClient looks like a
         # different character to wizard_names' switch detection. Tests that care set
         # read_value_from_offset.return_value directly to simulate a character switch.

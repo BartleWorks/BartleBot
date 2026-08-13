@@ -37,7 +37,9 @@ PARAM_SCHEMA: list[ParamField] = [
         help=(
             "Internal object names of the reagents to collect — use the Nearest Entity "
             "display in the client widget to find them. Partial matches work "
-            "(e.g. 'Fungi' matches 'FungusWort'). All listed reagents are collected in one pass."
+            "(e.g. 'Fungi' matches 'FungusWort'). Wildcards (* ? []) match the whole "
+            "name instead, so use '*Fungi*' to match anywhere and 'Fungi*' to match only "
+            "names starting with it. All listed reagents are collected in one pass."
         ),
         default=[],
         required=True,
@@ -88,7 +90,7 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
 
     entities = []
     for name in entity_names:
-        found = await client.get_base_entities_with_vague_name(name)
+        found = await node_helpers.find_entities_by_name(client, name)
         if found:
             machine.log(f"Client {client_idx + 1}: found {len(found)} '{name}' entity(s)", logging.DEBUG)
             entities.extend(found)

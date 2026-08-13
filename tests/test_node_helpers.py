@@ -10,7 +10,9 @@ from bartlebot.nodes.node_helpers import (
     all_in_zone,
     all_left_zone,
     entity_name_matches,
+    entity_name_predicate,
     find_closest_entity_by_name,
+    find_entities_by_name,
     zone_matches,
 )
 from tests.conftest import FakeClient, FakeEntity
@@ -146,27 +148,47 @@ async def test_find_closest_wildcard_uses_predicate():
     client.find_closest_by_predicate.assert_awaited_once()
 
 
-async def _predicate_from(client):
-    """Return the predicate handed to find_closest_by_predicate."""
-    return client.find_closest_by_predicate.await_args.args[0]
+@pytest.mark.asyncio
+async def test_find_entities_plain_name_uses_vague_name():
+    client = FakeClient()
+    client.get_base_entities_with_vague_name.return_value = [FakeEntity("FungusWort")]
+
+    found = await find_entities_by_name(client, "Fungi")
+
+    assert len(found) == 1
+    client.get_base_entities_with_vague_name.assert_awaited_once_with("Fungi")
+    client.get_base_entities_with_predicate.assert_not_awaited()
 
 
 @pytest.mark.asyncio
-async def test_wildcard_predicate_accepts_and_rejects_by_name():
+async def test_find_entities_wildcard_uses_predicate():
     client = FakeClient()
-    await find_closest_entity_by_name(client, "Bandit*")
-    predicate = await _predicate_from(client)
+    client.get_base_entities_with_predicate.return_value = [FakeEntity("FungusWort")]
+
+    found = await find_entities_by_name(client, "*Fungi*")
+
+    assert len(found) == 1
+    client.get_base_entities_with_vague_name.assert_not_awaited()
+    client.get_base_entities_with_predicate.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# entity_name_predicate — the matcher both search helpers hand to WizSprinter
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_predicate_accepts_and_rejects_by_name():
+    predicate = entity_name_predicate("Bandit*")
 
     assert await predicate(FakeEntity("BanditThug")) is True
     assert await predicate(FakeEntity("Krokotopia/BanditThug")) is False
 
 
 @pytest.mark.asyncio
-async def test_wildcard_predicate_skips_entity_that_despawned():
+async def test_predicate_skips_entity_that_despawned():
     """A dead entity mid-scan is skipped, not allowed to abort the whole search."""
-    client = FakeClient()
-    await find_closest_entity_by_name(client, "Bandit*")
-    predicate = await _predicate_from(client)
+    predicate = entity_name_predicate("Bandit*")
 
     gone = FakeEntity("BanditThug")
     gone.object_template = AsyncMock(side_effect=MemoryReadError("read failed"))
@@ -174,10 +196,8 @@ async def test_wildcard_predicate_skips_entity_that_despawned():
 
 
 @pytest.mark.asyncio
-async def test_wildcard_predicate_skips_entity_without_a_template():
-    client = FakeClient()
-    await find_closest_entity_by_name(client, "Bandit*")
-    predicate = await _predicate_from(client)
+async def test_predicate_skips_entity_without_a_template():
+    predicate = entity_name_predicate("Bandit*")
 
     templateless = FakeEntity("BanditThug")
     templateless.object_template = AsyncMock(return_value=None)
