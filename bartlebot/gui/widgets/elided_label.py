@@ -51,13 +51,24 @@ class ElidedLabel(QLabel):
     panel.)
 
     The untruncated text is always available as the tooltip.
+
+    *elide_mode* chooses which end is sacrificed.  The default ``ElideRight``
+    suits text whose head identifies it; pass ``ElideLeft`` for values like a
+    zone path, where the tail (``…/WC_Streets/Interior``) is what tells one
+    apart from another and the shared prefix is the disposable part.
     """
 
     _MIN_WIDTH = 24  # enough for "…" plus a character or two
 
-    def __init__(self, text: str = "", parent=None):
+    def __init__(
+        self,
+        text: str = "",
+        parent=None,
+        elide_mode: Qt.TextElideMode = Qt.TextElideMode.ElideRight,
+    ):
         super().__init__(parent)
         self._full_text = ""
+        self._elide_mode = elide_mode
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.setText(text)
 
@@ -72,13 +83,23 @@ class ElidedLabel(QLabel):
         """The complete, untruncated text — what ``text()`` would return on a plain QLabel."""
         return self._full_text
 
+    def elide_mode(self) -> Qt.TextElideMode:
+        """Which end of the text is dropped when it does not fit."""
+        return self._elide_mode
+
+    def elided_text(self, width: int) -> str:
+        """The visible form of the text at *width* pixels.
+
+        Split out of ``paintEvent`` so the truncation rule can be exercised
+        directly rather than inferred from a rendered pixmap.
+        """
+        return QFontMetrics(self.font()).elidedText(self._full_text, self._elide_mode, width)
+
     def minimumSizeHint(self) -> QSize:  # noqa: N802 — Qt naming
         return QSize(self._MIN_WIDTH, super().minimumSizeHint().height())
 
     def paintEvent(self, event) -> None:  # noqa: ARG002, N802 — Qt naming
         painter = QPainter(self)
-        metrics = QFontMetrics(self.font())
-        elided = metrics.elidedText(self._full_text, Qt.TextElideMode.ElideRight, self.contentsRect().width())
         painter.setPen(self.palette().color(self.foregroundRole()))
-        painter.drawText(self.contentsRect(), int(self.alignment()), elided)
+        painter.drawText(self.contentsRect(), int(self.alignment()), self.elided_text(self.contentsRect().width()))
         painter.end()

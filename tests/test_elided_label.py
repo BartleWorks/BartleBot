@@ -5,11 +5,21 @@ from __future__ import annotations
 import sys
 
 import pytest
+from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QApplication, QLabel, QSizePolicy
 
 from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 
 _LONG = "P1: {1} shatter@boss {2} empower… · P2–P3: {1} pass {2} pass · P4: {1} weakness@boss"
+#: A zone path — the case that motivated left elision.  Every zone in a world
+#: shares the leading segment, so the tail is the only part that identifies one.
+_ZONE = "WizardCity/WC_Streets/Interiors/Golem_Court"
+
+
+def _half_width(lbl: ElidedLabel) -> int:
+    """Half the width the full text wants — wide enough to show several characters, narrow enough to force elision."""
+    return QFontMetrics(lbl.font()).horizontalAdvance(lbl.full_text()) // 2
 
 
 @pytest.fixture(scope="session")
@@ -85,6 +95,44 @@ def test_paints_without_error_at_a_narrow_width(qapp):
     lbl = ElidedLabel(_LONG)
     lbl.resize(40, 16)
     lbl.grab()  # forces a real paint cycle
+
+
+def test_default_elide_mode_is_right(qapp):
+    assert ElidedLabel("x").elide_mode() == Qt.TextElideMode.ElideRight
+
+
+def test_nothing_is_elided_when_the_text_fits(qapp):
+    lbl = ElidedLabel(_ZONE, elide_mode=Qt.TextElideMode.ElideLeft)
+
+    assert lbl.elided_text(lbl.sizeHint().width() * 2) == _ZONE
+
+
+def test_left_elision_keeps_the_end_of_the_text(qapp):
+    """The point of ElideLeft: '…/Interiors/Golem_Court' is what names a zone."""
+    lbl = ElidedLabel(_ZONE, elide_mode=Qt.TextElideMode.ElideLeft)
+
+    out = lbl.elided_text(_half_width(lbl))
+
+    assert out != _ZONE  # guards the premise: it really did elide
+    assert out.startswith("…")
+    assert _ZONE.endswith(out.lstrip("…"))  # what survives is a suffix of the original
+
+
+def test_right_elision_keeps_the_start_of_the_text(qapp):
+    """The mirror image, and the default — used for enemy names, where the head identifies."""
+    lbl = ElidedLabel(_ZONE)
+
+    out = lbl.elided_text(_half_width(lbl))
+
+    assert out != _ZONE
+    assert out.endswith("…")
+    assert _ZONE.startswith(out.rstrip("…"))
+
+
+def test_paints_without_error_in_left_elide_mode(qapp):
+    lbl = ElidedLabel(_ZONE, elide_mode=Qt.TextElideMode.ElideLeft)
+    lbl.resize(40, 16)
+    lbl.grab()  # forces a real paint cycle through elided_text
 
 
 def test_apply_muted_color_uses_the_palette_not_a_stylesheet(qapp):

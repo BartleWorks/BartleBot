@@ -163,7 +163,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Cursed Repository",
       "position": {
-        "x": 880.0,
+        "x": 1320.0,
         "y": -90.0
       },
       "params": {
@@ -205,7 +205,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Mr. Stone",
       "position": {
-        "x": 1320.0,
+        "x": 1760.0,
         "y": -90.0
       },
       "params": {
@@ -223,7 +223,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Mr. Stone",
       "position": {
-        "x": 1760.0,
+        "x": 2200.0,
         "y": -90.0
       },
       "params": {
@@ -238,7 +238,7 @@
       "node_type": "enter_zone",
       "label": "Exit Cursed Repository",
       "position": {
-        "x": 2200.0,
+        "x": 2640.0,
         "y": -90.0
       },
       "params": {
@@ -255,6 +255,22 @@
           "z": -2.6
         },
         "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "Arcanum/AR_Z01_Hub"
       },
       "option_overrides": {}
     }
@@ -333,16 +349,6 @@
     {
       "trigger": "advance",
       "source": "state_5",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
@@ -403,6 +409,36 @@
     {
       "trigger": "advance",
       "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],

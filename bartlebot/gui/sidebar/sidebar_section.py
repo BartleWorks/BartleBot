@@ -1,4 +1,4 @@
-"""Shared sidebar infrastructure: SidebarSection, Sidebar base class, and widget helpers."""
+"""Shared sidebar infrastructure: SidebarSection and widget helpers."""
 
 from __future__ import annotations
 
@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPlainTextEdit,
-    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -159,42 +158,6 @@ class SidebarSection(QWidget):
     @property
     def body(self) -> QWidget:
         return self._body
-
-
-# ---------------------------------------------------------------------------
-# Sidebar base class
-# ---------------------------------------------------------------------------
-
-
-class Sidebar(QScrollArea):
-    """Base class for left and right sidebars.
-
-    Sets up a scrollable content area with standard margins and a trailing
-    stretch. Subclasses populate sections by calling ``_add_section()``.
-    """
-
-    def __init__(self, min_width: int = 220, parent=None):
-        super().__init__(parent)
-
-        self._content = QWidget()
-        self._layout = QVBoxLayout(self._content)
-        self._layout.setContentsMargins(8, 8, 8, 8)
-        self._layout.setSpacing(4)
-        self._layout.addStretch()  # trailing stretch — kept last
-
-        self.setWidget(self._content)
-        self.setWidgetResizable(True)
-        self.setMinimumWidth(min_width)
-
-    def _add_section(self, section: SidebarSection, stretch: int = 0) -> None:
-        """Insert *section* before the trailing stretch.
-
-        Pass ``stretch=1`` for a section that should fill remaining vertical
-        space when expanded (e.g. a drop table or list).  The trailing spacer
-        added in ``__init__`` absorbs any leftover space when that section is
-        collapsed to ``Maximum`` policy, preventing Qt from centering the items.
-        """
-        self._layout.insertWidget(self._layout.count() - 1, section, stretch)
 
 
 # ---------------------------------------------------------------------------

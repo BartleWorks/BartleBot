@@ -1,0 +1,38 @@
+[
+  {
+    "_comment": "Synthetic samples. Never commit real character names or ids -- see CLAUDE.md, 'No real player data'. These are constructed from the shipped name tables and verified by tools/name_keys.py --verify, and they keep the shared-part structure that made the byte layout legible: rows 1 and 2 share a first and last name, rows 1 and 3 share a middle name.",
+    "wizard_name": "Luke SkullHunter",
+    "m_nameKeys": 56900648,
+    "character_id": 100000000000000001,
+    "m_eGender": 1,
+    "m_eRace": 79806088
+  },
+  {
+    "wizard_name": "Luke CycloneHunter",
+    "m_nameKeys": 56916008,
+    "character_id": 100000000000000002,
+    "m_eGender": 1,
+    "m_eRace": 79806088
+  },
+  {
+    "wizard_name": "Misha SkullSeer",
+    "m_nameKeys": 64109768,
+    "character_id": 100000000000000003,
+    "m_eGender": 1,
+    "m_eRace": 79806088
+  },
+  {
+    "wizard_name": "Michelle HistoryBond",
+    "m_nameKeys": 39360090,
+    "character_id": 100000000000000004,
+    "m_eGender": 0,
+    "m_eRace": 79806088
+  },
+  {
+    "wizard_name": "Naomi HexPaint",
+    "m_nameKeys": 46997935,
+    "character_id": 100000000000000005,
+    "m_eGender": 0,
+    "m_eRace": 79806088
+  }
+]

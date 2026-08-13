@@ -38,5 +38,18 @@ logs/
 # The directory is recreated on demand (list_deck_presets tolerates it missing).
 strategies/decks/
 
+# Real player data — see CLAUDE.md, "No real player data".
+#
+# Some tools record actual character names and ids by design, and those must never be
+# committed: this repo is public, and a real wizard name links the account to whoever wrote
+# the commit. The tools write to these paths specifically so an accidental commit is not
+# possible by mistake.
+#
+# tools/name_key_samples.json is NOT ignored and stays tracked — it is the synthetic
+# fixture, built from the shipped name tables, that `name_keys.py --verify` checks against.
+# `probe_name_behavior.py --record` writes the .local.json beside it instead.
+*.local.json
+probe_*_report.txt
+
 # Claude
 .claude/

@@ -1,0 +1,9 @@
+# Game type dumps are ~26 MB of pretty-printed JSON (about 2.7 MB compressed in git).
+# They are tracked deliberately: a dump can only be captured from a *running* client, so
+# once a patch ships there is no way back to the previous version's layout. The checked-in
+# dumps are the only record of what the offsets were when our code last worked.
+#
+# Suppress textual diffing: a line-by-line diff of two 26 MB dumps is unreadable noise.
+# Compare them with the tool that understands the structure instead:
+#     poetry run python tools/typedump.py diff <old.json> <new.json>
+tools/r*_WizardDev.json -diff

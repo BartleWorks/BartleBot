@@ -88,15 +88,53 @@ This bug caused the client section sidebar (zone/XYZ display) to freeze for the 
 
 ### Client section refresh architecture
 
-`ClientSection` (`bartlebot/gui/sidebar/sections/client_section.py`) runs a long-lived asyncio task (`_refresh_loop`) that polls zone/XYZ data for each connected client. Key design points:
+`ClientSection` (`bartlebot/gui/sidebar/sections/client_section.py`) is a plain `QWidget` filling `RightSidebar`'s Players tab, and runs a long-lived asyncio task (`_refresh_loop`) that polls zone/XYZ data for each connected client. Key design points:
 
-- **Refresh rate is adaptive**: `CLIENT_REFRESH_INTERVAL_IDLE` (0.1 s) while idle, `CLIENT_REFRESH_INTERVAL_RUN` (0.5 s) during a bot run. `AppController._start_bot()` calls `set_bot_running(True/False)` at the bot lifecycle boundary. These constants live in `bartlebot/nodes/timing.py`.
+- **Refresh rate is adaptive**, decided by the pure `client_refresh_interval(bot_running, players_visible)`: `CLIENT_REFRESH_INTERVAL_IDLE` (0.1 s) while idle, `CLIENT_REFRESH_INTERVAL_RUN` (0.5 s) during a bot run, and `CLIENT_REFRESH_INTERVAL_HIDDEN` (2.0 s) whenever the Players tab is not the current tab — visibility is checked *first*, so a hidden tab during a run polls at the slowest rate. `AppController._start_bot()` calls `set_bot_running(True/False)` at the bot lifecycle boundary; `RightSidebar.currentChanged` calls `set_players_visible(True/False)`, which restarts the loop on becoming visible rather than waiting out the in-flight 2 s sleep. Polling never stops entirely, because `AppController`'s zone-dropdown getter reads each widget's cached zone via `client_zones()`. These constants live in `bartlebot/nodes/timing.py`.
 - **Per-widget timeout**: each `ClientWidget.refresh()` call is wrapped in `asyncio.wait_for(timeout=CLIENT_REFRESH_TIMEOUT)` inside the gather so a single slow client read can't stall the whole cycle.
 - **Loading guard**: `ClientWidget._refresh()` checks `is_loading()` first and returns early if True, skipping the more expensive `zone_name()` and `body.position()` reads that produce stale/slow results during zone transitions.
 - **WizWalker reads are synchronous**: despite the `async def` signatures, WizWalker memory reads (`zone_name()`, `body.position()`, etc.) call `ReadProcessMemory` synchronously on the event loop thread — they are not truly non-blocking. Keep this in mind when reasoning about latency or contention.
+- **The Wizard row costs nothing**: `ClientWidget._refresh()` reads the wizard name from `wizard_names.cached_name()`, a dict lookup. `ClientManager._client_loop` is what fills that cache, once per character. Do not make a sidebar label trigger detection — `resolve_names()` can open the character page, which would flash the game UI every refresh.
 
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
+
+### No real player data
+
+Never commit real, identifiable player data — wizard names, character ids, account
+ids, friend codes, or screenshots showing them. This repo is public, and a real
+wizard name links the account to whoever wrote the commit.
+
+This applies to test fixtures, sample data, docstrings, comments, log excerpts
+pasted into issues, and bot files. It applies to *any* player, not just your own.
+
+Use synthetic values instead. For anything name-shaped, build it from the shipped
+tables so it stays realistic and verifiable rather than arbitrary:
+
+```bash
+poetry run python tools/name_keys.py --decode 56900648   # -> "Luke SkullHunter"
+```
+
+`tools/name_key_samples.json` is generated this way: real `m_nameKeys` values for
+characters that do not exist, which still decode correctly and still exercise the
+real tables. It is tracked, and safe to share.
+
+Tools that capture real values write to gitignored paths, so an accidental commit
+is not possible by mistake:
+
+| written by | path | tracked |
+|---|---|---|
+| `probe_name_behavior.py --record` | `tools/name_key_samples.local.json` | no (`*.local.json`) |
+| `probe_wizard_name.py` | `probe_*_report.txt` | no |
+
+`name_keys.py --verify` reads both the tracked fixture and the local file when
+present, so recordings are still useful locally — they just cannot leave the
+machine. Follow that pattern for any new tool that records live account data:
+write to `*.local.json`, never append to a tracked file.
+
+Bot files under `bots/` are the easy one to miss: `friend_name` and similar
+parameters hold real character names and are functional, so redact them
+deliberately rather than by find-and-replace.
 
 ### Testing
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
@@ -204,6 +242,78 @@ For wizsprinter, the same shape at a much lower cadence:
 ```bash
 cd ../wizsprinter && git fetch deimos && git merge deimos/main
 ```
+
+## Reading the game's own data
+
+Two sources answer most "what is this offset / where does this value come from"
+questions without probing a live client. **Check both before writing a probe** —
+several days of `probe_*.py` work has been spent rediscovering things that were
+sitting in one of these.
+
+### Type dumps: `tools/r<rev>_WizardDev.json`
+
+A wiztype dump of every game class with the exact byte offset of each property —
+about 7,000 classes and 49,000 properties. Query it with `tools/typedump.py`:
+
+```bash
+poetry run python tools/typedump.py at ClientObject 448     # what lives at this offset?
+poetry run python tools/typedump.py show DeckListControl    # full layout, incl. inherited
+poetry run python tools/typedump.py prop "characterId"      # find a property everywhere
+poetry run python tools/typedump.py classes "SpellList"     # find classes by regex
+poetry run python tools/typedump.py gaps DeckListControl    # holes where raw members hide
+poetry run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
+poetry run python tools/typedump.py diff <old.json> <new.json>
+```
+
+Two things to know before trusting it:
+
+- **It covers reflected PropertyClass properties only.** Raw C++ members — child
+  pointers, manager handles, the entry vectors `deck_io.py` reads — never appear.
+  `gaps` is the workaround: it brackets those between named neighbours, which is
+  how `deck_io`'s `0x300` entry vector shows up as a 40-byte hole between
+  `m_treasureFrame` and `m_cardSize`.
+- **A class name is not the runtime behavior template name**, and the difference
+  is not derivable: `ClientWizPlayerNameBehavior` → `"WizPlayerNameBehavior"`,
+  `ClientTreasureBookBehavior` → `"BasicTreasureBookBehavior"`,
+  `ClientInventoryBehavior` → `"WizardInventoryBehavior"`. The authoritative list
+  is `await client_object.list_behavior_names()` on a live client.
+
+**Dumps are committed, and old ones are never deleted.** A dump can only be
+captured from a running client, so once a patch ships there is no way back to the
+previous layout. The checked-in dumps are the only record of what the offsets were
+when our code last worked; `typedump.py diff` against a fresh dump then says
+exactly what moved. `.gitattributes` disables textual diffing for them — use the
+tool, not `git diff`.
+
+### Game data: `Root.wad`
+
+WizWalker can read the game's own archives, which hold the lookup tables the
+client resolves IDs against. Many fields in memory are keys, not text —
+`m_badgeTitle` reads `'Badges_00006184'`, and a wizard's name is three indices,
+never characters — so a memory scan for display text will find nothing while the
+answer sits in a WAD.
+
+```python
+from wizwalker.file_readers.wad import Wad
+
+wad = Wad(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
+names = await wad.names()                       # ~172,000 entries
+data = await wad.get_file("CharacterNames.xml") # bytes
+```
+
+Conventions worth knowing:
+
+- `<Thing>.xml` holds the **ordered key list**; `Locale/<loc>/<Thing>.lang` maps
+  key → display text. IDs index **position in the XML list**, not the numeric
+  suffix of the key (`First_Boy_102` is "Luke" but sits at index 100).
+- `.lang` files are UTF-16LE with CRLF, in `key / blank / value` triples.
+- Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
+  later additions were not always translated.
+
+Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
+dependency on the game being installed at a guessable path. Extract what you need
+into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
+`bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
 
 ### Bumping a pin
 

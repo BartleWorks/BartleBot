@@ -29,7 +29,28 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from bartlebot.bot.strategy_models import DeckData
+
+#: What ClientWidget shows for a zone it could not read; never a real zone name.
+_ZONE_PLACEHOLDER = "—"
+
+
+def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str]) -> tuple[list[str], list[str]]:
+    """Build the zone dropdown's contents from live and remembered zones.
+
+    Returns ``(live, choices)``: the de-duplicated zones clients are actually in,
+    and those followed by the remembered ones that are not already listed.  Live
+    zones lead because they are what a bot being edited right now is about to
+    reference.  Blanks and the unread placeholder are dropped — offering "—" as a
+    zone name would write it straight into a bot config.
+    """
+    live: list[str] = []
+    for zone in client_zones:
+        if zone and zone != _ZONE_PLACEHOLDER and zone not in live:
+            live.append(zone)
+    return live, live + [z for z in recent_zones if z not in live]
 
 
 class AppController(QObject):
@@ -122,14 +143,10 @@ class AppController(QObject):
 
         def _zone_getter() -> list[str]:
             settings = SettingsManager.instance()
-            current_zones: list[str] = []
-            for widget in w.right_sidebar.clients._widgets:
-                zone = getattr(widget, "_last_zone", "")
-                if zone and zone != "—" and zone not in current_zones:
-                    current_zones.append(zone)
-                    settings.add_recent_zone(zone)
-            recent = [z for z in settings.recent_zones if z not in current_zones]
-            return current_zones + recent
+            live, choices = merge_zone_choices(w.right_sidebar.clients.client_zones(), settings.recent_zones)
+            for zone in live:
+                settings.add_recent_zone(zone)
+            return choices
 
         w.bot_canvas.set_zone_getter(_zone_getter)
 
@@ -143,6 +160,10 @@ class AppController(QObject):
         # Client list changes → game view renumber + start button state
         self._client_manager.clients_changed.connect(w.game_view.renumber_tiles)
         self._client_manager.clients_changed.connect(self._on_clients_changed)
+
+        # Wizard names → game tile pills. The sidebar reads the cache directly in its own
+        # refresh loop, so it needs no connection here.
+        self._client_manager.wizard_names_changed.connect(w.game_view.set_wizard_names)
 
         # All clients (active + unhooked) → sidebar rebuild
         self._client_manager.all_clients_changed.connect(
@@ -158,6 +179,12 @@ class AppController(QObject):
         )
         w.right_sidebar.clients.rehook_requested.connect(
             lambda hwnd: asyncio.ensure_future(self._client_manager.rehook_client(hwnd))
+        )
+        w.right_sidebar.clients.unhook_all_requested.connect(
+            lambda: asyncio.ensure_future(self._client_manager.unhook_all())
+        )
+        w.right_sidebar.clients.rehook_all_requested.connect(
+            lambda: asyncio.ensure_future(self._client_manager.rehook_all())
         )
 
         self._client_manager.recovery_error.connect(

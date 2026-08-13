@@ -20,11 +20,14 @@ class ClientManager(QObject):
 
     Signals:
         clients_changed: Emitted whenever the live client list changes.
+        wizard_names_changed: Emitted with the per-client wizard names when they change.
         recovery_error:  Emitted when recovery cannot proceed due to a user-fixable error.
     """
 
     clients_changed = pyqtSignal(list)
     all_clients_changed = pyqtSignal(list, list)  # (active_clients, unhooked_clients)
+    # list[str | None], positionally aligned with the live client list.
+    wizard_names_changed = pyqtSignal(list)
     recovery_error = pyqtSignal(str)
 
     def __init__(
@@ -42,6 +45,8 @@ class ClientManager(QObject):
         self._get_recovery_state = get_recovery_state
 
         self._clients: list = []
+        # Last announced wizard names, so the signal fires on change rather than per tick.
+        self._last_wizard_names: list = []
         # Maps window_handle → username for all clients seen this session.
         self._hwnd_account_map: dict[int, str] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
@@ -105,7 +110,47 @@ class ClientManager(QObject):
         """Unhook WizWalker from the client at the given index without closing its game window."""
         if index >= len(self._clients):
             return
-        client = self._clients[index]
+        prev_clients = list(self._clients)
+        await self._unhook_one(self._clients[index])
+        self._finish_hook_change(prev_clients)
+
+    async def unhook_all(self) -> None:
+        """Unhook every active client at once, leaving all game windows open."""
+        prev_clients = list(self._clients)
+        if not prev_clients:
+            return
+        await asyncio.gather(*[self._unhook_one(c) for c in prev_clients])
+        self._finish_hook_change(prev_clients)
+
+    async def rehook_client(self, hwnd: int) -> None:
+        """Re-activate WizWalker hooks on a previously unhooked client."""
+        client = next((c for c in self._unhooked_clients if c.window_handle == hwnd), None)
+        if client is None:
+            return
+        prev_clients = list(self._clients)
+        if await self._rehook_one(client):
+            self._assign_rehooked_slots([client])
+            self._finish_hook_change(prev_clients)
+
+    async def rehook_all(self) -> None:
+        """Re-activate WizWalker hooks on every previously unhooked client."""
+        candidates = list(self._unhooked_clients)
+        if not candidates:
+            return
+        prev_clients = list(self._clients)
+        results = await asyncio.gather(*[self._rehook_one(c) for c in candidates])
+        rehooked = [c for c, ok in zip(candidates, results) if ok]
+        if not rehooked:
+            return
+        self._assign_rehooked_slots(rehooked)
+        self._finish_hook_change(prev_clients)
+
+    # ------------------------------------------------------------------
+    # Hook toggling internals
+    # ------------------------------------------------------------------
+
+    async def _unhook_one(self, client) -> None:
+        """Close hooks on *client* and move it from the active list to the unhooked list."""
         hwnd = client.window_handle
         self._unhooked_hwnds.add(hwnd)
 
@@ -121,44 +166,40 @@ class ClientManager(QObject):
             except ValueError:
                 pass
 
-        prev_clients = list(self._clients)
         self._clients = [c for c in self._clients if c.window_handle != hwnd]
         self._unhooked_clients.append(client)
+        logger.info("Unhooked client hwnd=%d — game window left open", hwnd)
+
+    async def _rehook_one(self, client) -> bool:
+        """Activate hooks on *client* and move it back into the active list. Returns success."""
+        hwnd = client.window_handle
+        try:
+            await client.activate_hooks()
+        except Exception:
+            logger.exception("Error while rehooking client hwnd=%d", hwnd)
+            return False
+
+        self._unhooked_clients.remove(client)
+        self._unhooked_hwnds.discard(hwnd)
+        self._clients.append(client)
+        logger.info("Rehooked client hwnd=%d", hwnd)
+        return True
+
+    def _assign_rehooked_slots(self, rehooked: list) -> None:
+        """Restore ordering slots for clients that just came back under hooks."""
+        self._refresh_account_map(self._clients)
+        for client in rehooked:
+            username = self._hwnd_account_map.get(client.window_handle)
+            if username:
+                self._assign_slot(username)
+
+    def _finish_hook_change(self, prev_clients: list) -> None:
+        """Reconcile embedding, machine state, and listeners after a hook add/remove."""
         self._sync_embedded_clients(prev_clients, self._clients)
         if self._machine:
             self._machine.set_clients(self._clients)
         self.clients_changed.emit(list(self._clients))
         self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
-        logger.info("Unhooked client hwnd=%d — game window left open", hwnd)
-
-    async def rehook_client(self, hwnd: int) -> None:
-        """Re-activate WizWalker hooks on a previously unhooked client."""
-        client = next((c for c in self._unhooked_clients if c.window_handle == hwnd), None)
-        if client is None:
-            return
-
-        try:
-            await client.activate_hooks()
-        except Exception:
-            logger.exception("Error while rehoooking client hwnd=%d", hwnd)
-            return
-
-        self._unhooked_clients.remove(client)
-        self._unhooked_hwnds.discard(hwnd)
-        self._clients.append(client)
-
-        self._refresh_account_map(self._clients)
-        username = self._hwnd_account_map.get(hwnd)
-        if username:
-            self._assign_slot(username)
-
-        prev_without = [c for c in self._clients if c.window_handle != hwnd]
-        self._sync_embedded_clients(prev_without, self._clients)
-        if self._machine:
-            self._machine.set_clients(self._clients)
-        self.clients_changed.emit(list(self._clients))
-        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
-        logger.info("Rehooked client hwnd=%d", hwnd)
 
     # ------------------------------------------------------------------
     # Client loop
@@ -253,6 +294,19 @@ class ClientManager(QObject):
                     self.clients_changed.emit(self._clients)
                     self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
 
+                # Keep wizard names current: notice character switches, and read the name
+                # for any client that does not have one. One uint64 read per client per
+                # cycle, plus a behavior walk only on a genuine miss.
+                #
+                # Runs *after* the client list is rebuilt above, and over self._clients
+                # rather than the handler's list, for two reasons: the game tiles are keyed
+                # by position in self._clients, so emitting the handler's order would put
+                # names on the wrong tiles once a user reorders players; and tiles for
+                # newly appeared clients are only created by the sync above, so emitting
+                # first would announce names to tiles that do not exist yet — and the next
+                # tick would see no change and stay quiet.
+                await self._refresh_wizard_names(self._clients)
+
                 await asyncio.sleep(1.0)
 
             except MemoryReadError:
@@ -272,6 +326,34 @@ class ClientManager(QObject):
                 self.all_clients_changed.emit([], list(self._unhooked_clients))
                 logger.exception("Client loop error")
                 await asyncio.sleep(3.0)
+
+    async def _refresh_wizard_names(self, clients: list) -> None:
+        """Keep cached wizard names current, and announce them when they change.
+
+        Two jobs. Character switches invalidate a cached name: the window handle the cache
+        is keyed by survives a switch, so without this a cached name goes on naming the
+        previous wizard for the rest of the session — which is what sends a group invite to
+        the wrong character. And any client without a name gets one read from memory, so
+        the sidebar and the game tiles have something to show without anything having asked.
+
+        Memory only — never the character page. Filling a label is not worth opening the
+        character UI on a live client.
+
+        Never raises: a stale name degrades grouping, but an exception here would take down
+        the client loop that owns hook lifecycle and crash recovery.
+        """
+        from bartlebot import wizard_names  # noqa: PLC0415
+
+        try:
+            changed = await wizard_names.fill_names_from_memory(clients)
+        except Exception:
+            logger.debug("Could not refresh wizard names", exc_info=True)
+            return
+
+        names = [wizard_names.cached_name(c) for c in clients]
+        if changed or names != self._last_wizard_names:
+            self._last_wizard_names = names
+            self.wizard_names_changed.emit(list(names))
 
     def _refresh_account_map(self, live_clients: list) -> None:
         """For each live client with an unrecognised HWND, try to match window title to an account."""

@@ -570,9 +570,9 @@ Scope: The PyQt6 GUI — main window layout, node graph canvas, sidebars, game w
 MainWindow (QMainWindow)
   ├─ Menu bar         ← File, View, Run, Launch
   ├─ Horizontal splitter (top)
-  │   ├─ LeftSidebar (QTabWidget)    ← Bot / Properties / Log tabs
+  │   ├─ LeftSidebar (QTabWidget)    ← Bot / Config / Combat / Properties / Log tabs
   │   ├─ GameViewPanel               ← Status header + embedded game windows
-  │   └─ RightSidebar (Sidebar)      ← Clients + Drops sections
+  │   └─ RightSidebar (QTabWidget)   ← Players / Drops tabs
   └─ Vertical splitter (outer)
       └─ BotCanvas                   ← Node graph editor + toolbar + minimap
 ```
@@ -617,7 +617,7 @@ MainWindow (QMainWindow)
 - Splitter positions and window state are persisted — restoring layout across sessions.
 
 **Concerns:**
-- `ClientSection` refreshes every 100ms via async gather. If a WizWalker memory read blocks or raises, the entire refresh stalls. No per-client timeout.
+- ~~`ClientSection` refreshes every 100ms via async gather. If a WizWalker memory read blocks or raises, the entire refresh stalls. No per-client timeout.~~ → each widget refresh is wrapped in `asyncio.wait_for(CLIENT_REFRESH_TIMEOUT)`, and the interval now adapts to bot state and to whether the Players tab is on screen (`client_refresh_interval()`).
 - Copy/paste generates new state IDs deterministically — pasting the same clipboard multiple times could interact unexpectedly with validation if IDs collide with existing states (though the code likely handles this by appending `_copy_N`).
 
 **Resolved since original review:**

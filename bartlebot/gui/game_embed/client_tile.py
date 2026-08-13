@@ -57,6 +57,17 @@ class _GUITHREADINFO(ctypes.Structure):
     ]
 
 
+def pill_text(label: str, wizard_name: str | None) -> str:
+    """Compose the pill caption: the slot label, plus the wizard name once it is known.
+
+    Kept separate from the label itself because the two change independently — reordering
+    clients renumbers "Player N" while the wizard stays put, and a character switch
+    replaces the wizard while the slot stays put. Composing at paint time means neither
+    update can clobber the other.
+    """
+    return f"{label} · {wizard_name}" if wizard_name else label
+
+
 def _get_client_size(hwnd: int) -> tuple[int, int]:
     """Return (width, height) of the window client area."""
     rect = ctypes.wintypes.RECT()
@@ -81,6 +92,7 @@ class ClientTile(QWidget):
         super().__init__(parent)
         self._hwnd = hwnd
         self._label = label
+        self._wizard_name: str | None = None
         self._focused = False
 
         # Pill hit-testing rects (updated each paintEvent)
@@ -136,6 +148,23 @@ class ClientTile(QWidget):
             _user32.AttachThreadInput(self._my_thread_id, self._game_thread_id, True)
 
         self._reposition()
+
+    def set_label(self, label: str) -> None:
+        """Set the slot label (e.g. "Player 2"), repainting if it changed."""
+        if label != self._label:
+            self._label = label
+            self.update()
+
+    def set_wizard_name(self, name: str | None) -> None:
+        """Set the wizard name shown beside the slot label, repainting if it changed."""
+        if name != self._wizard_name:
+            self._wizard_name = name
+            self.update()
+
+    @property
+    def wizard_name(self) -> str | None:
+        """The wizard name currently shown on this tile, if any."""
+        return self._wizard_name
 
     def unembed(self) -> None:
         """Restore the game window to its original parent and style."""
@@ -239,7 +268,7 @@ class ClientTile(QWidget):
         font.setBold(True)
         painter.setFont(font)
         metrics = painter.fontMetrics()
-        text = self._label
+        text = pill_text(self._label, self._wizard_name)
         text_w = metrics.horizontalAdvance(text)
         text_h = metrics.height()
 
@@ -284,8 +313,21 @@ class DetachedTile(QWidget):
     def __init__(self, label: str, parent=None) -> None:
         super().__init__(parent)
         self._label = label
+        self._wizard_name: str | None = None
         self._pill_rect: QRect = QRect()
         self._icon_rect: QRect = QRect()
+
+    def set_label(self, label: str) -> None:
+        """Set the slot label, repainting if it changed."""
+        if label != self._label:
+            self._label = label
+            self.update()
+
+    def set_wizard_name(self, name: str | None) -> None:
+        """Set the wizard name shown beside the slot label, repainting if it changed."""
+        if name != self._wizard_name:
+            self._wizard_name = name
+            self.update()
 
     # ------------------------------------------------------------------
     # Qt event overrides
@@ -321,7 +363,7 @@ class DetachedTile(QWidget):
         pill_font.setBold(True)
         painter.setFont(pill_font)
         metrics = painter.fontMetrics()
-        text = self._label
+        text = pill_text(self._label, self._wizard_name)
         text_w = metrics.horizontalAdvance(text)
         text_h = metrics.height()
 
