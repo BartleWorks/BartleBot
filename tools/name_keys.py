@@ -8,9 +8,11 @@ The decoding itself lives in ``bartlebot/name_tables.py``, since it is productio
 now; this is the command-line front end and the regression check against recorded samples.
 See that module for the byte layout and why the checked-in table snapshot is safe.
 
-VERIFIED against tools/name_key_samples.json.  The layout fell out of comparing characters
-chosen to share different name parts -- every shared part showed up as a shared byte, which
-is what identified one byte per name component:
+VERIFIED against tools/name_key_samples.json -- and against name_key_samples.local.json
+too when it exists, the gitignored file --record writes with this machine's real characters.
+
+The layout fell out of comparing characters chosen to share different name parts: every
+shared part showed up as a shared byte, which is what identified one byte per component.
 
     Luke  SkullHunter    56900648  [3, 100, 60, 40]
     Luke  CycloneHunter  56916008  [3, 100, 120, 40]
@@ -44,14 +46,37 @@ from bartlebot.name_tables import (  # noqa: E402
     split_name_keys,
 )
 
+# The committed fixture: synthetic characters built from the shipped tables. Safe to share,
+# and what CI verifies against.
 SAMPLES_PATH = Path(__file__).parent / "name_key_samples.json"
+
+# Whatever probe_name_behavior.py --record captured on this machine. Real names, so it is
+# gitignored and only ever read, never written, from here. Verifying against it is the
+# point of recording -- it just must not leave the machine.
+LOCAL_SAMPLES_PATH = Path(__file__).parent / "name_key_samples.local.json"
+
+
+def _load_samples() -> list[dict]:
+    """The committed synthetic samples, plus any local recordings."""
+    samples: list[dict] = []
+    for path in (SAMPLES_PATH, LOCAL_SAMPLES_PATH):
+        if not path.exists():
+            continue
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            print(f"could not read {path.name}; skipping it")
+            continue
+        # Skip the leading comment object the committed file carries as a header.
+        samples += [e for e in entries if "m_nameKeys" in e]
+    return samples
 
 
 def cmd_verify(args) -> int:
-    if not SAMPLES_PATH.exists():
+    samples = _load_samples()
+    if not samples:
         print(f"no samples at {SAMPLES_PATH}; record some with probe_name_behavior.py --record")
         return 1
-    samples = json.loads(SAMPLES_PATH.read_text(encoding="utf-8"))
     tables = load_name_tables(args.locale)
     if tables is None:
         print("could not load name tables; regenerate with tools/dump_name_tables.py")

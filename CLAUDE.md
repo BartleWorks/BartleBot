@@ -117,9 +117,20 @@ poetry run python tools/name_keys.py --decode 56900648   # -> "Luke SkullHunter"
 
 `tools/name_key_samples.json` is generated this way: real `m_nameKeys` values for
 characters that do not exist, which still decode correctly and still exercise the
-real tables. If a probe records real data while you are working, scrub it before
-committing — `tools/probe_name_behavior.py --record` writes actual account values
-by design.
+real tables. It is tracked, and safe to share.
+
+Tools that capture real values write to gitignored paths, so an accidental commit
+is not possible by mistake:
+
+| written by | path | tracked |
+|---|---|---|
+| `probe_name_behavior.py --record` | `tools/name_key_samples.local.json` | no (`*.local.json`) |
+| `probe_wizard_name.py` | `probe_*_report.txt` | no |
+
+`name_keys.py --verify` reads both the tracked fixture and the local file when
+present, so recordings are still useful locally — they just cannot leave the
+machine. Follow that pattern for any new tool that records live account data:
+write to `*.local.json`, never append to a tracked file.
 
 Bot files under `bots/` are the easy one to miss: `friend_name` and similar
 parameters hold real character names and are functional, so redact them

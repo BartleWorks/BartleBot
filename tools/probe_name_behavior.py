@@ -54,9 +54,10 @@ CONFIRMED (2026-08-12, live client, Karamelle / dorm / Arcanum)
 WHAT IS STILL OPEN
     How to turn m_nameKeys into text.  Nothing in wizwalker, wizsprinter or Deimos decodes
     it, so the packing has to be derived from samples: --record pairs the value with a name
-    you supply and accumulates them in name_key_samples.json.  Names sharing a first name
-    or a surname are the most informative, since a shared part should appear as a shared
-    field.  Until that is solved, detect_wizard_name()'s keypress route stays.
+    you supply and accumulates them in name_key_samples.local.json -- gitignored, because
+    it holds real character names.  Names sharing a first name or a surname are the most
+    informative, since a shared part should appear as a shared field.  Until that is
+    solved, detect_wizard_name()'s keypress route stays.
 
 WHAT WOULD SINK IT
     m_nameKeys turning out to be a server-side handle rather than dictionary indices --
@@ -153,7 +154,11 @@ BIT_SPLITS: list[tuple[str, tuple[int, ...]]] = [
     ("16/16", (16, 16)),
 ]
 
-SAMPLES_PATH = Path(__file__).parent / "name_key_samples.json"
+# --record writes REAL character names and ids, so it writes to a gitignored file rather
+# than to the committed sample set. tools/name_key_samples.json is a synthetic fixture and
+# stays tracked; nothing here ever appends to it. Keeping the two files apart means an
+# accidental commit of real player data is not possible by mistake, only deliberately.
+LOCAL_SAMPLES_PATH = Path(__file__).parent / "name_key_samples.local.json"
 
 # The known-good control from probe_wizard_name.py: a reliable character identity that
 # held steady through a zone change and tracked character switches correctly.
@@ -338,13 +343,14 @@ async def cmd_record(clients, wizard_name: str) -> int:
     snap = await snapshot(clients[0])
     for line in format_snapshot("\n=== client 0 ===", snap):
         print(line)
-    sample = record_sample(SAMPLES_PATH, wizard_name, snap)
+    sample = record_sample(LOCAL_SAMPLES_PATH, wizard_name, snap)
     if sample is None:
         print("\nCould not record: no readable m_nameKeys on this client.")
         return 1
-    total = len(json.loads(SAMPLES_PATH.read_text(encoding="utf-8")))
+    total = len(json.loads(LOCAL_SAMPLES_PATH.read_text(encoding="utf-8")))
     print(
-        f"\nRecorded {wizard_name!r} -> m_nameKeys={sample['m_nameKeys']} in {SAMPLES_PATH.name} ({total} sample(s))."
+        f"\nRecorded {wizard_name!r} -> m_nameKeys={sample['m_nameKeys']} in "
+        f"{LOCAL_SAMPLES_PATH.name} ({total} sample(s)) -- gitignored, holds real names."
     )
     print("Switch character and record again. Names sharing a first name or a surname are")
     print("the most informative -- a shared part should show up as a shared field.")
