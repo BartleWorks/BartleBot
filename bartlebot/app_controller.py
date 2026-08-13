@@ -159,6 +159,12 @@ class AppController(QObject):
         w.right_sidebar.clients.rehook_requested.connect(
             lambda hwnd: asyncio.ensure_future(self._client_manager.rehook_client(hwnd))
         )
+        w.right_sidebar.clients.unhook_all_requested.connect(
+            lambda: asyncio.ensure_future(self._client_manager.unhook_all())
+        )
+        w.right_sidebar.clients.rehook_all_requested.connect(
+            lambda: asyncio.ensure_future(self._client_manager.rehook_all())
+        )
 
         self._client_manager.recovery_error.connect(
             lambda msg: QMessageBox.critical(self._window, "Client Recovery Failed", msg)

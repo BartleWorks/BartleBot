@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QVBoxLayout
+from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from bartlebot.gui.sidebar.client_widget import ClientWidget
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
@@ -21,16 +21,41 @@ class ClientSection(SidebarSection):
     swap_requested = pyqtSignal(int, int)
     unhook_requested = pyqtSignal(int)  # index of active client to unhook
     rehook_requested = pyqtSignal(int)  # HWND of unhooked client to rehook
+    unhook_all_requested = pyqtSignal()
+    rehook_all_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__("Players", parent)
         self._widgets: list[ClientWidget] = []
         self._refresh_task: asyncio.Task | None = None
         self._refresh_interval: float = CLIENT_REFRESH_INTERVAL_IDLE
+        self._bot_running = False
 
         self._clients_layout = QVBoxLayout()
         self._clients_layout.setSpacing(0)
+        self._clients_layout.addWidget(self._build_bulk_row())
         self.set_content_layout(self._clients_layout)
+
+    def _build_bulk_row(self) -> QWidget:
+        """Row of Unhook All / Rehook All buttons pinned above the per-client widgets."""
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(6, 0, 6, 4)
+        layout.setSpacing(4)
+
+        self._unhook_all_btn = QPushButton("Unhook All")
+        self._unhook_all_btn.setToolTip("Unhook every client (leaves all game windows open)")
+        self._unhook_all_btn.setEnabled(False)
+        self._unhook_all_btn.clicked.connect(self.unhook_all_requested)
+        layout.addWidget(self._unhook_all_btn)
+
+        self._rehook_all_btn = QPushButton("Rehook All")
+        self._rehook_all_btn.setToolTip("Re-hook every unhooked client into BartleBot")
+        self._rehook_all_btn.setEnabled(False)
+        self._rehook_all_btn.clicked.connect(self.rehook_all_requested)
+        layout.addWidget(self._rehook_all_btn)
+
+        return row
 
     # ------------------------------------------------------------------
     # Public API
@@ -63,13 +88,27 @@ class ClientSection(SidebarSection):
             self._clients_layout.addWidget(widget)
             self._widgets.append(widget)
 
+        self._update_bulk_buttons()
         self._start_refresh_loop()
 
     def set_bot_running(self, running: bool) -> None:
         """Switch refresh rate between idle and active-bot modes."""
+        self._bot_running = running
         self._refresh_interval = CLIENT_REFRESH_INTERVAL_RUN if running else CLIENT_REFRESH_INTERVAL_IDLE
         for w in self._widgets:
             w.set_bot_running(running)
+        self._update_bulk_buttons()
+
+    def _update_bulk_buttons(self) -> None:
+        """Enable each bulk button only when it has clients to act on.
+
+        Unhooking mid-run would pull clients out from under the FSM, so that button
+        follows the same bot-running lockout as the per-client Unhook button.
+        """
+        has_active = any(not w.is_unhooked for w in self._widgets)
+        has_unhooked = any(w.is_unhooked for w in self._widgets)
+        self._unhook_all_btn.setEnabled(has_active and not self._bot_running)
+        self._rehook_all_btn.setEnabled(has_unhooked)
 
     # ------------------------------------------------------------------
     # Internal

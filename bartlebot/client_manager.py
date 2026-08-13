@@ -105,7 +105,47 @@ class ClientManager(QObject):
         """Unhook WizWalker from the client at the given index without closing its game window."""
         if index >= len(self._clients):
             return
-        client = self._clients[index]
+        prev_clients = list(self._clients)
+        await self._unhook_one(self._clients[index])
+        self._finish_hook_change(prev_clients)
+
+    async def unhook_all(self) -> None:
+        """Unhook every active client at once, leaving all game windows open."""
+        prev_clients = list(self._clients)
+        if not prev_clients:
+            return
+        await asyncio.gather(*[self._unhook_one(c) for c in prev_clients])
+        self._finish_hook_change(prev_clients)
+
+    async def rehook_client(self, hwnd: int) -> None:
+        """Re-activate WizWalker hooks on a previously unhooked client."""
+        client = next((c for c in self._unhooked_clients if c.window_handle == hwnd), None)
+        if client is None:
+            return
+        prev_clients = list(self._clients)
+        if await self._rehook_one(client):
+            self._assign_rehooked_slots([client])
+            self._finish_hook_change(prev_clients)
+
+    async def rehook_all(self) -> None:
+        """Re-activate WizWalker hooks on every previously unhooked client."""
+        candidates = list(self._unhooked_clients)
+        if not candidates:
+            return
+        prev_clients = list(self._clients)
+        results = await asyncio.gather(*[self._rehook_one(c) for c in candidates])
+        rehooked = [c for c, ok in zip(candidates, results) if ok]
+        if not rehooked:
+            return
+        self._assign_rehooked_slots(rehooked)
+        self._finish_hook_change(prev_clients)
+
+    # ------------------------------------------------------------------
+    # Hook toggling internals
+    # ------------------------------------------------------------------
+
+    async def _unhook_one(self, client) -> None:
+        """Close hooks on *client* and move it from the active list to the unhooked list."""
         hwnd = client.window_handle
         self._unhooked_hwnds.add(hwnd)
 
@@ -121,44 +161,40 @@ class ClientManager(QObject):
             except ValueError:
                 pass
 
-        prev_clients = list(self._clients)
         self._clients = [c for c in self._clients if c.window_handle != hwnd]
         self._unhooked_clients.append(client)
+        logger.info("Unhooked client hwnd=%d — game window left open", hwnd)
+
+    async def _rehook_one(self, client) -> bool:
+        """Activate hooks on *client* and move it back into the active list. Returns success."""
+        hwnd = client.window_handle
+        try:
+            await client.activate_hooks()
+        except Exception:
+            logger.exception("Error while rehooking client hwnd=%d", hwnd)
+            return False
+
+        self._unhooked_clients.remove(client)
+        self._unhooked_hwnds.discard(hwnd)
+        self._clients.append(client)
+        logger.info("Rehooked client hwnd=%d", hwnd)
+        return True
+
+    def _assign_rehooked_slots(self, rehooked: list) -> None:
+        """Restore ordering slots for clients that just came back under hooks."""
+        self._refresh_account_map(self._clients)
+        for client in rehooked:
+            username = self._hwnd_account_map.get(client.window_handle)
+            if username:
+                self._assign_slot(username)
+
+    def _finish_hook_change(self, prev_clients: list) -> None:
+        """Reconcile embedding, machine state, and listeners after a hook add/remove."""
         self._sync_embedded_clients(prev_clients, self._clients)
         if self._machine:
             self._machine.set_clients(self._clients)
         self.clients_changed.emit(list(self._clients))
         self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
-        logger.info("Unhooked client hwnd=%d — game window left open", hwnd)
-
-    async def rehook_client(self, hwnd: int) -> None:
-        """Re-activate WizWalker hooks on a previously unhooked client."""
-        client = next((c for c in self._unhooked_clients if c.window_handle == hwnd), None)
-        if client is None:
-            return
-
-        try:
-            await client.activate_hooks()
-        except Exception:
-            logger.exception("Error while rehoooking client hwnd=%d", hwnd)
-            return
-
-        self._unhooked_clients.remove(client)
-        self._unhooked_hwnds.discard(hwnd)
-        self._clients.append(client)
-
-        self._refresh_account_map(self._clients)
-        username = self._hwnd_account_map.get(hwnd)
-        if username:
-            self._assign_slot(username)
-
-        prev_without = [c for c in self._clients if c.window_handle != hwnd]
-        self._sync_embedded_clients(prev_without, self._clients)
-        if self._machine:
-            self._machine.set_clients(self._clients)
-        self.clients_changed.emit(list(self._clients))
-        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
-        logger.info("Rehooked client hwnd=%d", hwnd)
 
     # ------------------------------------------------------------------
     # Client loop
