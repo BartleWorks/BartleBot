@@ -222,6 +222,23 @@ GROUP_UI_SETTLE = 1.0
 # for the whole fleet rather than one per client, which is where the win came from instead.
 
 
+HOUSING_EQUIP_TIMEOUT = 5.0
+# Ceiling on waiting for a castle's "equipped" fist icon to reflect an Equip_Item click.
+# Equipping is a server round-trip, but the icon is the game's own confirmation, so this is
+# polled rather than slept through. Generous because the only cost of a high ceiling is the
+# time taken by a click that was never going to land.
+
+HOUSING_OPEN_RETRIES = 3
+# Attempts at pressing U to open the housing page. The key is swallowed when another
+# spellbook page owns the window, which one ESC clears — so a second attempt almost always
+# succeeds and a third is pure margin.
+
+HOUSING_PAGE_MAX = 10
+# Ceiling on how many pages of the castle list are searched. At 8 rows per page this covers
+# 80 castles, far past any real inventory; it exists so that a paging control that stops
+# advancing cannot spin forever.
+
+
 CHARACTER_PAGE_SETTLE = 0.5
 # Pause after pressing C, so the character page is rendered before its title is read.
 # Unlike GROUP_UI_SETTLE this is not the floor on the operation: it is followed by a poll

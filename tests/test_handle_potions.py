@@ -2,6 +2,7 @@
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.combat.handle_potions as hp
@@ -405,7 +406,7 @@ async def test_enter_zone_called_twice_for_route():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# _teleport_home_and_verify_dorm
+# _press_home_until_dorm
 # ══════════════════════════════════════════════════════════════════════════════
 
 
@@ -423,7 +424,7 @@ async def test_home_lands_in_dorm_first_try():
     none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
 
     with none_load, patch.object(hp, "POLL_INTERVAL", 0):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp._press_home_until_dorm(FakeMachine(), [client])
 
     assert result is True
 
@@ -437,7 +438,7 @@ async def test_home_wrong_zone_dorm_button_wait_second_press_succeeds():
     btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
 
     with none_load, btn_enabled, patch.object(hp, "POLL_INTERVAL", 0):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp._press_home_until_dorm(FakeMachine(), [client])
 
     assert result is True
 
@@ -456,7 +457,7 @@ async def test_home_dorm_button_timeout_returns_false():
         patch.object(hp, "COMPASS_TELEPORT_TIMEOUT", 0.01),
         patch.object(hp, "POLL_INTERVAL", 0),
     ):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp._press_home_until_dorm(FakeMachine(), [client])
 
     assert result is False
 
@@ -470,7 +471,7 @@ async def test_home_both_attempts_wrong_zone_returns_false():
     btn_enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
 
     with none_load, btn_enabled, patch.object(hp, "POLL_INTERVAL", 0):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp._press_home_until_dorm(FakeMachine(), [client])
 
     assert result is False
 
@@ -487,7 +488,7 @@ async def test_home_loading_timeout_still_checks_zone():
         patch.object(hp, "_HOME_LOADING_TIMEOUT", 0.01),
         patch.object(hp, "POLL_INTERVAL", 0),
     ):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+        result = await hp._press_home_until_dorm(FakeMachine(), [client])
 
     # Zone is DORM, so should still succeed.
     assert result is True
@@ -518,7 +519,7 @@ async def test_home_only_retries_clients_not_yet_in_dorm():
     click_patch = patch.object(nh, "click_by_path", side_effect=fake_click)
 
     with none_load, btn_enabled, click_patch, patch.object(hp, "POLL_INTERVAL", 0):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [c_dorm, c_house])
+        result = await hp._press_home_until_dorm(FakeMachine(), [c_dorm, c_house])
 
     assert result is True
     assert pressed_for.count(c_dorm) == 1  # reached dorm on first press; no retry
@@ -538,9 +539,100 @@ async def test_home_repressed_for_lagging_client():
     none_load = patch.object(nh, "none_loading", new=AsyncMock(return_value=True))
 
     with none_load, patch.object(hp, "POLL_INTERVAL", 0):
-        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [c1, c2])
+        result = await hp._press_home_until_dorm(FakeMachine(), [c1, c2])
 
     assert result is True
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# _teleport_home_and_verify_dorm — the castle unequip wrapper around the above
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def _housing_patches(unequip_returns=None, equip_returns=True):
+    """Patch the housing module as handle_potions sees it."""
+    return (
+        patch.object(hp.housing, "unequip_castle", new=AsyncMock(return_value=unequip_returns)),
+        patch.object(hp.housing, "equip_castle", new=AsyncMock(return_value=equip_returns)),
+    )
+
+
+async def test_castle_is_unequipped_before_home_and_restored_after():
+    client = FakeClient()
+    unequip, equip = _housing_patches(unequip_returns="Red Barn Farm")
+    press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
+
+    with unequip as u, equip as e, press:
+        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+
+    assert result is True
+    u.assert_awaited_once_with(client)
+    e.assert_awaited_once_with(client, "Red Barn Farm")
+
+
+async def test_castle_is_restored_even_when_home_fails():
+    """The restore is in a finally block — a failed teleport must not cost somebody their home."""
+    client = FakeClient()
+    unequip, equip = _housing_patches(unequip_returns="Red Barn Farm")
+    press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=False))
+
+    with unequip, equip as e, press:
+        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+
+    assert result is False
+    e.assert_awaited_once_with(client, "Red Barn Farm")
+
+
+async def test_castle_is_restored_even_when_home_raises():
+    client = FakeClient()
+    unequip, equip = _housing_patches(unequip_returns="Red Barn Farm")
+    press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(side_effect=RuntimeError("boom")))
+
+    with unequip, equip as e, press, pytest.raises(RuntimeError):
+        await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+
+    e.assert_awaited_once_with(client, "Red Barn Farm")
+
+
+async def test_no_castle_equipped_skips_the_restore():
+    """A wizard whose home is already the dorm has nothing to unequip and nothing to put back."""
+    client = FakeClient()
+    unequip, equip = _housing_patches(unequip_returns=None)
+    press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
+
+    with unequip, equip as e, press:
+        result = await hp._teleport_home_and_verify_dorm(FakeMachine(), [client])
+
+    assert result is True
+    e.assert_not_awaited()
+
+
+async def test_failed_restore_warns_but_does_not_fail_the_step():
+    """The trip home worked; the user is told to fix the home by hand rather than losing the run."""
+    client = FakeClient()
+    machine = FakeMachine()
+    unequip, equip = _housing_patches(unequip_returns="Red Barn Farm", equip_returns=False)
+    press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
+
+    with unequip, equip, press:
+        result = await hp._teleport_home_and_verify_dorm(machine, [client])
+
+    assert result is True
+    assert any("Red Barn Farm" in str(entry) for entry in machine.logs)
+
+
+async def test_only_clients_with_castles_are_restored():
+    """Two clients, one with a castle — the other must not be handed a castle it never had."""
+    c_castle = FakeClient()
+    c_dorm = FakeClient()
+    unequip = patch.object(hp.housing, "unequip_castle", new=AsyncMock(side_effect=["Red Barn Farm", None]))
+    equip = patch.object(hp.housing, "equip_castle", new=AsyncMock(return_value=True))
+    press = patch.object(hp, "_press_home_until_dorm", new=AsyncMock(return_value=True))
+
+    with unequip, equip as e, press:
+        await hp._teleport_home_and_verify_dorm(FakeMachine(), [c_castle, c_dorm])
+
+    e.assert_awaited_once_with(c_castle, "Red Barn Farm")
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -5,7 +5,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot.nodes import node_helpers
+from bartlebot.nodes import housing, node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
@@ -142,10 +142,11 @@ async def run(machine, clients: list, params: dict) -> str:
             Return FAILURE if any are found there.
       5. Snapshot current zone and position as the mark/recall target.
       6. Call mark_location.run() for buying_clients. Return FAILURE if it fails.
-      7. Click GotoDormButton to teleport home; retry once if the first press lands in a
-         non-dorm zone (handles non-dorm primary residences). Each attempt only re-presses
-         HOME for clients that have not yet reached the dorm. Return FAILURE if any client
-         fails to reach the dorm after both attempts.
+      7. Temporarily unequip any equipped castle, then click GotoDormButton to teleport home;
+         retry once if the first press lands in a non-dorm zone. Each attempt only re-presses
+         HOME for clients that have not yet reached the dorm. Castles are re-equipped before
+         this step returns, whether it succeeded or not. Return FAILURE if any client fails
+         to reach the dorm after both attempts.
       8. Call enter_zone.run() Dorm → Ravenwood. Return FAILURE if it fails.
       9. Call enter_zone.run() Ravenwood → Commons. Return FAILURE if it fails.
       10. Teleport to Hilda Brewer, wait for the interact prompt, press X to open the potion
@@ -347,16 +348,44 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     """
     Press HOME and verify all clients end up in DORM_ZONE.
 
-    Retries once for any client that didn't land in the dorm on the first press
-    (e.g., a client whose primary residence is a non-dorm house). Each attempt only
-    re-presses HOME for clients not yet confirmed in the dorm, so a client that
-    reached the dorm on attempt 1 is never pressed again during its HOME cooldown.
+    Any client with a castle equipped is unequipped first, so that GotoDormButton lands in
+    the dorm on the first press. Without that, such a client lands in its castle instead and
+    has to sit out the ~30 s teleport cooldown before a second press — and the Arcanum
+    Apartment case never recovers at all, because it has no spiral door back to a street
+    from which HOME reaches the dorm. Each castle is restored as soon as its client is in
+    the dorm, in a finally block so that a failure anywhere in here cannot leave somebody's
+    home unequipped.
 
-    NOTE: Clients with a non-dorm primary residence are expected to end up in the dorm
-    on the second HOME press (most houses have a spiral door that returns to the street,
-    from which HOME reaches the dorm). The Arcanum Apartment edge case is not handled
-    and will result in FAILURE.
+    The retry is kept for clients where the unequip did not happen — it is skipped when no
+    castle is equipped, and it can fail for its own reasons — so the old slow path is still
+    there as a fallback. Each attempt only re-presses HOME for clients not yet confirmed in
+    the dorm, so a client that reached the dorm on attempt 1 is never pressed again during
+    its HOME cooldown.
     """
+    machine.log(f"Unequipping castles for {len(clients)} client(s) so HOME reaches the dorm…", logging.DEBUG)
+    castles = await asyncio.gather(*[housing.unequip_castle(c) for c in clients])
+    for c, castle in zip(clients, castles):
+        if castle:
+            machine.log(f"Unequipped {castle!r} for client {getattr(c, 'title', repr(c))}", logging.DEBUG)
+
+    try:
+        return await _press_home_until_dorm(machine, clients)
+    finally:
+        restorable = [(c, castle) for c, castle in zip(clients, castles) if castle]
+        if restorable:
+            machine.log(f"Re-equipping {len(restorable)} castle(s)…", logging.DEBUG)
+            restored = await asyncio.gather(*[housing.equip_castle(c, castle) for c, castle in restorable])
+            for (c, castle), ok in zip(restorable, restored):
+                if not ok:
+                    machine.log(
+                        f"Could not re-equip castle {castle!r} for client "
+                        f"{getattr(c, 'title', repr(c))} — re-equip it by hand from the housing page (U).",
+                        logging.WARNING,
+                    )
+
+
+async def _press_home_until_dorm(machine, clients: list) -> bool:
+    """Press HOME, up to twice, until every client is in DORM_ZONE."""
     needs_home = list(clients)
 
     for attempt in range(1, 3):

@@ -286,6 +286,64 @@ def group_member_name_path(line: int) -> list[str]:
 # Shown to the INVITER when the player they invited is already in a group.
 ALREADY_IN_GROUP_DISMISS_PATH = MESSAGE_BOX_RIGHT
 
+# Housing page (opened with the U key), Castles tab.
+#
+# handle_potions uses this to temporarily unequip a non-dorm primary residence, so that
+# GotoDormButton lands in the dorm on the first press instead of costing a full
+# COMPASS_TELEPORT_TIMEOUT wait for the teleport cooldown before a second press.
+#
+# TabBackground is the Castles tab button, and doubles as the marker that the housing page
+# is actually open — no other spellbook page has it. Equip_Item appears only on the Castles
+# tab, so its presence (visible, not enabled — it is grayed until a row is selected) is what
+# says the right tab is showing. Item_1 is the first row.
+#
+# Row order is only stable while the window stays open. The equipped castle sorts first, but
+# closing and reopening the page resorts the list alphabetically — so a castle unequipped
+# before a teleport is NOT Item_1 when the page is reopened afterwards, and re-equipping by
+# position would equip whichever castle sorts first. Anything that unequips must cache the
+# name and search for it on the way back.
+HOUSING_CASTLES_TAB_PATH = ["WorldView", "DeckConfiguration", "FurnitureSpellbookPage", "TabBackground"]
+HOUSING_EQUIP_BUTTON_PATH = [
+    "WorldView",
+    "DeckConfiguration",
+    "FurnitureSpellbookPage",
+    "windowForBtns",
+    "Layout",
+    "Equip_Item",
+]
+HOUSING_PAGE_PATH = ["WorldView", "DeckConfiguration", "FurnitureSpellbookPage"]
+
+# Paging controls for the castle list. Hidden when everything fits on one page.
+HOUSING_SCROLL_LEFT_PATH = HOUSING_PAGE_PATH + ["leftscroll"]
+HOUSING_SCROLL_RIGHT_PATH = HOUSING_PAGE_PATH + ["rightscroll"]
+
+
+def housing_castle_row_path(row: int) -> list[str]:
+    """Return the path to castle list row `row` (1-based; the page shows 8 at a time).
+
+    The row window's own text is the castle's name, so get_text_by_path on this path reads
+    it directly — there is no separate label child. An empty string means an empty slot.
+    """
+    return HOUSING_PAGE_PATH + [f"Item_{row}"]
+
+
+def housing_castle_equipped_icon_path(row: int) -> list[str]:
+    """Return the path to the "equipped" fist icon on castle list row `row`.
+
+    is_visible on this icon is what distinguishes an equipped castle from an unequipped one
+    — Equip_Item is a toggle with no readable label state, so without this a player with
+    castles but none equipped is indistinguishable from one with a castle equipped, and
+    clicking the toggle would EQUIP a castle for somebody who wants none.
+
+    Confirmed by tools/probe_housing_equip.py (2026-08-13): visible=True on the equipped
+    row, False on every other row and on every row when nothing is equipped. Note that the
+    icon's is_control_grayed and maybe_checked ALSO differ between those two states and are
+    both traps — the same probe caught them flipping at random on unrelated hidden windows
+    between two otherwise identical runs, so they are uninitialised memory, not signal.
+    """
+    return housing_castle_row_path(row) + ["fist"]
+
+
 # Character page (opened with the C key) — used to read this client's own wizard name.
 # Located by name search rather than a fixed path: the page's parent chain is not recorded
 # anywhere, and a guessed path would fail silently. See wizard_names.detect_wizard_name().
