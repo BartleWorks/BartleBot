@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL
+from bartlebot.nodes.timing import DROP_MESSAGE_POLL, DROP_MESSAGE_TIMEOUT, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -79,7 +79,7 @@ NODE_SPEC = NodeSpec(
 
 async def _collect_for_client(machine, client, client_idx: int, entity_names: list[str], safety_delay: float) -> int:
     """Find and collect all matching reagent entities for a single client. Returns collected count."""
-    from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
+    from bartlebot.utils.drop_detection import chat_available, poll_new_drops, snapshot_chat  # noqa: PLC0415
 
     entities = []
     for name in entity_names:
@@ -97,6 +97,24 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         logging.DEBUG,
     )
     collected = 0
+
+    # Drop announcements arrive from the server well after the reagent prompt has
+    # closed, so the chat baseline is carried across the whole pass rather than
+    # re-snapshotted per pickup: a message that misses its own poll window is then
+    # still detected on a later one instead of being absorbed into a new baseline.
+    track_drops = await chat_available(client)
+    if not track_drops:
+        machine.log(
+            f"Client {client_idx + 1}: chat log not visible — drops will not be logged this pass",
+            logging.WARNING,
+        )
+    drop_baseline = await snapshot_chat(client) if track_drops else ""
+
+    async def _report_drops() -> None:
+        nonlocal drop_baseline
+        drops, drop_baseline = await poll_new_drops(client, drop_baseline, DROP_MESSAGE_TIMEOUT, DROP_MESSAGE_POLL)
+        for item_name in drops:
+            machine.on_drop(item_name, 1, client_idx)
 
     for i, entity in enumerate(entities, start=1):
         try:
@@ -120,7 +138,6 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         )
 
         if prompted:
-            chat_before = await snapshot_chat(client)
             await client.send_key(Keycode.X, 0.1)
             dismissed = await node_helpers.poll_until(
                 lambda: node_helpers.none_in_npc_range([client]),
@@ -129,8 +146,8 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
             )
             if dismissed:
                 collected += 1
-                for item_name in extract_new_drops(chat_before, await snapshot_chat(client)):
-                    machine.on_drop(item_name, 1, client_idx)
+                if track_drops:
+                    await _report_drops()
             else:
                 machine.log(
                     f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after X, skipping",
@@ -141,6 +158,12 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
                 f"Client {client_idx + 1}: entity {i} — no prompt after teleport, skipping",
                 logging.DEBUG,
             )
+
+    # One last look: the final pickup has no following iteration to catch a late
+    # message, and a single pickup that yields two items announces them on
+    # separate lines, so the per-pickup poll can return with one still in flight.
+    if track_drops and collected:
+        await _report_drops()
 
     return collected
 

@@ -1,6 +1,6 @@
 """Unit tests for the collect_reagent node (entity-name API)."""
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from wizwalker import XYZ
 
@@ -16,6 +16,7 @@ _XYZ_B = XYZ(-300.0, 500.0, 50.0)
 # Patch targets for drop-detection I/O
 _SNAP = "bartlebot.utils.drop_detection.snapshot_chat"
 _EXTRACT = "bartlebot.utils.drop_detection.extract_new_drops"
+_AVAIL = "bartlebot.utils.drop_detection.chat_available"
 
 
 def _entity(xyz: XYZ = _XYZ_A) -> FakeEntity:
@@ -247,12 +248,64 @@ async def test_drop_tracking():
     client.get_base_entities_with_vague_name.return_value = [_entity()]
     client.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
     machine = FakeMachine()
+    calls = 0
+
+    def extract(before, after):
+        nonlocal calls
+        calls += 1
+        return ["Mandrake"] if calls == 2 else []  # absent on the first read, present on the second
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
+        patch.object(cr, "DROP_MESSAGE_TIMEOUT", 0.3),
+        patch(_AVAIL, new=AsyncMock(return_value=True)),
         patch(_SNAP, new=AsyncMock(return_value="")),
-        patch(_EXTRACT, return_value=["Mandrake"]),
+        patch(_EXTRACT, new=extract),
     ):
         await cr.run(machine, [client], _PARAMS)
 
-    assert ("Mandrake", 1, 0) in machine.drops
+    assert machine.drops.count(("Mandrake", 1, 0)) == 1
+
+
+async def test_drop_arriving_after_its_own_poll_window_is_still_logged():
+    """A message that misses one pickup's poll window is caught on the next pickup.
+
+    The chat baseline is carried across the pass, so a late announcement is not
+    absorbed into a fresh baseline and lost.
+    """
+    client = FakeClient()
+    client.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_A), _entity(_XYZ_B)]
+    client.is_in_npc_range.side_effect = [True, False, True, False]
+    machine = FakeMachine()
+
+    # First pickup's poll times out empty; the message shows up during the second.
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch.object(cr, "DROP_MESSAGE_TIMEOUT", 0),
+        patch(_AVAIL, new=AsyncMock(return_value=True)),
+        patch(_SNAP, new=AsyncMock(return_value="")),
+        patch(_EXTRACT, side_effect=[[], ["Mandrake"], []]),
+    ):
+        await cr.run(machine, [client], _PARAMS)
+
+    assert machine.drops.count(("Mandrake", 1, 0)) == 1
+
+
+async def test_hidden_chat_skips_drop_detection():
+    """With the chat log hidden there is nothing to poll, so no time is spent trying."""
+    client = FakeClient()
+    client.get_base_entities_with_vague_name.return_value = [_entity()]
+    client.is_in_npc_range.side_effect = [True, False]
+    machine = FakeMachine()
+    extract = MagicMock()
+
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch(_AVAIL, new=AsyncMock(return_value=False)),
+        patch(_EXTRACT, new=extract),
+    ):
+        result = await cr.run(machine, [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert machine.drops == []
+    extract.assert_not_called()

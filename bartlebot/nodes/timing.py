@@ -78,6 +78,18 @@ DIALOG_FAST_POLL_INTERVAL = 0.05
 # Safety Delay window has elapsed with no further dialogue.
 
 
+DROP_MESSAGE_TIMEOUT = 3.0
+# Seconds to keep watching the chat log for a drop announcement after an action
+# that should have produced one. The message is a server round-trip, so it lands
+# after the local UI has already finished reacting — diffing the chat the instant
+# a reagent prompt disappears reads it as it was before the drop. Only paid in
+# full when nothing arrives at all; the poll returns as soon as a line shows up.
+
+DROP_MESSAGE_POLL = 0.1
+# How often to re-read the chat log while waiting for a drop announcement. Finer
+# than POLL_INTERVAL because this wait sits between two game actions, so every
+# poll cycle spent past the message's arrival is added latency per pickup.
+
 CLIENT_REFRESH_INTERVAL_IDLE = 0.1
 # Seconds between client sidebar refreshes when no bot is running.
 
