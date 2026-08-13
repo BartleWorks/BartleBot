@@ -98,6 +98,32 @@ This bug caused the client section sidebar (zone/XYZ display) to freeze for the 
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
+### No real player data
+
+Never commit real, identifiable player data — wizard names, character ids, account
+ids, friend codes, or screenshots showing them. This repo is public, and a real
+wizard name links the account to whoever wrote the commit.
+
+This applies to test fixtures, sample data, docstrings, comments, log excerpts
+pasted into issues, and bot files. It applies to *any* player, not just your own.
+
+Use synthetic values instead. For anything name-shaped, build it from the shipped
+tables so it stays realistic and verifiable rather than arbitrary:
+
+```bash
+poetry run python tools/name_keys.py --decode 56900648   # -> "Luke SkullHunter"
+```
+
+`tools/name_key_samples.json` is generated this way: real `m_nameKeys` values for
+characters that do not exist, which still decode correctly and still exercise the
+real tables. If a probe records real data while you are working, scrub it before
+committing — `tools/probe_name_behavior.py --record` writes actual account values
+by design.
+
+Bot files under `bots/` are the easy one to miss: `friend_name` and similar
+parameters hold real character names and are functional, so redact them
+deliberately rather than by find-and-replace.
+
 ### Testing
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
@@ -204,6 +230,78 @@ For wizsprinter, the same shape at a much lower cadence:
 ```bash
 cd ../wizsprinter && git fetch deimos && git merge deimos/main
 ```
+
+## Reading the game's own data
+
+Two sources answer most "what is this offset / where does this value come from"
+questions without probing a live client. **Check both before writing a probe** —
+several days of `probe_*.py` work has been spent rediscovering things that were
+sitting in one of these.
+
+### Type dumps: `tools/r<rev>_WizardDev.json`
+
+A wiztype dump of every game class with the exact byte offset of each property —
+about 7,000 classes and 49,000 properties. Query it with `tools/typedump.py`:
+
+```bash
+poetry run python tools/typedump.py at ClientObject 448     # what lives at this offset?
+poetry run python tools/typedump.py show DeckListControl    # full layout, incl. inherited
+poetry run python tools/typedump.py prop "characterId"      # find a property everywhere
+poetry run python tools/typedump.py classes "SpellList"     # find classes by regex
+poetry run python tools/typedump.py gaps DeckListControl    # holes where raw members hide
+poetry run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
+poetry run python tools/typedump.py diff <old.json> <new.json>
+```
+
+Two things to know before trusting it:
+
+- **It covers reflected PropertyClass properties only.** Raw C++ members — child
+  pointers, manager handles, the entry vectors `deck_io.py` reads — never appear.
+  `gaps` is the workaround: it brackets those between named neighbours, which is
+  how `deck_io`'s `0x300` entry vector shows up as a 40-byte hole between
+  `m_treasureFrame` and `m_cardSize`.
+- **A class name is not the runtime behavior template name**, and the difference
+  is not derivable: `ClientWizPlayerNameBehavior` → `"WizPlayerNameBehavior"`,
+  `ClientTreasureBookBehavior` → `"BasicTreasureBookBehavior"`,
+  `ClientInventoryBehavior` → `"WizardInventoryBehavior"`. The authoritative list
+  is `await client_object.list_behavior_names()` on a live client.
+
+**Dumps are committed, and old ones are never deleted.** A dump can only be
+captured from a running client, so once a patch ships there is no way back to the
+previous layout. The checked-in dumps are the only record of what the offsets were
+when our code last worked; `typedump.py diff` against a fresh dump then says
+exactly what moved. `.gitattributes` disables textual diffing for them — use the
+tool, not `git diff`.
+
+### Game data: `Root.wad`
+
+WizWalker can read the game's own archives, which hold the lookup tables the
+client resolves IDs against. Many fields in memory are keys, not text —
+`m_badgeTitle` reads `'Badges_00006184'`, and a wizard's name is three indices,
+never characters — so a memory scan for display text will find nothing while the
+answer sits in a WAD.
+
+```python
+from wizwalker.file_readers.wad import Wad
+
+wad = Wad(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
+names = await wad.names()                       # ~172,000 entries
+data = await wad.get_file("CharacterNames.xml") # bytes
+```
+
+Conventions worth knowing:
+
+- `<Thing>.xml` holds the **ordered key list**; `Locale/<loc>/<Thing>.lang` maps
+  key → display text. IDs index **position in the XML list**, not the numeric
+  suffix of the key (`First_Boy_102` is "Luke" but sits at index 100).
+- `.lang` files are UTF-16LE with CRLF, in `key / blank / value` triples.
+- Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
+  later additions were not always translated.
+
+Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
+dependency on the game being installed at a guessable path. Extract what you need
+into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
+`bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
 
 ### Bumping a pin
 
