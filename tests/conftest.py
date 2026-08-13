@@ -103,6 +103,10 @@ class FakeClient:
         # read_value_from_offset.return_value directly to simulate a character switch.
         self.client_object = MagicMock()
         self.client_object.read_value_from_offset = AsyncMock(return_value=FakeClient._next_handle * 1000)
+        # No name behavior by default, so the memory name route answers None and callers
+        # fall through to the character-page route. Tests that want the memory route give
+        # this a behavior — see tests/test_wizard_names.py.
+        self.client_object.inactive_behaviors = AsyncMock(return_value=[])
 
 
 class FakeEntity:

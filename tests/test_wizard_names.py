@@ -206,6 +206,136 @@ def test_remember_ignores_empty_names():
 
 
 # ---------------------------------------------------------------------------
+# memory route
+# ---------------------------------------------------------------------------
+
+# "Luke SkullHunter" in the shipped tables — synthetic, see CLAUDE.md "No real player data".
+LUKE_KEYS = 56900648
+LUKE = "Luke SkullHunter"
+
+
+def _behavior(name: str, name_keys: int = LUKE_KEYS, gender: int = 1) -> MagicMock:
+    """A behavior instance reporting `name` and carrying packed name keys."""
+    behavior = MagicMock()
+    behavior.behavior_name = AsyncMock(return_value=name)
+    behavior.read_value_from_offset = AsyncMock(
+        side_effect=lambda offset, _p: {wn.NAME_KEYS_OFFSET: name_keys, wn.GENDER_OFFSET: gender}[offset]
+    )
+    return behavior
+
+
+def _client_with_name_behavior(*behaviors: MagicMock) -> FakeClient:
+    client = FakeClient()
+    client.client_object.inactive_behaviors = AsyncMock(return_value=list(behaviors))
+    return client
+
+
+async def test_reads_the_name_from_memory():
+    client = _client_with_name_behavior(_behavior("WizPlayerNameBehavior"))
+    assert await wn.read_name_from_memory(client) == LUKE
+
+
+async def test_finds_the_behavior_among_many():
+    """A real client lists ~38 behaviors; only the name one should be picked."""
+    client = _client_with_name_behavior(
+        _behavior("AnimationBehavior"),
+        _behavior("PetOwnerBehavior"),
+        _behavior("WizPlayerNameBehavior"),
+    )
+    assert await wn.read_name_from_memory(client) == LUKE
+
+
+async def test_ignores_the_pet_name_behavior():
+    """ClientPetNameBehavior inherits m_nameKeys at the same offset."""
+    client = _client_with_name_behavior(_behavior("PetNameBehavior", name_keys=64109768))
+    assert await wn.read_name_from_memory(client) is None
+
+
+async def test_prefers_the_wizard_behavior_over_a_pet_one():
+    client = _client_with_name_behavior(
+        _behavior("PetNameBehavior", name_keys=64109768),
+        _behavior("WizPlayerNameBehavior"),
+    )
+    assert await wn.read_name_from_memory(client) == LUKE
+
+
+async def test_returns_none_when_there_is_no_name_behavior():
+    assert await wn.read_name_from_memory(FakeClient()) is None
+
+
+async def test_returns_none_when_the_behavior_list_fails():
+    client = FakeClient()
+    client.client_object.inactive_behaviors = AsyncMock(side_effect=RuntimeError("boom"))
+    assert await wn.read_name_from_memory(client) is None
+
+
+async def test_returns_none_when_a_field_read_fails():
+    behavior = _behavior("WizPlayerNameBehavior")
+    behavior.read_value_from_offset = AsyncMock(side_effect=RuntimeError("boom"))
+    assert await wn.read_name_from_memory(_client_with_name_behavior(behavior)) is None
+
+
+async def test_returns_none_when_the_tables_cannot_resolve_the_keys():
+    """A name added by the game but missing from the shipped snapshot."""
+    client = _client_with_name_behavior(_behavior("WizPlayerNameBehavior", name_keys=0x03FF01FF))
+    assert await wn.read_name_from_memory(client) is None
+
+
+async def test_gender_is_read_and_passed_through():
+    """m_eGender is 0 for female, and the female table has different first names."""
+    male = _client_with_name_behavior(_behavior("WizPlayerNameBehavior", gender=1))
+    female = _client_with_name_behavior(_behavior("WizPlayerNameBehavior", gender=0))
+    assert await wn.read_name_from_memory(male) != await wn.read_name_from_memory(female)
+
+
+# ---------------------------------------------------------------------------
+# resolution order
+# ---------------------------------------------------------------------------
+
+
+async def test_memory_route_avoids_the_character_page_entirely():
+    client = _client_with_name_behavior(_behavior("WizPlayerNameBehavior"))
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        assert await wn.resolve_names([client]) == [LUKE]
+    assert client.send_key.await_count == 0, "no keypresses when memory answers"
+
+
+async def test_falls_back_to_the_character_page_when_memory_cannot_resolve():
+    client = _client_with_title("Wolf Deathblade")
+    client.client_object.inactive_behaviors = AsyncMock(
+        return_value=[_behavior("WizPlayerNameBehavior", name_keys=0x03FF01FF)]
+    )
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        assert await wn.resolve_names([client]) == ["Wolf Deathblade"]
+    assert client.send_key.await_count == 2, "the keypress route still runs when tables are stale"
+
+
+async def test_cache_beats_both_routes():
+    client = _client_with_name_behavior(_behavior("WizPlayerNameBehavior"))
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        await wn.resolve_names([client])
+        client.client_object.inactive_behaviors = AsyncMock(side_effect=AssertionError("should not re-read"))
+        assert await wn.resolve_names([client]) == [LUKE]
+
+
+async def test_mixed_fleet_uses_the_cheapest_route_per_client():
+    from_memory = _client_with_name_behavior(_behavior("WizPlayerNameBehavior"))
+    from_page = _client_with_title("Wolf Deathblade")
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        assert await wn.resolve_names([from_memory, from_page]) == [LUKE, "Wolf Deathblade"]
+    assert from_memory.send_key.await_count == 0
+    assert from_page.send_key.await_count == 2
+
+
+async def test_a_memory_read_name_is_cached_with_its_character_id():
+    client = _client_with_name_behavior(_behavior("WizPlayerNameBehavior"))
+    _set_character_id(client, 111)
+    with patch.object(wn, "CHARACTER_PAGE_SETTLE", 0):
+        await wn.resolve_names([client])
+    assert wn.cached_character_id(client) == 111, "so the next character switch is detectable"
+
+
+# ---------------------------------------------------------------------------
 # character switch detection
 # ---------------------------------------------------------------------------
 

@@ -26,6 +26,7 @@ import re
 from wizwalker import Keycode
 from wizwalker.memory.memory_object import Primitive
 
+from bartlebot.name_tables import decode_name_keys
 from bartlebot.nodes.paths import CHARACTER_PAGE_TITLE_WINDOW
 from bartlebot.nodes.timing import CHARACTER_PAGE_SETTLE, TRIGGER_TIMEOUT, jitter
 
@@ -212,6 +213,72 @@ async def refresh_identities(clients: list) -> list[int]:
     return list(await asyncio.gather(*(refresh_identity(c) for c in clients)))
 
 
+# ---------------------------------------------------------------------------
+# Memory route
+#
+# The name lives on WizPlayerNameBehavior as packed table indices; bartlebot.name_tables
+# decodes them. Two keypresses and a UI settle become two memory reads, and nothing on
+# screen moves.
+# ---------------------------------------------------------------------------
+
+# Offsets on ClientWizPlayerNameBehavior, from the r800294 type dump.
+#   poetry run python tools/typedump.py show ClientWizPlayerNameBehavior
+NAME_KEYS_OFFSET = 0x160  # m_nameKeys, unsigned int
+GENDER_OFFSET = 0x1B0  # m_eGender, enum eGender
+
+# Behaviors are matched on this suffix rather than by an exact template name. The dump's
+# class name is not the runtime template name and the difference is not derivable
+# (ClientWizPlayerNameBehavior -> "WizPlayerNameBehavior", ClientInventoryBehavior ->
+# "WizardInventoryBehavior"), so a hardcoded name is a rename away from silently failing.
+_NAME_BEHAVIOR_SUFFIX = "namebehavior"
+
+# ClientPetNameBehavior inherits from ClientWizPlayerNameBehavior and carries m_nameKeys at
+# the same offset, so a loose match could return the pet's name. A pet is its own
+# ClientObject and should not appear here at all, but the guard costs one comparison.
+_PET_MARKER = "pet"
+
+
+async def _find_name_behavior(client):
+    """Return this client's wizard-name behavior, or None."""
+    for behavior in await client.client_object.inactive_behaviors():
+        name = await behavior.behavior_name()
+        if not name:
+            continue
+        lowered = name.lower()
+        if lowered.endswith(_NAME_BEHAVIOR_SUFFIX) and _PET_MARKER not in lowered:
+            return behavior
+    return None
+
+
+async def read_name_from_memory(client) -> str | None:
+    """Return this client's wizard name by decoding m_nameKeys, or None.
+
+    None means "ask another route", and covers three genuinely different cases that the
+    caller treats identically: the behavior was not found, the reads failed, or the name
+    tables are older than the client and cannot resolve the indices. The last of those is
+    the one that matters operationally — see bartlebot.name_tables — and it is exactly why
+    the character-page route stays.
+
+    Costs a walk of the behavior list (~38 entries, each a pointer read plus a string
+    read), so it belongs behind the cache, not on a hot path.
+    """
+    try:
+        behavior = await _find_name_behavior(client)
+        if behavior is None:
+            logger.debug("No wizard-name behavior on this client object")
+            return None
+        name_keys = await behavior.read_value_from_offset(NAME_KEYS_OFFSET, Primitive.uint32)
+        gender = await behavior.read_value_from_offset(GENDER_OFFSET, Primitive.uint32)
+    except Exception:
+        logger.debug("Could not read the wizard name from memory", exc_info=True)
+        return None
+
+    name = decode_name_keys(name_keys, gender)
+    if name:
+        logger.debug("Read wizard name %r from memory", name)
+    return name
+
+
 async def resolve_names(clients: list) -> list[str | None]:
     """Return each client's wizard name, detecting and caching any that are unknown.
 
@@ -225,7 +292,19 @@ async def resolve_names(clients: list) -> list[str | None]:
     the CHARACTER_PAGE_SETTLE sleep plus the poll pauses in _read_title_scroll, and those
     overlap perfectly; only the ReadProcessMemory calls serialise on the loop thread.
 
-    No return_exceptions is needed — detect_wizard_name absorbs every failure and answers
+    Three routes are tried in order, cheapest first:
+
+      1. the cache — free
+      2. memory, via read_name_from_memory — two reads behind a behavior-list walk, and no
+         input at all, so nothing on screen moves
+      3. the character page, via detect_wizard_name — two keypresses and a UI settle
+
+    Route 2 handles every character whose name the shipped tables know. Route 3 exists for
+    the case where they do not: Wizard101 added names and bartlebot/data/name_tables.json
+    has not been regenerated yet. That is rare, but it is a real state the app has to keep
+    working in, so the keypress path stays rather than being deleted.
+
+    No return_exceptions is needed — both detection routes absorb every failure and answer
     None, so one unreadable client cannot cancel detection for the rest.
     """
     # Check for character switches first, so a client that swapped since the last call is
@@ -237,8 +316,21 @@ async def resolve_names(clients: list) -> list[str | None]:
     if not unknown:
         return names
 
-    detected = await asyncio.gather(*(detect_wizard_name(clients[i]) for i in unknown))
-    for i, name in zip(unknown, detected):
+    from_memory = await asyncio.gather(*(read_name_from_memory(clients[i]) for i in unknown))
+    unresolved: list[int] = []
+    for i, name in zip(unknown, from_memory):
+        if name:
+            remember(clients[i], name, ids[i])
+            names[i] = name
+        else:
+            unresolved.append(i)
+
+    if not unresolved:
+        return names
+
+    logger.debug("Falling back to the character page for %d client(s)", len(unresolved))
+    detected = await asyncio.gather(*(detect_wizard_name(clients[i]) for i in unresolved))
+    for i, name in zip(unresolved, detected):
         if name:
             remember(clients[i], name, ids[i])
             names[i] = name
