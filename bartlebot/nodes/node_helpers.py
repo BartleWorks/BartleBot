@@ -3,7 +3,6 @@
 import asyncio
 import fnmatch
 import logging
-import re
 
 from wizwalker import Keycode, MemoryReadError
 
@@ -312,17 +311,14 @@ def zone_matches(actual: str, pattern: str) -> bool:
     Plain strings (no metacharacters) fall through to exact equality, preserving
     the previous behaviour for all existing bot files.
 
-    Malformed glob patterns (e.g. "[unclosed") log a warning and fall back to
-    exact equality rather than raising.
+    A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
+    literal character, so "[unclosed" matches the zone of that exact name and
+    nothing else. No fallback is needed.
     """
     if actual is None:
         return False
     if has_glob(pattern):
-        try:
-            matched = fnmatch.fnmatchcase(actual, pattern)
-        except re.error:
-            logger.warning("zone_matches: invalid glob pattern %r — falling back to exact match", pattern)
-            return actual == pattern
+        matched = fnmatch.fnmatchcase(actual, pattern)
         if matched:
             logger.debug("zone_matches: pattern %r matched actual zone %r (wildcard)", pattern, actual)
         return matched

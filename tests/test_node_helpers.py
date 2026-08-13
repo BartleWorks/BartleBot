@@ -60,8 +60,9 @@ def test_zone_matches_none_actual_returns_false():
     assert zone_matches(None, "WizardCity/*") is False
 
 
-def test_zone_matches_malformed_pattern_falls_back_to_exact():
-    # "[unclosed" is an invalid glob — should not raise, falls back to equality
+def test_zone_matches_malformed_pattern_is_literal_not_an_error():
+    # fnmatch treats an unbalanced bracket as a literal, so this must not raise
+    # and matches only the zone of that exact name.
     assert zone_matches("WizardCity/WC_Hub", "[unclosed") is False
     assert zone_matches("[unclosed", "[unclosed") is True
 
