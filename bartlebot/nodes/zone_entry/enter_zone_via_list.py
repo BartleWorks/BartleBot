@@ -176,7 +176,8 @@ async def run(machine, clients: list, params: dict) -> str:
          change. A visited-signature set detects when all pages have been cycled through
          (the list wraps circularly — Next/Prev are never disabled). If not found on
          any page, click cancel on all clients and return FAILURE.
-      7. Click the teleport button on all clients.
+      7. Click the teleport button on all clients, then confirm the dungeon exit warning
+         if the list was used from inside a dungeon.
       8. Wait for all clients to reach to_zone within ZONE_CHANGE_TIMEOUT.
          Return FAILURE if timed out.
       9. Return SUCCESS.
@@ -258,6 +259,14 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 7. Click the teleport button.
     await asyncio.gather(*[node_helpers.click_by_path(c, UNIVERSE_TELEPORT_BUTTON) for c in clients])
+
+    # 7b. Confirm the dungeon exit warning if the list was used from inside a dungeon —
+    #     until it is confirmed the teleport never fires and step 8 times out. Blocking
+    #     here is safe because what follows waits on the arrival zone, which is sticky.
+    machine.log("Checking for dungeon exit warning…", logging.DEBUG)
+    await asyncio.gather(
+        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
+    )
 
     # 8. Wait for zone change.
     actual = await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT)

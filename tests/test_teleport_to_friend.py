@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_friend as ttf
-from tests.conftest import FakeClient, FakeMachine
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+from tests.conftest import FakeClient, FakeMachine, message_box_patches
 
 _FROM_ZONE = "HubZone"
 _TO_ZONE = "DungeonZone"
@@ -25,6 +26,14 @@ _RESOLVE_OK = patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value
 # Default dialog patch: no friend-busy dialog visible.
 _NO_DIALOG = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
 _CLICK_BY_PATH = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+
+def _caption(text: str):
+    """Patch the modal caption read, which is how dialogs are now told apart."""
+    return patch.object(nh, "get_text_by_path", new=AsyncMock(return_value=text))
+
+
+_NO_CAPTION = _caption("")
 
 
 def _client_needs_tp() -> FakeClient:
@@ -175,15 +184,50 @@ async def test_friend_busy_dialog_returns_failure():
     client = FakeClient()
     client.zone_name = AsyncMock(return_value=_FROM_ZONE)
     client.is_loading = AsyncMock(return_value=False)
+    patches, clicked = message_box_patches((MESSAGE_BOX_RIGHT,))
+    machine = FakeMachine()
 
-    dialog_visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
-    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
-
-    with _TELEPORT_OK, _RESOLVE_OK, dialog_visible, click as mock_click, patch.object(ttf, "POLL_INTERVAL", 0):
-        result = await ttf.run(FakeMachine(), [client], _PARAMS)
+    with (
+        _TELEPORT_OK,
+        _RESOLVE_OK,
+        patches[0],
+        patches[1],
+        _caption("Your friend is busy right now."),
+        patch.object(ttf, "POLL_INTERVAL", 0),
+    ):
+        result = await ttf.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
-    mock_click.assert_called_once()
+    # Dismissed, and nothing else touched — no stray confirm on the way past.
+    assert clicked == [MESSAGE_BOX_RIGHT]
+    assert any("not accepting teleports" in msg for msg, _lvl in machine.logs)
+
+
+async def test_unrecognised_dismiss_only_dialog_still_fails_fast():
+    """A dialog reworded by a game patch must not quietly become a timeout.
+
+    Caption matching finds nothing, so the button layout decides: a right button with no
+    centre offers no way to proceed, which is a refusal whatever it says.
+    """
+    client = FakeClient()
+    client.zone_name = AsyncMock(return_value=_FROM_ZONE)
+    client.is_loading = AsyncMock(return_value=False)
+    patches, clicked = message_box_patches((MESSAGE_BOX_RIGHT,))
+    machine = FakeMachine()
+
+    with (
+        _TELEPORT_OK,
+        _RESOLVE_OK,
+        patches[0],
+        patches[1],
+        _caption("Some brand new refusal from a future patch"),
+        patch.object(ttf, "POLL_INTERVAL", 0),
+    ):
+        result = await ttf.run(machine, [client], _PARAMS)
+
+    assert result == "FAILURE"
+    assert clicked == [MESSAGE_BOX_RIGHT]
+    assert any("does not recognise" in msg for msg, _lvl in machine.logs)
 
 
 async def test_friend_busy_dialog_only_checked_for_not_yet_loading():
@@ -193,13 +237,18 @@ async def test_friend_busy_dialog_only_checked_for_not_yet_loading():
     c2.zone_name = AsyncMock(return_value=_FROM_ZONE)
     c2.is_loading = AsyncMock(return_value=False)  # never loads → will hit dialog check
 
-    dialog_for_c2 = AsyncMock(side_effect=lambda client, path: client is c2)
+    # Right button only, and only on c2 — that is the busy dialog's shape.
+    dialog_for_c2 = AsyncMock(side_effect=lambda client, path: client is c2 and path == MESSAGE_BOX_RIGHT)
     click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+    caption_for_c2 = AsyncMock(
+        side_effect=lambda client, path: "Your friend is busy right now." if client is c2 else ""
+    )
 
     with (
         _TELEPORT_OK,
         _RESOLVE_OK,
         patch.object(nh, "is_visible_by_path", dialog_for_c2),
+        patch.object(nh, "get_text_by_path", caption_for_c2),
         click,
         patch.object(ttf, "POLL_INTERVAL", 0),
     ):
@@ -317,3 +366,84 @@ async def test_straggler_retry_raises_value_error_returns_failure():
         result = await ttf.run(FakeMachine(), [c1, c2], _PARAMS)
 
     assert result == "FAILURE"
+
+
+# ---------------------------------------------------------------------------
+# Dungeon exit warning (issue #84)
+# ---------------------------------------------------------------------------
+
+
+async def test_dungeon_exit_warning_is_not_mistaken_for_a_busy_friend():
+    """Issue #84: porting to a friend out of a dungeon failed outright before this.
+
+    The warning also shows a right button, so the busy check matched it and reported an
+    unreachable friend on every dungeon exit. The centre button is what separates them.
+    """
+    client = FakeClient()
+    client.zone_name = AsyncMock(side_effect=[_FROM_ZONE, _TO_ZONE])
+    # Tick 1: still behind the warning. Tick 2: confirmed and loading. Then done.
+    client.is_loading = AsyncMock(side_effect=[False, True, False])
+
+    # The warning is up until its centre button is clicked, then it is gone.
+    showing = [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]
+    clicked: list[list[str]] = []
+
+    async def _is_visible(_c, path):
+        return path in showing
+
+    async def _click(_c, path):
+        clicked.append(path)
+        if path not in showing:
+            return False
+        showing.clear()
+        return True
+
+    with (
+        _TELEPORT_OK,
+        _RESOLVE_OK,
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+        patch.object(ttf, "POLL_INTERVAL", 0),
+    ):
+        result = await ttf.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_busy_dialog_behind_the_dungeon_warning_still_fails():
+    """The live-observed order: the warning comes up first, the busy dialog only after it.
+
+    Confirming the warning must not lose the busy diagnosis that follows it — otherwise an
+    unreachable friend times out as a generic "never started loading".
+    """
+    client = FakeClient()
+    client.zone_name = AsyncMock(return_value=_FROM_ZONE)
+    client.is_loading = AsyncMock(return_value=False)
+
+    # The warning first; once its centre button is clicked, the busy dialog replaces it.
+    showing = [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]
+    clicked: list[list[str]] = []
+
+    async def _is_visible(_c, path):
+        return path in showing
+
+    async def _click(_c, path):
+        clicked.append(path)
+        if path not in showing:
+            return False
+        if path == MESSAGE_BOX_CENTER:
+            showing.remove(MESSAGE_BOX_CENTER)
+        return True
+
+    with (
+        _TELEPORT_OK,
+        _RESOLVE_OK,
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+        patch.object(ttf, "POLL_INTERVAL", 0),
+    ):
+        result = await ttf.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    assert clicked == [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]

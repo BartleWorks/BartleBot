@@ -47,8 +47,9 @@ async def run(machine, clients: list, params: dict) -> str:
       3. Wait for the hub teleport button to become enabled on clients to move. Return
          FAILURE if COMPASS_TELEPORT_TIMEOUT expires (30-second game cooldown).
       4. Click the hub teleport button on all clients to move.
-      5. "Ever seen" loop: poll until all clients have entered a loading screen, re-clicking
-         the button for stragglers. Return FAILURE if TRIGGER_TIMEOUT expires.
+      5. "Ever seen" loop: poll until all clients have entered a loading screen. For each
+         straggler, confirm a dungeon exit warning if one is up, otherwise re-click the
+         button. Return FAILURE if TRIGGER_TIMEOUT expires.
       6. Wait for all loading screens to finish.
       7. Wait for all clients (including those already in zone) to arrive in zone.
          Return FAILURE if any are not.
@@ -89,10 +90,12 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Clicking hub teleport button…", logging.DEBUG)
     await asyncio.gather(*[node_helpers.click_by_path(c, HUB_BUTTON_PATH) for c in clients_to_move])
 
+    # Clients teleporting out of a dungeon are held behind the dungeon exit warning, which
+    # no amount of re-clicking the hub button will clear — confirm it first each tick.
     seen_loading = await node_helpers.poll_each_until_seen(
         clients_to_move,
         check_fn=lambda c: c.is_loading(),
-        action_fn=lambda c: node_helpers.click_by_path(c, HUB_BUTTON_PATH),
+        action_fn=node_helpers.confirming_dungeon_warning(lambda c: node_helpers.click_by_path(c, HUB_BUTTON_PATH)),
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )

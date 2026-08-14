@@ -4,6 +4,7 @@ import asyncio
 import logging
 import re
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
@@ -355,13 +356,43 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
     # 11. Wait for the loading screen to start.
     #     Re-click Go To Realm each tick while still enabled — the button can be clicked
     #     too quickly after it enables, causing the game to ignore the first press.
+    #
+    #     Two realm modals can intervene, and they want opposite answers (verified live,
+    #     issue #84). Inside a dungeon the game simply refuses: "You are not allowed to
+    #     switch Realms from this location" — no amount of re-clicking gets past it, so
+    #     the node fails immediately rather than burning TRIGGER_TIMEOUT on a button the
+    #     game has already declined. Outside a dungeon but still holding a dungeon recall,
+    #     it asks instead: "Changing to a different Realm will reset your current Dungeon"
+    #     — a question, confirmed so the hop proceeds.
+    refusal: str | None = None
+
+    async def _retry(c) -> None:
+        nonlocal refusal
+        outcome = await node_helpers.resolve_modal(c)
+        refusal = outcome.refusal
+        if outcome.answered:
+            # The click would land on a modal that is still closing, not on the button.
+            return
+        await node_helpers.click_by_path(c, REALM_GO_TO_BUTTON_PATH)
+
+    async def _loading_or_refused(c) -> bool:
+        # A refusal ends the wait as surely as a loading screen does; the caller
+        # distinguishes them straight after.
+        return refusal is not None or await c.is_loading()
+
     seen = await node_helpers.poll_each_until_seen(
         [client],
-        check_fn=lambda c: c.is_loading(),
-        action_fn=lambda c: node_helpers.click_by_path(c, REALM_GO_TO_BUTTON_PATH),
+        check_fn=_loading_or_refused,
+        action_fn=_retry,
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )
+    if refusal:
+        machine.log(
+            f"FAILURE: realm change refused — {dialog_captions.describe(refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
     if not seen:
         machine.log(
             f"FAILURE: loading screen did not start within {TRIGGER_TIMEOUT}s after clicking Go To Realm",

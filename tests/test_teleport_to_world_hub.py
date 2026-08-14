@@ -4,7 +4,8 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_world_hub as gwh
-from tests.conftest import FakeClient, FakeMachine
+from bartlebot.nodes.paths import HUB_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+from tests.conftest import FakeClient, FakeMachine, message_box_patches
 
 _ZONE = "WizardCity/WC_Hub"
 _PARAMS = {"zone": _ZONE}
@@ -222,3 +223,44 @@ async def test_partial_already_in_zone_with_lagging_client():
 
     assert result == "SUCCESS"
     c_hub.send_key.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Dungeon exit warning (issue #84)
+# ---------------------------------------------------------------------------
+
+
+def _run_with_modal(visible_buttons):
+    """Return a (client, patches, clicked) triple for one stuck tick then a loading tick."""
+    client = FakeClient()
+    client.zone_name.side_effect = ["OtherZone", _ZONE]
+    # Tick 1: nothing has happened yet. Tick 2: teleport fired. Then done loading.
+    client.is_loading.side_effect = [False, True, False]
+    patches, clicked = message_box_patches(visible_buttons)
+    return client, patches, clicked
+
+
+async def test_dungeon_exit_warning_is_confirmed_rather_than_re_clicked():
+    """Hub teleport out of a dungeon: the warning holds the teleport until confirmed.
+
+    Re-pressing the hub button behind the modal does nothing, so before this the node
+    burned TRIGGER_TIMEOUT pressing an ignored button and failed.
+    """
+    client, patches, clicked = _run_with_modal((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0), patches[0], patches[1]:
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert clicked == [HUB_BUTTON_PATH, MESSAGE_BOX_CENTER]
+
+
+async def test_no_warning_still_re_presses_the_hub_button():
+    """Outside a dungeon the straggler retry must behave exactly as it did before."""
+    client, patches, clicked = _run_with_modal(())
+
+    with _BUTTON_ENABLED, patch.object(gwh, "POLL_INTERVAL", 0), patches[0], patches[1]:
+        result = await gwh.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert clicked == [HUB_BUTTON_PATH, HUB_BUTTON_PATH]

@@ -407,6 +407,12 @@ async def teleport_home_and_verify_dorm(machine, clients: list) -> bool:
 async def _press_home_until_dorm(machine, clients: list) -> bool:
     """Press HOME, up to twice, until every client is in DORM_ZONE."""
     needs_home = list(clients)
+    # Going home from inside a dungeon raises the dungeon exit warning, which blocks the
+    # teleport until confirmed — clicking the button again behind the modal achieves
+    # nothing, so a stuck client gets the confirm rather than another press.
+    _retry_home = node_helpers.confirming_dungeon_warning(
+        lambda c: node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH)
+    )
 
     for attempt in range(1, 3):
         machine.log(f"Clicking GotoDormButton for {len(needs_home)} client(s) (attempt {attempt}/2)…", logging.DEBUG)
@@ -427,7 +433,7 @@ async def _press_home_until_dorm(machine, clients: list) -> bool:
                 machine.log(f"Clients not loading at timeout: {still_waiting}", logging.DEBUG)
                 break
             not_loading = [c for i, c in enumerate(needs_home) if i not in seen_loading]
-            await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in not_loading])
+            await asyncio.gather(*[_retry_home(c) for c in not_loading])
             await asyncio.sleep(POLL_INTERVAL)
 
         # Wait for ALL clients to settle (includes clients already in dorm from a prior attempt).

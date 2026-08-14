@@ -7,9 +7,10 @@ from wizwalker import XYZ, Keycode
 
 import bartlebot.nodes.combat.handle_potions as hp
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.nodes.paths import GOTO_DORM_BUTTON_PATH, MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 from bartlebot.nodes.zone_entry import enter_zone
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, message_box_patches
 
 # ── Zone aliases ─────────────────────────────────────────────────────────────
 DORM = hp.DORM_ZONE
@@ -921,3 +922,43 @@ async def test_all_shop_open_one_false():
     clients = [FakeClient(), FakeClient()]
     with patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, False])):
         assert await hp._all_shop_open(clients) is False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Dungeon exit warning (issue #84)
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+async def _press_home_with_modal(visible_buttons) -> tuple[bool, list[list[str]]]:
+    """Run _press_home_until_dorm past one stuck tick; return (result, clicked paths)."""
+    client = FakeClient()
+    client.zone_name.return_value = DORM
+    # Tick 1: nothing has happened yet. Tick 2: loading. Then done.
+    client.is_loading.side_effect = [False, True, False]
+    patches, clicked = message_box_patches(visible_buttons)
+
+    with (
+        patch.object(nh, "none_loading", new=AsyncMock(return_value=True)),
+        patch.object(hp, "POLL_INTERVAL", 0),
+        patches[0],
+        patches[1],
+    ):
+        result = await hp._press_home_until_dorm(FakeMachine(), [client])
+
+    return result, clicked
+
+
+async def test_home_confirms_dungeon_exit_warning_rather_than_re_pressing():
+    """Going home from inside a dungeon raises the warning, which blocks the teleport."""
+    result, clicked = await _press_home_with_modal((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    assert result is True
+    assert clicked == [GOTO_DORM_BUTTON_PATH, MESSAGE_BOX_CENTER]
+
+
+async def test_home_without_a_warning_still_re_presses():
+    """Outside a dungeon the straggler retry must behave exactly as it did before."""
+    result, clicked = await _press_home_with_modal(())
+
+    assert result is True
+    assert clicked == [GOTO_DORM_BUTTON_PATH, GOTO_DORM_BUTTON_PATH]

@@ -245,3 +245,34 @@ async def test_stale_prompt_cleared():
     assert result == "SUCCESS"
     first_tp = client.teleport.call_args_list[0]
     assert first_tp.args[0].x == 1.0  # reset_xyz
+
+
+# ---------------------------------------------------------------------------
+# Dungeon exit warning (issue #84)
+# ---------------------------------------------------------------------------
+
+
+async def test_dungeon_exit_warning_is_confirmed_after_the_teleport_click():
+    """Using a zone list from inside a dungeon raises the warning, which holds the teleport.
+
+    Blocking on the confirm is safe here only because what follows waits on the arrival
+    zone, which stays true once it happens — unlike an is_loading() wait, which can be
+    missed entirely if the node spends the Safety Delay elsewhere first.
+    """
+    clients = [_ready_client(), _ready_client()]
+    for c in clients:
+        c.zone_name.side_effect = ["TestZone", "DestZone"]
+    confirm = AsyncMock()
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.confirm_dungeon_warning_dialog", confirm),
+    ):
+        result = await evl.run(FakeMachine(), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert confirm.await_count == len(clients)

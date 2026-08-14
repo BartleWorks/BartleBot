@@ -6,7 +6,9 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_marked_location as rtm
-from tests.conftest import FakeClient, FakeMachine
+from bartlebot import dialog_captions
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT, RECALL_BUTTON_PATH
+from tests.conftest import FakeClient, FakeMachine, message_box_patches
 
 _ZONE = "TestZone"  # matches FakeClient.zone_name default
 _PARAMS = {
@@ -218,3 +220,63 @@ async def test_fast_client_finishes_before_lagging_client_starts():
         result = await rtm.run(FakeMachine(), [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
+
+
+# ---------------------------------------------------------------------------
+# Dungeon exit warning (issue #84)
+# ---------------------------------------------------------------------------
+
+
+async def _recall_with_modal(visible_buttons):
+    """Run one stuck tick then a loading tick; return (result, clicked paths)."""
+    c = _ready_client()
+    c.is_loading.side_effect = [False, True, False]
+    patches, clicked = message_box_patches(visible_buttons)
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0), patches[0], patches[1]:
+        result = await rtm.run(FakeMachine(), [c], _PARAMS)
+
+    return result, clicked
+
+
+async def test_dungeon_exit_warning_is_confirmed_rather_than_re_clicked():
+    """Recalling out of a dungeon: the warning holds the recall until it is confirmed."""
+    result, clicked = await _recall_with_modal((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    assert result == "SUCCESS"
+    assert clicked == [RECALL_BUTTON_PATH, MESSAGE_BOX_CENTER]
+
+
+async def test_no_warning_still_re_clicks_the_recall_button():
+    """Outside a dungeon the straggler retry must behave exactly as it did before."""
+    result, clicked = await _recall_with_modal(())
+
+    assert result == "SUCCESS"
+    assert clicked == [RECALL_BUTTON_PATH, RECALL_BUTTON_PATH]
+
+
+async def test_expired_dungeon_recall_is_named_rather_than_timing_out():
+    """A mark outlives its dungeon, so this is normal after a long run.
+
+    Before, the refusal was confirmed and the node spent TRIGGER_TIMEOUT before reporting
+    "clients did not recall" — true, but not the reason.
+    """
+    c = _ready_client()
+    # side_effect wins over return_value, so clear the helper's scripted sequence first.
+    c.is_loading.side_effect = None
+    c.is_loading.return_value = False
+    patches, _clicked = message_box_patches((MESSAGE_BOX_CENTER,))
+    machine = FakeMachine()
+
+    with (
+        _RECALL_ENABLED,
+        patch.object(rtm, "POLL_INTERVAL", 0),
+        patch.object(nh, "identify_modal", new=AsyncMock(return_value=dialog_captions.RECALL_DUNGEON_EXPIRED)),
+        patches[0],
+        patches[1],
+    ):
+        result = await rtm.run(machine, [c], _PARAMS)
+
+    assert result == "FAILURE"
+    assert any("timer ended" in msg for msg, _lvl in machine.logs)
+    assert not any("did not recall" in msg for msg, _lvl in machine.logs)

@@ -5,9 +5,9 @@ import logging
 
 from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.paths import MESSAGE_BOX_RIGHT
 from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
@@ -41,7 +41,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             "Friend not found or not online; the friend-busy dialog appeared "
-            "(friend has teleports off, is in combat, or the instance is unavailable); "
+            "(friend has teleports off, or is somewhere you cannot follow them into); "
             "players did not enter a loading screen within the trigger timeout; "
             "or not all players arrived in to_zone after loading.",
         ),
@@ -64,16 +64,17 @@ async def run(machine, clients: list, params: dict) -> str:
       2. Filter to only clients not yet in to_zone.
       3. Call teleport_to_friend_from_list (wrapped in mouse_handler context) for all
          clients_to_move simultaneously. ValueError (friend not found/offline) → FAILURE.
-      4. "Ever seen" loading loop: on each tick, check each not-yet-loading client for the
-         friend-busy dialog — if visible, dismiss it and return FAILURE. Record newly-loading
-         clients. Re-attempt teleport for stragglers after TRIGGER_TIMEOUT has elapsed.
-         Return FAILURE if ZONE_CHANGE_TIMEOUT expires.
+      4. "Ever seen" loading loop: on each tick, answer whatever modal each not-yet-loading
+         client is showing — the dungeon exit and cross-realm warnings are confirmed so the
+         port proceeds, the friend-busy dialog is dismissed and returns FAILURE. Record
+         newly-loading clients. Re-attempt teleport for stragglers after TRIGGER_TIMEOUT has
+         elapsed. Return FAILURE if ZONE_CHANGE_TIMEOUT expires.
       5. Wait for all loading screens to finish.
       6. Wait for all clients (including those already in to_zone) to arrive in to_zone.
          Return FAILURE if any are not.
 
     FAILURE: friend not found or not online; friend-busy dialog appeared (friend has teleports
-    off, is in combat, or the instance is unavailable); loading not detected within
+    off, or is somewhere unreachable); loading not detected within
     ZONE_CHANGE_TIMEOUT; not all clients arrived in to_zone.
     """
     friend_name: str = params["friend_name"].lower()
@@ -112,18 +113,22 @@ async def run(machine, clients: list, params: dict) -> str:
     straggler_after = loop_start + TRIGGER_TIMEOUT
 
     while True:
-        # Check each not-yet-loading client for the friend-busy dialog first.
-        # If the dialog is visible, the friend is unreachable — dismiss and fail.
+        # Up to three different modals can be waiting here, and they arrive in a fixed
+        # order (issue #84): porting out of a dungeon raises the exit warning first, a
+        # cross-realm friend raises its own reset warning, and only once those are
+        # confirmed can the friend-busy dialog appear. All three are MessageBoxModalWindow
+        # and all three show a right button, so the right button does not identify any of
+        # them — resolve_modal reads the caption, confirms the two questions, and hands
+        # back only the refusal.
         for i, c in enumerate(clients_to_move):
             if i in seen_loading:
                 continue
-            if await node_helpers.is_visible_by_path(c, MESSAGE_BOX_RIGHT):
+            outcome = await node_helpers.resolve_modal(c)
+            if outcome.refusal:
                 machine.log(
-                    f"FAILURE: friend-busy dialog on client {i} — friend has teleports off, "
-                    "is in combat, or the instance is no longer accessible",
+                    f"FAILURE: client {i} cannot reach {friend_name!r} — {dialog_captions.describe(outcome.refusal)}",
                     logging.WARNING,
                 )
-                await node_helpers.click_by_path(c, MESSAGE_BOX_RIGHT)
                 return "FAILURE"
 
         # Record newly-loading clients.
