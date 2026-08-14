@@ -58,23 +58,24 @@ _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Interacts with the level-scaling NPC to apply the level-scaling elixir. "
-        "Assumes players are already in the correct dungeon zone."
+        "Interacts with the level-scaling NPC to apply the level-scaling elixir, one "
+        "player at a time, retrying anyone the elixir did not reach. Assumes players "
+        "are already in the correct dungeon zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "Level-scaling elixir applied to all specified players."),
         ReturnSpec(
             "FAILURE",
-            "Players not in zone, interact prompt never appeared after retries, "
-            "NPCServicesWin option button never became visible, "
-            "or elixir not active after interaction.",
+            "Players not in zone, or one or more players still lack the elixir "
+            "after every retry (interact prompt never appeared, NPCServicesWin option "
+            "button never became visible, or the elixir did not take effect).",
         ),
     ],
     required_bot_options=[_SAFETY_DELAY_OPTION, _LEVEL_SCALING_CLIENTS_OPTION],
 )
 
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
+from bartlebot.nodes.timing import LEVEL_SCALING_STAGGER_DELAY, MAX_RETRIES, POLL_INTERVAL
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -87,20 +88,24 @@ async def run(machine, clients: list, params: dict) -> str:
       2. Resolve scale_clients from the Level Scaling Players bot option (1-based).
          Return SUCCESS immediately if no clients are configured.
       3. Clear any pre-existing interact prompt by teleporting to reset_xyz.
-      4. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait up to Safety Delay
-         for the prompt to appear on all scale_clients. Reset to reset_xyz and retry if it
-         does not appear. Return FAILURE if the prompt never appeared.
-      5. Press X on all scale_clients simultaneously.
-      6. Poll until the NPCServicesWin option button is visible on all scale_clients.
-         Return FAILURE if it does not appear within Safety Delay.
-      7. Click the option button on all scale_clients simultaneously.
-      8. Poll until the NPCServicesWin menu is no longer visible.
-      9. Wait Safety Delay seconds for the elixir to apply server-side.
-      10. Verify the level-scaling elixir UI indicator is visible on all scale_clients.
-          Return FAILURE if any client is missing it.
+      4. Retry loop (up to MAX_RETRIES) over the clients still missing the elixir:
+         a. Use the station one client at a time (see _use_station), pausing
+            LEVEL_SCALING_STAGGER_DELAY between clients. The whole interaction is
+            sequential, not just the click: clients using the station at once
+            intermittently miss the elixir, and one client clicking while others have
+            the menu open closes it for all of them.
+         b. Wait Safety Delay seconds for the elixirs to apply server-side.
+         c. Read the elixir indicator on every client in this round. Anyone who has it
+            is done; anyone who does not is teleported to reset_xyz and retried.
+      5. Return SUCCESS once every client has the elixir, FAILURE if any client still
+         lacks it after MAX_RETRIES rounds.
 
-    FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES;
-    NPCServicesWin menu did not appear within Safety Delay; elixir not active after interaction.
+    A missing prompt or menu is logged and pushed through rather than failing the node:
+    the indicator check decides who still needs the station, so a swallowed keypress and
+    a click that did not take are recovered by the same retry.
+
+    FAILURE: clients not in zone; one or more clients still without the elixir after
+    MAX_RETRIES rounds.
     """
     zone: str = params["zone"]
     interact = XYZ(**params["interact_xyz"])
@@ -143,72 +148,84 @@ async def run(machine, clients: list, params: dict) -> str:
             lambda: node_helpers.none_in_npc_range(scale_clients), safety_delay, POLL_INTERVAL
         )
 
-    # 4-5. Retry loop: teleport to interact_xyz, wait for prompt.
-    prompt_appeared = False
+    # 4. Retry rounds over the clients that still need the elixir. One client uses the
+    #    station from start to finish before the next one opens it: an open menu closes
+    #    on every client that has not clicked yet as soon as one of them does, so the
+    #    whole interaction has to be sequential, not just the clicks.
+    pending = list(zip(scale_indices, scale_clients))
     for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(interact) for c in scale_clients])
-
-        machine.log("Waiting for interact prompt…", logging.DEBUG)
-        if await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range(scale_clients), safety_delay, POLL_INTERVAL
-        ):
-            prompt_appeared = True
-            break
-
         machine.log(
-            f"Interact prompt did not appear (attempt {attempt}); resetting",
+            f"Attempt {attempt}/{MAX_RETRIES}: applying elixir to client(s) {[i + 1 for i, _ in pending]}",
             logging.DEBUG,
         )
-        await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
 
-    if not prompt_appeared:
-        machine.log(
-            f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            logging.WARNING,
+        for position, (index, client) in enumerate(pending):
+            if position:
+                await asyncio.sleep(LEVEL_SCALING_STAGGER_DELAY)
+            await _use_station(machine, client, index + 1, interact, safety_delay)
+
+        # Give the elixirs time to apply server-side before reading the indicator.
+        machine.log(f"Waiting {safety_delay}s for elixir to apply…", logging.DEBUG)
+        await asyncio.sleep(safety_delay)
+
+        machine.log("Verifying level-scaling elixir is active…", logging.DEBUG)
+        elixir_results = await asyncio.gather(
+            *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_ELIXIR_PATH) for _, c in pending]
         )
-        return "FAILURE"
+        pending = [entry for entry, active in zip(pending, elixir_results) if not active]
+        if not pending:
+            machine.log("SUCCESS: level scaling applied")
+            return "SUCCESS"
 
-    # 6. Press X on all scaled clients simultaneously.
-    machine.log("Pressing X to interact with level-scaling NPC", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in scale_clients])
-
-    # 7. Wait for NPCServicesWin option button to appear.
-    machine.log("Waiting for NPCServicesWin menu…", logging.DEBUG)
-    if not await node_helpers.poll_until(lambda: _all_menu_visible(scale_clients), safety_delay, POLL_INTERVAL):
+        # Step out of NPC range so the next round's teleport re-triggers the prompt.
         machine.log(
-            f"FAILURE: NPCServicesWin option button never appeared within {safety_delay}s",
-            logging.WARNING,
+            f"Elixir not active on client(s) {[i + 1 for i, _ in pending]}; resetting to retry",
+            logging.DEBUG,
         )
-        return "FAILURE"
+        await asyncio.gather(*[c.teleport(reset) for _, c in pending])
 
-    # 8. Click option button on all scaled clients simultaneously.
-    machine.log("Clicking level-scaling option button", logging.DEBUG)
-    await asyncio.gather(*[node_helpers.click_by_path(c, LEVEL_SCALING_OPTION_BUTTON_PATH) for c in scale_clients])
-
-    # 9. Wait for menu to dismiss.
-    machine.log("Waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
-    await node_helpers.poll_until(lambda: _none_menu_visible(scale_clients), safety_delay, POLL_INTERVAL)
-
-    # 10. Wait for elixir to apply before checking.
-    machine.log(f"Waiting {safety_delay}s for elixir to apply…", logging.DEBUG)
-    await asyncio.sleep(safety_delay)
-
-    # 11. Verify elixir is active on all scaled clients.
-    machine.log("Verifying level-scaling elixir is active…", logging.DEBUG)
-    elixir_results = await asyncio.gather(
-        *[node_helpers.is_visible_by_path(c, LEVEL_SCALING_ELIXIR_PATH) for c in scale_clients]
+    machine.log(
+        f"FAILURE: level-scaling elixir not active on client(s) {[i + 1 for i, _ in pending]} "
+        f"after {MAX_RETRIES} attempts",
+        logging.WARNING,
     )
-    missing = [scale_indices[i] + 1 for i, active in enumerate(elixir_results) if not active]
-    if missing:
-        machine.log(
-            f"FAILURE: level-scaling elixir not active on client(s) {missing}",
-            logging.WARNING,
-        )
-        return "FAILURE"
+    return "FAILURE"
 
-    machine.log("SUCCESS: level scaling applied")
-    return "SUCCESS"
+
+async def _use_station(machine, client, client_number: int, interact: XYZ, safety_delay: float) -> None:
+    """Walk one client through a single use of the level-scaling station.
+
+    Teleports to the NPC, presses X, clicks the elixir option, and waits for the menu to
+    close again before returning, so no other client is sitting in the menu meanwhile.
+
+    Reports problems and returns instead of raising — whether the elixir actually landed
+    is decided by the caller's indicator check, which also drives the retry, so there is
+    nothing useful to distinguish here between "the menu never opened" and "the click did
+    not take".
+    """
+    await client.teleport(interact)
+
+    machine.log(f"Client {client_number}: waiting for interact prompt…", logging.DEBUG)
+    if not await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range([client]), safety_delay, POLL_INTERVAL):
+        machine.log(f"Client {client_number}: interact prompt did not appear", logging.DEBUG)
+        return
+
+    machine.log(f"Client {client_number}: pressing X to interact with level-scaling NPC", logging.DEBUG)
+    await client.send_key(Keycode.X, 0.1)
+
+    machine.log(f"Client {client_number}: waiting for NPCServicesWin menu…", logging.DEBUG)
+    if not await node_helpers.poll_until(lambda: _all_menu_visible([client]), safety_delay, POLL_INTERVAL):
+        machine.log(
+            f"Client {client_number}: NPCServicesWin option button never appeared within {safety_delay}s",
+            logging.DEBUG,
+        )
+        return
+
+    machine.log(f"Client {client_number}: clicking level-scaling option button", logging.DEBUG)
+    await node_helpers.click_by_path(client, LEVEL_SCALING_OPTION_BUTTON_PATH)
+
+    machine.log(f"Client {client_number}: waiting for NPCServicesWin menu to dismiss…", logging.DEBUG)
+    await node_helpers.poll_until(lambda: _none_menu_visible([client]), safety_delay, POLL_INTERVAL)
 
 
 async def _all_menu_visible(clients: list) -> bool:

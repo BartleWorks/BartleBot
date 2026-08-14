@@ -139,6 +139,15 @@ LAUNCH_STAGGER_DELAY = 1.0
 # succession; this spaces them out enough to avoid that without giving up
 # most of the benefit of launching a team in parallel.
 
+LEVEL_SCALING_STAGGER_DELAY = 1.0
+# Seconds between one client finishing with the level-scaling station and the next one
+# starting on it. Several clients using it at once intermittently leaves some of them
+# without the elixir, so the uses are serialised and spaced out. The whole interaction
+# is serialised rather than only the clicks: the station's menu closes on every client
+# that has not clicked yet as soon as one of them does, so overlapping the menus and
+# staggering only the clicks loses the elixir for everyone after the first. Anyone still
+# missing it is retried rather than failed, so this only has to cover the common case.
+
 WISP_COLLECT_TIMEOUT = 10.0
 # Ceiling on how long a single client may spend collecting wisps for one
 # resource (health or mana). Guards against a game bug where a client's
