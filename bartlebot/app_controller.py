@@ -846,6 +846,9 @@ class AppController(QObject):
         try:
             self._loaded_config.save(self._autosave_path())
             logger.debug("Auto-saved recovery file: %s", self._autosave_path())
+            if self._last_save_path:
+                stem = Path(self._last_save_path).stem
+                SettingsManager.instance().set_autosave_origin(stem, self._last_save_path)
         except Exception:
             logger.exception("Auto-save failed")
 
@@ -859,6 +862,7 @@ class AppController(QObject):
                 logger.debug("Deleted auto-save file: %s", p)
         except OSError:
             logger.warning("Could not delete auto-save file %s", p)
+        SettingsManager.instance().remove_autosave_origin(stem)
 
     def _check_crash_recovery(self) -> None:
         """Scan the autosave directory at startup and offer to restore newer files."""
@@ -886,7 +890,16 @@ class AppController(QObject):
             self._offer_recovery(candidates)
 
     def _find_original_for_stem(self, stem: str) -> Path | None:
-        """Search recent_bot_files for a path whose stem matches the autosave stem."""
+        """Resolve the original bot file for an auto-save stem.
+
+        Prefers the origin recorded at auto-save time (set_autosave_origin), which
+        stores the exact path the auto-save was derived from. Falls back to a
+        stem match against recent_bot_files for auto-saves written before that
+        mapping existed.
+        """
+        origin = SettingsManager.instance().get_autosave_origin(stem)
+        if origin:
+            return Path(origin)
         for recent_path in SettingsManager.instance().recent_bot_files:
             p = Path(recent_path)
             if p.stem == stem:

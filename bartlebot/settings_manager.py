@@ -97,6 +97,7 @@ _DEFAULTS: dict[str, Any] = {
     "launch_profiles": [],
     "recent_launches": [],
     "recent_bot_files": [],
+    "autosave_origins": {},
     "recently_used_nodes": [],
     "favorite_nodes": [],
     "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
@@ -317,6 +318,25 @@ class SettingsManager:
         self.set("recent_bot_files", value=recent[:8])
         self.save()
         return list(self.get("recent_bot_files", default=[]))
+
+    def set_autosave_origin(self, stem: str, original_path: str) -> None:
+        """Record which original bot file an auto-save stem was derived from."""
+        origins = dict(self.get("autosave_origins", default={}))
+        origins[stem] = str(Path(original_path).resolve())
+        self.set("autosave_origins", value=origins)
+        self.save()
+
+    def get_autosave_origin(self, stem: str) -> str | None:
+        """Look up the original bot file path recorded for an auto-save stem, if any."""
+        origins: dict = self.get("autosave_origins", default={})
+        return origins.get(stem)
+
+    def remove_autosave_origin(self, stem: str) -> None:
+        """Forget the recorded origin for an auto-save stem (called once its file is deleted)."""
+        origins = dict(self.get("autosave_origins", default={}))
+        if origins.pop(stem, None) is not None:
+            self.set("autosave_origins", value=origins)
+            self.save()
 
     @property
     def recently_used_nodes(self) -> list[str]:
