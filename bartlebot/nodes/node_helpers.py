@@ -129,38 +129,6 @@ async def modal_showing(client) -> bool:
     return bool(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
 
 
-async def dungeon_warning_showing(client) -> bool:
-    """Return True when the modal currently on screen is the dungeon exit warning.
-
-    Prefers the caption, which names the dialog outright. Falls back to the button layout
-    when the caption is not recognised — the dungeon exit warning offers confirm (centre)
-    and cancel (right), where the dialog it is most easily confused with, the friend-busy
-    dialog in teleport_to_friend, offers only the right one. Both facts were confirmed on
-    a live client (issue #84), along with the ordering: the warning comes up first, and
-    the busy dialog only replaces it once the warning has been confirmed.
-
-    The fallback reads is_visible(), not mere existence: the button windows are part of
-    the shared template and exist under any modal, so click_by_path() alone (which checks
-    only existence and grayed-ness) would happily "confirm" an unrelated dialog.
-    """
-    known = await identify_modal(client)
-    if known is not None:
-        return known in _DUNGEON_EXIT_KEYS
-    return await is_visible_by_path(client, MESSAGE_BOX_CENTER)
-
-
-# Captions that mean "you are about to leave a dungeon; confirm to proceed". The realm and
-# friend variants say it in different words but want the same answer, so anything treating
-# the exit warning as a thing to click through should accept all three.
-_DUNGEON_EXIT_KEYS = frozenset(
-    {
-        dialog_captions.INSTANCE_EXIT,
-        dialog_captions.REALM_RESETS_DUNGEON,
-        dialog_captions.FRIEND_CROSS_REALM,
-    }
-)
-
-
 class ModalOutcome(NamedTuple):
     """What resolve_modal() did about the dialog on screen.
 
@@ -227,61 +195,87 @@ async def resolve_modal(client) -> ModalOutcome:
     return _NOTHING
 
 
-async def confirm_dungeon_warning_once(client) -> bool:
-    """Confirm the dungeon exit warning if it is on screen right now. Returns True if it was.
+class ModalAwareRetry:
+    """Straggler-retry action for poll_each_until_seen() that answers modals first.
 
-    The non-blocking counterpart to confirm_dungeon_warning_dialog(): one look, no wait.
-    Use it inside a loop that is already polling for something else — see
-    confirming_dungeon_warning().
-    """
-    if not await dungeon_warning_showing(client):
-        return False
-    return await click_by_path(client, MESSAGE_BOX_CENTER)
+    A client held behind a modal is not lagging: the button the retry would press is
+    unreachable while the dialog is up, so a plain retry loop burns its whole timeout
+    pressing something the game cannot see. This answers the dialog instead, and only
+    falls through to `action_fn` when there is nothing on screen.
 
+    After the wait, read `.refusal`. It is set when the game refused outright, which
+    the retry loop itself cannot express — poll_each_until_seen only reports which
+    clients were seen, so without this a refusal looks identical to a timeout and gets
+    logged as the wrong cause.
 
-def confirming_dungeon_warning(action_fn):
-    """Wrap a straggler-retry action so a blocking dungeon exit warning is confirmed instead.
-
-    Returns an async action_fn for poll_each_until_seen() — or for any hand-rolled
-    "re-poke the clients that haven't moved yet" loop — that first tries to confirm a
-    dungeon exit warning and only falls back to `action_fn` when there is none. A client
-    held behind that warning is not lagging: re-pressing a teleport button does nothing
-    while a modal is up, so the wait would burn its whole timeout and the node would fail.
-
-    Why not simply await confirm_dungeon_warning_dialog() before the wait, the way
-    enter_zone() does — that call blocks for the full Safety Delay whenever no warning
-    appears, which is the common case. enter_zone() can afford it because what it waits
-    for next is "has left from_zone", which stays true once it happens. The nodes using
-    this wrapper wait on is_loading() instead, which is transient: spending three seconds
-    before starting to watch for a loading screen can miss it entirely and turn a
-    successful teleport into a timeout.
+    Why not answer the dialog once up front, the way await_instance_prompt() does: that
+    blocks for the full Safety Delay whenever no dialog appears, which is the common
+    case. It is affordable ahead of a wait on a sticky condition (left the zone, arrived
+    somewhere) but not ahead of a wait on is_loading(), which is transient — three
+    seconds spent before starting to watch for a loading screen can miss it entirely and
+    turn a successful teleport into a timeout.
     """
 
-    async def _act(client) -> None:
-        if await confirm_dungeon_warning_once(client):
+    def __init__(self, action_fn):
+        self._action_fn = action_fn
+        self.refusal: str | None = None
+
+    async def __call__(self, client) -> None:
+        outcome = await resolve_modal(client)
+        if outcome.refusal:
+            self.refusal = outcome.refusal
             return
-        await action_fn(client)
+        if outcome.answered:
+            # The retry would land on a modal that is still closing, not on the button.
+            return
+        await self._action_fn(client)
 
-    return _act
 
+async def await_instance_prompt(
+    client,
+    delay: float = 3.0,
+    poll_interval: float = POLL_INTERVAL,
+) -> ModalOutcome:
+    """Wait up to `delay` for the game to ask about an instance, then answer it.
 
-async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interval: float = POLL_INTERVAL) -> None:
-    """Poll for the dungeon warning dialog; confirm it immediately when it appears.
+    Crossing an instance boundary raises a modal, and which one depends on the direction:
+    entering a dungeon asks "you are about to enter a Dungeon", leaving one asks "you will
+    lose all your progress", and a gauntlet refuses the move outright. All are answered
+    here, which is why this is named for the boundary rather than for one of the dialogs —
+    the previous name, confirm_dungeon_warning_dialog, described the exit warning while
+    two of its five callers were actually answering the entry prompt.
 
-    Keeps polling for at least `delay` seconds before concluding the dialog will
-    not appear. If the dialog appears before `delay` has elapsed, the confirm button
-    is clicked immediately and the function returns — no further waiting.
+    Returns as soon as a dialog is answered; otherwise polls out the full `delay` before
+    concluding none is coming. Check the returned refusal — a gauntlet, or a full dungeon,
+    will not be talked round, and the node should stop rather than wait for a zone change
+    that cannot happen.
 
     Only safe ahead of a wait on a *sticky* condition (left the zone, arrived in the
-    destination). Ahead of a wait on is_loading(), use confirming_dungeon_warning().
+    destination). Ahead of a wait on is_loading(), use ModalAwareRetry.
     """
     loop_start = asyncio.get_event_loop().time()
     while True:
-        if await confirm_dungeon_warning_once(client):
-            return
+        outcome = await resolve_modal(client)
+        if outcome.answered:
+            return outcome
         if asyncio.get_event_loop().time() - loop_start >= delay:
-            return
+            return _NOTHING
         await asyncio.sleep(poll_interval)
+
+
+async def answer_instance_prompts(
+    clients: list,
+    delay: float = 3.0,
+    poll_interval: float = POLL_INTERVAL,
+) -> str | None:
+    """Answer the instance prompt on every client at once. Returns the first refusal, or None.
+
+    All clients cross the boundary together, so one refusal condemns the move for the whole
+    group — a gauntlet that will not let anyone change areas is not something the other
+    clients can proceed past.
+    """
+    outcomes = await asyncio.gather(*[await_instance_prompt(c, delay, poll_interval) for c in clients])
+    return next((o.refusal for o in outcomes if o.refusal), None)
 
 
 async def diagnose_path(client, path: list[str]) -> str:

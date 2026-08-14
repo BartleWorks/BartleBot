@@ -5,6 +5,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -160,11 +161,15 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Pressing X to enter dungeon sigil", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 5. Wait briefly, then confirm dungeon warning dialog if it appeared.
-    machine.log("Checking for dungeon warning dialog…", logging.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
-    )
+    # 5. Answer the dungeon entry prompt — "you are about to enter a Dungeon" — which the
+    #    sigil raises before it will take anyone inside.
+    machine.log("Checking for the dungeon entry prompt…", logging.DEBUG)
+    if refusal := await node_helpers.answer_instance_prompts(clients, safety_delay, POLL_INTERVAL):
+        machine.log(
+            f"FAILURE: could not enter the dungeon — {dialog_captions.describe(refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     # 6. Wait for all clients to leave from_zone.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)

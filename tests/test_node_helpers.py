@@ -541,70 +541,6 @@ async def test_open_friends_list_clicks_when_nothing_is_open():
 
 
 # ---------------------------------------------------------------------------
-# Dungeon exit warning
-#
-# Issue #84: the warning gates every teleport that leaves a dungeon, and while it
-# is up the game ignores the button that would have triggered the teleport. A node
-# that answers "not moving yet" with another button press therefore spins until it
-# times out, which is what made hub teleports fail out of dungeons.
-# ---------------------------------------------------------------------------
-
-
-async def test_dungeon_warning_showing_needs_the_centre_button():
-    """The centre button is the discriminator: only the dungeon warning has one.
-
-    Both dialogs show a right button, so "a modal is up" and even "the right button is
-    visible" are both true of the friend-busy dialog too (verified live, issue #84).
-    """
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    patches, _ = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
-    with patches[0], patches[1]:
-        assert await nh_mod.dungeon_warning_showing(FakeClient()) is True
-
-    patches, _ = message_box_patches((MESSAGE_BOX_RIGHT,))
-    with patches[0], patches[1]:
-        assert await nh_mod.dungeon_warning_showing(FakeClient()) is False
-
-
-async def test_confirm_dungeon_warning_once_leaves_other_modals_alone():
-    """A stray confirm would dismiss somebody else's dialog and swallow its diagnosis."""
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    patches, clicked = message_box_patches((MESSAGE_BOX_RIGHT,))
-    with patches[0], patches[1]:
-        assert await nh_mod.confirm_dungeon_warning_once(FakeClient()) is False
-
-    assert clicked == []
-
-
-async def test_confirming_dungeon_warning_skips_the_action_while_the_warning_is_up():
-    """The whole point: a client behind the modal gets the confirm, not another press."""
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
-    action = AsyncMock()
-    with patches[0], patches[1]:
-        await nh_mod.confirming_dungeon_warning(action)(FakeClient())
-
-    assert clicked == [MESSAGE_BOX_CENTER]
-    action.assert_not_called()
-
-
-async def test_confirming_dungeon_warning_falls_through_when_there_is_no_warning():
-    """Outside a dungeon the wrapper must be invisible — stragglers still get retried."""
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    patches, _ = message_box_patches(())
-    action = AsyncMock()
-    client = FakeClient()
-    with patches[0], patches[1]:
-        await nh_mod.confirming_dungeon_warning(action)(client)
-
-    action.assert_awaited_once_with(client)
-
-
-# ---------------------------------------------------------------------------
 # identify_modal / modal_showing — caption first, buttons as fallback
 # ---------------------------------------------------------------------------
 
@@ -647,44 +583,6 @@ async def test_modal_showing_is_true_for_an_unrecognised_dialog():
         assert await nh_mod.modal_showing(FakeClient()) is True
     with _caption_patch(""):
         assert await nh_mod.modal_showing(FakeClient()) is False
-
-
-async def test_dungeon_warning_uses_the_caption_over_the_buttons():
-    """The friend-busy dialog also shows a right button, so buttons alone are ambiguous.
-
-    With a caption available the answer no longer depends on the button layout at all —
-    here the buttons say "dungeon warning" and the caption overrules them.
-    """
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    patches, _ = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
-    with patches[0], patches[1], _caption_patch("Your friend is busy right now."):
-        assert await nh_mod.dungeon_warning_showing(FakeClient()) is False
-
-
-async def test_dungeon_warning_accepts_the_realm_and_friend_variants():
-    """Different wording, same required answer: confirm and carry on."""
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    realm = (
-        "Changing to a different Realm will reset your current Dungeon and you will not "
-        "be able to use Dungeon Recall. Are you sure you want to change your Realm?"
-    )
-    with _caption_patch(realm):
-        assert await nh_mod.dungeon_warning_showing(FakeClient()) is True
-
-
-async def test_dungeon_warning_falls_back_to_buttons_when_the_caption_is_unknown():
-    """A caption the snapshot has not seen must degrade to the previous behaviour."""
-    import bartlebot.nodes.node_helpers as nh_mod
-
-    patches, _ = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
-    with patches[0], patches[1], _caption_patch("Brand new dialog from a future patch"):
-        assert await nh_mod.dungeon_warning_showing(FakeClient()) is True
-
-    patches, _ = message_box_patches((MESSAGE_BOX_RIGHT,))
-    with patches[0], patches[1], _caption_patch("Brand new dialog from a future patch"):
-        assert await nh_mod.dungeon_warning_showing(FakeClient()) is False
 
 
 # ---------------------------------------------------------------------------
@@ -777,3 +675,92 @@ async def test_resolve_modal_leaves_another_handlers_dialog_alone():
     assert dialog_captions.identify_caption("Somebody is already in a group.") == dialog_captions.ALREADY_IN_GROUP
     assert outcome == (False, None)
     assert clicked == []
+
+
+# ---------------------------------------------------------------------------
+# ModalAwareRetry and await_instance_prompt
+# ---------------------------------------------------------------------------
+
+
+async def test_retry_answers_the_dialog_instead_of_pressing_the_button():
+    """A client behind a modal is not lagging — the button it would press is unreachable."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    action = AsyncMock()
+    with patches[0], patches[1], _caption_patch(_EXIT_CAPTION):
+        await nh_mod.ModalAwareRetry(action)(FakeClient())
+
+    assert clicked == [MESSAGE_BOX_CENTER]
+    action.assert_not_called()
+
+
+async def test_retry_falls_through_when_nothing_is_on_screen():
+    """Outside a dungeon the wrapper must be invisible — stragglers still get retried."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, _ = message_box_patches(())
+    action = AsyncMock()
+    client = FakeClient()
+    with patches[0], patches[1], _caption_patch(""):
+        await nh_mod.ModalAwareRetry(action)(client)
+
+    action.assert_awaited_once_with(client)
+
+
+async def test_retry_records_a_refusal_and_stops_pressing():
+    """poll_each_until_seen only reports who was seen, so the refusal has to be carried out."""
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot import dialog_captions
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER,))
+    action = AsyncMock()
+    retry = nh_mod.ModalAwareRetry(action)
+    with patches[0], patches[1], _caption_patch("You cannot change Areas while in a Gauntlet."):
+        await retry(FakeClient())
+
+    assert retry.refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE
+    action.assert_not_called()
+
+
+async def test_await_instance_prompt_returns_as_soon_as_it_answers():
+    """No reason to sit out the rest of the Safety Delay once the dialog is gone."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    with patches[0], patches[1], _caption_patch(_EXIT_CAPTION):
+        outcome = await nh_mod.await_instance_prompt(FakeClient(), delay=30, poll_interval=0)
+
+    assert outcome.answered is True
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_await_instance_prompt_gives_up_quietly_when_no_prompt_appears():
+    """The common case: no dungeon involved, so the wait expires and the node carries on."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches(())
+    with patches[0], patches[1], _caption_patch(""):
+        outcome = await nh_mod.await_instance_prompt(FakeClient(), delay=0.01, poll_interval=0)
+
+    assert outcome == (False, None)
+    assert clicked == []
+
+
+async def test_answer_instance_prompts_reports_one_clients_refusal_for_the_group():
+    """Clients cross together, so a refusal for one condemns the move for all."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot import dialog_captions
+
+    ok, blocked = FakeClient(), FakeClient()
+
+    async def caption(client, _path):
+        return "You cannot change Areas while in a Gauntlet." if client is blocked else ""
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER,))
+    with patches[0], patches[1], patch.object(nh_mod, "get_text_by_path", new=AsyncMock(side_effect=caption)):
+        refusal = await nh_mod.answer_instance_prompts([ok, blocked], delay=0.01, poll_interval=0)
+
+    assert refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE

@@ -5,6 +5,7 @@ import logging
 
 from wizwalker import Keycode
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -85,11 +86,14 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Pressing X to enter gauntlet", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 3. Confirm dungeon warning dialog if it appears.
-    machine.log("Checking for dungeon warning dialog…", logging.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
-    )
+    # 3. Answer the entry prompt if the gauntlet raises one.
+    machine.log("Checking for an instance prompt…", logging.DEBUG)
+    if refusal := await node_helpers.answer_instance_prompts(clients, safety_delay, POLL_INTERVAL):
+        machine.log(
+            f"FAILURE: could not enter the gauntlet — {dialog_captions.describe(refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     # 4. Wait for loading screens to clear.
     machine.log("Waiting for loading screen to clear…", logging.DEBUG)

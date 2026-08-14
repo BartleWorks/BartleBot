@@ -3,6 +3,7 @@ import logging
 
 from wizwalker import XYZ
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -120,14 +121,18 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
         machine.log(f"Teleporting {len(group)} client(s) to transition bounding box", logging.DEBUG)
         await asyncio.gather(*[c.teleport(target) for c in group])
 
-        # Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
-        machine.log("Checking for dungeon exit warning…", logging.DEBUG)
-        await asyncio.gather(
-            *[
-                node_helpers.confirm_dungeon_warning_dialog(c, machine.get_option("Safety Delay", 3.0), POLL_INTERVAL)
-                for c in group
-            ]
+        # Answer the instance prompt if the transition raised one — leaving a dungeon asks
+        # before it lets you go, and until that is answered the zone change never fires.
+        machine.log("Checking for an instance prompt…", logging.DEBUG)
+        refusal = await node_helpers.answer_instance_prompts(
+            group, machine.get_option("Safety Delay", 3.0), POLL_INTERVAL
         )
+        if refusal:
+            machine.log(
+                f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}",
+                logging.WARNING,
+            )
+            return "FAILURE"
 
         # Wait for the group to leave from_zone (zone change triggered by bounding box).
         # Re-teleport only stuck clients to the trigger on each poll; clients that have

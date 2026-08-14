@@ -318,12 +318,32 @@ into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 ### Telling modal dialogs apart
 
 Every in-game modal is the same `MessageBoxModalWindow` tree, so "a modal is up"
-does not say which one. Identify it by caption, via `node_helpers.identify_modal()`,
-comparing against the key constants in `bartlebot/dialog_captions.py`:
+does not say which one. Identify it by caption, comparing against the key constants
+in `bartlebot/dialog_captions.py`.
+
+Most nodes want `resolve_modal()` rather than `identify_modal()` — it acts on the
+dialog and reports only what the caller has to decide about:
 
 ```python
-if await node_helpers.identify_modal(client) == dialog_captions.FRIEND_BUSY:
+outcome = await node_helpers.resolve_modal(client)
+if outcome.refusal:                       # the game said no; stop
+    machine.log(f"FAILURE: … — {dialog_captions.describe(outcome.refusal)}")
+    return "FAILURE"
+if outcome.answered:                      # a question was confirmed; skip this tick's retry
+    return
 ```
+
+Pick by the shape of the wait that follows:
+
+| wait | use |
+|---|---|
+| a retry loop on `is_loading()` | `ModalAwareRetry(action_fn)` as `poll_each_until_seen`'s `action_fn`, then check `.refusal` |
+| a *sticky* condition (left the zone, arrived) | `await_instance_prompt()`, or `answer_instance_prompts()` for a whole group |
+| one-off, mid-loop | `resolve_modal()` directly |
+
+Never answer a dialog with a blocking wait ahead of an `is_loading()` check: it
+costs the full Safety Delay whenever no dialog appears, and three seconds spent
+before watching for a loading screen can miss it entirely.
 
 Do **not** infer identity from which buttons are showing. That only works while no
 two dialogs a node can hit share a layout, and it already broke once: the dungeon

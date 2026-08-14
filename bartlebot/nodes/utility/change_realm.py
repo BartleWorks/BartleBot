@@ -364,32 +364,23 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
     #     game has already declined. Outside a dungeon but still holding a dungeon recall,
     #     it asks instead: "Changing to a different Realm will reset your current Dungeon"
     #     — a question, confirmed so the hop proceeds.
-    refusal: str | None = None
-
-    async def _retry(c) -> None:
-        nonlocal refusal
-        outcome = await node_helpers.resolve_modal(c)
-        refusal = outcome.refusal
-        if outcome.answered:
-            # The click would land on a modal that is still closing, not on the button.
-            return
-        await node_helpers.click_by_path(c, REALM_GO_TO_BUTTON_PATH)
+    retry = node_helpers.ModalAwareRetry(lambda c: node_helpers.click_by_path(c, REALM_GO_TO_BUTTON_PATH))
 
     async def _loading_or_refused(c) -> bool:
         # A refusal ends the wait as surely as a loading screen does; the caller
         # distinguishes them straight after.
-        return refusal is not None or await c.is_loading()
+        return retry.refusal is not None or await c.is_loading()
 
     seen = await node_helpers.poll_each_until_seen(
         [client],
         check_fn=_loading_or_refused,
-        action_fn=_retry,
+        action_fn=retry,
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )
-    if refusal:
+    if retry.refusal:
         machine.log(
-            f"FAILURE: realm change refused — {dialog_captions.describe(refusal)}",
+            f"FAILURE: realm change refused — {dialog_captions.describe(retry.refusal)}",
             logging.WARNING,
         )
         return "FAILURE"

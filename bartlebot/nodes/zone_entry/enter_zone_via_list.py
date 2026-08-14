@@ -6,6 +6,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
@@ -261,12 +262,15 @@ async def run(machine, clients: list, params: dict) -> str:
     await asyncio.gather(*[node_helpers.click_by_path(c, UNIVERSE_TELEPORT_BUTTON) for c in clients])
 
     # 7b. Confirm the dungeon exit warning if the list was used from inside a dungeon —
-    #     until it is confirmed the teleport never fires and step 8 times out. Blocking
+    #     until it is answered the teleport never fires and step 8 times out. Blocking
     #     here is safe because what follows waits on the arrival zone, which is sticky.
-    machine.log("Checking for dungeon exit warning…", logging.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
-    )
+    machine.log("Checking for an instance prompt…", logging.DEBUG)
+    if refusal := await node_helpers.answer_instance_prompts(clients, safety_delay, POLL_INTERVAL):
+        machine.log(
+            f"FAILURE: the game refused the teleport — {dialog_captions.describe(refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     # 8. Wait for zone change.
     actual = await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT)
