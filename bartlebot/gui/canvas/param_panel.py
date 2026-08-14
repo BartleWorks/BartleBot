@@ -7,6 +7,7 @@ _ParamPanel        — stacked panel showing node, edge, or idle views; owns the
 
 import asyncio
 import json
+import re
 from collections.abc import Callable
 from typing import Any
 
@@ -59,6 +60,51 @@ class _StrListLineEdit(QLineEdit):
     Stores values as a comma-separated string (e.g. "IronBloom, GoldKey") and
     is identified by get_params() to deserialise back to list[str].
     """
+
+
+# ---------------------------------------------------------------------------
+# Clipboard XYZ parsing
+# ---------------------------------------------------------------------------
+
+_NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
+_XYZ_CALL_RE = re.compile(
+    rf"XYZ\s*\(\s*({_NUM})\s*,\s*({_NUM})\s*,\s*({_NUM})\s*\)",
+    re.IGNORECASE,
+)
+
+
+def parse_xyz_text(text: str) -> dict[str, float]:
+    """Parse clipboard text into whichever of the x/y/z axes it defines.
+
+    Two formats are accepted:
+
+    * ``XYZ(x, y, z)`` — the form used by Deimos scripts, so a line lifted
+      straight out of one (``mass tp XYZ(1, 2, 3)``) pastes as-is.  Only the
+      first such call on the line is read.
+    * a JSON object with any of ``x``/``y``/``z`` — what the Copy button
+      writes.  Missing or non-numeric axes are simply left out, so a partial
+      object updates only the axes it names.
+
+    Returns an empty dict when nothing parses; the caller leaves the spin
+    boxes untouched in that case.
+    """
+    text = text.strip()
+    match = _XYZ_CALL_RE.search(text)
+    if match:
+        return {axis: float(match.group(i)) for i, axis in enumerate(("x", "y", "z"), start=1)}
+    try:
+        data = json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    out: dict[str, float] = {}
+    for axis in ("x", "y", "z"):
+        try:
+            out[axis] = float(data[axis])
+        except (KeyError, TypeError, ValueError):
+            continue
+    return out
 
 
 class _PlayerListWidget(QWidget):
@@ -525,7 +571,7 @@ class _DynamicParamForm(QWidget):
             btns_row.addWidget(copy_btn, 1)
             paste_btn = QPushButton("Paste")
             paste_btn.setFixedHeight(_BTN_H)
-            paste_btn.setToolTip("Paste XYZ from clipboard (JSON format)")
+            paste_btn.setToolTip("Paste XYZ from clipboard (JSON or XYZ(x, y, z) format)")
             paste_btn.setStyleSheet(_btn_style)
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
             btns_row.addWidget(paste_btn, 1)
@@ -567,29 +613,18 @@ class _DynamicParamForm(QWidget):
             self.changed.emit()
 
     def _paste_xyz(self, key: str) -> None:
-        try:
-            data = json.loads(QApplication.clipboard().text().strip())
-        except (json.JSONDecodeError, AttributeError):
-            return
-        if not isinstance(data, dict):
+        clipboard = QApplication.clipboard()
+        values = parse_xyz_text(clipboard.text()) if clipboard else {}
+        if not values:
             return
         widgets = self._widgets.get(key)
         if not isinstance(widgets, tuple):
             return
         x_s, y_s, z_s, _ = widgets
         self._suppress = True
-        try:
-            x_s.setValue(float(data["x"]))
-        except (KeyError, TypeError, ValueError):
-            pass
-        try:
-            y_s.setValue(float(data["y"]))
-        except (KeyError, TypeError, ValueError):
-            pass
-        try:
-            z_s.setValue(float(data["z"]))
-        except (KeyError, TypeError, ValueError):
-            pass
+        for axis, spin in (("x", x_s), ("y", y_s), ("z", z_s)):
+            if axis in values:
+                spin.setValue(values[axis])
         self._suppress = False
         self._emit_changed()
 

@@ -3,12 +3,13 @@
 import asyncio
 import fnmatch
 import logging
-import re
+from typing import NamedTuple
 
-from wizwalker import Keycode
+from wizwalker import Keycode, MemoryReadError
 
 logger = logging.getLogger(__name__)
 
+from bartlebot import dialog_captions
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
@@ -16,7 +17,9 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     FRIENDS_LIST_WINDOW_NAMES,
     GAUNTLET_ENTRANCE_PATH,
     LARGE_FRIENDS_LIST_WINDOW_NAME,
+    MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_RIGHT,
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
@@ -100,20 +103,179 @@ async def advance_dialogue_until_clear(
             await asyncio.sleep(POLL_INTERVAL)
 
 
-async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interval: float = POLL_INTERVAL) -> None:
-    """Poll for the dungeon warning dialog; confirm it immediately when it appears.
+async def identify_modal(client) -> str | None:
+    """Return the lang key of the modal currently on screen, or None.
 
-    Keeps polling for at least `delay` seconds before concluding the dialog will
-    not appear. If the dialog appears before `delay` has elapsed, the confirm button
-    is clicked immediately and the function returns — no further waiting.
+    Every in-game modal is the same MessageBoxModalWindow tree, so "a modal is up" says
+    nothing about which one it is. Its caption does: see bartlebot.dialog_captions for the
+    key constants to compare against (INSTANCE_EXIT, FRIEND_BUSY, …) and for how the match
+    survives markup, substitution slots, and all seven locales.
+
+    None means *no recognised dialog* — either nothing is showing, or something the
+    snapshot has not seen. The two are deliberately not distinguished: callers should have
+    a button-based fallback for both, so a caption we do not know degrades to the previous
+    behaviour rather than hanging. Use modal_showing() to tell them apart when it matters.
+    """
+    return dialog_captions.identify_caption(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
+
+
+async def modal_showing(client) -> bool:
+    """Return True when any modal message box is on screen, recognised or not.
+
+    Reads the caption rather than the modal window itself: a window's is_visible() flag is
+    its own and ignores its parents (see is_visible_by_path), whereas CaptionText only
+    holds text while a dialog is actually up.
+    """
+    return bool(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
+
+
+class ModalOutcome(NamedTuple):
+    """What resolve_modal() did about the dialog on screen.
+
+    `answered` says a dialog was there and has been clicked — a caller in a retry loop
+    should skip its retry this tick, because the click it would send lands on a modal that
+    is still closing rather than on the button it means to press.
+
+    `refusal` is set when that dialog was one the game will not be talked out of. Pair it
+    with dialog_captions.describe() to log what the player would have read.
+    """
+
+    answered: bool
+    refusal: str | None = None
+
+
+_NOTHING = ModalOutcome(answered=False)
+
+
+async def resolve_modal(client) -> ModalOutcome:
+    """Answer whatever modal is on screen.
+
+    The one call a node needs while waiting for something the game may be holding behind a
+    dialog. Three outcomes:
+
+      * a question (dialog_captions.CONFIRM_TO_PROCEED) — confirmed, so the node's wait
+        carries on and will now succeed;
+      * a refusal (dialog_captions.REFUSALS) — dismissed, and returned, so the node can
+        fail immediately: the game has said no, and waiting out a timeout only delays the
+        same answer while reporting it as the wrong cause;
+      * nothing recognised — falls back to the button layout, which still separates the
+        two kinds: a centre button offers a way to proceed, so it is confirmed; a right
+        button with no centre offers only a way out, so it is dismissed and reported as
+        dialog_captions.UNRECOGNISED_REFUSAL. Without that second half a dialog reworded
+        by a game patch would stop failing fast and start timing out instead.
+
+    Refusals are dismissed with the right button where it exists and the centre otherwise:
+    a one-button refusal puts OK in the centre, and a two-button one puts cancel on the
+    right, which is the answer that leaves the game alone.
+    """
+    key = await identify_modal(client)
+
+    if key is None:
+        if await is_visible_by_path(client, MESSAGE_BOX_CENTER):
+            await click_by_path(client, MESSAGE_BOX_CENTER)
+            return ModalOutcome(answered=True)
+        if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
+            await click_by_path(client, MESSAGE_BOX_RIGHT)
+            return ModalOutcome(answered=True, refusal=dialog_captions.UNRECOGNISED_REFUSAL)
+        return _NOTHING
+
+    if key in dialog_captions.CONFIRM_TO_PROCEED:
+        await click_by_path(client, MESSAGE_BOX_CENTER)
+        return ModalOutcome(answered=True)
+
+    if key in dialog_captions.REFUSALS:
+        if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
+            await click_by_path(client, MESSAGE_BOX_RIGHT)
+        else:
+            await click_by_path(client, MESSAGE_BOX_CENTER)
+        return ModalOutcome(answered=True, refusal=key)
+
+    # Recognised, but somebody else's dialog — leave it alone rather than click blind.
+    logger.debug("resolve_modal: leaving %s to its own handler", key)
+    return _NOTHING
+
+
+class ModalAwareRetry:
+    """Straggler-retry action for poll_each_until_seen() that answers modals first.
+
+    A client held behind a modal is not lagging: the button the retry would press is
+    unreachable while the dialog is up, so a plain retry loop burns its whole timeout
+    pressing something the game cannot see. This answers the dialog instead, and only
+    falls through to `action_fn` when there is nothing on screen.
+
+    After the wait, read `.refusal`. It is set when the game refused outright, which
+    the retry loop itself cannot express — poll_each_until_seen only reports which
+    clients were seen, so without this a refusal looks identical to a timeout and gets
+    logged as the wrong cause.
+
+    Why not answer the dialog once up front, the way await_instance_prompt() does: that
+    blocks for the full Safety Delay whenever no dialog appears, which is the common
+    case. It is affordable ahead of a wait on a sticky condition (left the zone, arrived
+    somewhere) but not ahead of a wait on is_loading(), which is transient — three
+    seconds spent before starting to watch for a loading screen can miss it entirely and
+    turn a successful teleport into a timeout.
+    """
+
+    def __init__(self, action_fn):
+        self._action_fn = action_fn
+        self.refusal: str | None = None
+
+    async def __call__(self, client) -> None:
+        outcome = await resolve_modal(client)
+        if outcome.refusal:
+            self.refusal = outcome.refusal
+            return
+        if outcome.answered:
+            # The retry would land on a modal that is still closing, not on the button.
+            return
+        await self._action_fn(client)
+
+
+async def await_instance_prompt(
+    client,
+    delay: float = 3.0,
+    poll_interval: float = POLL_INTERVAL,
+) -> ModalOutcome:
+    """Wait up to `delay` for the game to ask about an instance, then answer it.
+
+    Crossing an instance boundary raises a modal, and which one depends on the direction:
+    entering a dungeon asks "you are about to enter a Dungeon", leaving one asks "you will
+    lose all your progress", and a gauntlet refuses the move outright. All are answered
+    here, which is why this is named for the boundary rather than for one of the dialogs —
+    the previous name, confirm_dungeon_warning_dialog, described the exit warning while
+    two of its five callers were actually answering the entry prompt.
+
+    Returns as soon as a dialog is answered; otherwise polls out the full `delay` before
+    concluding none is coming. Check the returned refusal — a gauntlet, or a full dungeon,
+    will not be talked round, and the node should stop rather than wait for a zone change
+    that cannot happen.
+
+    Only safe ahead of a wait on a *sticky* condition (left the zone, arrived in the
+    destination). Ahead of a wait on is_loading(), use ModalAwareRetry.
     """
     loop_start = asyncio.get_event_loop().time()
     while True:
-        if await click_by_path(client, MESSAGE_BOX_CENTER):
-            return
+        outcome = await resolve_modal(client)
+        if outcome.answered:
+            return outcome
         if asyncio.get_event_loop().time() - loop_start >= delay:
-            return
+            return _NOTHING
         await asyncio.sleep(poll_interval)
+
+
+async def answer_instance_prompts(
+    clients: list,
+    delay: float = 3.0,
+    poll_interval: float = POLL_INTERVAL,
+) -> str | None:
+    """Answer the instance prompt on every client at once. Returns the first refusal, or None.
+
+    All clients cross the boundary together, so one refusal condemns the move for the whole
+    group — a gauntlet that will not let anyone change areas is not something the other
+    clients can proceed past.
+    """
+    outcomes = await asyncio.gather(*[await_instance_prompt(c, delay, poll_interval) for c in clients])
+    return next((o.refusal for o in outcomes if o.refusal), None)
 
 
 async def diagnose_path(client, path: list[str]) -> str:
@@ -249,6 +411,81 @@ async def poll_each_until_seen(
         await asyncio.sleep(poll_interval)
 
 
+def has_glob(pattern: str) -> bool:
+    """Return True when pattern contains glob metacharacters (* ? [)."""
+    return "*" in pattern or "?" in pattern or "[" in pattern
+
+
+def entity_name_matches(actual: str, pattern: str) -> bool:
+    """Return True when an entity's template name matches pattern.
+
+    Two modes, chosen by the pattern itself, mirroring zone_matches():
+
+      * No metacharacters — case-insensitive *substring* match, which is what
+        WizSprinter's get_base_entities_with_vague_name() does. "Cyclops" finds
+        "Cyclops/CyclopsMinion". Every existing bot file relies on this.
+      * With metacharacters — case-insensitive glob against the *whole* name, so
+        "*Bandit*" matches anywhere but "Bandit*" only matches names that start
+        with it. Anchoring is the point: substring matching alone cannot express
+        "starts with", and a pattern that silently meant the same thing either
+        way would make the wildcard decorative.
+
+    A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
+    literal character, so "[unclosed" simply matches names containing that text
+    (anchored, like any other pattern). No fallback is needed.
+    """
+    if actual is None:
+        return False
+    if has_glob(pattern):
+        return fnmatch.fnmatch(actual.lower(), pattern.lower())
+    return pattern.lower() in actual.lower()
+
+
+def entity_name_predicate(pattern: str):
+    """Build an async predicate matching entities against pattern by template name.
+
+    Suitable for WizSprinter's find_closest_by_predicate() and
+    get_base_entities_with_predicate().
+    """
+
+    async def _matches(entity) -> bool:
+        # An entity can despawn mid-scan; WizSprinter's own vague-name predicate
+        # would propagate that and abandon the whole search, so skip it instead.
+        try:
+            template = await entity.object_template()
+            if template is None:
+                return False
+            return entity_name_matches(await template.object_name(), pattern)
+        except (ValueError, MemoryReadError):
+            return False
+
+    return _matches
+
+
+async def find_closest_entity_by_name(client, pattern: str):
+    """Return the closest entity whose template name matches pattern, or None.
+
+    Plain names delegate to WizSprinter's find_closest_by_vague_name() so the
+    long-standing path is untouched; only a pattern carrying metacharacters takes
+    the predicate route, which is the same search with our matcher in place of
+    WizSprinter's hardcoded substring test.
+    """
+    if not has_glob(pattern):
+        return await client.find_closest_by_vague_name(pattern)
+    return await client.find_closest_by_predicate(entity_name_predicate(pattern))
+
+
+async def find_entities_by_name(client, pattern: str) -> list:
+    """Return every entity whose template name matches pattern.
+
+    The list counterpart of find_closest_entity_by_name(), with the same split:
+    plain names go through WizSprinter untouched, wildcards through our matcher.
+    """
+    if not has_glob(pattern):
+        return await client.get_base_entities_with_vague_name(pattern)
+    return await client.get_base_entities_with_predicate(entity_name_predicate(pattern))
+
+
 def zone_matches(actual: str, pattern: str) -> bool:
     """Return True when actual matches pattern.
 
@@ -257,17 +494,14 @@ def zone_matches(actual: str, pattern: str) -> bool:
     Plain strings (no metacharacters) fall through to exact equality, preserving
     the previous behaviour for all existing bot files.
 
-    Malformed glob patterns (e.g. "[unclosed") log a warning and fall back to
-    exact equality rather than raising.
+    A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
+    literal character, so "[unclosed" matches the zone of that exact name and
+    nothing else. No fallback is needed.
     """
     if actual is None:
         return False
-    if "*" in pattern or "?" in pattern or "[" in pattern:
-        try:
-            matched = fnmatch.fnmatchcase(actual, pattern)
-        except re.error:
-            logger.warning("zone_matches: invalid glob pattern %r — falling back to exact match", pattern)
-            return actual == pattern
+    if has_glob(pattern):
+        matched = fnmatch.fnmatchcase(actual, pattern)
         if matched:
             logger.debug("zone_matches: pattern %r matched actual zone %r (wildcard)", pattern, actual)
         return matched

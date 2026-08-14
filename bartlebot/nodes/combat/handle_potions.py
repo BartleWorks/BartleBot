@@ -5,7 +5,8 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot.nodes import node_helpers
+from bartlebot import dialog_captions
+from bartlebot.nodes import housing, node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     GOTO_DORM_BUTTON_PATH,
@@ -142,10 +143,11 @@ async def run(machine, clients: list, params: dict) -> str:
             Return FAILURE if any are found there.
       5. Snapshot current zone and position as the mark/recall target.
       6. Call mark_location.run() for buying_clients. Return FAILURE if it fails.
-      7. Click GotoDormButton to teleport home; retry once if the first press lands in a
-         non-dorm zone (handles non-dorm primary residences). Each attempt only re-presses
-         HOME for clients that have not yet reached the dorm. Return FAILURE if any client
-         fails to reach the dorm after both attempts.
+      7. Temporarily unequip any equipped castle, then click GotoDormButton to teleport home;
+         retry once if the first press lands in a non-dorm zone. Each attempt only re-presses
+         HOME for clients that have not yet reached the dorm. Castles are re-equipped before
+         this step returns, whether it succeeded or not. Return FAILURE if any client fails
+         to reach the dorm after both attempts.
       8. Call enter_zone.run() Dorm → Ravenwood. Return FAILURE if it fails.
       9. Call enter_zone.run() Ravenwood → Commons. Return FAILURE if it fails.
       10. Teleport to Hilda Brewer, wait for the interact prompt, press X to open the potion
@@ -276,50 +278,8 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("FAILURE: mark_location failed for one or more clients", logging.WARNING)
         return "FAILURE"
 
-    # 7. Teleport home and verify dorm zone.
-    machine.log("Teleporting buying clients home…")
-    if not await _teleport_home_and_verify_dorm(machine, buying_clients):
-        machine.log("FAILURE: could not reach dorm after teleporting home", logging.WARNING)
-        return "FAILURE"
-
-    # 8. Navigate Dorm → Ravenwood.
-    machine.log("Navigating Dorm → Ravenwood…")
-    if (
-        await enter_zone.run(
-            machine,
-            buying_clients,
-            {
-                "from_zone": DORM_ZONE,
-                "to_zone": RAVENWOOD_ZONE,
-                "xyz": _DORM_EXIT_XYZ,
-            },
-        )
-        != "SUCCESS"
-    ):
-        machine.log("FAILURE: Dorm → Ravenwood failed", logging.WARNING)
-        return "FAILURE"
-
-    # 9. Navigate Ravenwood → Commons.
-    machine.log("Navigating Ravenwood → Commons…")
-    if (
-        await enter_zone.run(
-            machine,
-            buying_clients,
-            {
-                "from_zone": RAVENWOOD_ZONE,
-                "to_zone": COMMONS_ZONE,
-                "xyz": _RAVENWOOD_EXIT_XYZ,
-            },
-        )
-        != "SUCCESS"
-    ):
-        machine.log("FAILURE: Ravenwood → Commons failed", logging.WARNING)
-        return "FAILURE"
-
-    # 10. Approach Hilda and open the potion shop.
-    machine.log("Opening potion shop at Hilda Brewer…")
-    if not await _open_potion_shop(machine, buying_clients):
-        machine.log("FAILURE: could not open potion shop", logging.WARNING)
+    # 7-10. Travel to Hilda Brewer and open her shop.
+    if not await navigate_to_potion_vendor(machine, buying_clients):
         return "FAILURE"
 
     # 11. Buy potions for each buying client (parallel; each client manages their own shop window).
@@ -340,24 +300,118 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
+# ── Navigation ─────────────────────────────────────────────────────────────────
+
+
+async def navigate_to_potion_vendor(machine, clients: list) -> bool:
+    """Take clients from wherever they are to Hilda Brewer, with her shop window open.
+
+    Steps 7-10 of run(): unequip castles and HOME to the dorm, Dorm → Ravenwood, Ravenwood →
+    Commons, then approach Hilda and press X. Returns True only when the shop is open on
+    every client; logs the reason and returns False otherwise.
+
+    Public because this is the whole interesting part of handle_potions and the part that
+    breaks — buying is a few clicks in a window that is already open. tools/dry_run_potion_route.py
+    drives exactly this, so the route can be exercised without a client that actually needs
+    potions and without spending gold.
+    """
+    machine.log("Teleporting clients home…")
+    if not await teleport_home_and_verify_dorm(machine, clients):
+        machine.log("FAILURE: could not reach dorm after teleporting home", logging.WARNING)
+        return False
+
+    machine.log("Navigating Dorm → Ravenwood…")
+    if (
+        await enter_zone.run(
+            machine,
+            clients,
+            {"from_zone": DORM_ZONE, "to_zone": RAVENWOOD_ZONE, "xyz": _DORM_EXIT_XYZ},
+        )
+        != "SUCCESS"
+    ):
+        machine.log("FAILURE: Dorm → Ravenwood failed", logging.WARNING)
+        return False
+
+    machine.log("Navigating Ravenwood → Commons…")
+    if (
+        await enter_zone.run(
+            machine,
+            clients,
+            {"from_zone": RAVENWOOD_ZONE, "to_zone": COMMONS_ZONE, "xyz": _RAVENWOOD_EXIT_XYZ},
+        )
+        != "SUCCESS"
+    ):
+        machine.log("FAILURE: Ravenwood → Commons failed", logging.WARNING)
+        return False
+
+    machine.log("Opening potion shop at Hilda Brewer…")
+    if not await _open_potion_shop(machine, clients):
+        machine.log("FAILURE: could not open potion shop", logging.WARNING)
+        return False
+
+    return True
+
+
+async def close_potion_shop(client) -> None:
+    """Click Exit until the potion shop window is gone.
+
+    One click is not enough: the button can be swallowed while the shop is mid-animation.
+    """
+    while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
+        await node_helpers.click_by_path(client, POTION_EXIT_PATH)
+        await asyncio.sleep(_EXIT_CLICK_INTERVAL)
+
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
+async def teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     """
     Press HOME and verify all clients end up in DORM_ZONE.
 
-    Retries once for any client that didn't land in the dorm on the first press
-    (e.g., a client whose primary residence is a non-dorm house). Each attempt only
-    re-presses HOME for clients not yet confirmed in the dorm, so a client that
-    reached the dorm on attempt 1 is never pressed again during its HOME cooldown.
+    Any client with a castle equipped is unequipped first, so that GotoDormButton lands in
+    the dorm on the first press. Without that, such a client lands in its castle instead and
+    has to sit out the ~30 s teleport cooldown before a second press — and the Arcanum
+    Apartment case never recovers at all, because it has no spiral door back to a street
+    from which HOME reaches the dorm. Each castle is restored as soon as its client is in
+    the dorm, in a finally block so that a failure anywhere in here cannot leave somebody's
+    home unequipped.
 
-    NOTE: Clients with a non-dorm primary residence are expected to end up in the dorm
-    on the second HOME press (most houses have a spiral door that returns to the street,
-    from which HOME reaches the dorm). The Arcanum Apartment edge case is not handled
-    and will result in FAILURE.
+    The retry is kept for clients where the unequip did not happen — it is skipped when no
+    castle is equipped, and it can fail for its own reasons — so the old slow path is still
+    there as a fallback. Each attempt only re-presses HOME for clients not yet confirmed in
+    the dorm, so a client that reached the dorm on attempt 1 is never pressed again during
+    its HOME cooldown.
     """
+    machine.log(f"Unequipping castles for {len(clients)} client(s) so HOME reaches the dorm…", logging.DEBUG)
+    castles = await asyncio.gather(*[housing.unequip_castle(c) for c in clients])
+    for c, castle in zip(clients, castles):
+        if castle:
+            machine.log(f"Unequipped {castle!r} for client {getattr(c, 'title', repr(c))}", logging.DEBUG)
+
+    try:
+        return await _press_home_until_dorm(machine, clients)
+    finally:
+        restorable = [(c, castle) for c, castle in zip(clients, castles) if castle]
+        if restorable:
+            machine.log(f"Re-equipping {len(restorable)} castle(s)…", logging.DEBUG)
+            restored = await asyncio.gather(*[housing.equip_castle(c, castle) for c, castle in restorable])
+            for (c, castle), ok in zip(restorable, restored):
+                if not ok:
+                    machine.log(
+                        f"Could not re-equip castle {castle!r} for client "
+                        f"{getattr(c, 'title', repr(c))} — re-equip it by hand from the housing page (U).",
+                        logging.WARNING,
+                    )
+
+
+async def _press_home_until_dorm(machine, clients: list) -> bool:
+    """Press HOME, up to twice, until every client is in DORM_ZONE."""
     needs_home = list(clients)
+    # Going home from inside a dungeon raises the exit warning, which blocks the teleport
+    # until it is answered — clicking the button again behind the modal achieves nothing,
+    # so a stuck client gets the answer rather than another press.
+    retry_home = node_helpers.ModalAwareRetry(lambda c: node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH))
 
     for attempt in range(1, 3):
         machine.log(f"Clicking GotoDormButton for {len(needs_home)} client(s) (attempt {attempt}/2)…", logging.DEBUG)
@@ -378,7 +432,13 @@ async def _teleport_home_and_verify_dorm(machine, clients: list) -> bool:
                 machine.log(f"Clients not loading at timeout: {still_waiting}", logging.DEBUG)
                 break
             not_loading = [c for i, c in enumerate(needs_home) if i not in seen_loading]
-            await asyncio.gather(*[node_helpers.click_by_path(c, GOTO_DORM_BUTTON_PATH) for c in not_loading])
+            await asyncio.gather(*[retry_home(c) for c in not_loading])
+            if retry_home.refusal:
+                machine.log(
+                    f"FAILURE: could not go home — {dialog_captions.describe(retry_home.refusal)}",
+                    logging.WARNING,
+                )
+                return False
             await asyncio.sleep(POLL_INTERVAL)
 
         # Wait for ALL clients to settle (includes clients already in dorm from a prior attempt).
@@ -474,9 +534,7 @@ async def _buy_potions_for_client(machine, client) -> None:
         await node_helpers.click_by_path(client, POTION_BUY_PATH)
         await asyncio.sleep(_SHOP_CLICK_DELAY)
 
-        while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
-            await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-            await asyncio.sleep(_EXIT_CLICK_INTERVAL)
+        await close_potion_shop(client)
 
         charge_after = await client.stats.potion_charge()
         machine.log(f"Charge after buy: {charge_after}/{max_potions}", logging.DEBUG)

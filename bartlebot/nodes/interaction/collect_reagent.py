@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import POLL_INTERVAL
+from bartlebot.nodes.timing import DROP_MESSAGE_POLL, DROP_MESSAGE_TIMEOUT, POLL_INTERVAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -37,7 +37,9 @@ PARAM_SCHEMA: list[ParamField] = [
         help=(
             "Internal object names of the reagents to collect — use the Nearest Entity "
             "display in the client widget to find them. Partial matches work "
-            "(e.g. 'Fungi' matches 'FungusWort'). All listed reagents are collected in one pass."
+            "(e.g. 'Fungi' matches 'FungusWort'). Wildcards (* ? []) match the whole "
+            "name instead, so use '*Fungi*' to match anywhere and 'Fungi*' to match only "
+            "names starting with it. All listed reagents are collected in one pass."
         ),
         default=[],
         required=True,
@@ -49,14 +51,19 @@ NODE_SPEC = NodeSpec(
         "Finds all present instances of a named reagent entity in the zone and collects them. "
         "Optionally teleports all clients to a starting position first. "
         "Each client searches and collects independently, so clients on different servers "
-        "work from their own entity lists."
+        "work from their own entity lists. "
+        "An empty spawn is a normal outcome, not a failure — the node succeeds with nothing collected."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "At least one reagent was collected across all clients."),
+        ReturnSpec(
+            "SUCCESS",
+            "The zone was searched. Includes finding nothing — reagent spawns are random, "
+            "so an empty pass is expected and the route should carry on to its next stop.",
+        ),
         ReturnSpec(
             "FAILURE",
-            "Zone mismatch, entity_names is empty, or no entities were collected.",
+            "The search could not be performed: a client is in the wrong zone, or entity_names is empty.",
         ),
     ],
     required_bot_options=[
@@ -79,11 +86,11 @@ NODE_SPEC = NodeSpec(
 
 async def _collect_for_client(machine, client, client_idx: int, entity_names: list[str], safety_delay: float) -> int:
     """Find and collect all matching reagent entities for a single client. Returns collected count."""
-    from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
+    from bartlebot.utils.drop_detection import chat_available, poll_new_drops, snapshot_chat  # noqa: PLC0415
 
     entities = []
     for name in entity_names:
-        found = await client.get_base_entities_with_vague_name(name)
+        found = await node_helpers.find_entities_by_name(client, name)
         if found:
             machine.log(f"Client {client_idx + 1}: found {len(found)} '{name}' entity(s)", logging.DEBUG)
             entities.extend(found)
@@ -97,6 +104,24 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         logging.DEBUG,
     )
     collected = 0
+
+    # Drop announcements arrive from the server well after the reagent prompt has
+    # closed, so the chat baseline is carried across the whole pass rather than
+    # re-snapshotted per pickup: a message that misses its own poll window is then
+    # still detected on a later one instead of being absorbed into a new baseline.
+    track_drops = await chat_available(client)
+    if not track_drops:
+        machine.log(
+            f"Client {client_idx + 1}: chat log not visible — drops will not be logged this pass",
+            logging.WARNING,
+        )
+    drop_baseline = await snapshot_chat(client) if track_drops else ""
+
+    async def _report_drops() -> None:
+        nonlocal drop_baseline
+        drops, drop_baseline = await poll_new_drops(client, drop_baseline, DROP_MESSAGE_TIMEOUT, DROP_MESSAGE_POLL)
+        for item_name in drops:
+            machine.on_drop(item_name, 1, client_idx)
 
     for i, entity in enumerate(entities, start=1):
         try:
@@ -120,7 +145,6 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
         )
 
         if prompted:
-            chat_before = await snapshot_chat(client)
             await client.send_key(Keycode.X, 0.1)
             dismissed = await node_helpers.poll_until(
                 lambda: node_helpers.none_in_npc_range([client]),
@@ -129,8 +153,8 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
             )
             if dismissed:
                 collected += 1
-                for item_name in extract_new_drops(chat_before, await snapshot_chat(client)):
-                    machine.on_drop(item_name, 1, client_idx)
+                if track_drops:
+                    await _report_drops()
             else:
                 machine.log(
                     f"Client {client_idx + 1}: entity {i} — prompt did not dismiss after X, skipping",
@@ -141,6 +165,12 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
                 f"Client {client_idx + 1}: entity {i} — no prompt after teleport, skipping",
                 logging.DEBUG,
             )
+
+    # One last look: the final pickup has no following iteration to catch a late
+    # message, and a single pickup that yields two items announces them on
+    # separate lines, so the per-pickup poll can return with one still in flight.
+    if track_drops and collected:
+        await _report_drops()
 
     return collected
 
@@ -184,9 +214,13 @@ async def run(machine, clients: list, params: dict) -> str:
     counts = await asyncio.gather(
         *[_collect_for_client(machine, c, i, entity_names, safety_delay) for i, c in enumerate(clients)]
     )
+    # Reagent spawns are random, so an empty pass is a normal outcome rather than an
+    # error. Reporting it as FAILURE made it indistinguishable from a real problem
+    # like a wrong-zone client, and sent routes back to their recovery branch instead
+    # of on to their next stop. FAILURE is now reserved for the checks above.
     total = sum(counts)
     if total == 0:
-        machine.log("collect_reagent: no reagents collected — FAILURE", logging.WARNING)
-        return "FAILURE"
-    machine.log(f"collect_reagent: {total} reagent(s) collected across {len(clients)} client(s) — SUCCESS")
+        machine.log(f"collect_reagent: no reagents present in {zone!r} — nothing to collect, SUCCESS")
+    else:
+        machine.log(f"collect_reagent: {total} reagent(s) collected across {len(clients)} client(s) — SUCCESS")
     return "SUCCESS"

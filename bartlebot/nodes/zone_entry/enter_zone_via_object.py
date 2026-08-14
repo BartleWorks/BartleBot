@@ -5,6 +5,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -164,11 +165,14 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Pressing X to interact", logging.DEBUG)
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-    # 4b. Dismiss dungeon exit warning if it appears (triggered when leaving a dungeon zone).
-    machine.log("Checking for dungeon exit warning…", logging.DEBUG)
-    await asyncio.gather(
-        *[node_helpers.confirm_dungeon_warning_dialog(c, safety_delay, POLL_INTERVAL) for c in clients]
-    )
+    # 4b. Answer the instance prompt if interacting raised one (e.g. leaving a dungeon).
+    machine.log("Checking for an instance prompt…", logging.DEBUG)
+    if refusal := await node_helpers.answer_instance_prompts(clients, safety_delay, POLL_INTERVAL):
+        machine.log(
+            f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     # 5. Re-press X for any client that hasn't entered a loading screen yet.
     #    Track which clients have *ever* been seen loading rather than requiring

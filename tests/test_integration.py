@@ -326,7 +326,7 @@ async def test_compound_flag_AND_one_false_falls_through():
 # Shared params for enter_zone in all real-node tests
 _GZ_PARAMS = {"from_zone": "Src", "to_zone": "Dst", "xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
 
-# Safety Delay = 0.0 so confirm_dungeon_warning_dialog returns immediately in tests
+# Safety Delay = 0.0 so await_instance_prompt returns immediately in tests
 _SAFETY_DELAY_ZERO = BotOptionModel(name="Safety Delay", type="float", default=0.0)
 
 

@@ -6,6 +6,7 @@ import math
 
 from wizwalker import XYZ
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH
@@ -44,9 +45,10 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             "One or more clients had no mana; the RecallButton was not enabled within the "
-            "timeout (no mark set); clients did not move or enter a loading screen within the "
-            "trigger timeout; or not all clients arrived in the expected zone and position "
-            "after recalling.",
+            "timeout (no mark set); the game refused the recall (most often because the marked "
+            "dungeon's timer ended and it has been reset); clients did not move or enter a "
+            "loading screen within the trigger timeout; or not all clients arrived in the "
+            "expected zone and position after recalling.",
         ),
     ],
     max_consecutive_retries=5,
@@ -65,7 +67,9 @@ async def run(machine, clients: list, params: dict) -> str:
       3. Snapshot starting positions to detect same-zone recalls (no loading screen).
       4. Click RecallButton on all clients simultaneously.
       5. "Ever seen" loop: poll until all clients have either entered a loading screen or
-         moved more than TRIGGER_MARGIN units. Re-click RecallButton for stragglers.
+         moved more than TRIGGER_MARGIN units. For each straggler, answer any modal — a
+         dungeon exit warning is confirmed, a refusal (e.g. the marked dungeon has expired)
+         fails the node by name — otherwise re-click RecallButton.
          Return FAILURE if TRIGGER_TIMEOUT expires.
       6. Wait for all loading screens to finish.
       7. Verify all clients are in zone and within POSITION_MARGIN of xyz. Return FAILURE if not.
@@ -109,9 +113,32 @@ async def run(machine, clients: list, params: dict) -> str:
     #    A recall triggers either a loading screen (cross-zone) or an immediate XYZ jump
     #    (same-zone mark).  We accept either signal so both cases are handled.
     #    Re-press PAGE_UP for any client that hasn't triggered yet.
+    #    Recalling out of a dungeon raises the dungeon exit warning first; until it is
+    #    confirmed the recall never fires, and re-clicking behind the modal does nothing.
+    #    A recall *into* an expired dungeon is refused outright instead — the mark outlives
+    #    the instance, so this is a normal thing to hit after a long run, and it deserves
+    #    to be named rather than reported as "clients did not recall".
+    refusals: dict[int, str] = {}
+
+    async def _retry_recall(index: int, client) -> None:
+        outcome = await node_helpers.resolve_modal(client)
+        if outcome.refusal:
+            refusals[index] = outcome.refusal
+            return
+        if outcome.answered:
+            return
+        await node_helpers.click_by_path(client, RECALL_BUTTON_PATH)
+
     seen_triggered: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
     while True:
+        if refusals:
+            for i, key in refusals.items():
+                machine.log(
+                    f"FAILURE: client {i + 1} could not recall — {dialog_captions.describe(key)}",
+                    logging.WARNING,
+                )
+            return "FAILURE"
         loading = await asyncio.gather(*[c.is_loading() for c in clients])
         positions = await asyncio.gather(*[c.body.position() for c in clients])
         for i, (is_now, pos) in enumerate(zip(loading, positions)):
@@ -127,8 +154,7 @@ async def run(machine, clients: list, params: dict) -> str:
                 logging.WARNING,
             )
             return "FAILURE"
-        not_triggered_clients = [c for i, c in enumerate(clients) if i not in seen_triggered]
-        await asyncio.gather(*[node_helpers.click_by_path(c, RECALL_BUTTON_PATH) for c in not_triggered_clients])
+        await asyncio.gather(*[_retry_recall(i, c) for i, c in enumerate(clients) if i not in seen_triggered])
         await asyncio.sleep(POLL_INTERVAL)
 
     # 6. Wait for any loading screens to finish (no-op for same-zone recalls).

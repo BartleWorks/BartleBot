@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_zone as gtz
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER
 from tests.conftest import FakeClient, FakeMachine
 
 # Minimal params used across all tests.
@@ -105,6 +106,7 @@ async def test_exit_dungeon_dialog_dismissed():
 
     with (
         patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=lambda _c, p: p == MESSAGE_BOX_CENTER)),
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
         result = await gtz.run(FakeMachine(), [client], _PARAMS)
@@ -112,7 +114,7 @@ async def test_exit_dungeon_dialog_dismissed():
     assert result == "SUCCESS"
     # confirm button clicked; no keypresses
     client.send_key.assert_not_called()
-    assert click_by_path_mock.called
+    click_by_path_mock.assert_awaited_with(client, MESSAGE_BOX_CENTER)
 
 
 def _make_client():

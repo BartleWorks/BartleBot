@@ -4,7 +4,9 @@ Reads the in-game system chat window after combat to detect item drops.
 Adapted from Deimos (https://github.com/Deimos-Wizard101/Deimos-Wizard101).
 """
 
+import asyncio
 import re
+import time
 
 # Window tree path to the chat log text element
 _CHAT_PATH = [
@@ -47,6 +49,42 @@ async def snapshot_chat(client) -> str:
     if not await window.is_visible():
         return ""
     return await window.maybe_text() or ""
+
+
+async def chat_available(client) -> bool:
+    """Return True if the chat log window exists and is currently visible.
+
+    Drop detection has nothing to read when the chat log is hidden, so callers
+    that would otherwise poll for a message check this once up front and skip
+    detection entirely rather than waiting out a timeout per action.
+    """
+    window = await _get_window_from_path(client.root_window, _CHAT_PATH)
+    return window is not None and await window.is_visible()
+
+
+async def poll_new_drops(client, before: str, timeout: float, poll_interval: float) -> tuple[list[str], str]:
+    """Poll the chat log until new drops appear, or `timeout` seconds elapse.
+
+    Drop announcements are sent by the game server, so they land some time after
+    the local action that earned them has visibly finished. A single snapshot
+    taken the moment an interaction completes normally reads the chat exactly as
+    it was before the drop.
+
+    Returns `(drops, baseline)`. When drops are found, `baseline` is the snapshot
+    they were read from, and the caller passes it back as `before` next time.
+    When nothing is found, `baseline` is `before` unchanged — so a message that
+    arrives after the timeout is still caught by the following call instead of
+    being silently absorbed into a fresh baseline.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        after = await snapshot_chat(client)
+        drops = extract_new_drops(before, after)
+        if drops:
+            return drops, after
+        if time.monotonic() >= deadline:
+            return [], before
+        await asyncio.sleep(poll_interval)
 
 
 def extract_new_drops(before: str, after: str) -> list[str]:

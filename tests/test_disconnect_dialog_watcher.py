@@ -11,6 +11,7 @@ Covers:
 """
 
 import asyncio
+import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -269,3 +270,47 @@ async def test_watcher_still_fires_recovery_when_kill_raises():
 
     on_pause.assert_called_once()
     on_disconnected.assert_called_once_with(5)
+
+
+# ---------------------------------------------------------------------------
+# Caption identification (issue #84, step 6)
+#
+# The keyword list is English. A client running in any of the game's other six
+# locales matched nothing, and "nothing" reads as "no disconnect" — so a dead
+# client sat there instead of being recovered. Captions are matched against all
+# seven locales first, with the keywords kept only as a fallback.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("locale", ["de", "el", "en-US", "es", "fr", "it", "pl"])
+async def test_disconnect_is_detected_in_every_locale(locale):
+    from bartlebot import dialog_captions
+
+    captions = json.loads(dialog_captions.CAPTIONS_PATH.read_text(encoding="utf-8"))["captions"]
+    text = captions[dialog_captions.DISCONNECTED_IDLE][locale]
+    root = _make_disconnect_tree(caption_text=text)
+
+    assert await ClientHealthMonitor._is_disconnect_modal_visible(_make_client(root_window=root)) is True
+
+
+async def test_a_recognised_non_disconnect_modal_is_not_a_disconnect():
+    """The dungeon exit warning is a normal part of running a bot, not a dead client.
+
+    Being catalogued is what settles it: the answer comes from the key, so the caption
+    never reaches the keyword guess.
+    """
+    root = _make_disconnect_tree(
+        caption_text=(
+            "If you leave a Dungeon you will lose all your progress in the Dungeon and "
+            "will have to start over at the beginning.<br>Are you sure you want to leave now?"
+        )
+    )
+
+    assert await ClientHealthMonitor._is_disconnect_modal_visible(_make_client(root_window=root)) is False
+
+
+async def test_an_uncatalogued_caption_still_falls_back_to_keywords():
+    """A disconnect dialog reworded by a patch must not stop being detected."""
+    root = _make_disconnect_tree(caption_text="Brand new wording about your connection")
+
+    assert await ClientHealthMonitor._is_disconnect_modal_visible(_make_client(root_window=root)) is True

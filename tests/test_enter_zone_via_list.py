@@ -245,3 +245,59 @@ async def test_stale_prompt_cleared():
     assert result == "SUCCESS"
     first_tp = client.teleport.call_args_list[0]
     assert first_tp.args[0].x == 1.0  # reset_xyz
+
+
+# ---------------------------------------------------------------------------
+# Dungeon exit warning (issue #84)
+# ---------------------------------------------------------------------------
+
+
+async def test_instance_prompt_is_answered_after_the_teleport_click():
+    """Using a zone list from inside a dungeon raises the exit prompt, which holds the port.
+
+    Blocking on the answer is safe here only because what follows waits on the arrival
+    zone, which stays true once it happens — unlike an is_loading() wait, which can be
+    missed entirely if the node spends the Safety Delay elsewhere first.
+    """
+    clients = [_ready_client(), _ready_client()]
+    for c in clients:
+        c.zone_name.side_effect = ["TestZone", "DestZone"]
+    answer = AsyncMock(return_value=None)
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.answer_instance_prompts", answer),
+    ):
+        result = await evl.run(FakeMachine(), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    answer.assert_awaited_once()
+    assert answer.await_args[0][0] == clients
+
+
+async def test_a_refused_teleport_fails_instead_of_waiting_for_a_zone_change():
+    """A gauntlet will not let anyone change areas, so the arrival wait cannot succeed."""
+    from bartlebot import dialog_captions
+
+    clients = [_ready_client()]
+    machine = FakeMachine()
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 10)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+        patch(
+            f"{_NH}.answer_instance_prompts",
+            AsyncMock(return_value=dialog_captions.GAUNTLET_NO_ZONE_CHANGE),
+        ),
+    ):
+        result = await evl.run(machine, clients, _PARAMS)
+
+    assert result == "FAILURE"
+    assert any("in a Gauntlet" in msg or "gauntlet" in msg for msg, _lvl in machine.logs)

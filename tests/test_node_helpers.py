@@ -3,8 +3,20 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from wizwalker import MemoryReadError
 
-from bartlebot.nodes.node_helpers import _get_window_from_path, all_in_zone, all_left_zone, zone_matches
+from bartlebot.nodes.node_helpers import (
+    _get_window_from_path,
+    all_in_zone,
+    all_left_zone,
+    entity_name_matches,
+    entity_name_predicate,
+    find_closest_entity_by_name,
+    find_entities_by_name,
+    zone_matches,
+)
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+from tests.conftest import FakeClient, FakeEntity, message_box_patches
 
 # ---------------------------------------------------------------------------
 # zone_matches — pure function, no async
@@ -51,10 +63,146 @@ def test_zone_matches_none_actual_returns_false():
     assert zone_matches(None, "WizardCity/*") is False
 
 
-def test_zone_matches_malformed_pattern_falls_back_to_exact():
-    # "[unclosed" is an invalid glob — should not raise, falls back to equality
+def test_zone_matches_malformed_pattern_is_literal_not_an_error():
+    # fnmatch treats an unbalanced bracket as a literal, so this must not raise
+    # and matches only the zone of that exact name.
     assert zone_matches("WizardCity/WC_Hub", "[unclosed") is False
     assert zone_matches("[unclosed", "[unclosed") is True
+
+
+# ---------------------------------------------------------------------------
+# entity_name_matches — pure function, no async
+# ---------------------------------------------------------------------------
+
+
+def test_entity_name_plain_is_substring():
+    # The long-standing behaviour every existing bot file depends on.
+    assert entity_name_matches("Cyclops/CyclopsMinion", "Cyclops") is True
+    assert entity_name_matches("Cyclops/CyclopsMinion", "Minion") is True
+
+
+def test_entity_name_plain_is_case_insensitive():
+    assert entity_name_matches("Cyclops/CyclopsMinion", "cyclops") is True
+
+
+def test_entity_name_plain_miss():
+    assert entity_name_matches("Cyclops/CyclopsMinion", "Kraken") is False
+
+
+def test_entity_name_wildcard_anchors_the_whole_name():
+    # The bug behind #58: a wildcard used to be a literal character that matched
+    # nothing. It now globs, and anchored, so a leading "*" is load-bearing.
+    assert entity_name_matches("Bandit/BanditThug", "*Bandit*") is True
+    assert entity_name_matches("Bandit/BanditThug", "Bandit*") is True
+    assert entity_name_matches("Krokotopia/BanditThug", "Bandit*") is False
+
+
+def test_entity_name_wildcard_is_case_insensitive():
+    assert entity_name_matches("Bandit/BanditThug", "*bandit*") is True
+
+
+def test_entity_name_question_mark():
+    assert entity_name_matches("Rank3", "Rank?") is True
+    assert entity_name_matches("Rank30", "Rank?") is False
+
+
+def test_entity_name_none_actual_returns_false():
+    assert entity_name_matches(None, "Cyclops") is False
+    assert entity_name_matches(None, "*Cyclops*") is False
+
+
+def test_entity_name_malformed_pattern_is_literal_not_an_error():
+    # fnmatch treats an unbalanced bracket as a literal, so this must not raise
+    # and must behave like any other anchored pattern.
+    assert entity_name_matches("[unclosed", "[unclosed") is True
+    assert entity_name_matches("a [unclosed name", "[unclosed") is False
+    assert entity_name_matches("a [unclosed name", "*[unclosed*") is True
+
+
+# ---------------------------------------------------------------------------
+# find_closest_entity_by_name — async
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_find_closest_plain_name_uses_vague_name():
+    """A plain name must keep taking WizSprinter's own path, untouched."""
+    client = FakeClient()
+    client.find_closest_by_vague_name.return_value = FakeEntity("Cyclops/CyclopsMinion")
+
+    found = await find_closest_entity_by_name(client, "Cyclops")
+
+    assert found is not None
+    client.find_closest_by_vague_name.assert_awaited_once_with("Cyclops")
+    client.find_closest_by_predicate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_find_closest_wildcard_uses_predicate():
+    client = FakeClient()
+    client.find_closest_by_predicate.return_value = FakeEntity("Bandit/BanditThug")
+
+    found = await find_closest_entity_by_name(client, "*Bandit*")
+
+    assert found is not None
+    client.find_closest_by_vague_name.assert_not_awaited()
+    client.find_closest_by_predicate.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_find_entities_plain_name_uses_vague_name():
+    client = FakeClient()
+    client.get_base_entities_with_vague_name.return_value = [FakeEntity("FungusWort")]
+
+    found = await find_entities_by_name(client, "Fungi")
+
+    assert len(found) == 1
+    client.get_base_entities_with_vague_name.assert_awaited_once_with("Fungi")
+    client.get_base_entities_with_predicate.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_find_entities_wildcard_uses_predicate():
+    client = FakeClient()
+    client.get_base_entities_with_predicate.return_value = [FakeEntity("FungusWort")]
+
+    found = await find_entities_by_name(client, "*Fungi*")
+
+    assert len(found) == 1
+    client.get_base_entities_with_vague_name.assert_not_awaited()
+    client.get_base_entities_with_predicate.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# entity_name_predicate — the matcher both search helpers hand to WizSprinter
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_predicate_accepts_and_rejects_by_name():
+    predicate = entity_name_predicate("Bandit*")
+
+    assert await predicate(FakeEntity("BanditThug")) is True
+    assert await predicate(FakeEntity("Krokotopia/BanditThug")) is False
+
+
+@pytest.mark.asyncio
+async def test_predicate_skips_entity_that_despawned():
+    """A dead entity mid-scan is skipped, not allowed to abort the whole search."""
+    predicate = entity_name_predicate("Bandit*")
+
+    gone = FakeEntity("BanditThug")
+    gone.object_template = AsyncMock(side_effect=MemoryReadError("read failed"))
+    assert await predicate(gone) is False
+
+
+@pytest.mark.asyncio
+async def test_predicate_skips_entity_without_a_template():
+    predicate = entity_name_predicate("Bandit*")
+
+    templateless = FakeEntity("BanditThug")
+    templateless.object_template = AsyncMock(return_value=None)
+    assert await predicate(templateless) is False
 
 
 # ---------------------------------------------------------------------------
@@ -390,3 +538,229 @@ async def test_open_friends_list_does_not_touch_a_list_that_is_already_compact()
 async def test_open_friends_list_clicks_when_nothing_is_open():
     actions = await _open_friends_list_with(set())
     assert actions == ["click btnFriends"]
+
+
+# ---------------------------------------------------------------------------
+# identify_modal / modal_showing — caption first, buttons as fallback
+# ---------------------------------------------------------------------------
+
+
+def _caption_patch(text: str):
+    """Patch the caption read so the client appears to be showing `text`."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    return patch.object(nh_mod, "get_text_by_path", new=AsyncMock(return_value=text))
+
+
+_EXIT_CAPTION = (
+    "If you leave a Dungeon you will lose all your progress in the Dungeon and will "
+    "have to start over at the beginning.<br>Are you sure you want to leave now?"
+)
+
+
+async def test_identify_modal_names_the_dialog_on_screen():
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot import dialog_captions
+
+    with _caption_patch(_EXIT_CAPTION):
+        assert await nh_mod.identify_modal(FakeClient()) == dialog_captions.INSTANCE_EXIT
+
+
+async def test_identify_modal_returns_none_for_an_unknown_caption():
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    with _caption_patch("A dialog nobody has catalogued"):
+        assert await nh_mod.identify_modal(FakeClient()) is None
+
+
+async def test_modal_showing_is_true_for_an_unrecognised_dialog():
+    """identify_modal() conflates 'nothing up' with 'not in the snapshot'; this separates them."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    with _caption_patch("A dialog nobody has catalogued"):
+        assert await nh_mod.modal_showing(FakeClient()) is True
+    with _caption_patch(""):
+        assert await nh_mod.modal_showing(FakeClient()) is False
+
+
+# ---------------------------------------------------------------------------
+# resolve_modal — confirm questions, dismiss refusals, report the refusals
+# ---------------------------------------------------------------------------
+
+
+async def _resolve_with(caption: str, buttons):
+    """Run resolve_modal against a stated dialog. Returns (outcome, clicked paths)."""
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from tests.conftest import message_box_patches as mbp
+
+    patches, clicked = mbp(buttons)
+    with patches[0], patches[1], _caption_patch(caption):
+        outcome = await nh_mod.resolve_modal(FakeClient())
+    return outcome, clicked
+
+
+async def test_resolve_modal_confirms_a_question():
+    outcome, clicked = await _resolve_with(_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    assert outcome.answered is True
+    assert outcome.refusal is None
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_resolve_modal_dismisses_a_refusal_and_names_it():
+    """The node needs the key so it can fail with the reason a player would have read."""
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with("Your friend is busy right now.", (MESSAGE_BOX_RIGHT,))
+
+    assert outcome.refusal == dialog_captions.FRIEND_BUSY
+    assert clicked == [MESSAGE_BOX_RIGHT]
+    assert "not accepting teleports" in dialog_captions.describe(outcome.refusal)
+
+
+async def test_resolve_modal_dismisses_a_one_button_refusal_with_the_centre():
+    """A refusal with only an OK button puts it in the centre, not the right."""
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with(
+        "You are not allowed to switch Realms from this location", (MESSAGE_BOX_CENTER,)
+    )
+
+    assert outcome.refusal == dialog_captions.REALM_NOT_ALLOWED_HERE
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_resolve_modal_reports_nothing_when_no_dialog_is_up():
+    outcome, clicked = await _resolve_with("", ())
+
+    assert outcome == (False, None)
+    assert clicked == []
+
+
+async def test_resolve_modal_treats_an_unknown_dismiss_only_dialog_as_a_refusal():
+    """A dialog reworded by a patch must keep failing fast rather than start timing out.
+
+    No centre button means the game offers no way to proceed, whatever the words say.
+    """
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with("Wording nobody has catalogued", (MESSAGE_BOX_RIGHT,))
+
+    assert outcome.refusal == dialog_captions.UNRECOGNISED_REFUSAL
+    assert clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_resolve_modal_confirms_an_unknown_dialog_that_offers_a_way_forward():
+    outcome, clicked = await _resolve_with("Wording nobody has catalogued", (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    assert outcome.answered is True
+    assert outcome.refusal is None
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_resolve_modal_leaves_another_handlers_dialog_alone():
+    """A recognised dialog that belongs to somebody else is not clicked at all.
+
+    "already in a group" is group_manager's to answer. Being recognised is what protects
+    it: an unknown dismiss-only dialog would be treated as a refusal and dismissed, which
+    is the right default but the wrong answer here.
+    """
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with("Somebody is already in a group.", (MESSAGE_BOX_RIGHT,))
+
+    assert dialog_captions.identify_caption("Somebody is already in a group.") == dialog_captions.ALREADY_IN_GROUP
+    assert outcome == (False, None)
+    assert clicked == []
+
+
+# ---------------------------------------------------------------------------
+# ModalAwareRetry and await_instance_prompt
+# ---------------------------------------------------------------------------
+
+
+async def test_retry_answers_the_dialog_instead_of_pressing_the_button():
+    """A client behind a modal is not lagging — the button it would press is unreachable."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    action = AsyncMock()
+    with patches[0], patches[1], _caption_patch(_EXIT_CAPTION):
+        await nh_mod.ModalAwareRetry(action)(FakeClient())
+
+    assert clicked == [MESSAGE_BOX_CENTER]
+    action.assert_not_called()
+
+
+async def test_retry_falls_through_when_nothing_is_on_screen():
+    """Outside a dungeon the wrapper must be invisible — stragglers still get retried."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, _ = message_box_patches(())
+    action = AsyncMock()
+    client = FakeClient()
+    with patches[0], patches[1], _caption_patch(""):
+        await nh_mod.ModalAwareRetry(action)(client)
+
+    action.assert_awaited_once_with(client)
+
+
+async def test_retry_records_a_refusal_and_stops_pressing():
+    """poll_each_until_seen only reports who was seen, so the refusal has to be carried out."""
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot import dialog_captions
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER,))
+    action = AsyncMock()
+    retry = nh_mod.ModalAwareRetry(action)
+    with patches[0], patches[1], _caption_patch("You cannot change Areas while in a Gauntlet."):
+        await retry(FakeClient())
+
+    assert retry.refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE
+    action.assert_not_called()
+
+
+async def test_await_instance_prompt_returns_as_soon_as_it_answers():
+    """No reason to sit out the rest of the Safety Delay once the dialog is gone."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    with patches[0], patches[1], _caption_patch(_EXIT_CAPTION):
+        outcome = await nh_mod.await_instance_prompt(FakeClient(), delay=30, poll_interval=0)
+
+    assert outcome.answered is True
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_await_instance_prompt_gives_up_quietly_when_no_prompt_appears():
+    """The common case: no dungeon involved, so the wait expires and the node carries on."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches(())
+    with patches[0], patches[1], _caption_patch(""):
+        outcome = await nh_mod.await_instance_prompt(FakeClient(), delay=0.01, poll_interval=0)
+
+    assert outcome == (False, None)
+    assert clicked == []
+
+
+async def test_answer_instance_prompts_reports_one_clients_refusal_for_the_group():
+    """Clients cross together, so a refusal for one condemns the move for all."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot import dialog_captions
+
+    ok, blocked = FakeClient(), FakeClient()
+
+    async def caption(client, _path):
+        return "You cannot change Areas while in a Gauntlet." if client is blocked else ""
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER,))
+    with patches[0], patches[1], patch.object(nh_mod, "get_text_by_path", new=AsyncMock(side_effect=caption)):
+        refusal = await nh_mod.answer_instance_prompts([ok, blocked], delay=0.01, poll_interval=0)
+
+    assert refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE

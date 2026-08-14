@@ -30,9 +30,16 @@ _patch_elixir_active = lambda: patch(  # noqa: E731
 def _ready_client() -> FakeClient:
     """Client with no stale prompt; interact prompt shows immediately at interact_xyz."""
     c = FakeClient()
-    # First call: stale-prompt check on entry → no stale prompt.
-    # Second call onward: prompt is present at interact_xyz.
-    c.is_in_npc_range.side_effect = [False, True]
+    seen = False
+
+    async def _npc_range():
+        # First call: stale-prompt check on entry → no stale prompt.
+        # Every call after: prompt is present at interact_xyz.
+        nonlocal seen
+        was_seen, seen = seen, True
+        return was_seen
+
+    c.is_in_npc_range.side_effect = _npc_range
     return c
 
 
@@ -192,7 +199,7 @@ async def test_stale_prompt_cleared_before_interaction():
 
 
 async def test_prompt_retry_then_success():
-    """Prompt times out on first attempt; appears after reset on second attempt."""
+    """Prompt times out on the first round; appears after reset on the second."""
     client = FakeClient()
     machine = FakeMachine(options={"Level Scaling Players": [1]})
     reset_visited: list[bool] = []
@@ -208,10 +215,15 @@ async def test_prompt_retry_then_success():
 
     client.is_in_npc_range.side_effect = npc_range
 
+    # The elixir only shows up once the station has actually been used, which cannot
+    # happen until the prompt appears.
+    async def elixir_visible(_client, _path):
+        return bool(client.send_key.call_args_list)
+
     with (
         _patch_menu_visible(),
         _patch_menu_gone(),
-        _patch_elixir_active(),
+        patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
         patch.object(als, "POLL_INTERVAL", 0),
     ):
         result = await als.run(machine, [client], _PARAMS)
@@ -219,3 +231,63 @@ async def test_prompt_retry_then_success():
     assert result == "SUCCESS"
     assert len(reset_visited) == 1
     assert client.teleport.call_count == 3  # interact, reset, interact
+
+
+async def test_missing_elixir_is_retried():
+    """A client whose elixir did not take is retried; one that already has it is left alone."""
+    c1 = _ready_client()
+    c2 = _ready_client()
+    machine = FakeMachine(options={"Level Scaling Players": [1, 2]})
+
+    # c1 gets the elixir on the first round; c2 only on the second.
+    async def elixir_visible(client, _path):
+        if client is c1:
+            return True
+        return len(c2.send_key.call_args_list) >= 2
+
+    with (
+        _patch_menu_visible(),
+        _patch_menu_gone(),
+        patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
+        patch.object(als, "POLL_INTERVAL", 0),
+        patch.object(als, "LEVEL_SCALING_STAGGER_DELAY", 0),
+    ):
+        result = await als.run(machine, [c1, c2], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert len(c1.send_key.call_args_list) == 1  # used the station once, not retried
+    assert len(c2.send_key.call_args_list) == 2  # retried after the elixir did not take
+
+
+async def test_clients_use_station_one_at_a_time():
+    """Two clients never overlap at the station — one finishes before the next presses X."""
+    c1 = _ready_client()
+    c2 = _ready_client()
+    machine = FakeMachine(options={"Level Scaling Players": [1, 2]})
+    order: list[str] = []
+
+    def _record_key(client, label):
+        async def _send(*_args, **_kwargs):
+            order.append(f"x{label}")
+
+        client.send_key.side_effect = _send
+
+    _record_key(c1, 1)
+    _record_key(c2, 2)
+
+    async def _click(client, _path):
+        order.append(f"click{1 if client is c1 else 2}")
+        return True
+
+    with (
+        _patch_menu_visible(),
+        _patch_menu_gone(),
+        _patch_elixir_active(),
+        patch("bartlebot.nodes.node_helpers.click_by_path", new=AsyncMock(side_effect=_click)),
+        patch.object(als, "POLL_INTERVAL", 0),
+        patch.object(als, "LEVEL_SCALING_STAGGER_DELAY", 0),
+    ):
+        result = await als.run(machine, [c1, c2], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert order == ["x1", "click1", "x2", "click2"]

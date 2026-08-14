@@ -78,6 +78,18 @@ DIALOG_FAST_POLL_INTERVAL = 0.05
 # Safety Delay window has elapsed with no further dialogue.
 
 
+DROP_MESSAGE_TIMEOUT = 3.0
+# Seconds to keep watching the chat log for a drop announcement after an action
+# that should have produced one. The message is a server round-trip, so it lands
+# after the local UI has already finished reacting — diffing the chat the instant
+# a reagent prompt disappears reads it as it was before the drop. Only paid in
+# full when nothing arrives at all; the poll returns as soon as a line shows up.
+
+DROP_MESSAGE_POLL = 0.1
+# How often to re-read the chat log while waiting for a drop announcement. Finer
+# than POLL_INTERVAL because this wait sits between two game actions, so every
+# poll cycle spent past the message's arrival is added latency per pickup.
+
 CLIENT_REFRESH_INTERVAL_IDLE = 0.1
 # Seconds between client sidebar refreshes when no bot is running.
 
@@ -126,6 +138,15 @@ LAUNCH_STAGGER_DELAY = 1.0
 # login server intermittently rejects logins that arrive in too-tight
 # succession; this spaces them out enough to avoid that without giving up
 # most of the benefit of launching a team in parallel.
+
+LEVEL_SCALING_STAGGER_DELAY = 1.0
+# Seconds between one client finishing with the level-scaling station and the next one
+# starting on it. Several clients using it at once intermittently leaves some of them
+# without the elixir, so the uses are serialised and spaced out. The whole interaction
+# is serialised rather than only the clicks: the station's menu closes on every client
+# that has not clicked yet as soon as one of them does, so overlapping the menus and
+# staggering only the clicks loses the elixir for everyone after the first. Anyone still
+# missing it is retried rather than failed, so this only has to cover the common case.
 
 WISP_COLLECT_TIMEOUT = 10.0
 # Ceiling on how long a single client may spend collecting wisps for one
@@ -208,6 +229,23 @@ GROUP_UI_SETTLE = 1.0
 # under load, and a survey that misreads membership sends spurious invites. It is
 # concurrent across clients (see group_manager.read_group_flags), so it costs one second
 # for the whole fleet rather than one per client, which is where the win came from instead.
+
+
+HOUSING_EQUIP_TIMEOUT = 5.0
+# Ceiling on waiting for a castle's "equipped" fist icon to reflect an Equip_Item click.
+# Equipping is a server round-trip, but the icon is the game's own confirmation, so this is
+# polled rather than slept through. Generous because the only cost of a high ceiling is the
+# time taken by a click that was never going to land.
+
+HOUSING_OPEN_RETRIES = 3
+# Attempts at pressing U to open the housing page. The key is swallowed when another
+# spellbook page owns the window, which one ESC clears — so a second attempt almost always
+# succeeds and a third is pure margin.
+
+HOUSING_PAGE_MAX = 10
+# Ceiling on how many pages of the castle list are searched. At 8 rows per page this covers
+# 80 castles, far past any real inventory; it exists so that a paging control that stops
+# advancing cannot spin forever.
 
 
 CHARACTER_PAGE_SETTLE = 0.5

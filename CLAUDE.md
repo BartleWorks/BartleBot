@@ -306,7 +306,11 @@ Conventions worth knowing:
 - `<Thing>.xml` holds the **ordered key list**; `Locale/<loc>/<Thing>.lang` maps
   key → display text. IDs index **position in the XML list**, not the numeric
   suffix of the key (`First_Boy_102` is "Luke" but sits at index 100).
-- `.lang` files are UTF-16LE with CRLF, in `key / blank / value` triples.
+- `.lang` files are UTF-16LE with CRLF, in fixed three-line records: `key`,
+  translator description, display text. The description reads as blank in most
+  records, which makes the format look like `key / blank / value` — a parser that
+  *requires* it blank silently drops every documented key rather than failing. Slice
+  at a fixed stride; see `parse_lang` in `tools/dump_dialog_captions.py`.
 - Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
   later additions were not always translated.
 
@@ -314,6 +318,49 @@ Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
 dependency on the game being installed at a guessable path. Extract what you need
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 `bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
+
+### Telling modal dialogs apart
+
+Every in-game modal is the same `MessageBoxModalWindow` tree, so "a modal is up"
+does not say which one. Identify it by caption, comparing against the key constants
+in `bartlebot/dialog_captions.py`.
+
+Most nodes want `resolve_modal()` rather than `identify_modal()` — it acts on the
+dialog and reports only what the caller has to decide about:
+
+```python
+outcome = await node_helpers.resolve_modal(client)
+if outcome.refusal:                       # the game said no; stop
+    machine.log(f"FAILURE: … — {dialog_captions.describe(outcome.refusal)}")
+    return "FAILURE"
+if outcome.answered:                      # a question was confirmed; skip this tick's retry
+    return
+```
+
+Pick by the shape of the wait that follows:
+
+| wait | use |
+|---|---|
+| a retry loop on `is_loading()` | `ModalAwareRetry(action_fn)` as `poll_each_until_seen`'s `action_fn`, then check `.refusal` |
+| a *sticky* condition (left the zone, arrived) | `await_instance_prompt()`, or `answer_instance_prompts()` for a whole group |
+| one-off, mid-loop | `resolve_modal()` directly |
+
+Never answer a dialog with a blocking wait ahead of an `is_loading()` check: it
+costs the full Safety Delay whenever no dialog appears, and three seconds spent
+before watching for a loading screen can miss it entirely.
+
+Do **not** infer identity from which buttons are showing. That only works while no
+two dialogs a node can hit share a layout, and it already broke once: the dungeon
+exit warning and the friend-busy dialog both show a right button, so
+`teleport_to_friend` reported every dungeon exit as an unreachable friend (#84).
+
+Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per key
+— memory holds the *resolved* text, so an English substring match fails silently on
+any other locale. To add a dialog: append to `KNOWN_KEYS`, run
+`poetry run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.
+`--verify` re-checks the snapshot for keys whose text no longer identifies them
+uniquely. An unrecognised caption returns `None`, and callers must fall back rather
+than treat it as "no dialog".
 
 ### Bumping a pin
 

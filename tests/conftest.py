@@ -1,7 +1,7 @@
 """Shared test doubles for node unit tests."""
 
 import logging
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
@@ -30,6 +30,7 @@ _FAKED_METHODS = frozenset(
         "send_key",
         "find_closest_mob",
         "find_closest_by_vague_name",
+        "find_closest_by_predicate",
         "tp_to",
         "in_battle",
         "calc_health_ratio",
@@ -41,6 +42,7 @@ _FAKED_METHODS = frozenset(
         "tp_to_closest_mana_wisp",
         "backpack_space",
         "get_base_entities_with_vague_name",
+        "get_base_entities_with_predicate",
     }
 )
 for _method in _FAKED_METHODS:
@@ -76,6 +78,7 @@ class FakeClient:
         self.send_key = AsyncMock()
         self.find_closest_mob = AsyncMock(return_value=None)
         self.find_closest_by_vague_name = AsyncMock(return_value=None)
+        self.find_closest_by_predicate = AsyncMock(return_value=None)
         self.tp_to = AsyncMock()
         self.in_battle = AsyncMock(return_value=False)
         self.body = MagicMock()
@@ -98,6 +101,7 @@ class FakeClient:
         self.mouse_handler.__aexit__ = AsyncMock(return_value=False)
         self.mouse_handler.click_window = AsyncMock()
         self.get_base_entities_with_vague_name = AsyncMock(return_value=[])
+        self.get_base_entities_with_predicate = AsyncMock(return_value=[])
         # Distinct per instance, like window_handle, so each FakeClient looks like a
         # different character to wizard_names' switch detection. Tests that care set
         # read_value_from_offset.return_value directly to simulate a character switch.
@@ -115,6 +119,11 @@ class FakeEntity:
     def __init__(self, name: str = "TestEnemy/TestEnemy"):
         self.object_name = AsyncMock(return_value=name)
         self.location = AsyncMock(return_value=XYZ(100.0, 200.0, 0.0))
+        # Real entities expose their name through the template, not directly; predicate
+        # searches read it that way, so the two must report the same name.
+        template = MagicMock()
+        template.object_name = self.object_name
+        self.object_template = AsyncMock(return_value=template)
 
 
 class FakeMachine:
@@ -148,6 +157,39 @@ class FakeMachine:
         options={"Safety Delay": <value>} to the constructor.
         """
         return self._options.get(name, 0.01 if name == "Safety Delay" else 0)
+
+
+def message_box_patches(visible_buttons=()):
+    """Patch node_helpers' UI reads to stand in for an on-screen modal message box.
+
+    `visible_buttons` is the set of MESSAGE_BOX_* paths the modal shows; clicks land only
+    on those. Which buttons are showing is the ONLY way to tell the game's modals apart —
+    they all share the MessageBoxModalWindow tree — so tests state a dialog by naming its
+    buttons, the way the nodes identify it:
+
+        (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT)  the dungeon exit warning (confirm + cancel)
+        (MESSAGE_BOX_RIGHT,)                     teleport_to_friend's friend-busy dialog
+        ()                                       no modal
+
+    Returns (patches, clicked_paths): apply the patches with an ExitStack or a `with`
+    tuple, and assert against clicked_paths afterwards.
+    """
+    import bartlebot.nodes.node_helpers as nh
+
+    visible = [list(p) for p in visible_buttons]
+    clicked: list[list[str]] = []
+
+    async def _is_visible(_client, path):
+        return list(path) in visible
+
+    async def _click(_client, path):
+        clicked.append(path)
+        return list(path) in visible
+
+    return (
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+    ), clicked
 
 
 class FakeParamForm:

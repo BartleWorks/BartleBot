@@ -3,6 +3,7 @@
 import asyncio
 import logging
 
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
@@ -47,8 +48,9 @@ async def run(machine, clients: list, params: dict) -> str:
       3. Wait for the hub teleport button to become enabled on clients to move. Return
          FAILURE if COMPASS_TELEPORT_TIMEOUT expires (30-second game cooldown).
       4. Click the hub teleport button on all clients to move.
-      5. "Ever seen" loop: poll until all clients have entered a loading screen, re-clicking
-         the button for stragglers. Return FAILURE if TRIGGER_TIMEOUT expires.
+      5. "Ever seen" loop: poll until all clients have entered a loading screen. For each
+         straggler, confirm a dungeon exit warning if one is up, otherwise re-click the
+         button. Return FAILURE if TRIGGER_TIMEOUT expires.
       6. Wait for all loading screens to finish.
       7. Wait for all clients (including those already in zone) to arrive in zone.
          Return FAILURE if any are not.
@@ -89,13 +91,23 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("Clicking hub teleport button…", logging.DEBUG)
     await asyncio.gather(*[node_helpers.click_by_path(c, HUB_BUTTON_PATH) for c in clients_to_move])
 
+    # Clients teleporting out of a dungeon are held behind the exit warning, which no
+    # amount of re-clicking the hub button will clear — answer it first each tick. A
+    # refusal (a gauntlet, say) ends the wait instead of running it out.
+    retry = node_helpers.ModalAwareRetry(lambda c: node_helpers.click_by_path(c, HUB_BUTTON_PATH))
     seen_loading = await node_helpers.poll_each_until_seen(
         clients_to_move,
         check_fn=lambda c: c.is_loading(),
-        action_fn=lambda c: node_helpers.click_by_path(c, HUB_BUTTON_PATH),
+        action_fn=retry,
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )
+    if retry.refusal:
+        machine.log(
+            f"FAILURE: hub teleport refused — {dialog_captions.describe(retry.refusal)}",
+            logging.WARNING,
+        )
+        return "FAILURE"
     if len(seen_loading) < len(clients_to_move):
         not_loading_idx = [i for i in range(len(clients_to_move)) if i not in seen_loading]
         machine.log(f"Clients not loading at timeout: {not_loading_idx}", logging.DEBUG)
