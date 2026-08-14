@@ -73,16 +73,23 @@ def split_key(known_key: str) -> tuple[str, str]:
 def parse_lang(raw: bytes) -> dict[str, str]:
     """Parse a .lang file into {key: display text}.
 
-    Records are three lines -- key, blank, value -- in UTF-16LE with CRLF endings, after a
-    one-line header. Values containing a literal newline would desynchronise a fixed
-    stride, so records are walked rather than sliced.
+    UTF-16LE with CRLF endings, a one-line header, then fixed three-line records:
+
+        key
+        translator description, OFTEN BUT NOT ALWAYS BLANK
+        display text
+
+    The middle line is the trap. It reads as blank in most records, which makes the
+    format look like `key / blank / value` -- and a parser that requires it blank
+    silently drops every documented key instead of failing. That cost us GoToFriendFail,
+    whose description was mistaken for its value, so the key looked unusable and was
+    dropped from KNOWN_KEYS.
+
+    Records are therefore sliced at a fixed stride rather than walked. Values never
+    contain a literal newline: the game wraps with <br> and escaped \\n instead.
     """
     lines = raw.decode("utf-16-le", errors="replace").lstrip("\ufeff").split("\r\n")
-    out: dict[str, str] = {}
-    for i in range(1, len(lines) - 2):
-        if lines[i] and not lines[i + 1] and lines[i] not in out:
-            out[lines[i]] = lines[i + 2]
-    return out
+    return {lines[i]: lines[i + 2] for i in range(1, len(lines) - 2, 3) if lines[i]}
 
 
 async def build_snapshot(wad_path: Path) -> dict:

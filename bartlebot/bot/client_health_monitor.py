@@ -17,6 +17,7 @@ import logging
 import time
 from collections.abc import Callable
 
+from bartlebot import dialog_captions
 from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
 from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
 
@@ -44,8 +45,15 @@ _CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
 # Consecutive failed zone_name() calls before a client is treated as unresponsive.
 
 _DISCONNECT_KEYWORDS: frozenset[str] = frozenset({"disconnect", "connection", "network", "inactivity", "kicked"})
-# Lowercase substrings matched against the disconnect modal caption text.
-# A match on any one keyword triggers force-kill and recovery.
+# Fallback only. These are English substrings, so on a client running in any of the game's
+# other six locales they match nothing — and "nothing" reads as "no disconnect", which
+# leaves a dead client sitting there instead of being recovered. That is why the caption is
+# matched against dialog_captions.DISCONNECTS first, which knows all seven locales. The
+# keywords stay for a disconnect dialog the snapshot has not seen: broad and English-only
+# beats silent on the machines most likely to be running this.
+#
+# Note "network" would also match the "Network Connection Status" label, which is not a
+# disconnect at all. Another reason it is the fallback rather than the test.
 
 
 class ClientHealthMonitor:
@@ -164,8 +172,16 @@ class ClientHealthMonitor:
         text = await caption_window.maybe_text()
         if not text:
             return False
-        lowered = text.lower()
-        return any(kw in lowered for kw in _DISCONNECT_KEYWORDS)
+
+        # Identify it properly first: this works in every locale the game ships, and it
+        # distinguishes an actual disconnect from the other modals that mention a
+        # connection. A recognised non-disconnect dialog is a definite no, so it returns
+        # here rather than falling through to the keyword guess.
+        key = dialog_captions.identify_caption(text)
+        if key is not None:
+            return key in dialog_captions.DISCONNECTS
+
+        return any(kw in text.lower() for kw in _DISCONNECT_KEYWORDS)
 
     async def _client_status_watcher(self) -> None:
         """Detect unresponsive clients via zone_name() polling.

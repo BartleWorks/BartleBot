@@ -81,6 +81,32 @@ DUNGEON_FULL = "NoSubsOpen"
 REALM_DOES_NOT_EXIST = "Error_RealmDoesNotExist"
 """Chosen realm is gone. Dismiss and fail."""
 
+FRIEND_NOT_ON_LIST = "GoToFriendFail"
+"""'You failed to teleport to this friend. Perhaps he or she is not your friend anymore.'"""
+
+# The client has fallen out of the game. Nothing to click -- ClientHealthMonitor kills the
+# process and lets the relaunch/re-hook path recover it.
+DISCONNECTED_IDLE = "ConnectionAFK"
+"""'You have been disconnected due to inactivity.'"""
+
+DISCONNECTED_LOST = "ConnectionLost"
+"""'Connection Lost!'"""
+
+DISCONNECTED_BY_ADMIN = "CSRDisconnect"
+"""Disconnected from the server by an Administrator."""
+
+DISCONNECTED_ELSEWHERE = "ForceDisconnect"
+"""Someone else has logged in with this account."""
+
+DISCONNECTED_MAINTENANCE = "MaintenanceDisconnect"
+"""Disconnected for maintenance on this character."""
+
+CONNECT_FAILED = "FailedConnectToServer"
+"""'Failed to connect to server!'"""
+
+LOGIN_LOCKED = "LockFailed"
+"""'Your character is unable to enter the game. Please quit and try again.'"""
+
 # Every key the snapshot is expected to carry. tools/dump_dialog_captions.py reads this
 # list, so adding a dialog here and re-running the tool is the whole workflow.
 #
@@ -98,11 +124,15 @@ KNOWN_KEYS: tuple[str, ...] = (
     ALREADY_IN_GROUP,
     DUNGEON_FULL,
     REALM_DOES_NOT_EXIST,
+    FRIEND_NOT_ON_LIST,
+    DISCONNECTED_IDLE,
+    DISCONNECTED_LOST,
+    DISCONNECTED_BY_ADMIN,
+    DISCONNECTED_ELSEWHERE,
+    DISCONNECTED_MAINTENANCE,
+    CONNECT_FAILED,
+    LOGIN_LOCKED,
 )
-
-# Deliberately absent: GoToFriendFail ("you can't go to a friend, because she is not your
-# friend anymore"). Its GUI.lang record holds a description of the message rather than the
-# message, so there is nothing to match on; no node handles it either.
 
 # ---------------------------------------------------------------------------
 # What to do about each dialog
@@ -132,9 +162,25 @@ REFUSALS = frozenset(
         GAUNTLET_NO_ZONE_CHANGE,
         DUNGEON_FULL,
         REALM_DOES_NOT_EXIST,
+        FRIEND_NOT_ON_LIST,
     }
 )
 """Refusals. Dismiss and fail the node -- the game will not do the thing."""
+
+DISCONNECTS = frozenset(
+    {
+        DISCONNECTED_IDLE,
+        DISCONNECTED_LOST,
+        DISCONNECTED_BY_ADMIN,
+        DISCONNECTED_ELSEWHERE,
+        DISCONNECTED_MAINTENANCE,
+        CONNECT_FAILED,
+        LOGIN_LOCKED,
+    }
+)
+"""The client is out of the game. Not a refusal and not a question: there is nothing a node
+can usefully click, so resolve_modal leaves these alone and ClientHealthMonitor kills the
+process instead, letting the relaunch and re-hook path recover it."""
 
 UNRECOGNISED_REFUSAL = "<unrecognised>"
 """Not a lang key: a dismiss-only dialog whose caption the snapshot does not know.
@@ -155,6 +201,7 @@ REASONS: dict[str, str] = {
     GAUNTLET_NO_ZONE_CHANGE: "zones cannot be changed from inside a gauntlet",
     DUNGEON_FULL: "that dungeon is full",
     REALM_DOES_NOT_EXIST: "the chosen realm no longer exists",
+    FRIEND_NOT_ON_LIST: "that wizard is no longer on the friends list",
     ALREADY_IN_GROUP: "that player is already in a group",
     UNRECOGNISED_REFUSAL: (
         "the game refused with a dialog this build does not recognise — if this is "

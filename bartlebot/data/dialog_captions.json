@@ -101,6 +101,78 @@
    "fr": "Le royaume désiré n'existe pas",
    "it": "Il reame richiesto non esiste",
    "pl": "Wybrana sfera nie istnieje"
+  },
+  "GoToFriendFail": {
+   "de": "Du konntest dich nicht zu deinem Freund teleportieren. Vielleicht ist er nicht mehr dein Freund.",
+   "el": "<scale;0.80>Δεν κατάφερες να τηλεμεταφερθείς σε αυτόν το φίλο. Ίσως αυτός ή αυτή να μην είναι πλέον φίλος σου.",
+   "en-US": "You failed to teleport to this friend. Perhaps he or she is not your friend anymore.",
+   "es": "No pudiste teletransportarte hasta tu amigo. Quizás ya no es tu amigo.",
+   "fr": "Tu n'as pas réussi à te téléporter. Peut-être que vous n'êtes plus amis...",
+   "it": "Teletrasporto verso l'amico fallito. Forse non siete più amici.",
+   "pl": "Nie mogłeś teleportować się do swojego przyjaciela. Może nie jest on już Twoim przyjacielem."
+  },
+  "ConnectionAFK": {
+   "de": "Deine Verbindung wurde aufgrund von Inaktivität unterbrochen.",
+   "el": "Έχεις αποσυνδεθεί λόγω αδράνειας.",
+   "en-US": "You have been disconnected due to inactivity.",
+   "es": "Tu conexión ha sido interrumpida por inactividad.",
+   "fr": "Tu as été déconnecté pour cause d'inactivité.",
+   "it": "Disconnessione a causa di inattività!",
+   "pl": "Z powodu nieaktywności Twoje połączenie zostało przerwane."
+  },
+  "ConnectionLost": {
+   "de": "Verbindung unterbrochen!",
+   "el": "Η σύνδεση χάθηκε!",
+   "en-US": "Connection Lost!",
+   "es": "¡Conexión interrumpida!",
+   "fr": "Connexion perdue !",
+   "it": "Connessione persa!",
+   "pl": "Połączenie przerwane!"
+  },
+  "CSRDisconnect": {
+   "de": "Deine Verbindung zum Server wurde von einem Administrator unterbrochen.",
+   "el": "Ένας Διαχειριστής σε αποσύνδεσε από το διακομιστή.",
+   "en-US": "You have been disconnected from the server by an Administrator.",
+   "es": "Tu conexión al servidor fue interrumpida por un administrador.",
+   "fr": "Tu as été déconnecté du serveur par un administrateur.",
+   "it": "Disconnessione dal server a opera di un amministratore.",
+   "pl": "Twoje połączenie z serwerem zostało przerwane przez administratora."
+  },
+  "ForceDisconnect": {
+   "de": "Deine Verbindung wurde unterbrochen, da sich jemand anderes mit deinem Konto angemeldet hat.",
+   "el": "Έχεις αποσυνδεθεί γιατί κάποιος άλλος συνδέθηκε με το δικό σου λογαριασμό.",
+   "en-US": "You have been disconnected because someone else has logged in with your account.",
+   "es": "Se ha interrumpido tu conexión porque otra persona está conectada con tu cuenta.",
+   "fr": "Tu as été déconnecté parce que quelqu'un d'autre s'est connecté en utilisant ton compte.",
+   "it": "Disconnessione: qualcun altro ha eseguito l'accesso con il tuo account.",
+   "pl": "Połączenie zostało przerwane, ponieważ ktoś inny zalogował się na Twoje konto."
+  },
+  "MaintenanceDisconnect": {
+   "de": "Deine Verbindung zum Server wurde unterbrochen, da dein Charakter bearbeitet werden muss.",
+   "el": "Έχεις αποσυνδεθεί από το διακομιστή για συντήρηση του χαρακτήρα σου",
+   "en-US": "You have been disconnected from the server for maintenance on your character",
+   "es": "Se ha interrumpido tu conexión al servidor por mantenimiento de tu personaje.",
+   "fr": "Tu as été déconnecté du serveur pour cause de maintenance de ton personnage",
+   "it": "Disconnessione dal server per manutenzione del tuo personaggio",
+   "pl": "Twoje połączenie z serwerem zostało przerwane, ponieważ konieczna jest edycja Twojej postaci."
+  },
+  "FailedConnectToServer": {
+   "de": "Verbindung zum Server fehlgeschlagen.",
+   "el": "Αποτυχία σύνδεσης με το διακομιστή!",
+   "en-US": "Failed to connect to server!",
+   "es": "Error al conectar con el servidor.",
+   "fr": "Échec de connexion au serveur !",
+   "it": "Errore di connessione al server",
+   "pl": "Łączenie z serwerem nie powiodło się."
+  },
+  "LockFailed": {
+   "de": "Dein Charakter kann das Spiel nicht betreten. Bitte verlasse das Spiel und versuche es erneut.",
+   "el": "Ο χαρακτήρας σου δεν μπορεί να μπει στο παιχνίδι. Βγες και δοκίμασε ξανά.",
+   "en-US": "Your character is unable to enter the game. Please quit and try again.",
+   "es": "El personaje no puede unirse aentrar en el juego. Abandona el juego e inténtalo de nuevo.",
+   "fr": "Ton personnage ne peut pas se connecter à la partie. Quitte le jeu et réessaie.",
+   "it": "Il tuo personaggio non può accedere alla partita. Esci e riprova.",
+   "pl": "Twoja postać nie może wejść do gry. Wyjdź proszę z gry i spróbuj ponownie."
   }
  }
 }

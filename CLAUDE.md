@@ -306,7 +306,11 @@ Conventions worth knowing:
 - `<Thing>.xml` holds the **ordered key list**; `Locale/<loc>/<Thing>.lang` maps
   key → display text. IDs index **position in the XML list**, not the numeric
   suffix of the key (`First_Boy_102` is "Luke" but sits at index 100).
-- `.lang` files are UTF-16LE with CRLF, in `key / blank / value` triples.
+- `.lang` files are UTF-16LE with CRLF, in fixed three-line records: `key`,
+  translator description, display text. The description reads as blank in most
+  records, which makes the format look like `key / blank / value` — a parser that
+  *requires* it blank silently drops every documented key rather than failing. Slice
+  at a fixed stride; see `parse_lang` in `tools/dump_dialog_captions.py`.
 - Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
   later additions were not always translated.
 
