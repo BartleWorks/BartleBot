@@ -325,8 +325,8 @@ class GameView(QWidget):
     def detach_all(self) -> None:
         """Save current HWNDs and detach all clients (windows float free, slots show placeholders)."""
         for idx, tile in list(self._tiles.items()):
-            self._detached_hwnds[idx] = tile._hwnd
-            self._create_detached_tile(idx, tile._label)
+            self._detached_hwnds[idx] = tile.hwnd
+            self._create_detached_tile(idx, tile.label)
         # Unembed the game windows without touching _detached_tiles
         for idx in list(self._tiles.keys()):
             tile = self._tiles.pop(idx)
@@ -378,7 +378,7 @@ class GameView(QWidget):
 
     def renumber_tiles(self, clients: list) -> None:
         """Re-key _tiles and update labels to match current list positions."""
-        hwnd_to_old_idx = {tile._hwnd: old_idx for old_idx, tile in self._tiles.items()}
+        hwnd_to_old_idx = {tile.hwnd: old_idx for old_idx, tile in self._tiles.items()}
         new_tiles: dict[int, ClientTile] = {}
         for new_idx, client in enumerate(clients):
             old_idx = hwnd_to_old_idx.get(client.window_handle)
@@ -464,7 +464,7 @@ class GameView(QWidget):
         if self._tiles:
             tile = next(iter(self._tiles.values()))
             dpr = self.devicePixelRatio() or 1.0
-            game_w, game_h = tile._game_w, tile._game_h
+            game_w, game_h = tile.game_size
         else:
             dpr = self.devicePixelRatio() or 1.0
             game_w, game_h = SettingsManager.instance().game_resolution
@@ -477,8 +477,8 @@ class GameView(QWidget):
         """Save hwnd, create a DetachedTile, and unembed the ClientTile."""
         if idx not in self._tiles:
             return
-        hwnd = self._tiles[idx]._hwnd
-        label = self._tiles[idx]._label
+        hwnd = self._tiles[idx].hwnd
+        label = self._tiles[idx].label
         self._detached_hwnds[idx] = hwnd
         self._create_detached_tile(idx, label)
         # Unembed the ClientTile without clearing the DetachedTile
@@ -554,9 +554,9 @@ class GameView(QWidget):
                 _user32.GetCursorPos(ctypes.byref(pt))
                 for tile in self._tiles.values():
                     rect = ctypes.wintypes.RECT()
-                    _user32.GetWindowRect(tile._hwnd, ctypes.byref(rect))
+                    _user32.GetWindowRect(tile.hwnd, ctypes.byref(rect))
                     if rect.left <= pt.x < rect.right and rect.top <= pt.y < rect.bottom:
-                        _user32.SetFocus(tile._hwnd)
+                        tile.focus_game()
                         break
 
         for tile in self._tiles.values():
