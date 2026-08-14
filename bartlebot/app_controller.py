@@ -83,6 +83,7 @@ class AppController(QObject):
             get_recovery_state=lambda: self._loaded_config.recovery_state if self._loaded_config else None,
         )
         self._window.set_auto_select_driver(self._client_manager.drive_client_in)
+        self._window.set_slot_reserver(self._client_manager.reserve_slots)
         self._wire()
         self._window.show()
         self._reconfigure_autosave_timer()

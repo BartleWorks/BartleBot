@@ -51,14 +51,18 @@ class LauncherPopup(QWidget):
     @property
     def _auto_select_driver(self):
         """The main window's driver, so a popup launch behaves like a menu launch."""
-        parent = self.parent()
-        return getattr(parent, "auto_select_driver", None)
+        return getattr(self.parent(), "auto_select_driver", None)
+
+    @property
+    def _slot_reserver(self):
+        """The main window's reserver, so a popup launch respects the profile order too."""
+        return getattr(self.parent(), "slot_reserver", None)
 
     async def _run_launch(self, profile_name: str) -> None:
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
-            await launch_profile(profile_name, drive=self._auto_select_driver)
+            await launch_profile(profile_name, drive=self._auto_select_driver, reserve=self._slot_reserver)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
             logger.exception("Profile launch failed")

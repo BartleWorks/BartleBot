@@ -345,9 +345,13 @@ class ClientManager(QObject):
                         self._on_clients_removed(removed_hwnds)
 
                     # Register any newly added known clients in _client_order.
-                    # Sort by window position (top→bottom, left→right) so that clients
-                    # appearing in the same poll cycle are registered in visual layout order,
-                    # not EnumWindows Z-order (which is reverse-launch-order).
+                    #
+                    # Sorting by window position puts clients that appear in the same poll
+                    # cycle into visual layout order rather than EnumWindows Z-order. It only
+                    # decides anything for windows nobody reserved a slot for — a client
+                    # opened outside BartleBot. Anything launched from here is already placed
+                    # by reserve_slots, and could not be ordered by position anyway: a launch
+                    # spawns the whole batch at one shared anchor, so the keys are all equal.
                     new_additions = sorted(
                         [c for c in clients if c.window_handle not in cur_hwnd_set],
                         key=lambda c: (c.window_rectangle.y1, c.window_rectangle.x1),
@@ -531,6 +535,45 @@ class ClientManager(QObject):
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
                 self._recovery_task = asyncio.create_task(self._run_recovery_queue())
+
+    def reserve_slots(self, usernames: list[str]) -> None:
+        """Pin the slot order for a batch of accounts about to be launched.
+
+        Slot order is otherwise inferred from the windows themselves, and nothing about a
+        window carries the order the user asked for. A launch profile is the one place that
+        order is stated explicitly, so it is stated here, before the windows exist.
+
+        Three things were deciding the order instead, none of them the profile:
+
+        - Clients are published as each one's own hooks come up, so _assign_slot ran in
+          whatever sequence the characters finished loading in — a 3-15 s race, different
+          every run.
+        - launch_profile pairs accounts to windows through a set difference, so account 0's
+          credentials go to an arbitrary one of the new windows.
+        - The positional sort in _client_loop cannot break the tie, because the whole batch
+          is spawned at one shared anchor and every window has the same coordinates.
+
+        Reserving up front makes all three irrelevant: _assign_slot returns early for an
+        account already in the ordering, so each client keeps the slot named for it here
+        however late it loads in. Accounts already running keep their slots, and slots
+        being held for a client in recovery are left alone.
+        """
+        held_for_recovery = set(self._pending_recovery)
+        for username in usernames:
+            if username in self._client_order:
+                continue
+            # An explicit launch overrides whatever slot this account last sat in: the
+            # profile is a statement of intent, the vacated slot is only a memory.
+            self._vacated_slots.pop(username, None)
+            free = next(
+                (i for i, u in enumerate(self._client_order) if u is None and i not in held_for_recovery),
+                None,
+            )
+            if free is not None:
+                self._client_order[free] = username
+            else:
+                self._client_order.append(username)
+        logger.info("Reserved slot order for launch: %s", self._client_order)
 
     def _assign_slot(self, username: str) -> None:
         """Place *username* into _client_order without growing the ordering needlessly.

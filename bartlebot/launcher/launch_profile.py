@@ -30,6 +30,11 @@ from bartlebot.settings_manager import SettingsManager
 # on and the auto-select setting that decides whether it does anything at all.
 DriveFn = Callable[[str], Awaitable[bool]]
 
+# Claims the slot order for a batch of accounts before their windows exist. Injected for
+# the same reason as DriveFn: the ordering lives on ClientManager, which the launcher does
+# not know about. Without it the order is decided by whichever character loads in first.
+ReserveFn = Callable[[list[str]], None]
+
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
 # every window gets reparented and re-centered by ClientTile (see
 # gui/game_embed/client_tile.py) as soon as it's embedded, so the position it
@@ -135,7 +140,11 @@ async def launch_account(
     return title
 
 
-async def launch_profile(profile_name: str, drive: DriveFn | None = None) -> None:
+async def launch_profile(
+    profile_name: str,
+    drive: DriveFn | None = None,
+    reserve: ReserveFn | None = None,
+) -> None:
     """Launch all accounts in the named profile.
 
     Looks up the profile in SettingsManager and retrieves passwords from
@@ -144,6 +153,10 @@ async def launch_profile(profile_name: str, drive: DriveFn | None = None) -> Non
     Starts all instances back-to-back rather than waiting for each one to
     reach the login screen before starting the next, then logs in all
     accounts after a single shared wait for the login screen.
+
+    *reserve* is handed the profile's accounts, in profile order, before any window
+    exists — that call is the only thing that makes the players come up in the order the
+    profile asked for, since nothing about a window carries it.
 
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
@@ -170,6 +183,13 @@ async def launch_profile(profile_name: str, drive: DriveFn | None = None) -> Non
         alias = meta.get("alias") or None
         display_name = CredentialStore.display_name(username, alias)
         accounts.append((username, password, display_name))
+
+    # Claim the slot order now, while the profile's own order is still the only order in
+    # play. Doing this after launch would be too late: the windows are indistinguishable
+    # (one shared spawn anchor) and each client is published whenever its own character
+    # finishes loading in.
+    if reserve is not None:
+        reserve([username for username, _password, _display in accounts])
 
     # Patch config.xml once for the whole batch (all instances read the same
     # file at their own startup, so one shared resolution/position is enough —
