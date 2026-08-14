@@ -1,7 +1,7 @@
 """Shared test doubles for node unit tests."""
 
 import logging
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
@@ -157,6 +157,39 @@ class FakeMachine:
         options={"Safety Delay": <value>} to the constructor.
         """
         return self._options.get(name, 0.01 if name == "Safety Delay" else 0)
+
+
+def message_box_patches(visible_buttons=()):
+    """Patch node_helpers' UI reads to stand in for an on-screen modal message box.
+
+    `visible_buttons` is the set of MESSAGE_BOX_* paths the modal shows; clicks land only
+    on those. Which buttons are showing is the ONLY way to tell the game's modals apart —
+    they all share the MessageBoxModalWindow tree — so tests state a dialog by naming its
+    buttons, the way the nodes identify it:
+
+        (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT)  the dungeon exit warning (confirm + cancel)
+        (MESSAGE_BOX_RIGHT,)                     teleport_to_friend's friend-busy dialog
+        ()                                       no modal
+
+    Returns (patches, clicked_paths): apply the patches with an ExitStack or a `with`
+    tuple, and assert against clicked_paths afterwards.
+    """
+    import bartlebot.nodes.node_helpers as nh
+
+    visible = [list(p) for p in visible_buttons]
+    clicked: list[list[str]] = []
+
+    async def _is_visible(_client, path):
+        return list(path) in visible
+
+    async def _click(_client, path):
+        clicked.append(path)
+        return list(path) in visible
+
+    return (
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_is_visible)),
+        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=_click)),
+    ), clicked
 
 
 class FakeParamForm:

@@ -5,7 +5,14 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_dungeon as ed
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER
 from tests.conftest import FakeClient, FakeMachine
+
+
+async def _centre_button_visible(_client, path):
+    """Only the dungeon warning's confirm button is showing."""
+    return path == MESSAGE_BOX_CENTER
+
 
 _PARAMS = {
     "from_zone": "Hub",
@@ -169,6 +176,7 @@ async def test_dungeon_warning_dialog_confirmed():
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "none_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_centre_button_visible)),
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
@@ -204,22 +212,26 @@ async def test_dungeon_warning_dialog_not_present_no_enter():
 async def test_dungeon_warning_dialog_appears_late():
     """The dungeon warning dialog button is clicked even when it appears near the end of the safety window."""
     client = _happy_client()
-    call_count = 0
+    polls = 0
 
-    async def late_click(*args):
-        nonlocal call_count
-        call_count += 1
-        # Each call takes real time so elapsed accumulates; dialog clickable on 3rd poll.
+    async def late_visible(_c, path):
+        nonlocal polls
+        if path != MESSAGE_BOX_CENTER:
+            return False
+        polls += 1
+        # Each poll takes real time so elapsed accumulates; dialog shows on the 3rd.
         await asyncio.sleep(0.007)
-        return call_count >= 3
+        return polls >= 3
 
     machine = FakeMachine(options={"Safety Delay": 0.05})
+    click_by_path_mock = AsyncMock(return_value=True)
 
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "click_by_path", side_effect=late_click),
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=late_visible)),
+        patch.object(nh, "click_by_path", click_by_path_mock),
     ):
         result = await ed.run(machine, [client], _PARAMS)
 
@@ -228,4 +240,5 @@ async def test_dungeon_warning_dialog_appears_late():
 
     calls = [call.args[0] for call in client.send_key.call_args_list]
     assert Keycode.X in calls
-    assert call_count >= 3
+    assert polls >= 3
+    click_by_path_mock.assert_awaited_with(client, MESSAGE_BOX_CENTER)

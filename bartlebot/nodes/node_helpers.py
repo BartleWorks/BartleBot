@@ -3,11 +3,13 @@
 import asyncio
 import fnmatch
 import logging
+from typing import NamedTuple
 
 from wizwalker import Keycode, MemoryReadError
 
 logger = logging.getLogger(__name__)
 
+from bartlebot import dialog_captions
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
@@ -15,7 +17,9 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     FRIENDS_LIST_WINDOW_NAMES,
     GAUNTLET_ENTRANCE_PATH,
     LARGE_FRIENDS_LIST_WINDOW_NAME,
+    MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_RIGHT,
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
@@ -99,16 +103,181 @@ async def advance_dialogue_until_clear(
             await asyncio.sleep(POLL_INTERVAL)
 
 
+async def identify_modal(client) -> str | None:
+    """Return the lang key of the modal currently on screen, or None.
+
+    Every in-game modal is the same MessageBoxModalWindow tree, so "a modal is up" says
+    nothing about which one it is. Its caption does: see bartlebot.dialog_captions for the
+    key constants to compare against (INSTANCE_EXIT, FRIEND_BUSY, …) and for how the match
+    survives markup, substitution slots, and all seven locales.
+
+    None means *no recognised dialog* — either nothing is showing, or something the
+    snapshot has not seen. The two are deliberately not distinguished: callers should have
+    a button-based fallback for both, so a caption we do not know degrades to the previous
+    behaviour rather than hanging. Use modal_showing() to tell them apart when it matters.
+    """
+    return dialog_captions.identify_caption(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
+
+
+async def modal_showing(client) -> bool:
+    """Return True when any modal message box is on screen, recognised or not.
+
+    Reads the caption rather than the modal window itself: a window's is_visible() flag is
+    its own and ignores its parents (see is_visible_by_path), whereas CaptionText only
+    holds text while a dialog is actually up.
+    """
+    return bool(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
+
+
+async def dungeon_warning_showing(client) -> bool:
+    """Return True when the modal currently on screen is the dungeon exit warning.
+
+    Prefers the caption, which names the dialog outright. Falls back to the button layout
+    when the caption is not recognised — the dungeon exit warning offers confirm (centre)
+    and cancel (right), where the dialog it is most easily confused with, the friend-busy
+    dialog in teleport_to_friend, offers only the right one. Both facts were confirmed on
+    a live client (issue #84), along with the ordering: the warning comes up first, and
+    the busy dialog only replaces it once the warning has been confirmed.
+
+    The fallback reads is_visible(), not mere existence: the button windows are part of
+    the shared template and exist under any modal, so click_by_path() alone (which checks
+    only existence and grayed-ness) would happily "confirm" an unrelated dialog.
+    """
+    known = await identify_modal(client)
+    if known is not None:
+        return known in _DUNGEON_EXIT_KEYS
+    return await is_visible_by_path(client, MESSAGE_BOX_CENTER)
+
+
+# Captions that mean "you are about to leave a dungeon; confirm to proceed". The realm and
+# friend variants say it in different words but want the same answer, so anything treating
+# the exit warning as a thing to click through should accept all three.
+_DUNGEON_EXIT_KEYS = frozenset(
+    {
+        dialog_captions.INSTANCE_EXIT,
+        dialog_captions.REALM_RESETS_DUNGEON,
+        dialog_captions.FRIEND_CROSS_REALM,
+    }
+)
+
+
+class ModalOutcome(NamedTuple):
+    """What resolve_modal() did about the dialog on screen.
+
+    `answered` says a dialog was there and has been clicked — a caller in a retry loop
+    should skip its retry this tick, because the click it would send lands on a modal that
+    is still closing rather than on the button it means to press.
+
+    `refusal` is set when that dialog was one the game will not be talked out of. Pair it
+    with dialog_captions.describe() to log what the player would have read.
+    """
+
+    answered: bool
+    refusal: str | None = None
+
+
+_NOTHING = ModalOutcome(answered=False)
+
+
+async def resolve_modal(client) -> ModalOutcome:
+    """Answer whatever modal is on screen.
+
+    The one call a node needs while waiting for something the game may be holding behind a
+    dialog. Three outcomes:
+
+      * a question (dialog_captions.CONFIRM_TO_PROCEED) — confirmed, so the node's wait
+        carries on and will now succeed;
+      * a refusal (dialog_captions.REFUSALS) — dismissed, and returned, so the node can
+        fail immediately: the game has said no, and waiting out a timeout only delays the
+        same answer while reporting it as the wrong cause;
+      * nothing recognised — falls back to the button layout, which still separates the
+        two kinds: a centre button offers a way to proceed, so it is confirmed; a right
+        button with no centre offers only a way out, so it is dismissed and reported as
+        dialog_captions.UNRECOGNISED_REFUSAL. Without that second half a dialog reworded
+        by a game patch would stop failing fast and start timing out instead.
+
+    Refusals are dismissed with the right button where it exists and the centre otherwise:
+    a one-button refusal puts OK in the centre, and a two-button one puts cancel on the
+    right, which is the answer that leaves the game alone.
+    """
+    key = await identify_modal(client)
+
+    if key is None:
+        if await is_visible_by_path(client, MESSAGE_BOX_CENTER):
+            await click_by_path(client, MESSAGE_BOX_CENTER)
+            return ModalOutcome(answered=True)
+        if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
+            await click_by_path(client, MESSAGE_BOX_RIGHT)
+            return ModalOutcome(answered=True, refusal=dialog_captions.UNRECOGNISED_REFUSAL)
+        return _NOTHING
+
+    if key in dialog_captions.CONFIRM_TO_PROCEED:
+        await click_by_path(client, MESSAGE_BOX_CENTER)
+        return ModalOutcome(answered=True)
+
+    if key in dialog_captions.REFUSALS:
+        if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
+            await click_by_path(client, MESSAGE_BOX_RIGHT)
+        else:
+            await click_by_path(client, MESSAGE_BOX_CENTER)
+        return ModalOutcome(answered=True, refusal=key)
+
+    # Recognised, but somebody else's dialog — leave it alone rather than click blind.
+    logger.debug("resolve_modal: leaving %s to its own handler", key)
+    return _NOTHING
+
+
+async def confirm_dungeon_warning_once(client) -> bool:
+    """Confirm the dungeon exit warning if it is on screen right now. Returns True if it was.
+
+    The non-blocking counterpart to confirm_dungeon_warning_dialog(): one look, no wait.
+    Use it inside a loop that is already polling for something else — see
+    confirming_dungeon_warning().
+    """
+    if not await dungeon_warning_showing(client):
+        return False
+    return await click_by_path(client, MESSAGE_BOX_CENTER)
+
+
+def confirming_dungeon_warning(action_fn):
+    """Wrap a straggler-retry action so a blocking dungeon exit warning is confirmed instead.
+
+    Returns an async action_fn for poll_each_until_seen() — or for any hand-rolled
+    "re-poke the clients that haven't moved yet" loop — that first tries to confirm a
+    dungeon exit warning and only falls back to `action_fn` when there is none. A client
+    held behind that warning is not lagging: re-pressing a teleport button does nothing
+    while a modal is up, so the wait would burn its whole timeout and the node would fail.
+
+    Why not simply await confirm_dungeon_warning_dialog() before the wait, the way
+    enter_zone() does — that call blocks for the full Safety Delay whenever no warning
+    appears, which is the common case. enter_zone() can afford it because what it waits
+    for next is "has left from_zone", which stays true once it happens. The nodes using
+    this wrapper wait on is_loading() instead, which is transient: spending three seconds
+    before starting to watch for a loading screen can miss it entirely and turn a
+    successful teleport into a timeout.
+    """
+
+    async def _act(client) -> None:
+        if await confirm_dungeon_warning_once(client):
+            return
+        await action_fn(client)
+
+    return _act
+
+
 async def confirm_dungeon_warning_dialog(client, delay: float = 3.0, poll_interval: float = POLL_INTERVAL) -> None:
     """Poll for the dungeon warning dialog; confirm it immediately when it appears.
 
     Keeps polling for at least `delay` seconds before concluding the dialog will
     not appear. If the dialog appears before `delay` has elapsed, the confirm button
     is clicked immediately and the function returns — no further waiting.
+
+    Only safe ahead of a wait on a *sticky* condition (left the zone, arrived in the
+    destination). Ahead of a wait on is_loading(), use confirming_dungeon_warning().
     """
     loop_start = asyncio.get_event_loop().time()
     while True:
-        if await click_by_path(client, MESSAGE_BOX_CENTER):
+        if await confirm_dungeon_warning_once(client):
             return
         if asyncio.get_event_loop().time() - loop_start >= delay:
             return

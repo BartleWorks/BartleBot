@@ -15,7 +15,8 @@ from bartlebot.nodes.node_helpers import (
     find_entities_by_name,
     zone_matches,
 )
-from tests.conftest import FakeClient, FakeEntity
+from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
+from tests.conftest import FakeClient, FakeEntity, message_box_patches
 
 # ---------------------------------------------------------------------------
 # zone_matches — pure function, no async
@@ -537,3 +538,242 @@ async def test_open_friends_list_does_not_touch_a_list_that_is_already_compact()
 async def test_open_friends_list_clicks_when_nothing_is_open():
     actions = await _open_friends_list_with(set())
     assert actions == ["click btnFriends"]
+
+
+# ---------------------------------------------------------------------------
+# Dungeon exit warning
+#
+# Issue #84: the warning gates every teleport that leaves a dungeon, and while it
+# is up the game ignores the button that would have triggered the teleport. A node
+# that answers "not moving yet" with another button press therefore spins until it
+# times out, which is what made hub teleports fail out of dungeons.
+# ---------------------------------------------------------------------------
+
+
+async def test_dungeon_warning_showing_needs_the_centre_button():
+    """The centre button is the discriminator: only the dungeon warning has one.
+
+    Both dialogs show a right button, so "a modal is up" and even "the right button is
+    visible" are both true of the friend-busy dialog too (verified live, issue #84).
+    """
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    with patches[0], patches[1]:
+        assert await nh_mod.dungeon_warning_showing(FakeClient()) is True
+
+    patches, _ = message_box_patches((MESSAGE_BOX_RIGHT,))
+    with patches[0], patches[1]:
+        assert await nh_mod.dungeon_warning_showing(FakeClient()) is False
+
+
+async def test_confirm_dungeon_warning_once_leaves_other_modals_alone():
+    """A stray confirm would dismiss somebody else's dialog and swallow its diagnosis."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches((MESSAGE_BOX_RIGHT,))
+    with patches[0], patches[1]:
+        assert await nh_mod.confirm_dungeon_warning_once(FakeClient()) is False
+
+    assert clicked == []
+
+
+async def test_confirming_dungeon_warning_skips_the_action_while_the_warning_is_up():
+    """The whole point: a client behind the modal gets the confirm, not another press."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    action = AsyncMock()
+    with patches[0], patches[1]:
+        await nh_mod.confirming_dungeon_warning(action)(FakeClient())
+
+    assert clicked == [MESSAGE_BOX_CENTER]
+    action.assert_not_called()
+
+
+async def test_confirming_dungeon_warning_falls_through_when_there_is_no_warning():
+    """Outside a dungeon the wrapper must be invisible — stragglers still get retried."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, _ = message_box_patches(())
+    action = AsyncMock()
+    client = FakeClient()
+    with patches[0], patches[1]:
+        await nh_mod.confirming_dungeon_warning(action)(client)
+
+    action.assert_awaited_once_with(client)
+
+
+# ---------------------------------------------------------------------------
+# identify_modal / modal_showing — caption first, buttons as fallback
+# ---------------------------------------------------------------------------
+
+
+def _caption_patch(text: str):
+    """Patch the caption read so the client appears to be showing `text`."""
+    from unittest.mock import patch
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    return patch.object(nh_mod, "get_text_by_path", new=AsyncMock(return_value=text))
+
+
+_EXIT_CAPTION = (
+    "If you leave a Dungeon you will lose all your progress in the Dungeon and will "
+    "have to start over at the beginning.<br>Are you sure you want to leave now?"
+)
+
+
+async def test_identify_modal_names_the_dialog_on_screen():
+    import bartlebot.nodes.node_helpers as nh_mod
+    from bartlebot import dialog_captions
+
+    with _caption_patch(_EXIT_CAPTION):
+        assert await nh_mod.identify_modal(FakeClient()) == dialog_captions.INSTANCE_EXIT
+
+
+async def test_identify_modal_returns_none_for_an_unknown_caption():
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    with _caption_patch("A dialog nobody has catalogued"):
+        assert await nh_mod.identify_modal(FakeClient()) is None
+
+
+async def test_modal_showing_is_true_for_an_unrecognised_dialog():
+    """identify_modal() conflates 'nothing up' with 'not in the snapshot'; this separates them."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    with _caption_patch("A dialog nobody has catalogued"):
+        assert await nh_mod.modal_showing(FakeClient()) is True
+    with _caption_patch(""):
+        assert await nh_mod.modal_showing(FakeClient()) is False
+
+
+async def test_dungeon_warning_uses_the_caption_over_the_buttons():
+    """The friend-busy dialog also shows a right button, so buttons alone are ambiguous.
+
+    With a caption available the answer no longer depends on the button layout at all —
+    here the buttons say "dungeon warning" and the caption overrules them.
+    """
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    with patches[0], patches[1], _caption_patch("Your friend is busy right now."):
+        assert await nh_mod.dungeon_warning_showing(FakeClient()) is False
+
+
+async def test_dungeon_warning_accepts_the_realm_and_friend_variants():
+    """Different wording, same required answer: confirm and carry on."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    realm = (
+        "Changing to a different Realm will reset your current Dungeon and you will not "
+        "be able to use Dungeon Recall. Are you sure you want to change your Realm?"
+    )
+    with _caption_patch(realm):
+        assert await nh_mod.dungeon_warning_showing(FakeClient()) is True
+
+
+async def test_dungeon_warning_falls_back_to_buttons_when_the_caption_is_unknown():
+    """A caption the snapshot has not seen must degrade to the previous behaviour."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    patches, _ = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    with patches[0], patches[1], _caption_patch("Brand new dialog from a future patch"):
+        assert await nh_mod.dungeon_warning_showing(FakeClient()) is True
+
+    patches, _ = message_box_patches((MESSAGE_BOX_RIGHT,))
+    with patches[0], patches[1], _caption_patch("Brand new dialog from a future patch"):
+        assert await nh_mod.dungeon_warning_showing(FakeClient()) is False
+
+
+# ---------------------------------------------------------------------------
+# resolve_modal — confirm questions, dismiss refusals, report the refusals
+# ---------------------------------------------------------------------------
+
+
+async def _resolve_with(caption: str, buttons):
+    """Run resolve_modal against a stated dialog. Returns (outcome, clicked paths)."""
+
+    import bartlebot.nodes.node_helpers as nh_mod
+    from tests.conftest import message_box_patches as mbp
+
+    patches, clicked = mbp(buttons)
+    with patches[0], patches[1], _caption_patch(caption):
+        outcome = await nh_mod.resolve_modal(FakeClient())
+    return outcome, clicked
+
+
+async def test_resolve_modal_confirms_a_question():
+    outcome, clicked = await _resolve_with(_EXIT_CAPTION, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    assert outcome.answered is True
+    assert outcome.refusal is None
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_resolve_modal_dismisses_a_refusal_and_names_it():
+    """The node needs the key so it can fail with the reason a player would have read."""
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with("Your friend is busy right now.", (MESSAGE_BOX_RIGHT,))
+
+    assert outcome.refusal == dialog_captions.FRIEND_BUSY
+    assert clicked == [MESSAGE_BOX_RIGHT]
+    assert "not accepting teleports" in dialog_captions.describe(outcome.refusal)
+
+
+async def test_resolve_modal_dismisses_a_one_button_refusal_with_the_centre():
+    """A refusal with only an OK button puts it in the centre, not the right."""
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with(
+        "You are not allowed to switch Realms from this location", (MESSAGE_BOX_CENTER,)
+    )
+
+    assert outcome.refusal == dialog_captions.REALM_NOT_ALLOWED_HERE
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_resolve_modal_reports_nothing_when_no_dialog_is_up():
+    outcome, clicked = await _resolve_with("", ())
+
+    assert outcome == (False, None)
+    assert clicked == []
+
+
+async def test_resolve_modal_treats_an_unknown_dismiss_only_dialog_as_a_refusal():
+    """A dialog reworded by a patch must keep failing fast rather than start timing out.
+
+    No centre button means the game offers no way to proceed, whatever the words say.
+    """
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with("Wording nobody has catalogued", (MESSAGE_BOX_RIGHT,))
+
+    assert outcome.refusal == dialog_captions.UNRECOGNISED_REFUSAL
+    assert clicked == [MESSAGE_BOX_RIGHT]
+
+
+async def test_resolve_modal_confirms_an_unknown_dialog_that_offers_a_way_forward():
+    outcome, clicked = await _resolve_with("Wording nobody has catalogued", (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+
+    assert outcome.answered is True
+    assert outcome.refusal is None
+    assert clicked == [MESSAGE_BOX_CENTER]
+
+
+async def test_resolve_modal_leaves_another_handlers_dialog_alone():
+    """A recognised dialog that belongs to somebody else is not clicked at all.
+
+    "already in a group" is group_manager's to answer. Being recognised is what protects
+    it: an unknown dismiss-only dialog would be treated as a refusal and dismissed, which
+    is the right default but the wrong answer here.
+    """
+    from bartlebot import dialog_captions
+
+    outcome, clicked = await _resolve_with("Somebody is already in a group.", (MESSAGE_BOX_RIGHT,))
+
+    assert dialog_captions.identify_caption("Somebody is already in a group.") == dialog_captions.ALREADY_IN_GROUP
+    assert outcome == (False, None)
+    assert clicked == []

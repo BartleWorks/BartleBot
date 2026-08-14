@@ -315,6 +315,29 @@ dependency on the game being installed at a guessable path. Extract what you nee
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 `bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
 
+### Telling modal dialogs apart
+
+Every in-game modal is the same `MessageBoxModalWindow` tree, so "a modal is up"
+does not say which one. Identify it by caption, via `node_helpers.identify_modal()`,
+comparing against the key constants in `bartlebot/dialog_captions.py`:
+
+```python
+if await node_helpers.identify_modal(client) == dialog_captions.FRIEND_BUSY:
+```
+
+Do **not** infer identity from which buttons are showing. That only works while no
+two dialogs a node can hit share a layout, and it already broke once: the dungeon
+exit warning and the friend-busy dialog both show a right button, so
+`teleport_to_friend` reported every dungeon exit as an unreachable friend (#84).
+
+Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per key
+— memory holds the *resolved* text, so an English substring match fails silently on
+any other locale. To add a dialog: append to `KNOWN_KEYS`, run
+`poetry run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.
+`--verify` re-checks the snapshot for keys whose text no longer identifies them
+uniquely. An unrecognised caption returns `None`, and callers must fall back rather
+than treat it as "no dialog".
+
 ### Bumping a pin
 
 Local edits do **not** affect the app until they are pushed and the pin moves:
