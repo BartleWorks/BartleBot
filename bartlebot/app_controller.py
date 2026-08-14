@@ -82,6 +82,7 @@ class AppController(QObject):
             drops_widget=self._window.right_sidebar.drops,
             get_recovery_state=lambda: self._loaded_config.recovery_state if self._loaded_config else None,
         )
+        self._window.set_auto_select_driver(self._client_manager.drive_client_in)
         self._wire()
         self._window.show()
         self._reconfigure_autosave_timer()
@@ -206,6 +207,7 @@ class AppController(QObject):
         # Connected before quit_event so debounced edits land while the widgets
         # are still alive.
         self._app.aboutToQuit.connect(self._flush_pending_edits)
+        self._app.aboutToQuit.connect(self._client_manager.stop)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 

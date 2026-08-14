@@ -107,6 +107,20 @@ CLIENT_REFRESH_INTERVAL_HIDDEN = 2.0
 # not stop entirely because AppController's zone-dropdown getter reads each
 # widget's cached zone, and a frozen cache would offer zones nobody is in.
 
+CLIENT_DETECT_INTERVAL = 1.0
+# Seconds between ClientManager detection cycles: notice new game windows, rebuild the
+# slot ordering, re-read wizard names. Hook activation no longer happens inline here, so
+# this cadence is now the whole cost of a cycle.
+
+CLIENT_DETECT_INTERVAL_IDLE = 3.0
+# Detection cadence while no client is hooked yet. Slower than CLIENT_DETECT_INTERVAL
+# because there is nothing to keep in sync — every window present is either absent or
+# still loading in, and neither transition is worth a per-second poll.
+
+CLIENT_DETECT_ERROR_BACKOFF = 3.0
+# Pause after an unexpected detection-cycle error, so a persistent fault (a client dying
+# mid-read, say) does not spin the loop at full speed while it logs.
+
 CLIENT_REFRESH_TIMEOUT = 1.0
 # Per-widget timeout for a single refresh cycle. If any one client's
 # zone/xyz reads take longer than this (e.g. during a zone transition),
@@ -138,6 +152,39 @@ LAUNCH_STAGGER_DELAY = 1.0
 # login server intermittently rejects logins that arrive in too-tight
 # succession; this spaces them out enough to avoid that without giving up
 # most of the benefit of launching a team in parallel.
+
+AUTO_SELECT_FIRST_SCREEN_DELAY = 3.0
+# Seconds to wait after auto-login is typed before the first keypress. The loading screen
+# that follows login ignores input for roughly this long, so anything sent earlier is
+# simply dropped — this is a floor, not a guess at when the screen ends.
+
+AUTO_SELECT_KEY_INTERVAL = 0.5
+# Seconds between keypresses while advancing a launching client through the loading
+# screens and character select. There are three gates to clear and no readable signal for
+# where the client is between them, so the interval is the worst-case cost of each gate:
+# recovery's original 5.0 s could waste 15 s per launch.
+
+AUTO_SELECT_TIMEOUT = 120.0
+# Ceiling on driving one client from auto-login to in-game. Generous against the observed
+# worst case (~3 s + loading + ~5 s character select + ~15 s load-in); hitting it means
+# something is wrong — a login queue, a bad password, a server outage — not that the
+# client is slow.
+
+AUTO_SELECT_TREE_TIMEOUT = 20.0
+# How long to wait for a launching client's UI tree to become readable before giving up on
+# reading it and driving the client blind instead. Measured at 1.8 s from attach
+# (tools/probe_char_select.py), so this is a wide margin: reaching it means something is
+# wrong with the hook, not that the client is slow.
+
+AUTO_SELECT_MAX_ENTER = 8
+# How many times to press Enter on a confirmed character-select screen before giving up on
+# it. The screen is live for about two seconds before the Play button finishes resolving
+# (its label is still an unresolved lang key until then), so the first press or two can be
+# swallowed — but a screen that eats eight is not going to take a ninth.
+
+AUTO_SELECT_CLEANUP_INTERVAL = 2.0
+# Pause between ESC presses while closing whatever the Enter spam opened. The chat box and
+# the settings window both animate, and a second ESC sent mid-animation is swallowed.
 
 LEVEL_SCALING_STAGGER_DELAY = 1.0
 # Seconds between one client finishing with the level-scaling station and the next one

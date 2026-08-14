@@ -7,12 +7,30 @@ from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
 from bartlebot.credentials import CredentialStore
-from bartlebot.nodes.node_helpers import click_by_path, is_enabled_by_path, poll_until
-from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH, CROWNS_SHOP_PATH
-from bartlebot.nodes.timing import TRIGGER_TIMEOUT
+from bartlebot.launcher import auto_select
+from bartlebot.nodes.timing import (
+    CLIENT_DETECT_ERROR_BACKOFF,
+    CLIENT_DETECT_INTERVAL,
+    CLIENT_DETECT_INTERVAL_IDLE,
+)
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
+
+
+def _titled(clients, title: str):
+    """The first client in *clients* whose window title matches, or None.
+
+    Titles are read live rather than cached because a window is renamed after login and
+    a relaunched client comes back under a new handle with the same title.
+    """
+    for c in clients:
+        try:
+            if get_window_title(c.window_handle) == title:
+                return c
+        except Exception:
+            pass
+    return None
 
 
 class ClientManager(QObject):
@@ -61,6 +79,14 @@ class ClientManager(QObject):
         self._client_resolutions: dict[str, tuple[int, int]] = {}
         self._unhooked_clients: list = []
         self._unhooked_hwnds: set[int] = set()
+        # Windows whose hooks are still being installed. activate_hooks() blocks until the
+        # character is in-game, so activation runs as a background task per client and the
+        # hwnd sits here meanwhile — see _start_activation for why this can't be awaited inline.
+        self._activating_hwnds: set[int] = set()
+        # Windows whose hook activation raised. Kept out of the published client list for
+        # good: retrying would re-prepare the autobot region the failed hooks jump into.
+        self._failed_hook_hwnds: set[int] = set()
+        self._activation_tasks: set[asyncio.Task] = set()
         self._client_loop_task: asyncio.Task | None = None
         self._recovery_task: asyncio.Task | None = None
         self._machine = None
@@ -84,6 +110,68 @@ class ClientManager(QObject):
     def start(self) -> None:
         """Create the client detection loop task. Call once after the event loop is running."""
         self._client_loop_task = asyncio.create_task(self._client_loop())
+
+    def stop(self) -> None:
+        """Cancel the detection loop and any in-flight hook activations.
+
+        Hook activation can block indefinitely (a client parked at character select never
+        writes the player struct), so those tasks would otherwise outlive the manager.
+        """
+        if self._client_loop_task is not None:
+            self._client_loop_task.cancel()
+            self._client_loop_task = None
+        for task in list(self._activation_tasks):
+            task.cancel()
+        self._activation_tasks.clear()
+        self._activating_hwnds.clear()
+        self._failed_hook_hwnds.clear()
+
+    def has_client_titled(self, title: str) -> bool:
+        """Whether a fully hooked client with this window title is currently live.
+
+        This is the signal that a launched instance has finished loading in: a client only
+        reaches self._clients once activate_hooks() succeeds, which requires a character
+        to be in a game zone. Used as the completion check for auto-select and recovery.
+        """
+        return self.client_titled(title) is not None
+
+    def client_titled(self, title: str):
+        """The live client whose window title matches, or None."""
+        return _titled(self._clients, title)
+
+    def pending_client_titled(self, title: str):
+        """The client for this window whether or not its hooks have come up yet.
+
+        Auto-select reads the character-select screen through this. It must be the Client
+        this manager already registered — building a second one for the same process
+        re-prepares WizWalker's autobot region and corrupts the hooks the first one
+        installed, so there is deliberately no way to ask for a fresh one.
+        """
+        return _titled(self._handler.clients, title)
+
+    async def drive_client_in(self, expected_title: str) -> bool:
+        """Advance a just-launched window through to in-game, then tidy up after it.
+
+        This is the callback the launcher is handed (see MainWindow.set_auto_select_driver);
+        it lives here because the completion signal is has_client_titled, which only this
+        class can answer. Recovery uses it too, so a relaunched client and a freshly
+        launched one take exactly the same path in.
+
+        The single place the auto-select setting is read. With it off the window is left
+        at character select for the user, and False says so — callers that need the client
+        anyway (recovery) fall back to await_client_in.
+        """
+        if not SettingsManager.instance().auto_select_character:
+            return False
+        return await auto_select.drive_client_in(
+            expected_title,
+            lambda: self.has_client_titled(expected_title),
+            lambda: self.pending_client_titled(expected_title),
+        )
+
+    async def await_client_in(self, expected_title: str) -> bool:
+        """Wait for a window to reach in-game under its own steam, pressing nothing."""
+        return await auto_select.wait_for_client_in(expected_title, lambda: self.has_client_titled(expected_title))
 
     def swap_clients(self, idx_a: int, idx_b: int) -> None:
         """Swap the positions of two clients in the live list.
@@ -209,27 +297,19 @@ class ClientManager(QObject):
         while True:
             try:
                 self._handler.remove_dead_clients()
-                new_clients = self._handler.get_new_clients()
-                if new_clients:
-                    try:
-                        await asyncio.gather(*[c.activate_hooks() for c in new_clients])
-                    except Exception:
-                        for c in new_clients:
-                            if c in self._handler.clients:
-                                self._handler.clients.remove(c)
-                            if c.window_handle in self._handler._managed_handles:
-                                self._handler._managed_handles.remove(c.window_handle)
-                        logger.exception("Client activation failed")
-                        await asyncio.sleep(3.0)
-                        continue
+                for c in self._handler.get_new_clients():
+                    self._start_activation(c)
 
                 clients = list(self._handler.clients)
 
-                # Exclude unhooked clients — window still open but hooks deactivated.
-                clients = [c for c in clients if c.window_handle not in self._unhooked_hwnds]
+                # Exclude unhooked clients — window still open but hooks deactivated —
+                # plus clients whose hooks are still coming up or failed to install.
+                excluded = self._unhooked_hwnds | self._activating_hwnds | self._failed_hook_hwnds
+                clients = [c for c in clients if c.window_handle not in excluded]
 
                 # Clean up _unhooked_clients whose game windows have since closed.
                 handler_hwnds = {c.window_handle for c in self._handler.clients}
+                self._failed_hook_hwnds &= handler_hwnds
                 closed_unhooked = [c for c in self._unhooked_clients if c.window_handle not in handler_hwnds]
                 if closed_unhooked:
                     for c in closed_unhooked:
@@ -249,7 +329,7 @@ class ClientManager(QObject):
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit([])
                     self.all_clients_changed.emit([], list(self._unhooked_clients))
-                    await asyncio.sleep(3.0)
+                    await asyncio.sleep(CLIENT_DETECT_INTERVAL_IDLE)
                     continue
 
                 # Update the account map for any clients whose titles are now known.
@@ -307,7 +387,7 @@ class ClientManager(QObject):
                 # tick would see no change and stay quiet.
                 await self._refresh_wizard_names(self._clients)
 
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(CLIENT_DETECT_INTERVAL)
 
             except MemoryReadError:
                 self._sync_embedded_clients(self._clients, [])
@@ -316,7 +396,7 @@ class ClientManager(QObject):
                     self._machine.set_clients(self._clients)
                 self.clients_changed.emit([])
                 self.all_clients_changed.emit([], list(self._unhooked_clients))
-                await asyncio.sleep(1.0)
+                await asyncio.sleep(CLIENT_DETECT_INTERVAL)
             except Exception:
                 self._sync_embedded_clients(self._clients, [])
                 self._clients = []
@@ -325,7 +405,44 @@ class ClientManager(QObject):
                 self.clients_changed.emit([])
                 self.all_clients_changed.emit([], list(self._unhooked_clients))
                 logger.exception("Client loop error")
-                await asyncio.sleep(3.0)
+                await asyncio.sleep(CLIENT_DETECT_ERROR_BACKOFF)
+
+    def _start_activation(self, client) -> None:
+        """Begin hooking a newly detected client, without blocking the detection loop.
+
+        activate_hooks() waits for the *player struct* address to be written, and that only
+        happens once a character is in a game zone — a window sitting on the login or
+        character select screen never writes it, and WizWalker passes no timeout, so the
+        await simply never returns. Awaiting that inline stalls the whole loop: no zone
+        refresh, no embedding, no crash detection, for as long as any one window is parked
+        at character select. Auto-select makes that the normal case on every launch.
+
+        Timing out and retrying is not the fix. activate_all_hooks() installs every hook
+        before it waits, so a client abandoned mid-wait leaves jmps in the game process
+        pointing into WizWalker's autobot scratch region; building a fresh Client for the
+        same process re-runs _prepare_autobot, which zeroes that region out from under
+        them. So a failed activation is left alone — the client stays registered with the
+        handler and is reaped by remove_dead_clients() when its window closes.
+        """
+        hwnd = client.window_handle
+        if hwnd in self._activating_hwnds:
+            return
+        self._activating_hwnds.add(hwnd)
+
+        async def _activate() -> None:
+            try:
+                await client.activate_hooks()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("Client activation failed for hwnd %s", hwnd)
+                self._failed_hook_hwnds.add(hwnd)
+            finally:
+                self._activating_hwnds.discard(hwnd)
+
+        task = asyncio.create_task(_activate())
+        self._activation_tasks.add(task)
+        task.add_done_callback(self._activation_tasks.discard)
 
     async def _refresh_wizard_names(self, clients: list) -> None:
         """Keep cached wizard names current, and announce them when they change.
@@ -580,15 +697,11 @@ class ClientManager(QObject):
     async def _reconnect_client(self, orig_pos: int, username: str) -> None:
         """Relaunch a disconnected client, navigate to in-game, then resume the FSM.
 
-        WizWalker hooks can only be activated once the character is in-game (not during
-        loading screens or the character select menu). To advance through those screens
-        without hooks, we spam the Enter key via Win32 PostMessageW until the client
-        appears in self._clients (meaning _client_loop successfully activated hooks,
-        implying the character is now in a game zone).
+        The screens between auto-login and in-game are driven by drive_client_in, the same
+        path a normal launch takes — see launcher/auto_select.py for why that has to be
+        done blind. Recovery differs only in what failure means: a bot mid-run cannot
+        continue a player short, so a drive that gives up stops the machine.
         """
-        import ctypes  # noqa: PLC0415
-        import ctypes.wintypes  # noqa: PLC0415
-
         from bartlebot.launcher.launch_profile import launch_account  # noqa: PLC0415
 
         machine = self._machine
@@ -623,96 +736,30 @@ class ClientManager(QObject):
             machine.stop()
             return
 
-        # Spam Enter key into the game window to advance through login loading screens
-        # and the character select menu. Hooks only activate once in-game, so we keep
-        # pressing until the client appears in self._clients.
-        _VK_RETURN = 0x0D
-        _WM_KEYDOWN = 0x0100
-        _WM_KEYUP = 0x0101
-        _enter_stop = asyncio.Event()
+        if SettingsManager.instance().auto_select_character:
+            reached = await self.drive_client_in(expected_title)
+        else:
+            # The user has opted out of automatic character selection, so recovery waits
+            # for them rather than pressing anything — but it still has to wait, since the
+            # run cannot resume a player short.
+            logger.warning(
+                "Auto-select is off — '%s' has been relaunched and is waiting at character "
+                "select. Log it in to resume the run.",
+                display_name,
+            )
+            self.recovery_error.emit(
+                f"'{display_name}' has been relaunched and is waiting at character select.\n\n"
+                "Log it in to resume the run, or turn on Settings → General → "
+                "Automatically select a character to have this done for you."
+            )
+            reached = await self.await_client_in(expected_title)
 
-        async def _enter_spam() -> None:
-            while not _enter_stop.is_set():
-                try:
-                    hwnd = ctypes.windll.user32.FindWindowW(None, expected_title)
-                    if hwnd:
-                        ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_RETURN, 0)
-                        await asyncio.sleep(0.05)
-                        ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_RETURN, 0)
-                except Exception:
-                    logger.warning("Enter-spam: ctypes call failed, will retry", exc_info=True)
-                await asyncio.sleep(5.0)
-
-        spam_task = asyncio.create_task(_enter_spam())
-
-        # Wait for _client_loop to hook the new instance (only succeeds once in-game)
-        new_client = None
-        deadline = asyncio.get_event_loop().time() + 120.0
-        try:
-            while asyncio.get_event_loop().time() < deadline:
-                for c in self._clients:
-                    try:
-                        if get_window_title(c.window_handle) == expected_title:
-                            new_client = c
-                            break
-                    except Exception:
-                        pass
-                if new_client:
-                    break
-                await asyncio.sleep(1.0)
-        finally:
-            _enter_stop.set()
-            spam_task.cancel()
-            try:
-                await spam_task
-            except (asyncio.CancelledError, Exception):
-                pass
-
-        if new_client is None:
+        if not reached:
             logger.error("Timed out waiting for reconnected client '%s' — stopping bot", display_name)
             machine.stop()
             return
 
         logger.info("Client '%s' recovered and in-game, slot %d restored", display_name, orig_pos)
-
-        _VK_ESCAPE = 0x1B
-        hwnd = new_client.window_handle
-
-        async def _send_esc() -> None:
-            ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYDOWN, _VK_ESCAPE, 0)
-            await asyncio.sleep(0.05)
-            ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, _VK_ESCAPE, 0)
-
-        # Close any window accidentally opened by Enter spam (e.g. chat box).
-        # ESC always opens the settings window after closing chat, so: fire ESC until
-        # settings appears, then fire ESC until settings disappears.
-        logger.info("Cleaning up any window opened by Enter spam on client '%s'", display_name)
-        for _ in range(5):
-            if await is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH):
-                break
-            await _send_esc()
-            await asyncio.sleep(2.0)
-        for _ in range(5):
-            if not await is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH):
-                break
-            await _send_esc()
-            await asyncio.sleep(2.0)
-
-        # Dismiss the crowns shop if it opened automatically on login.
-        for _ in range(5):
-            if not await is_enabled_by_path(new_client, CROWNS_SHOP_PATH):
-                break
-            await _send_esc()
-            if not await poll_until(
-                lambda: is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH),
-                timeout=TRIGGER_TIMEOUT,
-            ):
-                continue
-            await click_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH)
-            await poll_until(
-                lambda: not is_enabled_by_path(new_client, BACKPACK_CLOSE_BUTTON_PATH),
-                timeout=TRIGGER_TIMEOUT,
-            )
 
         # Restore the slot so the next _client_loop rebuild puts the client back in order.
         # machine.clients is kept in sync by _client_loop automatically.

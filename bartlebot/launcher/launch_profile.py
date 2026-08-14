@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import Awaitable, Callable
 
 from wizwalker.utils import (
     get_all_wizard_handles,
@@ -22,6 +23,12 @@ from wizwalker.utils import (
 from bartlebot.credentials import CredentialStore
 from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
 from bartlebot.settings_manager import SettingsManager
+
+# Advances one launched window from auto-login to in-game, keyed by window title.
+# Injected by the caller rather than imported so the launcher stays independent of
+# ClientManager, which owns both the "is this client hooked yet" signal the drive waits
+# on and the auto-select setting that decides whether it does anything at all.
+DriveFn = Callable[[str], Awaitable[bool]]
 
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
 # every window gets reparented and re-centered by ClientTile (see
@@ -99,12 +106,21 @@ async def launch_account(
     password: str,
     display_name: str,
     resolution: tuple[int, int] | None = None,
-) -> None:
+    drive: DriveFn | None = None,
+) -> str:
     """Start one Wizard101 instance and auto-login with *username*/*password*.
 
-    Sets the window title to *display_name* once the login screen is ready.
+    Sets the window title to *display_name* once the login screen is ready, and returns
+    that title — it is how every later stage identifies the window.
+
     If *resolution* is provided it is used instead of the global setting — pass the
     crashed client's measured size here so reconnects preserve the original resolution.
+
+    If *drive* is given, the instance is then advanced through the loading screens and
+    character select (see launcher/auto_select.py), and this call does not return until
+    the character is in-game or the drive gives up. Whether the drive actually presses
+    anything is the drive's own call — it is where the auto-select setting is read.
+    Callers that never want a window advanced pass drive=None.
     """
     patch_open_browser()
     w, h = resolution if resolution is not None else SettingsManager.instance().game_resolution
@@ -112,10 +128,14 @@ async def launch_account(
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
     await _wait_for_login_screen(handle)
     instance_login(handle, username, password)
-    set_window_title(handle, f"[{display_name}] Wizard101")
+    title = f"[{display_name}] Wizard101"
+    set_window_title(handle, title)
+    if drive is not None:
+        await drive(title)
+    return title
 
 
-async def launch_profile(profile_name: str) -> None:
+async def launch_profile(profile_name: str, drive: DriveFn | None = None) -> None:
     """Launch all accounts in the named profile.
 
     Looks up the profile in SettingsManager and retrieves passwords from
@@ -176,8 +196,20 @@ async def launch_profile(profile_name: str) -> None:
 
     # Stagger login attempts too — the login server intermittently rejects
     # logins that arrive in too-tight succession.
+    #
+    # Each instance's drive starts as soon as its own login is typed, rather than after
+    # the whole batch: the drives are independent, cost nothing while they wait, and
+    # overlapping them with the remaining stagger delays is most of the reason a team
+    # launch is faster than doing this by hand.
+    drives: list[asyncio.Task] = []
     for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
         instance_login(handle, username, password)
-        set_window_title(handle, f"[{display_name}] Wizard101")
+        title = f"[{display_name}] Wizard101"
+        set_window_title(handle, title)
+        if drive is not None:
+            drives.append(asyncio.create_task(drive(title)))
         if i < len(accounts) - 1:
             await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
+
+    if drives:
+        await asyncio.gather(*drives)

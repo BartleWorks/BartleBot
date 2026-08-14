@@ -42,6 +42,13 @@ class RecoveryHarness:
     _assign_slot = ClientManager._assign_slot
     _sync_embedded_clients = ClientManager._sync_embedded_clients
     _regroup_after_recovery = ClientManager._regroup_after_recovery
+    # _reconnect_client now drives the relaunched window in through these, the same path
+    # a normal launch takes.
+    drive_client_in = ClientManager.drive_client_in
+    await_client_in = ClientManager.await_client_in
+    has_client_titled = ClientManager.has_client_titled
+    client_titled = ClientManager.client_titled
+    pending_client_titled = ClientManager.pending_client_titled
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
@@ -51,6 +58,8 @@ class RecoveryHarness:
         self._recovery_in_progress: bool = False
         self._recovery_task = None
         self._clients: list = []
+        # The driver borrows the handler's client to read the character-select screen.
+        self._handler = MagicMock(clients=[])
         self._client_resolutions: dict[str, tuple[int, int]] = {}
         self._machine = None
         self._get_recovery_state = lambda: None
@@ -304,7 +313,7 @@ def _base_reconnect_patches(display_name: str = "j***n"):
         patch("bartlebot.launcher.launch_profile.launch_account", new_callable=AsyncMock),
         patch("ctypes.windll", mock_windll),
         patch("asyncio.sleep", new_callable=AsyncMock),
-        patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+        patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
     )
 
 
@@ -371,7 +380,7 @@ class TestReconnectClient:
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -441,7 +450,7 @@ class TestReconnectClient:
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -475,7 +484,7 @@ class TestReconnectClient:
             patch("ctypes.windll", mock_windll),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -497,6 +506,10 @@ class TestReconnectClient:
         mock_settings = MagicMock()
         mock_settings.accounts = []
 
+        # The driver reads and tidies up through the handler's client, so it has to be
+        # registered there as well as published.
+        harness._handler = MagicMock(clients=[fake_client])
+
         # ESC cleanup loops each call is_enabled_by_path once (BACKPACK_CLOSE_BUTTON_PATH):
         #   loop 1: True  → break immediately
         #   loop 2: False → not False = True → break immediately
@@ -513,9 +526,9 @@ class TestReconnectClient:
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", crowns_check),
-            patch("bartlebot.client_manager.poll_until", new_callable=AsyncMock, return_value=True),
-            patch("bartlebot.client_manager.click_by_path", mock_click),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", crowns_check),
+            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=True),
+            patch("bartlebot.launcher.auto_select.click_by_path", mock_click),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"

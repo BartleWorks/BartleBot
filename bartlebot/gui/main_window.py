@@ -187,6 +187,9 @@ class MainWindow(QMainWindow):
         self.action_redo.triggered.connect(self.bot_canvas._on_redo)
         self.bot_canvas.undo_state_changed.connect(self._on_undo_state_changed)
 
+        # Set by AppController once ClientManager exists; see set_auto_select_driver.
+        self._auto_select_driver = None
+
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
             lambda u, d: asyncio.ensure_future(self._launch_single_account(u, d))
@@ -425,11 +428,24 @@ class MainWindow(QMainWindow):
         popup = LauncherPopup(self)
         popup.show()
 
+    def set_auto_select_driver(self, driver) -> None:
+        """Supply the coroutine that advances a launched window to in-game.
+
+        Injected by AppController because the drive's completion signal ("is a hooked
+        client with this title live yet?") belongs to ClientManager, which the window does
+        not own. None leaves launched windows sitting at character select.
+        """
+        self._auto_select_driver = driver
+
+    @property
+    def auto_select_driver(self):
+        return self._auto_select_driver
+
     async def _launch_profile(self, profile_name: str) -> None:
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
-            await launch_profile(profile_name)
+            await launch_profile(profile_name, drive=self.auto_select_driver)
             self._record_recent_launch("profile", profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
@@ -447,7 +463,7 @@ class MainWindow(QMainWindow):
                     f"No stored password for '{username}'.\nPlease add the account in Settings → Accounts.",
                 )
                 return
-            await launch_account(username, password, display_name)
+            await launch_account(username, password, display_name, drive=self.auto_select_driver)
             self._record_recent_launch("account", username)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))

@@ -33,6 +33,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
     auto_group_players: bool = True
+    auto_select_character: bool = True
 
 
 class _GameEmbedSettings(BaseModel):
@@ -78,6 +79,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
         "auto_group_players": True,
+        "auto_select_character": True,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -262,6 +264,15 @@ class SettingsManager:
     @auto_group_players.setter
     def auto_group_players(self, value: bool) -> None:
         self.set_general("auto_group_players", bool(value))
+
+    @property
+    def auto_select_character(self) -> bool:
+        """Whether a launched client is driven through to in-game without user input."""
+        return bool(self.get_general("auto_select_character", default=True))
+
+    @auto_select_character.setter
+    def auto_select_character(self, value: bool) -> None:
+        self.set_general("auto_select_character", bool(value))
 
     @property
     def accounts(self) -> list[dict]:
