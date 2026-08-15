@@ -121,6 +121,22 @@ CLIENT_DETECT_ERROR_BACKOFF = 3.0
 # Pause after an unexpected detection-cycle error, so a persistent fault (a client dying
 # mid-read, say) does not spin the loop at full speed while it logs.
 
+CLIENT_CLOSE_GRACE = 6.0
+# How long a client gets to exit on its own after WM_CLOSE before it is terminated.
+# A healthy client is gone well inside a second; the headroom is for one that is
+# mid-crash and putting up an error popup, which we dismiss and re-check each poll.
+# Recovery cannot start until the process is actually gone, so this is dead time on
+# every crash — long enough to let a clean exit happen, short enough not to matter.
+
+CLIENT_CLOSE_POLL = 0.25
+# How often to re-check for process exit, and to sweep for error popups, while
+# waiting out CLIENT_CLOSE_GRACE.
+
+CLIENT_TERMINATE_TIMEOUT = 2.0
+# How long to wait for the process to disappear after TerminateProcess. The call is
+# asynchronous — it returns before the kernel has torn the process down — and
+# remove_dead_clients() only reaps the client once the handle reports exited.
+
 CLIENT_REFRESH_TIMEOUT = 1.0
 # Per-widget timeout for a single refresh cycle. If any one client's
 # zone/xyz reads take longer than this (e.g. during a zone transition),

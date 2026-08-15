@@ -27,6 +27,7 @@ from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -68,6 +69,9 @@ class AppController(QObject):
 
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
+
+        # Same reason: in-flight client close sequences, one per crashed client.
+        self._close_tasks: set[asyncio.Task] = set()
 
         # Auto-save state
         self._has_unsaved_changes: bool = False
@@ -765,15 +769,39 @@ class AppController(QObject):
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)
 
     def _on_machine_client_disconnected(self, hwnd: int) -> None:
-        """Called by _client_status_watcher when a client becomes unresponsive.
+        """Called by the health monitor when a client becomes unresponsive.
 
         Force-closes the game window so that remove_dead_clients() detects the exit
-        and triggers the reconnect procedure via _on_clients_removed.
+        and triggers the reconnect procedure via _on_clients_removed. That reaping is
+        keyed on the *process* exiting, not the window, so the close has to be seen
+        through: a crashing client parks on an error popup and never exits on WM_CLOSE
+        alone, which used to leave recovery waiting forever (#79).
         """
-        import ctypes  # noqa: PLC0415
+        logger.warning("Client hwnd=%d flagged unresponsive — closing it", hwnd)
+        task = asyncio.create_task(self._close_dead_client(hwnd))
+        self._close_tasks.add(task)
+        task.add_done_callback(self._close_tasks.discard)
 
-        logger.warning("Client hwnd=%d flagged unresponsive — sending WM_CLOSE", hwnd)
-        ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)  # WM_CLOSE
+    async def _close_dead_client(self, hwnd: int) -> None:
+        """Run the close sequence for a flagged client and report a failure to the user."""
+        try:
+            closed = await force_close_client(hwnd)
+        except Exception:
+            logger.exception("Failed to close client hwnd=%d", hwnd)
+            return
+        if closed:
+            return
+        # Deferred rather than emitted here: recovery_error opens a modal QMessageBox,
+        # and exec() from inside an asyncio task is the re-entrancy trap in CLAUDE.md.
+        # A zero-delay timer runs it from Qt's loop with no task frame on the stack.
+        QTimer.singleShot(
+            0,
+            lambda: self._client_manager.recovery_error.emit(
+                "A crashed client could not be closed — it is likely showing a Windows error "
+                "popup that has to be dismissed by hand.\n\n"
+                "Close it manually and the bot will recover from there."
+            ),
+        )
 
     # ------------------------------------------------------------------
     # Signal handlers

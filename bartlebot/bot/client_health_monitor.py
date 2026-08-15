@@ -12,7 +12,6 @@ All loops write to a shared _flagged set so a client is never double-reported.
 """
 
 import asyncio
-import ctypes
 import logging
 import time
 from collections.abc import Callable
@@ -20,6 +19,7 @@ from collections.abc import Callable
 from bartlebot import dialog_captions
 from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
 from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
+from bartlebot.utils.window_kill import terminate_process
 
 logger = logging.getLogger(__name__)
 
@@ -115,12 +115,13 @@ class ClientHealthMonitor:
 
     @staticmethod
     def _force_kill_process(pid: int) -> None:
-        """Hard-terminate a process by PID using Win32 TerminateProcess."""
-        _PROCESS_TERMINATE = 0x0001
-        handle = ctypes.windll.kernel32.OpenProcess(_PROCESS_TERMINATE, False, pid)
-        if handle:
-            ctypes.windll.kernel32.TerminateProcess(handle, 1)
-            ctypes.windll.kernel32.CloseHandle(handle)
+        """Hard-terminate a process by PID using Win32 TerminateProcess.
+
+        A hard kill rather than the graceful sequence in window_kill.force_close_client:
+        a client sitting on a disconnect modal has nothing left to shut down cleanly, and
+        terminating takes any error popup it might be showing with it.
+        """
+        terminate_process(pid)
 
     async def _disconnect_dialog_watcher(self) -> None:
         """Detect in-game disconnect modals and force-kill the client process.
