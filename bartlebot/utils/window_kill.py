@@ -106,10 +106,23 @@ _kernel32_cache = None
 
 
 def default_user32():
-    """The real user32, with argtypes applied. Resolved lazily so this module imports anywhere."""
+    """A private user32 handle with our argtypes applied. Resolved lazily so this module imports anywhere.
+
+    ``ctypes.WinDLL("user32")``, never ``ctypes.windll.user32``: the latter is cached
+    per name for the whole process, so its function objects — and their argtypes — are
+    shared with every other library in the process. Setting ``EnumWindows.argtypes``
+    on the shared handle made wizwalker's own ``get_all_wizard_handles()`` fail with
+    ``expected WinFunctionType instance instead of WinFunctionType``: it passes a
+    callback built from a different WINFUNCTYPE, which ctypes rejects once a
+    conflicting prototype is declared. That broke client detection outright, and with
+    it the recovery this module exists to unblock.
+
+    A separate WinDLL instance loads the same DLL but owns its own function objects,
+    so our prototypes stay ours.
+    """
     global _user32_cache
     if _user32_cache is None:
-        lib = ctypes.windll.user32
+        lib = ctypes.WinDLL("user32")
         for name, argtypes, restype in _USER32_SIGNATURES:
             fn = getattr(lib, name)
             fn.argtypes = argtypes
@@ -119,10 +132,15 @@ def default_user32():
 
 
 def default_kernel32():
-    """The real kernel32, with argtypes applied."""
+    """A private kernel32 handle with our argtypes applied.
+
+    Private for the same reason as user32, and it matters at least as much here:
+    pymem drives every memory read through the shared kernel32, so a prototype
+    declared on it applies to WizWalker's calls too.
+    """
     global _kernel32_cache
     if _kernel32_cache is None:
-        lib = ctypes.windll.kernel32
+        lib = ctypes.WinDLL("kernel32")
         for name, argtypes, restype in _KERNEL32_SIGNATURES:
             fn = getattr(lib, name)
             fn.argtypes = argtypes

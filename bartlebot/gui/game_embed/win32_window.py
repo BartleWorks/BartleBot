@@ -166,10 +166,18 @@ _user32_cache = None
 
 
 def default_user32():
-    """The real user32, with argtypes applied. Resolved lazily so this module imports anywhere."""
+    """A private user32 handle with argtypes applied. Resolved lazily so this module imports anywhere.
+
+    ``ctypes.WinDLL("user32")`` rather than ``ctypes.windll.user32``, which is cached
+    process-wide and would share these prototypes with wizwalker and pymem. Declaring
+    argtypes on a shared function object breaks any other caller that passes a
+    differently-typed argument — see the EnumWindows failure documented in
+    ``bartlebot/utils/window_kill.py``. Nothing here has collided yet; this keeps it
+    that way.
+    """
     global _user32_cache
     if _user32_cache is None:
-        lib = ctypes.windll.user32
+        lib = ctypes.WinDLL("user32")
         for name, argtypes, restype in _SIGNATURES:
             fn = getattr(lib, name)
             fn.argtypes = argtypes

@@ -5,9 +5,11 @@ so each test states exactly when the process dies and what popups it puts up.
 """
 
 import ctypes
+import sys
 
 import pytest
 
+from bartlebot.gui.game_embed import win32_window
 from bartlebot.utils import window_kill
 from bartlebot.utils.window_kill import (
     DIALOG_CLASS,
@@ -250,6 +252,45 @@ async def test_explicit_pid_is_used_over_the_window_lookup():
 
     assert await force_close_client(1, pid=4242, user32=user32, kernel32=kernel32) is True
     assert kernel32.polls > 0, "liveness should have been polled against the supplied PID"
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="needs the real Win32 DLLs")
+def test_our_prototypes_do_not_leak_onto_the_shared_dll_handles():
+    """Regression: argtypes on ctypes.windll.* are shared with wizwalker and pymem.
+
+    ctypes.windll caches one library object per name for the whole process, so
+    declaring EnumWindows.argtypes there also declared them for wizwalker's
+    get_all_wizard_handles() — which passes a callback built from its own
+    WINFUNCTYPE and was rejected outright, killing client detection during a
+    recovery. Private WinDLL instances keep our prototypes off the shared handles.
+    """
+    window_kill._user32_cache = None
+    window_kill._kernel32_cache = None
+
+    user32 = window_kill.default_user32()
+    kernel32 = window_kill.default_kernel32()
+
+    assert user32 is not ctypes.windll.user32
+    assert kernel32 is not ctypes.windll.kernel32
+    assert win32_window.default_user32() is not ctypes.windll.user32
+    assert getattr(ctypes.windll.user32.EnumWindows, "argtypes", None) is None
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="needs the real Win32 DLLs")
+def test_wizwalker_style_enum_windows_still_works_after_our_init():
+    """The exact call from wizwalker.utils.get_windows_from_predicate, which #79's fix broke."""
+    window_kill._user32_cache = None
+    window_kill.default_user32()
+
+    enumwindows_func_type = ctypes.WINFUNCTYPE(
+        ctypes.c_bool,
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.c_int),
+    )
+    callback = enumwindows_func_type(lambda _handle, _lparam: 1)
+
+    # Raised ctypes.ArgumentError before the fix.
+    assert ctypes.windll.user32.EnumWindows(callback, 0)
 
 
 def test_ctypes_signatures_cover_every_call_site():
