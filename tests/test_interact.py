@@ -308,6 +308,144 @@ async def test_has_dialogue_true_explicit_behaves_as_default():
     vis_mock.assert_called()  # dialogue phase ran — is_visible_by_path was polled
 
 
+# ---------------------------------------------------------------------------
+# Sequential mode
+# ---------------------------------------------------------------------------
+
+
+def _positional_client() -> FakeClient:
+    """Client whose interact prompt shows at interact_xyz (x=0) and not at reset_xyz (x=1)."""
+    c = FakeClient()
+    state = {"at_interact": False}
+
+    async def _teleport(xyz):
+        state["at_interact"] = xyz.x == 0.0
+
+    async def _in_range():
+        return state["at_interact"]
+
+    c.teleport.side_effect = _teleport
+    c.is_in_npc_range.side_effect = _in_range
+    c.at_interact = state
+    return c
+
+
+async def test_sequential_each_client_interacts_alone():
+    """sequential=True: clients press X one at a time, never both in range at once."""
+    c1, c2 = _positional_client(), _positional_client()
+    clients = [c1, c2]
+    params = {**_PARAMS, "interact_clients": [1, 2], "has_dialogue": False, "sequential": True}
+    overlaps: list[bool] = []
+
+    async def _record_overlap(key, delay):
+        # Called on each X press: every other client must be parked at reset by then.
+        overlaps.append(sum(c.at_interact["at_interact"] for c in clients) > 1)
+
+    c1.send_key.side_effect = _record_overlap
+    c2.send_key.side_effect = _record_overlap
+
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+    ):
+        result = await ix.run(FakeMachine(), clients, params)
+
+    assert result == "SUCCESS"
+    assert overlaps == [False, False]
+    assert c1.at_interact["at_interact"] is False  # parked again after its turn
+    assert c2.at_interact["at_interact"] is False
+
+
+async def test_sequential_advances_dialogue_per_client():
+    """Each client's dialogue is advanced during its own turn, not after everyone has pressed X."""
+    c1, c2 = _positional_client(), _positional_client()
+    params = {**_PARAMS, "interact_clients": [1, 2], "sequential": True}
+    dialog_open: dict[int, bool] = {}
+    order: list[int] = []
+
+    async def _visible(c, path):
+        return dialog_open.get(id(c), False)
+
+    def _bind(client, number):
+        async def _key(key, delay):
+            from wizwalker import Keycode
+
+            if key == Keycode.X:
+                assert not any(dialog_open.values()), "a previous client was still in dialogue"
+                dialog_open[id(client)] = True
+                order.append(number)
+            elif key == Keycode.SPACEBAR:
+                dialog_open[id(client)] = False
+
+        client.send_key.side_effect = _key
+
+    _bind(c1, 1)
+    _bind(c2, 2)
+
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
+        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(_nh, "is_visible_by_path", side_effect=_visible),
+    ):
+        result = await ix.run(FakeMachine(), [c1, c2], params)
+
+    assert result == "SUCCESS"
+    assert order == [1, 2]
+
+
+async def test_sequential_prompt_never_appears_fails():
+    """FAILURE naming the client that never got the prompt, not a generic retry message."""
+    good = _positional_client()
+    bad = _positional_client()
+    bad.is_in_npc_range.side_effect = None
+    bad.is_in_npc_range.return_value = False
+    machine = FakeMachine()
+    params = {**_PARAMS, "interact_clients": [1, 2], "has_dialogue": False, "sequential": True}
+
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+    ):
+        result = await ix.run(machine, [good, bad], params)
+
+    assert result == "FAILURE"
+    assert any("client(s) [2]" in msg for msg, _ in machine.logs)
+
+
+async def test_sequential_respects_interact_clients_subset():
+    """Only the selected client takes a turn; the other is never moved."""
+    c1, c2 = FakeClient(), _positional_client()
+    params = {**_PARAMS, "interact_clients": [2], "has_dialogue": False, "sequential": True}
+
+    with (
+        patch.object(ix, "POLL_INTERVAL", 0),
+        patch.object(_nh, "POLL_INTERVAL", 0),
+        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+    ):
+        result = await ix.run(FakeMachine(), [c1, c2], params)
+
+    assert result == "SUCCESS"
+    c1.teleport.assert_not_called()
+    c1.send_key.assert_not_called()
+    c2.send_key.assert_called()
+
+
+async def test_sequential_wrong_zone_still_fails_first():
+    """The zone pre-condition runs before sequential mode gets a chance to move anybody."""
+    client = _positional_client()
+    client.zone_name.return_value = "WrongZone"
+    params = {**_PARAMS, "sequential": True}
+
+    result = await ix.run(FakeMachine(), [client], params)
+
+    assert result == "FAILURE"
+    client.teleport.assert_not_called()
+
+
 async def test_late_dialog_caught_within_safety_window():
     """Dialog appearing after several polls (but before safety_delay expires) is caught and advanced."""
     client = _ready_client()

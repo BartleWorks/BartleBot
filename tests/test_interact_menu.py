@@ -201,3 +201,86 @@ async def test_multiple_clients_both_must_see_menu():
 
     assert result == "SUCCESS"
     assert len(seen) >= 2
+
+
+# ---------------------------------------------------------------------------
+# Sequential mode
+# ---------------------------------------------------------------------------
+
+
+def _positional_client() -> FakeClient:
+    """Client whose interact prompt shows at interact_xyz (x=0) and not at reset_xyz (x=1)."""
+    c = FakeClient()
+    state = {"at_interact": False}
+
+    async def _teleport(xyz):
+        state["at_interact"] = xyz.x == 0.0
+
+    async def _in_range():
+        return state["at_interact"]
+
+    c.teleport.side_effect = _teleport
+    c.is_in_npc_range.side_effect = _in_range
+    c.at_interact = state
+    return c
+
+
+async def test_sequential_each_client_opens_the_menu_alone():
+    """sequential=True: no two clients are in range of the object at the same time."""
+    c1, c2 = _positional_client(), _positional_client()
+    clients = [c1, c2]
+    params = {**_PARAMS, "interact_clients": [1, 2], "sequential": True}
+    overlaps: list[bool] = []
+
+    async def _press(key, delay):
+        overlaps.append(sum(c.at_interact["at_interact"] for c in clients) > 1)
+
+    c1.send_key.side_effect = _press
+    c2.send_key.side_effect = _press
+
+    with (
+        patch.object(im, "POLL_INTERVAL", 0),
+        patch.object(node_helpers, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(node_helpers, "is_visible_by_path", AsyncMock(return_value=True)),
+    ):
+        result = await im.run(FakeMachine(), clients, params)
+
+    assert result == "SUCCESS"
+    assert overlaps == [False, False]
+
+
+async def test_sequential_menu_never_appears_reports_that_client():
+    """A client whose menu never opens is reported as unfinished, not as a missing prompt."""
+    client = _positional_client()
+    machine = FakeMachine()
+    params = {**_PARAMS, "sequential": True}
+
+    with (
+        patch.object(im, "POLL_INTERVAL", 0),
+        patch.object(node_helpers, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(node_helpers, "is_visible_by_path", AsyncMock(return_value=False)),
+    ):
+        result = await im.run(machine, [client], params)
+
+    assert result == "FAILURE"
+    assert any("menu path not visible" in msg for msg, _ in machine.logs)
+    assert not any("interact prompt never appeared" in msg for msg, _ in machine.logs)
+
+
+async def test_sequential_prompt_never_appears_reports_that_client():
+    """A client that never gets the prompt is reported as such, with its client number."""
+    client = _positional_client()
+    client.is_in_npc_range.side_effect = None
+    client.is_in_npc_range.return_value = False
+    machine = FakeMachine()
+    params = {**_PARAMS, "sequential": True}
+
+    with (
+        patch.object(im, "POLL_INTERVAL", 0),
+        patch.object(node_helpers, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(node_helpers, "is_visible_by_path", AsyncMock(return_value=True)),
+    ):
+        result = await im.run(machine, [client], params)
+
+    assert result == "FAILURE"
+    assert any("interact prompt never appeared for client(s) [1]" in msg for msg, _ in machine.logs)

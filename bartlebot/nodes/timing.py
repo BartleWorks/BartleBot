@@ -211,6 +211,17 @@ LEVEL_SCALING_STAGGER_DELAY = 1.0
 # staggering only the clicks loses the elixir for everyone after the first. Anyone still
 # missing it is retried rather than failed, so this only has to cover the common case.
 
+SEQUENTIAL_INTERACT_STAGGER = 1.0
+# Seconds between one client finishing its turn at a shared world object and the next one
+# starting on it, in the optional sequential mode of the interaction nodes. Some objects —
+# zone teleporters among them — only serve one player at a time, so a second client
+# interacting while the first is mid-interaction has its keypress swallowed. The gap covers
+# the object becoming free again, which has no readable signal of its own.
+#
+# Distinct from LEVEL_SCALING_STAGGER_DELAY, which paces the one station apply_level_scaling
+# is hardcoded against; these are separate knobs because there is no reason to believe every
+# contended object frees up at the same rate.
+
 WISP_COLLECT_TIMEOUT = 10.0
 # Ceiling on how long a single client may spend collecting wisps for one
 # resource (health or mana). Guards against a game bug where a client's

@@ -46,7 +46,22 @@ Several related repos have been downloaded locally so they can be easily referen
 Import all timing constants from `bartlebot/nodes/timing.py`. Never define local timeout or interval constants in nodes.
 
 ### Multi-client coordination
-Use `poll_until_each_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
+Use `poll_each_until_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
+
+Some world objects only serve one player at a time — a second client interacting while the
+first is mid-interaction has its keypress silently swallowed. Use `take_turns()` for those:
+it parks every client at `reset_xyz`, then sends them to the object one at a time, handing
+each to a `turn_fn` that owns the object until it returns. The release moment is what varies
+between nodes (a menu confirmed open, a zone list dismissed, a loading screen begun), which
+is why it is a callback rather than a fixed sequence.
+
+This is offered as an optional `sequential` param on `interact`, `interact_menu`,
+`enter_zone_via_object`, and `enter_zone_via_list`; it defaults off, and the parallel path
+in each of those nodes is untouched by it. `apply_level_scaling` predates the helper and is
+unconditionally sequential against its one hardcoded station.
+
+Pass `park_after_turn=False` when the interaction removes the client itself (a zone
+transition) — otherwise the helper aims a teleport at a client already on a loading screen.
 
 ### Logging
 Use Python `logging` module with per-module loggers:

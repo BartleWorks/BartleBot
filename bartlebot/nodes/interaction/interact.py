@@ -56,6 +56,21 @@ PARAM_SCHEMA: list[ParamField] = [
         default=True,
         required=False,
     ),
+    ParamField(
+        key="sequential",
+        type="bool",
+        label="Sequential Interaction",
+        help=(
+            "Have players use the object one at a time instead of together. Some objects only "
+            "serve one player at a time, and a second player interacting while the first is "
+            "mid-interaction has their keypress swallowed. Each player waits at Reset XYZ, "
+            "takes its turn, and advances its own dialogue before the next player starts. "
+            "Slower — leave off unless this object actually needs it."
+        ),
+        default=False,
+        default_hint="All players interact at once.",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -83,6 +98,12 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=10,
+    usage_notes=(
+        "Turn on Sequential Interaction when the object refuses to serve more than one player "
+        "at a time — the symptom is that one player interacts normally and the others' X press "
+        "does nothing, intermittently rather than every run. It costs roughly one full "
+        "interaction per extra player, so leave it off otherwise."
+    ),
 )
 
 from bartlebot.nodes.timing import DIALOG_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
@@ -97,6 +118,9 @@ async def run(machine, clients: list, params: dict) -> str:
       1. Verify all clients are in zone. Return FAILURE if not.
       2. Resolve active_clients from interact_clients param (default: all clients).
          Return SUCCESS immediately if the resolved set is empty.
+      2s. If sequential, hand the whole interaction to node_helpers.take_turns: each client
+         approaches, presses X and advances its own dialogue alone before the next starts.
+         Steps 3–6 are the parallel path and are skipped.
       3. Clear any pre-existing interact prompt by teleporting to reset_xyz.
       4. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait for the prompt
          on all active_clients. If it does not appear, teleport to reset_xyz and retry.
@@ -138,6 +162,47 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"Interacting client(s): {[i + 1 for i in interact_indices]}", logging.DEBUG)
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
+    has_dialogue: bool = params.get("has_dialogue", True)
+
+    # 3s. Sequential mode: one client uses the object from approach to last dialogue box
+    #     before the next one starts. Its dialogue is advanced per-client rather than for
+    #     the group, which is the whole point — a client still reading is a client still
+    #     holding the object.
+    if params.get("sequential", False):
+        machine.log("Sequential interaction: clients take turns at the object", logging.DEBUG)
+
+        async def _turn(client) -> bool:
+            await client.send_key(Keycode.X, 0.1)
+            if not has_dialogue:
+                return True
+            return await node_helpers.advance_dialogue_until_clear([client], safety_delay, DIALOG_TIMEOUT)
+
+        numbers = [i + 1 for i in interact_indices]
+        results = await node_helpers.take_turns(
+            active_clients,
+            interact,
+            reset,
+            safety_delay,
+            _turn,
+            numbers=numbers,
+            poll_interval=POLL_INTERVAL,
+            log=machine.log,
+        )
+        unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
+        if unprompted:
+            machine.log(
+                f"FAILURE: interact prompt never appeared for client(s) {unprompted} after {MAX_RETRIES} attempts",
+                logging.WARNING,
+            )
+            return "FAILURE"
+        if unfinished:
+            machine.log(
+                f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s for client(s) {unfinished}",
+                logging.WARNING,
+            )
+            return "FAILURE"
+        machine.log("SUCCESS: interaction complete")
+        return "SUCCESS"
 
     # 3. Clear any pre-existing interact prompt before starting.
     #    A stale prompt from a previous interaction can linger briefly after teleport,
@@ -185,7 +250,7 @@ async def run(machine, clients: list, params: dict) -> str:
     await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in active_clients])
 
     # 7. Advance through dialogue; skip entirely for silent interactions.
-    if not params.get("has_dialogue", True):
+    if not has_dialogue:
         machine.log("Skipping dialogue wait (has_dialogue=False)", logging.DEBUG)
         machine.log("SUCCESS: interaction complete")
         return "SUCCESS"

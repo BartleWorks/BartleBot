@@ -64,6 +64,22 @@ PARAM_SCHEMA: list[ParamField] = [
         default="",
         required=True,
     ),
+    ParamField(
+        key="sequential",
+        type="bool",
+        label="Sequential Interaction",
+        help=(
+            "Have players use the list object one at a time instead of together. Some list "
+            "objects only serve one player at a time, and a second player interacting while "
+            "the first has the list open has their keypress swallowed. Each player waits at "
+            "Reset XYZ, then opens the list, finds the entry and clicks Teleport before the "
+            "next player starts. All players are still confirmed in the destination zone "
+            "together at the end."
+        ),
+        default=False,
+        default_hint="All players interact at once.",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -95,6 +111,11 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=10,
+    usage_notes=(
+        "Turn on Sequential Interaction when the list object only serves one player at a time — "
+        "the symptom is that one player's list opens and the others' X press does nothing, "
+        "intermittently rather than every run."
+    ),
 )
 
 _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
@@ -157,6 +178,91 @@ async def _select_zone(client, entry: str, safety_delay: float) -> bool:
     return False
 
 
+async def _confirm_arrival(machine, clients: list, to_zone: str) -> str:
+    """Wait for every client to reach to_zone. The tail both modes share."""
+    actual = await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT)
+    if actual is not None:
+        machine.log(
+            f"FAILURE: zone change timed out (expected={to_zone!r}, actual={actual})",
+            logging.WARNING,
+        )
+        return "FAILURE"
+
+    machine.log(f"enter_zone_via_list: all clients in {to_zone!r} — SUCCESS")
+    return "SUCCESS"
+
+
+async def _use_list_sequentially(
+    machine, clients: list, interact, reset, zone_list_entry: str, safety_delay: float
+) -> str | None:
+    """Let each client use the list object alone. Returns "FAILURE", or None to carry on.
+
+    A client's turn runs from its keypress to its Teleport click: the list stays open on
+    screen for the whole of the page search, so unlike the other interaction nodes there is
+    no earlier moment at which the object is free. Answering the instance prompt is part of
+    the turn too — until it is answered the teleport never fires, so a client released
+    before that has not actually left.
+    """
+    machine.log("Sequential interaction: clients take turns at the list object", logging.DEBUG)
+    refusals: list[str] = []
+
+    async def _turn(client) -> bool:
+        await client.send_key(Keycode.X, 0.1)
+
+        if not await node_helpers.poll_until(
+            lambda: node_helpers.is_visible_by_path(client, UNIVERSE_TELEPORT_BUTTON), safety_delay, POLL_INTERVAL
+        ):
+            return False
+
+        if not await _select_zone(client, zone_list_entry, safety_delay):
+            # Leave the object as we found it, or the next client's turn starts with
+            # somebody else's list still on screen.
+            await node_helpers.click_by_path(client, UNIVERSE_CANCEL_BUTTON)
+            return False
+
+        await node_helpers.click_by_path(client, UNIVERSE_TELEPORT_BUTTON)
+        if refusal := await node_helpers.answer_instance_prompts([client], safety_delay, POLL_INTERVAL):
+            refusals.append(refusal)
+            return False
+        return True
+
+    numbers = list(range(1, len(clients) + 1))
+    results = await node_helpers.take_turns(
+        clients,
+        interact,
+        reset,
+        safety_delay,
+        _turn,
+        numbers=numbers,
+        poll_interval=POLL_INTERVAL,
+        # The teleport takes the client out of the zone itself; parking it would aim a
+        # teleport at a client that is already leaving.
+        park_after_turn=False,
+        log=machine.log,
+    )
+    unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
+
+    if refusals:
+        machine.log(
+            f"FAILURE: the game refused the teleport — {dialog_captions.describe(refusals[0])}",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    if unprompted:
+        machine.log(
+            f"FAILURE: interact prompt never appeared for client(s) {unprompted} after {MAX_RETRIES} attempts",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    if unfinished:
+        machine.log(
+            f"FAILURE: client(s) {unfinished} could not open the zone list or select {zone_list_entry!r}",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    return None
+
+
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
@@ -165,6 +271,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     Flow:
       1. Verify all clients are in zone. Return FAILURE if not.
+      2s. If sequential, _use_list_sequentially runs one client's whole turn — open the list,
+         find the entry, click Teleport, answer the prompt — before the next client starts,
+         replacing steps 2–7b. Step 8 runs either way.
       2. Clear any pre-existing interact prompt by teleporting to reset_xyz.
       3. Retry loop (MAX_RETRIES): teleport to interact_xyz, wait for the interact
          prompt. If it does not appear, teleport to reset_xyz and retry.
@@ -205,6 +314,13 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.WARNING,
         )
         return "FAILURE"
+
+    # 2s. Sequential mode replaces steps 2–7b; step 8 runs either way.
+    if params.get("sequential", False):
+        failure = await _use_list_sequentially(machine, clients, interact, reset, zone_list_entry, safety_delay)
+        if failure is not None:
+            return failure
+        return await _confirm_arrival(machine, clients, to_zone)
 
     # 2. Clear any pre-existing interact prompt.
     prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
@@ -273,13 +389,4 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     # 8. Wait for zone change.
-    actual = await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT)
-    if actual is not None:
-        machine.log(
-            f"FAILURE: zone change timed out (expected={to_zone!r}, actual={actual})",
-            logging.WARNING,
-        )
-        return "FAILURE"
-
-    machine.log(f"enter_zone_via_list: all clients in {to_zone!r} — SUCCESS")
-    return "SUCCESS"
+    return await _confirm_arrival(machine, clients, to_zone)
