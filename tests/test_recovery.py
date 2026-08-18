@@ -36,6 +36,7 @@ class RecoveryHarness:
 
     # Bind real methods directly — no copying, no duplication.
     _on_clients_removed = ClientManager._on_clients_removed
+    _log_unrecoverable_removal = ClientManager._log_unrecoverable_removal
     _run_recovery_queue = ClientManager._run_recovery_queue
     _reconnect_client = ClientManager._reconnect_client
     _build_ordered_clients = ClientManager._build_ordered_clients
@@ -52,6 +53,7 @@ class RecoveryHarness:
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
+        self._hwnd_titles: dict[int, str] = {}
         self._client_order: list[str | None] = []
         self._pending_recovery: dict[int, str] = {}
         self._vacated_slots: dict[str, int] = {}
@@ -94,6 +96,44 @@ def _mock_create_task(coro: object) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 
+class TestAccountMapTitleCache:
+    """_refresh_account_map records every title it reads, matched or not.
+
+    An unmatched title is the only description of the window that will still exist by the
+    time the client disconnects — the window is gone by then, so it cannot be read again.
+    """
+
+    def _run(self, harness: RecoveryHarness, title: str, accounts: list[dict]):
+        client = MagicMock(window_handle=100)
+        settings = MagicMock(accounts=accounts)
+        with (
+            patch("bartlebot.client_manager.SettingsManager") as sm,
+            patch("bartlebot.client_manager.get_window_title", return_value=title),
+        ):
+            sm.instance.return_value = settings
+            ClientManager._refresh_account_map(harness, [client])
+
+    def test_unmatched_title_is_remembered(self, harness: RecoveryHarness) -> None:
+        self._run(harness, "Wizard101", [{"username": "user1", "alias": "Jeff"}])
+        assert harness._hwnd_account_map == {}, "an adopted window matches no account"
+        assert harness._hwnd_titles == {100: "Wizard101"}
+
+    def test_matched_title_is_remembered_and_mapped(self, harness: RecoveryHarness) -> None:
+        self._run(harness, "[Jeff] Wizard101", [{"username": "user1", "alias": "Jeff"}])
+        assert harness._hwnd_account_map == {100: "user1"}
+        assert harness._hwnd_titles == {100: "[Jeff] Wizard101"}
+
+    def test_unreadable_title_records_nothing(self, harness: RecoveryHarness) -> None:
+        client = MagicMock(window_handle=100)
+        with (
+            patch("bartlebot.client_manager.SettingsManager") as sm,
+            patch("bartlebot.client_manager.get_window_title", side_effect=OSError("gone")),
+        ):
+            sm.instance.return_value = MagicMock(accounts=[])
+            ClientManager._refresh_account_map(harness, [client])
+        assert harness._hwnd_titles == {}
+
+
 class TestOnClientsRemoved:
     def test_unknown_hwnd_is_a_no_op(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
@@ -101,6 +141,81 @@ class TestOnClientsRemoved:
         harness._on_clients_removed({999})
         assert harness._client_order == ["user1"]
         assert harness._pending_recovery == {}
+
+    def test_unmapped_hwnd_warns_that_recovery_is_skipped(self, harness: RecoveryHarness, caplog) -> None:
+        """The overnight-silence bug: an adopted window disconnects and nothing is said.
+
+        Only clients BartleBot launched carry the '[account] Wizard101' title the account
+        map is keyed on, so a window adopted from another session can never be recovered.
+        That has to be audible, or a stalled run looks identical to a healthy one.
+        """
+        harness._hwnd_titles = {999: "Wizard101"}
+        harness._machine = _make_machine(stopped=False)
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({999})
+
+        assert len(caplog.records) == 1, "exactly one warning per unmapped client"
+        message = caplog.records[0].getMessage()
+        assert "999" in message and "'Wizard101'" in message, "the window must be identifiable"
+        assert "SKIPPED" in message, "the message has to say recovery is not happening"
+        assert harness._pending_recovery == {}
+
+    def test_unmapped_hwnd_is_quiet_when_no_bot_is_running(self, harness: RecoveryHarness, caplog) -> None:
+        """Closing a client by hand with no bot running is routine, not a fault."""
+        harness._hwnd_titles = {999: "Wizard101"}
+        harness._machine = None
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({999})
+
+        assert caplog.records == []
+
+    def test_unmapped_hwnd_with_no_known_title_still_warns(self, harness: RecoveryHarness, caplog) -> None:
+        """A window gone before its title was ever read is the case that most needs saying."""
+        harness._machine = _make_machine(stopped=False)
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({999})
+
+        assert len(caplog.records) == 1
+        assert "unreadable" in caplog.records[0].getMessage()
+
+    def test_mapped_client_holding_no_slot_warns(self, harness: RecoveryHarness, caplog) -> None:
+        """The other silent skip: an account is known but holds no slot in the ordering."""
+        harness._hwnd_account_map = {100: "user1"}
+        harness._client_order = ["user2"]
+        harness._machine = _make_machine(stopped=False)
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({100})
+
+        assert len(caplog.records) == 1
+        assert "SKIPPED" in caplog.records[0].getMessage()
+        assert harness._pending_recovery == {}
+
+    def test_queued_recovery_does_not_warn_about_being_skipped(self, harness: RecoveryHarness, caplog) -> None:
+        """The healthy path must stay distinguishable from the skipped one."""
+        harness._hwnd_account_map = {100: "user1"}
+        harness._client_order = ["user1"]
+        harness._machine = _make_machine(stopped=False)
+
+        with (
+            caplog.at_level("WARNING", logger="bartlebot.client_manager"),
+            patch("asyncio.create_task", _mock_create_task),
+        ):
+            harness._on_clients_removed({100})
+
+        assert len(caplog.records) == 1
+        assert "queuing recovery" in caplog.records[0].getMessage()
+        assert "SKIPPED" not in caplog.records[0].getMessage()
+
+    def test_title_cache_is_released_on_removal(self, harness: RecoveryHarness) -> None:
+        """Titles are kept only until the removal they explain, so the dict cannot grow forever."""
+        harness._hwnd_titles = {999: "Wizard101"}
+        harness._machine = None
+        harness._on_clients_removed({999})
+        assert harness._hwnd_titles == {}
 
     def test_username_absent_from_client_order_is_ignored(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}

@@ -67,6 +67,9 @@ class ClientManager(QObject):
         self._last_wizard_names: list = []
         # Maps window_handle → username for all clients seen this session.
         self._hwnd_account_map: dict[int, str] = {}
+        # Last title seen per unmapped window, so a client that disconnects can still be
+        # named in the log after its window is gone and get_window_title returns nothing.
+        self._hwnd_titles: dict[int, str] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
         self._client_order: list[str | None] = []
         # Slots pending recovery: original_position → username
@@ -489,6 +492,9 @@ class ClientManager(QObject):
                 title = get_window_title(client.window_handle)
             except Exception:
                 continue
+            # Remembered whether or not it matches an account: the ones that never match
+            # are exactly the ones _on_clients_removed has to explain itself about.
+            self._hwnd_titles[client.window_handle] = title
             for account in settings.accounts:
                 username = account["username"]
                 alias = account.get("alias") or None
@@ -508,9 +514,11 @@ class ClientManager(QObject):
     def _on_clients_removed(self, removed_hwnds: set) -> None:
         """Handle client removal: update _client_order and queue recovery if bot is running."""
         machine = self._machine
+        bot_running = machine is not None and not machine.is_stopped
         for hwnd in removed_hwnds:
             username = self._hwnd_account_map.get(hwnd)
             if not username:
+                self._log_unrecoverable_removal(hwnd, bot_running)
                 continue
             orig_pos = next((i for i, u in enumerate(self._client_order) if u == username), None)
             if orig_pos is not None:
@@ -520,21 +528,58 @@ class ClientManager(QObject):
                 # shows up later, and it should reclaim this slot rather than be
                 # appended past the end of the ordering.
                 self._vacated_slots[username] = orig_pos
-                if machine is not None and not machine.is_stopped:
+                if bot_running:
                     self._pending_recovery[orig_pos] = username
                     logger.warning(
                         "Client at slot %d (account: %s) disconnected — queuing recovery",
                         orig_pos,
                         username,
                     )
+            elif bot_running:
+                # Mapped to an account, but holding no slot — the other way a removal can
+                # skip recovery in silence.
+                logger.warning(
+                    "Client hwnd=%d (account: %s) disconnected, but holds no slot in the client "
+                    "ordering — recovery is being SKIPPED",
+                    hwnd,
+                    username,
+                )
+            self._hwnd_titles.pop(hwnd, None)
         if self._pending_recovery:
             # Pause immediately to prevent FAILURE results from accumulating before
             # recovery resumes the machine. Idempotent if already paused.
-            if machine is not None and not machine.is_stopped:
+            if bot_running:
                 machine.pause()
             if not self._recovery_in_progress:
                 self._recovery_in_progress = True
                 self._recovery_task = asyncio.create_task(self._run_recovery_queue())
+
+    def _log_unrecoverable_removal(self, hwnd: int, bot_running: bool) -> None:
+        """Say out loud that a disconnected client has no account, and so cannot be recovered.
+
+        The account map is keyed on the ``[account] Wizard101`` window title, and that
+        title is written by launch_profile during login — so only a client BartleBot
+        launched carries one. A window started from the game's own launcher and adopted
+        here never enters the map, and every recovery decision downstream is keyed on a
+        username this client does not have.
+
+        Until this existed the miss was a bare ``continue``: an overnight run lost every
+        client, queued nothing, and left five hours of silence in the log with no
+        indication that recovery had been skipped rather than attempted.
+        """
+        title = self._hwnd_titles.pop(hwnd, None)
+        described = repr(title) if title else "unreadable"
+        if not bot_running:
+            logger.debug("Client hwnd=%d (title %s) closed; it has no account mapping", hwnd, described)
+            return
+        logger.warning(
+            "Client hwnd=%d (title %s) disconnected, but no account is mapped to it — "
+            "recovery is being SKIPPED and the bot will stay paused. Only clients launched "
+            "by BartleBot carry the '[account] Wizard101' title that ties a window to an "
+            "account; one started elsewhere and adopted here has no credentials to log back in with.",
+            hwnd,
+            described,
+        )
 
     def reserve_slots(self, usernames: list[str]) -> None:
         """Pin the slot order for a batch of accounts about to be launched.
