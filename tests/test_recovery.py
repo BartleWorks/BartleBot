@@ -54,6 +54,7 @@ class RecoveryHarness:
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
         self._hwnd_titles: dict[int, str] = {}
+        self._hwnd_user_ids: dict[int, int] = {}
         self._client_order: list[str | None] = []
         self._pending_recovery: dict[int, str] = {}
         self._vacated_slots: dict[str, int] = {}

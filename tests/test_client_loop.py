@@ -88,6 +88,7 @@ class LoopHarness:
         self.clients_changed = MagicMock()
         self.all_clients_changed = MagicMock()
         self._refresh_account_map = MagicMock()
+        self._refresh_account_identity = AsyncMock()
         self._sync_embedded_clients = MagicMock()
         self._on_clients_removed = MagicMock()
         self._refresh_wizard_names = AsyncMock()

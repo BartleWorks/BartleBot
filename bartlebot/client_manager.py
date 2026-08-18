@@ -6,6 +6,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
+from bartlebot import account_identity
 from bartlebot.credentials import CredentialStore
 from bartlebot.launcher import auto_select
 from bartlebot.nodes.timing import (
@@ -70,6 +71,9 @@ class ClientManager(QObject):
         # Last title seen per unmapped window, so a client that disconnects can still be
         # named in the log after its window is gone and get_window_title returns nothing.
         self._hwnd_titles: dict[int, str] = {}
+        # Account-level user id per window, once one has been read. Identifies a client
+        # BartleBot did not launch, whose title carries no account tag.
+        self._hwnd_user_ids: dict[int, int] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
         self._client_order: list[str | None] = []
         # Slots pending recovery: original_position → username
@@ -338,6 +342,12 @@ class ClientManager(QObject):
                 # Update the account map for any clients whose titles are now known.
                 self._refresh_account_map(clients)
 
+                # Then place whatever the titles could not: a window BartleBot did not
+                # launch carries no account tag, and is identified by what it reports in
+                # memory instead. Runs before the comparison below so an adopted client
+                # is already placed when its slot is assigned.
+                await self._refresh_account_identity(clients)
+
                 # Compare by HWND set to detect additions and removals.
                 new_hwnd_set = {c.window_handle for c in clients}
                 cur_hwnd_set = {c.window_handle for c in self._clients}
@@ -479,6 +489,101 @@ class ClientManager(QObject):
             self._last_wizard_names = names
             self.wizard_names_changed.emit(list(names))
 
+    async def _refresh_account_identity(self, live_clients: list) -> None:
+        """Tie each client to an account by the user id it reports, learning or adopting.
+
+        Two directions, and which one runs depends on whether the title already placed
+        the client:
+
+        - **Learn.** A client the title matched was launched by BartleBot, so its account
+          is certain — we typed those credentials. Its fingerprint is written to that
+          account, which is the only moment the association can be established at all.
+        - **Adopt.** A client the title could not place is matched by fingerprint against
+          the configured accounts. This is what makes a window launched elsewhere and
+          adopted here recoverable.
+
+        Never raises: this runs inside the client loop, whose MemoryReadError branch
+        silently empties the client list, so an exception escaping here would look like
+        every client vanishing at once.
+        """
+        settings = SettingsManager.instance()
+        accounts = settings.accounts
+        if not accounts:
+            return
+
+        # An account already answering for a live window cannot also be another one's.
+        # Checked against live clients rather than the account map, which keeps every
+        # hwnd seen this session including long-closed ones.
+        claimed = {
+            self._hwnd_account_map[c.window_handle] for c in live_clients if c.window_handle in self._hwnd_account_map
+        }
+
+        for client in live_clients:
+            hwnd = client.window_handle
+            user_id = await self._read_user_id(client)
+            if not user_id:
+                continue  # not logged in yet; nothing to identify it by
+
+            try:
+                fp = account_identity.fingerprint(user_id, account_identity.account_key())
+            except Exception:
+                logger.exception("Could not fingerprint the user id for hwnd=%d", hwnd)
+                return  # the key is broken, so the whole pass is pointless
+
+            known = self._hwnd_account_map.get(hwnd)
+            if known:
+                if account_identity.stored_fingerprint(accounts, known) != fp:
+                    accounts = account_identity.with_fingerprint(accounts, known, fp)
+                    settings.accounts = accounts
+                    logger.info(
+                        "Learned the identity of account '%s' (user id %s) — clients adopted from "
+                        "outside BartleBot can now be recognised as this account",
+                        known,
+                        account_identity.mask(user_id),
+                    )
+                continue
+
+            username = account_identity.match_account(accounts, fp)
+            if username is None:
+                continue
+            if username in claimed:
+                logger.warning(
+                    "Client hwnd=%d reports account '%s', which another live client is already "
+                    "answering for — leaving it unidentified rather than guessing",
+                    hwnd,
+                    username,
+                )
+                continue
+
+            self._hwnd_account_map[hwnd] = username
+            claimed.add(username)
+            self._assign_slot(username)
+            logger.info(
+                "Adopted client hwnd=%d as account '%s' by its user id (%s)",
+                hwnd,
+                username,
+                account_identity.mask(user_id),
+            )
+
+    async def _read_user_id(self, client) -> int:
+        """This client's account-level user id, cached once a real one has been read.
+
+        Zero means the client has not finished logging in; that is re-read every cycle
+        until it resolves. A non-zero id cannot change without a new process, so it is
+        read exactly once per window — the first read also resolves GameClient's base
+        address by pattern scan, which is far too expensive to repeat per second.
+        """
+        cached = self._hwnd_user_ids.get(client.window_handle)
+        if cached:
+            return cached
+        try:
+            user_id = await client.game_client.user_id()
+        except Exception:
+            return 0
+        if user_id:
+            self._hwnd_user_ids[client.window_handle] = user_id
+        return user_id or 0
+
     def _refresh_account_map(self, live_clients: list) -> None:
         """For each live client with an unrecognised HWND, try to match window title to an account."""
         import ctypes  # noqa: PLC0415
@@ -516,6 +621,9 @@ class ClientManager(QObject):
         machine = self._machine
         bot_running = machine is not None and not machine.is_stopped
         for hwnd in removed_hwnds:
+            # Dropped first: unlike the title, nothing below reports the user id, and the
+            # unmapped path returns early.
+            self._hwnd_user_ids.pop(hwnd, None)
             username = self._hwnd_account_map.get(hwnd)
             if not username:
                 self._log_unrecoverable_removal(hwnd, bot_running)
