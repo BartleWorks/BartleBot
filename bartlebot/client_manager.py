@@ -6,7 +6,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
-from bartlebot import account_identity
+from bartlebot import account_identity, recovery_readiness
 from bartlebot.credentials import CredentialStore
 from bartlebot.launcher import auto_select
 from bartlebot.nodes.timing import (
@@ -145,6 +145,40 @@ class ClientManager(QObject):
     def client_titled(self, title: str):
         """The live client whose window title matches, or None."""
         return _titled(self._clients, title)
+
+    def recovery_gaps(self) -> list[tuple[int, str]]:
+        """Live clients that could not be recovered, as ``(position, reason)`` pairs.
+
+        Position is 1-based and matches the client list order, so it lines up with the
+        Player numbering the sidebar and game tiles show.
+
+        Both halves of the recovery path are checked, because either one missing has the
+        same outcome: an account to relaunch, and a password to log it back in. The
+        account map is private and the password lookup is CredentialStore's, so this is
+        the only place both can be asked at once.
+        """
+        gaps: list[tuple[int, str]] = []
+        for position, client in enumerate(self._clients, start=1):
+            username = self._hwnd_account_map.get(client.window_handle)
+            if not username:
+                gaps.append((position, recovery_readiness.NO_ACCOUNT))
+                continue
+            try:
+                has_password = bool(CredentialStore.retrieve(username))
+            except Exception:
+                logger.exception("Could not check the stored password for '%s'", username)
+                continue  # Credential Manager is unhappy; do not claim a gap we cannot verify
+            if not has_password:
+                display = CredentialStore.display_name(username, self._alias_for(username))
+                gaps.append((position, recovery_readiness.NO_PASSWORD.format(account=display)))
+        return gaps
+
+    def _alias_for(self, username: str) -> str | None:
+        """The configured alias for *username*, or None. Keeps real usernames out of the GUI."""
+        for account in SettingsManager.instance().accounts:
+            if account.get("username") == username:
+                return account.get("alias") or None
+        return None
 
     def pending_client_titled(self, title: str):
         """The client for this window whether or not its hooks have come up yet.

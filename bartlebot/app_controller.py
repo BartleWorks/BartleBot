@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, wizard_names
+from bartlebot import group_manager, recovery_readiness, wizard_names
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -562,7 +562,41 @@ class AppController(QObject):
             if result != QMessageBox.StandardButton.Yes:
                 return
 
+        if not self._confirm_recovery_gaps():
+            return
+
         self._bot_task = asyncio.create_task(self._start_bot())
+
+    def _confirm_recovery_gaps(self) -> bool:
+        """Warn about clients that could not be recovered, and return whether to proceed.
+
+        Runs here in the Qt slot rather than inside _start_bot for the reason in
+        CLAUDE.md: exec() from within an asyncio task wedges the tasks that wake while
+        the dialog is open. No task exists yet at this point.
+
+        Silent when every client is recoverable, which is the normal case — a dialog
+        that appears every run stops being read.
+        """
+        gaps = self._client_manager.recovery_gaps()
+        if not gaps:
+            return True
+
+        clients = self._client_manager.clients
+        lines = [
+            recovery_readiness.client_label(position, wizard_names.cached_name(clients[position - 1])) + f": {reason}"
+            for position, reason in gaps
+        ]
+        for line in lines:
+            logger.warning("Client cannot be recovered — %s", line)
+
+        result = QMessageBox.warning(
+            self._window,
+            "Clients Cannot Be Recovered",
+            recovery_readiness.warning_text(lines, len(clients)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        return result == QMessageBox.StandardButton.Yes
 
     def _collect_combat_warnings(self) -> list[str]:
         """Return a list of combat config warning strings. Empty list = no issues.
