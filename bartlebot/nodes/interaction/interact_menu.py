@@ -64,6 +64,22 @@ PARAM_SCHEMA: list[ParamField] = [
         default=TRIGGER_TIMEOUT,
         default_hint=f"{TRIGGER_TIMEOUT}s",
     ),
+    ParamField(
+        key="sequential",
+        type="bool",
+        label="Sequential Interaction",
+        help=(
+            "Have players open the menu one at a time instead of together. Each player waits "
+            "at Reset XYZ, takes its turn, and has its menu confirmed open before the next "
+            "player starts. Note that on an object which only serves one player at a time, "
+            "the previous player's menu may well close as the next one opens — so this helps "
+            "when the interaction itself is being swallowed, but it cannot leave every player "
+            "sitting in an open menu at once."
+        ),
+        default=False,
+        default_hint="All players interact at once.",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -97,7 +113,10 @@ NODE_SPEC = NodeSpec(
         "Use this node when pressing X opens a shop, NPC services menu, or any other UI window. "
         "For interactions that trigger dialogue, use the interact node instead. "
         "Set menu_path to a path from bartlebot/nodes/paths.py that is only visible when the "
-        "target menu is open (e.g. POTION_SHOP_BASE_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH)."
+        "target menu is open (e.g. POTION_SHOP_BASE_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH). "
+        "Turn on Sequential Interaction when the object will not serve more than one player at "
+        "once — but read that parameter's help first: it confirms each menu in turn and does "
+        "not promise every player is left in an open menu."
     ),
 )
 
@@ -134,6 +153,54 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"Interacting client(s): {[i + 1 for i in interact_indices]}", logging.DEBUG)
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
+    async def _menu_open(client) -> bool:
+        return await node_helpers.poll_until(
+            lambda: node_helpers.is_visible_by_path(client, menu_path), menu_timeout, POLL_INTERVAL
+        )
+
+    async def _report_missing_menu(failed_clients: list, failed_numbers: list[int]) -> None:
+        for client, number in zip(failed_clients, failed_numbers):
+            diag = await node_helpers.diagnose_path(client, menu_path)
+            machine.log(f"  client {number}: looking for {'→'.join(menu_path)!r} — {diag}", logging.DEBUG)
+
+    # 3s. Sequential mode: one client approaches, presses X and has its menu confirmed open
+    #     before the next one starts. See the param help — on a genuinely single-serving
+    #     object the earlier menus will not stay open, so this confirms each in turn rather
+    #     than leaving them all up.
+    if params.get("sequential", False):
+        machine.log("Sequential interaction: clients take turns at the object", logging.DEBUG)
+
+        async def _turn(client) -> bool:
+            await client.send_key(Keycode.X, 0.1)
+            return await _menu_open(client)
+
+        numbers = [i + 1 for i in interact_indices]
+        results = await node_helpers.take_turns(
+            active_clients,
+            interact,
+            reset,
+            safety_delay,
+            _turn,
+            numbers=numbers,
+            poll_interval=POLL_INTERVAL,
+            log=machine.log,
+        )
+        unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
+        if unprompted:
+            machine.log(
+                f"FAILURE: interact prompt never appeared for client(s) {unprompted} after {MAX_RETRIES} attempts",
+                logging.WARNING,
+            )
+            return "FAILURE"
+        if unfinished:
+            machine.log(f"FAILURE: menu path not visible within {menu_timeout}s", logging.WARNING)
+            await _report_missing_menu(
+                [c for c, r in zip(active_clients, results) if r.prompted and not r.completed], unfinished
+            )
+            return "FAILURE"
+        machine.log("interact_menu: SUCCESS")
+        return "SUCCESS"
 
     # 3. Clear any pre-existing interact prompt before starting.
     prompts = await asyncio.gather(*[c.is_in_npc_range() for c in active_clients])
@@ -178,27 +245,17 @@ async def run(machine, clients: list, params: dict) -> str:
     # 6. Wait for the menu to open on all active clients.
     machine.log(f"Waiting for menu path {'→'.join(menu_path)}…", logging.DEBUG)
 
-    menu_visible = await asyncio.gather(
-        *[
-            node_helpers.poll_until(
-                lambda c=c: node_helpers.is_visible_by_path(c, menu_path), menu_timeout, POLL_INTERVAL
-            )
-            for c in active_clients
-        ]
-    )
+    menu_visible = await asyncio.gather(*[_menu_open(c) for c in active_clients])
 
     if not all(menu_visible):
         machine.log(
             f"FAILURE: menu path not visible within {menu_timeout}s",
             logging.WARNING,
         )
-        for i, (client, visible) in enumerate(zip(active_clients, menu_visible)):
-            if not visible:
-                diag = await node_helpers.diagnose_path(client, menu_path)
-                machine.log(
-                    f"  client {interact_indices[i] + 1}: looking for {'→'.join(menu_path)!r} — {diag}",
-                    logging.DEBUG,
-                )
+        await _report_missing_menu(
+            [c for c, visible in zip(active_clients, menu_visible) if not visible],
+            [i + 1 for i, visible in zip(interact_indices, menu_visible) if not visible],
+        )
         return "FAILURE"
 
     machine.log("interact_menu: SUCCESS")

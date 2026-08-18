@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, wizard_names
+from bartlebot import group_manager, recovery_readiness, wizard_names
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -27,6 +27,7 @@ from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -69,6 +70,9 @@ class AppController(QObject):
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
 
+        # Same reason: in-flight client close sequences, one per crashed client.
+        self._close_tasks: set[asyncio.Task] = set()
+
         # Auto-save state
         self._has_unsaved_changes: bool = False
         self._auto_save_timer = QTimer(self)
@@ -82,6 +86,8 @@ class AppController(QObject):
             drops_widget=self._window.right_sidebar.drops,
             get_recovery_state=lambda: self._loaded_config.recovery_state if self._loaded_config else None,
         )
+        self._window.set_auto_select_driver(self._client_manager.drive_client_in)
+        self._window.set_slot_reserver(self._client_manager.reserve_slots)
         self._wire()
         self._window.show()
         self._reconfigure_autosave_timer()
@@ -206,6 +212,7 @@ class AppController(QObject):
         # Connected before quit_event so debounced edits land while the widgets
         # are still alive.
         self._app.aboutToQuit.connect(self._flush_pending_edits)
+        self._app.aboutToQuit.connect(self._client_manager.stop)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 
@@ -471,6 +478,11 @@ class AppController(QObject):
         if report.substitutions:
             lines.append("Used a lower tier than the deck asked for:")
             lines += [f"    {used}  (deck wanted {req})" for req, used in sorted(report.substitutions.items())]
+        if report.short:
+            if lines:
+                lines.append("")
+            lines.append("Fewer copies went in than the deck asked for:")
+            lines += [f"    {name}  ({got} of {wanted})" for name, (got, wanted) in sorted(report.short.items())]
         if report.skipped:
             if lines:
                 lines.append("")
@@ -555,7 +567,41 @@ class AppController(QObject):
             if result != QMessageBox.StandardButton.Yes:
                 return
 
+        if not self._confirm_recovery_gaps():
+            return
+
         self._bot_task = asyncio.create_task(self._start_bot())
+
+    def _confirm_recovery_gaps(self) -> bool:
+        """Warn about clients that could not be recovered, and return whether to proceed.
+
+        Runs here in the Qt slot rather than inside _start_bot for the reason in
+        CLAUDE.md: exec() from within an asyncio task wedges the tasks that wake while
+        the dialog is open. No task exists yet at this point.
+
+        Silent when every client is recoverable, which is the normal case — a dialog
+        that appears every run stops being read.
+        """
+        gaps = self._client_manager.recovery_gaps()
+        if not gaps:
+            return True
+
+        clients = self._client_manager.clients
+        lines = [
+            recovery_readiness.client_label(position, wizard_names.cached_name(clients[position - 1])) + f": {reason}"
+            for position, reason in gaps
+        ]
+        for line in lines:
+            logger.warning("Client cannot be recovered — %s", line)
+
+        result = QMessageBox.warning(
+            self._window,
+            "Clients Cannot Be Recovered",
+            recovery_readiness.warning_text(lines, len(clients)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        return result == QMessageBox.StandardButton.Yes
 
     def _collect_combat_warnings(self) -> list[str]:
         """Return a list of combat config warning strings. Empty list = no issues.
@@ -762,15 +808,39 @@ class AppController(QObject):
         self._window.right_sidebar.drops.add_drop(item, qty, client_idx)
 
     def _on_machine_client_disconnected(self, hwnd: int) -> None:
-        """Called by _client_status_watcher when a client becomes unresponsive.
+        """Called by the health monitor when a client becomes unresponsive.
 
         Force-closes the game window so that remove_dead_clients() detects the exit
-        and triggers the reconnect procedure via _on_clients_removed.
+        and triggers the reconnect procedure via _on_clients_removed. That reaping is
+        keyed on the *process* exiting, not the window, so the close has to be seen
+        through: a crashing client parks on an error popup and never exits on WM_CLOSE
+        alone, which used to leave recovery waiting forever (#79).
         """
-        import ctypes  # noqa: PLC0415
+        logger.warning("Client hwnd=%d flagged unresponsive — closing it", hwnd)
+        task = asyncio.create_task(self._close_dead_client(hwnd))
+        self._close_tasks.add(task)
+        task.add_done_callback(self._close_tasks.discard)
 
-        logger.warning("Client hwnd=%d flagged unresponsive — sending WM_CLOSE", hwnd)
-        ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)  # WM_CLOSE
+    async def _close_dead_client(self, hwnd: int) -> None:
+        """Run the close sequence for a flagged client and report a failure to the user."""
+        try:
+            closed = await force_close_client(hwnd)
+        except Exception:
+            logger.exception("Failed to close client hwnd=%d", hwnd)
+            return
+        if closed:
+            return
+        # Deferred rather than emitted here: recovery_error opens a modal QMessageBox,
+        # and exec() from inside an asyncio task is the re-entrancy trap in CLAUDE.md.
+        # A zero-delay timer runs it from Qt's loop with no task frame on the stack.
+        QTimer.singleShot(
+            0,
+            lambda: self._client_manager.recovery_error.emit(
+                "A crashed client could not be closed — it is likely showing a Windows error "
+                "popup that has to be dismissed by hand.\n\n"
+                "Close it manually and the bot will recover from there."
+            ),
+        )
 
     # ------------------------------------------------------------------
     # Signal handlers
@@ -846,6 +916,9 @@ class AppController(QObject):
         try:
             self._loaded_config.save(self._autosave_path())
             logger.debug("Auto-saved recovery file: %s", self._autosave_path())
+            if self._last_save_path:
+                stem = Path(self._last_save_path).stem
+                SettingsManager.instance().set_autosave_origin(stem, self._last_save_path)
         except Exception:
             logger.exception("Auto-save failed")
 
@@ -859,6 +932,7 @@ class AppController(QObject):
                 logger.debug("Deleted auto-save file: %s", p)
         except OSError:
             logger.warning("Could not delete auto-save file %s", p)
+        SettingsManager.instance().remove_autosave_origin(stem)
 
     def _check_crash_recovery(self) -> None:
         """Scan the autosave directory at startup and offer to restore newer files."""
@@ -886,7 +960,16 @@ class AppController(QObject):
             self._offer_recovery(candidates)
 
     def _find_original_for_stem(self, stem: str) -> Path | None:
-        """Search recent_bot_files for a path whose stem matches the autosave stem."""
+        """Resolve the original bot file for an auto-save stem.
+
+        Prefers the origin recorded at auto-save time (set_autosave_origin), which
+        stores the exact path the auto-save was derived from. Falls back to a
+        stem match against recent_bot_files for auto-saves written before that
+        mapping existed.
+        """
+        origin = SettingsManager.instance().get_autosave_origin(stem)
+        if origin:
+            return Path(origin)
         for recent_path in SettingsManager.instance().recent_bot_files:
             p = Path(recent_path)
             if p.stem == stem:

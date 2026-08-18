@@ -2,23 +2,13 @@
 
 from __future__ import annotations
 
-import ctypes
-import ctypes.wintypes
-
 from PyQt6.QtCore import QRect, Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QPainter
 from PyQt6.QtWidgets import QWidget
 
+from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
-
-# ---------------------------------------------------------------------------
-# Win32 constants
-# ---------------------------------------------------------------------------
-_GWL_STYLE = -16
-_WS_CHILD = 0x40000000
-_WS_VISIBLE = 0x10000000
-_WS_BORDER_MASK = 0x00CF0000  # WS_CAPTION | WS_BORDER | WS_DLGFRAME
 
 FOCUS_BORDER = 6  # logical pixels of red fill around the game window when focused
 _LABEL_GAP = 3  # logical pixels between the bottom of the pill and the top of the focus border
@@ -27,34 +17,9 @@ LABEL_RESERVE = (
     FOCUS_BORDER + _LABEL_GAP + _LABEL_PILL_H + 4
 )  # = 39 px; keeps label clear of border at minimum tile size
 
-_SWP_NOMOVE = 0x0002
-_SWP_NOSIZE = 0x0001
-_SWP_NOZORDER = 0x0004
-_SWP_FRAMECHANGED = 0x0020  # Required after SetWindowLongW to flush style change
-
-_user32 = ctypes.windll.user32
-_kernel32 = ctypes.windll.kernel32
-
-_user32.IsChild.argtypes = [ctypes.wintypes.HWND, ctypes.wintypes.HWND]
-_user32.IsChild.restype = ctypes.wintypes.BOOL
-
 # Pill icon constants
 _ICON_SIZE = 18
 _ICON_GAP = 6  # pixels between label text and detach icon
-
-
-class _GUITHREADINFO(ctypes.Structure):
-    _fields_ = [
-        ("cbSize", ctypes.wintypes.DWORD),
-        ("flags", ctypes.wintypes.DWORD),
-        ("hwndActive", ctypes.wintypes.HWND),
-        ("hwndFocus", ctypes.wintypes.HWND),
-        ("hwndCapture", ctypes.wintypes.HWND),
-        ("hwndMenuOwner", ctypes.wintypes.HWND),
-        ("hwndMoveSize", ctypes.wintypes.HWND),
-        ("hwndCaret", ctypes.wintypes.HWND),
-        ("rcCaret", ctypes.wintypes.RECT),
-    ]
 
 
 def pill_text(label: str, wizard_name: str | None) -> str:
@@ -66,13 +31,6 @@ def pill_text(label: str, wizard_name: str | None) -> str:
     update can clobber the other.
     """
     return f"{label} · {wizard_name}" if wizard_name else label
-
-
-def _get_client_size(hwnd: int) -> tuple[int, int]:
-    """Return (width, height) of the window client area."""
-    rect = ctypes.wintypes.RECT()
-    _user32.GetClientRect(hwnd, ctypes.byref(rect))
-    return rect.right - rect.left, rect.bottom - rect.top
 
 
 class ClientTile(QWidget):
@@ -99,55 +57,36 @@ class ClientTile(QWidget):
         self._pill_rect: QRect = QRect()
         self._icon_rect: QRect = QRect()
 
-        # Save original state for unembed/restoration
-        self._orig_parent: int = _user32.GetParent(hwnd)
-        self._orig_style: int = _user32.GetWindowLongW(hwnd, _GWL_STYLE)
-        _orig_rect = ctypes.wintypes.RECT()
-        _user32.GetWindowRect(hwnd, ctypes.byref(_orig_rect))
-        self._orig_w = _orig_rect.right - _orig_rect.left
-        self._orig_h = _orig_rect.bottom - _orig_rect.top
+        # Constructed before embedding: it captures the state needed to restore the
+        # window later (parent, styles, screen rect, native resolution).
+        self._window = EmbeddedWindow(hwnd)
+        self._game_w, self._game_h = self._window.game_size
 
-        # Detect native resolution before embedding
-        self._game_w, self._game_h = _get_client_size(hwnd)
+        self._window.embed(int(self.winId()))
+        self._reposition()
 
-        # Thread IDs for AttachThreadInput and GetGUIThreadInfo
-        _pid = ctypes.wintypes.DWORD(0)
-        self._game_thread_id: int = _user32.GetWindowThreadProcessId(hwnd, ctypes.byref(_pid))
-        self._my_thread_id: int = _kernel32.GetCurrentThreadId()
+    # ------------------------------------------------------------------
+    # Public accessors
+    # ------------------------------------------------------------------
 
-        self._embed()
+    @property
+    def hwnd(self) -> int:
+        """The embedded game window's HWND."""
+        return self._hwnd
+
+    @property
+    def label(self) -> str:
+        """The slot label shown on the pill (e.g. "Player 2")."""
+        return self._label
+
+    @property
+    def game_size(self) -> tuple[int, int]:
+        """Native game resolution in physical pixels, measured before embedding."""
+        return self._game_w, self._game_h
 
     # ------------------------------------------------------------------
     # Embedding / unembedding
     # ------------------------------------------------------------------
-
-    def _embed(self) -> None:
-        tile_hwnd = int(self.winId())
-
-        # 1. Reparent
-        _user32.SetParent(self._hwnd, tile_hwnd)
-
-        # 2. Strip decorations and set as child
-        new_style = (self._orig_style & ~_WS_BORDER_MASK) | _WS_CHILD | _WS_VISIBLE
-        _user32.SetWindowLongW(self._hwnd, _GWL_STYLE, new_style)
-
-        # 3. Flush style change — required for decoration removal to take effect
-        _user32.SetWindowPos(
-            self._hwnd,
-            0,
-            0,
-            0,
-            0,
-            0,
-            _SWP_NOMOVE | _SWP_NOSIZE | _SWP_NOZORDER | _SWP_FRAMECHANGED,
-        )
-
-        # 4. Attach input queues so the Qt thread can call SetFocus on the game
-        #    window. Without this, cross-thread SetFocus is silently blocked.
-        if self._game_thread_id and self._game_thread_id != self._my_thread_id:
-            _user32.AttachThreadInput(self._my_thread_id, self._game_thread_id, True)
-
-        self._reposition()
 
     def set_label(self, label: str) -> None:
         """Set the slot label (e.g. "Player 2"), repainting if it changed."""
@@ -167,35 +106,16 @@ class ClientTile(QWidget):
         return self._wizard_name
 
     def unembed(self) -> None:
-        """Restore the game window to its original parent and style."""
-        if self._game_thread_id and self._game_thread_id != self._my_thread_id:
-            _user32.AttachThreadInput(self._my_thread_id, self._game_thread_id, False)
+        """Restore the game window to a normal, movable top-level window."""
+        self._window.restore()
 
-        _user32.SetParent(self._hwnd, self._orig_parent)
-        _user32.SetWindowLongW(self._hwnd, _GWL_STYLE, self._orig_style)
-        _user32.SetWindowPos(
-            self._hwnd,
-            0,
-            0,
-            self._orig_w,
-            self._orig_h,
-            _SWP_NOMOVE | _SWP_NOZORDER | _SWP_FRAMECHANGED,
-        )
-        _user32.ShowWindow(self._hwnd, 5)  # SW_SHOW
+    def focus_game(self) -> None:
+        """Give the embedded game window keyboard focus."""
+        self._window.focus()
 
     def is_game_focused(self) -> bool:
-        """Return True if the game window (or a child of it) has keyboard focus.
-
-        Uses GetGUIThreadInfo to query the game thread's focus state directly,
-        which works across process boundaries.
-        """
-        if not self._game_thread_id:
-            return False
-        gti = _GUITHREADINFO(cbSize=ctypes.sizeof(_GUITHREADINFO))
-        if not _user32.GetGUIThreadInfo(self._game_thread_id, ctypes.byref(gti)):
-            return False
-        focus = gti.hwndFocus
-        return bool(focus) and (focus == self._hwnd or bool(_user32.IsChild(self._hwnd, focus)))
+        """Return True if the game window (or a child of it) has keyboard focus."""
+        return self._window.is_focused()
 
     def _reposition(self) -> None:
         """Center the game window at its native resolution within the tile.
@@ -206,13 +126,19 @@ class ClientTile(QWidget):
 
         LABEL_RESERVE logical pixels are kept clear at the top of the tile so
         the client label pill is never obscured by the Win32 child window.
+
+        No-op once the window has been restored: a resizeEvent can still arrive
+        between unembed() and the tile being deleted, and moving the window then
+        would drag the popped-out game window back to tile coordinates.
         """
+        if not self._window.is_embedded:
+            return
         dpr = self.devicePixelRatio()
         tile_w = int(self.width() * dpr)
         tile_h = int(self.height() * dpr) - int(LABEL_RESERVE * dpr)
         x = max(0, (tile_w - self._game_w) // 2)
         y = int(LABEL_RESERVE * dpr) + max(0, (tile_h - self._game_h) // 2)
-        _user32.MoveWindow(self._hwnd, x, y, self._game_w, self._game_h, True)
+        self._window.move(x, y, self._game_w, self._game_h)
 
     # ------------------------------------------------------------------
     # Qt event overrides
@@ -232,7 +158,7 @@ class ClientTile(QWidget):
             self.detach_requested.emit()
         else:
             if event.button() == Qt.MouseButton.LeftButton:
-                _user32.SetFocus(self._hwnd)
+                self.focus_game()
             super().mousePressEvent(event)
 
     def paintEvent(self, event) -> None:

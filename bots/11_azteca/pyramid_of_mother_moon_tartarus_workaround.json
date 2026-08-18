@@ -1,0 +1,1550 @@
+{
+  "id": "c5f40469-4c67-4f15-afd1-4a6e9f6dcd40",
+  "name": "Pyramid of Mother Moon",
+  "description": "Endlessly completes Pyramid of Mother Moon in Pitch Black Lake, Azteca. Good for rank 6-10 spellements.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_8",
+  "start_location": "Anywhere in Azteca",
+  "drops": [
+    "Acampi Reedfist's Lost Seal",
+    "Allocados",
+    "Apatotatoes",
+    "Avenging Fossil",
+    "Azteca Apocalypse Theme",
+    "Azteca Main Theme",
+    "Azteca Mountain Theme",
+    "Azteca Rug",
+    "Basilisk",
+    "Basilisk",
+    "Beak Breaker's Antique Sliver",
+    "Bedrock Bonbons",
+    "Bird Head Mount",
+    "Black Blade of Five Deaths",
+    "Black Lotus",
+    "Black Pearl",
+    "Black Sun Chac's Armor",
+    "Black Sun Chac's Stalkers",
+    "Black Tears of Night Wraps",
+    "Blood Moss",
+    "Bone",
+    "Bronze",
+    "Bronze Gear",
+    "Buff Minion Peridot",
+    "Cacao Beans",
+    "Cactus Fruit",
+    "Calendar of the Spiral King",
+    "Caramel Apple",
+    "Case of Mother Moon",
+    "Celestial Calendar",
+    "Centaur",
+    "Chastisement",
+    "Chimera",
+    "Chimera",
+    "Clothesline",
+    "Colossal",
+    "Colossus",
+    "Courage Charm of Jade Wings",
+    "Curse Giver Onyx",
+    "Cycle of Life",
+    "Deadly Ninja Fig",
+    "Death Moon's Chosen Robes",
+    "Deck of the Jaguar Spirit",
+    "Deep Mushroom",
+    "Dr. Jalapeno",
+    "Dr. Von's Monster",
+    "Dr. Von's Monster",
+    "Efreet",
+    "Elite Jura Guard Stalkers",
+    "Extraordinary",
+    "Fiery Boom Shroom",
+    "Fire Blossom",
+    "Fire Dragon",
+    "Fish on a Vine",
+    "Five Fangs of Fury Boots",
+    "Forest Lord",
+    "Fossil",
+    "Fried Ice Cream",
+    "Frost Demon",
+    "Frost Giant",
+    "Furnace",
+    "Galvanic Field",
+    "Glowing Star Fruit",
+    "Gnomes!",
+    "Gnomes!",
+    "Golden Head of the Cold House",
+    "Golden Pearl",
+    "Grinning Death Stompers",
+    "Grinning Death Xicolli Vest",
+    "Guava",
+    "Heart of Sky Boots",
+    "Helephant",
+    "Hydra",
+    "Indigo Wing Striders",
+    "Jelly Baby",
+    "Keen Eyes Talent Opal",
+    "Keeper of the Codex Vest",
+    "King's Royal Portraits",
+    "Lava Lily",
+    "Leviathan",
+    "Lord of Night Robes",
+    "Lord of Winter",
+    "Lords of Night Pyramid Deck",
+    "Mace of the Aztecosaurs",
+    "Maelstrom Snap Dragon",
+    "Maize",
+    "Mander Minion Citrine",
+    "Medusa",
+    "Mist Wood",
+    "Mithril",
+    "Moon Skull's Blessed Edge",
+    "Mother's New Moon Athame",
+    "Necklace of Lost Ancestors",
+    "New Moon Lance",
+    "Nightshade",
+    "Ninja Fig",
+    "Ore",
+    "Orthrus",
+    "Pendant of the Wild Wings",
+    "Philososaur's Robes",
+    "Polished Blocking Hematite +12",
+    "Polished Damage Peridot +21",
+    "Polished Defense Opal +21",
+    "Polymorph Jaguar",
+    "Polymorph Pteranodon",
+    "Potent Trap",
+    "Power Nova",
+    "Primordial",
+    "Pterotomatoes",
+    "Punishment",
+    "Quetzal Pretzel",
+    "Ra",
+    "Rain of Fire",
+    "Rain of Fire",
+    "Rebirth",
+    "Red Mandrake",
+    "Rex Tea",
+    "Saber-Tooth Cider",
+    "Sabertooth",
+    "Saursa",
+    "Scarecrow",
+    "Seal of Thunder Horn's Glory",
+    "Sharpened Blade",
+    "Shiny Tomato",
+    "Silver",
+    "Sirens",
+    "Sirens",
+    "Skeletal Dragon",
+    "Sleet Storm",
+    "Smoking Obsidian Rangers",
+    "Snow Angel",
+    "Snow Angel",
+    "Spartan Jade",
+    "Spear of Breaking Dawn",
+    "Spinysaur",
+    "Steel",
+    "Stego Waffles",
+    "Stone Block",
+    "Stone Colossus",
+    "Storm Lord",
+    "Storm Owl",
+    "Storm Quetzal's Charged Mace",
+    "Sun Serpent",
+    "Sunstone",
+    "Tall Drum",
+    "Talon of the Storm Owl",
+    "Tenochti-Flan",
+    "Titanium",
+    "Tree of Secrets Chac Runners",
+    "Triton",
+    "Troll Minion Peridot",
+    "Tungsten",
+    "Turquoise",
+    "Twisted Fang Boots",
+    "Underworld Stone",
+    "White Fire Chac's Armor",
+    "White Laugh-O-Dil",
+    "Wild Wing's Glorious Razor",
+    "Winged Tooth Knight's Hook",
+    "Woolly Mammoth",
+    "Woolly Mammoth",
+    "Wraith",
+    "Zocalo Wings"
+  ],
+  "authors": "BartleBot",
+  "options": [
+    {
+      "name": "Level Scaling Players",
+      "type": "player_list",
+      "default": [
+        1,
+        2,
+        3
+      ],
+      "description": "Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling."
+    },
+    {
+      "name": "Safety Delay",
+      "type": "float",
+      "default": 3.0,
+      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "check_zone",
+      "label": "Check if in Azteca",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Azteca/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {},
+      "option_overrides": {}
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Zocalo",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "check_zone",
+      "label": "Check if in Pitch Black Lake",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Zocalo",
+      "position": {
+        "x": 0.0,
+        "y": 270.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_zone",
+      "label": "Enter Three Points",
+      "position": {
+        "x": 1760.0,
+        "y": 270.0
+      },
+      "params": {
+        "from_zone": "Azteca/AZ_Z00_Zocalo",
+        "to_zone": "Azteca/AZ_Z01_ThreePoints",
+        "xyz": {
+          "x": -0.62,
+          "y": 9572.86,
+          "z": 276.01
+        },
+        "reset_xyz": {
+          "x": 14.51,
+          "y": 9098.5,
+          "z": 276.01
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone_via_object",
+      "label": "Take teleporter to Pitch Black Lake",
+      "position": {
+        "x": 2200.0,
+        "y": 270.0
+      },
+      "params": {
+        "from_zone": "Azteca/AZ_Z01_ThreePoints",
+        "to_zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "interact_xyz": {
+          "x": -3867.79,
+          "y": 2582.12,
+          "z": 328.19
+        },
+        "reset_xyz": {
+          "x": -3651.09,
+          "y": 1990.59,
+          "z": 273.18
+        },
+        "sequential": true
+      },
+      "option_overrides": {
+        "Safety Delay": 10.0
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 180.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_13",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 9240.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_14",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.1,
+        "refill_potions": true,
+        "mark_zone": ""
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_15",
+      "node_type": "enter_dungeon",
+      "label": "Enter Pyramid of Mother Moon",
+      "position": {
+        "x": 10120.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "dungeon_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room01",
+        "sigil_xyz": {
+          "x": -4402.27,
+          "y": -6405.45,
+          "z": 16.78
+        },
+        "reset_xyz": {
+          "x": -3695.92,
+          "y": -6229.73,
+          "z": 2.67
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_16",
+      "node_type": "enter_zone",
+      "label": "Enter second room",
+      "position": {
+        "x": 10560.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room01",
+        "to_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room02",
+        "xyz": {
+          "x": -0.66,
+          "y": 402.48,
+          "z": -103.78
+        },
+        "reset_xyz": {
+          "x": -8.19,
+          "y": 123.58,
+          "z": 6.25
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone",
+      "label": "Enter third room",
+      "position": {
+        "x": 11000.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room02",
+        "to_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room03",
+        "xyz": {
+          "x": -0.66,
+          "y": 402.48,
+          "z": -103.78
+        },
+        "reset_xyz": {
+          "x": -8.19,
+          "y": 123.58,
+          "z": 6.25
+        },
+        "stagger": true
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_18",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Neza the Poet and Grinning Death Moon",
+      "position": {
+        "x": 11440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room03",
+        "xyz": {
+          "x": -1299.19,
+          "y": -2230.63,
+          "z": -1788.46
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_19",
+      "node_type": "handle_combat",
+      "label": "Defeat Neza the Poet and Grinning Death Moon",
+      "position": {
+        "x": 11880.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "AZ-Parrot-King-B",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_20",
+      "node_type": "mark_location",
+      "label": "Mark location in Azteca",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "xyz": {
+          "x": -3733.4,
+          "y": -6185.43,
+          "z": 2.67
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_21",
+      "node_type": "enter_zone_via_list",
+      "label": "Go to Wizard City",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo",
+        "to_zone": "WizardCity/WC_Ravenwood_Teleporter",
+        "interact_xyz": {
+          "x": 4449.2,
+          "y": -10280.64,
+          "z": 177.05
+        },
+        "reset_xyz": {
+          "x": 3998.98,
+          "y": -10075.49,
+          "z": 131.52
+        },
+        "zone_list_entry": "Wizard City",
+        "sequential": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_22",
+      "node_type": "enter_zone",
+      "label": "Enter Ravenwood",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Ravenwood_Teleporter",
+        "to_zone": "WizardCity/WC_Ravenwood",
+        "xyz": {
+          "x": 2.84,
+          "y": -3150.58,
+          "z": 244.03
+        },
+        "reset_xyz": {
+          "x": 4.11,
+          "y": -2620.66,
+          "z": 244.03
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone",
+      "label": "Enter The Commons",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Ravenwood",
+        "to_zone": "WizardCity/WC_Hub",
+        "xyz": {
+          "x": 26.16,
+          "y": -2206.95,
+          "z": -156.76
+        },
+        "reset_xyz": {
+          "x": -1.2,
+          "y": -1587.86,
+          "z": -54.21
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_24",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1378.44,
+          "y": -3611.82,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1359.67,
+          "y": -3087.21,
+          "z": -27.99
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -5950.33,
+          "y": -3267.12,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5442.13,
+          "y": -3267.83,
+          "z": -29.36
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_26",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Commons",
+      "position": {
+        "x": 4400.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_27",
+      "node_type": "enter_zone",
+      "label": "Enter Cyclops Lane",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "to_zone": "WizardCity/WC_Streets/WC_Cyclops",
+        "xyz": {
+          "x": -5350.55,
+          "y": 3107.26,
+          "z": -595.39
+        },
+        "reset_xyz": {
+          "x": -4995.68,
+          "y": 2779.68,
+          "z": -598.02
+        },
+        "stagger": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_28",
+      "node_type": "enter_zone_via_object",
+      "label": "Take chariot to Aquila",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Cyclops",
+        "to_zone": "Aquila/AQ_Z00_Hub",
+        "interact_xyz": {
+          "x": -10087.56,
+          "y": 8237.76,
+          "z": 25.9
+        },
+        "reset_xyz": {
+          "x": -9705.2,
+          "y": 8387.53,
+          "z": 23.82
+        },
+        "sequential": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_29",
+      "node_type": "enter_dungeon",
+      "label": "Enter Tartarus",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z03_Tartarus",
+        "sigil_xyz": {
+          "x": 7633.61,
+          "y": 12837.84,
+          "z": -1659.61
+        },
+        "reset_xyz": {
+          "x": 8245.12,
+          "y": 12550.37,
+          "z": -1643.02
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to marked location",
+      "position": {
+        "x": 2640.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Azteca/*",
+        "xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_31",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z03_Tartarus",
+        "interact_xyz": {
+          "x": -2498.12,
+          "y": 8396.53,
+          "z": 1291.74
+        },
+        "reset_xyz": {
+          "x": -2539.91,
+          "y": 9093.42,
+          "z": 1303.41
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_32",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Garden of Hesperides",
+      "position": {
+        "x": 7480.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to Azteca",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "xyz": {
+          "x": -3733.4,
+          "y": -6185.43,
+          "z": 2.67
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_34",
+      "node_type": "enter_zone_via_object",
+      "label": "Take teleporter to outside",
+      "position": {
+        "x": 12320.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room03",
+        "to_zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "interact_xyz": {
+          "x": -2997.71,
+          "y": -3851.34,
+          "z": -1722.26
+        },
+        "reset_xyz": {
+          "x": -2563.96,
+          "y": -3467.23,
+          "z": -1747.25
+        },
+        "sequential": false
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_35",
+      "node_type": "check_mana",
+      "label": "Check mana",
+      "position": {
+        "x": 12760.0,
+        "y": -90.0
+      },
+      "params": {
+        "threshold": 0.1
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to mana wisps",
+      "position": {
+        "x": 440.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo",
+        "xyz": {
+          "x": -25.11,
+          "y": 7098.17,
+          "z": 276.01
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "sleep",
+      "label": "Wait for wisps to load",
+      "position": {
+        "x": 880.0,
+        "y": 180.0
+      },
+      "params": {
+        "duration": 3.0
+      },
+      "option_overrides": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_8",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_36",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_20",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_13",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_20",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_30",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_26",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_30",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_32",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_30",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_32",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_33",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_9",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_2",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "db0ff54f",
+      "label": "Defeat bosses",
+      "members": [
+        "state_15",
+        "state_35",
+        "state_18",
+        "state_34",
+        "state_17",
+        "state_16",
+        "state_13",
+        "state_19",
+        "state_14"
+      ],
+      "color": 1
+    },
+    {
+      "id": "2860582e",
+      "label": "Handle level scaling",
+      "members": [
+        "state_21",
+        "state_2",
+        "state_29",
+        "state_30",
+        "state_31",
+        "state_28",
+        "state_25",
+        "state_32",
+        "state_27",
+        "state_24",
+        "state_20",
+        "state_3",
+        "state_22",
+        "state_33",
+        "state_23",
+        "state_26"
+      ],
+      "color": 3
+    },
+    {
+      "id": "78bf8549",
+      "label": "Go to Pitch Black Lake",
+      "members": [
+        "state_10",
+        "state_8",
+        "state_1",
+        "state_11",
+        "state_9",
+        "state_12"
+      ],
+      "color": 2
+    }
+  ]
+}

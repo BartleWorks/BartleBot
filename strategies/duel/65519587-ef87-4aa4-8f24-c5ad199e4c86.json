@@ -2,24 +2,24 @@
   "min_players": 1,
   "max_players": 4,
   "combat_order": [
-    4,
-    3,
+    1,
     2,
-    1
+    3,
+    4
   ],
   "player_assignments": [
     {
       "players": [
-        1
+        4
       ],
       "dsl": "",
       "player_combat_strategy_id": "ffb724ab-bdad-45e2-8629-33ce50d67298"
     },
     {
       "players": [
+        1,
         2,
-        3,
-        4
+        3
       ],
       "dsl": "",
       "player_combat_strategy_id": "5687c15b-739a-403c-a89f-0d12695e461e"

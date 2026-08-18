@@ -24,7 +24,9 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
     DIALOG_TIMEOUT,
+    MAX_RETRIES,
     POLL_INTERVAL,
+    SEQUENTIAL_INTERACT_STAGGER,
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
 )
@@ -409,6 +411,126 @@ async def poll_each_until_seen(
         stragglers = [c for i, c in enumerate(clients) if i not in seen]
         await asyncio.gather(*[action_fn(c) for c in stragglers])
         await asyncio.sleep(poll_interval)
+
+
+class TurnResult(NamedTuple):
+    """What happened on one client's turn at a shared object, from take_turns().
+
+    The two failures are kept apart because they are different problems and a node should
+    not report them with the same message: `prompted=False` means the client never got the
+    interact prompt at all — it is in the wrong place, or the object is gone — while
+    `prompted=True, completed=False` means the interaction started and then did not finish,
+    which is what contention on the object actually looks like.
+    """
+
+    prompted: bool
+    completed: bool
+
+
+async def take_turns(
+    clients: list,
+    interact_xyz,
+    reset_xyz,
+    safety_delay: float,
+    turn_fn,
+    numbers: list[int] | None = None,
+    poll_interval: float = POLL_INTERVAL,
+    stagger: float | None = None,
+    park_after_turn: bool = True,
+    log=None,
+) -> list[TurnResult]:
+    """Let each client use a shared world object alone, one after another.
+
+    For objects that only serve one player at a time. Every client waits at `reset_xyz`,
+    out of the object's range; one at a time each is teleported to `interact_xyz`, given
+    up to MAX_RETRIES attempts to raise the interact prompt, and then handed to `turn_fn`,
+    which owns the object until it returns.
+
+    `turn_fn(client)` is the whole of one client's interaction — the keypress and whatever
+    that client must finish before another may start, which differs per node: a menu that
+    opens and is read, a zone list that is paged through and dismissed, a loading screen
+    that has begun. It returns truthy when that got as far as it needed to. Making it a
+    callback rather than a fixed sequence is the point: the release moment is exactly what
+    varies between the nodes that need this, and getting it wrong in either direction
+    either serialises nothing useful or holds the object long after it is free.
+
+    `park_after_turn` sends each client back to `reset_xyz` once it is done, so the object
+    is genuinely free for the next one. Leave it on for interactions the client walks away
+    from — standing in range is enough to swallow the next client's keypress, so a client
+    left at the object undoes the serialisation for everyone after it. Turn it off only
+    when the interaction removes the client itself, as a zone transition does: there the
+    teleport lands on a client that is mid-loading-screen or already elsewhere.
+
+    Results are positional, one per client in `clients`, so a caller that passed a subset
+    can map them back. `numbers` supplies the 1-based client numbers used in log messages;
+    without it clients are logged by their position in `clients`, which is misleading for
+    a subset.
+
+    Never raises on a client's failure — a client that never got the prompt is recorded and
+    the next one takes its turn, because one player standing in the wrong place is not a
+    reason to deny the object to everybody else.
+    """
+    labels = numbers if numbers is not None else list(range(1, len(clients) + 1))
+    # Read at call time rather than bound as a default, so the constant stays patchable.
+    gap = SEQUENTIAL_INTERACT_STAGGER if stagger is None else stagger
+
+    def _log(message: str, level: int = logging.DEBUG) -> None:
+        if log:
+            log(message, level)
+
+    results: list[TurnResult] = []
+
+    # Clear everyone off the object first. Unconditional, unlike the parallel path's
+    # stale-prompt check: sequential mode is only worth anything if exactly one client is
+    # in range at a time, and a client that starts in range never leaves it on its own.
+    await asyncio.gather(*[c.teleport(reset_xyz) for c in clients])
+    await poll_until(lambda: none_in_npc_range(clients), safety_delay, poll_interval)
+
+    for position, client in enumerate(clients):
+        if position:
+            await asyncio.sleep(gap)
+
+        number = labels[position]
+        prompted = False
+        for attempt in range(1, MAX_RETRIES + 1):
+            await client.teleport(interact_xyz)
+            if await poll_until(lambda c=client: all_in_npc_range([c]), safety_delay, poll_interval):
+                prompted = True
+                break
+            _log(f"Client {number}: interact prompt did not appear (attempt {attempt}/{MAX_RETRIES}); resetting")
+            await client.teleport(reset_xyz)
+
+        if not prompted:
+            _log(f"Client {number}: interact prompt never appeared after {MAX_RETRIES} attempts")
+            results.append(TurnResult(prompted=False, completed=False))
+            continue
+
+        _log(f"Client {number}: taking its turn at the object")
+        completed = bool(await turn_fn(client))
+        if not completed:
+            _log(f"Client {number}: did not finish its turn at the object")
+        results.append(TurnResult(prompted=True, completed=completed))
+
+        # Park whatever the outcome: a client whose turn failed is the one most likely to
+        # still be standing at the object, and it is the standing there — not the keypress
+        # — that costs the next client its turn.
+        if park_after_turn:
+            await client.teleport(reset_xyz)
+            await poll_until(lambda c=client: none_in_npc_range([c]), safety_delay, poll_interval)
+
+    return results
+
+
+def summarize_turns(results: list[TurnResult], numbers: list[int]) -> tuple[list[int], list[int]]:
+    """Split take_turns() results into (never prompted, prompted but did not finish).
+
+    Both lists hold 1-based client numbers. A node reports them separately because they
+    point at different fixes — wrong coordinates versus an object that would not serve the
+    client — and lumping them together is what makes a contention bug look like a bad XYZ.
+    """
+    unprompted = [n for n, r in zip(numbers, results) if not r.prompted]
+    unfinished = [n for n, r in zip(numbers, results) if r.prompted and not r.completed]
+    return unprompted, unfinished
 
 
 def has_glob(pattern: str) -> bool:

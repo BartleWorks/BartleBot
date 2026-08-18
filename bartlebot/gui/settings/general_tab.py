@@ -156,6 +156,19 @@ class GeneralTab(QWidget):
         )
         bot_form.addRow("Automatically group players:", self._auto_group_cb)
 
+        self._auto_select_cb = QCheckBox()
+        self._auto_select_cb.setChecked(sm.auto_select_character)
+        self._auto_select_cb.setToolTip(
+            "After a launched client logs in, advance it through the loading screens and "
+            "press Play on the most recently played character, with no input from you.\n\n"
+            "Launching a team otherwise means finding each window and clicking through it by "
+            "hand, and nothing embeds into the game view until a character is in-game. With "
+            "this on, every window arrives in one place — switching to a different character "
+            "afterwards is then just a few clicks in the embedded window.\n\n"
+            "Also used to bring a client back after it crashes mid-run."
+        )
+        bot_form.addRow("Automatically select a character:", self._auto_select_cb)
+
         self._sell_pets_cb = QCheckBox()
         self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
         bot_form.addRow("Quicksell: Sell Pets:", self._sell_pets_cb)
@@ -202,6 +215,7 @@ class GeneralTab(QWidget):
         sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())
         sm.default_safety_delay = self._safety_delay_sb.value()
         sm.auto_group_players = self._auto_group_cb.isChecked()
+        sm.auto_select_character = self._auto_select_cb.isChecked()
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())

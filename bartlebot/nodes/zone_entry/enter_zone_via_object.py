@@ -45,6 +45,22 @@ PARAM_SCHEMA: list[ParamField] = [
         default={"x": 0.0, "y": 0.0, "z": 0.0},
         required=True,
     ),
+    ParamField(
+        key="sequential",
+        type="bool",
+        label="Sequential Interaction",
+        help=(
+            "Have players use the object one at a time instead of together. Zone teleporters "
+            "in particular often serve only one player at a time, and a second player "
+            "interacting while the first is mid-interaction has their keypress swallowed. "
+            "Each player waits at Reset XYZ, takes its turn, and is released as soon as its "
+            "loading screen starts — the others do not wait for it to finish loading, and all "
+            "players are still confirmed in the destination zone together at the end."
+        ),
+        default=False,
+        default_hint="All players interact at once.",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -76,9 +92,109 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=10,
+    usage_notes=(
+        "Turn on Sequential Interaction when the object only serves one player at a time — the "
+        "symptom is that one player transitions and the others' X press does nothing, "
+        "intermittently rather than every run. Zone teleporters are the common case."
+    ),
 )
 
 from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
+
+
+async def _loading_or_arrived(client, to_zone: str) -> bool:
+    """Return True once this client has committed to the transition.
+
+    A fast client can finish its loading screen before a slow one has started, so arriving
+    in to_zone counts as much as being on a loading screen — see the note in run() on why
+    requiring is_loading() alone deadlocks.
+    """
+    return await client.is_loading() or node_helpers.zone_matches(await client.zone_name(), to_zone)
+
+
+async def _await_arrival(machine, clients: list, to_zone: str) -> str:
+    """Wait out the loading screens and confirm every client reached to_zone.
+
+    The tail both modes share: however the clients were sent — together or in turn — they
+    are only done when all of them are in the destination zone.
+    """
+    machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
+
+    if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+        machine.log(f"Zones after interaction: {actual}", logging.DEBUG)
+        machine.log(
+            f"FAILURE: not all clients in expected zone after transition "
+            f"(expected={to_zone!r}, got={list(set(actual))})",
+            logging.WARNING,
+        )
+        return "FAILURE"
+
+    machine.log(f"SUCCESS: all clients in {to_zone!r}")
+    return "SUCCESS"
+
+
+async def _trigger_sequentially(
+    machine, clients: list, interact, reset, to_zone: str, safety_delay: float
+) -> str | None:
+    """Send each client through the object alone. Returns "FAILURE", or None to carry on.
+
+    A client is released as soon as its transition is under way — a loading screen has
+    started, or it is already in to_zone — rather than when it has finished loading. That
+    is the moment the object is free again, and holding the next client past it would add
+    a full loading screen per player for nothing. Waiting for the loading screens to clear
+    and confirming the destination zone stay collective, back in run().
+    """
+    machine.log("Sequential interaction: clients take turns at the object", logging.DEBUG)
+    refusals: list[str] = []
+
+    async def _turn(client) -> bool:
+        await client.send_key(Keycode.X, 0.1)
+        # Costs the full Safety Delay per client when no dialog appears, which is the common
+        # case — affordable only because _loading_or_arrived also accepts "already in
+        # to_zone", so a loading screen missed during the wait is still recognised.
+        if refusal := await node_helpers.answer_instance_prompts([client], safety_delay, POLL_INTERVAL):
+            refusals.append(refusal)
+            return False
+        return await node_helpers.poll_until(
+            lambda: _loading_or_arrived(client, to_zone), TRIGGER_TIMEOUT, POLL_INTERVAL
+        )
+
+    numbers = list(range(1, len(clients) + 1))
+    results = await node_helpers.take_turns(
+        clients,
+        interact,
+        reset,
+        safety_delay,
+        _turn,
+        numbers=numbers,
+        poll_interval=POLL_INTERVAL,
+        # The client leaves the zone under its own power, so there is nothing to park —
+        # and a teleport aimed at a client already on a loading screen goes nowhere good.
+        park_after_turn=False,
+        log=machine.log,
+    )
+    unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
+
+    if refusals:
+        machine.log(
+            f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusals[0])}",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    if unprompted:
+        machine.log(
+            f"FAILURE: interact prompt never appeared for client(s) {unprompted} after {MAX_RETRIES} attempts",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    if unfinished:
+        machine.log(
+            f"FAILURE: client(s) {unfinished} did not enter a loading screen within {TRIGGER_TIMEOUT}s",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    return None
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -88,6 +204,8 @@ async def run(machine, clients: list, params: dict) -> str:
 
     Flow:
       1. Verify all clients are in from_zone. Return FAILURE if not.
+      2s. If sequential, _trigger_sequentially sends each client through the object alone,
+         replacing steps 2–5; steps 6–8 (_await_arrival) run either way.
       2. Clear any pre-existing interact prompt by teleporting to reset_xyz.
       3. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait for the interact
          prompt on all clients. If it does not appear, teleport to reset_xyz and retry.
@@ -122,6 +240,15 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
+    # 2s. Sequential mode replaces steps 2–5 entirely: each client approaches, interacts and
+    #     commits to the transition alone. Steps 6–7 below are shared by both modes.
+    if params.get("sequential", False):
+        if (
+            failure := await _trigger_sequentially(machine, clients, interact, reset, to_zone, safety_delay)
+        ) is not None:
+            return failure
+        return await _await_arrival(machine, clients, to_zone)
 
     # 2. Clear any pre-existing interact prompt before starting.
     prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
@@ -189,12 +316,9 @@ async def run(machine, clients: list, params: dict) -> str:
         logging.DEBUG,
     )
 
-    async def _loading_or_arrived(c) -> bool:
-        return await c.is_loading() or node_helpers.zone_matches(await c.zone_name(), to_zone)
-
     seen_loading = await node_helpers.poll_each_until_seen(
         clients,
-        check_fn=_loading_or_arrived,
+        check_fn=lambda c: _loading_or_arrived(c, to_zone),
         action_fn=lambda c: c.send_key(Keycode.X, 0.1),
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
@@ -208,19 +332,4 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
-    # 6. Wait for loading screens to finish.
-    machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
-    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
-
-    # 7. Wait for all clients to arrive in to_zone.
-    if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
-        machine.log(f"Zones after interaction: {actual}", logging.DEBUG)
-        machine.log(
-            f"FAILURE: not all clients in expected zone after transition "
-            f"(expected={to_zone!r}, got={list(set(actual))})",
-            logging.WARNING,
-        )
-        return "FAILURE"
-
-    machine.log(f"SUCCESS: all clients in {to_zone!r}")
-    return "SUCCESS"
+    return await _await_arrival(machine, clients, to_zone)

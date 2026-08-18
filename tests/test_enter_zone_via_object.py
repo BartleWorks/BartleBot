@@ -233,3 +233,115 @@ async def test_fast_client_finishes_before_lagging_client_starts():
     assert result == "SUCCESS"
     c2_x_presses = [call for call in c2.send_key.call_args_list if call.args[0] == Keycode.X]
     assert len(c2_x_presses) >= 2  # initial press + re-presses until loading
+
+
+# ---------------------------------------------------------------------------
+# Sequential mode
+# ---------------------------------------------------------------------------
+
+
+def _sequential_client() -> FakeClient:
+    """Client that raises the prompt at interact_xyz and transitions when it presses X."""
+    c = FakeClient()
+    state = {"at_interact": False, "gone": False}
+
+    async def _teleport(xyz):
+        state["at_interact"] = xyz.x == 0.0
+
+    async def _in_range():
+        return state["at_interact"] and not state["gone"]
+
+    async def _send_key(key, delay):
+        if key == Keycode.X:
+            state["gone"] = True
+
+    async def _zone():
+        return _TO_ZONE if state["gone"] else _FROM_ZONE
+
+    c.teleport.side_effect = _teleport
+    c.is_in_npc_range.side_effect = _in_range
+    c.send_key.side_effect = _send_key
+    c.zone_name.side_effect = _zone
+    # Stays False throughout: this stands in for a client whose loading screen has already
+    # finished by the time it is read, which is the case _loading_or_arrived exists to
+    # handle — arriving in to_zone counts as having committed just as much as loading does.
+    c.is_loading.return_value = False
+    c.state = state
+    return c
+
+
+async def test_sequential_clients_transition_one_at_a_time():
+    """sequential=True: each client presses X alone, and all arrive in to_zone."""
+    c1, c2 = _sequential_client(), _sequential_client()
+    clients = [c1, c2]
+    params = {**_PARAMS, "sequential": True}
+    overlaps: list[bool] = []
+
+    base_send = {id(c): c.send_key.side_effect for c in clients}
+
+    def _bind(client):
+        async def _press(key, delay):
+            overlaps.append(sum(c.state["at_interact"] and not c.state["gone"] for c in clients) > 1)
+            await base_send[id(client)](key, delay)
+
+        client.send_key.side_effect = _press
+
+    for c in clients:
+        _bind(c)
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
+        patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
+    ):
+        result = await itz.run(FakeMachine(), clients, params)
+
+    assert result == "SUCCESS"
+    assert overlaps == [False, False]
+
+
+async def test_sequential_client_never_triggers_fails():
+    """A client whose keypress does not start a transition is named in the failure."""
+    good = _sequential_client()
+    stuck = _sequential_client()
+
+    async def _no_transition(key, delay):
+        stuck.state["at_interact"] = stuck.state["at_interact"]  # keypress swallowed
+
+    stuck.send_key.side_effect = _no_transition
+    machine = FakeMachine()
+    params = {**_PARAMS, "sequential": True}
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch.object(itz, "TRIGGER_TIMEOUT", 0.05),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
+        patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
+    ):
+        result = await itz.run(machine, [good, stuck], params)
+
+    assert result == "FAILURE"
+    assert any("did not enter a loading screen" in msg and "[2]" in msg for msg, _ in machine.logs)
+
+
+async def test_sequential_does_not_park_a_departing_client():
+    """park_after_turn is off here — no teleport is aimed at a client already leaving."""
+    client = _sequential_client()
+    params = {**_PARAMS, "sequential": True}
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
+        patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
+    ):
+        result = await itz.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    # Park at reset, then the approach to interact — and nothing after the keypress.
+    assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]

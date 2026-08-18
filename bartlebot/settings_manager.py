@@ -33,6 +33,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
     auto_group_players: bool = True
+    auto_select_character: bool = True
 
 
 class _GameEmbedSettings(BaseModel):
@@ -78,6 +79,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
         "auto_group_players": True,
+        "auto_select_character": True,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -97,6 +99,7 @@ _DEFAULTS: dict[str, Any] = {
     "launch_profiles": [],
     "recent_launches": [],
     "recent_bot_files": [],
+    "autosave_origins": {},
     "recently_used_nodes": [],
     "favorite_nodes": [],
     "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
@@ -263,6 +266,15 @@ class SettingsManager:
         self.set_general("auto_group_players", bool(value))
 
     @property
+    def auto_select_character(self) -> bool:
+        """Whether a launched client is driven through to in-game without user input."""
+        return bool(self.get_general("auto_select_character", default=True))
+
+    @auto_select_character.setter
+    def auto_select_character(self, value: bool) -> None:
+        self.set_general("auto_select_character", bool(value))
+
+    @property
     def accounts(self) -> list[dict]:
         """List of {username, alias?} dicts (no passwords)."""
         return list(self.get("accounts", default=[]))
@@ -317,6 +329,25 @@ class SettingsManager:
         self.set("recent_bot_files", value=recent[:8])
         self.save()
         return list(self.get("recent_bot_files", default=[]))
+
+    def set_autosave_origin(self, stem: str, original_path: str) -> None:
+        """Record which original bot file an auto-save stem was derived from."""
+        origins = dict(self.get("autosave_origins", default={}))
+        origins[stem] = str(Path(original_path).resolve())
+        self.set("autosave_origins", value=origins)
+        self.save()
+
+    def get_autosave_origin(self, stem: str) -> str | None:
+        """Look up the original bot file path recorded for an auto-save stem, if any."""
+        origins: dict = self.get("autosave_origins", default={})
+        return origins.get(stem)
+
+    def remove_autosave_origin(self, stem: str) -> None:
+        """Forget the recorded origin for an auto-save stem (called once its file is deleted)."""
+        origins = dict(self.get("autosave_origins", default={}))
+        if origins.pop(stem, None) is not None:
+            self.set("autosave_origins", value=origins)
+            self.save()
 
     @property
     def recently_used_nodes(self) -> list[str]:

@@ -301,3 +301,104 @@ async def test_a_refused_teleport_fails_instead_of_waiting_for_a_zone_change():
 
     assert result == "FAILURE"
     assert any("in a Gauntlet" in msg or "gauntlet" in msg for msg, _lvl in machine.logs)
+
+
+# ---------------------------------------------------------------------------
+# Sequential mode
+# ---------------------------------------------------------------------------
+
+
+def _positional_client() -> FakeClient:
+    """Client whose interact prompt shows at interact_xyz (x=0) and not at reset_xyz (x=1)."""
+    c = FakeClient()
+    state = {"at_interact": False, "gone": False}
+
+    async def _teleport(xyz):
+        state["at_interact"] = xyz.x == 0.0
+
+    async def _in_range():
+        return state["at_interact"] and not state["gone"]
+
+    async def _zone():
+        return "DestZone" if state["gone"] else "TestZone"
+
+    c.teleport.side_effect = _teleport
+    c.is_in_npc_range.side_effect = _in_range
+    c.zone_name.side_effect = _zone
+    c.state = state
+    return c
+
+
+async def test_sequential_each_client_uses_the_list_alone():
+    """sequential=True: a client holds the list from its keypress to its Teleport click."""
+    c1, c2 = _positional_client(), _positional_client()
+    clients = [c1, c2]
+    params = {**_PARAMS, "sequential": True}
+    holders: list[int] = []
+
+    async def _click(client, path):
+        if list(path) == list(evl.UNIVERSE_TELEPORT_BUTTON):
+            # The client releases the object here, so exactly one may be mid-turn.
+            assert holders.count(clients.index(client)) <= 1
+            holders.append(clients.index(client))
+            client.state["gone"] = True
+        return True
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
+        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+    ):
+        result = await evl.run(FakeMachine(), clients, params)
+
+    assert result == "SUCCESS"
+    assert holders == [0, 1]  # in order, one at a time
+
+
+async def test_sequential_entry_not_found_cancels_and_fails():
+    """A client that cannot find its entry cancels the list rather than leaving it open."""
+    client = _positional_client()
+    machine = FakeMachine()
+    params = {**_PARAMS, "sequential": True}
+    clicked: list[list[str]] = []
+
+    async def _click(_client, path):
+        clicked.append(list(path))
+        return True
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "_MAX_PAGES", 2),
+        patch(f"{_NH}.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(return_value="Wizard City")),
+        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+    ):
+        result = await evl.run(machine, [client], params)
+
+    assert result == "FAILURE"
+    assert list(evl.UNIVERSE_CANCEL_BUTTON) in clicked
+    assert any("could not open the zone list or select" in msg for msg, _ in machine.logs)
+
+
+async def test_sequential_prompt_never_appears_fails():
+    """A client that never gets the prompt is named, and the list is never opened."""
+    client = _positional_client()
+    client.is_in_npc_range.side_effect = None
+    client.is_in_npc_range.return_value = False
+    machine = FakeMachine()
+    params = {**_PARAMS, "sequential": True}
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch(f"{_NH}.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+    ):
+        result = await evl.run(machine, [client], params)
+
+    assert result == "FAILURE"
+    assert any("interact prompt never appeared for client(s) [1]" in msg for msg, _ in machine.logs)

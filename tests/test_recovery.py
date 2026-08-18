@@ -36,21 +36,33 @@ class RecoveryHarness:
 
     # Bind real methods directly — no copying, no duplication.
     _on_clients_removed = ClientManager._on_clients_removed
+    _log_unrecoverable_removal = ClientManager._log_unrecoverable_removal
     _run_recovery_queue = ClientManager._run_recovery_queue
     _reconnect_client = ClientManager._reconnect_client
     _build_ordered_clients = ClientManager._build_ordered_clients
     _assign_slot = ClientManager._assign_slot
     _sync_embedded_clients = ClientManager._sync_embedded_clients
     _regroup_after_recovery = ClientManager._regroup_after_recovery
+    # _reconnect_client now drives the relaunched window in through these, the same path
+    # a normal launch takes.
+    drive_client_in = ClientManager.drive_client_in
+    await_client_in = ClientManager.await_client_in
+    has_client_titled = ClientManager.has_client_titled
+    client_titled = ClientManager.client_titled
+    pending_client_titled = ClientManager.pending_client_titled
 
     def __init__(self) -> None:
         self._hwnd_account_map: dict[int, str] = {}
+        self._hwnd_titles: dict[int, str] = {}
+        self._hwnd_user_ids: dict[int, int] = {}
         self._client_order: list[str | None] = []
         self._pending_recovery: dict[int, str] = {}
         self._vacated_slots: dict[str, int] = {}
         self._recovery_in_progress: bool = False
         self._recovery_task = None
         self._clients: list = []
+        # The driver borrows the handler's client to read the character-select screen.
+        self._handler = MagicMock(clients=[])
         self._client_resolutions: dict[str, tuple[int, int]] = {}
         self._machine = None
         self._get_recovery_state = lambda: None
@@ -85,6 +97,44 @@ def _mock_create_task(coro: object) -> MagicMock:
 # ---------------------------------------------------------------------------
 
 
+class TestAccountMapTitleCache:
+    """_refresh_account_map records every title it reads, matched or not.
+
+    An unmatched title is the only description of the window that will still exist by the
+    time the client disconnects — the window is gone by then, so it cannot be read again.
+    """
+
+    def _run(self, harness: RecoveryHarness, title: str, accounts: list[dict]):
+        client = MagicMock(window_handle=100)
+        settings = MagicMock(accounts=accounts)
+        with (
+            patch("bartlebot.client_manager.SettingsManager") as sm,
+            patch("bartlebot.client_manager.get_window_title", return_value=title),
+        ):
+            sm.instance.return_value = settings
+            ClientManager._refresh_account_map(harness, [client])
+
+    def test_unmatched_title_is_remembered(self, harness: RecoveryHarness) -> None:
+        self._run(harness, "Wizard101", [{"username": "user1", "alias": "Jeff"}])
+        assert harness._hwnd_account_map == {}, "an adopted window matches no account"
+        assert harness._hwnd_titles == {100: "Wizard101"}
+
+    def test_matched_title_is_remembered_and_mapped(self, harness: RecoveryHarness) -> None:
+        self._run(harness, "[Jeff] Wizard101", [{"username": "user1", "alias": "Jeff"}])
+        assert harness._hwnd_account_map == {100: "user1"}
+        assert harness._hwnd_titles == {100: "[Jeff] Wizard101"}
+
+    def test_unreadable_title_records_nothing(self, harness: RecoveryHarness) -> None:
+        client = MagicMock(window_handle=100)
+        with (
+            patch("bartlebot.client_manager.SettingsManager") as sm,
+            patch("bartlebot.client_manager.get_window_title", side_effect=OSError("gone")),
+        ):
+            sm.instance.return_value = MagicMock(accounts=[])
+            ClientManager._refresh_account_map(harness, [client])
+        assert harness._hwnd_titles == {}
+
+
 class TestOnClientsRemoved:
     def test_unknown_hwnd_is_a_no_op(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
@@ -92,6 +142,81 @@ class TestOnClientsRemoved:
         harness._on_clients_removed({999})
         assert harness._client_order == ["user1"]
         assert harness._pending_recovery == {}
+
+    def test_unmapped_hwnd_warns_that_recovery_is_skipped(self, harness: RecoveryHarness, caplog) -> None:
+        """The overnight-silence bug: an adopted window disconnects and nothing is said.
+
+        Only clients BartleBot launched carry the '[account] Wizard101' title the account
+        map is keyed on, so a window adopted from another session can never be recovered.
+        That has to be audible, or a stalled run looks identical to a healthy one.
+        """
+        harness._hwnd_titles = {999: "Wizard101"}
+        harness._machine = _make_machine(stopped=False)
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({999})
+
+        assert len(caplog.records) == 1, "exactly one warning per unmapped client"
+        message = caplog.records[0].getMessage()
+        assert "999" in message and "'Wizard101'" in message, "the window must be identifiable"
+        assert "SKIPPED" in message, "the message has to say recovery is not happening"
+        assert harness._pending_recovery == {}
+
+    def test_unmapped_hwnd_is_quiet_when_no_bot_is_running(self, harness: RecoveryHarness, caplog) -> None:
+        """Closing a client by hand with no bot running is routine, not a fault."""
+        harness._hwnd_titles = {999: "Wizard101"}
+        harness._machine = None
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({999})
+
+        assert caplog.records == []
+
+    def test_unmapped_hwnd_with_no_known_title_still_warns(self, harness: RecoveryHarness, caplog) -> None:
+        """A window gone before its title was ever read is the case that most needs saying."""
+        harness._machine = _make_machine(stopped=False)
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({999})
+
+        assert len(caplog.records) == 1
+        assert "unreadable" in caplog.records[0].getMessage()
+
+    def test_mapped_client_holding_no_slot_warns(self, harness: RecoveryHarness, caplog) -> None:
+        """The other silent skip: an account is known but holds no slot in the ordering."""
+        harness._hwnd_account_map = {100: "user1"}
+        harness._client_order = ["user2"]
+        harness._machine = _make_machine(stopped=False)
+
+        with caplog.at_level("WARNING", logger="bartlebot.client_manager"):
+            harness._on_clients_removed({100})
+
+        assert len(caplog.records) == 1
+        assert "SKIPPED" in caplog.records[0].getMessage()
+        assert harness._pending_recovery == {}
+
+    def test_queued_recovery_does_not_warn_about_being_skipped(self, harness: RecoveryHarness, caplog) -> None:
+        """The healthy path must stay distinguishable from the skipped one."""
+        harness._hwnd_account_map = {100: "user1"}
+        harness._client_order = ["user1"]
+        harness._machine = _make_machine(stopped=False)
+
+        with (
+            caplog.at_level("WARNING", logger="bartlebot.client_manager"),
+            patch("asyncio.create_task", _mock_create_task),
+        ):
+            harness._on_clients_removed({100})
+
+        assert len(caplog.records) == 1
+        assert "queuing recovery" in caplog.records[0].getMessage()
+        assert "SKIPPED" not in caplog.records[0].getMessage()
+
+    def test_title_cache_is_released_on_removal(self, harness: RecoveryHarness) -> None:
+        """Titles are kept only until the removal they explain, so the dict cannot grow forever."""
+        harness._hwnd_titles = {999: "Wizard101"}
+        harness._machine = None
+        harness._on_clients_removed({999})
+        assert harness._hwnd_titles == {}
 
     def test_username_absent_from_client_order_is_ignored(self, harness: RecoveryHarness) -> None:
         harness._hwnd_account_map = {100: "user1"}
@@ -304,7 +429,7 @@ def _base_reconnect_patches(display_name: str = "j***n"):
         patch("bartlebot.launcher.launch_profile.launch_account", new_callable=AsyncMock),
         patch("ctypes.windll", mock_windll),
         patch("asyncio.sleep", new_callable=AsyncMock),
-        patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+        patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
     )
 
 
@@ -371,7 +496,7 @@ class TestReconnectClient:
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -441,7 +566,7 @@ class TestReconnectClient:
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -475,7 +600,7 @@ class TestReconnectClient:
             patch("ctypes.windll", mock_windll),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -497,6 +622,10 @@ class TestReconnectClient:
         mock_settings = MagicMock()
         mock_settings.accounts = []
 
+        # The driver reads and tidies up through the handler's client, so it has to be
+        # registered there as well as published.
+        harness._handler = MagicMock(clients=[fake_client])
+
         # ESC cleanup loops each call is_enabled_by_path once (BACKPACK_CLOSE_BUTTON_PATH):
         #   loop 1: True  → break immediately
         #   loop 2: False → not False = True → break immediately
@@ -513,9 +642,9 @@ class TestReconnectClient:
             patch("ctypes.windll", MagicMock()),
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
-            patch("bartlebot.client_manager.is_enabled_by_path", crowns_check),
-            patch("bartlebot.client_manager.poll_until", new_callable=AsyncMock, return_value=True),
-            patch("bartlebot.client_manager.click_by_path", mock_click),
+            patch("bartlebot.launcher.auto_select.is_enabled_by_path", crowns_check),
+            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=True),
+            patch("bartlebot.launcher.auto_select.click_by_path", mock_click),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
