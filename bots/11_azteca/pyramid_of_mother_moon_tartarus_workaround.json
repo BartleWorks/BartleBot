@@ -197,7 +197,7 @@
       "node_type": "check_zone",
       "label": "Check if in Azteca",
       "position": {
-        "x": 0.0,
+        "x": -880.0,
         "y": -90.0
       },
       "params": {
@@ -240,7 +240,7 @@
       "node_type": "check_zone",
       "label": "Check if in Pitch Black Lake",
       "position": {
-        "x": 440.0,
+        "x": -440.0,
         "y": -90.0
       },
       "params": {
@@ -259,7 +259,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Zocalo",
       "position": {
-        "x": 880.0,
+        "x": 0.0,
         "y": 270.0
       },
       "params": {
@@ -325,7 +325,7 @@
       "label": "Collect mana wisps",
       "position": {
         "x": 1320.0,
-        "y": 270.0
+        "y": 180.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -818,6 +818,37 @@
         "threshold": 0.1
       },
       "option_overrides": {}
+    },
+    {
+      "id": "state_36",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to mana wisps",
+      "position": {
+        "x": 440.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo",
+        "xyz": {
+          "x": -25.11,
+          "y": 7098.17,
+          "z": 276.01
+        }
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_37",
+      "node_type": "sleep",
+      "label": "Wait for wisps to load",
+      "position": {
+        "x": 880.0,
+        "y": 180.0
+      },
+      "params": {
+        "duration": 3.0
+      },
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -884,7 +915,7 @@
     {
       "trigger": "advance",
       "source": "state_12",
-      "dest": "state_10",
+      "dest": "state_36",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1393,6 +1424,36 @@
     },
     {
       "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_8",
       "dest": "state_9",
       "when": "FALSE",
@@ -1424,7 +1485,7 @@
     {
       "trigger": "advance",
       "source": "state_9",
-      "dest": "state_12",
+      "dest": "state_36",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
