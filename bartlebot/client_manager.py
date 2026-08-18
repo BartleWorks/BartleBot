@@ -535,6 +535,12 @@ class ClientManager(QObject):
                 if account_identity.stored_fingerprint(accounts, known) != fp:
                     accounts = account_identity.with_fingerprint(accounts, known, fp)
                     settings.accounts = accounts
+                    # The setter only updates the in-memory dict — every other caller
+                    # pairs it with an explicit save. Without this the association would
+                    # last exactly as long as the process, which is the opposite of the
+                    # point: it exists so a later session can recognise a window this one
+                    # launched.
+                    settings.save()
                     logger.info(
                         "Learned the identity of account '%s' (user id %s) — clients adopted from "
                         "outside BartleBot can now be recognised as this account",
