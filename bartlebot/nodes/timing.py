@@ -158,9 +158,22 @@ DECK_FUSION_FLYOUT_SETTLE = 0.3
 # reading TieredSpellMPUnlockedList. The variant list is populated by the click,
 # so reading immediately can return the previous spell's variants or nothing.
 
+DECK_SPELL_PAGE_SETTLE = 0.1
+# Pause after clicking PageDown in the spellbook, so the new page is rendered
+# before a card on it is clicked. Matches the cadence wizwalker's own page
+# sweep uses.
+
 DECK_FUSION_CLICK_SETTLE = 0.05
 # Pause between repeat clicks on one fusion variant, matching the cadence
 # wizwalker uses when adding copies of an ordinary card.
+
+DECK_CARD_CONFIRM_TIMEOUT = 2.0
+# How long to wait for clicked copies of one card to appear in CardsInDeck
+# before treating the clicks as lost. Generous: the cost of being wrong is a
+# duplicate copy, and the deck read is two memory reads so polling is cheap.
+
+DECK_CARD_CONFIRM_POLL = 0.05
+# Gap between deck-count reads while confirming a card went in.
 
 LAUNCH_STAGGER_DELAY = 1.0
 # Seconds to wait between starting successive Wizard101 instances, and between

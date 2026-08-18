@@ -17,9 +17,11 @@ import pytest
 
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import (
+    CARD_CLICK_ATTEMPTS,
     SLOTS_PER_PAGE,
     ItemSlot,
     _settle_deck,
+    _share_shortfall,
     active_item_counts,
     apply_deck,
     count_names,
@@ -33,6 +35,7 @@ from bartlebot.deck_io import (
     plan_normal_cards,
     read_deck,
     resolve_tier,
+    resolved_at_click_time,
     suggest_alternatives,
     write_deck,
 )
@@ -55,6 +58,11 @@ def _fast_settle(monkeypatch):
     """
     monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_TIMEOUT", 0.0)
     monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_POLL", 0.001)
+    # Likewise for the per-card confirm: a zero ceiling still takes one reading,
+    # so a fake deck that reflects its clicks confirms immediately and one that
+    # never grows gives up at once instead of waiting out 2s per attempt.
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_CONFIRM_TIMEOUT", 0.0)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_CONFIRM_POLL", 0.001)
 
 
 def _async_returning(value):
@@ -512,45 +520,37 @@ async def test_apply_deck_defaults_to_the_shared_timeout(fake_deck_builder):
 
 
 def test_expected_deck_is_just_the_direct_cards_when_there_is_no_fusion():
-    assert expected_normal_deck({"Tempest": 4, "Epic": 2}, {}, {}, []) == {"Tempest": 4, "Epic": 2}
+    assert expected_normal_deck({"Tempest": 4, "Epic": 2}, {}) == {"Tempest": 4, "Epic": 2}
 
 
-def test_expected_deck_includes_fusion_cards_under_their_requested_name():
-    expected = expected_normal_deck({"Tempest": 2}, {"Novus Storm - T05 - B": 3}, {}, [])
+def test_expected_deck_includes_the_fusion_cards_that_were_counted_in():
+    expected = expected_normal_deck({"Tempest": 2}, {"Novus Storm - T05 - B": 3})
     assert expected == {"Tempest": 2, "Novus Storm - T05 - B": 3}
 
 
-def test_expected_deck_renames_substituted_fusion_cards():
+def test_expected_deck_takes_fusion_cards_under_the_name_actually_clicked():
     """A wizard who only unlocked T02 gets T02, so that is what should be there."""
-    expected = expected_normal_deck(
-        {},
-        {"Novus Storm - T05 - B": 3},
-        {"Novus Storm - T05 - B": "Novus Storm - T02 - B"},
-        [],
-    )
+    expected = expected_normal_deck({}, {"Novus Storm - T02 - B": 3})
     assert expected == {"Novus Storm - T02 - B": 3}
 
 
-def test_expected_deck_drops_skipped_fusion_cards():
+def test_expected_deck_omits_fusion_cards_that_never_landed():
     """Known-missing cards are expected to be missing; waiting for them would
-    guarantee a timeout on every apply."""
-    expected = expected_normal_deck(
-        {"Tempest": 2},
-        {"Novus Storm - T05 - B": 3},
-        {},
-        ["Novus Storm - T05 - B"],
-    )
+    guarantee a timeout on every apply. _add_fusion_cards leaves them out of
+    ``placed`` rather than this having to filter them."""
+    expected = expected_normal_deck({"Tempest": 2}, {})
     assert expected == {"Tempest": 2}
+
+
+def test_expected_deck_expects_only_the_copies_that_went_in():
+    """A card the deck took two of three copies of settles at two, not three."""
+    expected = expected_normal_deck({}, {"Novus Storm - T05 - B": 2})
+    assert expected == {"Novus Storm - T05 - B": 2}
 
 
 def test_expected_deck_merges_a_substitution_onto_an_existing_direct_card():
     """Two routes can land on the same entry; the counts have to add up."""
-    expected = expected_normal_deck(
-        {"Novus Storm - T02 - B": 1},
-        {"Novus Storm - T05 - B": 2},
-        {"Novus Storm - T05 - B": "Novus Storm - T02 - B"},
-        [],
-    )
+    expected = expected_normal_deck({"Novus Storm - T02 - B": 1}, {"Novus Storm - T02 - B": 2})
     assert expected == {"Novus Storm - T02 - B": 3}
 
 
@@ -1072,6 +1072,7 @@ _VARIANT_CLICK_BASE = 1000  # keeps flyout click positions distinguishable
 class _FakeMouse:
     def __init__(self):
         self.clicks: list[tuple[int, int]] = []
+        self.window_clicks: list[str] = []
 
     async def __aenter__(self):
         return self
@@ -1082,7 +1083,8 @@ class _FakeMouse:
     async def click(self, x, y):
         self.clicks.append((x, y))
 
-    async def click_window(self, *_args, **_kwargs):
+    async def click_window(self, window=None, *_args, **_kwargs):
+        self.window_clicks.append(getattr(window, "window_name", "?"))
         return None
 
 
@@ -1376,6 +1378,150 @@ def test_partition_reports_no_substitution_for_an_exact_match():
     assert routing.substitutions == {}
 
 
+# ---------------------------------------------------------------------------
+# A base-form entry has two spellings and two meanings (#109)
+# ---------------------------------------------------------------------------
+#
+# "Novus Storm - T01 - Base" is the self-describing spelling; other spells name
+# their base form plainly, so the spellbook lists a bare "Bunyips Rage". Reading
+# only the first reported those spells as untrained.
+#
+# Either spelling then means one of two things, and the page looks the same for
+# both: a flyout with the unlocked variants (two paths or more), or the base card
+# itself (no path unlocked). Only the click tells them apart.
+
+
+@pytest.mark.parametrize(
+    ("requested", "entry"),
+    [
+        ("Novus Storm - T05 - B", "Novus Storm - T01 - Base"),  # the explicit spelling
+        ("Bunyips Rage - T05 - A", "Bunyips Rage"),  # the plain one
+        ("King Artorius - Storm - T05 - B", "King Artorius - Storm"),  # base name has its own " - "
+    ],
+)
+def test_both_base_form_spellings_resolve_at_click_time(requested: str, entry: str):
+    assert resolved_at_click_time(requested, entry)
+
+
+@pytest.mark.parametrize(
+    ("requested", "entry"),
+    [
+        ("Novus Storm - T05 - B", "Novus Storm - T04 - B"),  # the one unlocked path, clickable as-is
+        ("Tempest", "Tempest"),  # an untiered spell asked for by its own name
+    ],
+)
+def test_a_directly_clickable_entry_is_not_a_base_form(requested: str, entry: str):
+    assert not resolved_at_click_time(requested, entry)
+
+
+def test_partition_defers_a_bare_base_entry_to_click_time():
+    """The #109 regression: this used to land in unresolvable and read as untrained."""
+    routing = partition_addable({"Bunyips Rage - T05 - A": 3}, ["Tempest", "Bunyips Rage"])
+
+    assert routing.fusion == {"Bunyips Rage - T05 - A": 3}
+    assert routing.unresolvable == []
+
+
+async def test_a_bare_base_form_is_added_through_its_flyout(monkeypatch):
+    """Two paths unlocked: the spellbook shows only "Bunyips Rage", the flyout has both."""
+    _tier_patches(monkeypatch)
+    db = FusionRootDeckBuilder()
+    db.spell_list = ["Tempest", "Frenzy", "Bunyips Rage"]
+    db.owned_tiers = ["Bunyips Rage - T05 - A", "Bunyips Rage - T05 - B"]
+
+    report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 2}))
+
+    assert db.fusion_added == {"Bunyips Rage - T05 - A": 2}
+    assert report.skipped == []
+    assert report.is_clean
+
+
+# --- no path unlocked: the click adds the base card and no flyout appears ---
+#
+# The spellbook entry is identical to the two-path case above, so this is only
+# discoverable after clicking. Undoing it would be worse than finishing it: the
+# base form is the same spell, weaker, and the only one this wizard has.
+
+
+class NoPathDeckBuilder(FusionRootDeckBuilder):
+    """A wizard with nothing unlocked: clicking the entry adds a card, no flyout."""
+
+    spell_list = ["Tempest", "Frenzy", "Bunyips Rage"]
+
+    async def get_graphical_tiered_spell_cards(self) -> list:
+        self.calls.append("get_graphical_tiered_spell_cards")
+        raise ValueError("TieredSpellMPUnlockedList not found")
+
+    @property
+    def base_form_clicks(self) -> int:
+        """Clicks that landed on the spellbook entry rather than inside a flyout."""
+        return sum(1 for x, _y in self.client.mouse_handler.clicks if x < _VARIANT_CLICK_BASE)
+
+
+async def test_no_unlocked_path_places_the_base_card(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+
+    report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 3}))
+
+    assert db.base_form_clicks == 3
+    assert report.skipped == []
+    assert report.substitutions == {"Bunyips Rage - T05 - A": "Bunyips Rage"}
+
+
+async def test_no_unlocked_path_collapses_every_variant_onto_one_card(monkeypatch):
+    """Both requested paths become the same base card, so the copies are summed."""
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+
+    report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 2, "Bunyips Rage - T05 - B": 1}))
+
+    assert db.base_form_clicks == 3
+    assert report.substitutions == {
+        "Bunyips Rage - T05 - A": "Bunyips Rage",
+        "Bunyips Rage - T05 - B": "Bunyips Rage",
+    }
+
+
+async def test_no_unlocked_path_expects_the_base_card_when_settling(monkeypatch):
+    """A skip here would leave _settle_deck waiting out its timeout on a correct deck."""
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+
+    report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 2}))
+
+    assert expected_normal_deck({}, {"Bunyips Rage": 2}) == {"Bunyips Rage": 2}
+    assert report.substitutions == {"Bunyips Rage - T05 - A": "Bunyips Rage"}
+
+
+async def test_no_unlocked_path_is_reported_as_a_substitution(monkeypatch, caplog):
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+
+    with caplog.at_level(logging.INFO, logger="bartlebot.deck_io"):
+        await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 1}))
+
+    assert "no upgrade path unlocked" in caplog.text
+
+
+async def test_a_failed_flyout_read_still_skips(monkeypatch, caplog):
+    """Only a missing window means "nothing unlocked" — a read error is still our bug."""
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+
+    async def _boom() -> list:
+        raise MemoryError("read failed")
+
+    db.get_graphical_tiered_spell_cards = _boom
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.deck_io"):
+        report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 2}))
+
+    assert report.skipped == ["Bunyips Rage - T05 - A"]
+    assert report.substitutions == {}
+    assert "Could not open the variant list" in caplog.text
+
+
 def test_partition_does_not_pre_report_fusion_substitutions():
     """Which variant a fusion root resolves to is only known with the flyout open."""
     routing = partition_addable({"Novus Storm - T05 - B": 4}, ["Novus Storm - T01 - Base"])
@@ -1599,3 +1745,307 @@ async def test_a_deck_saved_before_kinds_existed_still_applies(monkeypatch):
     assert db.added == {"Tempest": 2}
     assert report.kinds == {}
     assert report.alternatives == {}
+
+
+# ---------------------------------------------------------------------------
+# The fusion pass sweeps the spellbook forward once
+# ---------------------------------------------------------------------------
+#
+# _go_to_spell_page rewinds to page one before advancing, so calling it per base
+# re-walked the whole spellbook each time — and in deck order, so it bounced
+# 0 -> 11 -> 0 -> 9 -> 0 -> 7. Bases are visited in page order now, and the page
+# only ever advances.
+
+
+async def _named_window(_parent, name, *_args, **_kwargs):
+    return SimpleNamespace(window_name=name)
+
+
+class MultiPageDeckBuilder(FusionRootDeckBuilder):
+    """A spellbook long enough to page through, with three fusion spells on it."""
+
+    CARDS_PER_PAGE = 6
+    spell_list = (
+        [f"Filler {i}" for i in range(7)]
+        + ["Thunder Snake"]  # page 1
+        + [f"Filler {i}" for i in range(7, 13)]
+        + ["Lightning Bats"]  # page 2
+        + [f"Filler {i}" for i in range(13, 19)]
+        + ["Bunyips Rage"]  # page 3
+    )
+
+    def calcuate_position_of_card_in_page(self, cards: list, name: str) -> tuple[int, int]:
+        """The real 6-per-page arithmetic, so page indices are not all zero."""
+        index = cards.index(name) + 1
+        slot = index % self.CARDS_PER_PAGE or self.CARDS_PER_PAGE
+        return (index - 1) // self.CARDS_PER_PAGE, slot
+
+    async def get_graphical_tiered_spell_cards(self) -> list:
+        """Every base offers the same two paths, so the flyout is always populated."""
+        base = self.last_clicked_base
+        self.flyout_order.append(base)
+        self.owned_tiers = [f"{base} - T05 - A", f"{base} - T05 - B"]
+        return await super().get_graphical_tiered_spell_cards()
+
+    @property
+    def last_clicked_base(self) -> str:
+        """Which spellbook entry the most recent page-click landed on."""
+        page = self._rewound_to + self.page_downs
+        for name in ("Thunder Snake", "Lightning Bats", "Bunyips Rage"):
+            if self.calcuate_position_of_card_in_page(self.spell_list, name)[0] == page:
+                return name
+        raise AssertionError(f"no fusion base on page {page}")
+
+    def __init__(self):
+        super().__init__()
+        self._rewound_to = 0
+        #: Bases whose flyout was opened, in the order the sweep reached them.
+        self.flyout_order: list[str] = []
+
+    async def _go_to_spell_page(self, page: int) -> None:
+        self.calls.append(f"rewind:{page}")
+        self._rewound_to = page
+
+    @property
+    def rewinds(self) -> list[str]:
+        return [c for c in self.calls if c.startswith("rewind:")]
+
+    @property
+    def page_downs(self) -> int:
+        return self.client.mouse_handler.window_clicks.count("PageDown")
+
+
+def _sweep_patches(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _named_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+
+
+async def test_fusion_pass_rewinds_only_once(monkeypatch):
+    _sweep_patches(monkeypatch)
+    db = MultiPageDeckBuilder()
+
+    await write_deck(
+        db,
+        DeckData(
+            normal={
+                "Bunyips Rage - T05 - A": 1,
+                "Lightning Bats - T05 - A": 1,
+                "Thunder Snake - T05 - A": 1,
+            }
+        ),
+    )
+
+    assert db.rewinds == ["rewind:1"]  # to the first base's page, then forward only
+
+
+async def test_fusion_pass_advances_one_page_at_a_time(monkeypatch):
+    """Pages 1, 2 and 3 in order: two PageDown clicks, not a walk per base."""
+    _sweep_patches(monkeypatch)
+    db = MultiPageDeckBuilder()
+
+    await write_deck(
+        db,
+        DeckData(
+            normal={
+                "Bunyips Rage - T05 - A": 1,
+                "Lightning Bats - T05 - A": 1,
+                "Thunder Snake - T05 - A": 1,
+            }
+        ),
+    )
+
+    assert db.page_downs == 2
+
+
+async def test_fusion_pass_visits_bases_in_page_order(monkeypatch):
+    """Deck order is arbitrary; the sweep must follow the spellbook."""
+    _sweep_patches(monkeypatch)
+    db = MultiPageDeckBuilder()
+
+    await write_deck(
+        db,
+        DeckData(normal={"Bunyips Rage - T05 - A": 1, "Thunder Snake - T05 - A": 1}),
+    )
+
+    assert db.flyout_order == ["Thunder Snake", "Bunyips Rage"]  # pages 1 then 3
+    assert db.rewinds == ["rewind:1"]  # Thunder Snake's page, the earlier of the two
+
+
+async def test_a_reopened_deck_page_forces_another_rewind(monkeypatch):
+    """The close fallback reopens the page, so the tracked position is a guess."""
+    _sweep_patches(monkeypatch)
+    db = MultiPageDeckBuilder()
+
+    async def _no_close_button(parent, name, *args, **kwargs):
+        if name == "CloseTSMPUnlockedPageButton":
+            raise ValueError("no close button")
+        return SimpleNamespace(window_name=name)
+
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _no_close_button)
+
+    await write_deck(
+        db,
+        DeckData(normal={"Thunder Snake - T05 - A": 1, "Lightning Bats - T05 - A": 1}),
+    )
+
+    assert db.calls.count("refresh_deck_page") == 2  # the fallback fired for each base
+    assert db.rewinds == ["rewind:1", "rewind:2"]  # so each base re-sought its page
+
+
+# ---------------------------------------------------------------------------
+# Every fusion click is confirmed against the deck's card count
+# ---------------------------------------------------------------------------
+#
+# The flyout used to be closed 50 ms after the last click of each base, which is
+# long enough to lose it — the same bug _settle_deck was written for, one scope
+# in. No fixed delay can tell a slow click from a dropped one, so the clicks are
+# now counted in: click, poll CardsInDeck, re-click only what is still missing.
+
+
+def _counting_deck(mouse, *, at_variant=True, lost=0, cap=None):
+    """A deck whose card count follows the fake mouse's clicks.
+
+    ``lost`` swallows that many clicks outright, modelling the reported bug.
+    ``cap`` stops the deck growing past a point, modelling the 64-card limit and
+    per-spell copy limits — a refusal the count cannot distinguish from a drop.
+    """
+
+    async def count() -> int:
+        landed = sum(1 for x, _y in mouse.clicks if (x >= _VARIANT_CLICK_BASE) is at_variant)
+        landed = max(0, landed - lost)
+        return min(landed, cap) if cap is not None else landed
+
+    return count
+
+
+def _use_deck(monkeypatch, counter):
+    monkeypatch.setattr("bartlebot.deck_io.card_counter", lambda *_args: counter)
+
+
+def _two_path_builder():
+    db = FusionRootDeckBuilder()
+    db.owned_tiers = ["Novus Storm - T05 - A", "Novus Storm - T05 - B"]
+    return db
+
+
+async def test_a_dropped_variant_click_is_clicked_again(monkeypatch):
+    """The reported symptom: a click that never landed used to be lost silently."""
+    _tier_patches(monkeypatch)
+    db = _two_path_builder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, lost=1))
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 2}))
+
+    assert db.fusion_added == {"Novus Storm - T05 - A": 3}  # two asked for, one re-clicked
+    assert report.is_clean
+
+
+async def test_a_card_the_deck_never_takes_is_reported_skipped(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = _two_path_builder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, cap=0))
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 2}))
+
+    assert report.skipped == ["Novus Storm - T05 - A"]
+    assert report.substitutions == {}  # nothing went in, so nothing was substituted
+    assert report.short == {}  # reported as absent, not as partial
+
+
+async def test_retries_are_bounded_when_the_deck_keeps_refusing(monkeypatch):
+    """A full deck refuses every click; retrying forever would hang the apply."""
+    _tier_patches(monkeypatch)
+    db = _two_path_builder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, cap=0))
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 1}))
+
+    assert sum(db.fusion_added.values()) == CARD_CLICK_ATTEMPTS
+
+
+async def test_a_partly_placed_card_is_reported_not_hidden(monkeypatch):
+    """Two of three copies is neither clean nor missing, and used to look clean."""
+    _tier_patches(monkeypatch)
+    db = _two_path_builder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, cap=2))
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 3}))
+
+    assert report.short == {"Novus Storm - T05 - A": (2, 3)}
+    assert not report.is_clean
+    assert report.skipped == []  # the card is in the deck, just not in full
+
+
+async def test_the_settle_expects_only_the_copies_that_landed(monkeypatch):
+    """Expecting three when two went in would burn the full settle timeout."""
+    _tier_patches(monkeypatch)
+    db = _two_path_builder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, cap=2))
+    expected: dict[str, int] = {}
+
+    async def _spy_settle(_client, _window, expected_normal, _desired_item):
+        expected.update(expected_normal)
+        return True
+
+    monkeypatch.setattr("bartlebot.deck_io._settle_deck", _spy_settle)
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 3}))
+
+    assert expected == {"Novus Storm - T05 - A": 2}
+
+
+async def test_an_unreadable_count_falls_back_to_clicking_once(monkeypatch):
+    """A broken read is not evidence of a failed click; retrying would duplicate."""
+    _tier_patches(monkeypatch)
+    db = _two_path_builder()
+
+    async def _unreadable() -> None:
+        return None
+
+    _use_deck(monkeypatch, _unreadable)
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - A": 2}))
+
+    assert db.fusion_added == {"Novus Storm - T05 - A": 2}  # clicked once each, as before
+    assert report.is_clean
+
+
+# -- the base-form path counts its opening click too ------------------------
+
+
+async def test_the_flyout_opening_click_is_counted_not_assumed(monkeypatch):
+    """It adds a card only when no flyout opens, so whether it did is measured."""
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False))
+
+    report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 3}))
+
+    assert db.base_form_clicks == 3  # the opening click counted, then two more
+    assert report.substitutions == {"Bunyips Rage - T05 - A": "Bunyips Rage"}
+    assert report.short == {}  # all three copies in, even though each is a downgrade
+
+
+async def test_a_base_form_that_never_lands_is_not_called_a_substitution(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = NoPathDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=0))
+
+    report = await write_deck(db, DeckData(normal={"Bunyips Rage - T05 - A": 2}))
+
+    assert report.skipped == ["Bunyips Rage - T05 - A"]
+    assert report.substitutions == {}
+
+
+def test_shortfall_is_shared_out_across_the_names_that_asked():
+    """Variants collapse onto one card, so the per-name counts must still total."""
+    short = _share_shortfall({"X - T05 - A": 2, "X - T05 - B": 1}, landed=2)
+
+    assert short == {"X - T05 - B": 0}  # the first request filled, the second did not
+
+
+def test_shortfall_reports_a_partly_filled_request():
+    short = _share_shortfall({"X - T05 - A": 3}, landed=1)
+
+    assert short == {"X - T05 - A": 1}

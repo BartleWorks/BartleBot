@@ -478,6 +478,11 @@ class AppController(QObject):
         if report.substitutions:
             lines.append("Used a lower tier than the deck asked for:")
             lines += [f"    {used}  (deck wanted {req})" for req, used in sorted(report.substitutions.items())]
+        if report.short:
+            if lines:
+                lines.append("")
+            lines.append("Fewer copies went in than the deck asked for:")
+            lines += [f"    {name}  ({got} of {wanted})" for name, (got, wanted) in sorted(report.short.items())]
         if report.skipped:
             if lines:
                 lines.append("")

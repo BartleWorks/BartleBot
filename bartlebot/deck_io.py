@@ -51,6 +51,8 @@ from wizwalker.memory.memory_objects.window import (
 from bartlebot.card_kinds import classify_effects
 from bartlebot.nodes.timing import (
     DECK_APPLY_TIMEOUT,
+    DECK_CARD_CONFIRM_POLL,
+    DECK_CARD_CONFIRM_TIMEOUT,
     DECK_FUSION_CLICK_SETTLE,
     DECK_FUSION_FLYOUT_SETTLE,
     DECK_ITEM_PAGE_SETTLE,
@@ -59,6 +61,7 @@ from bartlebot.nodes.timing import (
     DECK_PAGE_POLL,
     DECK_SETTLE_POLL,
     DECK_SETTLE_TIMEOUT,
+    DECK_SPELL_PAGE_SETTLE,
 )
 
 if TYPE_CHECKING:
@@ -87,7 +90,16 @@ TIER_MARKER = " - T"
 # against a live client (tools/probe_spell_list.py): a wizard owning Novus Storm
 # at both T05-A and T05-B lists "Novus Storm - T01 - Base" in the spellbook, and
 # only the flyout names the two real variants.
+#
+# It is not the only spelling a base form takes — see ``resolved_at_click_time``.
 FUSION_ROOT_PATH = "Base"
+
+# How many times a card's clicks are repeated when the deck does not grow by as
+# much as was asked for.  Bounded because a refusal is indistinguishable from a
+# lost click: the deck holds 64 cards and each spell has its own copy limit, so
+# a click the game declines leaves the count flat exactly like a click that was
+# swallowed.  Retrying forever would spin out the apply on a full deck.
+CARD_CLICK_ATTEMPTS = 3
 
 # Both routing paths substitute tiers, and a wizard reading the log should not
 # have to notice that two differently-worded lines mean the same thing.
@@ -123,6 +135,10 @@ class TieredName:
         Clicking one in the spellbook opens the variant flyout instead of adding
         a card, which is the difference between a wizard who has unlocked
         several variants and one who has unlocked exactly one.
+
+        Only some spells name their base form this way, and it opens a flyout
+        only for a wizard holding two paths or more.
+        ``resolved_at_click_time`` is the question callers actually want to ask.
         """
         return self.path == FUSION_ROOT_PATH
 
@@ -165,13 +181,19 @@ class DeckApplyReport:
     # the hitter the strategy was built around.
     alternatives: dict[str, list[str]] = field(default_factory=dict)
     kinds: dict[str, str] = field(default_factory=dict)  # skipped card → its recorded kind
+    # Requested card → (copies that went in, copies asked for), for cards the
+    # deck accepted only partly.  Distinct from ``skipped``, which is all-or-
+    # nothing: a deck holding two of three copies is neither clean nor missing
+    # the card, and saying nothing would put it back in the class of partial
+    # applies that look like clean ones.
+    short: dict[str, tuple[int, int]] = field(default_factory=dict)
     applied: bool = True  # False when nothing was placeable and the deck was left alone
     unchanged: bool = False  # already matched, so no clear/rewrite was needed
 
     @property
     def is_clean(self) -> bool:
         """True when every card the deck asked for went in under its own name."""
-        return not self.substitutions and not self.skipped
+        return not self.substitutions and not self.skipped and not self.short
 
     def merge(self, substitutions: dict[str, str], skipped: list[str]) -> None:
         self.substitutions.update(substitutions)
@@ -255,6 +277,53 @@ def resolve_tier(requested: str, owned: list[str]) -> str | None:
     return max(candidates)[1]
 
 
+def resolved_at_click_time(requested: str, entry: str) -> bool:
+    """Whether ``entry`` is a *base form*, so what it yields is only known once clicked.
+
+    A wizard unlocks at most one tier per upgrade path, and the spellbook shows
+    one entry per fusion spell whose meaning depends on how many paths they have:
+
+    ======  ==============================  ==========================
+    paths   the entry reads                 clicking it
+    ======  ==============================  ==========================
+    0       the base form                   adds the base card
+    1       that variant, "… - T04 - A"     adds that card
+    2+      the base form                   opens the variant flyout
+    ======  ==============================  ==========================
+
+    The base form is spelled either way — "Novus Storm - T01 - Base" says so,
+    while "Bunyips Rage" is just the plain name — and which convention a spell
+    follows is not derivable, so both are treated the same.  Nor does the
+    spelling track when the spell entered the game: one spellbook holds
+    "Storm Lord - T02 - A" and a bare "Bunyips Rage" at once.
+
+    Rows 0 and 2 are *identical* on the page, which is why this returns only
+    "resolve it later" and not which of the two it is.  ``_add_fusion_cards``
+    clicks and looks: a flyout means row 2, and no flyout means row 0 and the
+    base card is already in the deck.  Verified with
+    ``tools/probe_spell_list.py`` — clicking a bare "Bunyips Rage" on a wizard
+    holding two paths fills TieredSpellMPUnlockedList with "- T05 - A" and
+    "- T05 - B".
+
+    The tell is the pair, not the entry: the deck asked for a tier, so the spell
+    has tiers, and the entry carries none, so it is the base form.  A card that
+    genuinely has no tiers cannot be asked for by tiered name, because saved
+    decks record the name the game itself reported.  Row 1 is excluded on the
+    same evidence — a tiered entry is the wizard's one unlocked variant, and
+    ``resolve_tier`` decides against it directly.
+
+    This was #109.  Treating "- T01 - Base" as the base form's only spelling
+    sent every plainly-named one to ``unresolvable``, reporting spells the
+    wizard had as untrained.  It worked before fusion routing existed only by
+    accident: wizwalker's tiered branch looks up the bare base, which is exactly
+    the spelling this handles.
+    """
+    have = parse_tiered_name(entry)
+    if have.is_fusion_root:
+        return True
+    return parse_tiered_name(requested).is_tiered and not have.is_tiered
+
+
 def plan_normal_cards(desired: dict[str, int], available: list[str]) -> NormalCardPlan:
     """Split a saved deck's normal cards into what this account can and cannot supply.
 
@@ -303,10 +372,13 @@ def partition_addable(addable: dict[str, int], available: list[str]) -> CardRout
         too.  These are safe to hand to wizwalker's ``_add_all_normal_cards``,
         which takes its no-op "name in spell_names" branch and cannot raise.
 
-    *fusion* — the spellbook entry is a "… - T01 - Base" root, so the real
-        variants are only visible once its flyout is open.  wizwalker cannot add
-        these at all: its tiered branch looks up the *bare* base ("Novus Storm"),
-        which no build lists.  ``_add_fusion_cards`` handles them instead.
+    *fusion* — the spellbook entry is the spell's *base form*, which yields
+        either a variant flyout or the base card itself depending on how many
+        upgrade paths this wizard has unlocked — a difference the page does not
+        show.  See ``resolved_at_click_time``.  ``_add_fusion_cards`` clicks and
+        finds out, because wizwalker cannot: its tiered branch looks up the bare
+        base, which happens to match a plainly-named base form and misses every
+        "… - T01 - Base" one.
 
     *unresolvable* — no spellbook entry shares the base, or the only unlocked
         variant is on another path or a higher tier than asked for.
@@ -333,7 +405,7 @@ def partition_addable(addable: dict[str, int], available: list[str]) -> CardRout
         entry = entries.get(parse_tiered_name(name).base)
         if entry is None:
             unresolvable.append(name)
-        elif parse_tiered_name(entry).is_fusion_root:
+        elif resolved_at_click_time(name, entry):
             fusion[name] = fusion.get(name, 0) + count
         elif (resolved := resolve_tier(name, [entry])) is not None:
             direct[resolved] = direct.get(resolved, 0) + count
@@ -350,33 +422,25 @@ def partition_addable(addable: dict[str, int], available: list[str]) -> CardRout
     )
 
 
-def expected_normal_deck(
-    direct: dict[str, int],
-    fusion: dict[str, int],
-    fusion_substitutions: dict[str, str],
-    fusion_skipped: list[str],
-) -> dict[str, int]:
+def expected_normal_deck(direct: dict[str, int], fusion_placed: dict[str, int]) -> dict[str, int]:
     """The normal deck a completed write should produce, keyed by spellbook name.
 
     This is deliberately *not* the deck that was asked for.  Cards this wizard
-    cannot supply were dropped before the clear, and a tiered card may have gone
-    in under a lower tier — but both of those are known by the time the write
-    finishes, so the end state is known exactly.  That is what lets the settle
-    wait for a match instead of waiting out a timeout on every apply.
+    cannot supply were dropped before the clear, a tiered card may have gone in
+    under a lower tier, and a click may have been refused outright — but all of
+    that is known by the time the write finishes, so the end state is known
+    exactly.  That is what lets the settle wait for a match instead of waiting
+    out a timeout on every apply.
 
-    ``direct`` is already keyed by the entry that was clicked, since
-    ``partition_addable`` resolves substitutions into it.  ``fusion`` is keyed by
-    the *requested* name, because its variants only become visible once the
-    flyout is open, so those are renamed here from what ``_add_fusion_cards``
-    reported.
+    ``direct`` is keyed by the entry that was clicked, since ``partition_addable``
+    resolves substitutions into it.  ``fusion_placed`` is keyed by the card that
+    was actually clicked and counted by ``_add_fusion_cards``, which is why no
+    renaming or skip-filtering happens here any more: a count that was confirmed
+    against the deck already reflects every substitution and every shortfall.
     """
     expected = dict(direct)
-    skipped = set(fusion_skipped)
-    for requested, count in fusion.items():
-        if requested in skipped:
-            continue
-        used = fusion_substitutions.get(requested, requested)
-        expected[used] = expected.get(used, 0) + count
+    for card, count in fusion_placed.items():
+        expected[card] = expected.get(card, 0) + count
     return expected
 
 
@@ -641,9 +705,26 @@ async def _spell_list_names(db) -> list[str]:
 
 
 async def _owned_tier_variants(db) -> list[str]:
-    """Template names currently shown in the open tier flyout."""
+    """Template names currently shown in the tier flyout, empty if there is none.
+
+    No flyout is a real answer, not a failure.  The game only offers one for a
+    spell with two or more paths unlocked; with one or none, clicking the
+    spellbook entry adds a card outright.  Since the entry looks the same either
+    way (see ``resolved_at_click_time``), this read is how the caller finds out
+    which happened, so a missing window has to come back as "nothing unlocked"
+    rather than as an exception.
+
+    Only the window lookup is forgiven.  A memory read that fails once the
+    flyout *is* open still raises, because that is our bug and guessing "nothing
+    unlocked" would hide it behind a base-form substitution.
+    """
     names: list[str] = []
-    for spell in await db.get_graphical_tiered_spell_cards():
+    try:
+        spells = await db.get_graphical_tiered_spell_cards()
+    except ValueError:
+        logger.debug("No tier flyout is open; treating this spell as having no unlocked variants")
+        return []
+    for spell in spells:
         if not spell:
             continue
         template = await spell.spell_template()
@@ -654,8 +735,103 @@ async def _owned_tier_variants(db) -> list[str]:
     return names
 
 
-async def _close_tier_flyout(db) -> None:
-    """Dismiss the tier flyout, falling back to a full deck-page refresh."""
+def card_counter(client, deck_window):
+    """An async callable giving the normal deck's card count, or None if unreadable.
+
+    Two memory reads per call, whatever the deck holds — ``_entry_vector``
+    returns the begin and end pointers and the count falls out of the
+    difference.  Card *names* cost four reads each, which is why the confirm
+    loops below count cards instead of identifying them: they only ever need to
+    know that the deck grew.
+
+    The control is built once and reused, so a poll is not paying for a window
+    tree walk every 50 ms.  It is built lazily rather than up front so a failure
+    to find it degrades to "unreadable" like any other, instead of taking down
+    the apply that has already cleared the deck.
+    """
+    control = None
+
+    async def count() -> int | None:
+        nonlocal control
+        try:
+            if control is None:
+                control = await _control_for(client, deck_window, "CardsInDeck")
+            _begin, total = await _entry_vector(control)
+        except Exception:
+            logger.debug("Could not read the deck card count", exc_info=True)
+            control = None  # it may have gone stale; rebuild on the next try
+            return None
+        return total
+
+    return count
+
+
+async def _await_card_growth(count_cards, before: int, expected: int) -> int:
+    """Poll until the deck has grown by ``expected``, returning how far it got.
+
+    Returns ``expected`` when the deck cannot be read at all.  An unreadable
+    count is not evidence that the click failed, and treating it as failure
+    would make the retry above click again — turning a broken memory read into
+    duplicate copies of every card in the deck.  Degrading to the old
+    click-and-hope behaviour is the safe direction.
+    """
+    deadline = time.perf_counter() + DECK_CARD_CONFIRM_TIMEOUT
+    grown = 0
+    readable = False
+    while True:
+        now = await count_cards()
+        if now is not None:
+            readable = True
+            grown = max(grown, now - before)
+            if grown >= expected:
+                return grown
+        if time.perf_counter() >= deadline:
+            break
+        await asyncio.sleep(DECK_CARD_CONFIRM_POLL)
+    if not readable:
+        logger.debug("Deck count unreadable, assuming %d card(s) went in", expected)
+        return expected
+    return grown
+
+
+async def _place_copies(db, count_cards, position: tuple[int, int], wanted: int, label: str) -> int:
+    """Click ``position`` until ``wanted`` copies are in the deck.  Returns how many landed.
+
+    Confirming beats sleeping here because a click can be lost outright — the
+    flyout used to be closed 50 ms after the last one, which is the whole reason
+    this exists — and no fixed delay can tell a slow click from a dropped one.
+
+    The order is poll first, re-click second, never the reverse.  A click that
+    landed while the read was mid-update would otherwise be clicked again, and a
+    deck holding an extra copy is worse than one holding too few: the shortfall
+    is reported, the duplicate is not.
+    """
+    placed = 0
+    for _attempt in range(CARD_CLICK_ATTEMPTS):
+        missing = wanted - placed
+        before = await count_cards()
+        async with db.client.mouse_handler:
+            for _ in range(missing):
+                await db.client.mouse_handler.click(*position)
+                await asyncio.sleep(DECK_FUSION_CLICK_SETTLE)
+        if before is None:
+            return wanted  # nothing to confirm against; the clicks are all we have
+        placed += await _await_card_growth(count_cards, before, missing)
+        if placed >= wanted:
+            return wanted
+        logger.debug("'%s': %d of %d copies in the deck, clicking again", label, placed, wanted)
+    logger.warning("Only %d of %d copies of '%s' went into the deck", placed, wanted, label)
+    return placed
+
+
+async def _close_tier_flyout(db) -> bool:
+    """Dismiss the tier flyout.  Returns True if the spellbook page was lost.
+
+    The close button leaves the page beneath it alone, so the sweep in
+    ``_add_fusion_cards`` can keep counting.  The fallback does not: reopening
+    the deck page puts the spellbook back on page one, and a sweep that went on
+    counting from there would click whatever now sits under its coordinates.
+    """
     try:
         close_btn = await _maybe_get_named_window(db._deck_config_window, "CloseTSMPUnlockedPageButton")  # noqa: SLF001
         async with db.client.mouse_handler:
@@ -663,9 +839,34 @@ async def _close_tier_flyout(db) -> None:
     except Exception:
         logger.debug("Tier flyout close button unavailable, refreshing the deck page", exc_info=True)
         await db.refresh_deck_page()
+        return True
+    return False
 
 
-async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) -> tuple[dict[str, str], list[str]]:
+async def _seek_spell_page(db, current: int | None, target: int) -> int:
+    """Put the spellbook on ``target``, returning the page now shown.
+
+    Forward moves click PageDown and nothing else.  Anything else defers to
+    wizwalker's ``_go_to_spell_page``, which rewinds to the first page before
+    advancing — correct from an unknown position, and needlessly expensive from
+    a known one, which is the whole reason this exists.  ``current`` is None
+    when the position is unknown: on entry, and after a flyout close had to
+    reopen the page.
+    """
+    if current is None or current > target:
+        await db._go_to_spell_page(target)  # noqa: SLF001
+        return target
+    for _ in range(target - current):
+        next_btn = await _maybe_get_named_window(db._deck_config_window, "PageDown")  # noqa: SLF001
+        async with db.client.mouse_handler:
+            await db.client.mouse_handler.click_window(next_btn)
+        await asyncio.sleep(DECK_SPELL_PAGE_SETTLE)
+    return target
+
+
+async def _add_fusion_cards(
+    db, count_cards, wanted: dict[str, int], spell_names: list[str]
+) -> tuple[dict[str, str], list[str], dict[str, int], dict[str, int]]:
     """Add fusion variants by opening each root's flyout and clicking inside it.
 
     wizwalker cannot do this.  Its tiered branch locates the base spell by its
@@ -678,19 +879,48 @@ async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) 
     to read, once to click) would double the click cost for no benefit: nothing
     below raises, so a failure costs the affected cards and nothing more.
 
-    One flyout open/close per distinct base spell, regardless of how many
-    variants or copies of it the deck asks for.
+    The click is also the only way to learn whether there is a flyout at all.  A
+    base-form entry opens one for a wizard holding two or more upgrade paths and
+    simply adds the base card for a wizard holding none, and the spellbook page
+    reads the same in both cases (see ``resolved_at_click_time``).  So this
+    clicks, then looks: variants mean the first, nothing means the second and
+    ``_fill_base_form`` finishes what the click started.
 
-    Returns ``(substitutions, skipped)`` across every base, so a partial result
-    here reaches the user rather than stopping at the log.
+    One flyout open/close per distinct base spell, regardless of how many
+    variants or copies of it the deck asks for, and one *forward* sweep of the
+    spellbook across all of them.  Both matter: ``_go_to_spell_page`` rewinds to
+    the first page before advancing, so calling it per base walked the whole
+    book over again each time — on a 16-page spellbook with three fusion spells
+    that was 57 page clicks and ~5.7 s of paging, against 12 clicks for a sweep.
+    Bases are therefore visited in page order, not deck order, and the page is
+    only ever advanced.  This mirrors what wizwalker's own ``_add_all_normal_cards``
+    does for ordinary cards, for the same reason.
+
+    Every click is confirmed against the deck's card count rather than trusted
+    after a fixed delay.  The flyout used to be closed 50 ms after the last
+    click of each base, which is long enough to lose it — the same bug
+    ``_settle_deck`` was written for, one scope in.  Confirming also means the
+    counts returned here are what the deck actually holds, so the settle is not
+    handed an expectation the write already knows to be wrong.
+
+    Returns ``(substitutions, skipped, placed, short)`` across every base, so a
+    partial result here reaches the user rather than stopping at the log.
     """
     substitutions: dict[str, str] = {}
     skipped: list[str] = []
+    placed: dict[str, int] = {}
+    short: dict[str, int] = {}
     by_base: dict[str, dict[str, int]] = {}
     for name, count in wanted.items():
         by_base.setdefault(parse_tiered_name(name).base, {})[name] = count
     entries = {parse_tiered_name(entry).base: entry for entry in spell_names}
 
+    # Positions are computed before a single page is turned, so the sweep below
+    # is clicks and nothing else.  Slot coordinates come from the list control's
+    # own rectangle and do not vary by page, and wizwalker precomputes them for
+    # the same reason: reading the spell list mid-sweep risks a vector that the
+    # clicks have since disturbed.
+    sweep: list[tuple[int, str, str, tuple[int, int], dict[str, int]]] = []
     for base, requested in by_base.items():
         entry = entries.get(base)
         if entry is None:  # partition_addable only routes cards here when it exists
@@ -699,7 +929,21 @@ async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) 
         try:
             page_idx, card_idx = db.calcuate_position_of_card_in_page(spell_names, entry)
             position = await db.calculate_card_position(card_idx)
-            await db._go_to_spell_page(page_idx)  # noqa: SLF001
+        except Exception:
+            logger.warning("Could not locate '%s' in the spellbook — its cards are skipped", base, exc_info=True)
+            skipped.extend(requested)
+            continue
+        sweep.append((page_idx, base, entry, position, requested))
+    sweep.sort(key=lambda item: item[0])
+
+    current_page: int | None = None  # unknown: the direct pass left it anywhere
+    for page_idx, base, entry, position, requested in sweep:
+        try:
+            current_page = await _seek_spell_page(db, current_page, page_idx)
+            # Taken before the click, because this one is ambiguous: it opens a
+            # flyout for a wizard holding two paths and adds a card for one
+            # holding none, and only the count says which happened.
+            before = await count_cards()
             async with db.client.mouse_handler:
                 await db.client.mouse_handler.click(*position)
             # The click is what populates the variant list; reading straight
@@ -709,34 +953,124 @@ async def _add_fusion_cards(db, wanted: dict[str, int], spell_names: list[str]) 
         except Exception:
             logger.warning("Could not open the variant list for '%s' — its cards are skipped", base, exc_info=True)
             skipped.extend(requested)
+            current_page = None  # the failure may have been the page turn itself
+            continue
+
+        if not owned:
+            # No flyout opened, so that click did not open anything — it added the
+            # base card.  This wizard has no path unlocked, which the spellbook
+            # cannot say in advance.  Finish the job rather than undo it: the base
+            # form is the same spell, weaker, and it is the only version they have.
+            base_subs, base_placed, base_short = await _fill_base_form(
+                db, count_cards, requested, entry, position, before
+            )
+            if not base_placed:
+                # Not one copy reached the deck, so there is no substitution to
+                # claim — the wizard is simply without the card.
+                skipped.extend(requested)
+                continue
+            substitutions.update(base_subs)
+            short.update(base_short)
+            for card, n in base_placed.items():
+                placed[card] = placed.get(card, 0) + n
             continue
 
         try:
-            base_subs, base_skipped = await _click_fusion_variants(db, requested, owned, base)
+            base_subs, base_skipped, base_placed, base_short = await _click_fusion_variants(
+                db, count_cards, requested, owned, base
+            )
             substitutions.update(base_subs)
             skipped.extend(base_skipped)
+            short.update(base_short)
+            for card, n in base_placed.items():
+                placed[card] = placed.get(card, 0) + n
         except Exception:
             logger.warning("Failed while adding variants of '%s'", base, exc_info=True)
             # Which of this base's cards made it in before the failure is not
             # knowable, so report the lot rather than claim a clean partial.
             skipped.extend(requested)
         finally:
-            await _close_tier_flyout(db)
+            if await _close_tier_flyout(db):
+                current_page = None  # the page was reopened; where it landed is a guess
 
-    return substitutions, skipped
+    return substitutions, skipped, placed, short
+
+
+async def _fill_base_form(
+    db, count_cards, requested: dict[str, int], entry: str, position: tuple[int, int], before: int | None
+) -> tuple[dict[str, str], dict[str, int], dict[str, int]]:
+    """Top up the base card that opening the flyout turned out to add, and report it.
+
+    Reached only when the flyout never appeared, which means the click that was
+    meant to open it added ``entry`` to the deck instead.  ``before`` is the
+    count taken just ahead of that click, so how many copies it really placed is
+    measured rather than assumed to be one — a click that landed on nothing
+    would otherwise leave the deck a card short of what is reported.
+
+    Every requested variant of this base collapses onto the same card, so the
+    copies are summed: a deck asking for two "- T05 - A" and one "- T05 - B"
+    gets three base cards, which is the shape the strategy expects even though
+    every one of them is weaker than asked for.
+
+    Returned as substitutions rather than skips because the card *is* in the
+    deck.  Reporting it as skipped would be a lie in both directions — the wizard
+    would be told they lack a spell they are holding, and ``expected_normal_deck``
+    would wait out its timeout on a deck that is exactly right.
+    """
+    total = sum(requested.values())
+    now = await count_cards()
+    already = 1 if before is None or now is None else max(0, min(total, now - before))
+    landed = already
+    if total > already:
+        landed += await _place_copies(db, count_cards, position, total - already, entry)
+    for name in requested:
+        logger.info(
+            "Using '%s' in place of '%s' — this wizard has no upgrade path unlocked for it",
+            entry,
+            name,
+        )
+    placed = {entry: landed} if landed else {}
+    short = _share_shortfall(requested, landed) if landed < total else {}
+    return dict.fromkeys(requested, entry), placed, short
+
+
+def _share_shortfall(requested: dict[str, int], landed: int) -> dict[str, int]:
+    """Split ``landed`` copies of one card back across the names that asked for it.
+
+    Every variant of a base form collapses onto the same card, so when fewer
+    copies go in than were asked for there is no saying which request went
+    unfilled.  Filling them in request order is arbitrary but complete, which is
+    what the report needs: the per-name counts add up to what the deck holds.
+    """
+    short: dict[str, int] = {}
+    remaining = landed
+    for name, count in requested.items():
+        got = min(count, remaining)
+        remaining -= got
+        if got < count:
+            short[name] = got
+    return short
 
 
 async def _click_fusion_variants(
-    db, requested: dict[str, int], owned: list[str], base: str
-) -> tuple[dict[str, str], list[str]]:
+    db, count_cards, requested: dict[str, int], owned: list[str], base: str
+) -> tuple[dict[str, str], list[str], dict[str, int], dict[str, int]]:
     """Click each requested variant inside the already-open flyout.
 
-    Returns ``(substitutions, skipped)``.  Which variant a fusion card resolves
-    to is only knowable with the flyout open, so this is the only place those
-    two facts exist — the caller cannot recompute them.
+    Returns ``(substitutions, skipped, placed, short)``.  Which variant a fusion
+    card resolves to is only knowable with the flyout open, so this is the only
+    place those facts exist — the caller cannot recompute them.
+
+    ``placed`` counts what reached the deck, keyed by the variant actually
+    clicked, and ``short`` records any card that fell behind what was asked for.
+    Both are measured rather than assumed: the caller feeds ``placed`` to
+    ``expected_normal_deck``, so a card that went in twice out of three times
+    leaves the settle expecting two, not three.
     """
     substitutions: dict[str, str] = {}
     skipped: list[str] = []
+    placed: dict[str, int] = {}
+    short: dict[str, int] = {}
     for name, count in requested.items():
         resolved = resolve_tier(name, owned)
         if resolved is None:
@@ -753,11 +1087,18 @@ async def _click_fusion_variants(
             substitutions[name] = resolved
         _page, variant_idx = db.calcuate_position_of_card_in_page(owned, resolved)
         variant_position = await db.calculate_tiered_spell_card_position(variant_idx)
-        async with db.client.mouse_handler:
-            for _ in range(count):
-                await db.client.mouse_handler.click(*variant_position)
-                await asyncio.sleep(DECK_FUSION_CLICK_SETTLE)
-    return substitutions, skipped
+        landed = await _place_copies(db, count_cards, variant_position, count, resolved)
+        if landed:
+            placed[resolved] = placed.get(resolved, 0) + landed
+        if landed < count:
+            short[name] = landed
+        if landed == 0:
+            # Nothing of this card reached the deck, which is what "skipped"
+            # means.  Reported there so it sits beside the cards the spellbook
+            # genuinely lacks, rather than as a substitution that never happened.
+            skipped.append(name)
+            substitutions.pop(name, None)
+    return substitutions, skipped, placed, short
 
 
 async def read_deck(db) -> dict:
@@ -987,11 +1328,14 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
         # branch and its raising tiered path is never reached.
         await db._add_all_normal_cards(direct)  # noqa: SLF001
 
-    fusion_subs: dict[str, str] = {}
-    fusion_skipped: list[str] = []
+    fusion_placed: dict[str, int] = {}
     if fusion:
-        fusion_subs, fusion_skipped = await _add_fusion_cards(db, fusion, spell_names)
+        count_cards = card_counter(db.client, deck_window)
+        fusion_subs, fusion_skipped, fusion_placed, fusion_short = await _add_fusion_cards(
+            db, count_cards, fusion, spell_names
+        )
         report.merge(fusion_subs, fusion_skipped)
+        report.short = {name: (got, fusion[name]) for name, got in fusion_short.items() if name not in fusion_skipped}
 
     slots = await read_item_slots(db.client, deck_window)
     plan = plan_item_toggles(slots, deck.item)
@@ -1004,7 +1348,7 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     await _settle_deck(
         db.client,
         deck_window,
-        expected_normal_deck(direct, fusion, fusion_subs, fusion_skipped),
+        expected_normal_deck(direct, fusion_placed),
         deck.item,
     )
     return report
