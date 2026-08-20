@@ -32,6 +32,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds
@@ -41,8 +42,6 @@ DROP_BULK_CONFIRM_THRESHOLD = 25
 _COL_KEEP = 0
 _COL_ITEM = 1
 _COL_CATEGORY = 2
-
-_UNCATEGORIZED_DISPLAY = "—"
 
 _TABLE_MAX_HEIGHT = 220
 
@@ -62,16 +61,26 @@ def row_visible(
 ) -> bool:
     """Whether one drop row survives the current filters.
 
-    The three filters compose rather than override: a query narrows within the
-    selected category, and "show only kept" narrows within both.
+    The filters compose rather than override: a query narrows within the selected
+    category, and "show only kept" narrows within both.
 
     *category* is "" for an uncategorized drop. *category_filter* is None for
     "all categories", so "" is a selectable filter meaning uncategorized only.
+
+    Categories quicksell never sells are left out unless the filter names that
+    category specifically. They are a third of every categorized drop and 45% of
+    the worst bot, and there is no decision to make about them — but selecting
+    "Reagents" in the dropdown still shows them, so nothing is unreachable.
+
+    An *unknown* category is never hidden this way: most of the library predates
+    categories, and unknown is not the same as unsellable.
 
     The query test is deliberately the same case-insensitive substring rule as
     ``quicksell.matching_keyword``: the rows a search shows are exactly the drops
     that search text would keep if typed into the keep list.
     """
+    if category in quicksell.NEVER_QUICKSOLD_CATEGORIES and category_filter != category:
+        return False
     if kept_only and not kept:
         return False
     if category_filter is not None and category != category_filter:
@@ -85,17 +94,19 @@ def bulk_needs_confirmation(count: int) -> bool:
     return count > DROP_BULK_CONFIRM_THRESHOLD
 
 
-class _DropItem(QTreeWidgetItem):
-    """Tree row that sorts by check state in the Keep column, case-insensitively elsewhere."""
+class _DropItem(CaseInsensitiveTreeItem):
+    """Tree row that sorts by check state in the Keep column, by text elsewhere.
+
+    Sorting by Keep is how "show me what I am keeping" works without a filter.
+    """
 
     def __lt__(self, other: QTreeWidgetItem) -> bool:
         tree = self.treeWidget()
-        column = tree.sortColumn() if tree is not None else _COL_ITEM
-        if column == _COL_KEEP:
+        if tree is not None and tree.sortColumn() == _COL_KEEP:
             return (self.checkState(_COL_KEEP) == Qt.CheckState.Checked) < (
                 other.checkState(_COL_KEEP) == Qt.CheckState.Checked
             )
-        return self.text(column).casefold() < other.text(column).casefold()
+        return super().__lt__(other)
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +132,7 @@ class DropKeepListWidget(QWidget):
         self._context: dict[str, Any] = {}
         self._suppress = False
         self._rows: list[_DropItem] = []
-        self._kept_total = (0, 0)
+        self._kept_total = (0, 0, 0)  # kept, sellable, never-quicksold
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -246,7 +257,7 @@ class DropKeepListWidget(QWidget):
         self._rows = []
         for entry in entries:
             category = entry.category or ""
-            row = _DropItem(["", entry.name, category or _UNCATEGORIZED_DISPLAY])
+            row = _DropItem(["", entry.name, category or UNCATEGORIZED_DISPLAY])
             row.setData(_COL_CATEGORY, Qt.ItemDataRole.UserRole, category)
             row.setFlags(row.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
@@ -263,9 +274,14 @@ class DropKeepListWidget(QWidget):
         for entry in entries:
             counts[entry.category or ""] = counts.get(entry.category or "", 0) + 1
 
+        # The default entry counts what it actually shows — never-sold categories are
+        # filtered out of it, so labelling it with the full drop total would lie.
+        never = sum(n for c, n in counts.items() if c in quicksell.NEVER_QUICKSOLD_CATEGORIES)
+        default_label = f"All sellable ({len(entries) - never})" if never else f"All categories ({len(entries)})"
+
         self._category.blockSignals(True)
         self._category.clear()
-        self._category.addItem(f"All categories ({len(entries)})", None)
+        self._category.addItem(default_label, None)
         for category in sorted(counts, key=lambda c: (c == "", c.casefold())):
             label = category or "Uncategorized"
             self._category.addItem(f"{label} ({counts[category]})", category)
@@ -293,10 +309,25 @@ class DropKeepListWidget(QWidget):
         by_name = {state.name: state for state in states}
 
         self._suppress = True
+        kept = sellable = 0
         for row in self._rows:
             state = by_name.get(row.text(_COL_ITEM))
             if state is None:
                 continue
+            never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(
+                row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
+            )
+            if never_reason:
+                # Hidden by default; shown checked and inert if the user filters to
+                # this category, because the item does survive — it is just never
+                # the keep list's doing.
+                row.setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+                row.setFlags(row.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+                row.setToolTip(_COL_ITEM, never_reason)
+                continue
+
+            sellable += 1
+            kept += bool(state.kept)
             row.setCheckState(_COL_KEEP, Qt.CheckState.Checked if state.kept else Qt.CheckState.Unchecked)
             locked = state.kept and not state.exact
             flags = row.flags()
@@ -309,15 +340,19 @@ class DropKeepListWidget(QWidget):
                 row.setToolTip(_COL_ITEM, "Sell this item." if state.kept else "Keep this item when quickselling.")
         self._suppress = False
 
-        kept = sum(1 for state in states if state.kept)
-        self._kept_total = (kept, len(states))
+        self._kept_total = (kept, sellable, len(states) - sellable)
         self._render_summary()
 
     def _render_summary(self) -> None:
-        kept, total = getattr(self, "_kept_total", (0, 0))
-        text = f"Currently keeping {self._emphasis(kept)} out of {self._emphasis(total)} possible drops"
+        kept, sellable, never = self._kept_total
+        # The denominator is the sellable drops, not every drop: counting items
+        # quicksell can never touch would make the number meaningless on bots
+        # where they are half the table.
+        text = f"Currently keeping {self._emphasis(kept)} out of {self._emphasis(sellable)} sellable drops"
+        if never:
+            text += f" · {self._emphasis(never)} never quicksold"
         shown = sum(1 for row in self._rows if not row.isHidden())
-        if shown != total:
+        if shown != sellable:
             text += f" · {self._emphasis(shown)} shown"
         self._summary.setText(text)
 

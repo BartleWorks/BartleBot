@@ -8,17 +8,19 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
+    QHeaderView,
     QInputDialog,
-    QListWidget,
-    QListWidgetItem,
     QPushButton,
     QSizePolicy,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
+from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -98,12 +100,14 @@ def merge_drops(existing: list[DropModel], incoming: list[DropModel]) -> list[Dr
 
 
 class _DropsListWidget(QWidget):
-    """Scrollable list of drops with edit controls.
+    """Sortable Item / Category table of a bot's drops, with edit controls.
 
-    Rows show the item name only; each row carries its DropModel on UserRole so
-    the category survives every edit here without being displayed. Showing
-    categories in this section is deliberately left to the quicksell picker,
-    which is where they are acted on.
+    Sorting by category is the point of the second column: it groups a 600-entry
+    drop table into something you can curate, and it puts the uncategorized rows
+    together so it is obvious which bots still need a wiki re-import.
+
+    The view's sort order never reaches storage — get_items() always returns
+    entries in name order, so clicking a header does not rewrite the bot file.
 
     Always visible; the button row is shown only in edit mode via set_editable().
     Emits changed(list[DropModel]) whenever the list is modified.
@@ -112,6 +116,9 @@ class _DropsListWidget(QWidget):
 
     changed = pyqtSignal(list)
     import_requested = pyqtSignal()
+
+    _COL_NAME = 0
+    _COL_CATEGORY = 1
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -122,11 +129,21 @@ class _DropsListWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        self._list = QListWidget()
+        self._list = QTreeWidget()
+        self._list.setHeaderLabels(["Item", "Category"])
+        self._list.setRootIsDecorated(False)
+        self._list.setUniformRowHeights(True)
+        self._list.setSortingEnabled(True)
+        self._list.sortByColumn(self._COL_NAME, Qt.SortOrder.AscendingOrder)
+        self._list.setTextElideMode(Qt.TextElideMode.ElideRight)
         self._list.setMinimumHeight(120)
         self._list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        header = self._list.header()
+        header.setSectionResizeMode(self._COL_NAME, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self._COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
+        self._list.setColumnWidth(self._COL_CATEGORY, 92)
         layout.addWidget(self._list, 1)
 
         # Button row — shown only in edit mode
@@ -169,24 +186,31 @@ class _DropsListWidget(QWidget):
         self._btn_row.setVisible(editable)
 
     def set_items(self, entries: list[DropModel]) -> None:
-        """Replace list contents, sorted alphabetically by name."""
+        """Replace table contents. The view keeps whichever column the user sorted by."""
         self._list.clear()
-        for entry in sorted(entries, key=lambda e: e.name.casefold()):
-            item = QListWidgetItem(entry.name)
-            item.setData(Qt.ItemDataRole.UserRole, entry)
-            if entry.category:
-                item.setToolTip(entry.category)
-            self._list.addItem(item)
+        for entry in entries:
+            item = CaseInsensitiveTreeItem([entry.name, entry.category or UNCATEGORIZED_DISPLAY])
+            item.setData(self._COL_NAME, Qt.ItemDataRole.UserRole, entry)
+            self._list.addTopLevelItem(item)
         self._update_button_state()
 
     def _update_button_state(self) -> None:
         selected = len(self._list.selectedItems())
         self._btn_edit.setEnabled(selected == 1)
         self._btn_remove.setEnabled(selected > 0)
-        self._btn_clear.setEnabled(self._list.count() > 0)
+        self._btn_clear.setEnabled(self._list.topLevelItemCount() > 0)
 
     def get_items(self) -> list[DropModel]:
-        return [self._list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._list.count())]
+        """Entries in name order, whatever the view is sorted by.
+
+        Sorting is a view concern: letting it reach here would rewrite the bot
+        file's drop order every time someone clicked a column header.
+        """
+        entries = [
+            self._list.topLevelItem(i).data(self._COL_NAME, Qt.ItemDataRole.UserRole)
+            for i in range(self._list.topLevelItemCount())
+        ]
+        return sorted(entries, key=lambda e: e.name.casefold())
 
     def add_items(self, entries: list[DropModel]) -> None:
         """Append drops not already listed, then re-sort. Emits changed."""
@@ -208,16 +232,20 @@ class _DropsListWidget(QWidget):
             return
         self._edit_item(items[0])
 
-    def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
+    def _on_item_double_clicked(self, item: QTreeWidgetItem, _column: int = 0) -> None:
         if self._editable:
             self._edit_item(item)
 
-    def _edit_item(self, item: QListWidgetItem) -> None:
-        row = self._list.row(item)
-        text, ok = QInputDialog.getText(self, "Edit Drop", "Item name:", text=item.text())
+    def _edit_item(self, item: QTreeWidgetItem) -> None:
+        entries = self.get_items()
+        name = item.text(self._COL_NAME)
+        # Index into get_items(), not the view: the two differ whenever the user
+        # has sorted by category. Names are unique, so this is well defined.
+        row = next((i for i, entry in enumerate(entries) if entry.name == name), -1)
+        text, ok = QInputDialog.getText(self, "Edit Drop", "Item name:", text=name)
         if not ok:
             return
-        updated = rename_drop(self.get_items(), row, text)
+        updated = rename_drop(entries, row, text)
         if updated == self.get_items():
             return
         self.set_items(updated)
@@ -225,7 +253,7 @@ class _DropsListWidget(QWidget):
 
     def _on_remove(self) -> None:
         for item in self._list.selectedItems():
-            self._list.takeItem(self._list.row(item))
+            self._list.takeTopLevelItem(self._list.indexOfTopLevelItem(item))
         self._update_button_state()
         self.changed.emit(self.get_items())
 

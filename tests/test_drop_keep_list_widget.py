@@ -26,10 +26,11 @@ from bartlebot.gui.canvas.param_panel import _DynamicParamForm
 from bartlebot.nodes.utility.quicksell import PARAM_SCHEMA
 
 _DROPS = [
-    DropModel(name="Amber", category="Reagents"),
-    DropModel(name="Amber Ring", category="Jewels"),
+    DropModel(name="Amber", category="Jewels"),
+    DropModel(name="Amber Ring", category="Rings"),
     DropModel(name="Boots of Dawn", category="Boots"),
-    DropModel(name="Socket Wrench"),
+    DropModel(name="Socket Wrench"),  # uncategorized — unknown is not unsellable
+    DropModel(name="Mandrake", category="Reagents"),  # never quicksold
 ]
 _SELL_ALL = {"sell_socket_wrenches": True, "sell_skeleton_keys": True}
 
@@ -73,33 +74,52 @@ def _enabled(w, name: str) -> bool:
 
 
 def test_no_filters_shows_everything():
-    assert row_visible("Amber", "Reagents", False, "", None, False)
+    assert row_visible("Amber", "Jewels", False, "", None, False)
 
 
 def test_query_matches_case_insensitive_substring():
-    assert row_visible("Amber Ring", "Jewels", False, "amber", None, False)
+    assert row_visible("Amber Ring", "Rings", False, "amber", None, False)
     assert not row_visible("Boots of Dawn", "Boots", False, "amber", None, False)
 
 
 def test_category_filter_selects_one_category():
-    assert row_visible("Amber", "Reagents", False, "", "Reagents", False)
-    assert not row_visible("Amber", "Reagents", False, "", "Jewels", False)
+    assert row_visible("Amber", "Jewels", False, "", "Jewels", False)
+    assert not row_visible("Amber", "Jewels", False, "", "Rings", False)
 
 
 def test_empty_category_filter_selects_uncategorized():
     assert row_visible("Socket Wrench", "", False, "", "", False)
-    assert not row_visible("Amber", "Reagents", False, "", "", False)
+    assert not row_visible("Amber", "Jewels", False, "", "", False)
 
 
 def test_kept_only_hides_unkept():
-    assert row_visible("Amber", "Reagents", True, "", None, True)
-    assert not row_visible("Amber", "Reagents", False, "", None, True)
+    assert row_visible("Amber", "Jewels", True, "", None, True)
+    assert not row_visible("Amber", "Jewels", False, "", None, True)
 
 
 def test_filters_compose_rather_than_override():
     # Matches the query and the category, but is not kept.
-    assert not row_visible("Amber", "Reagents", False, "amb", "Reagents", True)
-    assert row_visible("Amber", "Reagents", True, "amb", "Reagents", True)
+    assert not row_visible("Amber", "Jewels", False, "amb", "Jewels", True)
+    assert row_visible("Amber", "Jewels", True, "amb", "Jewels", True)
+
+
+def test_never_quicksold_categories_are_hidden_by_default():
+    assert not row_visible("Mandrake", "Reagents", False, "", None, False)
+    assert not row_visible("Ghulture Feather", "Spellements", False, "", None, False)
+
+
+def test_selecting_a_never_sold_category_still_shows_it():
+    """Hidden, not unreachable — the dropdown is the escape hatch."""
+    assert row_visible("Mandrake", "Reagents", False, "", "Reagents", False)
+
+
+def test_a_never_sold_row_stays_hidden_under_another_category_filter():
+    assert not row_visible("Mandrake", "Reagents", False, "", "Jewels", False)
+
+
+def test_an_unknown_category_is_never_hidden_as_unsellable():
+    """Most of the library predates categories; unknown is not the same as unsellable."""
+    assert row_visible("Socket Wrench", "", False, "", None, False)
 
 
 def test_query_agrees_with_the_keyword_matcher():
@@ -135,7 +155,7 @@ def test_keep_list_entries_start_checked(qapp):
 
 def test_category_is_shown_and_missing_reads_as_a_dash(qapp):
     w = _make(qapp)
-    assert _row(w, "Amber").text(2) == "Reagents"
+    assert _row(w, "Amber").text(2) == "Jewels"
     assert _row(w, "Socket Wrench").text(2) == "—"
 
 
@@ -212,7 +232,7 @@ def test_filtering_preserves_check_state(qapp):
 
 def test_category_dropdown_filters(qapp):
     w = _make(qapp)
-    w._category.setCurrentIndex(w._category.findData("Jewels"))
+    w._category.setCurrentIndex(w._category.findData("Rings"))
     assert w.visible_rows() == ["Amber Ring"]
 
 
@@ -225,9 +245,56 @@ def test_kept_only_filters(qapp):
 def test_summary_reports_kept_and_shown_counts(qapp):
     w = _make(qapp, keep_list=["Amber"])
     # "Amber" and "Amber Ring" — the partial match counts, because the bot keeps it.
-    assert "keeping 2 out of 4 possible drops" in _plain(w._summary.text())
+    # The denominator is the 4 sellable drops; Mandrake is counted separately.
+    text = _plain(w._summary.text())
+    assert "keeping 2 out of 4 sellable drops" in text
+    assert "1 never quicksold" in text
     w._search.setText("boots")
     assert "1 shown" in _plain(w._summary.text())
+
+
+def test_summary_omits_the_never_sold_count_when_there_are_none(qapp):
+    w = _make(qapp, drops=[DropModel(name="Amber", category="Jewels")])
+    assert "never quicksold" not in _plain(w._summary.text())
+
+
+# ---------------------------------------------------------------------------
+# Never-quicksellable categories
+# ---------------------------------------------------------------------------
+
+
+def test_never_sold_drops_are_hidden_by_default(qapp):
+    w = _make(qapp)
+    assert "Mandrake" not in w.visible_rows()
+    # The row still exists — hidden, not dropped.
+    assert "Mandrake" in _rows(w)
+
+
+def test_never_sold_drops_appear_when_their_category_is_selected(qapp):
+    w = _make(qapp)
+    w._category.setCurrentIndex(w._category.findData("Reagents"))
+    assert w.visible_rows() == ["Mandrake"]
+
+
+def test_never_sold_rows_are_inert_with_a_reason(qapp):
+    w = _make(qapp)
+    w._category.setCurrentIndex(w._category.findData("Reagents"))
+    assert _checked(w, "Mandrake")
+    assert not _enabled(w, "Mandrake")
+    assert "cannot be quicksold" in _row(w, "Mandrake").toolTip(_COL_ITEM).lower()
+
+
+def test_never_sold_drops_stay_out_of_bulk_changes(qapp):
+    w = _make(qapp)
+    w._category.setCurrentIndex(w._category.findData("Reagents"))
+    w._btn_check_all.click()
+    assert w.get_value() == []
+
+
+def test_never_sold_drops_are_excluded_from_the_kept_count(qapp):
+    """A reagent survives quicksell, but not because the keep list said so."""
+    w = _make(qapp, keep_list=["Mandrake"])
+    assert "keeping 0 out of 4 sellable drops" in _plain(w._summary.text())
 
 
 def test_no_matches_shows_a_message_instead_of_the_table(qapp):
@@ -340,3 +407,15 @@ def test_the_quicksell_form_feeds_its_sell_bools_to_the_widget(qapp):
 
     widget = next(w for w in form.findChildren(DropKeepListWidget))
     assert _checked(widget, "Socket Wrench") and not _enabled(widget, "Socket Wrench")
+
+
+def test_the_default_category_entry_counts_what_it_shows(qapp):
+    w = _make(qapp)
+    # 5 drops, 1 of them a reagent the default view hides.
+    assert w._category.itemText(0) == "All sellable (4)"
+    assert len(w.visible_rows()) == 4
+
+
+def test_the_default_category_entry_says_all_categories_when_nothing_is_hidden(qapp):
+    w = _make(qapp, drops=[DropModel(name="Amber", category="Jewels")])
+    assert w._category.itemText(0) == "All categories (1)"
