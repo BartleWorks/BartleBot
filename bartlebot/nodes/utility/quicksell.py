@@ -173,6 +173,18 @@ def drop_keep_states(drops: list[str], params: dict) -> list[DropKeepState]:
     return states
 
 
+def set_drops_in_keep_list(keep_list: list[str], names: list[str], keep: bool) -> list[str]:
+    """Return *keep_list* with every name in *names* added or removed, in one pass.
+
+    The bulk form of toggle_drop_in_keep_list, for the picker's check/uncheck-all
+    buttons: doing it one name at a time would rescan the list per name, and a
+    drop table can hold hundreds of entries.
+    """
+    targets = {name.lower().strip() for name in names}
+    remaining = [k for k in keep_list if k.lower().strip() not in targets]
+    return [*remaining, *names] if keep else remaining
+
+
 def toggle_drop_in_keep_list(keep_list: list[str], name: str, keep: bool) -> list[str]:
     """Return *keep_list* with the exact item *name* added or removed.
 

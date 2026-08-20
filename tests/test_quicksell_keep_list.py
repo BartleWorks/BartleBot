@@ -4,6 +4,7 @@ from bartlebot.nodes.utility.quicksell import (
     drop_keep_states,
     effective_keep_list,
     matching_keyword,
+    set_drops_in_keep_list,
     toggle_drop_in_keep_list,
 )
 
@@ -117,3 +118,38 @@ def test_toggle_off_leaves_a_broader_keyword_alone():
 
 def test_toggle_off_missing_entry_is_a_no_op():
     assert toggle_drop_in_keep_list(["Amber"], "Boots of Dawn", False) == ["Amber"]
+
+
+# ---------------------------------------------------------------------------
+# set_drops_in_keep_list — the bulk form
+# ---------------------------------------------------------------------------
+
+
+def test_bulk_add_appends_every_name():
+    assert set_drops_in_keep_list(["hat"], ["Amber", "Boots of Dawn"], True) == ["hat", "Amber", "Boots of Dawn"]
+
+
+def test_bulk_add_does_not_duplicate_existing_entries():
+    assert set_drops_in_keep_list(["amber"], ["Amber", "Cloak"], True) == ["Amber", "Cloak"]
+
+
+def test_bulk_remove_drops_every_name_case_insensitively():
+    assert set_drops_in_keep_list(["Amber", "hat", "Cloak"], ["AMBER", "cloak"], False) == ["hat"]
+
+
+def test_bulk_remove_leaves_broader_keywords_alone():
+    assert set_drops_in_keep_list(["hat"], ["Witch Hat"], False) == ["hat"]
+
+
+def test_bulk_with_no_names_is_a_no_op():
+    assert set_drops_in_keep_list(["Amber"], [], True) == ["Amber"]
+    assert set_drops_in_keep_list(["Amber"], [], False) == ["Amber"]
+
+
+def test_bulk_matches_repeated_singular_toggles():
+    """The single-name and bulk forms must not disagree — the picker uses both."""
+    names = ["Amber", "Boots of Dawn", "Cloak"]
+    one_at_a_time = ["hat"]
+    for name in names:
+        one_at_a_time = toggle_drop_in_keep_list(one_at_a_time, name, True)
+    assert one_at_a_time == set_drops_in_keep_list(["hat"], names, True)

@@ -113,6 +113,24 @@ class _BotMeta:
     path: Path
 
 
+def _drop_names(raw: object) -> list[str]:
+    """Drop names from a bot file's raw ``drops``, in either storage form.
+
+    Read outside Pydantic, so it has to handle the pre-category ``["Amber"]`` shape
+    as well as ``[{"name": "Amber", "category": "Reagents"}]``. The library card only
+    counts and searches names, so the category is not carried here.
+    """
+    if not isinstance(raw, list):
+        return []
+    names = []
+    for entry in raw:
+        if isinstance(entry, str):
+            names.append(entry)
+        elif isinstance(entry, dict) and isinstance(entry.get("name"), str):
+            names.append(entry["name"])
+    return names
+
+
 def _read_bot_meta(path: Path) -> "_BotMeta | None":
     try:
         with path.open(encoding="utf-8") as f:
@@ -121,7 +139,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             name=data.get("name") or path.stem,
             description=data.get("description") or "",
             authors=data.get("authors") or "",
-            drops=data.get("drops") or [],
+            drops=_drop_names(data.get("drops")),
             start_location=data.get("start_location") or "",
             version=data.get("version") or "",
             path=path,

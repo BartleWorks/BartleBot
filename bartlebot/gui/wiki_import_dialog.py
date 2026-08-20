@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
 
 logger = logging.getLogger(__name__)
@@ -190,7 +191,7 @@ class WikiImportDialog(QDialog):
         self.setMinimumSize(480, 500)
         self.resize(540, 580)
         self._worker: _FetchWorker | None = None
-        self._selected: list[str] = []
+        self._selected: list[DropModel] = []
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -199,7 +200,11 @@ class WikiImportDialog(QDialog):
 
     def selected_items(self) -> list[str]:
         """Return the list of checked item names after the dialog is accepted."""
-        return self._selected
+        return [entry.name for entry in self._selected]
+
+    def selected_entries(self) -> list[DropModel]:
+        """Return the checked items with the wiki category each was listed under."""
+        return list(self._selected)
 
     # ------------------------------------------------------------------
     # UI construction
@@ -332,6 +337,7 @@ class WikiImportDialog(QDialog):
         self._tree.clear()
         for category, items in drops.items():
             cat_item = QTreeWidgetItem(self._tree, [f"{category}  ({len(items)})"])
+            cat_item.setData(0, Qt.ItemDataRole.UserRole, category)
             cat_item.setFlags(cat_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             cat_item.setCheckState(0, Qt.CheckState.Checked)
             for name in sorted(items, key=str.casefold):
@@ -398,10 +404,13 @@ class WikiImportDialog(QDialog):
         self._selected = []
         for i in range(self._tree.topLevelItemCount()):
             cat = self._tree.topLevelItem(i)
+            # The header carries a count suffix for display; the category is stored
+            # separately so it survives back into the bot's drop table.
+            category = cat.data(0, Qt.ItemDataRole.UserRole)
             for j in range(cat.childCount()):
                 child = cat.child(j)
                 if child.checkState(0) == Qt.CheckState.Checked:
-                    self._selected.append(child.text(0))
+                    self._selected.append(DropModel(name=child.text(0), category=category))
         self.accept()
 
     # ------------------------------------------------------------------
