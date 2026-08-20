@@ -106,6 +106,43 @@ IMPLIED_KEEP_KEYWORDS: dict[str, str] = {
     "sell_skeleton_keys": "skeleton key",
 }
 
+# Wiki drop categories this node will never sell, and why. Editor-only: the node
+# reads item names off the quicksell window and never sees a category, so this
+# cannot be consulted at run time — it exists so the keep-list picker can leave
+# out rows where there is no decision to make.
+#
+# Keys must match the category strings the wiki import produces. Run
+# ``poetry run python tools/drop_categories.py`` after importing new bots to
+# catch a category nobody has classified yet.
+NEVER_QUICKSOLD_CATEGORIES: dict[str, str] = {
+    "Reagents": "Reagents cannot be quicksold.",
+    "Snacks": "Snacks cannot be quicksold.",
+    "Spellements": "Spellements cannot be quicksold.",
+    "Mounts": "Mounts cannot be quicksold.",
+    "Treasure Cards": "Treasure cards sell through a separate UI this node does not use.",
+}
+
+# Categories confirmed to go through the quicksell window. Tracked alongside the
+# never-sold set so tools/drop_categories.py can tell "known to sell" apart from
+# "not yet looked at" — Pins are listed because quicksell treats them as Jewels.
+QUICKSELLABLE_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "Amulets",
+        "Athames",
+        "Boots",
+        "Decks",
+        "Hats",
+        "Housing Items",
+        "Jewels",
+        "Pets",
+        "Pins",
+        "Rings",
+        "Robes",
+        "Seeds",
+        "Wands",
+    }
+)
+
 
 def _typed_keywords(params: dict) -> list[str]:
     """The keep_list param, lowercased. Blank entries are dropped: an empty keyword

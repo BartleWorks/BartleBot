@@ -26,6 +26,26 @@ if TYPE_CHECKING:
 _BASE_TITLE = "Possible Drops"
 
 
+_UNCATEGORIZED_HINT = (
+    "Drops imported before categories existed have none. Re-import this bot from the wiki to add them — "
+    "categories let the quicksell keep-list picker group drops and leave out the ones it can never sell."
+)
+
+
+def drops_header_text(entries: list[DropModel]) -> str:
+    """Section title with the drop count, calling out drops that have no category.
+
+    The uncategorized count is the only prompt to re-import: nothing else tells a
+    user that a bot predates categories, and without one they never appear.
+    """
+    if not entries:
+        return _BASE_TITLE
+    uncategorized = sum(1 for entry in entries if not entry.category)
+    if not uncategorized:
+        return f"{_BASE_TITLE} ({len(entries)})"
+    return f"{_BASE_TITLE} ({len(entries)} · {uncategorized} uncategorized)"
+
+
 def rename_drop(entries: list[DropModel], index: int, new_text: str) -> list[DropModel]:
     """Return *entries* with the drop at *index* renamed to *new_text*.
 
@@ -267,7 +287,6 @@ class PossibleDropsSection(SidebarSection):
         if dialog.exec():
             self._drops_widget.add_items(dialog.selected_entries())
 
-    def _update_header(self, items: list[str]) -> None:
-        n = len(items)
-        title = f"{_BASE_TITLE} ({n})" if n else _BASE_TITLE
-        self._header.label.setText(title)
+    def _update_header(self, entries: list[DropModel]) -> None:
+        self._header.label.setText(drops_header_text(entries))
+        self._header.label.setToolTip(_UNCATEGORIZED_HINT if any(not e.category for e in entries) else "")

@@ -1,7 +1,7 @@
-"""Tests for the Possible Drops rename and merge helpers."""
+"""Tests for the Possible Drops rename, merge, and header helpers."""
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.gui.sidebar.sections.possible_drops_section import merge_drops, rename_drop
+from bartlebot.gui.sidebar.sections.possible_drops_section import drops_header_text, merge_drops, rename_drop
 
 
 def _drops(*specs) -> list[DropModel]:
@@ -90,3 +90,30 @@ def test_merge_does_not_mutate_its_inputs():
 def test_merge_preserves_existing_order():
     result = merge_drops(_drops("Cloak", "Amber"), _drops("Boots"))
     assert [d.name for d in result] == ["Cloak", "Amber", "Boots"]
+
+
+# ---------------------------------------------------------------------------
+# drops_header_text
+# ---------------------------------------------------------------------------
+
+
+def test_header_is_bare_when_there_are_no_drops():
+    assert drops_header_text([]) == "Possible Drops"
+
+
+def test_header_counts_drops():
+    assert drops_header_text(_drops(("Amber", "Reagents"), ("Boots", "Boots"))) == "Possible Drops (2)"
+
+
+def test_header_calls_out_uncategorized_drops():
+    text = drops_header_text(_drops(("Amber", "Reagents"), "Boots"))
+    assert text == "Possible Drops (2 · 1 uncategorized)"
+
+
+def test_header_reports_a_fully_uncategorized_bot():
+    # The state every bot is in until it is re-imported — this is the whole prompt.
+    assert drops_header_text(_drops("Amber", "Boots")) == "Possible Drops (2 · 2 uncategorized)"
+
+
+def test_header_treats_a_blank_category_as_missing():
+    assert drops_header_text([DropModel(name="Amber", category="")]) == "Possible Drops (1 · 1 uncategorized)"
