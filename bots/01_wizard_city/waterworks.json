@@ -1425,7 +1425,14 @@
           "Mastery",
           "Savory Shroud",
           "Tasty Tunic",
-          "Delectable Hooves"
+          "Delectable Hooves",
+          "Skyscream",
+          "Frostbit",
+          "Firestarter",
+          "Hangman",
+          "Tricksy",
+          "Esprit",
+          "Judgment"
         ],
         "sell_pets": true,
         "sell_socket_wrenches": false,
