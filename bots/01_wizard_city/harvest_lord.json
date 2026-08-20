@@ -6,218 +6,287 @@
   "clients": "all",
   "initial": "state_9",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
     {
-      "name": "Adventurer's Robe"
+      "name": "Adventurer's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Blonde Strawberry"
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of Embers"
+      "name": "Boots of Embers",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Obstruction"
+      "name": "Boots of Obstruction",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Adverse"
+      "name": "Boots of the Adverse",
+      "category": "Boots"
     },
     {
-      "name": "Charged Coat"
+      "name": "Charged Coat",
+      "category": "Robes"
     },
     {
-      "name": "Cheese Broccoli"
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Chillcloak"
+      "name": "Chillcloak",
+      "category": "Robes"
     },
     {
-      "name": "Chocolate Strawberry"
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Cloak of Calamity"
+      "name": "Cloak of Calamity",
+      "category": "Robes"
     },
     {
-      "name": "Elven Pendant"
+      "name": "Elven Pendant",
+      "category": "Amulets"
     },
     {
-      "name": "Elven Storm Cap"
+      "name": "Elven Storm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Explorer Boots"
+      "name": "Explorer Boots",
+      "category": "Boots"
     },
     {
-      "name": "Fairy Cloak"
+      "name": "Fairy Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Fairy Shoes"
+      "name": "Fairy Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Fine Jade Ring"
+      "name": "Fine Jade Ring",
+      "category": "Rings"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fire Elf",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Shield"
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Firestorm Cap"
+      "name": "Firestorm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ghoul"
+      "name": "Ghoul",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Guiding Light"
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gummy Firecat"
+      "name": "Gummy Firecat",
+      "category": "Snacks"
     },
     {
-      "name": "Hardened Boots"
+      "name": "Hardened Boots",
+      "category": "Boots"
     },
     {
-      "name": "Harvest Lord"
+      "name": "Harvest Lord",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Harvest Lord's Mantle"
+      "name": "Harvest Lord's Mantle",
+      "category": "Robes"
     },
     {
-      "name": "Heated Stone Tower"
+      "name": "Heated Stone Tower",
+      "category": "Housing Items"
     },
     {
-      "name": "Helm of Nightmares"
+      "name": "Helm of Nightmares",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Tales"
+      "name": "Helm of Tales",
+      "category": "Hats"
     },
     {
-      "name": "Honey Sickle"
+      "name": "Honey Sickle",
+      "category": "Seeds"
     },
     {
-      "name": "Hood of Storms"
+      "name": "Hood of Storms",
+      "category": "Hats"
     },
     {
-      "name": "Keen Eyes"
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Myth Shield"
+      "name": "Myth Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Novice's Hat"
+      "name": "Novice's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Novice's Robe"
+      "name": "Novice's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Novice's Shoes"
+      "name": "Novice's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Novitiate Boots"
+      "name": "Novitiate Boots",
+      "category": "Boots"
     },
     {
-      "name": "Novitiate Robe"
+      "name": "Novitiate Robe",
+      "category": "Robes"
     },
     {
-      "name": "Peridot Studded Athame"
+      "name": "Peridot Studded Athame",
+      "category": "Athames"
     },
     {
-      "name": "Plated Boots"
+      "name": "Plated Boots",
+      "category": "Boots"
     },
     {
-      "name": "Prop Mountains 1"
+      "name": "Prop Mountains 1",
+      "category": "Housing Items"
     },
     {
-      "name": "Pumpkin"
+      "name": "Pumpkin",
+      "category": "Housing Items"
     },
     {
-      "name": "Reaper's Athame"
+      "name": "Reaper's Athame",
+      "category": "Athames"
     },
     {
-      "name": "Ritual Athame"
+      "name": "Ritual Athame",
+      "category": "Athames"
     },
     {
-      "name": "Robe of the Lifeblood"
+      "name": "Robe of the Lifeblood",
+      "category": "Robes"
     },
     {
-      "name": "Roughspun Hat"
+      "name": "Roughspun Hat",
+      "category": "Hats"
     },
     {
-      "name": "Roughspun Shoes"
+      "name": "Roughspun Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Simple Dirk"
+      "name": "Simple Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Slippers of Rites"
+      "name": "Slippers of Rites",
+      "category": "Boots"
     },
     {
-      "name": "Snow Shield"
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Soot Stained Boots"
+      "name": "Soot Stained Boots",
+      "category": "Boots"
     },
     {
-      "name": "Soot Stained Tunic"
+      "name": "Soot Stained Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Storm Shield"
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stormcaller's Robe"
+      "name": "Stormcaller's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sugar Donut"
+      "name": "Sugar Donut",
+      "category": "Snacks"
     },
     {
-      "name": "Symmetrical Wand"
+      "name": "Symmetrical Wand",
+      "category": "Wands"
     },
     {
-      "name": "Tall Vase"
+      "name": "Tall Vase",
+      "category": "Housing Items"
     },
     {
-      "name": "Time of Legend"
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tough"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Trollskin Boots"
+      "name": "Trollskin Boots",
+      "category": "Boots"
     },
     {
-      "name": "Twice Stitched Boots"
+      "name": "Twice Stitched Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vestment of the Adverse"
+      "name": "Vestment of the Adverse",
+      "category": "Robes"
     },
     {
-      "name": "Wand of Repose"
+      "name": "Wand of Repose",
+      "category": "Wands"
     },
     {
-      "name": "Windrunners"
+      "name": "Windrunners",
+      "category": "Boots"
     },
     {
-      "name": "Wizard City Haunted Theme"
+      "name": "Wizard City Haunted Theme",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",

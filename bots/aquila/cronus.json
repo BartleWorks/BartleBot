@@ -6,126 +6,163 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nfeint mass | feint[potent]@boss | feint @ boss | crow[epic]\n\n### p2\nany<aura & out_damage> | lord[epic] | tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
     {
-      "name": "Amber"
+      "name": "Amber",
+      "category": "Reagents"
     },
     {
-      "name": "Aquila Atlantea Theme"
+      "name": "Aquila Atlantea Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Boss Combat Theme"
+      "name": "Aquila Boss Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Combat Theme"
+      "name": "Aquila Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Epic Combat Theme"
+      "name": "Aquila Epic Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Olympus Theme"
+      "name": "Aquila Olympus Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Tartarus Theme"
+      "name": "Aquila Tartarus Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Blade of the Felled Titan"
+      "name": "Blade of the Felled Titan",
+      "category": "Athames"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Death-Boon Onyx"
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Exalted Balance Amulet"
+      "name": "Exalted Balance Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Death Amulet"
+      "name": "Exalted Death Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Fire Amulet"
+      "name": "Exalted Fire Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Ice Amulet"
+      "name": "Exalted Ice Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Life Amulet"
+      "name": "Exalted Life Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Myth Amulet"
+      "name": "Exalted Myth Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Storm Amulet"
+      "name": "Exalted Storm Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Fires of Mars"
+      "name": "Fires of Mars",
+      "category": "Spellements"
     },
     {
-      "name": "Forceful Opal"
+      "name": "Forceful Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Jupiter's Might"
+      "name": "Jupiter's Might",
+      "category": "Spellements"
     },
     {
-      "name": "Neptune's Fury"
+      "name": "Neptune's Fury",
+      "category": "Spellements"
     },
     {
-      "name": "Phoebus' Will"
+      "name": "Phoebus' Will",
+      "category": "Spellements"
     },
     {
-      "name": "Pluto's Peril"
+      "name": "Pluto's Peril",
+      "category": "Spellements"
     },
     {
-      "name": "Polished Blocking Peridot +11"
+      "name": "Polished Blocking Peridot +11",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Blocking Ruby +11"
+      "name": "Polished Blocking Ruby +11",
+      "category": "Jewels"
     },
     {
-      "name": "Ring of Gorgon Imprisonment (Level 90+)"
+      "name": "Ring of Gorgon Imprisonment (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Gorgon Infamy (Level 90+)"
+      "name": "Ring of Gorgon Infamy (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Gorgon Petrification (Level 90+)"
+      "name": "Ring of Gorgon Petrification (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Gorgon Suffering (Level 90+)"
+      "name": "Ring of Gorgon Suffering (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Gorgon Venom (Level 90+)"
+      "name": "Ring of Gorgon Venom (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Gorgon Volatility (Level 90+)"
+      "name": "Ring of Gorgon Volatility (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Ring of Gorgon's Gaze (Level 90+)"
+      "name": "Ring of Gorgon's Gaze (Level 90+)",
+      "category": "Rings"
     },
     {
-      "name": "Saturn's Reaping"
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
     },
     {
-      "name": "Silver"
+      "name": "Silver",
+      "category": "Reagents"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Stonewall Opal"
+      "name": "Stonewall Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Terminus' Strike"
+      "name": "Terminus' Strike",
+      "category": "Spellements"
     },
     {
-      "name": "Tungsten"
+      "name": "Tungsten",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",

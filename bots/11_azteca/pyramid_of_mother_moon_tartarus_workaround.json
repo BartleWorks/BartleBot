@@ -9,493 +9,656 @@
   "start_location": "Anywhere in Azteca",
   "drops": [
     {
-      "name": "Acampi Reedfist's Lost Seal"
+      "name": "Acampi Reedfist's Lost Seal",
+      "category": "Rings"
     },
     {
-      "name": "Allocados"
+      "name": "Allocados",
+      "category": "Snacks"
     },
     {
-      "name": "Apatotatoes"
+      "name": "Apatotatoes",
+      "category": "Snacks"
     },
     {
-      "name": "Avenging Fossil"
+      "name": "Avenging Fossil",
+      "category": "Spellements"
     },
     {
-      "name": "Azteca Apocalypse Theme"
+      "name": "Azteca Apocalypse Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Azteca Main Theme"
+      "name": "Azteca Main Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Azteca Mountain Theme"
+      "name": "Azteca Mountain Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Azteca Rug"
+      "name": "Azteca Rug",
+      "category": "Housing Items"
     },
     {
-      "name": "Basilisk"
+      "name": "Basilisk",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Basilisk"
+      "name": "Basilisk",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Beak Breaker's Antique Sliver"
+      "name": "Beak Breaker's Antique Sliver",
+      "category": "Athames"
     },
     {
-      "name": "Bedrock Bonbons"
+      "name": "Bedrock Bonbons",
+      "category": "Snacks"
     },
     {
-      "name": "Bird Head Mount"
+      "name": "Bird Head Mount",
+      "category": "Housing Items"
     },
     {
-      "name": "Black Blade of Five Deaths"
+      "name": "Black Blade of Five Deaths",
+      "category": "Athames"
     },
     {
-      "name": "Black Lotus"
+      "name": "Black Lotus",
+      "category": "Reagents"
     },
     {
-      "name": "Black Pearl"
+      "name": "Black Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Black Sun Chac's Armor"
+      "name": "Black Sun Chac's Armor",
+      "category": "Robes"
     },
     {
-      "name": "Black Sun Chac's Stalkers"
+      "name": "Black Sun Chac's Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Black Tears of Night Wraps"
+      "name": "Black Tears of Night Wraps",
+      "category": "Boots"
     },
     {
-      "name": "Blood Moss"
+      "name": "Blood Moss",
+      "category": "Reagents"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Buff Minion Peridot"
+      "name": "Buff Minion Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Cacao Beans"
+      "name": "Cacao Beans",
+      "category": "Snacks"
     },
     {
-      "name": "Cactus Fruit"
+      "name": "Cactus Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Calendar of the Spiral King"
+      "name": "Calendar of the Spiral King",
+      "category": "Decks"
     },
     {
-      "name": "Caramel Apple"
+      "name": "Caramel Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Case of Mother Moon"
+      "name": "Case of Mother Moon",
+      "category": "Decks"
     },
     {
-      "name": "Celestial Calendar"
+      "name": "Celestial Calendar",
+      "category": "Spellements"
     },
     {
-      "name": "Centaur"
+      "name": "Centaur",
+      "category": "Spellements"
     },
     {
-      "name": "Chastisement"
+      "name": "Chastisement",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Chimera"
+      "name": "Chimera",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Chimera"
+      "name": "Chimera",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Clothesline"
+      "name": "Clothesline",
+      "category": "Housing Items"
     },
     {
-      "name": "Colossal"
+      "name": "Colossal",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Colossus"
+      "name": "Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Courage Charm of Jade Wings"
+      "name": "Courage Charm of Jade Wings",
+      "category": "Amulets"
     },
     {
-      "name": "Curse Giver Onyx"
+      "name": "Curse Giver Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Cycle of Life"
+      "name": "Cycle of Life",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Death Moon's Chosen Robes"
+      "name": "Death Moon's Chosen Robes",
+      "category": "Robes"
     },
     {
-      "name": "Deck of the Jaguar Spirit"
+      "name": "Deck of the Jaguar Spirit",
+      "category": "Decks"
     },
     {
-      "name": "Deep Mushroom"
+      "name": "Deep Mushroom",
+      "category": "Reagents"
     },
     {
-      "name": "Dr. Jalapeno"
+      "name": "Dr. Jalapeno",
+      "category": "Snacks"
     },
     {
-      "name": "Dr. Von's Monster"
+      "name": "Dr. Von's Monster",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dr. Von's Monster"
+      "name": "Dr. Von's Monster",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Efreet"
+      "name": "Efreet",
+      "category": "Spellements"
     },
     {
-      "name": "Elite Jura Guard Stalkers"
+      "name": "Elite Jura Guard Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Extraordinary"
+      "name": "Extraordinary",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Blossom"
+      "name": "Fire Blossom",
+      "category": "Reagents"
     },
     {
-      "name": "Fire Dragon"
+      "name": "Fire Dragon",
+      "category": "Spellements"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Five Fangs of Fury Boots"
+      "name": "Five Fangs of Fury Boots",
+      "category": "Boots"
     },
     {
-      "name": "Forest Lord"
+      "name": "Forest Lord",
+      "category": "Spellements"
     },
     {
-      "name": "Fossil"
+      "name": "Fossil",
+      "category": "Reagents"
     },
     {
-      "name": "Fried Ice Cream"
+      "name": "Fried Ice Cream",
+      "category": "Snacks"
     },
     {
-      "name": "Frost Demon"
+      "name": "Frost Demon",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frost Giant"
+      "name": "Frost Giant",
+      "category": "Spellements"
     },
     {
-      "name": "Furnace"
+      "name": "Furnace",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Galvanic Field"
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Glowing Star Fruit"
+      "name": "Glowing Star Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Gnomes!"
+      "name": "Gnomes!",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gnomes!"
+      "name": "Gnomes!",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Golden Head of the Cold House"
+      "name": "Golden Head of the Cold House",
+      "category": "Amulets"
     },
     {
-      "name": "Golden Pearl"
+      "name": "Golden Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Grinning Death Stompers"
+      "name": "Grinning Death Stompers",
+      "category": "Boots"
     },
     {
-      "name": "Grinning Death Xicolli Vest"
+      "name": "Grinning Death Xicolli Vest",
+      "category": "Robes"
     },
     {
-      "name": "Guava"
+      "name": "Guava",
+      "category": "Snacks"
     },
     {
-      "name": "Heart of Sky Boots"
+      "name": "Heart of Sky Boots",
+      "category": "Boots"
     },
     {
-      "name": "Helephant"
+      "name": "Helephant",
+      "category": "Spellements"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Spellements"
     },
     {
-      "name": "Indigo Wing Striders"
+      "name": "Indigo Wing Striders",
+      "category": "Boots"
     },
     {
-      "name": "Jelly Baby"
+      "name": "Jelly Baby",
+      "category": "Snacks"
     },
     {
-      "name": "Keen Eyes Talent Opal"
+      "name": "Keen Eyes Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Keeper of the Codex Vest"
+      "name": "Keeper of the Codex Vest",
+      "category": "Robes"
     },
     {
-      "name": "King's Royal Portraits"
+      "name": "King's Royal Portraits",
+      "category": "Decks"
     },
     {
-      "name": "Lava Lily"
+      "name": "Lava Lily",
+      "category": "Reagents"
     },
     {
-      "name": "Leviathan"
+      "name": "Leviathan",
+      "category": "Spellements"
     },
     {
-      "name": "Lord of Night Robes"
+      "name": "Lord of Night Robes",
+      "category": "Robes"
     },
     {
-      "name": "Lord of Winter"
+      "name": "Lord of Winter",
+      "category": "Spellements"
     },
     {
-      "name": "Lords of Night Pyramid Deck"
+      "name": "Lords of Night Pyramid Deck",
+      "category": "Decks"
     },
     {
-      "name": "Mace of the Aztecosaurs"
+      "name": "Mace of the Aztecosaurs",
+      "category": "Wands"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Maize"
+      "name": "Maize",
+      "category": "Snacks"
     },
     {
-      "name": "Mander Minion Citrine"
+      "name": "Mander Minion Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Medusa"
+      "name": "Medusa",
+      "category": "Spellements"
     },
     {
-      "name": "Mist Wood"
+      "name": "Mist Wood",
+      "category": "Reagents"
     },
     {
-      "name": "Mithril"
+      "name": "Mithril",
+      "category": "Reagents"
     },
     {
-      "name": "Moon Skull's Blessed Edge"
+      "name": "Moon Skull's Blessed Edge",
+      "category": "Athames"
     },
     {
-      "name": "Mother's New Moon Athame"
+      "name": "Mother's New Moon Athame",
+      "category": "Athames"
     },
     {
-      "name": "Necklace of Lost Ancestors"
+      "name": "Necklace of Lost Ancestors",
+      "category": "Amulets"
     },
     {
-      "name": "New Moon Lance"
+      "name": "New Moon Lance",
+      "category": "Wands"
     },
     {
-      "name": "Nightshade"
+      "name": "Nightshade",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Fig"
+      "name": "Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Ore"
+      "name": "Ore",
+      "category": "Reagents"
     },
     {
-      "name": "Orthrus"
+      "name": "Orthrus",
+      "category": "Spellements"
     },
     {
-      "name": "Pendant of the Wild Wings"
+      "name": "Pendant of the Wild Wings",
+      "category": "Amulets"
     },
     {
-      "name": "Philososaur's Robes"
+      "name": "Philososaur's Robes",
+      "category": "Robes"
     },
     {
-      "name": "Polished Blocking Hematite +12"
+      "name": "Polished Blocking Hematite +12",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Damage Peridot +21"
+      "name": "Polished Damage Peridot +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polished Defense Opal +21"
+      "name": "Polished Defense Opal +21",
+      "category": "Jewels"
     },
     {
-      "name": "Polymorph Jaguar"
+      "name": "Polymorph Jaguar",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Polymorph Pteranodon"
+      "name": "Polymorph Pteranodon",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Potent Trap"
+      "name": "Potent Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Power Nova"
+      "name": "Power Nova",
+      "category": "Spellements"
     },
     {
-      "name": "Primordial"
+      "name": "Primordial",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Pterotomatoes"
+      "name": "Pterotomatoes",
+      "category": "Snacks"
     },
     {
-      "name": "Punishment"
+      "name": "Punishment",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Quetzal Pretzel"
+      "name": "Quetzal Pretzel",
+      "category": "Snacks"
     },
     {
-      "name": "Ra"
+      "name": "Ra",
+      "category": "Spellements"
     },
     {
-      "name": "Rain of Fire"
+      "name": "Rain of Fire",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rain of Fire"
+      "name": "Rain of Fire",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rebirth"
+      "name": "Rebirth",
+      "category": "Spellements"
     },
     {
-      "name": "Red Mandrake"
+      "name": "Red Mandrake",
+      "category": "Reagents"
     },
     {
-      "name": "Rex Tea"
+      "name": "Rex Tea",
+      "category": "Snacks"
     },
     {
-      "name": "Saber-Tooth Cider"
+      "name": "Saber-Tooth Cider",
+      "category": "Snacks"
     },
     {
-      "name": "Sabertooth"
+      "name": "Sabertooth",
+      "category": "Spellements"
     },
     {
-      "name": "Saursa"
+      "name": "Saursa",
+      "category": "Snacks"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Spellements"
     },
     {
-      "name": "Seal of Thunder Horn's Glory"
+      "name": "Seal of Thunder Horn's Glory",
+      "category": "Rings"
     },
     {
-      "name": "Sharpened Blade"
+      "name": "Sharpened Blade",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Shiny Tomato"
+      "name": "Shiny Tomato",
+      "category": "Snacks"
     },
     {
-      "name": "Silver"
+      "name": "Silver",
+      "category": "Reagents"
     },
     {
-      "name": "Sirens"
+      "name": "Sirens",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sirens"
+      "name": "Sirens",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Skeletal Dragon"
+      "name": "Skeletal Dragon",
+      "category": "Spellements"
     },
     {
-      "name": "Sleet Storm"
+      "name": "Sleet Storm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Smoking Obsidian Rangers"
+      "name": "Smoking Obsidian Rangers",
+      "category": "Boots"
     },
     {
-      "name": "Snow Angel"
+      "name": "Snow Angel",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Angel"
+      "name": "Snow Angel",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Spartan Jade"
+      "name": "Spartan Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Spear of Breaking Dawn"
+      "name": "Spear of Breaking Dawn",
+      "category": "Wands"
     },
     {
-      "name": "Spinysaur"
+      "name": "Spinysaur",
+      "category": "Spellements"
     },
     {
-      "name": "Steel"
+      "name": "Steel",
+      "category": "Reagents"
     },
     {
-      "name": "Stego Waffles"
+      "name": "Stego Waffles",
+      "category": "Snacks"
     },
     {
-      "name": "Stone Block"
+      "name": "Stone Block",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Stone Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Lord"
+      "name": "Storm Lord",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Owl"
+      "name": "Storm Owl",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Quetzal's Charged Mace"
+      "name": "Storm Quetzal's Charged Mace",
+      "category": "Wands"
     },
     {
-      "name": "Sun Serpent"
+      "name": "Sun Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Sunstone"
+      "name": "Sunstone",
+      "category": "Reagents"
     },
     {
-      "name": "Tall Drum"
+      "name": "Tall Drum",
+      "category": "Housing Items"
     },
     {
-      "name": "Talon of the Storm Owl"
+      "name": "Talon of the Storm Owl",
+      "category": "Wands"
     },
     {
-      "name": "Tenochti-Flan"
+      "name": "Tenochti-Flan",
+      "category": "Snacks"
     },
     {
-      "name": "Titanium"
+      "name": "Titanium",
+      "category": "Reagents"
     },
     {
-      "name": "Tree of Secrets Chac Runners"
+      "name": "Tree of Secrets Chac Runners",
+      "category": "Boots"
     },
     {
-      "name": "Triton"
+      "name": "Triton",
+      "category": "Spellements"
     },
     {
-      "name": "Troll Minion Peridot"
+      "name": "Troll Minion Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Tungsten"
+      "name": "Tungsten",
+      "category": "Reagents"
     },
     {
-      "name": "Turquoise"
+      "name": "Turquoise",
+      "category": "Reagents"
     },
     {
-      "name": "Twisted Fang Boots"
+      "name": "Twisted Fang Boots",
+      "category": "Boots"
     },
     {
-      "name": "Underworld Stone"
+      "name": "Underworld Stone",
+      "category": "Rings"
     },
     {
-      "name": "White Fire Chac's Armor"
+      "name": "White Fire Chac's Armor",
+      "category": "Robes"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     },
     {
-      "name": "Wild Wing's Glorious Razor"
+      "name": "Wild Wing's Glorious Razor",
+      "category": "Athames"
     },
     {
-      "name": "Winged Tooth Knight's Hook"
+      "name": "Winged Tooth Knight's Hook",
+      "category": "Athames"
     },
     {
-      "name": "Woolly Mammoth"
+      "name": "Woolly Mammoth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Woolly Mammoth"
+      "name": "Woolly Mammoth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Wraith"
+      "name": "Wraith",
+      "category": "Spellements"
     },
     {
-      "name": "Zocalo Wings"
+      "name": "Zocalo Wings",
+      "category": "Snacks"
     }
   ],
   "authors": "BartleBot",

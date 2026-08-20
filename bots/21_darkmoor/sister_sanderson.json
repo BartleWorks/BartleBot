@@ -9,394 +9,524 @@
   "start_location": "Graveholm",
   "drops": [
     {
-      "name": "2 Outsider Relic"
+      "name": "2 Outsider Relic",
+      "category": "Reagents"
     },
     {
-      "name": "Ammut"
+      "name": "Ammut",
+      "category": "Spellements"
     },
     {
-      "name": "Anubis"
+      "name": "Anubis",
+      "category": "Spellements"
     },
     {
-      "name": "Balance Blocking Pin (150, Death)"
+      "name": "Balance Blocking Pin (150, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (150, Fire)"
+      "name": "Balance Blocking Pin (150, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (150, Ice)"
+      "name": "Balance Blocking Pin (150, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (150, Life)"
+      "name": "Balance Blocking Pin (150, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (150, Myth)"
+      "name": "Balance Blocking Pin (150, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (150, Storm)"
+      "name": "Balance Blocking Pin (150, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (160, Death)"
+      "name": "Balance Blocking Pin (160, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (160, Fire)"
+      "name": "Balance Blocking Pin (160, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (160, Ice)"
+      "name": "Balance Blocking Pin (160, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (160, Life)"
+      "name": "Balance Blocking Pin (160, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (160, Myth)"
+      "name": "Balance Blocking Pin (160, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Blocking Pin (160, Storm)"
+      "name": "Balance Blocking Pin (160, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Mending Pin (170)"
+      "name": "Balance Mending Pin (170)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Mending Pin (180)"
+      "name": "Balance Mending Pin (180)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Resist Pin (140, Death)"
+      "name": "Balance Resist Pin (140, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Resist Pin (140, Fire)"
+      "name": "Balance Resist Pin (140, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Resist Pin (140, Ice)"
+      "name": "Balance Resist Pin (140, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Resist Pin (140, Life)"
+      "name": "Balance Resist Pin (140, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Resist Pin (140, Myth)"
+      "name": "Balance Resist Pin (140, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Balance Resist Pin (140, Storm)"
+      "name": "Balance Resist Pin (140, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Barbarian's Saga"
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
     },
     {
-      "name": "Blast Off!"
+      "name": "Blast Off!",
+      "category": "Spellements"
     },
     {
-      "name": "Bunyip's Rage"
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
     },
     {
-      "name": "Chameleon Clash"
+      "name": "Chameleon Clash",
+      "category": "Spellements"
     },
     {
-      "name": "Chilling Abomination Ring"
+      "name": "Chilling Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "Count Croakula"
+      "name": "Count Croakula",
+      "category": "Spellements"
     },
     {
-      "name": "Dark & Stormy"
+      "name": "Dark & Stormy",
+      "category": "Spellements"
     },
     {
-      "name": "Death Blocking Pin (150, Ice)"
+      "name": "Death Blocking Pin (150, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Death Blocking Pin (150, Myth)"
+      "name": "Death Blocking Pin (150, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Death Blocking Pin (160, Balance)"
+      "name": "Death Blocking Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Death Blocking Pin (160, Ice)"
+      "name": "Death Blocking Pin (160, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Death Blocking Pin (160, Myth)"
+      "name": "Death Blocking Pin (160, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Death Resist Pin (150, Balance)"
+      "name": "Death Resist Pin (150, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Death Resist Pin (150, Ice)"
+      "name": "Death Resist Pin (150, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Death Resist Pin (150, Myth)"
+      "name": "Death Resist Pin (150, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Deathly Depths"
+      "name": "Deathly Depths",
+      "category": "Spellements"
     },
     {
-      "name": "Doomed Abomination Ring"
+      "name": "Doomed Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "Drop Bear Fury"
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Blocking Pin (150, Life)"
+      "name": "Fire Blocking Pin (150, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Blocking Pin (150, Storm)"
+      "name": "Fire Blocking Pin (150, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Blocking Pin (160, Balance)"
+      "name": "Fire Blocking Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Blocking Pin (160, Life)"
+      "name": "Fire Blocking Pin (160, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Blocking Pin (160, Storm)"
+      "name": "Fire Blocking Pin (160, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Mending Pin (170)"
+      "name": "Fire Mending Pin (170)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Mending Pin (180)"
+      "name": "Fire Mending Pin (180)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Resist Pin (140, Balance)"
+      "name": "Fire Resist Pin (140, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Resist Pin (140, Life)"
+      "name": "Fire Resist Pin (140, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Fire Resist Pin (140, Storm)"
+      "name": "Fire Resist Pin (140, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Freeze Ray"
+      "name": "Freeze Ray",
+      "category": "Spellements"
     },
     {
-      "name": "Glimpse of Infinity"
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
     },
     {
-      "name": "Gravestorm"
+      "name": "Gravestorm",
+      "category": "Spellements"
     },
     {
-      "name": "Grim Reader"
+      "name": "Grim Reader",
+      "category": "Spellements"
     },
     {
-      "name": "Heqet"
+      "name": "Heqet",
+      "category": "Spellements"
     },
     {
-      "name": "Ice Blocking Pin (150, Fire)"
+      "name": "Ice Blocking Pin (150, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Blocking Pin (150, Myth)"
+      "name": "Ice Blocking Pin (150, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Blocking Pin (160, Balance)"
+      "name": "Ice Blocking Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Blocking Pin (160, Fire)"
+      "name": "Ice Blocking Pin (160, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Blocking Pin (160, Myth)"
+      "name": "Ice Blocking Pin (160, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Resist Pin (140, Balance)"
+      "name": "Ice Resist Pin (140, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Resist Pin (140, Fire)"
+      "name": "Ice Resist Pin (140, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Ice Resist Pin (140, Myth)"
+      "name": "Ice Resist Pin (140, Myth)",
+      "category": "Pins"
     },
     {
-      "name": "Improbable Gaze"
+      "name": "Improbable Gaze",
+      "category": "Spellements"
     },
     {
-      "name": "Legendary Socket Wrench"
+      "name": "Legendary Socket Wrench",
+      "category": "Housing Items"
     },
     {
-      "name": "Life Blocking Pin (150, Death)"
+      "name": "Life Blocking Pin (150, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Life Blocking Pin (150, Storm)"
+      "name": "Life Blocking Pin (150, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Life Blocking Pin (160, Balance)"
+      "name": "Life Blocking Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Life Blocking Pin (160, Death)"
+      "name": "Life Blocking Pin (160, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Life Blocking Pin (160, Storm)"
+      "name": "Life Blocking Pin (160, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Life Mending Pin (170)"
+      "name": "Life Mending Pin (170)",
+      "category": "Pins"
     },
     {
-      "name": "Life Mending Pin (180)"
+      "name": "Life Mending Pin (180)",
+      "category": "Pins"
     },
     {
-      "name": "Life Resist Pin (140, Balance)"
+      "name": "Life Resist Pin (140, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Life Resist Pin (140, Death)"
+      "name": "Life Resist Pin (140, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Life Resist Pin (140, Storm)"
+      "name": "Life Resist Pin (140, Storm)",
+      "category": "Pins"
     },
     {
-      "name": "Lord of the Jungle"
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
     },
     {
-      "name": "Mortality"
+      "name": "Mortality",
+      "category": "Spellements"
     },
     {
-      "name": "Myth Blocking Pin (150, Fire)"
+      "name": "Myth Blocking Pin (150, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Blocking Pin (150, Life)"
+      "name": "Myth Blocking Pin (150, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Blocking Pin (160, Balance)"
+      "name": "Myth Blocking Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Blocking Pin (160, Fire)"
+      "name": "Myth Blocking Pin (160, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Blocking Pin (160, Life)"
+      "name": "Myth Blocking Pin (160, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Mending Pin (170)"
+      "name": "Myth Mending Pin (170)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Mending Pin (180)"
+      "name": "Myth Mending Pin (180)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Resist Pin (140, Balance)"
+      "name": "Myth Resist Pin (140, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Resist Pin (140, Fire)"
+      "name": "Myth Resist Pin (140, Fire)",
+      "category": "Pins"
     },
     {
-      "name": "Myth Resist Pin (140, Life)"
+      "name": "Myth Resist Pin (140, Life)",
+      "category": "Pins"
     },
     {
-      "name": "Mythic Abomination Ring"
+      "name": "Mythic Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "Old One's Endgame"
+      "name": "Old One's Endgame",
+      "category": "Spellements"
     },
     {
-      "name": "Outsider Relic"
+      "name": "Outsider Relic",
+      "category": "Reagents"
     },
     {
-      "name": "Phantasmania!"
+      "name": "Phantasmania!",
+      "category": "Spellements"
     },
     {
-      "name": "Rainbow Serpent"
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Sanguine Abomination Ring"
+      "name": "Sanguine Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scales of Destiny"
+      "name": "Scales of Destiny",
+      "category": "Spellements"
     },
     {
-      "name": "Scary Abomination Ring"
+      "name": "Scary Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Death Ring"
+      "name": "Scholomantic Death Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Destructive Ring"
+      "name": "Scholomantic Destructive Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Devilish Ring"
+      "name": "Scholomantic Devilish Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Fortune Ring"
+      "name": "Scholomantic Fortune Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Justice Ring"
+      "name": "Scholomantic Justice Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Strength Ring"
+      "name": "Scholomantic Strength Ring",
+      "category": "Rings"
     },
     {
-      "name": "Scholomantic Worldly Ring"
+      "name": "Scholomantic Worldly Ring",
+      "category": "Rings"
     },
     {
-      "name": "Shocking Abomination Ring"
+      "name": "Shocking Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "Shu"
+      "name": "Shu",
+      "category": "Spellements"
     },
     {
-      "name": "Starspawn"
+      "name": "Starspawn",
+      "category": "Spellements"
     },
     {
-      "name": "Storm Blocking Pin (150, Death)"
+      "name": "Storm Blocking Pin (150, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Blocking Pin (150, Ice)"
+      "name": "Storm Blocking Pin (150, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Blocking Pin (160, Balance)"
+      "name": "Storm Blocking Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Blocking Pin (160, Death)"
+      "name": "Storm Blocking Pin (160, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Blocking Pin (160, Ice)"
+      "name": "Storm Blocking Pin (160, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Mending Pin (160)"
+      "name": "Storm Mending Pin (160)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Mending Pin (170)"
+      "name": "Storm Mending Pin (170)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Resist Pin (130, Death)"
+      "name": "Storm Resist Pin (130, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Resist Pin (130, Ice)"
+      "name": "Storm Resist Pin (130, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Resist Pin (160, Balance)"
+      "name": "Storm Resist Pin (160, Balance)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Resist Pin (160, Death)"
+      "name": "Storm Resist Pin (160, Death)",
+      "category": "Pins"
     },
     {
-      "name": "Storm Resist Pin (160, Ice)"
+      "name": "Storm Resist Pin (160, Ice)",
+      "category": "Pins"
     },
     {
-      "name": "Taweret"
+      "name": "Taweret",
+      "category": "Spellements"
     },
     {
-      "name": "Tense Abomination Ring"
+      "name": "Tense Abomination Ring",
+      "category": "Rings"
     },
     {
-      "name": "The Chariot"
+      "name": "The Chariot",
+      "category": "Spellements"
     },
     {
-      "name": "The Emperor"
+      "name": "The Emperor",
+      "category": "Spellements"
     },
     {
-      "name": "The Hierophant"
+      "name": "The Hierophant",
+      "category": "Spellements"
     },
     {
-      "name": "The Tower"
+      "name": "The Tower",
+      "category": "Spellements"
     },
     {
-      "name": "The World"
+      "name": "The World",
+      "category": "Spellements"
     },
     {
-      "name": "Thoth"
+      "name": "Thoth",
+      "category": "Spellements"
     },
     {
-      "name": "Tree of Strife"
+      "name": "Tree of Strife",
+      "category": "Spellements"
     },
     {
-      "name": "Wheel of Fortune"
+      "name": "Wheel of Fortune",
+      "category": "Spellements"
     },
     {
-      "name": "Wobbegong Frenzy"
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
     },
     {
-      "name": "Zand the Bandit"
+      "name": "Zand the Bandit",
+      "category": "Spellements"
     }
   ],
   "authors": "BartleBot",

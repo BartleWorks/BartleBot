@@ -6,222 +6,289 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "bunyip[epic] | tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
     {
-      "name": "15 Olympian Dust"
+      "name": "15 Olympian Dust",
+      "category": "Reagents"
     },
     {
-      "name": "16 Olympian Dust"
+      "name": "16 Olympian Dust",
+      "category": "Reagents"
     },
     {
-      "name": "17 Olympian Dust"
+      "name": "17 Olympian Dust",
+      "category": "Reagents"
     },
     {
-      "name": "18 Olympian Dust"
+      "name": "18 Olympian Dust",
+      "category": "Reagents"
     },
     {
-      "name": "25 Olympian Dust"
+      "name": "25 Olympian Dust",
+      "category": "Reagents"
     },
     {
-      "name": "Ares' Charred Spear"
+      "name": "Ares' Charred Spear",
+      "category": "Wands"
     },
     {
-      "name": "Ares' Spear of Bitter Cold"
+      "name": "Ares' Spear of Bitter Cold",
+      "category": "Wands"
     },
     {
-      "name": "Ares' Spear of Destiny"
+      "name": "Ares' Spear of Destiny",
+      "category": "Wands"
     },
     {
-      "name": "Ares' Spear of Fortitude"
+      "name": "Ares' Spear of Fortitude",
+      "category": "Wands"
     },
     {
-      "name": "Ares' Spear of Havoc"
+      "name": "Ares' Spear of Havoc",
+      "category": "Wands"
     },
     {
-      "name": "Ares' Spear of Valor"
+      "name": "Ares' Spear of Valor",
+      "category": "Wands"
     },
     {
-      "name": "Ares' Windstorm Spear"
+      "name": "Ares' Windstorm Spear",
+      "category": "Wands"
     },
     {
-      "name": "Boots of Zeus' Alacrity"
+      "name": "Boots of Zeus' Alacrity",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Zeus' Lore"
+      "name": "Boots of Zeus' Lore",
+      "category": "Boots"
     },
     {
-      "name": "Cowl of Zeus' Ire"
+      "name": "Cowl of Zeus' Ire",
+      "category": "Hats"
     },
     {
       "name": "Fiery Skeleturion"
     },
     {
-      "name": "Fires of Mars"
+      "name": "Fires of Mars",
+      "category": "Spellements"
     },
     {
-      "name": "Helmet of Heavenly Gaze"
+      "name": "Helmet of Heavenly Gaze",
+      "category": "Hats"
     },
     {
-      "name": "Helmet of Zeus' Will"
+      "name": "Helmet of Zeus' Will",
+      "category": "Hats"
     },
     {
-      "name": "Jupiter's Might"
+      "name": "Jupiter's Might",
+      "category": "Spellements"
     },
     {
-      "name": "Mythic Skeleturion"
+      "name": "Mythic Skeleturion",
+      "category": "Pets"
     },
     {
-      "name": "Neptune's Fury"
+      "name": "Neptune's Fury",
+      "category": "Spellements"
     },
     {
-      "name": "Phoebus' Will"
+      "name": "Phoebus' Will",
+      "category": "Spellements"
     },
     {
-      "name": "Pluto's Peril"
+      "name": "Pluto's Peril",
+      "category": "Spellements"
     },
     {
-      "name": "Saturn's Reaping"
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
     },
     {
-      "name": "Senator's Devious Mantle"
+      "name": "Senator's Devious Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Devious Sandals"
+      "name": "Senator's Devious Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Devious Toga"
+      "name": "Senator's Devious Toga",
+      "category": "Robes"
     },
     {
-      "name": "Senator's Guiding Sandals"
+      "name": "Senator's Guiding Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Judicial Laurel"
+      "name": "Senator's Judicial Laurel",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Judicial Shoes"
+      "name": "Senator's Judicial Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Judicial Toga"
+      "name": "Senator's Judicial Toga",
+      "category": "Robes"
     },
     {
-      "name": "Senator's Laurel of Truth"
+      "name": "Senator's Laurel of Truth",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Mantle of Winter"
+      "name": "Senator's Mantle of Winter",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Poetic Boots"
+      "name": "Senator's Poetic Boots",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Poetic Laurel"
+      "name": "Senator's Poetic Laurel",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Poetic Toga"
+      "name": "Senator's Poetic Toga",
+      "category": "Robes"
     },
     {
-      "name": "Senator's Radiant Laurel"
+      "name": "Senator's Radiant Laurel",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Radiant Sandals"
+      "name": "Senator's Radiant Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Radiant Toga"
+      "name": "Senator's Radiant Toga",
+      "category": "Robes"
     },
     {
-      "name": "Senator's Raincloud Mantle"
+      "name": "Senator's Raincloud Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Senator's Raincloud Shoes"
+      "name": "Senator's Raincloud Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Raincloud Toga"
+      "name": "Senator's Raincloud Toga",
+      "category": "Robes"
     },
     {
-      "name": "Senator's Stirring Toga"
+      "name": "Senator's Stirring Toga",
+      "category": "Robes"
     },
     {
-      "name": "Senator's Wintry Sandals"
+      "name": "Senator's Wintry Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Senator's Wintry Toga"
+      "name": "Senator's Wintry Toga",
+      "category": "Robes"
     },
     {
       "name": "Sky Iron Hasta"
     },
     {
-      "name": "Staff of Zeus' Immortality"
+      "name": "Staff of Zeus' Immortality",
+      "category": "Wands"
     },
     {
-      "name": "Terminus' Strike"
+      "name": "Terminus' Strike",
+      "category": "Spellements"
     },
     {
-      "name": "Vestment of Zeus' Aegis"
+      "name": "Vestment of Zeus' Aegis",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Armor of Supremacy"
+      "name": "Zeus' Armor of Supremacy",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Blazing Sun Raiment"
+      "name": "Zeus' Blazing Sun Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Blustering Footwraps"
+      "name": "Zeus' Blustering Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Zeus' Bolt of Arbitration"
+      "name": "Zeus' Bolt of Arbitration",
+      "category": "Wands"
     },
     {
-      "name": "Zeus' Bolt of Gravity"
+      "name": "Zeus' Bolt of Gravity",
+      "category": "Wands"
     },
     {
-      "name": "Zeus' Boots of Rancor"
+      "name": "Zeus' Boots of Rancor",
+      "category": "Boots"
     },
     {
-      "name": "Zeus' Boots of Skyfire"
+      "name": "Zeus' Boots of Skyfire",
+      "category": "Boots"
     },
     {
-      "name": "Zeus' Cloak of Fate"
+      "name": "Zeus' Cloak of Fate",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Cloudstriders"
+      "name": "Zeus' Cloudstriders",
+      "category": "Boots"
     },
     {
-      "name": "Zeus' Falling Skies Staff"
+      "name": "Zeus' Falling Skies Staff",
+      "category": "Wands"
     },
     {
-      "name": "Zeus' Galea of Vitality"
+      "name": "Zeus' Galea of Vitality",
+      "category": "Hats"
     },
     {
-      "name": "Zeus' Helm of Authority"
+      "name": "Zeus' Helm of Authority",
+      "category": "Hats"
     },
     {
-      "name": "Zeus' Helm of Tumult"
+      "name": "Zeus' Helm of Tumult",
+      "category": "Hats"
     },
     {
-      "name": "Zeus' Lightning Striker"
+      "name": "Zeus' Lightning Striker",
+      "category": "Wands"
     },
     {
-      "name": "Zeus' Raiment of Flurries"
+      "name": "Zeus' Raiment of Flurries",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Robes of Judgment"
+      "name": "Zeus' Robes of Judgment",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Staff of Hailstones"
+      "name": "Zeus' Staff of Hailstones",
+      "category": "Wands"
     },
     {
-      "name": "Zeus' Staff of Wildfires"
+      "name": "Zeus' Staff of Wildfires",
+      "category": "Wands"
     },
     {
-      "name": "Zeus' Thunderclap Drape"
+      "name": "Zeus' Thunderclap Drape",
+      "category": "Robes"
     },
     {
-      "name": "Zeus' Thunderstomp Boots"
+      "name": "Zeus' Thunderstomp Boots",
+      "category": "Boots"
     },
     {
-      "name": "Zeus' Veil of Snowfall"
+      "name": "Zeus' Veil of Snowfall",
+      "category": "Hats"
     }
   ],
   "authors": "BartleBot",

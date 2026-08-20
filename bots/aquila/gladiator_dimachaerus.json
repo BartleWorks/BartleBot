@@ -6,96 +6,151 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nany<aura & out_damage> | lord[epic] | tempest[epic] | bunyip[epic]\n\n### p2\nfeint[potent]@boss | purge@ally(1) | tempest[epic]\n\n### p3\nfeint@boss | any<blade>@ally(1) | tempest[any<mod_damage>]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
     {
-      "name": "Alpha and Omega Ring"
+      "name": "Alpha and Omega Ring",
+      "category": "Rings"
     },
     {
-      "name": "Amber"
+      "name": "Amber",
+      "category": "Reagents"
     },
     {
-      "name": "Aquila Atlantea Theme"
+      "name": "Aquila Atlantea Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Boss Combat Theme"
+      "name": "Aquila Boss Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Combat Theme"
+      "name": "Aquila Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Epic Combat Theme"
+      "name": "Aquila Epic Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Olympus Theme"
+      "name": "Aquila Olympus Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Aquila Tartarus Theme"
+      "name": "Aquila Tartarus Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Board of Gorgon Imprisonment (Level 90+)"
+      "name": "Blade of Ice Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Board of Gorgon Infamy (Level 90+)"
+      "name": "Board of Gorgon Imprisonment (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Board of Gorgon Petrification (Level 90+)"
+      "name": "Board of Gorgon Infamy (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Board of Gorgon Suffering (Level 90+)"
+      "name": "Board of Gorgon Petrification (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Board of Gorgon Venom (Level 90+)"
+      "name": "Board of Gorgon Suffering (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Board of Gorgon Volatility (Level 90+)"
+      "name": "Board of Gorgon Venom (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Board of Gorgon's Gaze (Level 90+)"
+      "name": "Board of Gorgon Volatility (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Exalted Balance Amulet"
+      "name": "Board of Gorgon's Gaze (Level 90+)",
+      "category": "Decks"
     },
     {
-      "name": "Exalted Death Amulet"
+      "name": "Braided Vine",
+      "category": "Reagents"
     },
     {
-      "name": "Exalted Fire Amulet"
+      "name": "Enchanted Armament",
+      "category": "Pets"
     },
     {
-      "name": "Exalted Ice Amulet"
+      "name": "Exalted Balance Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Life Amulet"
+      "name": "Exalted Death Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Myth Amulet"
+      "name": "Exalted Fire Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Exalted Storm Amulet"
+      "name": "Exalted Ice Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Fires of Mars"
+      "name": "Exalted Life Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Jupiter's Might"
+      "name": "Exalted Myth Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Neptune's Fury"
+      "name": "Exalted Storm Amulet",
+      "category": "Amulets"
     },
     {
-      "name": "Phoebus' Will"
+      "name": "Fires of Mars",
+      "category": "Spellements"
     },
     {
-      "name": "Pluto's Peril"
+      "name": "Guava",
+      "category": "Snacks"
     },
     {
-      "name": "Saturn's Reaping"
+      "name": "Jupiter's Might",
+      "category": "Spellements"
     },
     {
-      "name": "Terminus' Strike"
+      "name": "Mist Wood",
+      "category": "Reagents"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Senator's Laurel of Wisdom",
+      "category": "Hats"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",
@@ -103,7 +158,7 @@
     {
       "name": "Safety Delay",
       "type": "float",
-      "default": 3,
+      "default": 3.0,
       "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
     },
     {

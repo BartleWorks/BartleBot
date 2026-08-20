@@ -6,738 +6,979 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "novus[epic]@boss | bat[epic]@boss",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Mooshu",
   "drops": [
     {
-      "name": "Add Health Opal"
+      "name": "Add Health Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Adept's Socket Wrench"
+      "name": "Adept's Socket Wrench",
+      "category": "Housing Items"
     },
     {
-      "name": "Angelic Helm"
+      "name": "Angelic Helm",
+      "category": "Hats"
     },
     {
-      "name": "Attentive Opal"
+      "name": "Attentive Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-Boon Citrine"
+      "name": "Balance-Boon Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Balance-Giver Citrine"
+      "name": "Balance-Giver Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Banana Peel Opal"
+      "name": "Banana Peel Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Banshee"
+      "name": "Banshee",
+      "category": "Spellements"
     },
     {
-      "name": "Big Boost Opal"
+      "name": "Big Boost Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Big Downer Opal"
+      "name": "Big Downer Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Big Energy Opal"
+      "name": "Big Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Big Holiday Tree"
+      "name": "Big Holiday Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Big-Check Opal"
+      "name": "Big-Check Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Black Cat"
+      "name": "Black Cat",
+      "category": "Pets"
     },
     {
-      "name": "Blemished Damage Amethyst +11"
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Citrine +11"
+      "name": "Blemished Damage Citrine +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Jade +11"
+      "name": "Blemished Damage Jade +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Onyx +11"
+      "name": "Blemished Damage Onyx +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Peridot +11"
+      "name": "Blemished Damage Peridot +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Ruby +11"
+      "name": "Blemished Damage Ruby +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Damage Sapphire +11"
+      "name": "Blemished Damage Sapphire +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Citrine +21"
+      "name": "Blemished Defense Citrine +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Opal +11"
+      "name": "Blemished Defense Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Health Opal +40"
+      "name": "Blemished Health Opal +40",
+      "category": "Jewels"
     },
     {
-      "name": "Blood Bat"
+      "name": "Blood Bat",
+      "category": "Spellements"
     },
     {
-      "name": "Blubbering Pumpkin Scepter"
+      "name": "Blubbering Pumpkin Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Blue Holiday Ornament"
+      "name": "Blue Holiday Ornament",
+      "category": "Housing Items"
     },
     {
-      "name": "Boon Tree"
+      "name": "Boon Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Brogans of Decrepitude"
+      "name": "Brogans of Decrepitude",
+      "category": "Boots"
     },
     {
-      "name": "Brooding Cap"
+      "name": "Brooding Cap",
+      "category": "Hats"
     },
     {
-      "name": "Bunny Feet"
+      "name": "Bunny Feet",
+      "category": "Boots"
     },
     {
-      "name": "Bunny Suit"
+      "name": "Bunny Suit",
+      "category": "Robes"
     },
     {
-      "name": "Cackling Pumpkin Scepter"
+      "name": "Cackling Pumpkin Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Candy Wand"
+      "name": "Candy Wand",
+      "category": "Wands"
     },
     {
-      "name": "Carol of the Bells Theme"
+      "name": "Carol of the Bells Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Charge Opal"
+      "name": "Charge Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Charge Up Opal"
+      "name": "Charge Up Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Check Opal"
+      "name": "Check Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cheeky Opal"
+      "name": "Cheeky Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Christmas Elf"
+      "name": "Christmas Elf",
+      "category": "Pets"
     },
     {
-      "name": "Chuckling Pumpkin Scepter"
+      "name": "Chuckling Pumpkin Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Clay Post Opal"
+      "name": "Clay Post Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Path Opal"
+      "name": "Clear Path Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Colossus"
+      "name": "Colossus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cool Pumpkin Mask"
+      "name": "Cool Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cupig"
+      "name": "Cupig",
+      "category": "Pets"
     },
     {
-      "name": "Cyclops"
+      "name": "Cyclops",
+      "category": "Spellements"
     },
     {
-      "name": "Cyclops Minion"
+      "name": "Cyclops Minion",
+      "category": "Spellements"
     },
     {
-      "name": "Cyclops Pumpkin Mask"
+      "name": "Cyclops Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Dark Sprite"
+      "name": "Dark Sprite",
+      "category": "Spellements"
     },
     {
-      "name": "Dashing Shoes"
+      "name": "Dashing Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Dawdle Opal"
+      "name": "Dawdle Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Dead End Opal"
+      "name": "Dead End Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Away Onyx"
+      "name": "Death-Away Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Boon Onyx"
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Giver Onyx"
+      "name": "Death-Giver Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Deck the Halls Theme"
+      "name": "Deck the Halls Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Decorative Cannon"
+      "name": "Decorative Cannon",
+      "category": "Housing Items"
     },
     {
-      "name": "Dependable Opal"
+      "name": "Dependable Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Determined Opal"
+      "name": "Determined Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Dirt Post Opal"
+      "name": "Dirt Post Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Downer Opal"
+      "name": "Downer Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Eager Opal"
+      "name": "Eager Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Earth Walker"
+      "name": "Earth Walker",
+      "category": "Spellements"
     },
     {
-      "name": "Earthquake"
+      "name": "Earthquake",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Effective Opal"
+      "name": "Effective Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Even Footing"
+      "name": "Even Footing",
+      "category": "Boots"
     },
     {
-      "name": "Exhaust Opal"
+      "name": "Exhaust Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Extra Mana Opal"
+      "name": "Extra Mana Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Away Ruby"
+      "name": "Fire-Away Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Fire-Giver Ruby"
+      "name": "Fire-Giver Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Frostman"
+      "name": "Frostman",
+      "category": "Pets"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Ghost Dragon"
+      "name": "Ghost Dragon",
+      "category": "Pets"
     },
     {
-      "name": "Ghoul"
+      "name": "Ghoul",
+      "category": "Spellements"
     },
     {
-      "name": "Gogi Berry Stained Boots"
+      "name": "Gogi Berry Stained Boots",
+      "category": "Boots"
     },
     {
-      "name": "Gold Miner Opal"
+      "name": "Gold Miner Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Golden Goose"
+      "name": "Golden Goose",
+      "category": "Pets"
     },
     {
-      "name": "Green Holiday Ornament"
+      "name": "Green Holiday Ornament",
+      "category": "Housing Items"
     },
     {
-      "name": "Hallowe'en Robe"
+      "name": "Hallowe'en Robe",
+      "category": "Robes"
     },
     {
-      "name": "Happy Holidaisy"
+      "name": "Happy Holidaisy",
+      "category": "Seeds"
     },
     {
-      "name": "Happy Pumpkin Mask"
+      "name": "Happy Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Hatchling Scepter"
+      "name": "Hatchling Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Headgear of the Sylph"
+      "name": "Headgear of the Sylph",
+      "category": "Hats"
     },
     {
-      "name": "Headwraps of the Zealous"
+      "name": "Headwraps of the Zealous",
+      "category": "Hats"
     },
     {
-      "name": "Healer Opal"
+      "name": "Healer Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Helephant"
+      "name": "Helephant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Helm of Disquiet"
+      "name": "Helm of Disquiet",
+      "category": "Hats"
     },
     {
-      "name": "Holiday Fireplace"
+      "name": "Holiday Fireplace",
+      "category": "Housing Items"
     },
     {
-      "name": "Holiday Hook Wand"
+      "name": "Holiday Hook Wand",
+      "category": "Wands"
     },
     {
-      "name": "Holiday Treat Wand"
+      "name": "Holiday Treat Wand",
+      "category": "Wands"
     },
     {
-      "name": "Holiday Wreath"
+      "name": "Holiday Wreath",
+      "category": "Housing Items"
     },
     {
-      "name": "Huge Energy Opal"
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Humongofrog Peridot"
+      "name": "Humongofrog Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Hurry Opal"
+      "name": "Hurry Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern Sapphire"
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Away Sapphire"
+      "name": "Ice-Away Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Boon Sapphire"
+      "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ice-Giver Sapphire"
+      "name": "Ice-Giver Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Imp"
+      "name": "Imp",
+      "category": "Spellements"
     },
     {
-      "name": "Imperial Statue"
+      "name": "Imperial Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Intrepid Opal"
+      "name": "Intrepid Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Jade Oni"
+      "name": "Jade Oni",
+      "category": "Pets"
     },
     {
-      "name": "Jade Oni's Amethyst Blade"
+      "name": "Jade Oni's Amethyst Blade",
+      "category": "Wands"
     },
     {
-      "name": "Jade Oni's Amulet of Duplicity"
+      "name": "Jade Oni's Amulet of Duplicity",
+      "category": "Amulets"
     },
     {
-      "name": "Jade Oni's Boots"
+      "name": "Jade Oni's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Jade Oni's Cap"
+      "name": "Jade Oni's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Jade Oni's Garments"
+      "name": "Jade Oni's Garments",
+      "category": "Robes"
     },
     {
-      "name": "Jade Oni's Shroud of Nothing"
+      "name": "Jade Oni's Shroud of Nothing",
+      "category": "Hats"
     },
     {
-      "name": "Jade Oni's Vestment"
+      "name": "Jade Oni's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Jingle Bells Theme"
+      "name": "Jingle Bells Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Kitty Pumpkin Mask"
+      "name": "Kitty Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Knotwork Wand"
+      "name": "Knotwork Wand",
+      "category": "Wands"
     },
     {
-      "name": "Kraken Amethyst"
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Krokopatra Exalted Duel"
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokopatra Master Duel"
+      "name": "Krokopatra Master Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Leprechaun"
+      "name": "Leprechaun",
+      "category": "Spellements"
     },
     {
-      "name": "Life-Boon Jade"
+      "name": "Life-Boon Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Eye Jade"
+      "name": "Life-Eye Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Life-Proof Jade"
+      "name": "Life-Proof Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Lovely Ladybug"
+      "name": "Lovely Ladybug",
+      "category": "Pets"
     },
     {
-      "name": "Lovely Leopard"
+      "name": "Lovely Leopard",
+      "category": "Pets"
     },
     {
-      "name": "Lucky Leprechaun"
+      "name": "Lucky Leprechaun",
+      "category": "Pets"
     },
     {
-      "name": "Lucky Shamrock Wand"
+      "name": "Lucky Shamrock Wand",
+      "category": "Wands"
     },
     {
-      "name": "Lump of Coal"
+      "name": "Lump of Coal",
+      "category": "Pets"
     },
     {
-      "name": "Mana Boost Opal"
+      "name": "Mana Boost Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Maple Moose"
+      "name": "Maple Moose",
+      "category": "Pets"
     },
     {
-      "name": "Mend Minion Talent Peridot"
+      "name": "Mend Minion Talent Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Meowiarty Archmage Duel"
+      "name": "Meowiarty Archmage Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Meowiarty Exalted Duel"
+      "name": "Meowiarty Exalted Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Meteor Strike Ruby"
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Milk and Cookies"
+      "name": "Milk and Cookies",
+      "category": "Housing Items"
     },
     {
-      "name": "Minotaur"
+      "name": "Minotaur",
+      "category": "Spellements"
     },
     {
-      "name": "Mint Standee"
+      "name": "Mint Standee",
+      "category": "Housing Items"
     },
     {
-      "name": "Mint Swirl"
+      "name": "Mint Swirl",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Main Theme"
+      "name": "MooShu Main Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "MooShu Plague Theme"
+      "name": "MooShu Plague Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Move It! Opal"
+      "name": "Move It! Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Mummy Costume Footwraps"
+      "name": "Mummy Costume Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Mummy Costume Headwraps"
+      "name": "Mummy Costume Headwraps",
+      "category": "Hats"
     },
     {
-      "name": "Myth-Boon Peridot"
+      "name": "Myth-Boon Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Eye Peridot"
+      "name": "Myth-Eye Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Myth-Proof Peridot"
+      "name": "Myth-Proof Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Nature's Wrath"
+      "name": "Nature's Wrath",
+      "category": "Spellements"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Pig Hat"
+      "name": "Ninja Pig Hat",
+      "category": "Hats"
     },
     {
-      "name": "Ninja Pig Shoes"
+      "name": "Ninja Pig Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Nosferatu's Cloak"
+      "name": "Nosferatu's Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Nutcracker"
+      "name": "Nutcracker",
+      "category": "Housing Items"
     },
     {
-      "name": "Nutcracker"
+      "name": "Nutcracker",
+      "category": "Housing Items"
     },
     {
-      "name": "Nutcracker Wand"
+      "name": "Nutcracker Wand",
+      "category": "Wands"
     },
     {
-      "name": "Oil Slick Opal"
+      "name": "Oil Slick Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Peculiar Garments"
+      "name": "Peculiar Garments",
+      "category": "Robes"
     },
     {
-      "name": "Perplex Opal"
+      "name": "Perplex Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Pet Egg"
+      "name": "Pet Egg",
+      "category": "Pets"
     },
     {
-      "name": "Pilgrim Robe"
+      "name": "Pilgrim Robe",
+      "category": "Robes"
     },
     {
-      "name": "Pip O'Plenty Opal"
+      "name": "Pip O'Plenty Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Pirate Pumpkin Mask"
+      "name": "Pirate Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Polka Dot Wrapped Gift"
+      "name": "Polka Dot Wrapped Gift",
+      "category": "Housing Items"
     },
     {
-      "name": "Power Play Citrine"
+      "name": "Power Play Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Rattlebones Exalted Duel"
+      "name": "Rattlebones Exalted Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Rattlebones Master Duel"
+      "name": "Rattlebones Master Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Red Holiday Ornament"
+      "name": "Red Holiday Ornament",
+      "category": "Housing Items"
     },
     {
-      "name": "Rescue Rover"
+      "name": "Rescue Rover",
+      "category": "Pets"
     },
     {
-      "name": "Reshuffle"
+      "name": "Reshuffle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Restore Opal"
+      "name": "Restore Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Samoorai"
+      "name": "Samoorai",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sanguine Scepter"
+      "name": "Sanguine Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Santa Boots"
+      "name": "Santa Boots",
+      "category": "Boots"
     },
     {
-      "name": "Santa Hat"
+      "name": "Santa Hat",
+      "category": "Hats"
     },
     {
-      "name": "Santa Robe"
+      "name": "Santa Robe",
+      "category": "Robes"
     },
     {
-      "name": "Scarab"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scepter of Spring's Bounty"
+      "name": "Scepter of Spring's Bounty",
+      "category": "Wands"
     },
     {
-      "name": "Scepter of the Cherub"
+      "name": "Scepter of the Cherub",
+      "category": "Wands"
     },
     {
-      "name": "Scorpion"
+      "name": "Scorpion",
+      "category": "Spellements"
     },
     {
-      "name": "Seraph"
+      "name": "Seraph",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seraph"
+      "name": "Seraph",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seraph Jade"
+      "name": "Seraph Jade",
+      "category": "Jewels"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
     },
     {
-      "name": "Skeletal Pirate Onyx"
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Slippers of Enthusiasm"
+      "name": "Slippers of Enthusiasm",
+      "category": "Boots"
     },
     {
-      "name": "Slippers of Inflection"
+      "name": "Slippers of Inflection",
+      "category": "Boots"
     },
     {
-      "name": "Small Color Light Strand"
+      "name": "Small Color Light Strand",
+      "category": "Housing Items"
     },
     {
-      "name": "Snowball"
+      "name": "Snowball",
+      "category": "Pets"
     },
     {
-      "name": "Snowglobe"
+      "name": "Snowglobe",
+      "category": "Housing Items"
     },
     {
-      "name": "Snowman"
+      "name": "Snowman",
+      "category": "Housing Items"
     },
     {
-      "name": "Snowman Wrapped Gift"
+      "name": "Snowman Wrapped Gift",
+      "category": "Housing Items"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Spooky Bob"
+      "name": "Spooky Bob",
+      "category": "Housing Items"
     },
     {
-      "name": "Spring Bunny Scepter"
+      "name": "Spring Bunny Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Staff of the Crimson Hart"
+      "name": "Staff of the Crimson Hart",
+      "category": "Wands"
     },
     {
-      "name": "Staff of the Harvest"
+      "name": "Staff of the Harvest",
+      "category": "Wands"
     },
     {
-      "name": "Staff of the White Rabbit"
+      "name": "Staff of the White Rabbit",
+      "category": "Wands"
     },
     {
-      "name": "Star Staff"
+      "name": "Star Staff",
+      "category": "Wands"
     },
     {
-      "name": "Statue Base"
+      "name": "Statue Base",
+      "category": "Housing Items"
     },
     {
-      "name": "Statue of Koto"
+      "name": "Statue of Koto",
+      "category": "Housing Items"
     },
     {
-      "name": "Stave of the Holiday Flame"
+      "name": "Stave of the Holiday Flame",
+      "category": "Wands"
     },
     {
-      "name": "Storm-Away Amethyst"
+      "name": "Storm-Away Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Boon Amethyst"
+      "name": "Storm-Boon Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Eye Amethyst"
+      "name": "Storm-Eye Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Storm-Giver Amethyst"
+      "name": "Storm-Giver Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stormclaw Amethyst"
+      "name": "Stormclaw Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stormrider Hare"
+      "name": "Stormrider Hare",
+      "category": "Mounts"
     },
     {
-      "name": "Stormzilla"
+      "name": "Stormzilla",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Strong"
+      "name": "Strong",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sugar Cane Wand"
+      "name": "Sugar Cane Wand",
+      "category": "Wands"
     },
     {
-      "name": "Super-Pass Opal"
+      "name": "Super-Pass Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Super-Stall Opal"
+      "name": "Super-Stall Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "To The Jade Palace"
+      "name": "To The Jade Palace",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Troll"
+      "name": "Troll",
+      "category": "Spellements"
     },
     {
-      "name": "Tunic of Anthems"
+      "name": "Tunic of Anthems",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Discontent"
+      "name": "Tunic of Discontent",
+      "category": "Robes"
     },
     {
-      "name": "Tunic of Fiery Renewal"
+      "name": "Tunic of Fiery Renewal",
+      "category": "Robes"
     },
     {
-      "name": "Turkey Hat"
+      "name": "Turkey Hat",
+      "category": "Hats"
     },
     {
-      "name": "Ultra Energy Opal"
+      "name": "Ultra Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Unbalancer Citrine"
+      "name": "Unbalancer Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Valentine Pig"
+      "name": "Valentine Pig",
+      "category": "Pets"
     },
     {
-      "name": "Vampire"
+      "name": "Vampire",
+      "category": "Spellements"
     },
     {
-      "name": "Vampire Costume Boots"
+      "name": "Vampire Costume Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vampire Costume Wig"
+      "name": "Vampire Costume Wig",
+      "category": "Hats"
     },
     {
-      "name": "Vestment of the Lotus"
+      "name": "Vestment of the Lotus",
+      "category": "Robes"
     },
     {
-      "name": "Wand of Compassion"
+      "name": "Wand of Compassion",
+      "category": "Wands"
     },
     {
-      "name": "Wand of Nature's Ebb"
+      "name": "Wand of Nature's Ebb",
+      "category": "Wands"
     },
     {
-      "name": "Wand of Wealth"
+      "name": "Wand of Wealth",
+      "category": "Wands"
     },
     {
-      "name": "Wise Opal"
+      "name": "Wise Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Wisp Bonus Opal"
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Wooden Skeleton Key"
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "Youkai's Shoes"
+      "name": "Youkai's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Yuletide Lg. Keeper Aquarium"
+      "name": "Yuletide Lg. Keeper Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Yuletide Lg. Small Fry Aquarium"
+      "name": "Yuletide Lg. Small Fry Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Yuletide Spirit"
+      "name": "Yuletide Spirit",
+      "category": "Pets"
     },
     {
-      "name": "Yuletide Tall Keeper Aquarium"
+      "name": "Yuletide Tall Keeper Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Yuletide Tall Small Fry Aquarium"
+      "name": "Yuletide Tall Small Fry Aquarium",
+      "category": "Housing Items"
     },
     {
-      "name": "Zeus Exalted Duel"
+      "name": "Zeus Exalted Duel",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",
@@ -980,7 +1221,9 @@
       "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -988,7 +1231,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -996,7 +1241,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1004,7 +1251,9 @@
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1012,7 +1261,9 @@
       "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1020,7 +1271,9 @@
       "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1028,7 +1281,9 @@
       "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1036,7 +1291,9 @@
       "dest": "state_9",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1044,7 +1301,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1052,7 +1311,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1060,7 +1321,9 @@
       "dest": "state_12",
       "when": "FALSE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1068,7 +1331,9 @@
       "dest": "state_11",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1076,7 +1341,9 @@
       "dest": "state_10",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1084,7 +1351,9 @@
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1092,7 +1361,9 @@
       "dest": "state_4",
       "when": "TRUE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1100,7 +1371,9 @@
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1108,7 +1381,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1116,7 +1391,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1124,7 +1401,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1132,7 +1411,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1140,7 +1421,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1148,7 +1431,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -1156,7 +1441,9 @@
       "dest": "state_11",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [

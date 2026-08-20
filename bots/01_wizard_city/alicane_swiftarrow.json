@@ -6,362 +6,487 @@
   "clients": "all",
   "initial": "state_9",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
     {
-      "name": "Adventurer's Boots"
+      "name": "Adventurer's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Alicane's Band"
+      "name": "Alicane's Band",
+      "category": "Rings"
     },
     {
-      "name": "Alicane's Cowl"
+      "name": "Alicane's Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Alicane's Dirk"
+      "name": "Alicane's Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Alicane's Flame Staff"
+      "name": "Alicane's Flame Staff",
+      "category": "Wands"
     },
     {
-      "name": "Alicane's Helm"
+      "name": "Alicane's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Ancient Koi"
+      "name": "Ancient Koi",
+      "category": "Mounts"
     },
     {
-      "name": "Ankylosaurus"
+      "name": "Ankylosaurus",
+      "category": "Mounts"
     },
     {
-      "name": "Auroch"
+      "name": "Auroch",
+      "category": "Mounts"
     },
     {
-      "name": "Barkskin Boots"
+      "name": "Barkskin Boots",
+      "category": "Boots"
     },
     {
-      "name": "Barkskin Tunic"
+      "name": "Barkskin Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Bat Wings"
+      "name": "Bat Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Bengal Tiger"
+      "name": "Bengal Tiger",
+      "category": "Mounts"
     },
     {
-      "name": "Black Stallion"
+      "name": "Black Stallion",
+      "category": "Mounts"
     },
     {
-      "name": "Blonde Strawberry"
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Blood Bat"
+      "name": "Blood Bat",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Boots of the Adverse"
+      "name": "Boots of the Adverse",
+      "category": "Boots"
     },
     {
-      "name": "Branded Footguards"
+      "name": "Branded Footguards",
+      "category": "Boots"
     },
     {
-      "name": "Canvas Wraps"
+      "name": "Canvas Wraps",
+      "category": "Boots"
     },
     {
-      "name": "Cheese Broccoli"
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Chestnut Pony"
+      "name": "Chestnut Pony",
+      "category": "Mounts"
     },
     {
-      "name": "Chillcloak"
+      "name": "Chillcloak",
+      "category": "Robes"
     },
     {
-      "name": "Chocolate Strawberry"
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Cloak of Calamity"
+      "name": "Cloak of Calamity",
+      "category": "Robes"
     },
     {
-      "name": "Cloak of Foresight"
+      "name": "Cloak of Foresight",
+      "category": "Robes"
     },
     {
-      "name": "Crokagator"
+      "name": "Crokagator",
+      "category": "Mounts"
     },
     {
-      "name": "Dark Redwing"
+      "name": "Dark Redwing",
+      "category": "Mounts"
     },
     {
-      "name": "Death Trap"
+      "name": "Death Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Elven Fire Robe"
+      "name": "Elven Fire Robe",
+      "category": "Robes"
     },
     {
-      "name": "Enchanted Broom"
+      "name": "Enchanted Broom",
+      "category": "Mounts"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Explorer Boots"
+      "name": "Explorer Boots",
+      "category": "Boots"
     },
     {
-      "name": "Fairy Cloak"
+      "name": "Fairy Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Fairy Shoes"
+      "name": "Fairy Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Faithful Dragoness"
+      "name": "Faithful Dragoness",
+      "category": "Mounts"
     },
     {
-      "name": "Fire Bush"
+      "name": "Fire Bush",
+      "category": "Housing Items"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fire Elf",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Shield"
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Firecat Statue"
+      "name": "Firecat Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Firestorm Cap"
+      "name": "Firestorm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Firestorm Wraps"
+      "name": "Firestorm Wraps",
+      "category": "Boots"
     },
     {
-      "name": "Flawed Opal Band"
+      "name": "Flawed Opal Band",
+      "category": "Rings"
     },
     {
-      "name": "Flawed Pearl Ring"
+      "name": "Flawed Pearl Ring",
+      "category": "Rings"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ghoul"
+      "name": "Ghoul",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Guiding Light"
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gummy Firecat"
+      "name": "Gummy Firecat",
+      "category": "Snacks"
     },
     {
-      "name": "Hallowed Band"
+      "name": "Hallowed Band",
+      "category": "Rings"
     },
     {
-      "name": "Hardened Boots"
+      "name": "Hardened Boots",
+      "category": "Boots"
     },
     {
-      "name": "Healer's Cowl"
+      "name": "Healer's Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Stability"
+      "name": "Helm of Stability",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Supremacy"
+      "name": "Helm of Supremacy",
+      "category": "Hats"
     },
     {
-      "name": "Hippogriff"
+      "name": "Hippogriff",
+      "category": "Mounts"
     },
     {
-      "name": "Hood of Storms"
+      "name": "Hood of Storms",
+      "category": "Hats"
     },
     {
-      "name": "Horned Sweeper"
+      "name": "Horned Sweeper",
+      "category": "Mounts"
     },
     {
-      "name": "Imp"
+      "name": "Imp",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Imp Lord's Helm"
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Jeweled Dagger"
+      "name": "Jeweled Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Keen Eyes"
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Martyr's Wraps"
+      "name": "Martyr's Wraps",
+      "category": "Boots"
     },
     {
-      "name": "Moonlight Pony"
+      "name": "Moonlight Pony",
+      "category": "Mounts"
     },
     {
-      "name": "Myth Shield"
+      "name": "Myth Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Nightflame Pegasus"
+      "name": "Nightflame Pegasus",
+      "category": "Mounts"
     },
     {
-      "name": "Novice's Hat"
+      "name": "Novice's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Novice's Robe"
+      "name": "Novice's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Novice's Shoes"
+      "name": "Novice's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Orange Fairy Wings"
+      "name": "Orange Fairy Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Panther"
+      "name": "Panther",
+      "category": "Mounts"
     },
     {
-      "name": "Pixie"
+      "name": "Pixie",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Plated Boots"
+      "name": "Plated Boots",
+      "category": "Boots"
     },
     {
-      "name": "Prop House 2"
+      "name": "Prop House 2",
+      "category": "Housing Items"
     },
     {
-      "name": "Prop Mountains 1"
+      "name": "Prop Mountains 1",
+      "category": "Housing Items"
     },
     {
-      "name": "Prop Mountains 2"
+      "name": "Prop Mountains 2",
+      "category": "Housing Items"
     },
     {
-      "name": "Renaissance Wings"
+      "name": "Renaissance Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Ritual Athame"
+      "name": "Ritual Athame",
+      "category": "Athames"
     },
     {
-      "name": "Robe of Antiquities"
+      "name": "Robe of Antiquities",
+      "category": "Robes"
     },
     {
-      "name": "Roughspun Hat"
+      "name": "Roughspun Hat",
+      "category": "Hats"
     },
     {
-      "name": "Rugged Seahorse"
+      "name": "Rugged Seahorse",
+      "category": "Mounts"
     },
     {
-      "name": "Scarab"
+      "name": "Scarab",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Sea Turtle"
+      "name": "Sea Turtle",
+      "category": "Mounts"
     },
     {
-      "name": "Senior Novice's Robe"
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Seraph Wings"
+      "name": "Seraph Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Shortblade of the Quick"
+      "name": "Shortblade of the Quick",
+      "category": "Athames"
     },
     {
-      "name": "Simple Dirk"
+      "name": "Simple Dirk",
+      "category": "Athames"
     },
     {
-      "name": "Slippers of Rites"
+      "name": "Slippers of Rites",
+      "category": "Boots"
     },
     {
-      "name": "Small Fern"
+      "name": "Small Fern",
+      "category": "Housing Items"
     },
     {
-      "name": "Snappy Lobster"
+      "name": "Snappy Lobster",
+      "category": "Mounts"
     },
     {
-      "name": "Snow Ram"
+      "name": "Snow Ram",
+      "category": "Mounts"
     },
     {
-      "name": "Snow Shield"
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Soft Hood"
+      "name": "Soft Hood",
+      "category": "Hats"
     },
     {
-      "name": "Soldiers Wraps"
+      "name": "Soldiers Wraps",
+      "category": "Boots"
     },
     {
-      "name": "Spider Silk"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Sprite"
+      "name": "Sprite",
+      "category": "Pets"
     },
     {
-      "name": "Spritely Seahorse"
+      "name": "Spritely Seahorse",
+      "category": "Mounts"
     },
     {
-      "name": "Starlight Pony"
+      "name": "Starlight Pony",
+      "category": "Mounts"
     },
     {
-      "name": "Sturdy Boots"
+      "name": "Sturdy Boots",
+      "category": "Boots"
     },
     {
-      "name": "Sturdy Coat"
+      "name": "Sturdy Coat",
+      "category": "Robes"
     },
     {
-      "name": "Sugar Donut"
+      "name": "Sugar Donut",
+      "category": "Snacks"
     },
     {
-      "name": "Sunshine Pony"
+      "name": "Sunshine Pony",
+      "category": "Mounts"
     },
     {
-      "name": "Swift Gryphon"
+      "name": "Swift Gryphon",
+      "category": "Mounts"
     },
     {
-      "name": "Swift Shark"
+      "name": "Swift Shark",
+      "category": "Mounts"
     },
     {
-      "name": "Swiftarrow's Boots"
+      "name": "Swiftarrow's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Swiftarrow's Mantle"
+      "name": "Swiftarrow's Mantle",
+      "category": "Robes"
     },
     {
-      "name": "Swiftarrow's Necklace"
+      "name": "Swiftarrow's Necklace",
+      "category": "Amulets"
     },
     {
-      "name": "Swiftarrow's Signet"
+      "name": "Swiftarrow's Signet",
+      "category": "Rings"
     },
     {
-      "name": "Swiftarrow's Staff"
+      "name": "Swiftarrow's Staff",
+      "category": "Wands"
     },
     {
-      "name": "Swiftarrow's Windmane"
+      "name": "Swiftarrow's Windmane",
+      "category": "Robes"
     },
     {
-      "name": "Swiftshadow Wings"
+      "name": "Swiftshadow Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Time of Legend"
+      "name": "Tawny Ram",
+      "category": "Mounts"
     },
     {
-      "name": "Tough"
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Twice Stitched Robe"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Vestment of the Adverse"
+      "name": "Twice Stitched Robe",
+      "category": "Robes"
     },
     {
-      "name": "White Mare"
+      "name": "Venemous Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Wizard101 Theme"
+      "name": "Vestment of the Adverse",
+      "category": "Robes"
+    },
+    {
+      "name": "White Mare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Wizard101 Theme",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",
