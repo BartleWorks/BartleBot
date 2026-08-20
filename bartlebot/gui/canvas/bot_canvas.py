@@ -578,6 +578,7 @@ class BotCanvas(QWidget):
         self._scene = EditScene()
         self._view = _EditView(self._scene)
         self._param_panel = _ParamPanel()
+        self._param_panel.set_drops_getter(lambda: list(self._config.drops) if self._config else [])
 
         # ── Buttons ───────────────────────────────────────────────────
         self._run_pause_btn = _icon_btn("play", "Run bot")
@@ -818,6 +819,7 @@ class BotCanvas(QWidget):
         self._tab_idx = 0
         _inject_required_options(config)
         self._config = config
+        self._param_panel.refresh_drops()
         # Auto-layout when no positions are saved and the setting is enabled
         if (
             config.states

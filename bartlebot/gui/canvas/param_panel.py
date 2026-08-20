@@ -278,6 +278,178 @@ class _ZoneWidget(QWidget):
             pass
 
 
+class _DropKeepListWidget(QWidget):
+    """Keep-list editor for the quicksell node: keywords plus the bot's drop table.
+
+    The line edit holds the raw comma-separated keywords, exactly as the plain
+    'str_list' widget does. Below it every item in the bot's drop table is listed
+    with a checkbox reflecting whether this quicksell config would keep it, so the
+    two halves of the answer — what am I keeping, and what does this bot drop —
+    are visible together.
+
+    Rows kept by a keyword that is not the item's own name (a partial match, or one
+    of the sell_* bools) are checked but disabled: ticking them off would mean
+    rewriting a keyword the user typed, which is done in the line edit instead.
+    """
+
+    changed = pyqtSignal()
+
+    _LIST_MAX_HEIGHT = 170
+
+    def __init__(self, get_drops: Callable[[], list[str]], parent=None):
+        super().__init__(parent)
+        self._get_drops = get_drops
+        # Sibling params (the sell_* bools) — supplied by the form on every edit,
+        # since they contribute implied keywords to the keep list.
+        self._context: dict[str, Any] = {}
+        self._suppress = False
+        self._rows: list[QCheckBox] = []
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(3)
+
+        self._edit = _StrListLineEdit()
+        self._edit.setPlaceholderText("e.g. ItemA, ItemB")
+        self._edit.textChanged.connect(self._on_text_edited)
+        outer.addWidget(self._edit)
+
+        # Two lines: the rule, which never changes, and the live count under it.
+        self._rule = QLabel("Checked drops are <b>kept</b>, unchecked drops are <b>sold</b>")
+        self._rule.setWordWrap(True)
+        outer.addWidget(self._rule)
+
+        self._summary = QLabel()
+        self._summary.setWordWrap(True)
+        outer.addWidget(self._summary)
+
+        self._list = QWidget()
+        self._list_layout = QVBoxLayout(self._list)
+        self._list_layout.setContentsMargins(6, 4, 6, 4)
+        self._list_layout.setSpacing(2)
+
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setMaximumHeight(self._LIST_MAX_HEIGHT)
+        self._scroll.setWidget(self._list)
+        outer.addWidget(self._scroll)
+
+        self._apply_styles()
+
+    # ------------------------------------------------------------------
+    # Form integration
+    # ------------------------------------------------------------------
+
+    def get_value(self) -> list[str]:
+        return [x.strip().strip("'\"") for x in self._edit.text().strip("[] ").split(",") if x.strip().strip("'\"")]
+
+    def set_value(self, value: list[str]) -> None:
+        self._suppress = True
+        self._edit.setText(", ".join(str(v) for v in value) if isinstance(value, list) else str(value or ""))
+        self._suppress = False
+        self.refresh()
+
+    def set_context(self, params: dict) -> None:
+        """Supply the node's other params, whose sell_* bools imply extra keywords."""
+        self._context = dict(params)
+        self.refresh()
+
+    def refresh(self) -> None:
+        """Bring the drop rows in line with the current drop table and keep list.
+
+        Rows are only rebuilt when the drop table itself changes; otherwise their
+        state is updated in place. That matters because a tick re-enters here
+        through the form's changed signal, and destroying the checkbox that is
+        mid-emission takes the process down with it.
+        """
+        drops = self._get_drops()
+        if [row.text() for row in self._rows] != drops:
+            self._rebuild_rows(drops)
+        self._apply_states(drops)
+
+    # ------------------------------------------------------------------
+    # Internals
+    # ------------------------------------------------------------------
+
+    def _rebuild_rows(self, drops: list[str]) -> None:
+        while self._list_layout.count():
+            item = self._list_layout.takeAt(0)
+            if item.widget():
+                item.widget().setParent(None)
+        self._rows = []
+        for name in drops:
+            row = QCheckBox(name)
+            row.checkStateChanged.connect(lambda _s, n=name, w=row: self._on_row_toggled(n, w.isChecked()))
+            self._list_layout.addWidget(row)
+            self._rows.append(row)
+        self._list_layout.addStretch()
+
+    def _apply_states(self, drops: list[str]) -> None:
+        from bartlebot.nodes.utility import quicksell
+
+        self._scroll.setVisible(bool(drops))
+        self._rule.setVisible(bool(drops))
+        if not drops:
+            self._summary.setText("This bot has no drops listed. Add some in Possible Drops to pick them here.")
+            return
+
+        states = quicksell.drop_keep_states(drops, {**self._context, "keep_list": self.get_value()})
+        kept = sum(1 for s in states if s.kept)
+        self._summary.setText(
+            f"Currently keeping {self._emphasis(kept)} out of {self._emphasis(len(states))} possible drops"
+        )
+
+        for row, state in zip(self._rows, states):
+            row.blockSignals(True)
+            row.setChecked(state.kept)
+            row.blockSignals(False)
+            locked = state.kept and not state.exact
+            row.setEnabled(not locked)
+            if locked:
+                row.setToolTip(f"Kept by the keyword {state.keyword!r}, not by its own name — change that above.")
+            else:
+                row.setToolTip("Sell this item." if state.kept else "Keep this item when quickselling.")
+
+    def _on_row_toggled(self, name: str, keep: bool) -> None:
+        from bartlebot.nodes.utility import quicksell
+
+        self._suppress = True
+        self._edit.setText(", ".join(quicksell.toggle_drop_in_keep_list(self.get_value(), name, keep)))
+        self._suppress = False
+        self._apply_states(self._get_drops())
+        self.changed.emit()
+
+    def _on_text_edited(self) -> None:
+        if self._suppress:
+            return
+        self.refresh()
+        self.changed.emit()
+
+    @staticmethod
+    def _emphasis(text: object) -> str:
+        """Bold *text* at full text colour, for use inside the muted summary lines.
+
+        The colour has to be inline: a Qt style sheet selects widgets, so it cannot
+        reach the <b> spans inside a QLabel's rich text.
+        """
+        return f'<b style="color: {THEME.text}">{text}</b>'
+
+    def _apply_styles(self) -> None:
+        line = f"color: {THEME.text_muted}; font-size: 10px;"
+        self._rule.setStyleSheet(line)
+        self._summary.setStyleSheet(line)
+        self._scroll.setStyleSheet(f"QScrollArea {{ border: 1px solid {THEME.border}; border-radius: 3px; }}")
+        self._rule.setText(f"Checked drops are {self._emphasis('kept')}, unchecked drops are {self._emphasis('sold')}")
+        self._scroll.setStyleSheet(f"QScrollArea {{ border: 1px solid {THEME.border}; border-radius: 3px; }}")
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._apply_styles()
+            # The summary's bold spans carry an inline colour, so re-render them too.
+            self.refresh()
+
+
 class _IntChoiceComboBox(QComboBox):
     """QComboBox variant used for 'int_choice' param fields.
 
@@ -305,6 +477,18 @@ class _DynamicParamForm(QWidget):
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
+        self._get_drops: Callable[[], list[str]] = lambda: []
+
+    def set_drops_getter(self, fn: Callable[[], list[str]]) -> None:
+        """Pass a callable returning the current bot's drop table."""
+        self._get_drops = fn
+        self.refresh_drops()
+
+    def refresh_drops(self) -> None:
+        """Re-read the drop table into any drop-aware widget on the form."""
+        for w in self._widgets.values():
+            if isinstance(w, _DropKeepListWidget):
+                w.refresh()
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
@@ -376,7 +560,14 @@ class _DynamicParamForm(QWidget):
                     display_w.setEnabled(not controller.text().strip())
                     controller.textChanged.connect(lambda text, w=display_w: w.setEnabled(not text.strip()))
         self._suppress = False
+        self._push_context()
         self._validate_required_fields()
+
+    def _push_context(self) -> None:
+        """Hand drop-aware widgets the form's other params, which affect what is kept."""
+        for w in self._widgets.values():
+            if isinstance(w, _DropKeepListWidget):
+                w.set_context(self.get_params())
 
     def _validate_required_fields(self) -> None:
         """Apply or clear a red border on required input widgets based on whether they are empty."""
@@ -411,7 +602,7 @@ class _DynamicParamForm(QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
-            elif isinstance(w, _PlayerListWidget):
+            elif isinstance(w, _PlayerListWidget | _DropKeepListWidget):
                 result[key] = w.get_value()
             elif isinstance(w, _IntListLineEdit):
                 result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
@@ -481,6 +672,13 @@ class _DynamicParamForm(QWidget):
             return w
         if field_type == "player_list":
             w = _PlayerListWidget()
+            w.set_value(val if isinstance(val, list) else [])
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
+        if field_type == "drop_keep_list":
+            w = _DropKeepListWidget(lambda: self._get_drops())
             w.set_value(val if isinstance(val, list) else [])
             if help_text:
                 w.setToolTip(help_text)
@@ -609,6 +807,7 @@ class _DynamicParamForm(QWidget):
 
     def _emit_changed(self, *_) -> None:
         if not self._suppress:
+            self._push_context()
             self._validate_required_fields()
             self.changed.emit()
 
@@ -1355,6 +1554,14 @@ class _ParamPanel(QWidget):
                 f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
                 " border: none; padding: 0; font-size: 11px; background: transparent; }"
             )
+
+    def set_drops_getter(self, fn: Callable[[], list[str]]) -> None:
+        """Pass a callable returning the current bot's drop table (BotConfig.drops)."""
+        self._param_form.set_drops_getter(fn)
+
+    def refresh_drops(self) -> None:
+        """Re-read the drop table — call when the bot's drops are edited elsewhere."""
+        self._param_form.refresh_drops()
 
     def show_idle(self) -> None:
         self._cancel_record()

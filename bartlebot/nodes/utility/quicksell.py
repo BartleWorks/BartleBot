@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from dataclasses import dataclass
 
 from wizwalker import Keycode
 
@@ -27,12 +28,13 @@ from bartlebot.nodes.paths import (
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="keep_list",
-        type="str_list",
+        type="drop_keep_list",
         label="Keep List",
         help=(
             "Keywords to match against item names when quickselling. "
             "Any item whose name contains one of these strings (case-insensitive) will NOT be sold. "
-            "Partial matches count — 'hat' will keep any item with 'hat' in the name."
+            "Partial matches count — 'hat' will keep any item with 'hat' in the name. "
+            "Tick an item below to add its exact name to the list."
         ),
         default=[],
         required=False,
@@ -98,6 +100,89 @@ from bartlebot.nodes.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # 
 
 _ROWS_PER_PAGE = 10
 
+# Bool params that add a keyword to the keep list when switched *off*.
+IMPLIED_KEEP_KEYWORDS: dict[str, str] = {
+    "sell_socket_wrenches": "socket wrench",
+    "sell_skeleton_keys": "skeleton key",
+}
+
+
+def _typed_keywords(params: dict) -> list[str]:
+    """The keep_list param, lowercased. Blank entries are dropped: an empty keyword
+    is a substring of every name and would silently keep the entire backpack."""
+    return [k for k in (kw.lower().strip() for kw in (params.get("keep_list") or [])) if k]
+
+
+def _implied_keywords(params: dict) -> list[str]:
+    """The keywords contributed by the sell_* bools rather than by the keep_list."""
+    return [keyword for param_key, keyword in IMPLIED_KEEP_KEYWORDS.items() if not params.get(param_key, False)]
+
+
+def effective_keep_list(params: dict) -> list[str]:
+    """Return the lowercased keywords this config keeps items by."""
+    return [*_typed_keywords(params), *_implied_keywords(params)]
+
+
+def matching_keyword(item_name: str, keywords: list[str]) -> str | None:
+    """Return the first keyword in *keywords* that keeps *item_name*, or None.
+
+    Matching is the case-insensitive substring test the quicksell page loop uses,
+    so the answer is exactly what the node will do to that item.
+    """
+    lowered = item_name.lower()
+    for keyword in keywords:
+        if keyword and keyword in lowered:
+            return keyword
+    return None
+
+
+@dataclass(frozen=True)
+class DropKeepState:
+    """How one item from a bot's drop table fares under a quicksell config.
+
+    Attributes:
+        name:    The item name as it appears in the drop table.
+        keyword: The keep-list keyword that spares it, or None when it will be sold.
+        exact:   True when *keyword* is a keep_list entry equal to the item's own
+                 name, so ticking or unticking the item is enough to change its
+                 fate. False for a partial match, and false for an implied keyword
+                 even when it happens to equal the name ("Socket Wrench") — removing
+                 that one means flipping the sell_* bool, not editing the keep list.
+    """
+
+    name: str
+    keyword: str | None
+    exact: bool
+
+    @property
+    def kept(self) -> bool:
+        return self.keyword is not None
+
+
+def drop_keep_states(drops: list[str], params: dict) -> list[DropKeepState]:
+    """Report what a quicksell config does to each item in a bot's drop table."""
+    typed = _typed_keywords(params)
+    implied = _implied_keywords(params)
+    states = []
+    for name in drops:
+        keyword = matching_keyword(name, typed)
+        if keyword is not None:
+            states.append(DropKeepState(name, keyword, exact=keyword == name.lower().strip()))
+        else:
+            states.append(DropKeepState(name, matching_keyword(name, implied), exact=False))
+    return states
+
+
+def toggle_drop_in_keep_list(keep_list: list[str], name: str, keep: bool) -> list[str]:
+    """Return *keep_list* with the exact item *name* added or removed.
+
+    Only entries equal to *name* are touched, so a broader keyword the user typed
+    themselves survives an untick — it simply cannot be removed from here.
+    """
+    target = name.lower().strip()
+    remaining = [k for k in keep_list if k.lower().strip() != target]
+    return [*remaining, name] if keep else remaining
+
 
 async def run(machine, clients: list, params: dict) -> str:
     """
@@ -106,9 +191,9 @@ async def run(machine, clients: list, params: dict) -> str:
           node_helpers.click_by_path(), node_helpers.get_text_by_path()
 
     Flow (per client, run concurrently via asyncio.gather):
-      1. Build the effective keep_list: start from the keep_list param, then append
-         'socket wrench' if sell_socket_wrenches is False, 'skeleton key' if
-         sell_skeleton_keys is False.
+      1. Build the effective keep_list via effective_keep_list(): the keep_list param
+         plus the keywords implied by the sell_* bools. The properties panel calls the
+         same function to show which of the bot's drops this config will keep.
       2. Open the inventory page (B key); read backpack_space() to check if full.
       3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
       4. If neither is full, close the backpack and return SUCCESS.
@@ -131,14 +216,10 @@ async def run(machine, clients: list, params: dict) -> str:
     FAILURE: quicksell open button did not appear; shop UI did not appear;
     sell confirmation dialog did not appear.
     """
-    keep_list = [k.lower() for k in (params.get("keep_list") or [])]
+    keep_list = effective_keep_list(params)
     sell_pets: bool = params.get("sell_pets", True)
     sell_socket_wrenches: bool = params.get("sell_socket_wrenches", False)
     sell_skeleton_keys: bool = params.get("sell_skeleton_keys", False)
-    if not sell_socket_wrenches:
-        keep_list.append("socket wrench")
-    if not sell_skeleton_keys:
-        keep_list.append("skeleton key")
     machine.log(
         f"quicksell: keep_list={keep_list!r} sell_pets={sell_pets} "
         f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
@@ -338,7 +419,7 @@ async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
             text = await node_helpers.get_text_by_path(client, quicksell_item_title_path(row))
             if not text:
                 continue
-            if any(kw in text.lower() for kw in keep_list):
+            if matching_keyword(text, keep_list) is not None:
                 # Uncheck this item so it is not sold.
                 await node_helpers.click_by_path(client, quicksell_item_checkbox_path(row))
 

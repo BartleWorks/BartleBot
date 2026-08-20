@@ -31,8 +31,11 @@ class ParamField:
 
     Attributes:
         key:          JSON key used in the params dict.
-        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list" | "int_choice".
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list" |
+                      "int_choice" | "player_list" | "drop_keep_list".
                       "text" renders as a multi-line QPlainTextEdit.
+                      "drop_keep_list" is a str_list of quicksell keep-list keywords, shown alongside the bot's
+                      drop table with a checkbox per drop; the value on disk is a plain list of strings.
         label:        Human-readable form label.
         help:         Tooltip / documentation text shown on hover.
         default:      Value used when no existing param data is present.
