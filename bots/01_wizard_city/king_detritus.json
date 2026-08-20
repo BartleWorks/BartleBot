@@ -8,100 +8,288 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Alchemical Crystals",
-    "Alchemical Extract",
-    "Alchemical Salts",
-    "Alligator Pear Tree",
-    "Ancient Scroll",
-    "Angora Bunny Ears",
-    "Antheneum Delight",
-    "Antique Coins",
-    "Aztecan  Hot Chocolate",
-    "Baby Carrots",
-    "BBQ Drumstick",
-    "Beast Wellington",
-    "Black Pearl",
-    "Blood Moss",
-    "Blue Huckleberries",
-    "Brain Jar",
-    "Brass",
-    "Bread Fruit Fruit",
-    "Bronze Gear",
-    "Cherry Pie",
-    "Cobalt",
-    "Crab Alley Chaise",
-    "Daybreaker",
-    "Deadly Ninja Fig",
-    "Decimatoes",
-    "Desparagus (Seed)",
-    "Discord Grape Jelly",
-    "Dragonspyre Soldier Cleaver",
-    "Dragonspyre Soldier's Helm",
-    "Dragonspyre Vanguard's Helm",
-    "Drumstick",
-    "Ectoplasm",
-    "Evil Magma Peas",
-    "Eye Candy",
-    "Feathered Tabby",
-    "Fern Jelly",
-    "Fiery Boom Shroom",
-    "Fish",
-    "Fish on a Vine",
-    "Ginormous Apple",
-    "Glowing Taffy",
-    "Hot Cross Buns",
-    "Lustrous Blocking Citrine +14",
-    "Maelstrom Snap Dragon",
-    "Mystic Pizza",
-    "Nickel",
-    "Nightbringer",
-    "Pink Huckleberries",
-    "Pizza",
-    "Polished Resilient Opal +5%",
-    "Prickly Bear Cactus",
-    "Purple Grapes of Wrath",
-    "Purple Snow Apples",
-    "Queen Crape Myrtle",
-    "Red Bell Pepper",
-    "Roasted Drumstick",
-    "Rock and Roll Candy",
-    "Rye Bread Fruit Bush",
-    "Satyr Chow",
-    "Saw Palmetto",
-    "Scales",
-    "Soldier's Balanced Helm",
-    "Soldier's Deadly Helm",
-    "Soldier's Deadly Longsword",
-    "Soldier's Fiery Blade",
-    "Soldier's Fiery Helm",
-    "Soldier's Icy Battle Axe",
-    "Soldier's Icy Helm",
-    "Soldier's Mythic Helm",
-    "Soldier's Shocking Helm",
-    "Soldier's Vibrant Helm",
-    "Soldier's Vibrant Saber",
-    "Spider Silk",
-    "Spring",
-    "Sprinkle Cupcake",
-    "Sugar Khrystal",
-    "Tin",
-    "Trumpet Vine",
-    "Vanguard's Balanced Helm",
-    "Vanguard's Deadly Helm",
-    "Vanguard's Fiery Helm",
-    "Vanguard's Icy Helm",
-    "Vanguard's Mythic Helm",
-    "Vanguard's Shocking Helm",
-    "Vanguard's Vibrant Helm",
-    "Veggie Juice",
-    "Watermelon Slice",
-    "WC Catacombs Combat Theme",
-    "WC Catacombs Theme",
-    "WC Drains Combat Theme",
-    "WC Drains Theme",
-    "WC Elsewhere Combat Theme",
-    "White Tiger Lily",
-    "Yellow Bell Pepper"
+    {
+      "name": "Alchemical Crystals"
+    },
+    {
+      "name": "Alchemical Extract"
+    },
+    {
+      "name": "Alchemical Salts"
+    },
+    {
+      "name": "Alligator Pear Tree"
+    },
+    {
+      "name": "Ancient Scroll"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Antheneum Delight"
+    },
+    {
+      "name": "Antique Coins"
+    },
+    {
+      "name": "Aztecan  Hot Chocolate"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "BBQ Drumstick"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Black Pearl"
+    },
+    {
+      "name": "Blood Moss"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Brain Jar"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bread Fruit Fruit"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cherry Pie"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Crab Alley Chaise"
+    },
+    {
+      "name": "Daybreaker"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Decimatoes"
+    },
+    {
+      "name": "Desparagus (Seed)"
+    },
+    {
+      "name": "Discord Grape Jelly"
+    },
+    {
+      "name": "Dragonspyre Soldier Cleaver"
+    },
+    {
+      "name": "Dragonspyre Soldier's Helm"
+    },
+    {
+      "name": "Dragonspyre Vanguard's Helm"
+    },
+    {
+      "name": "Drumstick"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Feathered Tabby"
+    },
+    {
+      "name": "Fern Jelly"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fish"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Ginormous Apple"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Lustrous Blocking Citrine +14"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Mystic Pizza"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Nightbringer"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pizza"
+    },
+    {
+      "name": "Polished Resilient Opal +5%"
+    },
+    {
+      "name": "Prickly Bear Cactus"
+    },
+    {
+      "name": "Purple Grapes of Wrath"
+    },
+    {
+      "name": "Purple Snow Apples"
+    },
+    {
+      "name": "Queen Crape Myrtle"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Roasted Drumstick"
+    },
+    {
+      "name": "Rock and Roll Candy"
+    },
+    {
+      "name": "Rye Bread Fruit Bush"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Saw Palmetto"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Soldier's Balanced Helm"
+    },
+    {
+      "name": "Soldier's Deadly Helm"
+    },
+    {
+      "name": "Soldier's Deadly Longsword"
+    },
+    {
+      "name": "Soldier's Fiery Blade"
+    },
+    {
+      "name": "Soldier's Fiery Helm"
+    },
+    {
+      "name": "Soldier's Icy Battle Axe"
+    },
+    {
+      "name": "Soldier's Icy Helm"
+    },
+    {
+      "name": "Soldier's Mythic Helm"
+    },
+    {
+      "name": "Soldier's Shocking Helm"
+    },
+    {
+      "name": "Soldier's Vibrant Helm"
+    },
+    {
+      "name": "Soldier's Vibrant Saber"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spring"
+    },
+    {
+      "name": "Sprinkle Cupcake"
+    },
+    {
+      "name": "Sugar Khrystal"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Vanguard's Balanced Helm"
+    },
+    {
+      "name": "Vanguard's Deadly Helm"
+    },
+    {
+      "name": "Vanguard's Fiery Helm"
+    },
+    {
+      "name": "Vanguard's Icy Helm"
+    },
+    {
+      "name": "Vanguard's Mythic Helm"
+    },
+    {
+      "name": "Vanguard's Shocking Helm"
+    },
+    {
+      "name": "Vanguard's Vibrant Helm"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Watermelon Slice"
+    },
+    {
+      "name": "WC Catacombs Combat Theme"
+    },
+    {
+      "name": "WC Catacombs Theme"
+    },
+    {
+      "name": "WC Drains Combat Theme"
+    },
+    {
+      "name": "WC Drains Theme"
+    },
+    {
+      "name": "WC Elsewhere Combat Theme"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Yellow Bell Pepper"
+    }
   ],
   "authors": "BartleBot",
   "options": [

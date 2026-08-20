@@ -8,130 +8,378 @@
   "recovery_state": "state_7",
   "start_location": "Anywhere in Mooshu",
   "drops": [
-    "Abstract Shroud",
-    "Ape Grapes",
-    "Band of Hope",
-    "Benign Slippers",
-    "Blemished Defense Amethyst +21",
-    "Blemished Defense Onyx +21",
-    "Blemished Defense Peridot +21",
-    "Blemished Defense Ruby +21",
-    "Blemished Defense Sapphire +21",
-    "Blended Wool Cap",
-    "Blight Hound",
-    "Boots of Awareness",
-    "Boots of Consideration",
-    "Boots of Disillusion",
-    "Brass",
-    "Cap of Dilemma",
-    "Cap of Hinderance",
-    "Cap of Preoccupation",
-    "Copper",
-    "Cowl of Arias",
-    "Cowl of Fiction",
-    "Crunch Apple",
-    "Deadly Ninja Fig",
-    "Do-Daga's Band",
-    "Do-Daga's Cloak of Disorder",
-    "Do-Daga's Dagger of Intent",
-    "Do-Daga's Hat of Unrest",
-    "Do-Daga's Staff of Cognition",
-    "Do-Daga's Tuned Vest",
-    "Donate Power",
-    "Doom and Gloom",
-    "Druidic Cowl",
-    "Druidic Tunic",
-    "Engrossed Robes",
-    "Evil Snowman",
-    "Fancy Bench",
-    "Fancy Lantern",
-    "Fiery Boom Shroom",
-    "Fire Cat",
-    "Fire Cracker",
-    "Fire Elf",
-    "Flawed Damage Opal +5",
-    "Flawed Defense Citrine +18",
-    "Flawed Defense Ruby +18",
-    "Flawed Health Opal +31",
-    "Flawed Health Opal +33",
-    "Flawed Mana Opal +15",
-    "Flawed Resilient Opal +2%",
-    "Friendly Helm",
-    "Frost Beetle",
-    "Futon Pillow",
-    "Garments of Predicament",
-    "Gearhead Destroyer",
-    "Golden Peanut",
-    "Golden Squash",
-    "Gripping Boots",
-    "Hat of Charity",
-    "Hat of the Eager",
-    "Hat of the Observant",
-    "Haystack",
-    "Hearty Opal",
-    "Helm of Struggling",
-    "Hood of Chimes",
-    "Hood of Melodies",
-    "Ice Wyvern",
-    "Ice Wyvern",
-    "Immolate",
-    "Iron",
-    "Kraken",
-    "Kris of the Pensive Ones",
-    "Landscape Painting",
-    "Large Fish",
-    "Large Watermelon",
-    "Leather Straps",
-    "Light-As-Air Cloak",
-    "Light-As-Air Slippers",
-    "Lightning Bats",
-    "Locust Swarm",
-    "Logical Band",
-    "Maelstrom Snap Dragon",
-    "Monstrous",
-    "Nickel",
-    "Ninja Pigs",
-    "Nunu's Twisted Slippers",
-    "Painful Slippers",
-    "Paper Lantern",
-    "Pest Zapper",
-    "Phoenix",
-    "Pink Dandelion",
-    "Prospective Boots",
-    "Pupil's Cap",
-    "Pupil's Uniform",
-    "Pyrite",
-    "Ring of Detachment",
-    "Robe of Hinderance",
-    "Robe of the Universe",
-    "Scarab",
-    "Scorpion",
-    "Shoes of Watchfulness",
-    "Shortblade of a Daydreamer",
-    "Shroud of Deliberation",
-    "Shroud of Scruples",
-    "Shroud of the Universe",
-    "Shroud of Woe",
-    "Single Bed",
-    "Skeletal Pirate",
-    "Small Woodpile",
-    "Snow Serpent",
-    "Spectral Blast",
-    "Square Root",
-    "Stone Base",
-    "Storm Shark",
-    "Stormzilla",
-    "Straw Pile",
-    "Sunbird",
-    "Systematic Boots",
-    "Thunder Snake",
-    "Tin",
-    "Tormented Sandals",
-    "Tough",
-    "Tunic of Scruples",
-    "Vestment of Fiction",
-    "Warbled Shoes",
-    "White Laugh-O-Dil"
+    {
+      "name": "Abstract Shroud"
+    },
+    {
+      "name": "Ape Grapes"
+    },
+    {
+      "name": "Band of Hope"
+    },
+    {
+      "name": "Benign Slippers"
+    },
+    {
+      "name": "Blemished Defense Amethyst +21"
+    },
+    {
+      "name": "Blemished Defense Onyx +21"
+    },
+    {
+      "name": "Blemished Defense Peridot +21"
+    },
+    {
+      "name": "Blemished Defense Ruby +21"
+    },
+    {
+      "name": "Blemished Defense Sapphire +21"
+    },
+    {
+      "name": "Blended Wool Cap"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Boots of Awareness"
+    },
+    {
+      "name": "Boots of Consideration"
+    },
+    {
+      "name": "Boots of Disillusion"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Cap of Dilemma"
+    },
+    {
+      "name": "Cap of Hinderance"
+    },
+    {
+      "name": "Cap of Preoccupation"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cowl of Arias"
+    },
+    {
+      "name": "Cowl of Fiction"
+    },
+    {
+      "name": "Crunch Apple"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Do-Daga's Band"
+    },
+    {
+      "name": "Do-Daga's Cloak of Disorder"
+    },
+    {
+      "name": "Do-Daga's Dagger of Intent"
+    },
+    {
+      "name": "Do-Daga's Hat of Unrest"
+    },
+    {
+      "name": "Do-Daga's Staff of Cognition"
+    },
+    {
+      "name": "Do-Daga's Tuned Vest"
+    },
+    {
+      "name": "Donate Power"
+    },
+    {
+      "name": "Doom and Gloom"
+    },
+    {
+      "name": "Druidic Cowl"
+    },
+    {
+      "name": "Druidic Tunic"
+    },
+    {
+      "name": "Engrossed Robes"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Fancy Bench"
+    },
+    {
+      "name": "Fancy Lantern"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Cracker"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Flawed Damage Opal +5"
+    },
+    {
+      "name": "Flawed Defense Citrine +18"
+    },
+    {
+      "name": "Flawed Defense Ruby +18"
+    },
+    {
+      "name": "Flawed Health Opal +31"
+    },
+    {
+      "name": "Flawed Health Opal +33"
+    },
+    {
+      "name": "Flawed Mana Opal +15"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%"
+    },
+    {
+      "name": "Friendly Helm"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Futon Pillow"
+    },
+    {
+      "name": "Garments of Predicament"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Golden Peanut"
+    },
+    {
+      "name": "Golden Squash"
+    },
+    {
+      "name": "Gripping Boots"
+    },
+    {
+      "name": "Hat of Charity"
+    },
+    {
+      "name": "Hat of the Eager"
+    },
+    {
+      "name": "Hat of the Observant"
+    },
+    {
+      "name": "Haystack"
+    },
+    {
+      "name": "Hearty Opal"
+    },
+    {
+      "name": "Helm of Struggling"
+    },
+    {
+      "name": "Hood of Chimes"
+    },
+    {
+      "name": "Hood of Melodies"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Kris of the Pensive Ones"
+    },
+    {
+      "name": "Landscape Painting"
+    },
+    {
+      "name": "Large Fish"
+    },
+    {
+      "name": "Large Watermelon"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Light-As-Air Cloak"
+    },
+    {
+      "name": "Light-As-Air Slippers"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Logical Band"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Pigs"
+    },
+    {
+      "name": "Nunu's Twisted Slippers"
+    },
+    {
+      "name": "Painful Slippers"
+    },
+    {
+      "name": "Paper Lantern"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Prospective Boots"
+    },
+    {
+      "name": "Pupil's Cap"
+    },
+    {
+      "name": "Pupil's Uniform"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Ring of Detachment"
+    },
+    {
+      "name": "Robe of Hinderance"
+    },
+    {
+      "name": "Robe of the Universe"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scorpion"
+    },
+    {
+      "name": "Shoes of Watchfulness"
+    },
+    {
+      "name": "Shortblade of a Daydreamer"
+    },
+    {
+      "name": "Shroud of Deliberation"
+    },
+    {
+      "name": "Shroud of Scruples"
+    },
+    {
+      "name": "Shroud of the Universe"
+    },
+    {
+      "name": "Shroud of Woe"
+    },
+    {
+      "name": "Single Bed"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Small Woodpile"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Square Root"
+    },
+    {
+      "name": "Stone Base"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Straw Pile"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Systematic Boots"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tormented Sandals"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Tunic of Scruples"
+    },
+    {
+      "name": "Vestment of Fiction"
+    },
+    {
+      "name": "Warbled Shoes"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -10,249 +10,735 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Mooshu",
   "drops": [
-    "Add Health Opal",
-    "Adept's Socket Wrench",
-    "Angelic Helm",
-    "Attentive Opal",
-    "Balance-Boon Citrine",
-    "Balance-Giver Citrine",
-    "Banana Peel Opal",
-    "Banshee",
-    "Big Boost Opal",
-    "Big Downer Opal",
-    "Big Energy Opal",
-    "Big Holiday Tree",
-    "Big-Check Opal",
-    "Black Cat",
-    "Blemished Damage Amethyst +11",
-    "Blemished Damage Citrine +11",
-    "Blemished Damage Jade +11",
-    "Blemished Damage Onyx +11",
-    "Blemished Damage Peridot +11",
-    "Blemished Damage Ruby +11",
-    "Blemished Damage Sapphire +11",
-    "Blemished Defense Citrine +21",
-    "Blemished Defense Opal +11",
-    "Blemished Health Opal +40",
-    "Blood Bat",
-    "Blubbering Pumpkin Scepter",
-    "Blue Holiday Ornament",
-    "Boon Tree",
-    "Brass",
-    "Brogans of Decrepitude",
-    "Brooding Cap",
-    "Bunny Feet",
-    "Bunny Suit",
-    "Cackling Pumpkin Scepter",
-    "Candy Wand",
-    "Carol of the Bells Theme",
-    "Charge Opal",
-    "Charge Up Opal",
-    "Check Opal",
-    "Cheeky Opal",
-    "Christmas Elf",
-    "Chuckling Pumpkin Scepter",
-    "Clay Post Opal",
-    "Clear Path Opal",
-    "Cobalt",
-    "Colossus",
-    "Cool Pumpkin Mask",
-    "Copper",
-    "Cupig",
-    "Cyclops",
-    "Cyclops Minion",
-    "Cyclops Pumpkin Mask",
-    "Dark Sprite",
-    "Dashing Shoes",
-    "Dawdle Opal",
-    "Dead End Opal",
-    "Death-Away Onyx",
-    "Death-Boon Onyx",
-    "Death-Giver Onyx",
-    "Deck the Halls Theme",
-    "Decorative Cannon",
-    "Dependable Opal",
-    "Determined Opal",
-    "Dirt Post Opal",
-    "Downer Opal",
-    "Eager Opal",
-    "Earth Walker",
-    "Earthquake",
-    "Ectoplasm",
-    "Effective Opal",
-    "Even Footing",
-    "Exhaust Opal",
-    "Extra Mana Opal",
-    "Fire-Away Ruby",
-    "Fire-Giver Ruby",
-    "Frostman",
-    "Gearhead Destroyer",
-    "Ghost Dragon",
-    "Ghoul",
-    "Gogi Berry Stained Boots",
-    "Gold Miner Opal",
-    "Golden Goose",
-    "Green Holiday Ornament",
-    "Hallowe'en Robe",
-    "Happy Holidaisy",
-    "Happy Pumpkin Mask",
-    "Hatchling Scepter",
-    "Headgear of the Sylph",
-    "Headwraps of the Zealous",
-    "Healer Opal",
-    "Helephant",
-    "Helm of Disquiet",
-    "Holiday Fireplace",
-    "Holiday Hook Wand",
-    "Holiday Treat Wand",
-    "Holiday Wreath",
-    "Huge Energy Opal",
-    "Humongofrog Peridot",
-    "Hurry Opal",
-    "Hydra",
-    "Ice Wyvern Sapphire",
-    "Ice-Away Sapphire",
-    "Ice-Boon Sapphire",
-    "Ice-Giver Sapphire",
-    "Imp",
-    "Imperial Statue",
-    "Intrepid Opal",
-    "Jade Oni",
-    "Jade Oni's Amethyst Blade",
-    "Jade Oni's Amulet of Duplicity",
-    "Jade Oni's Boots",
-    "Jade Oni's Cap",
-    "Jade Oni's Garments",
-    "Jade Oni's Shroud of Nothing",
-    "Jade Oni's Vestment",
-    "Jingle Bells Theme",
-    "Kitty Pumpkin Mask",
-    "Knotwork Wand",
-    "Kraken Amethyst",
-    "Krokopatra Exalted Duel",
-    "Krokopatra Master Duel",
-    "Lead",
-    "Leprechaun",
-    "Life-Boon Jade",
-    "Life-Eye Jade",
-    "Life-Proof Jade",
-    "Locust Swarm",
-    "Lovely Ladybug",
-    "Lovely Leopard",
-    "Lucky Leprechaun",
-    "Lucky Shamrock Wand",
-    "Lump of Coal",
-    "Mana Boost Opal",
-    "Maple Moose",
-    "Mend Minion Talent Peridot",
-    "Meowiarty Archmage Duel",
-    "Meowiarty Exalted Duel",
-    "Meteor Strike Ruby",
-    "Milk and Cookies",
-    "Minotaur",
-    "Mint Standee",
-    "Mint Swirl",
-    "MooShu Main Theme",
-    "MooShu Plague Theme",
-    "Move It! Opal",
-    "Mummy Costume Footwraps",
-    "Mummy Costume Headwraps",
-    "Myth-Boon Peridot",
-    "Myth-Eye Peridot",
-    "Myth-Proof Peridot",
-    "Nature's Wrath",
-    "Nickel",
-    "Ninja Pig Hat",
-    "Ninja Pig Shoes",
-    "Nosferatu's Cloak",
-    "Nutcracker",
-    "Nutcracker",
-    "Nutcracker Wand",
-    "Oil Slick Opal",
-    "Peculiar Garments",
-    "Perplex Opal",
-    "Pet Egg",
-    "Pilgrim Robe",
-    "Pip O'Plenty Opal",
-    "Pirate Pumpkin Mask",
-    "Polka Dot Wrapped Gift",
-    "Power Play Citrine",
-    "Rattlebones Exalted Duel",
-    "Rattlebones Master Duel",
-    "Red Holiday Ornament",
-    "Rescue Rover",
-    "Reshuffle",
-    "Restore Opal",
-    "Samoorai",
-    "Sanguine Scepter",
-    "Santa Boots",
-    "Santa Hat",
-    "Santa Robe",
-    "Scarab",
-    "Scarecrow",
-    "Scepter of Spring's Bounty",
-    "Scepter of the Cherub",
-    "Scorpion",
-    "Seraph",
-    "Seraph",
-    "Seraph Jade",
-    "Skeletal Pirate",
-    "Skeletal Pirate Onyx",
-    "Slippers of Enthusiasm",
-    "Slippers of Inflection",
-    "Small Color Light Strand",
-    "Snowball",
-    "Snowglobe",
-    "Snowman",
-    "Snowman Wrapped Gift",
-    "Spectral Blast",
-    "Spooky Bob",
-    "Spring Bunny Scepter",
-    "Staff of the Crimson Hart",
-    "Staff of the Harvest",
-    "Staff of the White Rabbit",
-    "Star Staff",
-    "Statue Base",
-    "Statue of Koto",
-    "Stave of the Holiday Flame",
-    "Storm-Away Amethyst",
-    "Storm-Boon Amethyst",
-    "Storm-Eye Amethyst",
-    "Storm-Giver Amethyst",
-    "Stormclaw Amethyst",
-    "Stormrider Hare",
-    "Stormzilla",
-    "Strong",
-    "Sugar Cane Wand",
-    "Super-Pass Opal",
-    "Super-Stall Opal",
-    "Tin",
-    "To The Jade Palace",
-    "Troll",
-    "Tunic of Anthems",
-    "Tunic of Discontent",
-    "Tunic of Fiery Renewal",
-    "Turkey Hat",
-    "Ultra Energy Opal",
-    "Unbalancer Citrine",
-    "Valentine Pig",
-    "Vampire",
-    "Vampire Costume Boots",
-    "Vampire Costume Wig",
-    "Vestment of the Lotus",
-    "Wand of Compassion",
-    "Wand of Nature's Ebb",
-    "Wand of Wealth",
-    "Wise Opal",
-    "Wisp Bonus Opal",
-    "Wooden Skeleton Key",
-    "Youkai's Shoes",
-    "Yuletide Lg. Keeper Aquarium",
-    "Yuletide Lg. Small Fry Aquarium",
-    "Yuletide Spirit",
-    "Yuletide Tall Keeper Aquarium",
-    "Yuletide Tall Small Fry Aquarium",
-    "Zeus Exalted Duel"
+    {
+      "name": "Add Health Opal"
+    },
+    {
+      "name": "Adept's Socket Wrench"
+    },
+    {
+      "name": "Angelic Helm"
+    },
+    {
+      "name": "Attentive Opal"
+    },
+    {
+      "name": "Balance-Boon Citrine"
+    },
+    {
+      "name": "Balance-Giver Citrine"
+    },
+    {
+      "name": "Banana Peel Opal"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Big Boost Opal"
+    },
+    {
+      "name": "Big Downer Opal"
+    },
+    {
+      "name": "Big Energy Opal"
+    },
+    {
+      "name": "Big Holiday Tree"
+    },
+    {
+      "name": "Big-Check Opal"
+    },
+    {
+      "name": "Black Cat"
+    },
+    {
+      "name": "Blemished Damage Amethyst +11"
+    },
+    {
+      "name": "Blemished Damage Citrine +11"
+    },
+    {
+      "name": "Blemished Damage Jade +11"
+    },
+    {
+      "name": "Blemished Damage Onyx +11"
+    },
+    {
+      "name": "Blemished Damage Peridot +11"
+    },
+    {
+      "name": "Blemished Damage Ruby +11"
+    },
+    {
+      "name": "Blemished Damage Sapphire +11"
+    },
+    {
+      "name": "Blemished Defense Citrine +21"
+    },
+    {
+      "name": "Blemished Defense Opal +11"
+    },
+    {
+      "name": "Blemished Health Opal +40"
+    },
+    {
+      "name": "Blood Bat"
+    },
+    {
+      "name": "Blubbering Pumpkin Scepter"
+    },
+    {
+      "name": "Blue Holiday Ornament"
+    },
+    {
+      "name": "Boon Tree"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Brogans of Decrepitude"
+    },
+    {
+      "name": "Brooding Cap"
+    },
+    {
+      "name": "Bunny Feet"
+    },
+    {
+      "name": "Bunny Suit"
+    },
+    {
+      "name": "Cackling Pumpkin Scepter"
+    },
+    {
+      "name": "Candy Wand"
+    },
+    {
+      "name": "Carol of the Bells Theme"
+    },
+    {
+      "name": "Charge Opal"
+    },
+    {
+      "name": "Charge Up Opal"
+    },
+    {
+      "name": "Check Opal"
+    },
+    {
+      "name": "Cheeky Opal"
+    },
+    {
+      "name": "Christmas Elf"
+    },
+    {
+      "name": "Chuckling Pumpkin Scepter"
+    },
+    {
+      "name": "Clay Post Opal"
+    },
+    {
+      "name": "Clear Path Opal"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Cool Pumpkin Mask"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cupig"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Cyclops Minion"
+    },
+    {
+      "name": "Cyclops Pumpkin Mask"
+    },
+    {
+      "name": "Dark Sprite"
+    },
+    {
+      "name": "Dashing Shoes"
+    },
+    {
+      "name": "Dawdle Opal"
+    },
+    {
+      "name": "Dead End Opal"
+    },
+    {
+      "name": "Death-Away Onyx"
+    },
+    {
+      "name": "Death-Boon Onyx"
+    },
+    {
+      "name": "Death-Giver Onyx"
+    },
+    {
+      "name": "Deck the Halls Theme"
+    },
+    {
+      "name": "Decorative Cannon"
+    },
+    {
+      "name": "Dependable Opal"
+    },
+    {
+      "name": "Determined Opal"
+    },
+    {
+      "name": "Dirt Post Opal"
+    },
+    {
+      "name": "Downer Opal"
+    },
+    {
+      "name": "Eager Opal"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Earthquake"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Effective Opal"
+    },
+    {
+      "name": "Even Footing"
+    },
+    {
+      "name": "Exhaust Opal"
+    },
+    {
+      "name": "Extra Mana Opal"
+    },
+    {
+      "name": "Fire-Away Ruby"
+    },
+    {
+      "name": "Fire-Giver Ruby"
+    },
+    {
+      "name": "Frostman"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Ghost Dragon"
+    },
+    {
+      "name": "Ghoul"
+    },
+    {
+      "name": "Gogi Berry Stained Boots"
+    },
+    {
+      "name": "Gold Miner Opal"
+    },
+    {
+      "name": "Golden Goose"
+    },
+    {
+      "name": "Green Holiday Ornament"
+    },
+    {
+      "name": "Hallowe'en Robe"
+    },
+    {
+      "name": "Happy Holidaisy"
+    },
+    {
+      "name": "Happy Pumpkin Mask"
+    },
+    {
+      "name": "Hatchling Scepter"
+    },
+    {
+      "name": "Headgear of the Sylph"
+    },
+    {
+      "name": "Headwraps of the Zealous"
+    },
+    {
+      "name": "Healer Opal"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Helm of Disquiet"
+    },
+    {
+      "name": "Holiday Fireplace"
+    },
+    {
+      "name": "Holiday Hook Wand"
+    },
+    {
+      "name": "Holiday Treat Wand"
+    },
+    {
+      "name": "Holiday Wreath"
+    },
+    {
+      "name": "Huge Energy Opal"
+    },
+    {
+      "name": "Humongofrog Peridot"
+    },
+    {
+      "name": "Hurry Opal"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Wyvern Sapphire"
+    },
+    {
+      "name": "Ice-Away Sapphire"
+    },
+    {
+      "name": "Ice-Boon Sapphire"
+    },
+    {
+      "name": "Ice-Giver Sapphire"
+    },
+    {
+      "name": "Imp"
+    },
+    {
+      "name": "Imperial Statue"
+    },
+    {
+      "name": "Intrepid Opal"
+    },
+    {
+      "name": "Jade Oni"
+    },
+    {
+      "name": "Jade Oni's Amethyst Blade"
+    },
+    {
+      "name": "Jade Oni's Amulet of Duplicity"
+    },
+    {
+      "name": "Jade Oni's Boots"
+    },
+    {
+      "name": "Jade Oni's Cap"
+    },
+    {
+      "name": "Jade Oni's Garments"
+    },
+    {
+      "name": "Jade Oni's Shroud of Nothing"
+    },
+    {
+      "name": "Jade Oni's Vestment"
+    },
+    {
+      "name": "Jingle Bells Theme"
+    },
+    {
+      "name": "Kitty Pumpkin Mask"
+    },
+    {
+      "name": "Knotwork Wand"
+    },
+    {
+      "name": "Kraken Amethyst"
+    },
+    {
+      "name": "Krokopatra Exalted Duel"
+    },
+    {
+      "name": "Krokopatra Master Duel"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Leprechaun"
+    },
+    {
+      "name": "Life-Boon Jade"
+    },
+    {
+      "name": "Life-Eye Jade"
+    },
+    {
+      "name": "Life-Proof Jade"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Lovely Ladybug"
+    },
+    {
+      "name": "Lovely Leopard"
+    },
+    {
+      "name": "Lucky Leprechaun"
+    },
+    {
+      "name": "Lucky Shamrock Wand"
+    },
+    {
+      "name": "Lump of Coal"
+    },
+    {
+      "name": "Mana Boost Opal"
+    },
+    {
+      "name": "Maple Moose"
+    },
+    {
+      "name": "Mend Minion Talent Peridot"
+    },
+    {
+      "name": "Meowiarty Archmage Duel"
+    },
+    {
+      "name": "Meowiarty Exalted Duel"
+    },
+    {
+      "name": "Meteor Strike Ruby"
+    },
+    {
+      "name": "Milk and Cookies"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Mint Standee"
+    },
+    {
+      "name": "Mint Swirl"
+    },
+    {
+      "name": "MooShu Main Theme"
+    },
+    {
+      "name": "MooShu Plague Theme"
+    },
+    {
+      "name": "Move It! Opal"
+    },
+    {
+      "name": "Mummy Costume Footwraps"
+    },
+    {
+      "name": "Mummy Costume Headwraps"
+    },
+    {
+      "name": "Myth-Boon Peridot"
+    },
+    {
+      "name": "Myth-Eye Peridot"
+    },
+    {
+      "name": "Myth-Proof Peridot"
+    },
+    {
+      "name": "Nature's Wrath"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Pig Hat"
+    },
+    {
+      "name": "Ninja Pig Shoes"
+    },
+    {
+      "name": "Nosferatu's Cloak"
+    },
+    {
+      "name": "Nutcracker"
+    },
+    {
+      "name": "Nutcracker"
+    },
+    {
+      "name": "Nutcracker Wand"
+    },
+    {
+      "name": "Oil Slick Opal"
+    },
+    {
+      "name": "Peculiar Garments"
+    },
+    {
+      "name": "Perplex Opal"
+    },
+    {
+      "name": "Pet Egg"
+    },
+    {
+      "name": "Pilgrim Robe"
+    },
+    {
+      "name": "Pip O'Plenty Opal"
+    },
+    {
+      "name": "Pirate Pumpkin Mask"
+    },
+    {
+      "name": "Polka Dot Wrapped Gift"
+    },
+    {
+      "name": "Power Play Citrine"
+    },
+    {
+      "name": "Rattlebones Exalted Duel"
+    },
+    {
+      "name": "Rattlebones Master Duel"
+    },
+    {
+      "name": "Red Holiday Ornament"
+    },
+    {
+      "name": "Rescue Rover"
+    },
+    {
+      "name": "Reshuffle"
+    },
+    {
+      "name": "Restore Opal"
+    },
+    {
+      "name": "Samoorai"
+    },
+    {
+      "name": "Sanguine Scepter"
+    },
+    {
+      "name": "Santa Boots"
+    },
+    {
+      "name": "Santa Hat"
+    },
+    {
+      "name": "Santa Robe"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Scepter of Spring's Bounty"
+    },
+    {
+      "name": "Scepter of the Cherub"
+    },
+    {
+      "name": "Scorpion"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Seraph Jade"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Skeletal Pirate Onyx"
+    },
+    {
+      "name": "Slippers of Enthusiasm"
+    },
+    {
+      "name": "Slippers of Inflection"
+    },
+    {
+      "name": "Small Color Light Strand"
+    },
+    {
+      "name": "Snowball"
+    },
+    {
+      "name": "Snowglobe"
+    },
+    {
+      "name": "Snowman"
+    },
+    {
+      "name": "Snowman Wrapped Gift"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Spooky Bob"
+    },
+    {
+      "name": "Spring Bunny Scepter"
+    },
+    {
+      "name": "Staff of the Crimson Hart"
+    },
+    {
+      "name": "Staff of the Harvest"
+    },
+    {
+      "name": "Staff of the White Rabbit"
+    },
+    {
+      "name": "Star Staff"
+    },
+    {
+      "name": "Statue Base"
+    },
+    {
+      "name": "Statue of Koto"
+    },
+    {
+      "name": "Stave of the Holiday Flame"
+    },
+    {
+      "name": "Storm-Away Amethyst"
+    },
+    {
+      "name": "Storm-Boon Amethyst"
+    },
+    {
+      "name": "Storm-Eye Amethyst"
+    },
+    {
+      "name": "Storm-Giver Amethyst"
+    },
+    {
+      "name": "Stormclaw Amethyst"
+    },
+    {
+      "name": "Stormrider Hare"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Strong"
+    },
+    {
+      "name": "Sugar Cane Wand"
+    },
+    {
+      "name": "Super-Pass Opal"
+    },
+    {
+      "name": "Super-Stall Opal"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "To The Jade Palace"
+    },
+    {
+      "name": "Troll"
+    },
+    {
+      "name": "Tunic of Anthems"
+    },
+    {
+      "name": "Tunic of Discontent"
+    },
+    {
+      "name": "Tunic of Fiery Renewal"
+    },
+    {
+      "name": "Turkey Hat"
+    },
+    {
+      "name": "Ultra Energy Opal"
+    },
+    {
+      "name": "Unbalancer Citrine"
+    },
+    {
+      "name": "Valentine Pig"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vampire Costume Boots"
+    },
+    {
+      "name": "Vampire Costume Wig"
+    },
+    {
+      "name": "Vestment of the Lotus"
+    },
+    {
+      "name": "Wand of Compassion"
+    },
+    {
+      "name": "Wand of Nature's Ebb"
+    },
+    {
+      "name": "Wand of Wealth"
+    },
+    {
+      "name": "Wise Opal"
+    },
+    {
+      "name": "Wisp Bonus Opal"
+    },
+    {
+      "name": "Wooden Skeleton Key"
+    },
+    {
+      "name": "Youkai's Shoes"
+    },
+    {
+      "name": "Yuletide Lg. Keeper Aquarium"
+    },
+    {
+      "name": "Yuletide Lg. Small Fry Aquarium"
+    },
+    {
+      "name": "Yuletide Spirit"
+    },
+    {
+      "name": "Yuletide Tall Keeper Aquarium"
+    },
+    {
+      "name": "Yuletide Tall Small Fry Aquarium"
+    },
+    {
+      "name": "Zeus Exalted Duel"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -9,425 +9,1263 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Celestia",
   "drops": [
-    "5 Shark Tooth",
-    "6 Shark Tooth",
-    "Accurate",
-    "Amplify Opal",
-    "Atavistic Balance Boots",
-    "Atavistic Balance Garb",
-    "Atavistic Balance Helm",
-    "Atavistic Death Boots",
-    "Atavistic Death Garb",
-    "Atavistic Death Helm",
-    "Atavistic Fire Boots",
-    "Atavistic Fire Garb",
-    "Atavistic Fire Helm",
-    "Atavistic Ice Boots",
-    "Atavistic Ice Garb",
-    "Atavistic Ice Helm",
-    "Atavistic Life Boots",
-    "Atavistic Life Garb",
-    "Atavistic Life Helm",
-    "Atavistic Myth Boots",
-    "Atavistic Myth Garb",
-    "Atavistic Myth Helm",
-    "Atavistic Storm Boots",
-    "Atavistic Storm Garb",
-    "Atavistic Storm Helm",
-    "Baby Bird Wand",
-    "Balance Blocking Pin (60, Death)",
-    "Balance Blocking Pin (60, Fire)",
-    "Balance Blocking Pin (60, Ice)",
-    "Balance Blocking Pin (60, Life)",
-    "Balance Blocking Pin (60, Myth)",
-    "Balance Blocking Pin (60, Storm)",
-    "Balance Mending Pin (50)",
-    "Balance Mending Pin (60)",
-    "Balance Resist Pin (50, Death)",
-    "Balance Resist Pin (50, Fire)",
-    "Balance Resist Pin (50, Ice)",
-    "Balance Resist Pin (50, Life)",
-    "Balance Resist Pin (50, Myth)",
-    "Balance Resist Pin (50, Storm)",
-    "Balance Resist Pin (60, Death)",
-    "Balance Resist Pin (60, Fire)",
-    "Balance Resist Pin (60, Ice)",
-    "Balance Resist Pin (60, Life)",
-    "Balance Resist Pin (60, Myth)",
-    "Balance Resist Pin (60, Storm)",
-    "Balanceblade Talent Citrine",
-    "Balefrost",
-    "Banshee",
-    "Big Energy Opal",
-    "Blade of Life Jade",
-    "Blazing Oak Ruby",
-    "Blemished Mana Opal +20",
-    "Blemished PIP Opal +4%",
-    "Blight Hound",
-    "Boon Tree",
-    "Boots of Celestian Totality",
-    "Boots of the Hurricane",
-    "Brass",
-    "Brimstone Boots",
-    "Bronze",
-    "Brown Recluse Jade",
-    "Bullheaded Peridot",
-    "Bygone Balance Boots",
-    "Bygone Balance Garb",
-    "Bygone Balance Helm",
-    "Bygone Death Boots",
-    "Bygone Death Garb",
-    "Bygone Death Helm",
-    "Bygone Fire Boots",
-    "Bygone Fire Garb",
-    "Bygone Fire Helm",
-    "Bygone Ice Boots",
-    "Bygone Ice Garb",
-    "Bygone Ice Helm",
-    "Bygone Life Boots",
-    "Bygone Life Garb",
-    "Bygone Life Helm",
-    "Bygone Myth Boots",
-    "Bygone Myth Garb",
-    "Bygone Myth Helm",
-    "Bygone Storm Boots",
-    "Bygone Storm Garb",
-    "Bygone Storm Helm",
-    "Cap of the Archivist",
-    "Cauliflowers",
-    "Celestia Combat Theme",
-    "Celestia Finale Theme",
-    "Celestia Main Theme",
-    "Celestian Snow Boots",
-    "Celestian Snow Cover",
-    "Celestian Snow Smock",
-    "Celestian Tempest Trekkers",
-    "Centaur",
-    "Cheeky Opal",
-    "Christmas Elf",
-    "Cloak of Mortality",
-    "Cobalt",
-    "Colossus",
-    "Combustible Band",
-    "Copper",
-    "Cover of Rapture",
-    "Cowl of the Necromancer",
-    "Cupig",
-    "Cyclone Coif",
-    "Cyclops",
-    "Cyclops Minion",
-    "Dagger of Typhoons",
-    "Darkwind Amethyst",
-    "Deadly Fly Trap",
-    "Death Blocking Pin (60, Balance)",
-    "Death Blocking Pin (60, Ice)",
-    "Death Blocking Pin (60, Myth)",
-    "Death Resist Pin (50, Balance)",
-    "Death Resist Pin (50, Ice)",
-    "Death Resist Pin (50, Myth)",
-    "Death Resist Pin (60, Balance)",
-    "Death Resist Pin (60, Ice)",
-    "Death Resist Pin (60, Myth)",
-    "Delicious Cookie",
-    "Devoted Vestment",
-    "Diamond Dust Dagger",
-    "Dirk of Delusion",
-    "Dirk of the Daring",
-    "Dissipate Amethyst",
-    "Draconian Opal",
-    "Dragonflies",
-    "Dragonspyre Ruins",
-    "Dragonstalkers",
-    "Dragontooth Ring",
-    "Dull Accurate Ruby +6%",
-    "Dull Critical Jade +3",
-    "Dull Critical Onyx +3",
-    "Dull Critical Peridot +3",
-    "Dull Critical Sapphire +3",
-    "Dull Defense Amethyst +26",
-    "Dull Defense Onyx +26",
-    "Dull Defense Ruby +26",
-    "Dull Healing Opal +3%",
-    "Dull Health Opal +53",
-    "Dull Mana Opal +21",
-    "Dull Mana Opal +22",
-    "Dull Mana Opal +23",
-    "Dull PIP Opal +5%",
-    "Dull Resilient Opal +3%",
-    "Earth Walker",
-    "Eat My Dirt Opal",
-    "Eclipse Cloak",
-    "Eclipse Clogs",
-    "Eclipse Cover",
-    "Empower",
-    "Enfeeblement Opal",
-    "Entangle Jade",
-    "Euphoric Outfit",
-    "Eureka Raiment",
-    "Everlasting Celestian Boots",
-    "Evil Snowman",
-    "Expert's Socket Wrench",
-    "Feinting Spell Onyx",
-    "Fiery Boom Shroom",
-    "Fire Blocking Pin (60, Balance)",
-    "Fire Blocking Pin (60, Life)",
-    "Fire Blocking Pin (60, Storm)",
-    "Fire Dragon",
-    "Fire Mending Pin (50)",
-    "Fire Mending Pin (60)",
-    "Fire Resist Pin (50, Balance)",
-    "Fire Resist Pin (50, Life)",
-    "Fire Resist Pin (50, Storm)",
-    "Fish Fin",
-    "Flaming Soup",
-    "Footgear of the Forgotten",
-    "Footwraps of the Whirlwind",
-    "Forest Lord",
-    "Forgotten Facade",
-    "Fortify Opal",
-    "Fortify Talent Opal",
-    "Frost Giant",
-    "Frost Giant's Armor",
-    "Frostbit Footguards",
-    "Frostflower Cap",
-    "Frostman",
-    "Gardener's Smock",
-    "Gargantuan",
-    "Gearhead Destroyer",
-    "Glimmering Band",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Goat Cheese",
-    "Gobbler Opal",
-    "Golden Grapes",
-    "Guardian's Wand",
-    "Gummy Humongofrog",
-    "Hallowe'en Hat",
-    "Happy Holidaisy",
-    "Hard Candy Spellcaster",
-    "Hat of the Ever Watchful",
-    "Headdress of the Grove",
-    "Headdress of the Phoenix",
-    "Headgear of the Absolute",
-    "Helephant",
-    "Helm of Burning Ambition",
-    "Hood of Ashes",
-    "Hood of the Tempest",
-    "Hydra",
-    "Ice Blocking Pin (60, Balance)",
-    "Ice Blocking Pin (60, Fire)",
-    "Ice Blocking Pin (60, Myth)",
-    "Ice Rangers",
-    "Ice Resist Pin (50, Balance)",
-    "Ice Resist Pin (50, Fire)",
-    "Ice Resist Pin (50, Myth)",
-    "Ice Wyvern",
-    "Ice-Proof Sapphire",
-    "Icefire Hood",
-    "Icestar Stalkers",
-    "Illusive Headdress",
-    "Illusive Longcoat",
-    "Illusive Shoes",
-    "Immolate",
-    "Indomitable Knife",
-    "Insightful Topper",
-    "Jewel of the Feint",
-    "Keen Eyes Opal",
-    "King Banana",
-    "Kraken",
-    "Kris of the Piscean Guard",
-    "Krokopatra Exalted Duel",
-    "Krokopatra Master Duel",
-    "Lavastone Ring",
-    "Lead",
-    "Librarian's Mantle",
-    "Life Blocking Pin (60, Balance)",
-    "Life Blocking Pin (60, Death)",
-    "Life Blocking Pin (60, Storm)",
-    "Life Mending Pin (40)",
-    "Life Mending Pin (60)",
-    "Life Resist Pin (50, Balance)",
-    "Life Resist Pin (50, Death)",
-    "Life Resist Pin (50, Storm)",
-    "Life-Boon Jade",
-    "Life-Giver Jade",
-    "Locust Swarm",
-    "Lovely Ladybug",
-    "Lovely Leopard",
-    "Lucky Leprechaun",
-    "Lump of Coal",
-    "Maelstrom Snap Dragon",
-    "Maize Wand",
-    "Majestic Signet",
-    "Mantle of Growth",
-    "Maple Moose",
-    "Mass Death Prism Onyx",
-    "Mass Ice Prism Sapphire",
-    "Mass Life Prism Jade",
-    "Mass Myth Prism Peridot",
-    "Mass Storm Prism Amethyst",
-    "Melt Sapphire",
-    "Mend Talent Opal",
-    "Meowiarty Archmage Duel",
-    "Meowiarty Exalted Duel",
-    "Minotaur",
-    "Mocassins of the Embers",
-    "Mocassins of the Healer",
-    "Mocassins of the Polar Ice",
-    "Moon Cover",
-    "Moon Dagger",
-    "Moon Icon",
-    "Moon Pendant",
-    "Moon Ring",
-    "Mysterious Costume",
-    "Myth Blocking Pin (60, Balance)",
-    "Myth Blocking Pin (60, Fire)",
-    "Myth Blocking Pin (60, Life)",
-    "Myth Resist Pin (50, Balance)",
-    "Myth Resist Pin (50, Fire)",
-    "Myth Resist Pin (50, Life)",
-    "Myth-Eye Peridot",
-    "Mythmaker Boots",
-    "Natural Boots",
-    "Nature's Wrath",
-    "Nereus's Hoarfrost Helm",
-    "Nickel",
-    "Ninja Pig Opal",
-    "No Pain, No Gain Onyx",
-    "Nutcracker",
-    "Orthrus",
-    "Pest Zapper",
-    "Pet Egg",
-    "Phoenix",
-    "Pink Dandelion",
-    "Plain Blocking Citrine +6",
-    "Plain Blocking Onyx +6",
-    "Plain Blocking Opal +3",
-    "Plain Blocking Sapphire +6",
-    "Plain Damage Jade +15",
-    "Plain Damage Onyx +15",
-    "Plain Damage Peridot +15",
-    "Plain Damage Sapphire +15",
-    "Plain Defense Citrine +29",
-    "Plain Defense Onyx +29",
-    "Plain Defense Opal +15",
-    "Plain Defense Opal +16",
-    "Plain Defense Ruby +29",
-    "Plain Defense Sapphire +29",
-    "Plain Health Opal +59",
-    "Polar Boots",
-    "Power Nova",
-    "Power-Taker Ruby",
-    "Principle Jerkin",
-    "Quench Ruby",
-    "Rattlebones Exalted Duel",
-    "Rattlebones Master Duel",
-    "Reckless Raiment",
-    "Rescue Rover",
-    "Reshuffle Citrine",
-    "Rime Runners",
-    "Ring of Rare Origins",
-    "Robe of Rapture",
-    "Robe of the Conflagration",
-    "Robes of the Ice Queen",
-    "Salgio's Tinder Cloak",
-    "Sandals of Sleet",
-    "Sandals of the Remortal",
-    "Sandals of the Shaman",
-    "Sandstone",
-    "Scarecrow",
-    "Sea Dragon",
-    "Seraph",
-    "Shillelagh of Reformation",
-    "Shroud of Solitude",
-    "Silver Trumpet Vine",
-    "Skeletal Pirate",
-    "Slippers of Deftness",
-    "Slippers of the Quiet",
-    "Snowflake Wrapped Gift",
-    "Snowglobe",
-    "Sorcerer's Robe",
-    "Spectral Blast",
-    "Spicy Drumstick",
-    "Staff of Enchantment",
-    "Staff of the Cherub Archer",
-    "Staff of the Year's Dusk",
-    "Star Amulet",
-    "Star Blade",
-    "Star Signet",
-    "Stars Icon",
-    "Stave of Tweets",
-    "Steel",
-    "Stone Colossus",
-    "Storied Celestian Sabatons",
-    "Storm Blocking Pin (60, Balance)",
-    "Storm Blocking Pin (60, Death)",
-    "Storm Blocking Pin (60, Ice)",
-    "Storm Lord",
-    "Storm Mending Pin (50)",
-    "Storm Mending Pin (60)",
-    "Storm Resist Pin (50, Balance)",
-    "Storm Resist Pin (50, Death)",
-    "Storm Resist Pin (50, Ice)",
-    "Storm Resist Pin (60, Balance)",
-    "Storm Resist Pin (60, Death)",
-    "Storm Resist Pin (60, Ice)",
-    "Storm Shark",
-    "Storm-Giver Amethyst",
-    "Stormrider Hare",
-    "Stormzilla",
-    "Storyteller's Cap",
-    "Strangle Onyx",
-    "Strawberry Cupcake",
-    "Strong Opal",
-    "Strong Talent Opal",
-    "Sub Zero Signet",
-    "Submarine Sandwich",
-    "Sun Circle",
-    "Sun Icon",
-    "Sun Kris",
-    "Sunbird",
-    "Sunstone",
-    "Sunwalkers",
-    "Talespinner's Footgear",
-    "Tempest Robe",
-    "Tempest Topper",
-    "The Deer Knight Rises Onyx",
-    "Thunder Lizard Amethyst",
-    "Thundercloud Coif",
-    "Tin",
-    "Tolerant Boots",
-    "Tragic Tunic",
-    "Triton",
-    "Turbulent Tunic",
-    "Ultra Mute Opal",
-    "Unbalance Citrine",
-    "United Footwear",
-    "United Longcoat",
-    "Unstoppable",
-    "Valentine Pig",
-    "Vampire",
-    "Vaporize Peridot",
-    "Veil of the Guardian",
-    "Vestment of Fable",
-    "Vestment of the Howling Wind",
-    "Vial of Frozen Fury",
-    "Vial of the Sun",
-    "Virtue Shoes",
-    "Vital Headdress",
-    "Volatile Vestment",
-    "Wand of the Beguiler",
-    "Wand of the Third Season",
-    "Whimsical Surcoat",
-    "White Laugh-O-Dil",
-    "Wicked Raiment",
-    "Wraith",
-    "Wraps of Rapport",
-    "Wraps of Rapture",
-    "Wyldfire",
-    "Yuletide Spirit",
-    "Yuletide Tall Small Fry Aquarium",
-    "Zeus Exalted Duel"
+    {
+      "name": "5 Shark Tooth"
+    },
+    {
+      "name": "6 Shark Tooth"
+    },
+    {
+      "name": "Accurate"
+    },
+    {
+      "name": "Amplify Opal"
+    },
+    {
+      "name": "Atavistic Balance Boots"
+    },
+    {
+      "name": "Atavistic Balance Garb"
+    },
+    {
+      "name": "Atavistic Balance Helm"
+    },
+    {
+      "name": "Atavistic Death Boots"
+    },
+    {
+      "name": "Atavistic Death Garb"
+    },
+    {
+      "name": "Atavistic Death Helm"
+    },
+    {
+      "name": "Atavistic Fire Boots"
+    },
+    {
+      "name": "Atavistic Fire Garb"
+    },
+    {
+      "name": "Atavistic Fire Helm"
+    },
+    {
+      "name": "Atavistic Ice Boots"
+    },
+    {
+      "name": "Atavistic Ice Garb"
+    },
+    {
+      "name": "Atavistic Ice Helm"
+    },
+    {
+      "name": "Atavistic Life Boots"
+    },
+    {
+      "name": "Atavistic Life Garb"
+    },
+    {
+      "name": "Atavistic Life Helm"
+    },
+    {
+      "name": "Atavistic Myth Boots"
+    },
+    {
+      "name": "Atavistic Myth Garb"
+    },
+    {
+      "name": "Atavistic Myth Helm"
+    },
+    {
+      "name": "Atavistic Storm Boots"
+    },
+    {
+      "name": "Atavistic Storm Garb"
+    },
+    {
+      "name": "Atavistic Storm Helm"
+    },
+    {
+      "name": "Baby Bird Wand"
+    },
+    {
+      "name": "Balance Blocking Pin (60, Death)"
+    },
+    {
+      "name": "Balance Blocking Pin (60, Fire)"
+    },
+    {
+      "name": "Balance Blocking Pin (60, Ice)"
+    },
+    {
+      "name": "Balance Blocking Pin (60, Life)"
+    },
+    {
+      "name": "Balance Blocking Pin (60, Myth)"
+    },
+    {
+      "name": "Balance Blocking Pin (60, Storm)"
+    },
+    {
+      "name": "Balance Mending Pin (50)"
+    },
+    {
+      "name": "Balance Mending Pin (60)"
+    },
+    {
+      "name": "Balance Resist Pin (50, Death)"
+    },
+    {
+      "name": "Balance Resist Pin (50, Fire)"
+    },
+    {
+      "name": "Balance Resist Pin (50, Ice)"
+    },
+    {
+      "name": "Balance Resist Pin (50, Life)"
+    },
+    {
+      "name": "Balance Resist Pin (50, Myth)"
+    },
+    {
+      "name": "Balance Resist Pin (50, Storm)"
+    },
+    {
+      "name": "Balance Resist Pin (60, Death)"
+    },
+    {
+      "name": "Balance Resist Pin (60, Fire)"
+    },
+    {
+      "name": "Balance Resist Pin (60, Ice)"
+    },
+    {
+      "name": "Balance Resist Pin (60, Life)"
+    },
+    {
+      "name": "Balance Resist Pin (60, Myth)"
+    },
+    {
+      "name": "Balance Resist Pin (60, Storm)"
+    },
+    {
+      "name": "Balanceblade Talent Citrine"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Big Energy Opal"
+    },
+    {
+      "name": "Blade of Life Jade"
+    },
+    {
+      "name": "Blazing Oak Ruby"
+    },
+    {
+      "name": "Blemished Mana Opal +20"
+    },
+    {
+      "name": "Blemished PIP Opal +4%"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Boon Tree"
+    },
+    {
+      "name": "Boots of Celestian Totality"
+    },
+    {
+      "name": "Boots of the Hurricane"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Brimstone Boots"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Brown Recluse Jade"
+    },
+    {
+      "name": "Bullheaded Peridot"
+    },
+    {
+      "name": "Bygone Balance Boots"
+    },
+    {
+      "name": "Bygone Balance Garb"
+    },
+    {
+      "name": "Bygone Balance Helm"
+    },
+    {
+      "name": "Bygone Death Boots"
+    },
+    {
+      "name": "Bygone Death Garb"
+    },
+    {
+      "name": "Bygone Death Helm"
+    },
+    {
+      "name": "Bygone Fire Boots"
+    },
+    {
+      "name": "Bygone Fire Garb"
+    },
+    {
+      "name": "Bygone Fire Helm"
+    },
+    {
+      "name": "Bygone Ice Boots"
+    },
+    {
+      "name": "Bygone Ice Garb"
+    },
+    {
+      "name": "Bygone Ice Helm"
+    },
+    {
+      "name": "Bygone Life Boots"
+    },
+    {
+      "name": "Bygone Life Garb"
+    },
+    {
+      "name": "Bygone Life Helm"
+    },
+    {
+      "name": "Bygone Myth Boots"
+    },
+    {
+      "name": "Bygone Myth Garb"
+    },
+    {
+      "name": "Bygone Myth Helm"
+    },
+    {
+      "name": "Bygone Storm Boots"
+    },
+    {
+      "name": "Bygone Storm Garb"
+    },
+    {
+      "name": "Bygone Storm Helm"
+    },
+    {
+      "name": "Cap of the Archivist"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Celestia Combat Theme"
+    },
+    {
+      "name": "Celestia Finale Theme"
+    },
+    {
+      "name": "Celestia Main Theme"
+    },
+    {
+      "name": "Celestian Snow Boots"
+    },
+    {
+      "name": "Celestian Snow Cover"
+    },
+    {
+      "name": "Celestian Snow Smock"
+    },
+    {
+      "name": "Celestian Tempest Trekkers"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Cheeky Opal"
+    },
+    {
+      "name": "Christmas Elf"
+    },
+    {
+      "name": "Cloak of Mortality"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Combustible Band"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cover of Rapture"
+    },
+    {
+      "name": "Cowl of the Necromancer"
+    },
+    {
+      "name": "Cupig"
+    },
+    {
+      "name": "Cyclone Coif"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Cyclops Minion"
+    },
+    {
+      "name": "Dagger of Typhoons"
+    },
+    {
+      "name": "Darkwind Amethyst"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Death Blocking Pin (60, Balance)"
+    },
+    {
+      "name": "Death Blocking Pin (60, Ice)"
+    },
+    {
+      "name": "Death Blocking Pin (60, Myth)"
+    },
+    {
+      "name": "Death Resist Pin (50, Balance)"
+    },
+    {
+      "name": "Death Resist Pin (50, Ice)"
+    },
+    {
+      "name": "Death Resist Pin (50, Myth)"
+    },
+    {
+      "name": "Death Resist Pin (60, Balance)"
+    },
+    {
+      "name": "Death Resist Pin (60, Ice)"
+    },
+    {
+      "name": "Death Resist Pin (60, Myth)"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Devoted Vestment"
+    },
+    {
+      "name": "Diamond Dust Dagger"
+    },
+    {
+      "name": "Dirk of Delusion"
+    },
+    {
+      "name": "Dirk of the Daring"
+    },
+    {
+      "name": "Dissipate Amethyst"
+    },
+    {
+      "name": "Draconian Opal"
+    },
+    {
+      "name": "Dragonflies"
+    },
+    {
+      "name": "Dragonspyre Ruins"
+    },
+    {
+      "name": "Dragonstalkers"
+    },
+    {
+      "name": "Dragontooth Ring"
+    },
+    {
+      "name": "Dull Accurate Ruby +6%"
+    },
+    {
+      "name": "Dull Critical Jade +3"
+    },
+    {
+      "name": "Dull Critical Onyx +3"
+    },
+    {
+      "name": "Dull Critical Peridot +3"
+    },
+    {
+      "name": "Dull Critical Sapphire +3"
+    },
+    {
+      "name": "Dull Defense Amethyst +26"
+    },
+    {
+      "name": "Dull Defense Onyx +26"
+    },
+    {
+      "name": "Dull Defense Ruby +26"
+    },
+    {
+      "name": "Dull Healing Opal +3%"
+    },
+    {
+      "name": "Dull Health Opal +53"
+    },
+    {
+      "name": "Dull Mana Opal +21"
+    },
+    {
+      "name": "Dull Mana Opal +22"
+    },
+    {
+      "name": "Dull Mana Opal +23"
+    },
+    {
+      "name": "Dull PIP Opal +5%"
+    },
+    {
+      "name": "Dull Resilient Opal +3%"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Eat My Dirt Opal"
+    },
+    {
+      "name": "Eclipse Cloak"
+    },
+    {
+      "name": "Eclipse Clogs"
+    },
+    {
+      "name": "Eclipse Cover"
+    },
+    {
+      "name": "Empower"
+    },
+    {
+      "name": "Enfeeblement Opal"
+    },
+    {
+      "name": "Entangle Jade"
+    },
+    {
+      "name": "Euphoric Outfit"
+    },
+    {
+      "name": "Eureka Raiment"
+    },
+    {
+      "name": "Everlasting Celestian Boots"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Expert's Socket Wrench"
+    },
+    {
+      "name": "Feinting Spell Onyx"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Blocking Pin (60, Balance)"
+    },
+    {
+      "name": "Fire Blocking Pin (60, Life)"
+    },
+    {
+      "name": "Fire Blocking Pin (60, Storm)"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fire Mending Pin (50)"
+    },
+    {
+      "name": "Fire Mending Pin (60)"
+    },
+    {
+      "name": "Fire Resist Pin (50, Balance)"
+    },
+    {
+      "name": "Fire Resist Pin (50, Life)"
+    },
+    {
+      "name": "Fire Resist Pin (50, Storm)"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Flaming Soup"
+    },
+    {
+      "name": "Footgear of the Forgotten"
+    },
+    {
+      "name": "Footwraps of the Whirlwind"
+    },
+    {
+      "name": "Forest Lord"
+    },
+    {
+      "name": "Forgotten Facade"
+    },
+    {
+      "name": "Fortify Opal"
+    },
+    {
+      "name": "Fortify Talent Opal"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Frost Giant's Armor"
+    },
+    {
+      "name": "Frostbit Footguards"
+    },
+    {
+      "name": "Frostflower Cap"
+    },
+    {
+      "name": "Frostman"
+    },
+    {
+      "name": "Gardener's Smock"
+    },
+    {
+      "name": "Gargantuan"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Glimmering Band"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Goat Cheese"
+    },
+    {
+      "name": "Gobbler Opal"
+    },
+    {
+      "name": "Golden Grapes"
+    },
+    {
+      "name": "Guardian's Wand"
+    },
+    {
+      "name": "Gummy Humongofrog"
+    },
+    {
+      "name": "Hallowe'en Hat"
+    },
+    {
+      "name": "Happy Holidaisy"
+    },
+    {
+      "name": "Hard Candy Spellcaster"
+    },
+    {
+      "name": "Hat of the Ever Watchful"
+    },
+    {
+      "name": "Headdress of the Grove"
+    },
+    {
+      "name": "Headdress of the Phoenix"
+    },
+    {
+      "name": "Headgear of the Absolute"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Helm of Burning Ambition"
+    },
+    {
+      "name": "Hood of Ashes"
+    },
+    {
+      "name": "Hood of the Tempest"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Blocking Pin (60, Balance)"
+    },
+    {
+      "name": "Ice Blocking Pin (60, Fire)"
+    },
+    {
+      "name": "Ice Blocking Pin (60, Myth)"
+    },
+    {
+      "name": "Ice Rangers"
+    },
+    {
+      "name": "Ice Resist Pin (50, Balance)"
+    },
+    {
+      "name": "Ice Resist Pin (50, Fire)"
+    },
+    {
+      "name": "Ice Resist Pin (50, Myth)"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Ice-Proof Sapphire"
+    },
+    {
+      "name": "Icefire Hood"
+    },
+    {
+      "name": "Icestar Stalkers"
+    },
+    {
+      "name": "Illusive Headdress"
+    },
+    {
+      "name": "Illusive Longcoat"
+    },
+    {
+      "name": "Illusive Shoes"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Indomitable Knife"
+    },
+    {
+      "name": "Insightful Topper"
+    },
+    {
+      "name": "Jewel of the Feint"
+    },
+    {
+      "name": "Keen Eyes Opal"
+    },
+    {
+      "name": "King Banana"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Kris of the Piscean Guard"
+    },
+    {
+      "name": "Krokopatra Exalted Duel"
+    },
+    {
+      "name": "Krokopatra Master Duel"
+    },
+    {
+      "name": "Lavastone Ring"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Librarian's Mantle"
+    },
+    {
+      "name": "Life Blocking Pin (60, Balance)"
+    },
+    {
+      "name": "Life Blocking Pin (60, Death)"
+    },
+    {
+      "name": "Life Blocking Pin (60, Storm)"
+    },
+    {
+      "name": "Life Mending Pin (40)"
+    },
+    {
+      "name": "Life Mending Pin (60)"
+    },
+    {
+      "name": "Life Resist Pin (50, Balance)"
+    },
+    {
+      "name": "Life Resist Pin (50, Death)"
+    },
+    {
+      "name": "Life Resist Pin (50, Storm)"
+    },
+    {
+      "name": "Life-Boon Jade"
+    },
+    {
+      "name": "Life-Giver Jade"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Lovely Ladybug"
+    },
+    {
+      "name": "Lovely Leopard"
+    },
+    {
+      "name": "Lucky Leprechaun"
+    },
+    {
+      "name": "Lump of Coal"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Maize Wand"
+    },
+    {
+      "name": "Majestic Signet"
+    },
+    {
+      "name": "Mantle of Growth"
+    },
+    {
+      "name": "Maple Moose"
+    },
+    {
+      "name": "Mass Death Prism Onyx"
+    },
+    {
+      "name": "Mass Ice Prism Sapphire"
+    },
+    {
+      "name": "Mass Life Prism Jade"
+    },
+    {
+      "name": "Mass Myth Prism Peridot"
+    },
+    {
+      "name": "Mass Storm Prism Amethyst"
+    },
+    {
+      "name": "Melt Sapphire"
+    },
+    {
+      "name": "Mend Talent Opal"
+    },
+    {
+      "name": "Meowiarty Archmage Duel"
+    },
+    {
+      "name": "Meowiarty Exalted Duel"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Mocassins of the Embers"
+    },
+    {
+      "name": "Mocassins of the Healer"
+    },
+    {
+      "name": "Mocassins of the Polar Ice"
+    },
+    {
+      "name": "Moon Cover"
+    },
+    {
+      "name": "Moon Dagger"
+    },
+    {
+      "name": "Moon Icon"
+    },
+    {
+      "name": "Moon Pendant"
+    },
+    {
+      "name": "Moon Ring"
+    },
+    {
+      "name": "Mysterious Costume"
+    },
+    {
+      "name": "Myth Blocking Pin (60, Balance)"
+    },
+    {
+      "name": "Myth Blocking Pin (60, Fire)"
+    },
+    {
+      "name": "Myth Blocking Pin (60, Life)"
+    },
+    {
+      "name": "Myth Resist Pin (50, Balance)"
+    },
+    {
+      "name": "Myth Resist Pin (50, Fire)"
+    },
+    {
+      "name": "Myth Resist Pin (50, Life)"
+    },
+    {
+      "name": "Myth-Eye Peridot"
+    },
+    {
+      "name": "Mythmaker Boots"
+    },
+    {
+      "name": "Natural Boots"
+    },
+    {
+      "name": "Nature's Wrath"
+    },
+    {
+      "name": "Nereus's Hoarfrost Helm"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Pig Opal"
+    },
+    {
+      "name": "No Pain, No Gain Onyx"
+    },
+    {
+      "name": "Nutcracker"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Pet Egg"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Plain Blocking Citrine +6"
+    },
+    {
+      "name": "Plain Blocking Onyx +6"
+    },
+    {
+      "name": "Plain Blocking Opal +3"
+    },
+    {
+      "name": "Plain Blocking Sapphire +6"
+    },
+    {
+      "name": "Plain Damage Jade +15"
+    },
+    {
+      "name": "Plain Damage Onyx +15"
+    },
+    {
+      "name": "Plain Damage Peridot +15"
+    },
+    {
+      "name": "Plain Damage Sapphire +15"
+    },
+    {
+      "name": "Plain Defense Citrine +29"
+    },
+    {
+      "name": "Plain Defense Onyx +29"
+    },
+    {
+      "name": "Plain Defense Opal +15"
+    },
+    {
+      "name": "Plain Defense Opal +16"
+    },
+    {
+      "name": "Plain Defense Ruby +29"
+    },
+    {
+      "name": "Plain Defense Sapphire +29"
+    },
+    {
+      "name": "Plain Health Opal +59"
+    },
+    {
+      "name": "Polar Boots"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Power-Taker Ruby"
+    },
+    {
+      "name": "Principle Jerkin"
+    },
+    {
+      "name": "Quench Ruby"
+    },
+    {
+      "name": "Rattlebones Exalted Duel"
+    },
+    {
+      "name": "Rattlebones Master Duel"
+    },
+    {
+      "name": "Reckless Raiment"
+    },
+    {
+      "name": "Rescue Rover"
+    },
+    {
+      "name": "Reshuffle Citrine"
+    },
+    {
+      "name": "Rime Runners"
+    },
+    {
+      "name": "Ring of Rare Origins"
+    },
+    {
+      "name": "Robe of Rapture"
+    },
+    {
+      "name": "Robe of the Conflagration"
+    },
+    {
+      "name": "Robes of the Ice Queen"
+    },
+    {
+      "name": "Salgio's Tinder Cloak"
+    },
+    {
+      "name": "Sandals of Sleet"
+    },
+    {
+      "name": "Sandals of the Remortal"
+    },
+    {
+      "name": "Sandals of the Shaman"
+    },
+    {
+      "name": "Sandstone"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Sea Dragon"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Shillelagh of Reformation"
+    },
+    {
+      "name": "Shroud of Solitude"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Slippers of Deftness"
+    },
+    {
+      "name": "Slippers of the Quiet"
+    },
+    {
+      "name": "Snowflake Wrapped Gift"
+    },
+    {
+      "name": "Snowglobe"
+    },
+    {
+      "name": "Sorcerer's Robe"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Staff of Enchantment"
+    },
+    {
+      "name": "Staff of the Cherub Archer"
+    },
+    {
+      "name": "Staff of the Year's Dusk"
+    },
+    {
+      "name": "Star Amulet"
+    },
+    {
+      "name": "Star Blade"
+    },
+    {
+      "name": "Star Signet"
+    },
+    {
+      "name": "Stars Icon"
+    },
+    {
+      "name": "Stave of Tweets"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storied Celestian Sabatons"
+    },
+    {
+      "name": "Storm Blocking Pin (60, Balance)"
+    },
+    {
+      "name": "Storm Blocking Pin (60, Death)"
+    },
+    {
+      "name": "Storm Blocking Pin (60, Ice)"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm Mending Pin (50)"
+    },
+    {
+      "name": "Storm Mending Pin (60)"
+    },
+    {
+      "name": "Storm Resist Pin (50, Balance)"
+    },
+    {
+      "name": "Storm Resist Pin (50, Death)"
+    },
+    {
+      "name": "Storm Resist Pin (50, Ice)"
+    },
+    {
+      "name": "Storm Resist Pin (60, Balance)"
+    },
+    {
+      "name": "Storm Resist Pin (60, Death)"
+    },
+    {
+      "name": "Storm Resist Pin (60, Ice)"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm-Giver Amethyst"
+    },
+    {
+      "name": "Stormrider Hare"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Storyteller's Cap"
+    },
+    {
+      "name": "Strangle Onyx"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Strong Opal"
+    },
+    {
+      "name": "Strong Talent Opal"
+    },
+    {
+      "name": "Sub Zero Signet"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sun Circle"
+    },
+    {
+      "name": "Sun Icon"
+    },
+    {
+      "name": "Sun Kris"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Sunwalkers"
+    },
+    {
+      "name": "Talespinner's Footgear"
+    },
+    {
+      "name": "Tempest Robe"
+    },
+    {
+      "name": "Tempest Topper"
+    },
+    {
+      "name": "The Deer Knight Rises Onyx"
+    },
+    {
+      "name": "Thunder Lizard Amethyst"
+    },
+    {
+      "name": "Thundercloud Coif"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tolerant Boots"
+    },
+    {
+      "name": "Tragic Tunic"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Turbulent Tunic"
+    },
+    {
+      "name": "Ultra Mute Opal"
+    },
+    {
+      "name": "Unbalance Citrine"
+    },
+    {
+      "name": "United Footwear"
+    },
+    {
+      "name": "United Longcoat"
+    },
+    {
+      "name": "Unstoppable"
+    },
+    {
+      "name": "Valentine Pig"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vaporize Peridot"
+    },
+    {
+      "name": "Veil of the Guardian"
+    },
+    {
+      "name": "Vestment of Fable"
+    },
+    {
+      "name": "Vestment of the Howling Wind"
+    },
+    {
+      "name": "Vial of Frozen Fury"
+    },
+    {
+      "name": "Vial of the Sun"
+    },
+    {
+      "name": "Virtue Shoes"
+    },
+    {
+      "name": "Vital Headdress"
+    },
+    {
+      "name": "Volatile Vestment"
+    },
+    {
+      "name": "Wand of the Beguiler"
+    },
+    {
+      "name": "Wand of the Third Season"
+    },
+    {
+      "name": "Whimsical Surcoat"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wicked Raiment"
+    },
+    {
+      "name": "Wraith"
+    },
+    {
+      "name": "Wraps of Rapport"
+    },
+    {
+      "name": "Wraps of Rapture"
+    },
+    {
+      "name": "Wyldfire"
+    },
+    {
+      "name": "Yuletide Spirit"
+    },
+    {
+      "name": "Yuletide Tall Small Fry Aquarium"
+    },
+    {
+      "name": "Zeus Exalted Duel"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -8,176 +8,516 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Darkmoor",
   "drops": [
-    "2 Outsider Relic",
-    "Ammut",
-    "Anubis",
-    "Balance Accurate Pin (100)",
-    "Balance Conversion Pin (180)",
-    "Barbarian's Saga",
-    "Blast Off!",
-    "Bright Critical Amethyst +44 (Ice)",
-    "Bright Critical Amethyst +48 (Life)",
-    "Bright Critical Amethyst +52 (Death)",
-    "Bright Critical Amethyst +56 (Myth)",
-    "Bright Critical Amethyst +57 (Fire)",
-    "Bright Critical Amethyst +63 (Storm)",
-    "Bright Critical Citrine +44 (Ice)",
-    "Bright Critical Citrine +52 (Death)",
-    "Bright Critical Citrine +54 (Balance)",
-    "Bright Critical Citrine +56 (Myth)",
-    "Bright Critical Citrine +57 (Fire)",
-    "Bright Critical Citrine +63 (Storm)",
-    "Bright Critical Jade +48 (Life)",
-    "Bright Critical Jade +52 (Death)",
-    "Bright Critical Jade +54 (Balance)",
-    "Bright Critical Jade +56 (Myth)",
-    "Bright Critical Jade +57 (Fire)",
-    "Bright Critical Jade +63 (Storm)",
-    "Bright Critical Onyx +44 (Ice)",
-    "Bright Critical Onyx +48 (Life)",
-    "Bright Critical Onyx +52 (Death)",
-    "Bright Critical Onyx +54 (Balance)",
-    "Bright Critical Onyx +56 (Myth)",
-    "Bright Critical Onyx +57 (Fire)",
-    "Bright Critical Onyx +63 (Storm)",
-    "Bright Critical Peridot +44 (Ice)",
-    "Bright Critical Peridot +48 (Life)",
-    "Bright Critical Peridot +52 (Death)",
-    "Bright Critical Peridot +54 (Balance)",
-    "Bright Critical Peridot +56 (Myth)",
-    "Bright Critical Peridot +57 (Fire)",
-    "Bright Critical Peridot +63 (Storm)",
-    "Bright Critical Ruby +44 (Ice)",
-    "Bright Critical Ruby +48 (Life)",
-    "Bright Critical Ruby +52 (Death)",
-    "Bright Critical Ruby +54 (Balance)",
-    "Bright Critical Ruby +56 (Myth)",
-    "Bright Critical Ruby +57 (Fire)",
-    "Bright Critical Ruby +63 (Storm)",
-    "Bright Critical Sapphire +44 (Ice)",
-    "Bright Critical Sapphire +48 (Life)",
-    "Bright Critical Sapphire +52 (Death)",
-    "Bright Critical Sapphire +54 (Balance)",
-    "Bright Critical Sapphire +56 (Myth)",
-    "Bright Critical Sapphire +57 (Fire)",
-    "Bright Critical Sapphire +63 (Storm)",
-    "Bright Damage Amethyst +10% (Ice)",
-    "Bright Damage Amethyst +10% (Life)",
-    "Bright Damage Citrine +11% (Balance)",
-    "Bright Damage Citrine +11% (Death)",
-    "Bright Damage Citrine +11% (Fire)",
-    "Bright Damage Citrine +11% (Myth)",
-    "Bright Damage Citrine +11% (Storm)",
-    "Bright Damage Jade +10% (Ice)",
-    "Bright Damage Jade +10% (Life)",
-    "Bright Damage Jade +11% (Balance)",
-    "Bright Damage Jade +11% (Death)",
-    "Bright Damage Jade +11% (Fire)",
-    "Bright Damage Jade +11% (Myth)",
-    "Bright Damage Jade +11% (Storm)",
-    "Bright Damage Onyx +10% (Ice)",
-    "Bright Damage Onyx +10% (Life)",
-    "Bright Damage Peridot +11% (Balance)",
-    "Bright Damage Peridot +11% (Death)",
-    "Bright Damage Peridot +11% (Fire)",
-    "Bright Damage Peridot +11% (Myth)",
-    "Bright Damage Peridot +11% (Storm)",
-    "Bright Damage Ruby +11% (Balance)",
-    "Bright Damage Ruby +11% (Death)",
-    "Bright Damage Ruby +11% (Fire)",
-    "Bright Damage Ruby +11% (Myth)",
-    "Bright Damage Ruby +11% (Storm)",
-    "Bright Damage Sapphire +10% (Ice)",
-    "Bright Damage Sapphire +10% (Life)",
-    "Bright Damage Sapphire +11% (Balance)",
-    "Bright Damage Sapphire +11% (Death)",
-    "Bright Damage Sapphire +11% (Fire)",
-    "Bright Damage Sapphire +11% (Myth)",
-    "Bright Damage Sapphire +11% (Storm)",
-    "Bunyip's Rage",
-    "Chameleon Clash",
-    "Chilling Abomination Amulet",
-    "Count Croakula",
-    "Dark & Stormy",
-    "Death Accurate Pin (100)",
-    "Death Conversion Pin (180)",
-    "Deathly Depths",
-    "Doomed Abomination Amulet",
-    "Drop Bear Fury",
-    "Fire Accurate Pin (100)",
-    "Fire Conversion Pin (180)",
-    "Freeze Ray",
-    "Glimpse of Infinity",
-    "Gravestorm",
-    "Grim Reader",
-    "Heqet",
-    "Ice Accurate Pin (110)",
-    "Ice Conversion Pin (180)",
-    "Improbable Gaze",
-    "Life Accurate Pin (100)",
-    "Life Conversion Pin (180)",
-    "Lord of the Jungle",
-    "Mortality",
-    "Myth Accurate Pin (100)",
-    "Myth Conversion Pin (180)",
-    "Mythic Abomination Amulet",
-    "Old One's Endgame",
-    "Outsider Relic",
-    "Phantasmania!",
-    "Polished Piercing Amethyst +6%",
-    "Polished Piercing Citrine +6%",
-    "Polished Piercing Jade +6%",
-    "Polished Piercing Onyx +6%",
-    "Polished Piercing Peridot +6%",
-    "Polished Piercing Ruby +6%",
-    "Polished Piercing Sapphire +6%",
-    "Rainbow Serpent",
-    "Sanguine Abomination Amulet",
-    "Scales of Destiny",
-    "Scary Abomination Amulet",
-    "Scholomantic Death Charm",
-    "Scholomantic Destructive Charm",
-    "Scholomantic Devilish Charm",
-    "Scholomantic Fortune Charm",
-    "Scholomantic Justice Charm",
-    "Scholomantic Strength Charm",
-    "Scholomantic Worldly Charm",
-    "Shocking Abomination Amulet",
-    "Shu",
-    "Starspawn",
-    "Storm Accurate Pin (80)",
-    "Storm Conversion Pin (180)",
-    "Taweret",
-    "Tense Abomination Amulet",
-    "The Chariot",
-    "The Emperor",
-    "The Hierophant",
-    "The Tower",
-    "The World",
-    "Thoth",
-    "Tree of Strife",
-    "Unearthly Critical Amethyst +48 (Balance)",
-    "Unearthly Critical Citrine +44 (Life)",
-    "Unearthly Critical Jade +42 (Ice)",
-    "Unearthly Damage Amethyst +10% (Balance)",
-    "Unearthly Damage Amethyst +10% (Fire)",
-    "Unearthly Damage Amethyst +10% (Myth)",
-    "Unearthly Damage Amethyst +11% (Death)",
-    "Unearthly Damage Amethyst +11% (Storm)",
-    "Unearthly Damage Citrine +9% (Ice)",
-    "Unearthly Damage Citrine +9% (Life)",
-    "Unearthly Damage Onyx +10% (Balance)",
-    "Unearthly Damage Onyx +10% (Fire)",
-    "Unearthly Damage Onyx +10% (Myth)",
-    "Unearthly Damage Onyx +11% (Death)",
-    "Unearthly Damage Onyx +11% (Storm)",
-    "Unearthly Damage Peridot +9% (Ice)",
-    "Unearthly Damage Peridot +9% (Life)",
-    "Unearthly Damage Ruby +9% (Ice)",
-    "Unearthly Damage Ruby +9% (Life)",
-    "Wheel of Fortune",
-    "Wobbegong Frenzy",
-    "Zand the Bandit"
+    {
+      "name": "2 Outsider Relic"
+    },
+    {
+      "name": "Ammut"
+    },
+    {
+      "name": "Anubis"
+    },
+    {
+      "name": "Balance Accurate Pin (100)"
+    },
+    {
+      "name": "Balance Conversion Pin (180)"
+    },
+    {
+      "name": "Barbarian's Saga"
+    },
+    {
+      "name": "Blast Off!"
+    },
+    {
+      "name": "Bright Critical Amethyst +44 (Ice)"
+    },
+    {
+      "name": "Bright Critical Amethyst +48 (Life)"
+    },
+    {
+      "name": "Bright Critical Amethyst +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Amethyst +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Amethyst +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Amethyst +63 (Storm)"
+    },
+    {
+      "name": "Bright Critical Citrine +44 (Ice)"
+    },
+    {
+      "name": "Bright Critical Citrine +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Citrine +54 (Balance)"
+    },
+    {
+      "name": "Bright Critical Citrine +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Citrine +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Citrine +63 (Storm)"
+    },
+    {
+      "name": "Bright Critical Jade +48 (Life)"
+    },
+    {
+      "name": "Bright Critical Jade +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Jade +54 (Balance)"
+    },
+    {
+      "name": "Bright Critical Jade +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Jade +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Jade +63 (Storm)"
+    },
+    {
+      "name": "Bright Critical Onyx +44 (Ice)"
+    },
+    {
+      "name": "Bright Critical Onyx +48 (Life)"
+    },
+    {
+      "name": "Bright Critical Onyx +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Onyx +54 (Balance)"
+    },
+    {
+      "name": "Bright Critical Onyx +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Onyx +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Onyx +63 (Storm)"
+    },
+    {
+      "name": "Bright Critical Peridot +44 (Ice)"
+    },
+    {
+      "name": "Bright Critical Peridot +48 (Life)"
+    },
+    {
+      "name": "Bright Critical Peridot +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Peridot +54 (Balance)"
+    },
+    {
+      "name": "Bright Critical Peridot +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Peridot +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Peridot +63 (Storm)"
+    },
+    {
+      "name": "Bright Critical Ruby +44 (Ice)"
+    },
+    {
+      "name": "Bright Critical Ruby +48 (Life)"
+    },
+    {
+      "name": "Bright Critical Ruby +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Ruby +54 (Balance)"
+    },
+    {
+      "name": "Bright Critical Ruby +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Ruby +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Ruby +63 (Storm)"
+    },
+    {
+      "name": "Bright Critical Sapphire +44 (Ice)"
+    },
+    {
+      "name": "Bright Critical Sapphire +48 (Life)"
+    },
+    {
+      "name": "Bright Critical Sapphire +52 (Death)"
+    },
+    {
+      "name": "Bright Critical Sapphire +54 (Balance)"
+    },
+    {
+      "name": "Bright Critical Sapphire +56 (Myth)"
+    },
+    {
+      "name": "Bright Critical Sapphire +57 (Fire)"
+    },
+    {
+      "name": "Bright Critical Sapphire +63 (Storm)"
+    },
+    {
+      "name": "Bright Damage Amethyst +10% (Ice)"
+    },
+    {
+      "name": "Bright Damage Amethyst +10% (Life)"
+    },
+    {
+      "name": "Bright Damage Citrine +11% (Balance)"
+    },
+    {
+      "name": "Bright Damage Citrine +11% (Death)"
+    },
+    {
+      "name": "Bright Damage Citrine +11% (Fire)"
+    },
+    {
+      "name": "Bright Damage Citrine +11% (Myth)"
+    },
+    {
+      "name": "Bright Damage Citrine +11% (Storm)"
+    },
+    {
+      "name": "Bright Damage Jade +10% (Ice)"
+    },
+    {
+      "name": "Bright Damage Jade +10% (Life)"
+    },
+    {
+      "name": "Bright Damage Jade +11% (Balance)"
+    },
+    {
+      "name": "Bright Damage Jade +11% (Death)"
+    },
+    {
+      "name": "Bright Damage Jade +11% (Fire)"
+    },
+    {
+      "name": "Bright Damage Jade +11% (Myth)"
+    },
+    {
+      "name": "Bright Damage Jade +11% (Storm)"
+    },
+    {
+      "name": "Bright Damage Onyx +10% (Ice)"
+    },
+    {
+      "name": "Bright Damage Onyx +10% (Life)"
+    },
+    {
+      "name": "Bright Damage Peridot +11% (Balance)"
+    },
+    {
+      "name": "Bright Damage Peridot +11% (Death)"
+    },
+    {
+      "name": "Bright Damage Peridot +11% (Fire)"
+    },
+    {
+      "name": "Bright Damage Peridot +11% (Myth)"
+    },
+    {
+      "name": "Bright Damage Peridot +11% (Storm)"
+    },
+    {
+      "name": "Bright Damage Ruby +11% (Balance)"
+    },
+    {
+      "name": "Bright Damage Ruby +11% (Death)"
+    },
+    {
+      "name": "Bright Damage Ruby +11% (Fire)"
+    },
+    {
+      "name": "Bright Damage Ruby +11% (Myth)"
+    },
+    {
+      "name": "Bright Damage Ruby +11% (Storm)"
+    },
+    {
+      "name": "Bright Damage Sapphire +10% (Ice)"
+    },
+    {
+      "name": "Bright Damage Sapphire +10% (Life)"
+    },
+    {
+      "name": "Bright Damage Sapphire +11% (Balance)"
+    },
+    {
+      "name": "Bright Damage Sapphire +11% (Death)"
+    },
+    {
+      "name": "Bright Damage Sapphire +11% (Fire)"
+    },
+    {
+      "name": "Bright Damage Sapphire +11% (Myth)"
+    },
+    {
+      "name": "Bright Damage Sapphire +11% (Storm)"
+    },
+    {
+      "name": "Bunyip's Rage"
+    },
+    {
+      "name": "Chameleon Clash"
+    },
+    {
+      "name": "Chilling Abomination Amulet"
+    },
+    {
+      "name": "Count Croakula"
+    },
+    {
+      "name": "Dark & Stormy"
+    },
+    {
+      "name": "Death Accurate Pin (100)"
+    },
+    {
+      "name": "Death Conversion Pin (180)"
+    },
+    {
+      "name": "Deathly Depths"
+    },
+    {
+      "name": "Doomed Abomination Amulet"
+    },
+    {
+      "name": "Drop Bear Fury"
+    },
+    {
+      "name": "Fire Accurate Pin (100)"
+    },
+    {
+      "name": "Fire Conversion Pin (180)"
+    },
+    {
+      "name": "Freeze Ray"
+    },
+    {
+      "name": "Glimpse of Infinity"
+    },
+    {
+      "name": "Gravestorm"
+    },
+    {
+      "name": "Grim Reader"
+    },
+    {
+      "name": "Heqet"
+    },
+    {
+      "name": "Ice Accurate Pin (110)"
+    },
+    {
+      "name": "Ice Conversion Pin (180)"
+    },
+    {
+      "name": "Improbable Gaze"
+    },
+    {
+      "name": "Life Accurate Pin (100)"
+    },
+    {
+      "name": "Life Conversion Pin (180)"
+    },
+    {
+      "name": "Lord of the Jungle"
+    },
+    {
+      "name": "Mortality"
+    },
+    {
+      "name": "Myth Accurate Pin (100)"
+    },
+    {
+      "name": "Myth Conversion Pin (180)"
+    },
+    {
+      "name": "Mythic Abomination Amulet"
+    },
+    {
+      "name": "Old One's Endgame"
+    },
+    {
+      "name": "Outsider Relic"
+    },
+    {
+      "name": "Phantasmania!"
+    },
+    {
+      "name": "Polished Piercing Amethyst +6%"
+    },
+    {
+      "name": "Polished Piercing Citrine +6%"
+    },
+    {
+      "name": "Polished Piercing Jade +6%"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%"
+    },
+    {
+      "name": "Polished Piercing Peridot +6%"
+    },
+    {
+      "name": "Polished Piercing Ruby +6%"
+    },
+    {
+      "name": "Polished Piercing Sapphire +6%"
+    },
+    {
+      "name": "Rainbow Serpent"
+    },
+    {
+      "name": "Sanguine Abomination Amulet"
+    },
+    {
+      "name": "Scales of Destiny"
+    },
+    {
+      "name": "Scary Abomination Amulet"
+    },
+    {
+      "name": "Scholomantic Death Charm"
+    },
+    {
+      "name": "Scholomantic Destructive Charm"
+    },
+    {
+      "name": "Scholomantic Devilish Charm"
+    },
+    {
+      "name": "Scholomantic Fortune Charm"
+    },
+    {
+      "name": "Scholomantic Justice Charm"
+    },
+    {
+      "name": "Scholomantic Strength Charm"
+    },
+    {
+      "name": "Scholomantic Worldly Charm"
+    },
+    {
+      "name": "Shocking Abomination Amulet"
+    },
+    {
+      "name": "Shu"
+    },
+    {
+      "name": "Starspawn"
+    },
+    {
+      "name": "Storm Accurate Pin (80)"
+    },
+    {
+      "name": "Storm Conversion Pin (180)"
+    },
+    {
+      "name": "Taweret"
+    },
+    {
+      "name": "Tense Abomination Amulet"
+    },
+    {
+      "name": "The Chariot"
+    },
+    {
+      "name": "The Emperor"
+    },
+    {
+      "name": "The Hierophant"
+    },
+    {
+      "name": "The Tower"
+    },
+    {
+      "name": "The World"
+    },
+    {
+      "name": "Thoth"
+    },
+    {
+      "name": "Tree of Strife"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +48 (Balance)"
+    },
+    {
+      "name": "Unearthly Critical Citrine +44 (Life)"
+    },
+    {
+      "name": "Unearthly Critical Jade +42 (Ice)"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +10% (Balance)"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +10% (Fire)"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +10% (Myth)"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +11% (Death)"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +11% (Storm)"
+    },
+    {
+      "name": "Unearthly Damage Citrine +9% (Ice)"
+    },
+    {
+      "name": "Unearthly Damage Citrine +9% (Life)"
+    },
+    {
+      "name": "Unearthly Damage Onyx +10% (Balance)"
+    },
+    {
+      "name": "Unearthly Damage Onyx +10% (Fire)"
+    },
+    {
+      "name": "Unearthly Damage Onyx +10% (Myth)"
+    },
+    {
+      "name": "Unearthly Damage Onyx +11% (Death)"
+    },
+    {
+      "name": "Unearthly Damage Onyx +11% (Storm)"
+    },
+    {
+      "name": "Unearthly Damage Peridot +9% (Ice)"
+    },
+    {
+      "name": "Unearthly Damage Peridot +9% (Life)"
+    },
+    {
+      "name": "Unearthly Damage Ruby +9% (Ice)"
+    },
+    {
+      "name": "Unearthly Damage Ruby +9% (Life)"
+    },
+    {
+      "name": "Wheel of Fortune"
+    },
+    {
+      "name": "Wobbegong Frenzy"
+    },
+    {
+      "name": "Zand the Bandit"
+    }
   ],
   "authors": "BartleBot",
   "options": [

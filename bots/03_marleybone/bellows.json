@@ -10,171 +10,501 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "Alluring Robes",
-    "Altar with Candles",
-    "Angled Gravemarker",
-    "Artificial Robe",
-    "Balance-Boon Citrine",
-    "Bellows' Aristocratic Hat",
-    "Bellows' Bitter Cold Amulet",
-    "Bellows' Boots of Accuracy",
-    "Bellows' Confined Robe",
-    "Bellows' Dirk of Restoration",
-    "Bellows' Famous Vest",
-    "Bellows' Graceful Cap",
-    "Bellows' Helm of Civility",
-    "Bellows' Intolerant Robe",
-    "Bellows' Polished Hat",
-    "Bellows' Pompous Hat",
-    "Bellows' Robe of Courtesy",
-    "Bellows' Shoes of Disposition",
-    "Bellows' Shoes of the Bubble",
-    "Bellows' Shoes of the Hushed",
-    "Bellows' Stiletto of Tragedy",
-    "Bellows's Band of Numbness",
-    "Bewitching Shoes",
-    "Black Mantle",
-    "Bronze Gear",
-    "Calculating Opal",
-    "Cap of the Banshee",
-    "Cap of the Inventor",
-    "Cap of the Unicorn",
-    "Caramel Popcorn",
-    "Cat Burglar's Cap",
-    "Chipped Accurate Jade +3%",
-    "Chipped Accurate Peridot +3%",
-    "Chipped Accurate Ruby +3%",
-    "Chipped Damage Ruby +8",
-    "Chipped Defense Amethyst +14",
-    "Chipped Defense Citrine +14",
-    "Chipped Defense Peridot +14",
-    "Chipped Defense Sapphire +15",
-    "Chipped Mana Opal +12",
-    "Cloak",
-    "Cloak of Clarity",
-    "Cloak of Fascination",
-    "Clockwork Golem",
-    "Comedian's Ring",
-    "Copper",
-    "Cosmopolitan Robe",
-    "Cracked Damage Opal +3",
-    "Crossbone Gravestone",
-    "Cyclops",
-    "Deck of Chivalry",
-    "Deer Knight Onyx",
-    "Dexterous Vest",
-    "Distinguished Slippers",
-    "Distract Opal",
-    "Dryad",
-    "Exacting Boots",
-    "Exclusive Boots",
-    "Exclusive Cap",
-    "Exquisite Slippers",
-    "Fancy Garments",
-    "Feline's Charged Hat",
-    "Feline's Fiery Hat",
-    "Feline's Invigorating Robe",
-    "Feline's Somber Hat",
-    "Feline's Somber Robe",
-    "Feline's Whimsical Robe",
-    "Fire-Eye Ruby",
-    "Flawed Damage Amethyst +10",
-    "Flawed Damage Onyx +10",
-    "Flawed Damage Peridot +10",
-    "Flawed Defense Amethyst +17",
-    "Flawed Defense Citrine +17",
-    "Flawed Defense Onyx +17",
-    "Flawed Defense Opal +10",
-    "Flawed Defense Opal +9",
-    "Flawed Defense Sapphire +17",
-    "Flawed Healing Opal +2%",
-    "Flawed Resilient Opal +2%",
-    "Garment of the Supreme",
-    "Giant",
-    "Glowing Canine Hat",
-    "Gummy Bloodbat",
-    "Heck Hound",
-    "High Quality Boots",
-    "High Quality Cloak",
-    "Ice Trap",
-    "Ice Wyvern",
-    "Informant's Dirk",
-    "Iron",
-    "Lead",
-    "Magnificent Boots",
-    "Marleybone Theme 4",
-    "Marvelous Shroud",
-    "Mechanical Ring",
-    "Medium Fish",
-    "Medium Magenta Rug",
-    "Monstrous",
-    "Move It! Opal",
-    "Newspaper Page",
-    "Nickel",
-    "Noteworthy Slippers",
-    "Opportunists' Sandals",
-    "Polished Garments",
-    "Precious Cloak",
-    "Premium Footwraps",
-    "Redskin Peanut",
-    "Remarkable Sandals",
-    "Ring of Effect",
-    "Ring of the Unicorn",
-    "Ringlet of Fire",
-    "Robe of Excellence",
-    "Robe of Ideals",
-    "Robe of the Bubble",
-    "Sandals of Delusion",
-    "Sandstorm",
-    "Satyr",
-    "Savvy Vestment",
-    "Shaman's Hat",
-    "Shaman's Uniform",
-    "Sharp Opal",
-    "Shoes of Preference",
-    "Shoes of Sentiments",
-    "Shoes of the Chimera",
-    "Shoes of the Devoted",
-    "Shoes of the Exceptional",
-    "Shoes of the Windless",
-    "Short Metal Fence",
-    "Shortblade of Flowers",
-    "Silent Canine Cowl",
-    "Skeletal Pirate",
-    "Slippers of Gusto",
-    "Slippers of Predominance",
-    "Slippers of the Worrier",
-    "Sniper",
-    "Spectral Blast Citrine",
-    "Spider Silk",
-    "Spirit Armor",
-    "Square Watermelon",
-    "Stable Salacot",
-    "Steamer Trunk",
-    "Stein",
-    "Stinky Cheese",
-    "Storm Trap",
-    "Stylish Garments",
-    "Superstitious Canine Cowl",
-    "Superstitious Canine Hat",
-    "Tall Roof Vent",
-    "Thinker's Ring",
-    "Time of Legend",
-    "Tin Can",
-    "Tough",
-    "Tunic of Chivalry",
-    "Tunic of Symmetry",
-    "Tunic of the Clever",
-    "Vampire",
-    "Vest of Predominance",
-    "Vestment of Expertise",
-    "Vestment of Stability",
-    "Vestment of the Enigma",
-    "Visor of Invention",
-    "Watchman's Athame",
-    "Wheat Cracker",
-    "Windstorm Amethyst",
-    "Winter Canine Cowl"
+    {
+      "name": "Alluring Robes"
+    },
+    {
+      "name": "Altar with Candles"
+    },
+    {
+      "name": "Angled Gravemarker"
+    },
+    {
+      "name": "Artificial Robe"
+    },
+    {
+      "name": "Balance-Boon Citrine"
+    },
+    {
+      "name": "Bellows' Aristocratic Hat"
+    },
+    {
+      "name": "Bellows' Bitter Cold Amulet"
+    },
+    {
+      "name": "Bellows' Boots of Accuracy"
+    },
+    {
+      "name": "Bellows' Confined Robe"
+    },
+    {
+      "name": "Bellows' Dirk of Restoration"
+    },
+    {
+      "name": "Bellows' Famous Vest"
+    },
+    {
+      "name": "Bellows' Graceful Cap"
+    },
+    {
+      "name": "Bellows' Helm of Civility"
+    },
+    {
+      "name": "Bellows' Intolerant Robe"
+    },
+    {
+      "name": "Bellows' Polished Hat"
+    },
+    {
+      "name": "Bellows' Pompous Hat"
+    },
+    {
+      "name": "Bellows' Robe of Courtesy"
+    },
+    {
+      "name": "Bellows' Shoes of Disposition"
+    },
+    {
+      "name": "Bellows' Shoes of the Bubble"
+    },
+    {
+      "name": "Bellows' Shoes of the Hushed"
+    },
+    {
+      "name": "Bellows' Stiletto of Tragedy"
+    },
+    {
+      "name": "Bellows's Band of Numbness"
+    },
+    {
+      "name": "Bewitching Shoes"
+    },
+    {
+      "name": "Black Mantle"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Calculating Opal"
+    },
+    {
+      "name": "Cap of the Banshee"
+    },
+    {
+      "name": "Cap of the Inventor"
+    },
+    {
+      "name": "Cap of the Unicorn"
+    },
+    {
+      "name": "Caramel Popcorn"
+    },
+    {
+      "name": "Cat Burglar's Cap"
+    },
+    {
+      "name": "Chipped Accurate Jade +3%"
+    },
+    {
+      "name": "Chipped Accurate Peridot +3%"
+    },
+    {
+      "name": "Chipped Accurate Ruby +3%"
+    },
+    {
+      "name": "Chipped Damage Ruby +8"
+    },
+    {
+      "name": "Chipped Defense Amethyst +14"
+    },
+    {
+      "name": "Chipped Defense Citrine +14"
+    },
+    {
+      "name": "Chipped Defense Peridot +14"
+    },
+    {
+      "name": "Chipped Defense Sapphire +15"
+    },
+    {
+      "name": "Chipped Mana Opal +12"
+    },
+    {
+      "name": "Cloak"
+    },
+    {
+      "name": "Cloak of Clarity"
+    },
+    {
+      "name": "Cloak of Fascination"
+    },
+    {
+      "name": "Clockwork Golem"
+    },
+    {
+      "name": "Comedian's Ring"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cosmopolitan Robe"
+    },
+    {
+      "name": "Cracked Damage Opal +3"
+    },
+    {
+      "name": "Crossbone Gravestone"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Deck of Chivalry"
+    },
+    {
+      "name": "Deer Knight Onyx"
+    },
+    {
+      "name": "Dexterous Vest"
+    },
+    {
+      "name": "Distinguished Slippers"
+    },
+    {
+      "name": "Distract Opal"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Exacting Boots"
+    },
+    {
+      "name": "Exclusive Boots"
+    },
+    {
+      "name": "Exclusive Cap"
+    },
+    {
+      "name": "Exquisite Slippers"
+    },
+    {
+      "name": "Fancy Garments"
+    },
+    {
+      "name": "Feline's Charged Hat"
+    },
+    {
+      "name": "Feline's Fiery Hat"
+    },
+    {
+      "name": "Feline's Invigorating Robe"
+    },
+    {
+      "name": "Feline's Somber Hat"
+    },
+    {
+      "name": "Feline's Somber Robe"
+    },
+    {
+      "name": "Feline's Whimsical Robe"
+    },
+    {
+      "name": "Fire-Eye Ruby"
+    },
+    {
+      "name": "Flawed Damage Amethyst +10"
+    },
+    {
+      "name": "Flawed Damage Onyx +10"
+    },
+    {
+      "name": "Flawed Damage Peridot +10"
+    },
+    {
+      "name": "Flawed Defense Amethyst +17"
+    },
+    {
+      "name": "Flawed Defense Citrine +17"
+    },
+    {
+      "name": "Flawed Defense Onyx +17"
+    },
+    {
+      "name": "Flawed Defense Opal +10"
+    },
+    {
+      "name": "Flawed Defense Opal +9"
+    },
+    {
+      "name": "Flawed Defense Sapphire +17"
+    },
+    {
+      "name": "Flawed Healing Opal +2%"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%"
+    },
+    {
+      "name": "Garment of the Supreme"
+    },
+    {
+      "name": "Giant"
+    },
+    {
+      "name": "Glowing Canine Hat"
+    },
+    {
+      "name": "Gummy Bloodbat"
+    },
+    {
+      "name": "Heck Hound"
+    },
+    {
+      "name": "High Quality Boots"
+    },
+    {
+      "name": "High Quality Cloak"
+    },
+    {
+      "name": "Ice Trap"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Informant's Dirk"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Magnificent Boots"
+    },
+    {
+      "name": "Marleybone Theme 4"
+    },
+    {
+      "name": "Marvelous Shroud"
+    },
+    {
+      "name": "Mechanical Ring"
+    },
+    {
+      "name": "Medium Fish"
+    },
+    {
+      "name": "Medium Magenta Rug"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "Move It! Opal"
+    },
+    {
+      "name": "Newspaper Page"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Noteworthy Slippers"
+    },
+    {
+      "name": "Opportunists' Sandals"
+    },
+    {
+      "name": "Polished Garments"
+    },
+    {
+      "name": "Precious Cloak"
+    },
+    {
+      "name": "Premium Footwraps"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Remarkable Sandals"
+    },
+    {
+      "name": "Ring of Effect"
+    },
+    {
+      "name": "Ring of the Unicorn"
+    },
+    {
+      "name": "Ringlet of Fire"
+    },
+    {
+      "name": "Robe of Excellence"
+    },
+    {
+      "name": "Robe of Ideals"
+    },
+    {
+      "name": "Robe of the Bubble"
+    },
+    {
+      "name": "Sandals of Delusion"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Satyr"
+    },
+    {
+      "name": "Savvy Vestment"
+    },
+    {
+      "name": "Shaman's Hat"
+    },
+    {
+      "name": "Shaman's Uniform"
+    },
+    {
+      "name": "Sharp Opal"
+    },
+    {
+      "name": "Shoes of Preference"
+    },
+    {
+      "name": "Shoes of Sentiments"
+    },
+    {
+      "name": "Shoes of the Chimera"
+    },
+    {
+      "name": "Shoes of the Devoted"
+    },
+    {
+      "name": "Shoes of the Exceptional"
+    },
+    {
+      "name": "Shoes of the Windless"
+    },
+    {
+      "name": "Short Metal Fence"
+    },
+    {
+      "name": "Shortblade of Flowers"
+    },
+    {
+      "name": "Silent Canine Cowl"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Slippers of Gusto"
+    },
+    {
+      "name": "Slippers of Predominance"
+    },
+    {
+      "name": "Slippers of the Worrier"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Spectral Blast Citrine"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Stable Salacot"
+    },
+    {
+      "name": "Steamer Trunk"
+    },
+    {
+      "name": "Stein"
+    },
+    {
+      "name": "Stinky Cheese"
+    },
+    {
+      "name": "Storm Trap"
+    },
+    {
+      "name": "Stylish Garments"
+    },
+    {
+      "name": "Superstitious Canine Cowl"
+    },
+    {
+      "name": "Superstitious Canine Hat"
+    },
+    {
+      "name": "Tall Roof Vent"
+    },
+    {
+      "name": "Thinker's Ring"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tin Can"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Tunic of Chivalry"
+    },
+    {
+      "name": "Tunic of Symmetry"
+    },
+    {
+      "name": "Tunic of the Clever"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vest of Predominance"
+    },
+    {
+      "name": "Vestment of Expertise"
+    },
+    {
+      "name": "Vestment of Stability"
+    },
+    {
+      "name": "Vestment of the Enigma"
+    },
+    {
+      "name": "Visor of Invention"
+    },
+    {
+      "name": "Watchman's Athame"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "Windstorm Amethyst"
+    },
+    {
+      "name": "Winter Canine Cowl"
+    }
   ],
   "authors": "BartleBot",
   "options": [

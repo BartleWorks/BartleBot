@@ -8,299 +8,885 @@
   "recovery_state": "state_1",
   "start_location": "Monkey Spider Cave",
   "drops": [
-    "Alligator Pear Tree",
-    "Ally Dragonblade Citrine",
-    "Ally Elemental Shield Citrine",
-    "Ally Ether Shield Peridot",
-    "Ally Glacial Shield Ruby",
-    "Ally Precision Citrine",
-    "Ally Spirit Shield Citrine",
-    "Ally Stun Block Sapphire",
-    "Ally Volcanic Shield Sapphire",
-    "Ancient Scroll",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Animate Skeleton Onyx",
-    "Antheneum Delight",
-    "Antique Coins",
-    "Armor Breaker Opal",
-    "Armor Piercer Opal",
-    "Aztecan Hot Chocolate",
-    "Baby Carrots",
-    "Balance Assailant Citrine",
-    "Balance Striker Citrine",
-    "Balance-Boon Citrine",
-    "Balance-Dealer Citrine",
-    "Balance-Eye Citrine",
-    "Balance-Giver Citrine",
-    "Balance-It Citrine",
-    "Balance-Off Citrine",
-    "Balance-Sniper Citrine",
-    "Balance-Ward Citrine",
-    "Balefrost",
-    "BBQ Drumstick",
-    "Beast Wellington",
-    "Bell Pepper",
-    "Black Pearl",
-    "Blood Moss",
-    "Blue Huckleberries",
-    "Boiled Peanuts",
-    "Brass",
-    "Bread Fruit Bush",
-    "Bread Fruit Fruit",
-    "Bronze Gear",
-    "Burning Snap Dragon",
-    "Cherry Pie",
-    "Cobalt",
-    "Combustion",
-    "Cornbread Fruit Bush",
-    "Couch Potatoes",
-    "Dandelion",
-    "Darkwind",
-    "Deadly Fly Trap",
-    "Deadly Ninja Fig",
-    "Death Assailant Onyx",
-    "Death Striker Onyx",
-    "Death-Boon Onyx",
-    "Death-Dealer Onyx",
-    "Death-Giver Onyx",
-    "Death-Proof Onyx",
-    "Death-Shot Onyx",
-    "Death-Ward Onyx",
-    "Decimatoes",
-    "Deep Mushroom",
-    "Delegate's Hexacorder",
-    "Discord Grape Jelly",
-    "Doom and Gloom",
-    "Drumstick",
-    "Ectoplasm",
-    "Elf on Fire Ruby",
-    "Empyrea Aeriel Theme",
-    "Empyrea Athanor Combat Theme",
-    "Empyrea Finale Combat Theme",
-    "Empyrea Flotsam Combat Theme",
-    "Empyrea Inner Athanor Theme",
-    "Empyrea Jungle Theme",
-    "Empyrea Outer Athanor Theme",
-    "Empyrea Sepidious Combat Theme",
-    "Empyrea Sepidious Theme",
-    "Engineer's Hexacorder",
-    "Evil Magma Peas",
-    "Evil Snow Peas",
-    "Eye Candy",
-    "Face Palm",
-    "Feeling Weak Citrine",
-    "Fern Jelly",
-    "Fickle Pickle",
-    "Fiery Boom Shroom",
-    "Fire Striker Ruby",
-    "Fire-Away Ruby",
-    "Fire-Boon Ruby",
-    "Fire-Dealer Ruby",
-    "Fire-Eye Ruby",
-    "Fire-Giver Ruby",
-    "Fire-Proof Ruby",
-    "Fire-Sniper Ruby",
-    "Fish on a Vine",
-    "Frozen Fly Trap",
-    "Get Sunbird Ruby",
-    "Glowing Taffy",
-    "Golden Couch Potatoes",
-    "Grapes of Wrath",
-    "Green Snow Apples",
-    "Healer Opal",
-    "Healthy Opal",
-    "Helephant Ears",
-    "Hero's Hexacorder",
-    "Hexster Citrine",
-    "Honey Sickle",
-    "Hot Cross Buns",
-    "Ice Assailant Sapphire",
-    "Ice Striker Sapphire",
-    "Ice-Away Sapphire",
-    "Ice-Boon Sapphire",
-    "Ice-Dealer Sapphire",
-    "Ice-Eye Sapphire",
-    "Ice-Shot Sapphire",
-    "Ice-Sniper Sapphire",
-    "Infector Onyx",
-    "Interstellar Delegate Trekkers",
-    "Interstellar Delegate's Deck",
-    "Interstellar Delegate's Helm",
-    "Interstellar Delegate's Knife",
-    "Interstellar Delegate's Suit",
-    "Interstellar Engineer Suit",
-    "Interstellar Engineer Trekkers",
-    "Interstellar Engineer's Charm",
-    "Interstellar Engineer's Deck",
-    "Interstellar Explorer's Charm",
-    "Interstellar Explorer's Deck",
-    "Interstellar Explorer's Helm",
-    "Interstellar Explorer's Trekkers",
-    "Interstellar Hero's Band",
-    "Interstellar Hero's Charm",
-    "Interstellar Hero's Deck",
-    "Interstellar Hero's Helm",
-    "Interstellar Hero's Knife",
-    "Interstellar Hero's Trekkers",
-    "Interstellar Hero's Uniform",
-    "Interstellar Medic's Band",
-    "Interstellar Medic's Charm",
-    "Interstellar Medic's Deck",
-    "Interstellar Medic's Scalpel",
-    "Interstellar Navigator Helm",
-    "Interstellar Navigator Suit",
-    "Interstellar Navigator's Band",
-    "Interstellar Navigator's Boots",
-    "Interstellar Navigator's Charm",
-    "Interstellar Navigator's Deck",
-    "Interstellar Navigator's Knife",
-    "Interstellar Officer's Boots",
-    "Interstellar Officer's Charm",
-    "Interstellar Officer's Helm",
-    "Interstellar Officer's Knife",
-    "Interstellar Officer's Uniform",
-    "Interstellar Warrior Helm",
-    "Interstellar Warrior Trekkers",
-    "Interstellar Warrior Uniform",
-    "Interstellar Warrior's Charm",
-    "Interstellar Warrior's Deck",
-    "Interstellar Warrior's Knife",
-    "Ivy League",
-    "Laugh-O-Dil",
-    "Life Assailant Jade",
-    "Life Striker Jade",
-    "Life-Away Jade",
-    "Life-Boon Jade",
-    "Life-Bringer Jade",
-    "Life-Giver Jade",
-    "Life-Proof Jade",
-    "Life-Shot Jade",
-    "Life-Sniper Jade",
-    "Lively Opal",
-    "Lustrous Accurate Citrine +11%",
-    "Lustrous Accurate Jade +11%",
-    "Lustrous Accurate Onyx +11%",
-    "Lustrous Accurate Peridot +11%",
-    "Lustrous Accurate Ruby +11%",
-    "Lustrous Accurate Sapphire +11%",
-    "Lustrous Blocking Amethyst +13",
-    "Lustrous Blocking Citrine +13",
-    "Lustrous Blocking Jade +13",
-    "Lustrous Blocking Onyx +13",
-    "Lustrous Blocking Peridot +13",
-    "Lustrous Blocking Ruby +13",
-    "Lustrous Blocking Sapphire +13",
-    "Lustrous Critical Amethyst +13",
-    "Lustrous Critical Citrine +13",
-    "Lustrous Critical Jade +13",
-    "Lustrous Critical Onyx +13",
-    "Lustrous Critical Peridot +13",
-    "Lustrous Critical Ruby +13",
-    "Lustrous Critical Sapphire +13",
-    "Lustrous Damage Amethyst +23",
-    "Lustrous Damage Citrine +23",
-    "Lustrous Damage Jade +23",
-    "Lustrous Damage Onyx +23",
-    "Lustrous Damage Ruby +23",
-    "Lustrous Damage Sapphire +23",
-    "Lustrous Defense Amethyst +45",
-    "Lustrous Defense Citrine +45",
-    "Lustrous Defense Jade +45",
-    "Lustrous Defense Onyx +45",
-    "Lustrous Defense Peridot +45",
-    "Lustrous Defense Ruby +45",
-    "Lustrous Health Opal +100",
-    "Lustrous Health Opal +96",
-    "Lustrous Health Opal +97",
-    "Lustrous Mana Opal +41",
-    "Lustrous Mana Opal +42",
-    "Lustrous PIP Opal +10%",
-    "Maltese Tiger Lily",
-    "Mass Death Prism",
-    "Mass Fire Prism",
-    "Mass Ice Prism",
-    "Mass Life Prism",
-    "Mass Myth Prism",
-    "Mass Storm Prism",
-    "Mass Triage",
-    "Medic Opal",
-    "Medic's Hexacorder",
-    "Medic's Interstellar Helm",
-    "Medic's Interstellar Uniform",
-    "Myth Striker Peridot",
-    "Myth-Away Peridot",
-    "Myth-Boon Peridot",
-    "Myth-Eye Peridot",
-    "Myth-Giver Peridot",
-    "Myth-Proof Peridot",
-    "Myth-Shot Peridot",
-    "Myth-Sniper Peridot",
-    "Myth-Ward Peridot",
-    "Navigator's Hexacorder",
-    "Nickel",
-    "Officer's Hexacorder",
-    "Orange Dandelion",
-    "Pain-Bringer Opal",
-    "Pain-Giver Opal",
-    "Pink Huckleberries",
-    "Pip Boost Opal",
-    "Pip O'Plenty Opal",
-    "Pizza",
-    "Power Play",
-    "Power Player Citrine",
-    "Power-Taker Ruby",
-    "Prickly Bear Cactus",
-    "Purple Bell Pepper",
-    "Purple Grapes of Wrath",
-    "Purple Snow Apples",
-    "Pyrosaurus Rex Ruby",
-    "Queen Crape Myrtle",
-    "Rage of Winter Sapphire",
-    "Red Bell Pepper",
-    "Red Couch Potatoes",
-    "Red Grapes of Wrath",
-    "Red Huckleberries",
-    "Rock and Roll Candy",
-    "Sanctuary",
-    "Satyr Chow",
-    "Saw Palmetto",
-    "Scales",
-    "Sharp-Shot Opal",
-    "Snow Apples",
-    "Sour Fickle Pickle",
-    "Spell-Defying Opal",
-    "Spell-Proof Opal",
-    "Spider Silk",
-    "Spring",
-    "Sprinkle Cupcake",
-    "Squash",
-    "Storm Striker Amethyst",
-    "Storm-Away Amethyst",
-    "Storm-Boon Amethyst",
-    "Storm-Dealer Amethyst",
-    "Storm-Eye Amethyst",
-    "Storm-Giver Amethyst",
-    "Storm-Proof Amethyst",
-    "Storm-Shot Amethyst",
-    "Storm-Sniper Amethyst",
-    "Storm-Ward Amethyst",
-    "Stun Recalcitrant Opal",
-    "Stun Resistant Opal",
-    "The Deer Knight Rises Onyx",
-    "Tiger Lily (Seed)",
-    "Time of Legend",
-    "Tin",
-    "Trumpet Vine",
-    "Unbalancer Citrine",
-    "Veggie Juice",
-    "Venus Fly Trap",
-    "Warrior's Hexacorder",
-    "Wheat Cracker",
-    "White Desparagus",
-    "White Laugh-O-Dil",
-    "White Tiger Lily",
-    "Yellow Bell Pepper"
+    {
+      "name": "Alligator Pear Tree"
+    },
+    {
+      "name": "Ally Dragonblade Citrine"
+    },
+    {
+      "name": "Ally Elemental Shield Citrine"
+    },
+    {
+      "name": "Ally Ether Shield Peridot"
+    },
+    {
+      "name": "Ally Glacial Shield Ruby"
+    },
+    {
+      "name": "Ally Precision Citrine"
+    },
+    {
+      "name": "Ally Spirit Shield Citrine"
+    },
+    {
+      "name": "Ally Stun Block Sapphire"
+    },
+    {
+      "name": "Ally Volcanic Shield Sapphire"
+    },
+    {
+      "name": "Ancient Scroll"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Animate Skeleton Onyx"
+    },
+    {
+      "name": "Antheneum Delight"
+    },
+    {
+      "name": "Antique Coins"
+    },
+    {
+      "name": "Armor Breaker Opal"
+    },
+    {
+      "name": "Armor Piercer Opal"
+    },
+    {
+      "name": "Aztecan Hot Chocolate"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Balance Assailant Citrine"
+    },
+    {
+      "name": "Balance Striker Citrine"
+    },
+    {
+      "name": "Balance-Boon Citrine"
+    },
+    {
+      "name": "Balance-Dealer Citrine"
+    },
+    {
+      "name": "Balance-Eye Citrine"
+    },
+    {
+      "name": "Balance-Giver Citrine"
+    },
+    {
+      "name": "Balance-It Citrine"
+    },
+    {
+      "name": "Balance-Off Citrine"
+    },
+    {
+      "name": "Balance-Sniper Citrine"
+    },
+    {
+      "name": "Balance-Ward Citrine"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "BBQ Drumstick"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Bell Pepper"
+    },
+    {
+      "name": "Black Pearl"
+    },
+    {
+      "name": "Blood Moss"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Bread Fruit Fruit"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Burning Snap Dragon"
+    },
+    {
+      "name": "Cherry Pie"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Combustion"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Couch Potatoes"
+    },
+    {
+      "name": "Dandelion"
+    },
+    {
+      "name": "Darkwind"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Assailant Onyx"
+    },
+    {
+      "name": "Death Striker Onyx"
+    },
+    {
+      "name": "Death-Boon Onyx"
+    },
+    {
+      "name": "Death-Dealer Onyx"
+    },
+    {
+      "name": "Death-Giver Onyx"
+    },
+    {
+      "name": "Death-Proof Onyx"
+    },
+    {
+      "name": "Death-Shot Onyx"
+    },
+    {
+      "name": "Death-Ward Onyx"
+    },
+    {
+      "name": "Decimatoes"
+    },
+    {
+      "name": "Deep Mushroom"
+    },
+    {
+      "name": "Delegate's Hexacorder"
+    },
+    {
+      "name": "Discord Grape Jelly"
+    },
+    {
+      "name": "Doom and Gloom"
+    },
+    {
+      "name": "Drumstick"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Elf on Fire Ruby"
+    },
+    {
+      "name": "Empyrea Aeriel Theme"
+    },
+    {
+      "name": "Empyrea Athanor Combat Theme"
+    },
+    {
+      "name": "Empyrea Finale Combat Theme"
+    },
+    {
+      "name": "Empyrea Flotsam Combat Theme"
+    },
+    {
+      "name": "Empyrea Inner Athanor Theme"
+    },
+    {
+      "name": "Empyrea Jungle Theme"
+    },
+    {
+      "name": "Empyrea Outer Athanor Theme"
+    },
+    {
+      "name": "Empyrea Sepidious Combat Theme"
+    },
+    {
+      "name": "Empyrea Sepidious Theme"
+    },
+    {
+      "name": "Engineer's Hexacorder"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Feeling Weak Citrine"
+    },
+    {
+      "name": "Fern Jelly"
+    },
+    {
+      "name": "Fickle Pickle"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Striker Ruby"
+    },
+    {
+      "name": "Fire-Away Ruby"
+    },
+    {
+      "name": "Fire-Boon Ruby"
+    },
+    {
+      "name": "Fire-Dealer Ruby"
+    },
+    {
+      "name": "Fire-Eye Ruby"
+    },
+    {
+      "name": "Fire-Giver Ruby"
+    },
+    {
+      "name": "Fire-Proof Ruby"
+    },
+    {
+      "name": "Fire-Sniper Ruby"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Get Sunbird Ruby"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Golden Couch Potatoes"
+    },
+    {
+      "name": "Grapes of Wrath"
+    },
+    {
+      "name": "Green Snow Apples"
+    },
+    {
+      "name": "Healer Opal"
+    },
+    {
+      "name": "Healthy Opal"
+    },
+    {
+      "name": "Helephant Ears"
+    },
+    {
+      "name": "Hero's Hexacorder"
+    },
+    {
+      "name": "Hexster Citrine"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Ice Assailant Sapphire"
+    },
+    {
+      "name": "Ice Striker Sapphire"
+    },
+    {
+      "name": "Ice-Away Sapphire"
+    },
+    {
+      "name": "Ice-Boon Sapphire"
+    },
+    {
+      "name": "Ice-Dealer Sapphire"
+    },
+    {
+      "name": "Ice-Eye Sapphire"
+    },
+    {
+      "name": "Ice-Shot Sapphire"
+    },
+    {
+      "name": "Ice-Sniper Sapphire"
+    },
+    {
+      "name": "Infector Onyx"
+    },
+    {
+      "name": "Interstellar Delegate Trekkers"
+    },
+    {
+      "name": "Interstellar Delegate's Deck"
+    },
+    {
+      "name": "Interstellar Delegate's Helm"
+    },
+    {
+      "name": "Interstellar Delegate's Knife"
+    },
+    {
+      "name": "Interstellar Delegate's Suit"
+    },
+    {
+      "name": "Interstellar Engineer Suit"
+    },
+    {
+      "name": "Interstellar Engineer Trekkers"
+    },
+    {
+      "name": "Interstellar Engineer's Charm"
+    },
+    {
+      "name": "Interstellar Engineer's Deck"
+    },
+    {
+      "name": "Interstellar Explorer's Charm"
+    },
+    {
+      "name": "Interstellar Explorer's Deck"
+    },
+    {
+      "name": "Interstellar Explorer's Helm"
+    },
+    {
+      "name": "Interstellar Explorer's Trekkers"
+    },
+    {
+      "name": "Interstellar Hero's Band"
+    },
+    {
+      "name": "Interstellar Hero's Charm"
+    },
+    {
+      "name": "Interstellar Hero's Deck"
+    },
+    {
+      "name": "Interstellar Hero's Helm"
+    },
+    {
+      "name": "Interstellar Hero's Knife"
+    },
+    {
+      "name": "Interstellar Hero's Trekkers"
+    },
+    {
+      "name": "Interstellar Hero's Uniform"
+    },
+    {
+      "name": "Interstellar Medic's Band"
+    },
+    {
+      "name": "Interstellar Medic's Charm"
+    },
+    {
+      "name": "Interstellar Medic's Deck"
+    },
+    {
+      "name": "Interstellar Medic's Scalpel"
+    },
+    {
+      "name": "Interstellar Navigator Helm"
+    },
+    {
+      "name": "Interstellar Navigator Suit"
+    },
+    {
+      "name": "Interstellar Navigator's Band"
+    },
+    {
+      "name": "Interstellar Navigator's Boots"
+    },
+    {
+      "name": "Interstellar Navigator's Charm"
+    },
+    {
+      "name": "Interstellar Navigator's Deck"
+    },
+    {
+      "name": "Interstellar Navigator's Knife"
+    },
+    {
+      "name": "Interstellar Officer's Boots"
+    },
+    {
+      "name": "Interstellar Officer's Charm"
+    },
+    {
+      "name": "Interstellar Officer's Helm"
+    },
+    {
+      "name": "Interstellar Officer's Knife"
+    },
+    {
+      "name": "Interstellar Officer's Uniform"
+    },
+    {
+      "name": "Interstellar Warrior Helm"
+    },
+    {
+      "name": "Interstellar Warrior Trekkers"
+    },
+    {
+      "name": "Interstellar Warrior Uniform"
+    },
+    {
+      "name": "Interstellar Warrior's Charm"
+    },
+    {
+      "name": "Interstellar Warrior's Deck"
+    },
+    {
+      "name": "Interstellar Warrior's Knife"
+    },
+    {
+      "name": "Ivy League"
+    },
+    {
+      "name": "Laugh-O-Dil"
+    },
+    {
+      "name": "Life Assailant Jade"
+    },
+    {
+      "name": "Life Striker Jade"
+    },
+    {
+      "name": "Life-Away Jade"
+    },
+    {
+      "name": "Life-Boon Jade"
+    },
+    {
+      "name": "Life-Bringer Jade"
+    },
+    {
+      "name": "Life-Giver Jade"
+    },
+    {
+      "name": "Life-Proof Jade"
+    },
+    {
+      "name": "Life-Shot Jade"
+    },
+    {
+      "name": "Life-Sniper Jade"
+    },
+    {
+      "name": "Lively Opal"
+    },
+    {
+      "name": "Lustrous Accurate Citrine +11%"
+    },
+    {
+      "name": "Lustrous Accurate Jade +11%"
+    },
+    {
+      "name": "Lustrous Accurate Onyx +11%"
+    },
+    {
+      "name": "Lustrous Accurate Peridot +11%"
+    },
+    {
+      "name": "Lustrous Accurate Ruby +11%"
+    },
+    {
+      "name": "Lustrous Accurate Sapphire +11%"
+    },
+    {
+      "name": "Lustrous Blocking Amethyst +13"
+    },
+    {
+      "name": "Lustrous Blocking Citrine +13"
+    },
+    {
+      "name": "Lustrous Blocking Jade +13"
+    },
+    {
+      "name": "Lustrous Blocking Onyx +13"
+    },
+    {
+      "name": "Lustrous Blocking Peridot +13"
+    },
+    {
+      "name": "Lustrous Blocking Ruby +13"
+    },
+    {
+      "name": "Lustrous Blocking Sapphire +13"
+    },
+    {
+      "name": "Lustrous Critical Amethyst +13"
+    },
+    {
+      "name": "Lustrous Critical Citrine +13"
+    },
+    {
+      "name": "Lustrous Critical Jade +13"
+    },
+    {
+      "name": "Lustrous Critical Onyx +13"
+    },
+    {
+      "name": "Lustrous Critical Peridot +13"
+    },
+    {
+      "name": "Lustrous Critical Ruby +13"
+    },
+    {
+      "name": "Lustrous Critical Sapphire +13"
+    },
+    {
+      "name": "Lustrous Damage Amethyst +23"
+    },
+    {
+      "name": "Lustrous Damage Citrine +23"
+    },
+    {
+      "name": "Lustrous Damage Jade +23"
+    },
+    {
+      "name": "Lustrous Damage Onyx +23"
+    },
+    {
+      "name": "Lustrous Damage Ruby +23"
+    },
+    {
+      "name": "Lustrous Damage Sapphire +23"
+    },
+    {
+      "name": "Lustrous Defense Amethyst +45"
+    },
+    {
+      "name": "Lustrous Defense Citrine +45"
+    },
+    {
+      "name": "Lustrous Defense Jade +45"
+    },
+    {
+      "name": "Lustrous Defense Onyx +45"
+    },
+    {
+      "name": "Lustrous Defense Peridot +45"
+    },
+    {
+      "name": "Lustrous Defense Ruby +45"
+    },
+    {
+      "name": "Lustrous Health Opal +100"
+    },
+    {
+      "name": "Lustrous Health Opal +96"
+    },
+    {
+      "name": "Lustrous Health Opal +97"
+    },
+    {
+      "name": "Lustrous Mana Opal +41"
+    },
+    {
+      "name": "Lustrous Mana Opal +42"
+    },
+    {
+      "name": "Lustrous PIP Opal +10%"
+    },
+    {
+      "name": "Maltese Tiger Lily"
+    },
+    {
+      "name": "Mass Death Prism"
+    },
+    {
+      "name": "Mass Fire Prism"
+    },
+    {
+      "name": "Mass Ice Prism"
+    },
+    {
+      "name": "Mass Life Prism"
+    },
+    {
+      "name": "Mass Myth Prism"
+    },
+    {
+      "name": "Mass Storm Prism"
+    },
+    {
+      "name": "Mass Triage"
+    },
+    {
+      "name": "Medic Opal"
+    },
+    {
+      "name": "Medic's Hexacorder"
+    },
+    {
+      "name": "Medic's Interstellar Helm"
+    },
+    {
+      "name": "Medic's Interstellar Uniform"
+    },
+    {
+      "name": "Myth Striker Peridot"
+    },
+    {
+      "name": "Myth-Away Peridot"
+    },
+    {
+      "name": "Myth-Boon Peridot"
+    },
+    {
+      "name": "Myth-Eye Peridot"
+    },
+    {
+      "name": "Myth-Giver Peridot"
+    },
+    {
+      "name": "Myth-Proof Peridot"
+    },
+    {
+      "name": "Myth-Shot Peridot"
+    },
+    {
+      "name": "Myth-Sniper Peridot"
+    },
+    {
+      "name": "Myth-Ward Peridot"
+    },
+    {
+      "name": "Navigator's Hexacorder"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Officer's Hexacorder"
+    },
+    {
+      "name": "Orange Dandelion"
+    },
+    {
+      "name": "Pain-Bringer Opal"
+    },
+    {
+      "name": "Pain-Giver Opal"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pip Boost Opal"
+    },
+    {
+      "name": "Pip O'Plenty Opal"
+    },
+    {
+      "name": "Pizza"
+    },
+    {
+      "name": "Power Play"
+    },
+    {
+      "name": "Power Player Citrine"
+    },
+    {
+      "name": "Power-Taker Ruby"
+    },
+    {
+      "name": "Prickly Bear Cactus"
+    },
+    {
+      "name": "Purple Bell Pepper"
+    },
+    {
+      "name": "Purple Grapes of Wrath"
+    },
+    {
+      "name": "Purple Snow Apples"
+    },
+    {
+      "name": "Pyrosaurus Rex Ruby"
+    },
+    {
+      "name": "Queen Crape Myrtle"
+    },
+    {
+      "name": "Rage of Winter Sapphire"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Red Couch Potatoes"
+    },
+    {
+      "name": "Red Grapes of Wrath"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Rock and Roll Candy"
+    },
+    {
+      "name": "Sanctuary"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Saw Palmetto"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Sharp-Shot Opal"
+    },
+    {
+      "name": "Snow Apples"
+    },
+    {
+      "name": "Sour Fickle Pickle"
+    },
+    {
+      "name": "Spell-Defying Opal"
+    },
+    {
+      "name": "Spell-Proof Opal"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spring"
+    },
+    {
+      "name": "Sprinkle Cupcake"
+    },
+    {
+      "name": "Squash"
+    },
+    {
+      "name": "Storm Striker Amethyst"
+    },
+    {
+      "name": "Storm-Away Amethyst"
+    },
+    {
+      "name": "Storm-Boon Amethyst"
+    },
+    {
+      "name": "Storm-Dealer Amethyst"
+    },
+    {
+      "name": "Storm-Eye Amethyst"
+    },
+    {
+      "name": "Storm-Giver Amethyst"
+    },
+    {
+      "name": "Storm-Proof Amethyst"
+    },
+    {
+      "name": "Storm-Shot Amethyst"
+    },
+    {
+      "name": "Storm-Sniper Amethyst"
+    },
+    {
+      "name": "Storm-Ward Amethyst"
+    },
+    {
+      "name": "Stun Recalcitrant Opal"
+    },
+    {
+      "name": "Stun Resistant Opal"
+    },
+    {
+      "name": "The Deer Knight Rises Onyx"
+    },
+    {
+      "name": "Tiger Lily (Seed)"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Unbalancer Citrine"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "Warrior's Hexacorder"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "White Desparagus"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Yellow Bell Pepper"
+    }
   ],
   "authors": "BartleBot",
   "options": [

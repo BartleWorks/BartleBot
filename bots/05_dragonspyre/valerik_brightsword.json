@@ -10,41 +10,111 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Dragonspyre",
   "drops": [
-    "Brass",
-    "Cloak of the Seasons",
-    "Cobalt",
-    "Cowl of Blazes",
-    "Deadly Fly Trap",
-    "Deck of Perfect Harmony",
-    "Drake Marker",
-    "Drape of Symmetry",
-    "Dull Blocking Onyx +4",
-    "Dull Damage Citrine +13",
-    "Dull Damage Jade +13",
-    "Fiery Boom Shroom",
-    "Footgear of Craftsmanship",
-    "Headgear of the Ice Pilot",
-    "Hood of the Historian",
-    "King Parsley",
-    "Leather Straps",
-    "Maelstrom Snap Dragon",
-    "Monsoon Mocassins",
-    "Nickel",
-    "Ozone Shroud",
-    "Pink Dandelion",
-    "Sandals of the Prophet",
-    "Shoes of Gloom",
-    "Signet of the Reaper",
-    "Slippers of the Ice Flow",
-    "Slippers of the Slipstream",
-    "Snowflake Plaque",
-    "Soothing Steel",
-    "Stonecutter",
-    "Tin",
-    "Tunic of Effervescence",
-    "Valerik's Chilled Vestment",
-    "Valerik's Sandals of Destiny",
-    "White Laugh-O-Dil"
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Cloak of the Seasons"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Cowl of Blazes"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Deck of Perfect Harmony"
+    },
+    {
+      "name": "Drake Marker"
+    },
+    {
+      "name": "Drape of Symmetry"
+    },
+    {
+      "name": "Dull Blocking Onyx +4"
+    },
+    {
+      "name": "Dull Damage Citrine +13"
+    },
+    {
+      "name": "Dull Damage Jade +13"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Footgear of Craftsmanship"
+    },
+    {
+      "name": "Headgear of the Ice Pilot"
+    },
+    {
+      "name": "Hood of the Historian"
+    },
+    {
+      "name": "King Parsley"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Monsoon Mocassins"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ozone Shroud"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Sandals of the Prophet"
+    },
+    {
+      "name": "Shoes of Gloom"
+    },
+    {
+      "name": "Signet of the Reaper"
+    },
+    {
+      "name": "Slippers of the Ice Flow"
+    },
+    {
+      "name": "Slippers of the Slipstream"
+    },
+    {
+      "name": "Snowflake Plaque"
+    },
+    {
+      "name": "Soothing Steel"
+    },
+    {
+      "name": "Stonecutter"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tunic of Effervescence"
+    },
+    {
+      "name": "Valerik's Chilled Vestment"
+    },
+    {
+      "name": "Valerik's Sandals of Destiny"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    }
   ],
   "authors": "BartleBot",
   "options": [

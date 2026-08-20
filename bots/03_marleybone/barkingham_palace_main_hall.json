@@ -8,58 +8,162 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "13 Royal Brooch",
-    "15 Royal Brooch",
-    "Amulet of the Misty Palace",
-    "Barkingham Cinder Smock",
-    "Barkingham Fog Coat",
-    "Barkingham Frostbreaker",
-    "Barkingham Hearthfire Relic",
-    "Barkingham Robe of Repose",
-    "Barkingham Vial of Numbing",
-    "Ceremonial Array of Triumph",
-    "Clean Sweep",
-    "Crown Jewel Necklace",
-    "Crown's Charm of Adroitness",
-    "Empire's Torc of Calamity",
-    "Enfield Trickster's Ampul",
-    "Grenadier's Vial of Tumult",
-    "Hound's Choker of Squalls",
-    "Jackall & Hound",
-    "Jackall's Vial of Duplicity",
-    "Jacques Scratches!",
-    "Lanyon Scratcher's Bauble",
-    "Life Potbelly",
-    "Locket of the Opera Nova",
-    "Mark of Meowiarty",
-    "Mycroft's Medallion",
-    "Necklace of the Monarchy",
-    "Ornament of Mesmerization",
-    "Outfit of the Forlorn Watch",
-    "Palace Guard's Firebreaker",
-    "Palace Guard's Rain Gear",
-    "Pops' Knuckles",
-    "Queen's Jewel of Barkingham",
-    "Raiment of the Royal Flame",
-    "Ratstabber",
-    "Royal Ceremonial Snowgear",
-    "Royal Coat of Alliance",
-    "Royal Coat of Wit",
-    "Royal Outfit of Remembrance",
-    "Royal Uniform of Accord",
-    "Royal Uniform of Whirlwind",
-    "Royal Vestment of Charisma",
-    "Sherlock's Lens of Hegemony",
-    "Smock of Barkingham Brio",
-    "Torc of the Woman",
-    "Vial of the Palace Menace",
-    "Watson's Amulet of Purpose",
-    "Whiplash",
-    "Yeoman's Ampul of Winter",
-    "Yeoman's Cloak of Reverie",
-    "Yeoman's Robe of Bounty",
-    "Yeoman's Vestment of Unity",
-    "Yeoman's Winter Uniform"
+    {
+      "name": "13 Royal Brooch"
+    },
+    {
+      "name": "15 Royal Brooch"
+    },
+    {
+      "name": "Amulet of the Misty Palace"
+    },
+    {
+      "name": "Barkingham Cinder Smock"
+    },
+    {
+      "name": "Barkingham Fog Coat"
+    },
+    {
+      "name": "Barkingham Frostbreaker"
+    },
+    {
+      "name": "Barkingham Hearthfire Relic"
+    },
+    {
+      "name": "Barkingham Robe of Repose"
+    },
+    {
+      "name": "Barkingham Vial of Numbing"
+    },
+    {
+      "name": "Ceremonial Array of Triumph"
+    },
+    {
+      "name": "Clean Sweep"
+    },
+    {
+      "name": "Crown Jewel Necklace"
+    },
+    {
+      "name": "Crown's Charm of Adroitness"
+    },
+    {
+      "name": "Empire's Torc of Calamity"
+    },
+    {
+      "name": "Enfield Trickster's Ampul"
+    },
+    {
+      "name": "Grenadier's Vial of Tumult"
+    },
+    {
+      "name": "Hound's Choker of Squalls"
+    },
+    {
+      "name": "Jackall & Hound"
+    },
+    {
+      "name": "Jackall's Vial of Duplicity"
+    },
+    {
+      "name": "Jacques Scratches!"
+    },
+    {
+      "name": "Lanyon Scratcher's Bauble"
+    },
+    {
+      "name": "Life Potbelly"
+    },
+    {
+      "name": "Locket of the Opera Nova"
+    },
+    {
+      "name": "Mark of Meowiarty"
+    },
+    {
+      "name": "Mycroft's Medallion"
+    },
+    {
+      "name": "Necklace of the Monarchy"
+    },
+    {
+      "name": "Ornament of Mesmerization"
+    },
+    {
+      "name": "Outfit of the Forlorn Watch"
+    },
+    {
+      "name": "Palace Guard's Firebreaker"
+    },
+    {
+      "name": "Palace Guard's Rain Gear"
+    },
+    {
+      "name": "Pops' Knuckles"
+    },
+    {
+      "name": "Queen's Jewel of Barkingham"
+    },
+    {
+      "name": "Raiment of the Royal Flame"
+    },
+    {
+      "name": "Ratstabber"
+    },
+    {
+      "name": "Royal Ceremonial Snowgear"
+    },
+    {
+      "name": "Royal Coat of Alliance"
+    },
+    {
+      "name": "Royal Coat of Wit"
+    },
+    {
+      "name": "Royal Outfit of Remembrance"
+    },
+    {
+      "name": "Royal Uniform of Accord"
+    },
+    {
+      "name": "Royal Uniform of Whirlwind"
+    },
+    {
+      "name": "Royal Vestment of Charisma"
+    },
+    {
+      "name": "Sherlock's Lens of Hegemony"
+    },
+    {
+      "name": "Smock of Barkingham Brio"
+    },
+    {
+      "name": "Torc of the Woman"
+    },
+    {
+      "name": "Vial of the Palace Menace"
+    },
+    {
+      "name": "Watson's Amulet of Purpose"
+    },
+    {
+      "name": "Whiplash"
+    },
+    {
+      "name": "Yeoman's Ampul of Winter"
+    },
+    {
+      "name": "Yeoman's Cloak of Reverie"
+    },
+    {
+      "name": "Yeoman's Robe of Bounty"
+    },
+    {
+      "name": "Yeoman's Vestment of Unity"
+    },
+    {
+      "name": "Yeoman's Winter Uniform"
+    }
   ],
   "authors": "BartleBot",
   "options": [

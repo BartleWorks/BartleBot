@@ -8,264 +8,780 @@
   "recovery_state": "state_3",
   "start_location": "Anywhere in Mooshu",
   "drops": [
-    "Accurate",
-    "Add Health Opal",
-    "Ape Grapes",
-    "Athame of the Lotus",
-    "Balance-Eye Citrine",
-    "Balance-It Citrine",
-    "Bamboo Obelisk",
-    "Band of the Primitives",
-    "Banshee",
-    "Bell Pagoda",
-    "Benign Cap",
-    "Black Mantle",
-    "Blemished Damage Amethyst +11",
-    "Blemished Damage Citrine +11",
-    "Blemished Damage Onyx +11",
-    "Blemished Damage Sapphire +11",
-    "Blemished Defense Onyx +21",
-    "Blemished Defense Opal +11",
-    "Blemished Defense Opal +12",
-    "Blemished Defense Ruby +21",
-    "Blemished Health Opal +40",
-    "Blemished Mana Opal +18",
-    "Blemished PIP Opal +4%",
-    "Blended Wool Tunic",
-    "Blood Bat",
-    "Bone",
-    "Boots of Chimes",
-    "Boots of the Verse",
-    "Brass",
-    "Brogans of Decrepitude",
-    "Cap of Consideration",
-    "Cap of Song",
-    "Cap of the Verse",
-    "Cat Tail",
-    "Cloak of Charity",
-    "Cloak of Clarity",
-    "Cloak of Concentration",
-    "Cloak of Deliberation",
-    "Cobalt",
-    "Colossus",
-    "Copper",
-    "Cowl of Cooperation",
-    "Cowl of Soul-Searching",
-    "Cowl of Sympathy",
-    "Cowl of Tact",
-    "Crunch Apple",
-    "Cyclops",
-    "Cyclops Minion",
-    "Dark Sprite",
-    "Darkwind",
-    "Dashing Cloak",
-    "Deadly Ninja Fig",
-    "Death Oni's Abstract Hat",
-    "Death Oni's Garments",
-    "Death Oni's Introverted Shoes",
-    "Death Oni's Necklace of Doom",
-    "Death Oni's Peridot Blade",
-    "Death Oni's Tunic",
-    "Death-Shot Onyx",
-    "Deathbat",
-    "Deck of the Lotus",
-    "Determined Opal",
-    "Dire Ghoul",
-    "Dirt Pile",
-    "Dream Tanto of Ages",
-    "Earth Walker",
-    "Ecstatic Garments",
-    "Ectoplasm",
-    "Energy Opal",
-    "Engrossed Hat",
-    "Engrossed Shoes",
-    "Enlivened Garment",
-    "Euphonic Cloak",
-    "Exhaust Opal",
-    "Fiery Boom Shroom",
-    "Fire Cracker",
-    "Flawed Accurate Amethyst +4%",
-    "Flawed Accurate Onyx +4%",
-    "Flawed Accurate Opal +2%",
-    "Flawed Damage Opal +5",
-    "Flawed Defense Amethyst +18",
-    "Flawed Defense Citrine +18",
-    "Flawed Defense Jade +18",
-    "Flawed Defense Onyx +18",
-    "Flawed Defense Ruby +18",
-    "Flawed Defense Sapphire +18",
-    "Flawed Health Opal +32",
-    "Flawed Health Opal +33",
-    "Flawed Mana Opal +15",
-    "Flawed Mending Opal +2%",
-    "Footwraps of Charity",
-    "Footwraps of Predicament",
-    "Friendly Shoes",
-    "Frost Obelisk",
-    "Gallant Tunic",
-    "Garment of Dilemma",
-    "Garment of Watchfulness",
-    "Garments of Chants",
-    "Garments of Generations",
-    "Garments of the Observant",
-    "Gearhead Destroyer",
-    "Ghoul",
-    "Gold Tori Gates",
-    "Golden Peanut",
-    "Golden Squash",
-    "Gong of the Oni",
-    "Haskarr's Barbarish Boots",
-    "Hat of Discontent",
-    "Hat of Niceties",
-    "Hat of the Lotus",
-    "Hat of the Nimble",
-    "Hat of the Triad",
-    "Hat of Unison",
-    "Headgear of the Sylph",
-    "Headwraps of Generations",
-    "Headwraps of Nourishment",
-    "Heedful Headwraps",
-    "Heedful Robe",
-    "Helephant",
-    "Helm of Sandcastles",
-    "Hooked Lantern",
-    "Hydra",
-    "Ice Wyvern",
-    "Ice Wyvern Sapphire",
-    "Ice-Shot Sapphire",
-    "Immersive Sandals",
-    "Imp",
-    "Impulsive Vestment",
-    "Indulgent Boots",
-    "Indulgent Vestment",
-    "Industrial Helm",
-    "Industrial Uniform",
-    "Kagemoosha's Boots",
-    "Kagemoosha's Citrine Blade",
-    "Kagemoosha's Cowl",
-    "Kagemoosha's Robe",
-    "Kagemoosha's Sandals",
-    "Kagemoosha's Shroud",
-    "Kraken Amethyst",
-    "Large Fish",
-    "Large Watermelon",
-    "Lead",
-    "Leather Straps",
-    "Leech Opal",
-    "Leprechaun",
-    "Life-Proof Jade",
-    "Lunar Tablet",
-    "Lyrical Footwraps",
-    "Lyrical Garments",
-    "Maelstrom Snap Dragon",
-    "Mask of Impression",
-    "Meteor Strike Ruby",
-    "Monstrous",
-    "MooShu Battle Theme",
-    "MooShu Haunted Theme",
-    "MooShu Mystical Theme",
-    "MooShu Plague Theme",
-    "MooShu War Theme",
-    "Myth-Away Peridot",
-    "Nature's Wrath",
-    "Nickel",
-    "Ninja Pigs",
-    "Nomoonaga's Analytical Ring",
-    "Nomoonaga's Band",
-    "Nomoonaga's Deck",
-    "Nomoonaga's Diligent Cap",
-    "Nomoonaga's Kris of Hope",
-    "Nomoonaga's Lively Garment",
-    "Nosferatu's Cloak",
-    "Nunu's Mask of the Twisted",
-    "Painful Vestment",
-    "Peculiar Boots",
-    "Pest Zapper",
-    "Pink Dandelion",
-    "Potted Bamboo Plant",
-    "Potted Heartblossom",
-    "Power Play Citrine",
-    "Problematic Headwraps",
-    "Proficient Shoes",
-    "Profound Robes",
-    "Profound Slippers",
-    "Pyrite",
-    "Quick-Witted Vestment",
-    "Ring of Regard",
-    "Robe of Cognition",
-    "Robe of Conceit",
-    "Robe of Song",
-    "Robe of the Chipper",
-    "Robe of the Lithe",
-    "Robe of the Verse",
-    "Robes of Struggling",
-    "Robes of the Triad",
-    "Samoorai",
-    "Samoorai Statue",
-    "Sandals of Hymns",
-    "Sandals of the Determined",
-    "Sandals of the Quick-Witted",
-    "Sandals of the Universe",
-    "Sapphire Ring of Power",
-    "Satyr",
-    "Scarecrow",
-    "Scorpion",
-    "Seraph",
-    "Shoes of Dilemma",
-    "Shoes of Hinderance",
-    "Shoes of Scruples",
-    "Shoes of Song",
-    "Shoes of Struggling",
-    "Shoes of the Whim",
-    "Shoes of Woe",
-    "Shroud of Chants",
-    "Shroud of Conceit",
-    "Shroud of Music",
-    "Shroud of the Opus",
-    "Silence Opal",
-    "Silver Lantern",
-    "Skeletal Pirate",
-    "Skeletal Pirate Onyx",
-    "Slippers of the Opus",
-    "Slippers of Yodels",
-    "Solar Obelisk",
-    "Spectral Blast",
-    "Speculative Tunic",
-    "Spider Silk",
-    "Sprightly Garments",
-    "Sprightly Slippers",
-    "Square Root",
-    "Square Watermelon",
-    "Statue of Hyottoko",
-    "Storm-Eye Amethyst",
-    "Stressed Mask",
-    "Stressed Sandals",
-    "Tall Boulder",
-    "Tin",
-    "Tormented Cloak",
-    "Troll",
-    "Tunic of Impression",
-    "Tunic of Melodies",
-    "Tunic of Preoccupation",
-    "Tunic of Soul-Searching",
-    "Vampire",
-    "Vestment of Arias",
-    "Vestment of Commotion",
-    "Vestment of Cooperation",
-    "Vestment of Dreaming",
-    "Vestment of Hymns",
-    "Vestment of Niceties",
-    "Vestment of the Eager",
-    "Vexing Tunic",
-    "Vigilant Cap",
-    "Vigilant Sandals",
-    "Votive Tablet",
-    "White Laugh-O-Dil",
-    "Wing Chun Dummy",
-    "Wisp Bonus Opal",
-    "Wooden Skeleton Key",
-    "Wyldfire",
-    "Zippy Shroud"
+    {
+      "name": "Accurate"
+    },
+    {
+      "name": "Add Health Opal"
+    },
+    {
+      "name": "Ape Grapes"
+    },
+    {
+      "name": "Athame of the Lotus"
+    },
+    {
+      "name": "Balance-Eye Citrine"
+    },
+    {
+      "name": "Balance-It Citrine"
+    },
+    {
+      "name": "Bamboo Obelisk"
+    },
+    {
+      "name": "Band of the Primitives"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Bell Pagoda"
+    },
+    {
+      "name": "Benign Cap"
+    },
+    {
+      "name": "Black Mantle"
+    },
+    {
+      "name": "Blemished Damage Amethyst +11"
+    },
+    {
+      "name": "Blemished Damage Citrine +11"
+    },
+    {
+      "name": "Blemished Damage Onyx +11"
+    },
+    {
+      "name": "Blemished Damage Sapphire +11"
+    },
+    {
+      "name": "Blemished Defense Onyx +21"
+    },
+    {
+      "name": "Blemished Defense Opal +11"
+    },
+    {
+      "name": "Blemished Defense Opal +12"
+    },
+    {
+      "name": "Blemished Defense Ruby +21"
+    },
+    {
+      "name": "Blemished Health Opal +40"
+    },
+    {
+      "name": "Blemished Mana Opal +18"
+    },
+    {
+      "name": "Blemished PIP Opal +4%"
+    },
+    {
+      "name": "Blended Wool Tunic"
+    },
+    {
+      "name": "Blood Bat"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of Chimes"
+    },
+    {
+      "name": "Boots of the Verse"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Brogans of Decrepitude"
+    },
+    {
+      "name": "Cap of Consideration"
+    },
+    {
+      "name": "Cap of Song"
+    },
+    {
+      "name": "Cap of the Verse"
+    },
+    {
+      "name": "Cat Tail"
+    },
+    {
+      "name": "Cloak of Charity"
+    },
+    {
+      "name": "Cloak of Clarity"
+    },
+    {
+      "name": "Cloak of Concentration"
+    },
+    {
+      "name": "Cloak of Deliberation"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cowl of Cooperation"
+    },
+    {
+      "name": "Cowl of Soul-Searching"
+    },
+    {
+      "name": "Cowl of Sympathy"
+    },
+    {
+      "name": "Cowl of Tact"
+    },
+    {
+      "name": "Crunch Apple"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Cyclops Minion"
+    },
+    {
+      "name": "Dark Sprite"
+    },
+    {
+      "name": "Darkwind"
+    },
+    {
+      "name": "Dashing Cloak"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Oni's Abstract Hat"
+    },
+    {
+      "name": "Death Oni's Garments"
+    },
+    {
+      "name": "Death Oni's Introverted Shoes"
+    },
+    {
+      "name": "Death Oni's Necklace of Doom"
+    },
+    {
+      "name": "Death Oni's Peridot Blade"
+    },
+    {
+      "name": "Death Oni's Tunic"
+    },
+    {
+      "name": "Death-Shot Onyx"
+    },
+    {
+      "name": "Deathbat"
+    },
+    {
+      "name": "Deck of the Lotus"
+    },
+    {
+      "name": "Determined Opal"
+    },
+    {
+      "name": "Dire Ghoul"
+    },
+    {
+      "name": "Dirt Pile"
+    },
+    {
+      "name": "Dream Tanto of Ages"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Ecstatic Garments"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Energy Opal"
+    },
+    {
+      "name": "Engrossed Hat"
+    },
+    {
+      "name": "Engrossed Shoes"
+    },
+    {
+      "name": "Enlivened Garment"
+    },
+    {
+      "name": "Euphonic Cloak"
+    },
+    {
+      "name": "Exhaust Opal"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Cracker"
+    },
+    {
+      "name": "Flawed Accurate Amethyst +4%"
+    },
+    {
+      "name": "Flawed Accurate Onyx +4%"
+    },
+    {
+      "name": "Flawed Accurate Opal +2%"
+    },
+    {
+      "name": "Flawed Damage Opal +5"
+    },
+    {
+      "name": "Flawed Defense Amethyst +18"
+    },
+    {
+      "name": "Flawed Defense Citrine +18"
+    },
+    {
+      "name": "Flawed Defense Jade +18"
+    },
+    {
+      "name": "Flawed Defense Onyx +18"
+    },
+    {
+      "name": "Flawed Defense Ruby +18"
+    },
+    {
+      "name": "Flawed Defense Sapphire +18"
+    },
+    {
+      "name": "Flawed Health Opal +32"
+    },
+    {
+      "name": "Flawed Health Opal +33"
+    },
+    {
+      "name": "Flawed Mana Opal +15"
+    },
+    {
+      "name": "Flawed Mending Opal +2%"
+    },
+    {
+      "name": "Footwraps of Charity"
+    },
+    {
+      "name": "Footwraps of Predicament"
+    },
+    {
+      "name": "Friendly Shoes"
+    },
+    {
+      "name": "Frost Obelisk"
+    },
+    {
+      "name": "Gallant Tunic"
+    },
+    {
+      "name": "Garment of Dilemma"
+    },
+    {
+      "name": "Garment of Watchfulness"
+    },
+    {
+      "name": "Garments of Chants"
+    },
+    {
+      "name": "Garments of Generations"
+    },
+    {
+      "name": "Garments of the Observant"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Ghoul"
+    },
+    {
+      "name": "Gold Tori Gates"
+    },
+    {
+      "name": "Golden Peanut"
+    },
+    {
+      "name": "Golden Squash"
+    },
+    {
+      "name": "Gong of the Oni"
+    },
+    {
+      "name": "Haskarr's Barbarish Boots"
+    },
+    {
+      "name": "Hat of Discontent"
+    },
+    {
+      "name": "Hat of Niceties"
+    },
+    {
+      "name": "Hat of the Lotus"
+    },
+    {
+      "name": "Hat of the Nimble"
+    },
+    {
+      "name": "Hat of the Triad"
+    },
+    {
+      "name": "Hat of Unison"
+    },
+    {
+      "name": "Headgear of the Sylph"
+    },
+    {
+      "name": "Headwraps of Generations"
+    },
+    {
+      "name": "Headwraps of Nourishment"
+    },
+    {
+      "name": "Heedful Headwraps"
+    },
+    {
+      "name": "Heedful Robe"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Helm of Sandcastles"
+    },
+    {
+      "name": "Hooked Lantern"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Ice Wyvern Sapphire"
+    },
+    {
+      "name": "Ice-Shot Sapphire"
+    },
+    {
+      "name": "Immersive Sandals"
+    },
+    {
+      "name": "Imp"
+    },
+    {
+      "name": "Impulsive Vestment"
+    },
+    {
+      "name": "Indulgent Boots"
+    },
+    {
+      "name": "Indulgent Vestment"
+    },
+    {
+      "name": "Industrial Helm"
+    },
+    {
+      "name": "Industrial Uniform"
+    },
+    {
+      "name": "Kagemoosha's Boots"
+    },
+    {
+      "name": "Kagemoosha's Citrine Blade"
+    },
+    {
+      "name": "Kagemoosha's Cowl"
+    },
+    {
+      "name": "Kagemoosha's Robe"
+    },
+    {
+      "name": "Kagemoosha's Sandals"
+    },
+    {
+      "name": "Kagemoosha's Shroud"
+    },
+    {
+      "name": "Kraken Amethyst"
+    },
+    {
+      "name": "Large Fish"
+    },
+    {
+      "name": "Large Watermelon"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Leech Opal"
+    },
+    {
+      "name": "Leprechaun"
+    },
+    {
+      "name": "Life-Proof Jade"
+    },
+    {
+      "name": "Lunar Tablet"
+    },
+    {
+      "name": "Lyrical Footwraps"
+    },
+    {
+      "name": "Lyrical Garments"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Mask of Impression"
+    },
+    {
+      "name": "Meteor Strike Ruby"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "MooShu Battle Theme"
+    },
+    {
+      "name": "MooShu Haunted Theme"
+    },
+    {
+      "name": "MooShu Mystical Theme"
+    },
+    {
+      "name": "MooShu Plague Theme"
+    },
+    {
+      "name": "MooShu War Theme"
+    },
+    {
+      "name": "Myth-Away Peridot"
+    },
+    {
+      "name": "Nature's Wrath"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Pigs"
+    },
+    {
+      "name": "Nomoonaga's Analytical Ring"
+    },
+    {
+      "name": "Nomoonaga's Band"
+    },
+    {
+      "name": "Nomoonaga's Deck"
+    },
+    {
+      "name": "Nomoonaga's Diligent Cap"
+    },
+    {
+      "name": "Nomoonaga's Kris of Hope"
+    },
+    {
+      "name": "Nomoonaga's Lively Garment"
+    },
+    {
+      "name": "Nosferatu's Cloak"
+    },
+    {
+      "name": "Nunu's Mask of the Twisted"
+    },
+    {
+      "name": "Painful Vestment"
+    },
+    {
+      "name": "Peculiar Boots"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Potted Bamboo Plant"
+    },
+    {
+      "name": "Potted Heartblossom"
+    },
+    {
+      "name": "Power Play Citrine"
+    },
+    {
+      "name": "Problematic Headwraps"
+    },
+    {
+      "name": "Proficient Shoes"
+    },
+    {
+      "name": "Profound Robes"
+    },
+    {
+      "name": "Profound Slippers"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Quick-Witted Vestment"
+    },
+    {
+      "name": "Ring of Regard"
+    },
+    {
+      "name": "Robe of Cognition"
+    },
+    {
+      "name": "Robe of Conceit"
+    },
+    {
+      "name": "Robe of Song"
+    },
+    {
+      "name": "Robe of the Chipper"
+    },
+    {
+      "name": "Robe of the Lithe"
+    },
+    {
+      "name": "Robe of the Verse"
+    },
+    {
+      "name": "Robes of Struggling"
+    },
+    {
+      "name": "Robes of the Triad"
+    },
+    {
+      "name": "Samoorai"
+    },
+    {
+      "name": "Samoorai Statue"
+    },
+    {
+      "name": "Sandals of Hymns"
+    },
+    {
+      "name": "Sandals of the Determined"
+    },
+    {
+      "name": "Sandals of the Quick-Witted"
+    },
+    {
+      "name": "Sandals of the Universe"
+    },
+    {
+      "name": "Sapphire Ring of Power"
+    },
+    {
+      "name": "Satyr"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Scorpion"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Shoes of Dilemma"
+    },
+    {
+      "name": "Shoes of Hinderance"
+    },
+    {
+      "name": "Shoes of Scruples"
+    },
+    {
+      "name": "Shoes of Song"
+    },
+    {
+      "name": "Shoes of Struggling"
+    },
+    {
+      "name": "Shoes of the Whim"
+    },
+    {
+      "name": "Shoes of Woe"
+    },
+    {
+      "name": "Shroud of Chants"
+    },
+    {
+      "name": "Shroud of Conceit"
+    },
+    {
+      "name": "Shroud of Music"
+    },
+    {
+      "name": "Shroud of the Opus"
+    },
+    {
+      "name": "Silence Opal"
+    },
+    {
+      "name": "Silver Lantern"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Skeletal Pirate Onyx"
+    },
+    {
+      "name": "Slippers of the Opus"
+    },
+    {
+      "name": "Slippers of Yodels"
+    },
+    {
+      "name": "Solar Obelisk"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Speculative Tunic"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprightly Garments"
+    },
+    {
+      "name": "Sprightly Slippers"
+    },
+    {
+      "name": "Square Root"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Statue of Hyottoko"
+    },
+    {
+      "name": "Storm-Eye Amethyst"
+    },
+    {
+      "name": "Stressed Mask"
+    },
+    {
+      "name": "Stressed Sandals"
+    },
+    {
+      "name": "Tall Boulder"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tormented Cloak"
+    },
+    {
+      "name": "Troll"
+    },
+    {
+      "name": "Tunic of Impression"
+    },
+    {
+      "name": "Tunic of Melodies"
+    },
+    {
+      "name": "Tunic of Preoccupation"
+    },
+    {
+      "name": "Tunic of Soul-Searching"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vestment of Arias"
+    },
+    {
+      "name": "Vestment of Commotion"
+    },
+    {
+      "name": "Vestment of Cooperation"
+    },
+    {
+      "name": "Vestment of Dreaming"
+    },
+    {
+      "name": "Vestment of Hymns"
+    },
+    {
+      "name": "Vestment of Niceties"
+    },
+    {
+      "name": "Vestment of the Eager"
+    },
+    {
+      "name": "Vexing Tunic"
+    },
+    {
+      "name": "Vigilant Cap"
+    },
+    {
+      "name": "Vigilant Sandals"
+    },
+    {
+      "name": "Votive Tablet"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wing Chun Dummy"
+    },
+    {
+      "name": "Wisp Bonus Opal"
+    },
+    {
+      "name": "Wooden Skeleton Key"
+    },
+    {
+      "name": "Wyldfire"
+    },
+    {
+      "name": "Zippy Shroud"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -10,94 +10,270 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Azteca",
   "drops": [
-    "Allocados",
-    "Angel Oak",
-    "Azteca Combat Theme",
-    "Azteca Dungeon Theme",
-    "Azteca Swamp Theme",
-    "Basilisk",
-    "Bedrock Bonbons",
-    "Black Lotus",
-    "Black Pearl",
-    "Black Sun Chac's Armor",
-    "Blood Moss",
-    "Bone",
-    "Bronze",
-    "Bronze Gear",
-    "Cacao Beans",
-    "Cactus Fruit",
-    "Catch Opal",
-    "Chapulines",
-    "Chastisement",
-    "Clear Accurate Jade +9%",
-    "Clear Defense Peridot +38",
-    "Clear Piercing Peridot +5%",
-    "Clear Piercing Ruby +5%",
-    "Clear PIP Opal +8%",
-    "Coatl Lord's Hat",
-    "Colossal",
-    "Cycle of Life",
-    "Deep Mushroom",
-    "Dr. Von's Monster",
-    "Earth Dino Shield",
-    "Fern Jelly",
-    "Fire Blossom",
-    "Fish on a Vine",
-    "Fossil",
-    "Fried Ice Cream",
-    "Furnace",
-    "Galvanic Field",
-    "Gargantuan",
-    "Glorious Feathered Mantle",
-    "Gnomes!",
-    "Golden Head of the Cold House",
-    "Golden Pearl",
-    "House of Plague Greenstone",
-    "Jaguar Prince's Leapers",
-    "Keeper of the Codex Crown",
-    "Lava Lily",
-    "Lord of Night",
-    "Lord of the Swamp's Scepter",
-    "Maize",
-    "Marzipan Maize",
-    "Mega-Upset Opal",
-    "Mend",
-    "Mist Wood",
-    "Nightshade",
-    "Ore",
-    "Philosoraptor's Ideal Mantle",
-    "Philososaur's Robes",
-    "Polymorph Icehorn",
-    "Polymorph Jaguar",
-    "Polymorph Pteranodon",
-    "Potent Trap",
-    "Primordial",
-    "Punishment",
-    "Quetzal Pretzel",
-    "Red Bell Pepper",
-    "Red Mandrake",
-    "Reliquary",
-    "Saber-Tooth Cider",
-    "Sharp Opal",
-    "Sharpened Blade",
-    "Sirens",
-    "Sleet Storm",
-    "Stone Block",
-    "Storm Owl's Favored Trackers",
-    "Stumble On Opal",
-    "Sun Jar",
-    "Sun's Death Smiling Pendant",
-    "Sunstone",
-    "Tenochti-Flan",
-    "The Enchanter",
-    "Tortilla Chips",
-    "Turquoise",
-    "Venus Fly Trap",
-    "Virulence",
-    "Wide Drum",
-    "Winter's Pyramid Deck",
-    "Woolly Mammoth",
-    "Zocalo Wings"
+    {
+      "name": "Allocados"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Azteca Combat Theme"
+    },
+    {
+      "name": "Azteca Dungeon Theme"
+    },
+    {
+      "name": "Azteca Swamp Theme"
+    },
+    {
+      "name": "Basilisk"
+    },
+    {
+      "name": "Bedrock Bonbons"
+    },
+    {
+      "name": "Black Lotus"
+    },
+    {
+      "name": "Black Pearl"
+    },
+    {
+      "name": "Black Sun Chac's Armor"
+    },
+    {
+      "name": "Blood Moss"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cacao Beans"
+    },
+    {
+      "name": "Cactus Fruit"
+    },
+    {
+      "name": "Catch Opal"
+    },
+    {
+      "name": "Chapulines"
+    },
+    {
+      "name": "Chastisement"
+    },
+    {
+      "name": "Clear Accurate Jade +9%"
+    },
+    {
+      "name": "Clear Defense Peridot +38"
+    },
+    {
+      "name": "Clear Piercing Peridot +5%"
+    },
+    {
+      "name": "Clear Piercing Ruby +5%"
+    },
+    {
+      "name": "Clear PIP Opal +8%"
+    },
+    {
+      "name": "Coatl Lord's Hat"
+    },
+    {
+      "name": "Colossal"
+    },
+    {
+      "name": "Cycle of Life"
+    },
+    {
+      "name": "Deep Mushroom"
+    },
+    {
+      "name": "Dr. Von's Monster"
+    },
+    {
+      "name": "Earth Dino Shield"
+    },
+    {
+      "name": "Fern Jelly"
+    },
+    {
+      "name": "Fire Blossom"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Fossil"
+    },
+    {
+      "name": "Fried Ice Cream"
+    },
+    {
+      "name": "Furnace"
+    },
+    {
+      "name": "Galvanic Field"
+    },
+    {
+      "name": "Gargantuan"
+    },
+    {
+      "name": "Glorious Feathered Mantle"
+    },
+    {
+      "name": "Gnomes!"
+    },
+    {
+      "name": "Golden Head of the Cold House"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "House of Plague Greenstone"
+    },
+    {
+      "name": "Jaguar Prince's Leapers"
+    },
+    {
+      "name": "Keeper of the Codex Crown"
+    },
+    {
+      "name": "Lava Lily"
+    },
+    {
+      "name": "Lord of Night"
+    },
+    {
+      "name": "Lord of the Swamp's Scepter"
+    },
+    {
+      "name": "Maize"
+    },
+    {
+      "name": "Marzipan Maize"
+    },
+    {
+      "name": "Mega-Upset Opal"
+    },
+    {
+      "name": "Mend"
+    },
+    {
+      "name": "Mist Wood"
+    },
+    {
+      "name": "Nightshade"
+    },
+    {
+      "name": "Ore"
+    },
+    {
+      "name": "Philosoraptor's Ideal Mantle"
+    },
+    {
+      "name": "Philososaur's Robes"
+    },
+    {
+      "name": "Polymorph Icehorn"
+    },
+    {
+      "name": "Polymorph Jaguar"
+    },
+    {
+      "name": "Polymorph Pteranodon"
+    },
+    {
+      "name": "Potent Trap"
+    },
+    {
+      "name": "Primordial"
+    },
+    {
+      "name": "Punishment"
+    },
+    {
+      "name": "Quetzal Pretzel"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Red Mandrake"
+    },
+    {
+      "name": "Reliquary"
+    },
+    {
+      "name": "Saber-Tooth Cider"
+    },
+    {
+      "name": "Sharp Opal"
+    },
+    {
+      "name": "Sharpened Blade"
+    },
+    {
+      "name": "Sirens"
+    },
+    {
+      "name": "Sleet Storm"
+    },
+    {
+      "name": "Stone Block"
+    },
+    {
+      "name": "Storm Owl's Favored Trackers"
+    },
+    {
+      "name": "Stumble On Opal"
+    },
+    {
+      "name": "Sun Jar"
+    },
+    {
+      "name": "Sun's Death Smiling Pendant"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Tenochti-Flan"
+    },
+    {
+      "name": "The Enchanter"
+    },
+    {
+      "name": "Tortilla Chips"
+    },
+    {
+      "name": "Turquoise"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "Virulence"
+    },
+    {
+      "name": "Wide Drum"
+    },
+    {
+      "name": "Winter's Pyramid Deck"
+    },
+    {
+      "name": "Woolly Mammoth"
+    },
+    {
+      "name": "Zocalo Wings"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -10,77 +10,219 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
-    "15 Olympian Dust",
-    "16 Olympian Dust",
-    "17 Olympian Dust",
-    "18 Olympian Dust",
-    "25 Olympian Dust",
-    "Ares' Charred Spear",
-    "Ares' Spear of Bitter Cold",
-    "Ares' Spear of Destiny",
-    "Ares' Spear of Fortitude",
-    "Ares' Spear of Havoc",
-    "Ares' Spear of Valor",
-    "Ares' Windstorm Spear",
-    "Boots of Zeus' Alacrity",
-    "Boots of Zeus' Lore",
-    "Cowl of Zeus' Ire",
-    "Fiery Skeleturion",
-    "Fires of Mars",
-    "Helmet of Heavenly Gaze",
-    "Helmet of Zeus' Will",
-    "Jupiter's Might",
-    "Mythic Skeleturion",
-    "Neptune's Fury",
-    "Phoebus' Will",
-    "Pluto's Peril",
-    "Saturn's Reaping",
-    "Senator's Devious Mantle",
-    "Senator's Devious Sandals",
-    "Senator's Devious Toga",
-    "Senator's Guiding Sandals",
-    "Senator's Judicial Laurel",
-    "Senator's Judicial Shoes",
-    "Senator's Judicial Toga",
-    "Senator's Laurel of Truth",
-    "Senator's Mantle of Winter",
-    "Senator's Poetic Boots",
-    "Senator's Poetic Laurel",
-    "Senator's Poetic Toga",
-    "Senator's Radiant Laurel",
-    "Senator's Radiant Sandals",
-    "Senator's Radiant Toga",
-    "Senator's Raincloud Mantle",
-    "Senator's Raincloud Shoes",
-    "Senator's Raincloud Toga",
-    "Senator's Stirring Toga",
-    "Senator's Wintry Sandals",
-    "Senator's Wintry Toga",
-    "Sky Iron Hasta",
-    "Staff of Zeus' Immortality",
-    "Terminus' Strike",
-    "Vestment of Zeus' Aegis",
-    "Zeus' Armor of Supremacy",
-    "Zeus' Blazing Sun Raiment",
-    "Zeus' Blustering Footwraps",
-    "Zeus' Bolt of Arbitration",
-    "Zeus' Bolt of Gravity",
-    "Zeus' Boots of Rancor",
-    "Zeus' Boots of Skyfire",
-    "Zeus' Cloak of Fate",
-    "Zeus' Cloudstriders",
-    "Zeus' Falling Skies Staff",
-    "Zeus' Galea of Vitality",
-    "Zeus' Helm of Authority",
-    "Zeus' Helm of Tumult",
-    "Zeus' Lightning Striker",
-    "Zeus' Raiment of Flurries",
-    "Zeus' Robes of Judgment",
-    "Zeus' Staff of Hailstones",
-    "Zeus' Staff of Wildfires",
-    "Zeus' Thunderclap Drape",
-    "Zeus' Thunderstomp Boots",
-    "Zeus' Veil of Snowfall"
+    {
+      "name": "15 Olympian Dust"
+    },
+    {
+      "name": "16 Olympian Dust"
+    },
+    {
+      "name": "17 Olympian Dust"
+    },
+    {
+      "name": "18 Olympian Dust"
+    },
+    {
+      "name": "25 Olympian Dust"
+    },
+    {
+      "name": "Ares' Charred Spear"
+    },
+    {
+      "name": "Ares' Spear of Bitter Cold"
+    },
+    {
+      "name": "Ares' Spear of Destiny"
+    },
+    {
+      "name": "Ares' Spear of Fortitude"
+    },
+    {
+      "name": "Ares' Spear of Havoc"
+    },
+    {
+      "name": "Ares' Spear of Valor"
+    },
+    {
+      "name": "Ares' Windstorm Spear"
+    },
+    {
+      "name": "Boots of Zeus' Alacrity"
+    },
+    {
+      "name": "Boots of Zeus' Lore"
+    },
+    {
+      "name": "Cowl of Zeus' Ire"
+    },
+    {
+      "name": "Fiery Skeleturion"
+    },
+    {
+      "name": "Fires of Mars"
+    },
+    {
+      "name": "Helmet of Heavenly Gaze"
+    },
+    {
+      "name": "Helmet of Zeus' Will"
+    },
+    {
+      "name": "Jupiter's Might"
+    },
+    {
+      "name": "Mythic Skeleturion"
+    },
+    {
+      "name": "Neptune's Fury"
+    },
+    {
+      "name": "Phoebus' Will"
+    },
+    {
+      "name": "Pluto's Peril"
+    },
+    {
+      "name": "Saturn's Reaping"
+    },
+    {
+      "name": "Senator's Devious Mantle"
+    },
+    {
+      "name": "Senator's Devious Sandals"
+    },
+    {
+      "name": "Senator's Devious Toga"
+    },
+    {
+      "name": "Senator's Guiding Sandals"
+    },
+    {
+      "name": "Senator's Judicial Laurel"
+    },
+    {
+      "name": "Senator's Judicial Shoes"
+    },
+    {
+      "name": "Senator's Judicial Toga"
+    },
+    {
+      "name": "Senator's Laurel of Truth"
+    },
+    {
+      "name": "Senator's Mantle of Winter"
+    },
+    {
+      "name": "Senator's Poetic Boots"
+    },
+    {
+      "name": "Senator's Poetic Laurel"
+    },
+    {
+      "name": "Senator's Poetic Toga"
+    },
+    {
+      "name": "Senator's Radiant Laurel"
+    },
+    {
+      "name": "Senator's Radiant Sandals"
+    },
+    {
+      "name": "Senator's Radiant Toga"
+    },
+    {
+      "name": "Senator's Raincloud Mantle"
+    },
+    {
+      "name": "Senator's Raincloud Shoes"
+    },
+    {
+      "name": "Senator's Raincloud Toga"
+    },
+    {
+      "name": "Senator's Stirring Toga"
+    },
+    {
+      "name": "Senator's Wintry Sandals"
+    },
+    {
+      "name": "Senator's Wintry Toga"
+    },
+    {
+      "name": "Sky Iron Hasta"
+    },
+    {
+      "name": "Staff of Zeus' Immortality"
+    },
+    {
+      "name": "Terminus' Strike"
+    },
+    {
+      "name": "Vestment of Zeus' Aegis"
+    },
+    {
+      "name": "Zeus' Armor of Supremacy"
+    },
+    {
+      "name": "Zeus' Blazing Sun Raiment"
+    },
+    {
+      "name": "Zeus' Blustering Footwraps"
+    },
+    {
+      "name": "Zeus' Bolt of Arbitration"
+    },
+    {
+      "name": "Zeus' Bolt of Gravity"
+    },
+    {
+      "name": "Zeus' Boots of Rancor"
+    },
+    {
+      "name": "Zeus' Boots of Skyfire"
+    },
+    {
+      "name": "Zeus' Cloak of Fate"
+    },
+    {
+      "name": "Zeus' Cloudstriders"
+    },
+    {
+      "name": "Zeus' Falling Skies Staff"
+    },
+    {
+      "name": "Zeus' Galea of Vitality"
+    },
+    {
+      "name": "Zeus' Helm of Authority"
+    },
+    {
+      "name": "Zeus' Helm of Tumult"
+    },
+    {
+      "name": "Zeus' Lightning Striker"
+    },
+    {
+      "name": "Zeus' Raiment of Flurries"
+    },
+    {
+      "name": "Zeus' Robes of Judgment"
+    },
+    {
+      "name": "Zeus' Staff of Hailstones"
+    },
+    {
+      "name": "Zeus' Staff of Wildfires"
+    },
+    {
+      "name": "Zeus' Thunderclap Drape"
+    },
+    {
+      "name": "Zeus' Thunderstomp Boots"
+    },
+    {
+      "name": "Zeus' Veil of Snowfall"
+    }
   ],
   "authors": "BartleBot",
   "options": [

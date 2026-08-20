@@ -8,7 +8,9 @@
   "recovery_state": "state_10",
   "start_location": "The Commons",
   "drops": [
-    "Fitzhume's Explorer gear"
+    {
+      "name": "Fitzhume's Explorer gear"
+    }
   ],
   "authors": "BartleBot",
   "options": [

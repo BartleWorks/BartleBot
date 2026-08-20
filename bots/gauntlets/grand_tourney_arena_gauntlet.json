@@ -10,89 +10,255 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Accurate Talent Opal",
-    "Acorn",
-    "Aether",
-    "Aquamarine",
-    "Asparagus Spears",
-    "Basilisk",
-    "Bearberry",
-    "Black Cap Crisps",
-    "Black Spider",
-    "Blaze Beast",
-    "Blue Ghost",
-    "Bog Witch Beetroot",
-    "Brass",
-    "Bronze",
-    "Caliburnt Toast",
-    "Ceara Ashbury Bobblehead",
-    "Chimera",
-    "Chocolate Comet",
-    "Clear Critical Amethyst +10",
-    "Clear Critical Peridot +10",
-    "Clear Damage Ruby +19",
-    "Cobalt",
-    "Cornbread Fruit Bush",
-    "Crab Knight Cakes",
-    "Crystal Ball",
-    "Crystal Custard",
-    "Dark Sprite",
-    "Deepwater Toffee",
-    "Dimension Shift Peridot",
-    "Dryad",
-    "Efreet",
-    "Enfeeble Amethyst",
-    "Faerie Court Boots",
-    "Faerie Court Steel Leaf",
-    "Fire Blossom",
-    "Fire Dragon",
-    "Fire Elf",
-    "Forest Beast",
-    "Frost Giant",
-    "Giant Talent Opal",
-    "Grandfather Clock",
-    "Great Spiral Glyph",
-    "Grendelweed",
-    "Helephant Ears",
-    "High Road Haggis",
-    "King Artorius Bobblehead",
-    "Lady's Favor",
-    "Large Willow Tree",
-    "Lectern",
-    "Lemon Harts",
-    "Levee Breaking Lute",
-    "Mandolin of Evermore",
-    "Mask of the Faerie Court",
-    "Mass Infection Onyx",
-    "Mass Triage Jade",
-    "Misty Mountain Mandolin",
-    "Monstrous Talent Opal",
-    "Muscle Sprouts",
-    "Mythic Beast",
-    "Ogre Meanies",
-    "Pixie Parsnips",
-    "Pixie's Armor of Encanta",
-    "Pixie's Enchanted Boots",
-    "Pixie's Mask of Encanta",
-    "Pomegranite",
-    "Red Bell Pepper",
-    "Rye Bread Fruit Bush",
-    "Seraph Food Cake",
-    "Shadow Beast",
-    "Shepherd's Crook Pie",
-    "Sir Pike Del Lago Bobblehead",
-    "Snow Beast",
-    "Spark Beast",
-    "Spiral Shield",
-    "Spirit Trap Citrine (Triangle)",
-    "Spring",
-    "Steel",
-    "Toad in the Hole",
-    "Weirwood Cake",
-    "World's Fool Armor",
-    "World's Fool Boots",
-    "World's Fool Mask",
-    "Wyrmy Apple"
+    {
+      "name": "Accurate Talent Opal"
+    },
+    {
+      "name": "Acorn"
+    },
+    {
+      "name": "Aether"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Asparagus Spears"
+    },
+    {
+      "name": "Basilisk"
+    },
+    {
+      "name": "Bearberry"
+    },
+    {
+      "name": "Black Cap Crisps"
+    },
+    {
+      "name": "Black Spider"
+    },
+    {
+      "name": "Blaze Beast"
+    },
+    {
+      "name": "Blue Ghost"
+    },
+    {
+      "name": "Bog Witch Beetroot"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Caliburnt Toast"
+    },
+    {
+      "name": "Ceara Ashbury Bobblehead"
+    },
+    {
+      "name": "Chimera"
+    },
+    {
+      "name": "Chocolate Comet"
+    },
+    {
+      "name": "Clear Critical Amethyst +10"
+    },
+    {
+      "name": "Clear Critical Peridot +10"
+    },
+    {
+      "name": "Clear Damage Ruby +19"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Crab Knight Cakes"
+    },
+    {
+      "name": "Crystal Ball"
+    },
+    {
+      "name": "Crystal Custard"
+    },
+    {
+      "name": "Dark Sprite"
+    },
+    {
+      "name": "Deepwater Toffee"
+    },
+    {
+      "name": "Dimension Shift Peridot"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Efreet"
+    },
+    {
+      "name": "Enfeeble Amethyst"
+    },
+    {
+      "name": "Faerie Court Boots"
+    },
+    {
+      "name": "Faerie Court Steel Leaf"
+    },
+    {
+      "name": "Fire Blossom"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Forest Beast"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Giant Talent Opal"
+    },
+    {
+      "name": "Grandfather Clock"
+    },
+    {
+      "name": "Great Spiral Glyph"
+    },
+    {
+      "name": "Grendelweed"
+    },
+    {
+      "name": "Helephant Ears"
+    },
+    {
+      "name": "High Road Haggis"
+    },
+    {
+      "name": "King Artorius Bobblehead"
+    },
+    {
+      "name": "Lady's Favor"
+    },
+    {
+      "name": "Large Willow Tree"
+    },
+    {
+      "name": "Lectern"
+    },
+    {
+      "name": "Lemon Harts"
+    },
+    {
+      "name": "Levee Breaking Lute"
+    },
+    {
+      "name": "Mandolin of Evermore"
+    },
+    {
+      "name": "Mask of the Faerie Court"
+    },
+    {
+      "name": "Mass Infection Onyx"
+    },
+    {
+      "name": "Mass Triage Jade"
+    },
+    {
+      "name": "Misty Mountain Mandolin"
+    },
+    {
+      "name": "Monstrous Talent Opal"
+    },
+    {
+      "name": "Muscle Sprouts"
+    },
+    {
+      "name": "Mythic Beast"
+    },
+    {
+      "name": "Ogre Meanies"
+    },
+    {
+      "name": "Pixie Parsnips"
+    },
+    {
+      "name": "Pixie's Armor of Encanta"
+    },
+    {
+      "name": "Pixie's Enchanted Boots"
+    },
+    {
+      "name": "Pixie's Mask of Encanta"
+    },
+    {
+      "name": "Pomegranite"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Rye Bread Fruit Bush"
+    },
+    {
+      "name": "Seraph Food Cake"
+    },
+    {
+      "name": "Shadow Beast"
+    },
+    {
+      "name": "Shepherd's Crook Pie"
+    },
+    {
+      "name": "Sir Pike Del Lago Bobblehead"
+    },
+    {
+      "name": "Snow Beast"
+    },
+    {
+      "name": "Spark Beast"
+    },
+    {
+      "name": "Spiral Shield"
+    },
+    {
+      "name": "Spirit Trap Citrine (Triangle)"
+    },
+    {
+      "name": "Spring"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Toad in the Hole"
+    },
+    {
+      "name": "Weirwood Cake"
+    },
+    {
+      "name": "World's Fool Armor"
+    },
+    {
+      "name": "World's Fool Boots"
+    },
+    {
+      "name": "World's Fool Mask"
+    },
+    {
+      "name": "Wyrmy Apple"
+    }
   ],
   "authors": "BartleBot",
   "options": [

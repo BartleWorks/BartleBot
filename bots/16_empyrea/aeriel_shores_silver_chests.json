@@ -9,8 +9,12 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Empyrea",
   "drops": [
-    "Shocked Key",
-    "Silver Chest"
+    {
+      "name": "Shocked Key"
+    },
+    {
+      "name": "Silver Chest"
+    }
   ],
   "authors": "BartleBot",
   "options": [

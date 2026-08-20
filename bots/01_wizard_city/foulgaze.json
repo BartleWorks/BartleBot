@@ -9,110 +9,318 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Adventurer's Helm",
-    "Adventurer's Robe",
-    "Antiquated Knife",
-    "Antiquated Wand",
-    "Antique Deck",
-    "Antique Footguards",
-    "Antique Helm",
-    "Blightshroud",
-    "Blonde Strawberry",
-    "Blood Bat",
-    "Boots of Embers",
-    "Boots of Obstruction",
-    "Branded Dagger",
-    "Branded Wand",
-    "Canvas Cloak",
-    "Carbonshroud",
-    "Charged Coat",
-    "Charged Cover",
-    "Charged Kris",
-    "Charged Wand",
-    "Cheese Broccoli",
-    "Chillcloak",
-    "Chocolate Strawberry",
-    "Cloak of Calamity",
-    "Crown of Seasons",
-    "Dagger of Repose",
-    "Dark Sprite",
-    "Dulled Athame",
-    "Durable Hood",
-    "Ectoplasm",
-    "Embershroud",
-    "Fairy's Athame",
-    "Fine Dagger",
-    "Fire Cat",
-    "Fire Shield",
-    "Fireguard Robe",
-    "Frost Wolf Cloak",
-    "Frozen Pedestal",
-    "Fur-Lined Hood",
-    "Ghost Touch",
-    "Ghoul",
-    "Goldleaf Shoes",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hallowed Robes",
-    "Hardened Boots",
-    "Healer's Vestment",
-    "Honed Athame",
-    "Honey Sickle",
-    "Hood of Storms",
-    "Imp",
-    "Imp Lord's Helm",
-    "Insulated Dirk",
-    "Leather Straps",
-    "Lightning Bats",
-    "Martyr's Hat",
-    "Martyr's Raiment",
-    "Myth Shield",
-    "Novice's Athame",
-    "Novice's Hat",
-    "Novitiate Boots",
-    "Novitiate Hat",
-    "Novitiate Robe",
-    "Pixie",
-    "Plated Boots",
-    "Prop Mountains 2",
-    "Robe of Embers",
-    "Robe of Savvy",
-    "Roughspun Robe",
-    "Roughspun Shoes",
-    "Sapphyra's Vestment",
-    "Scarab",
-    "Scavenger's Staff of Sagas",
-    "Scholarly Robes",
-    "Senior Novice's Robe",
-    "Shoes of the Troll King",
-    "Simple Opal Ring",
-    "Snow Serpent",
-    "Snow Shield",
-    "Soft Boots",
-    "Soft Hood",
-    "Soot Stained Tunic",
-    "Storm Shield",
-    "Stormcaller's Robe",
-    "Stormforged Boots",
-    "Stormforged Mantle",
-    "Sturdy Blade",
-    "Sturdy Coat",
-    "Sturdy Hat",
-    "Sugar Donut",
-    "Sundae (Wizard City)",
-    "Swiftshadow Wings",
-    "Symmetrical Dirk",
-    "Thunder Snake",
-    "Time of Legend",
-    "Tough",
-    "Trollskin Cloak",
-    "Trollskin Hat",
-    "Veil of Sparks",
-    "Venomous Cowl",
-    "Vestment of Essence",
-    "Vestment of Tremors",
-    "Vrixx's Verdant Cowl",
-    "Windrunners"
+    {
+      "name": "Adventurer's Helm"
+    },
+    {
+      "name": "Adventurer's Robe"
+    },
+    {
+      "name": "Antiquated Knife"
+    },
+    {
+      "name": "Antiquated Wand"
+    },
+    {
+      "name": "Antique Deck"
+    },
+    {
+      "name": "Antique Footguards"
+    },
+    {
+      "name": "Antique Helm"
+    },
+    {
+      "name": "Blightshroud"
+    },
+    {
+      "name": "Blonde Strawberry"
+    },
+    {
+      "name": "Blood Bat"
+    },
+    {
+      "name": "Boots of Embers"
+    },
+    {
+      "name": "Boots of Obstruction"
+    },
+    {
+      "name": "Branded Dagger"
+    },
+    {
+      "name": "Branded Wand"
+    },
+    {
+      "name": "Canvas Cloak"
+    },
+    {
+      "name": "Carbonshroud"
+    },
+    {
+      "name": "Charged Coat"
+    },
+    {
+      "name": "Charged Cover"
+    },
+    {
+      "name": "Charged Kris"
+    },
+    {
+      "name": "Charged Wand"
+    },
+    {
+      "name": "Cheese Broccoli"
+    },
+    {
+      "name": "Chillcloak"
+    },
+    {
+      "name": "Chocolate Strawberry"
+    },
+    {
+      "name": "Cloak of Calamity"
+    },
+    {
+      "name": "Crown of Seasons"
+    },
+    {
+      "name": "Dagger of Repose"
+    },
+    {
+      "name": "Dark Sprite"
+    },
+    {
+      "name": "Dulled Athame"
+    },
+    {
+      "name": "Durable Hood"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Embershroud"
+    },
+    {
+      "name": "Fairy's Athame"
+    },
+    {
+      "name": "Fine Dagger"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Shield"
+    },
+    {
+      "name": "Fireguard Robe"
+    },
+    {
+      "name": "Frost Wolf Cloak"
+    },
+    {
+      "name": "Frozen Pedestal"
+    },
+    {
+      "name": "Fur-Lined Hood"
+    },
+    {
+      "name": "Ghost Touch"
+    },
+    {
+      "name": "Ghoul"
+    },
+    {
+      "name": "Goldleaf Shoes"
+    },
+    {
+      "name": "Guiding Light"
+    },
+    {
+      "name": "Gummy Firecat"
+    },
+    {
+      "name": "Hallowed Robes"
+    },
+    {
+      "name": "Hardened Boots"
+    },
+    {
+      "name": "Healer's Vestment"
+    },
+    {
+      "name": "Honed Athame"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hood of Storms"
+    },
+    {
+      "name": "Imp"
+    },
+    {
+      "name": "Imp Lord's Helm"
+    },
+    {
+      "name": "Insulated Dirk"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Martyr's Hat"
+    },
+    {
+      "name": "Martyr's Raiment"
+    },
+    {
+      "name": "Myth Shield"
+    },
+    {
+      "name": "Novice's Athame"
+    },
+    {
+      "name": "Novice's Hat"
+    },
+    {
+      "name": "Novitiate Boots"
+    },
+    {
+      "name": "Novitiate Hat"
+    },
+    {
+      "name": "Novitiate Robe"
+    },
+    {
+      "name": "Pixie"
+    },
+    {
+      "name": "Plated Boots"
+    },
+    {
+      "name": "Prop Mountains 2"
+    },
+    {
+      "name": "Robe of Embers"
+    },
+    {
+      "name": "Robe of Savvy"
+    },
+    {
+      "name": "Roughspun Robe"
+    },
+    {
+      "name": "Roughspun Shoes"
+    },
+    {
+      "name": "Sapphyra's Vestment"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scavenger's Staff of Sagas"
+    },
+    {
+      "name": "Scholarly Robes"
+    },
+    {
+      "name": "Senior Novice's Robe"
+    },
+    {
+      "name": "Shoes of the Troll King"
+    },
+    {
+      "name": "Simple Opal Ring"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Snow Shield"
+    },
+    {
+      "name": "Soft Boots"
+    },
+    {
+      "name": "Soft Hood"
+    },
+    {
+      "name": "Soot Stained Tunic"
+    },
+    {
+      "name": "Storm Shield"
+    },
+    {
+      "name": "Stormcaller's Robe"
+    },
+    {
+      "name": "Stormforged Boots"
+    },
+    {
+      "name": "Stormforged Mantle"
+    },
+    {
+      "name": "Sturdy Blade"
+    },
+    {
+      "name": "Sturdy Coat"
+    },
+    {
+      "name": "Sturdy Hat"
+    },
+    {
+      "name": "Sugar Donut"
+    },
+    {
+      "name": "Sundae (Wizard City)"
+    },
+    {
+      "name": "Swiftshadow Wings"
+    },
+    {
+      "name": "Symmetrical Dirk"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Trollskin Cloak"
+    },
+    {
+      "name": "Trollskin Hat"
+    },
+    {
+      "name": "Veil of Sparks"
+    },
+    {
+      "name": "Venomous Cowl"
+    },
+    {
+      "name": "Vestment of Essence"
+    },
+    {
+      "name": "Vestment of Tremors"
+    },
+    {
+      "name": "Vrixx's Verdant Cowl"
+    },
+    {
+      "name": "Windrunners"
+    }
   ],
   "authors": "BartleBot",
   "options": [

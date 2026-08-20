@@ -8,169 +8,495 @@
   "recovery_state": "state_8",
   "start_location": "Anywhere in Azteca",
   "drops": [
-    "Acampi Reedfist's Lost Seal",
-    "Allocados",
-    "Apatotatoes",
-    "Avenging Fossil",
-    "Azteca Apocalypse Theme",
-    "Azteca Main Theme",
-    "Azteca Mountain Theme",
-    "Azteca Rug",
-    "Basilisk",
-    "Basilisk",
-    "Beak Breaker's Antique Sliver",
-    "Bedrock Bonbons",
-    "Bird Head Mount",
-    "Black Blade of Five Deaths",
-    "Black Lotus",
-    "Black Pearl",
-    "Black Sun Chac's Armor",
-    "Black Sun Chac's Stalkers",
-    "Black Tears of Night Wraps",
-    "Blood Moss",
-    "Bone",
-    "Bronze",
-    "Bronze Gear",
-    "Buff Minion Peridot",
-    "Cacao Beans",
-    "Cactus Fruit",
-    "Calendar of the Spiral King",
-    "Caramel Apple",
-    "Case of Mother Moon",
-    "Celestial Calendar",
-    "Centaur",
-    "Chastisement",
-    "Chimera",
-    "Chimera",
-    "Clothesline",
-    "Colossal",
-    "Colossus",
-    "Courage Charm of Jade Wings",
-    "Curse Giver Onyx",
-    "Cycle of Life",
-    "Deadly Ninja Fig",
-    "Death Moon's Chosen Robes",
-    "Deck of the Jaguar Spirit",
-    "Deep Mushroom",
-    "Dr. Jalapeno",
-    "Dr. Von's Monster",
-    "Dr. Von's Monster",
-    "Efreet",
-    "Elite Jura Guard Stalkers",
-    "Extraordinary",
-    "Fiery Boom Shroom",
-    "Fire Blossom",
-    "Fire Dragon",
-    "Fish on a Vine",
-    "Five Fangs of Fury Boots",
-    "Forest Lord",
-    "Fossil",
-    "Fried Ice Cream",
-    "Frost Demon",
-    "Frost Giant",
-    "Furnace",
-    "Galvanic Field",
-    "Glowing Star Fruit",
-    "Gnomes!",
-    "Gnomes!",
-    "Golden Head of the Cold House",
-    "Golden Pearl",
-    "Grinning Death Stompers",
-    "Grinning Death Xicolli Vest",
-    "Guava",
-    "Heart of Sky Boots",
-    "Helephant",
-    "Hydra",
-    "Indigo Wing Striders",
-    "Jelly Baby",
-    "Keen Eyes Talent Opal",
-    "Keeper of the Codex Vest",
-    "King's Royal Portraits",
-    "Lava Lily",
-    "Leviathan",
-    "Lord of Night Robes",
-    "Lord of Winter",
-    "Lords of Night Pyramid Deck",
-    "Mace of the Aztecosaurs",
-    "Maelstrom Snap Dragon",
-    "Maize",
-    "Mander Minion Citrine",
-    "Medusa",
-    "Mist Wood",
-    "Mithril",
-    "Moon Skull's Blessed Edge",
-    "Mother's New Moon Athame",
-    "Necklace of Lost Ancestors",
-    "New Moon Lance",
-    "Nightshade",
-    "Ninja Fig",
-    "Ore",
-    "Orthrus",
-    "Pendant of the Wild Wings",
-    "Philososaur's Robes",
-    "Polished Blocking Hematite +12",
-    "Polished Damage Peridot +21",
-    "Polished Defense Opal +21",
-    "Polymorph Jaguar",
-    "Polymorph Pteranodon",
-    "Potent Trap",
-    "Power Nova",
-    "Primordial",
-    "Pterotomatoes",
-    "Punishment",
-    "Quetzal Pretzel",
-    "Ra",
-    "Rain of Fire",
-    "Rain of Fire",
-    "Rebirth",
-    "Red Mandrake",
-    "Rex Tea",
-    "Saber-Tooth Cider",
-    "Sabertooth",
-    "Saursa",
-    "Scarecrow",
-    "Seal of Thunder Horn's Glory",
-    "Sharpened Blade",
-    "Shiny Tomato",
-    "Silver",
-    "Sirens",
-    "Sirens",
-    "Skeletal Dragon",
-    "Sleet Storm",
-    "Smoking Obsidian Rangers",
-    "Snow Angel",
-    "Snow Angel",
-    "Spartan Jade",
-    "Spear of Breaking Dawn",
-    "Spinysaur",
-    "Steel",
-    "Stego Waffles",
-    "Stone Block",
-    "Stone Colossus",
-    "Storm Lord",
-    "Storm Owl",
-    "Storm Quetzal's Charged Mace",
-    "Sun Serpent",
-    "Sunstone",
-    "Tall Drum",
-    "Talon of the Storm Owl",
-    "Tenochti-Flan",
-    "Titanium",
-    "Tree of Secrets Chac Runners",
-    "Triton",
-    "Troll Minion Peridot",
-    "Tungsten",
-    "Turquoise",
-    "Twisted Fang Boots",
-    "Underworld Stone",
-    "White Fire Chac's Armor",
-    "White Laugh-O-Dil",
-    "Wild Wing's Glorious Razor",
-    "Winged Tooth Knight's Hook",
-    "Woolly Mammoth",
-    "Woolly Mammoth",
-    "Wraith",
-    "Zocalo Wings"
+    {
+      "name": "Acampi Reedfist's Lost Seal"
+    },
+    {
+      "name": "Allocados"
+    },
+    {
+      "name": "Apatotatoes"
+    },
+    {
+      "name": "Avenging Fossil"
+    },
+    {
+      "name": "Azteca Apocalypse Theme"
+    },
+    {
+      "name": "Azteca Main Theme"
+    },
+    {
+      "name": "Azteca Mountain Theme"
+    },
+    {
+      "name": "Azteca Rug"
+    },
+    {
+      "name": "Basilisk"
+    },
+    {
+      "name": "Basilisk"
+    },
+    {
+      "name": "Beak Breaker's Antique Sliver"
+    },
+    {
+      "name": "Bedrock Bonbons"
+    },
+    {
+      "name": "Bird Head Mount"
+    },
+    {
+      "name": "Black Blade of Five Deaths"
+    },
+    {
+      "name": "Black Lotus"
+    },
+    {
+      "name": "Black Pearl"
+    },
+    {
+      "name": "Black Sun Chac's Armor"
+    },
+    {
+      "name": "Black Sun Chac's Stalkers"
+    },
+    {
+      "name": "Black Tears of Night Wraps"
+    },
+    {
+      "name": "Blood Moss"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Buff Minion Peridot"
+    },
+    {
+      "name": "Cacao Beans"
+    },
+    {
+      "name": "Cactus Fruit"
+    },
+    {
+      "name": "Calendar of the Spiral King"
+    },
+    {
+      "name": "Caramel Apple"
+    },
+    {
+      "name": "Case of Mother Moon"
+    },
+    {
+      "name": "Celestial Calendar"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Chastisement"
+    },
+    {
+      "name": "Chimera"
+    },
+    {
+      "name": "Chimera"
+    },
+    {
+      "name": "Clothesline"
+    },
+    {
+      "name": "Colossal"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Courage Charm of Jade Wings"
+    },
+    {
+      "name": "Curse Giver Onyx"
+    },
+    {
+      "name": "Cycle of Life"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Moon's Chosen Robes"
+    },
+    {
+      "name": "Deck of the Jaguar Spirit"
+    },
+    {
+      "name": "Deep Mushroom"
+    },
+    {
+      "name": "Dr. Jalapeno"
+    },
+    {
+      "name": "Dr. Von's Monster"
+    },
+    {
+      "name": "Dr. Von's Monster"
+    },
+    {
+      "name": "Efreet"
+    },
+    {
+      "name": "Elite Jura Guard Stalkers"
+    },
+    {
+      "name": "Extraordinary"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Blossom"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Five Fangs of Fury Boots"
+    },
+    {
+      "name": "Forest Lord"
+    },
+    {
+      "name": "Fossil"
+    },
+    {
+      "name": "Fried Ice Cream"
+    },
+    {
+      "name": "Frost Demon"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Furnace"
+    },
+    {
+      "name": "Galvanic Field"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Gnomes!"
+    },
+    {
+      "name": "Gnomes!"
+    },
+    {
+      "name": "Golden Head of the Cold House"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "Grinning Death Stompers"
+    },
+    {
+      "name": "Grinning Death Xicolli Vest"
+    },
+    {
+      "name": "Guava"
+    },
+    {
+      "name": "Heart of Sky Boots"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Indigo Wing Striders"
+    },
+    {
+      "name": "Jelly Baby"
+    },
+    {
+      "name": "Keen Eyes Talent Opal"
+    },
+    {
+      "name": "Keeper of the Codex Vest"
+    },
+    {
+      "name": "King's Royal Portraits"
+    },
+    {
+      "name": "Lava Lily"
+    },
+    {
+      "name": "Leviathan"
+    },
+    {
+      "name": "Lord of Night Robes"
+    },
+    {
+      "name": "Lord of Winter"
+    },
+    {
+      "name": "Lords of Night Pyramid Deck"
+    },
+    {
+      "name": "Mace of the Aztecosaurs"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Maize"
+    },
+    {
+      "name": "Mander Minion Citrine"
+    },
+    {
+      "name": "Medusa"
+    },
+    {
+      "name": "Mist Wood"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Moon Skull's Blessed Edge"
+    },
+    {
+      "name": "Mother's New Moon Athame"
+    },
+    {
+      "name": "Necklace of Lost Ancestors"
+    },
+    {
+      "name": "New Moon Lance"
+    },
+    {
+      "name": "Nightshade"
+    },
+    {
+      "name": "Ninja Fig"
+    },
+    {
+      "name": "Ore"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Pendant of the Wild Wings"
+    },
+    {
+      "name": "Philososaur's Robes"
+    },
+    {
+      "name": "Polished Blocking Hematite +12"
+    },
+    {
+      "name": "Polished Damage Peridot +21"
+    },
+    {
+      "name": "Polished Defense Opal +21"
+    },
+    {
+      "name": "Polymorph Jaguar"
+    },
+    {
+      "name": "Polymorph Pteranodon"
+    },
+    {
+      "name": "Potent Trap"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Primordial"
+    },
+    {
+      "name": "Pterotomatoes"
+    },
+    {
+      "name": "Punishment"
+    },
+    {
+      "name": "Quetzal Pretzel"
+    },
+    {
+      "name": "Ra"
+    },
+    {
+      "name": "Rain of Fire"
+    },
+    {
+      "name": "Rain of Fire"
+    },
+    {
+      "name": "Rebirth"
+    },
+    {
+      "name": "Red Mandrake"
+    },
+    {
+      "name": "Rex Tea"
+    },
+    {
+      "name": "Saber-Tooth Cider"
+    },
+    {
+      "name": "Sabertooth"
+    },
+    {
+      "name": "Saursa"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Seal of Thunder Horn's Glory"
+    },
+    {
+      "name": "Sharpened Blade"
+    },
+    {
+      "name": "Shiny Tomato"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Sirens"
+    },
+    {
+      "name": "Sirens"
+    },
+    {
+      "name": "Skeletal Dragon"
+    },
+    {
+      "name": "Sleet Storm"
+    },
+    {
+      "name": "Smoking Obsidian Rangers"
+    },
+    {
+      "name": "Snow Angel"
+    },
+    {
+      "name": "Snow Angel"
+    },
+    {
+      "name": "Spartan Jade"
+    },
+    {
+      "name": "Spear of Breaking Dawn"
+    },
+    {
+      "name": "Spinysaur"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stego Waffles"
+    },
+    {
+      "name": "Stone Block"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm Owl"
+    },
+    {
+      "name": "Storm Quetzal's Charged Mace"
+    },
+    {
+      "name": "Sun Serpent"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Tall Drum"
+    },
+    {
+      "name": "Talon of the Storm Owl"
+    },
+    {
+      "name": "Tenochti-Flan"
+    },
+    {
+      "name": "Titanium"
+    },
+    {
+      "name": "Tree of Secrets Chac Runners"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Troll Minion Peridot"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turquoise"
+    },
+    {
+      "name": "Twisted Fang Boots"
+    },
+    {
+      "name": "Underworld Stone"
+    },
+    {
+      "name": "White Fire Chac's Armor"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wild Wing's Glorious Razor"
+    },
+    {
+      "name": "Winged Tooth Knight's Hook"
+    },
+    {
+      "name": "Woolly Mammoth"
+    },
+    {
+      "name": "Woolly Mammoth"
+    },
+    {
+      "name": "Wraith"
+    },
+    {
+      "name": "Zocalo Wings"
+    }
   ],
   "authors": "BartleBot",
   "options": [

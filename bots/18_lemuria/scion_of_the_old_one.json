@@ -8,603 +8,1797 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Lemuria",
   "drops": [
-    "Alligator Pear Tree",
-    "Ally Dream Shield Onyx",
-    "Ally Precision Citrine",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Arcanum Combat Theme",
-    "Baby Carrots",
-    "Baby Sunbird",
-    "Balance Striker Citrine",
-    "Balance-Giver Citrine",
-    "Balance-It Citrine",
-    "Balance-Off Citrine",
-    "Balance-Sniper Citrine",
-    "Bamboo Shoots",
-    "Barbarian's Saga",
-    "Beast Wellington",
-    "Bell Pepper",
-    "Berserk",
-    "Black Sun Seeds",
-    "Blade of Fire Ruby",
-    "Blast Off!",
-    "Blaze Beetle",
-    "Blood Bat",
-    "Blue Huckleberries",
-    "Blue Phoenix",
-    "Boiled Peanuts",
-    "Boom Shroom",
-    "Boon Tree",
-    "Brass",
-    "Bread Fruit Bush",
-    "Breakfast Tacos",
-    "Brilliant Light",
-    "Bronze Gear",
-    "Burning Snap Dragon",
-    "Cargo",
-    "Cat Thug",
-    "Centaur",
-    "Chilly Con Queso",
-    "Climaclysm",
-    "Clockwork Flower",
-    "Cobalt",
-    "Cornbread Fruit Bush",
-    "Cracker",
-    "Crystal Spider",
-    "Dandelion",
-    "Dark & Stormy",
-    "Dazzling Accurate Amethyst +14%",
-    "Dazzling Accurate Citrine +14%",
-    "Dazzling Accurate Hematite +14%",
-    "Dazzling Accurate Jade +14%",
-    "Dazzling Accurate Onyx +14%",
-    "Dazzling Accurate Sapphire +14%",
-    "Dazzling Blocking Amethyst +19",
-    "Dazzling Blocking Citrine +19",
-    "Dazzling Blocking Hematite +19",
-    "Dazzling Blocking Jade +19",
-    "Dazzling Blocking Opal +10",
-    "Dazzling Blocking Peridot +19",
-    "Dazzling Blocking Ruby +19",
-    "Dazzling Blocking Sapphire +19",
-    "Dazzling Critical Amethyst +19",
-    "Dazzling Critical Citrine +19",
-    "Dazzling Critical Hematite +19",
-    "Dazzling Critical Jade +19",
-    "Dazzling Critical Onyx +19",
-    "Dazzling Critical Peridot +19",
-    "Dazzling Critical Sapphire +19",
-    "Dazzling Damage Amethyst +29",
-    "Dazzling Damage Hematite +60",
-    "Dazzling Damage Jade +29",
-    "Dazzling Damage Onyx +29",
-    "Dazzling Damage Peridot +29",
-    "Dazzling Damage Ruby +29",
-    "Dazzling Damage Sapphire +29",
-    "Dazzling Defense Amethyst +58",
-    "Dazzling Defense Citrine +58",
-    "Dazzling Defense Citrine +60",
-    "Dazzling Defense Hematite +58",
-    "Dazzling Defense Hematite +60",
-    "Dazzling Defense Jade +58",
-    "Dazzling Defense Jade +60",
-    "Dazzling Defense Onyx +58",
-    "Dazzling Defense Onyx +60",
-    "Dazzling Defense Opal +29",
-    "Dazzling Defense Peridot +58",
-    "Dazzling Defense Peridot +60",
-    "Dazzling Defense Ruby +58",
-    "Dazzling Defense Ruby +60",
-    "Dazzling Defense Sapphire +58",
-    "Dazzling Defense Sapphire +60",
-    "Deadly Fly Trap",
-    "Deadly Helephant Ears",
-    "Deadly Ninja Fig",
-    "Death Prism",
-    "Death Striker Onyx",
-    "Death-Away Onyx",
-    "Death-Boon Onyx",
-    "Death-Dealer Onyx",
-    "Death-Proof Onyx",
-    "Death-Shot Onyx",
-    "Death-Sniper Onyx",
-    "Death-Ward Onyx",
-    "Decimatoes",
-    "Desparagus (Seed)",
-    "Dragonflies",
-    "Dream Shield",
-    "Ectoplasm",
-    "Eggplant",
-    "Elemental Blade",
-    "Elemental Defuse",
-    "Elemental Shield",
-    "Elemental Spear",
-    "Elemental Trap",
-    "Elf on Fire Ruby",
-    "Ether Shield",
-    "Evil Magma Peas",
-    "Evil Snow Peas",
-    "Eye Candy",
-    "Face Palm",
-    "Fetid Legumes",
-    "Fickle Pickle",
-    "Fiery Boom Shroom",
-    "Fire Cracker",
-    "Fire Prism",
-    "Fire Striker Ruby",
-    "Fire-Away Ruby",
-    "Fire-Dealer Ruby",
-    "Fire-Giver Ruby",
-    "Fire-Proof Ruby",
-    "Fire-Ward Ruby",
-    "Fish on a Vine",
-    "Flood",
-    "Flute Symphony",
-    "Fortune Cookie Tree",
-    "Freeze Ray",
-    "Frostbite",
-    "Frozen Fly Trap",
-    "Galvanic Field",
-    "Golden Biscuit",
-    "Golden Candy Bar",
-    "Golden Peanut",
-    "Golden Squash",
-    "Goose Tree",
-    "Grapes of Wrath",
-    "Green Snow Apples",
-    "Green Widow",
-    "Grim Reader",
-    "Grrnadier",
-    "Healer Opal",
-    "Healthy Opal",
-    "Helephant Ears",
-    "Honey Bee Plant",
-    "Honey Sickle",
-    "Huge Ice Cream",
-    "Ice Assailant Sapphire",
-    "Ice Prism",
-    "Ice Striker Sapphire",
-    "Ice-Away Sapphire",
-    "Ice-Dealer Sapphire",
-    "Ice-Eye Sapphire",
-    "Ice-Giver Sapphire",
-    "Ice-Proof Sapphire",
-    "Ice-Ward Sapphire",
-    "Iron Sultan",
-    "Ivy League",
-    "Key Limes",
-    "Lamassu",
-    "Large Fish",
-    "Large Watermelon",
-    "Laugh-O-Dil",
-    "Lemuria Action Theme",
-    "Lemuria Boss Combat Theme",
-    "Lemuria Forest Combat Theme",
-    "Lemuria Forest Theme",
-    "Lemuria Heroic Theme",
-    "Lemuria Jungle Combat Theme",
-    "Lemuria Lab Combat Theme",
-    "Lemuria Mandoria Theme",
-    "Lemuria Minds Theme",
-    "Lemuria Mystery Theme",
-    "Lemuria Noir Combat Theme",
-    "Lemuria Noir Theme",
-    "Lemuria Sky City Combat Theme",
-    "Lemuria Sky City Theme",
-    "Lemuria Telos Theme 1",
-    "Lemuria Telos Theme 2",
-    "Lemuria Telos Theme 3",
-    "Lemuria Telos Theme 4",
-    "Lemuria Telos Theme 5",
-    "Lemuria Telos Theme 6",
-    "Lemuria Telos Theme 7",
-    "Lemuria Ursai Village Theme",
-    "Lemurian Ancient One Hat",
-    "Lemurian Barbarian Robe",
-    "Lemurian Barbarian Shoes",
-    "Lemurian Cold Steel Deck",
-    "Lemurian Cold Steel Hat",
-    "Lemurian Cold Steel Talisman",
-    "Lemurian Deadly Robe",
-    "Lemurian Deadly Shoes",
-    "Lemurian Deadly Staff",
-    "Lemurian Deflector Ring",
-    "Lemurian Deflector Shoes",
-    "Lemurian Detective Hat",
-    "Lemurian Detective Ring",
-    "Lemurian Detective Staff",
-    "Lemurian Electric Athame",
-    "Lemurian Electric Shoes",
-    "Lemurian Eruption Ring",
-    "Lemurian Eruption Staff",
-    "Lemurian Ferocious Shoes",
-    "Lemurian Firewall Robe",
-    "Lemurian Founder's Athame",
-    "Lemurian Founder's Hat",
-    "Lemurian Founder's Shoes",
-    "Lemurian Hex Talisman",
-    "Lemurian Horror Ring",
-    "Lemurian Horror Staff",
-    "Lemurian Horror Talisman",
-    "Lemurian Old Judge Talisman",
-    "Lemurian Preservation Athame",
-    "Lemurian Preservation Staff",
-    "Lemurian Science Deck",
-    "Lemurian Stability Deck",
-    "Lemurian Stability Hat",
-    "Lemurian Teleological Hat",
-    "Lemurian Undaunting Robe",
-    "Lemurian Undead Hat",
-    "Lemurian Undead Talisman",
-    "Lemurian Volcanic Athame",
-    "Lemurian Volcanic Hat",
-    "Life Prism",
-    "Life Striker Jade",
-    "Life-Boon Jade",
-    "Life-Bringer Jade",
-    "Life-Eye Jade",
-    "Life-Giver Jade",
-    "Life-Proof Jade",
-    "Life-Shot Jade",
-    "Life-Sniper Jade",
-    "Life-Ward Jade",
-    "Link",
-    "Lively Opal",
-    "Lord of the Jungle",
-    "Maelstrom Snap Dragon",
-    "Magician's Balance Cap",
-    "Magician's Balance Wand",
-    "Magician's Death Cap",
-    "Magician's Death Wand",
-    "Magician's Fire Cap",
-    "Magician's Fire Wand",
-    "Magician's Ice Cap",
-    "Magician's Ice Wand",
-    "Magician's Life Cap",
-    "Magician's Life Wand",
-    "Magician's Myth Cap",
-    "Magician's Myth Wand",
-    "Magician's Power Cap",
-    "Magician's Power Wand",
-    "Magician's Storm Cap",
-    "Magician's Storm Wand",
-    "Malevolent Balance Cap",
-    "Malevolent Balance Wand",
-    "Malevolent Death Cap",
-    "Malevolent Death Wand",
-    "Malevolent Fire Cap",
-    "Malevolent Fire Wand",
-    "Malevolent Ice Cap",
-    "Malevolent Ice Wand",
-    "Malevolent Life Cap",
-    "Malevolent Life Wand",
-    "Malevolent Myth Cap",
-    "Malevolent Myth Wand",
-    "Malevolent Power Cap",
-    "Malevolent Power Wand",
-    "Malevolent Storm Cap",
-    "Malevolent Storm Wand",
-    "Maltese Tiger Lily",
-    "Marzipan Maize",
-    "Massive Pest Zapper",
-    "Medic Opal",
-    "Melting Cheese Tree",
-    "Merciless Balance Cap",
-    "Merciless Balance Wand",
-    "Merciless Death Cap",
-    "Merciless Death Wand",
-    "Merciless Fire Cap",
-    "Merciless Fire Wand",
-    "Merciless Ice Cap",
-    "Merciless Ice Wand",
-    "Merciless Life Cap",
-    "Merciless Life Wand",
-    "Merciless Myth Cap",
-    "Merciless Myth Wand",
-    "Merciless Storm Cap",
-    "Merciless Storm Wand",
-    "Miniature Bloodbats",
-    "Missile Toe",
-    "Mockenspiel",
-    "Moon Flower",
-    "Moon Pie",
-    "MooShu Cheddar",
-    "Myth Assailant Peridot",
-    "Myth Prism",
-    "Myth Striker Peridot",
-    "Myth-Boon Peridot",
-    "Myth-Giver Peridot",
-    "Myth-Proof Peridot",
-    "Myth-Sniper Peridot",
-    "Myth-Ward Peridot",
-    "Nested Fury",
-    "Nickel",
-    "Ninja Fig",
-    "No Pain, No Gain Onyx",
-    "Old One's Endgame",
-    "Orange Bell Pepper",
-    "Orange Dandelion",
-    "Periodic Table Poster",
-    "Pest Zapper",
-    "Pineapple Spears",
-    "Pink Huckleberries",
-    "Pink Laugh-O-Dil",
-    "Poncherello Chips",
-    "Potato Chips",
-    "Power-Taker Ruby",
-    "Prickly Bear Cactus",
-    "Pungent Bug Spray",
-    "Purple Bell Pepper",
-    "Purple Grapes of Wrath",
-    "Purple Snow Apples",
-    "Putrid Bug Spray",
-    "Puzzle Cube",
-    "Pyrosaurus Rex Ruby",
-    "Qismah's Curse",
-    "Quartermane Citrine",
-    "Queen Crape Myrtle",
-    "Raging Bull",
-    "Red Bell Pepper",
-    "Red Couch Potatoes",
-    "Red Grapes of Wrath",
-    "Red Huckleberries",
-    "Rock and Roll Candy",
-    "Rotten Beets",
-    "Rusalka's Wrath",
-    "Rye Bread Fruit Bush",
-    "S'more Machine",
-    "Sand Wurm",
-    "Saw Palmetto",
-    "Scales",
-    "Scion of Balance",
-    "Scion of Death",
-    "Scion of Fire",
-    "Scion of Ice",
-    "Scion of Life",
-    "Scion of Myth",
-    "Scion of Storm",
-    "Scorching Scimitars",
-    "Shatterhorn",
-    "Silver Trumpet Vine",
-    "Sirens",
-    "Sliced Watermelon",
-    "Snack Attack",
-    "Snake Charmer",
-    "Snap Dragon",
-    "Snow Apples",
-    "Snowball Barrage",
-    "Sound of Musicology",
-    "Sour Fickle Pickle",
-    "Sparkling Accurate Amethyst +13%",
-    "Sparkling Accurate Citrine +13%",
-    "Sparkling Accurate Hematite +13%",
-    "Sparkling Accurate Jade +13%",
-    "Sparkling Accurate Onyx +13%",
-    "Sparkling Accurate Peridot +13%",
-    "Sparkling Accurate Ruby +13%",
-    "Sparkling Accurate Sapphire +13%",
-    "Sparkling Blocking Amethyst +17",
-    "Sparkling Blocking Citrine +17",
-    "Sparkling Blocking Hematite +17",
-    "Sparkling Blocking Jade +17",
-    "Sparkling Blocking Onyx +17",
-    "Sparkling Blocking Opal +9",
-    "Sparkling Blocking Peridot +17",
-    "Sparkling Blocking Ruby +17",
-    "Sparkling Blocking Sapphire +17",
-    "Sparkling Critical Amethyst +17",
-    "Sparkling Critical Citrine +17",
-    "Sparkling Critical Jade +17",
-    "Sparkling Critical Onyx +17",
-    "Sparkling Critical Peridot +17",
-    "Sparkling Critical Ruby +17",
-    "Sparkling Critical Sapphire +17",
-    "Sparkling Damage Amethyst +27",
-    "Sparkling Damage Hematite +54",
-    "Sparkling Damage Onyx +27",
-    "Sparkling Damage Opal +14",
-    "Sparkling Damage Peridot +27",
-    "Sparkling Damage Ruby +27",
-    "Sparkling Damage Sapphire +27",
-    "Sparkling Defense Amethyst +53",
-    "Sparkling Defense Amethyst +54",
-    "Sparkling Defense Citrine +53",
-    "Sparkling Defense Hematite +53",
-    "Sparkling Defense Hematite +54",
-    "Sparkling Defense Jade +53",
-    "Sparkling Defense Jade +54",
-    "Sparkling Defense Onyx +53",
-    "Sparkling Defense Onyx +54",
-    "Sparkling Defense Opal +27",
-    "Sparkling Defense Peridot +53",
-    "Sparkling Defense Peridot +54",
-    "Sparkling Defense Ruby +53",
-    "Sparkling Defense Ruby +54",
-    "Sparkling Defense Sapphire +53",
-    "Sparkling Defense Sapphire +54",
-    "Sparkling Health Opal +116",
-    "Sparkling Health Opal +117",
-    "Sparkling Health Opal +118",
-    "Sparkling Health Opal +119",
-    "Sparkling Mana Opal +49",
-    "Spell-Proof Opal",
-    "Spicy Popcorn",
-    "Spider Silk",
-    "Sprinkle Cupcake",
-    "Square Root",
-    "Squash",
-    "Star Cookie",
-    "Storm Prism",
-    "Storm Shield",
-    "Storm-Away Amethyst",
-    "Storm-Boon Amethyst",
-    "Storm-Proof Amethyst",
-    "Storm-Shot Amethyst",
-    "Storm-Ward Amethyst",
-    "Stun Recalcitrant Opal",
-    "Stun Resistant Opal",
-    "Sugar Donut",
-    "Sugar Khrystal",
-    "Sunion",
-    "Super Cold Popsicle",
-    "Supreme Ancient One Athame",
-    "Supreme Ancient One Deck",
-    "Supreme Ancient One Ring",
-    "Supreme Ancient One Robe",
-    "Supreme Ancient One Shoes",
-    "Supreme Ancient One Staff",
-    "Supreme Ancient One Talisman",
-    "Supreme Barbarian Deck",
-    "Supreme Barbarian Hat",
-    "Supreme Barbarian Ring",
-    "Supreme Barbarian Robe",
-    "Supreme Barbarian Shoes",
-    "Supreme Barbarian Staff",
-    "Supreme Barbarian Talisman",
-    "Supreme Cold Steel Athame",
-    "Supreme Cold Steel Deck",
-    "Supreme Cold Steel Robe",
-    "Supreme Cold Steel Shoes",
-    "Supreme Deadly Athame",
-    "Supreme Deadly Robe",
-    "Supreme Deadly Shoes",
-    "Supreme Deflector Deck",
-    "Supreme Deflector Robe",
-    "Supreme Deflector Shoes",
-    "Supreme Deflector Staff",
-    "Supreme Detective Athame",
-    "Supreme Detective Hat",
-    "Supreme Detective Robe",
-    "Supreme Detective Shoes",
-    "Supreme Detective Staff",
-    "Supreme Electric Ring",
-    "Supreme Electric Robe",
-    "Supreme Electric Shoes",
-    "Supreme Electric Staff",
-    "Supreme Eruption Athame",
-    "Supreme Eruption Ring",
-    "Supreme Eruption Robe",
-    "Supreme Eruption Shoes",
-    "Supreme Eruption Staff",
-    "Supreme Ferocious Ring",
-    "Supreme Ferocious Robe",
-    "Supreme Ferocious Shoes",
-    "Supreme Ferocious Talisman",
-    "Supreme Firewall Robe",
-    "Supreme Firewall Shoes",
-    "Supreme Firewall Staff",
-    "Supreme Firewall Talisman",
-    "Supreme Founder's Athame",
-    "Supreme Founder's Deck",
-    "Supreme Founder's Hat",
-    "Supreme Founder's Ring",
-    "Supreme Founder's Robe",
-    "Supreme Founder's Shoes",
-    "Supreme Founder's Talisman",
-    "Supreme Freezer Athame",
-    "Supreme Freezer Deck",
-    "Supreme Freezer Hat",
-    "Supreme Freezer Robe",
-    "Supreme Freezer Shoes",
-    "Supreme Freezer Staff",
-    "Supreme Freezer Talisman",
-    "Supreme Hex Deck",
-    "Supreme Hex Hat",
-    "Supreme Hex Ring",
-    "Supreme Hex Robe",
-    "Supreme Hex Shoes",
-    "Supreme Hex Talisman",
-    "Supreme Horror Deck",
-    "Supreme Horror Hat",
-    "Supreme Horror Robe",
-    "Supreme Horror Shoes",
-    "Supreme Jungle Ring",
-    "Supreme Jungle Robe",
-    "Supreme Jungle Shoes",
-    "Supreme Jungle Talisman",
-    "Supreme Lifeforce Athame",
-    "Supreme Lifeforce Deck",
-    "Supreme Lifeforce Hat",
-    "Supreme Lifeforce Robe",
-    "Supreme Lifeforce Shoes",
-    "Supreme Lifeforce Staff",
-    "Supreme Old Judge Deck",
-    "Supreme Old Judge Ring",
-    "Supreme Old Judge Robe",
-    "Supreme Old Judge Shoes",
-    "Supreme Old Judge Talisman",
-    "Supreme Preservation Athame",
-    "Supreme Preservation Hat",
-    "Supreme Preservation Robe",
-    "Supreme Preservation Shoes",
-    "Supreme Preservation Talisman",
-    "Supreme Science Athame",
-    "Supreme Science Robe",
-    "Supreme Science Shoes",
-    "Supreme Stability Athame",
-    "Supreme Stability Deck",
-    "Supreme Stability Ring",
-    "Supreme Stability Robe",
-    "Supreme Stability Shoes",
-    "Supreme Sunburst",
-    "Supreme Teleological Athame",
-    "Supreme Teleological Hat",
-    "Supreme Teleological Robe",
-    "Supreme Teleological Shoes",
-    "Supreme Teleological Staff",
-    "Supreme Teleological Talisman",
-    "Supreme Undaunting Athame",
-    "Supreme Undaunting Ring",
-    "Supreme Undaunting Robe",
-    "Supreme Undaunting Shoes",
-    "Supreme Undaunting Talisman",
-    "Supreme Undead Athame",
-    "Supreme Undead Deck",
-    "Supreme Undead Robe",
-    "Supreme Undead Shoes",
-    "Supreme Undead Staff",
-    "Supreme Undead Talisman",
-    "Supreme Volcanic Deck",
-    "Supreme Volcanic Ring",
-    "Supreme Volcanic Robe",
-    "Supreme Volcanic Shoes",
-    "Supreme Volcanic Staff",
-    "Swirled Lollipop",
-    "Sword Fern",
-    "Synthonium",
-    "Taco",
-    "Taco Town Special",
-    "Tatzlewurm Terror",
-    "Tiger Lily (Seed)",
-    "Tin",
-    "Tiny Fish",
-    "Titanium",
-    "Tomato Soup",
-    "Triage",
-    "Trumpet Vine",
-    "Ultra Alligator Pear Tree",
-    "Ultra Boom Shroom",
-    "Ultra Dandelion",
-    "Ultra Fly Trap",
-    "Ultra Huckleberries",
-    "Ultra Ninja Fig",
-    "Ultra Snap Dragon",
-    "Ultra Snow Apples",
-    "Ultra Tiger Lily",
-    "Ultra Trumpet Vine",
-    "Unbalancer Citrine",
-    "Uncanny Magic",
-    "Vampire Carrots",
-    "Venus Fly Trap",
-    "White Desparagus",
-    "White Laugh-O-Dil",
-    "White Tiger Lily",
-    "Winged Sorrow",
-    "Wings of Fate",
-    "Witch's House Call",
-    "Yellow Bell Pepper",
-    "Zounds...Bees!"
+    {
+      "name": "Alligator Pear Tree"
+    },
+    {
+      "name": "Ally Dream Shield Onyx"
+    },
+    {
+      "name": "Ally Precision Citrine"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Arcanum Combat Theme"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Baby Sunbird"
+    },
+    {
+      "name": "Balance Striker Citrine"
+    },
+    {
+      "name": "Balance-Giver Citrine"
+    },
+    {
+      "name": "Balance-It Citrine"
+    },
+    {
+      "name": "Balance-Off Citrine"
+    },
+    {
+      "name": "Balance-Sniper Citrine"
+    },
+    {
+      "name": "Bamboo Shoots"
+    },
+    {
+      "name": "Barbarian's Saga"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Bell Pepper"
+    },
+    {
+      "name": "Berserk"
+    },
+    {
+      "name": "Black Sun Seeds"
+    },
+    {
+      "name": "Blade of Fire Ruby"
+    },
+    {
+      "name": "Blast Off!"
+    },
+    {
+      "name": "Blaze Beetle"
+    },
+    {
+      "name": "Blood Bat"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Blue Phoenix"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Boom Shroom"
+    },
+    {
+      "name": "Boon Tree"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Breakfast Tacos"
+    },
+    {
+      "name": "Brilliant Light"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Burning Snap Dragon"
+    },
+    {
+      "name": "Cargo"
+    },
+    {
+      "name": "Cat Thug"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Chilly Con Queso"
+    },
+    {
+      "name": "Climaclysm"
+    },
+    {
+      "name": "Clockwork Flower"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Cracker"
+    },
+    {
+      "name": "Crystal Spider"
+    },
+    {
+      "name": "Dandelion"
+    },
+    {
+      "name": "Dark & Stormy"
+    },
+    {
+      "name": "Dazzling Accurate Amethyst +14%"
+    },
+    {
+      "name": "Dazzling Accurate Citrine +14%"
+    },
+    {
+      "name": "Dazzling Accurate Hematite +14%"
+    },
+    {
+      "name": "Dazzling Accurate Jade +14%"
+    },
+    {
+      "name": "Dazzling Accurate Onyx +14%"
+    },
+    {
+      "name": "Dazzling Accurate Sapphire +14%"
+    },
+    {
+      "name": "Dazzling Blocking Amethyst +19"
+    },
+    {
+      "name": "Dazzling Blocking Citrine +19"
+    },
+    {
+      "name": "Dazzling Blocking Hematite +19"
+    },
+    {
+      "name": "Dazzling Blocking Jade +19"
+    },
+    {
+      "name": "Dazzling Blocking Opal +10"
+    },
+    {
+      "name": "Dazzling Blocking Peridot +19"
+    },
+    {
+      "name": "Dazzling Blocking Ruby +19"
+    },
+    {
+      "name": "Dazzling Blocking Sapphire +19"
+    },
+    {
+      "name": "Dazzling Critical Amethyst +19"
+    },
+    {
+      "name": "Dazzling Critical Citrine +19"
+    },
+    {
+      "name": "Dazzling Critical Hematite +19"
+    },
+    {
+      "name": "Dazzling Critical Jade +19"
+    },
+    {
+      "name": "Dazzling Critical Onyx +19"
+    },
+    {
+      "name": "Dazzling Critical Peridot +19"
+    },
+    {
+      "name": "Dazzling Critical Sapphire +19"
+    },
+    {
+      "name": "Dazzling Damage Amethyst +29"
+    },
+    {
+      "name": "Dazzling Damage Hematite +60"
+    },
+    {
+      "name": "Dazzling Damage Jade +29"
+    },
+    {
+      "name": "Dazzling Damage Onyx +29"
+    },
+    {
+      "name": "Dazzling Damage Peridot +29"
+    },
+    {
+      "name": "Dazzling Damage Ruby +29"
+    },
+    {
+      "name": "Dazzling Damage Sapphire +29"
+    },
+    {
+      "name": "Dazzling Defense Amethyst +58"
+    },
+    {
+      "name": "Dazzling Defense Citrine +58"
+    },
+    {
+      "name": "Dazzling Defense Citrine +60"
+    },
+    {
+      "name": "Dazzling Defense Hematite +58"
+    },
+    {
+      "name": "Dazzling Defense Hematite +60"
+    },
+    {
+      "name": "Dazzling Defense Jade +58"
+    },
+    {
+      "name": "Dazzling Defense Jade +60"
+    },
+    {
+      "name": "Dazzling Defense Onyx +58"
+    },
+    {
+      "name": "Dazzling Defense Onyx +60"
+    },
+    {
+      "name": "Dazzling Defense Opal +29"
+    },
+    {
+      "name": "Dazzling Defense Peridot +58"
+    },
+    {
+      "name": "Dazzling Defense Peridot +60"
+    },
+    {
+      "name": "Dazzling Defense Ruby +58"
+    },
+    {
+      "name": "Dazzling Defense Ruby +60"
+    },
+    {
+      "name": "Dazzling Defense Sapphire +58"
+    },
+    {
+      "name": "Dazzling Defense Sapphire +60"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Deadly Helephant Ears"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Prism"
+    },
+    {
+      "name": "Death Striker Onyx"
+    },
+    {
+      "name": "Death-Away Onyx"
+    },
+    {
+      "name": "Death-Boon Onyx"
+    },
+    {
+      "name": "Death-Dealer Onyx"
+    },
+    {
+      "name": "Death-Proof Onyx"
+    },
+    {
+      "name": "Death-Shot Onyx"
+    },
+    {
+      "name": "Death-Sniper Onyx"
+    },
+    {
+      "name": "Death-Ward Onyx"
+    },
+    {
+      "name": "Decimatoes"
+    },
+    {
+      "name": "Desparagus (Seed)"
+    },
+    {
+      "name": "Dragonflies"
+    },
+    {
+      "name": "Dream Shield"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Eggplant"
+    },
+    {
+      "name": "Elemental Blade"
+    },
+    {
+      "name": "Elemental Defuse"
+    },
+    {
+      "name": "Elemental Shield"
+    },
+    {
+      "name": "Elemental Spear"
+    },
+    {
+      "name": "Elemental Trap"
+    },
+    {
+      "name": "Elf on Fire Ruby"
+    },
+    {
+      "name": "Ether Shield"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Fetid Legumes"
+    },
+    {
+      "name": "Fickle Pickle"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Cracker"
+    },
+    {
+      "name": "Fire Prism"
+    },
+    {
+      "name": "Fire Striker Ruby"
+    },
+    {
+      "name": "Fire-Away Ruby"
+    },
+    {
+      "name": "Fire-Dealer Ruby"
+    },
+    {
+      "name": "Fire-Giver Ruby"
+    },
+    {
+      "name": "Fire-Proof Ruby"
+    },
+    {
+      "name": "Fire-Ward Ruby"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Flood"
+    },
+    {
+      "name": "Flute Symphony"
+    },
+    {
+      "name": "Fortune Cookie Tree"
+    },
+    {
+      "name": "Freeze Ray"
+    },
+    {
+      "name": "Frostbite"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Galvanic Field"
+    },
+    {
+      "name": "Golden Biscuit"
+    },
+    {
+      "name": "Golden Candy Bar"
+    },
+    {
+      "name": "Golden Peanut"
+    },
+    {
+      "name": "Golden Squash"
+    },
+    {
+      "name": "Goose Tree"
+    },
+    {
+      "name": "Grapes of Wrath"
+    },
+    {
+      "name": "Green Snow Apples"
+    },
+    {
+      "name": "Green Widow"
+    },
+    {
+      "name": "Grim Reader"
+    },
+    {
+      "name": "Grrnadier"
+    },
+    {
+      "name": "Healer Opal"
+    },
+    {
+      "name": "Healthy Opal"
+    },
+    {
+      "name": "Helephant Ears"
+    },
+    {
+      "name": "Honey Bee Plant"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Huge Ice Cream"
+    },
+    {
+      "name": "Ice Assailant Sapphire"
+    },
+    {
+      "name": "Ice Prism"
+    },
+    {
+      "name": "Ice Striker Sapphire"
+    },
+    {
+      "name": "Ice-Away Sapphire"
+    },
+    {
+      "name": "Ice-Dealer Sapphire"
+    },
+    {
+      "name": "Ice-Eye Sapphire"
+    },
+    {
+      "name": "Ice-Giver Sapphire"
+    },
+    {
+      "name": "Ice-Proof Sapphire"
+    },
+    {
+      "name": "Ice-Ward Sapphire"
+    },
+    {
+      "name": "Iron Sultan"
+    },
+    {
+      "name": "Ivy League"
+    },
+    {
+      "name": "Key Limes"
+    },
+    {
+      "name": "Lamassu"
+    },
+    {
+      "name": "Large Fish"
+    },
+    {
+      "name": "Large Watermelon"
+    },
+    {
+      "name": "Laugh-O-Dil"
+    },
+    {
+      "name": "Lemuria Action Theme"
+    },
+    {
+      "name": "Lemuria Boss Combat Theme"
+    },
+    {
+      "name": "Lemuria Forest Combat Theme"
+    },
+    {
+      "name": "Lemuria Forest Theme"
+    },
+    {
+      "name": "Lemuria Heroic Theme"
+    },
+    {
+      "name": "Lemuria Jungle Combat Theme"
+    },
+    {
+      "name": "Lemuria Lab Combat Theme"
+    },
+    {
+      "name": "Lemuria Mandoria Theme"
+    },
+    {
+      "name": "Lemuria Minds Theme"
+    },
+    {
+      "name": "Lemuria Mystery Theme"
+    },
+    {
+      "name": "Lemuria Noir Combat Theme"
+    },
+    {
+      "name": "Lemuria Noir Theme"
+    },
+    {
+      "name": "Lemuria Sky City Combat Theme"
+    },
+    {
+      "name": "Lemuria Sky City Theme"
+    },
+    {
+      "name": "Lemuria Telos Theme 1"
+    },
+    {
+      "name": "Lemuria Telos Theme 2"
+    },
+    {
+      "name": "Lemuria Telos Theme 3"
+    },
+    {
+      "name": "Lemuria Telos Theme 4"
+    },
+    {
+      "name": "Lemuria Telos Theme 5"
+    },
+    {
+      "name": "Lemuria Telos Theme 6"
+    },
+    {
+      "name": "Lemuria Telos Theme 7"
+    },
+    {
+      "name": "Lemuria Ursai Village Theme"
+    },
+    {
+      "name": "Lemurian Ancient One Hat"
+    },
+    {
+      "name": "Lemurian Barbarian Robe"
+    },
+    {
+      "name": "Lemurian Barbarian Shoes"
+    },
+    {
+      "name": "Lemurian Cold Steel Deck"
+    },
+    {
+      "name": "Lemurian Cold Steel Hat"
+    },
+    {
+      "name": "Lemurian Cold Steel Talisman"
+    },
+    {
+      "name": "Lemurian Deadly Robe"
+    },
+    {
+      "name": "Lemurian Deadly Shoes"
+    },
+    {
+      "name": "Lemurian Deadly Staff"
+    },
+    {
+      "name": "Lemurian Deflector Ring"
+    },
+    {
+      "name": "Lemurian Deflector Shoes"
+    },
+    {
+      "name": "Lemurian Detective Hat"
+    },
+    {
+      "name": "Lemurian Detective Ring"
+    },
+    {
+      "name": "Lemurian Detective Staff"
+    },
+    {
+      "name": "Lemurian Electric Athame"
+    },
+    {
+      "name": "Lemurian Electric Shoes"
+    },
+    {
+      "name": "Lemurian Eruption Ring"
+    },
+    {
+      "name": "Lemurian Eruption Staff"
+    },
+    {
+      "name": "Lemurian Ferocious Shoes"
+    },
+    {
+      "name": "Lemurian Firewall Robe"
+    },
+    {
+      "name": "Lemurian Founder's Athame"
+    },
+    {
+      "name": "Lemurian Founder's Hat"
+    },
+    {
+      "name": "Lemurian Founder's Shoes"
+    },
+    {
+      "name": "Lemurian Hex Talisman"
+    },
+    {
+      "name": "Lemurian Horror Ring"
+    },
+    {
+      "name": "Lemurian Horror Staff"
+    },
+    {
+      "name": "Lemurian Horror Talisman"
+    },
+    {
+      "name": "Lemurian Old Judge Talisman"
+    },
+    {
+      "name": "Lemurian Preservation Athame"
+    },
+    {
+      "name": "Lemurian Preservation Staff"
+    },
+    {
+      "name": "Lemurian Science Deck"
+    },
+    {
+      "name": "Lemurian Stability Deck"
+    },
+    {
+      "name": "Lemurian Stability Hat"
+    },
+    {
+      "name": "Lemurian Teleological Hat"
+    },
+    {
+      "name": "Lemurian Undaunting Robe"
+    },
+    {
+      "name": "Lemurian Undead Hat"
+    },
+    {
+      "name": "Lemurian Undead Talisman"
+    },
+    {
+      "name": "Lemurian Volcanic Athame"
+    },
+    {
+      "name": "Lemurian Volcanic Hat"
+    },
+    {
+      "name": "Life Prism"
+    },
+    {
+      "name": "Life Striker Jade"
+    },
+    {
+      "name": "Life-Boon Jade"
+    },
+    {
+      "name": "Life-Bringer Jade"
+    },
+    {
+      "name": "Life-Eye Jade"
+    },
+    {
+      "name": "Life-Giver Jade"
+    },
+    {
+      "name": "Life-Proof Jade"
+    },
+    {
+      "name": "Life-Shot Jade"
+    },
+    {
+      "name": "Life-Sniper Jade"
+    },
+    {
+      "name": "Life-Ward Jade"
+    },
+    {
+      "name": "Link"
+    },
+    {
+      "name": "Lively Opal"
+    },
+    {
+      "name": "Lord of the Jungle"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Magician's Balance Cap"
+    },
+    {
+      "name": "Magician's Balance Wand"
+    },
+    {
+      "name": "Magician's Death Cap"
+    },
+    {
+      "name": "Magician's Death Wand"
+    },
+    {
+      "name": "Magician's Fire Cap"
+    },
+    {
+      "name": "Magician's Fire Wand"
+    },
+    {
+      "name": "Magician's Ice Cap"
+    },
+    {
+      "name": "Magician's Ice Wand"
+    },
+    {
+      "name": "Magician's Life Cap"
+    },
+    {
+      "name": "Magician's Life Wand"
+    },
+    {
+      "name": "Magician's Myth Cap"
+    },
+    {
+      "name": "Magician's Myth Wand"
+    },
+    {
+      "name": "Magician's Power Cap"
+    },
+    {
+      "name": "Magician's Power Wand"
+    },
+    {
+      "name": "Magician's Storm Cap"
+    },
+    {
+      "name": "Magician's Storm Wand"
+    },
+    {
+      "name": "Malevolent Balance Cap"
+    },
+    {
+      "name": "Malevolent Balance Wand"
+    },
+    {
+      "name": "Malevolent Death Cap"
+    },
+    {
+      "name": "Malevolent Death Wand"
+    },
+    {
+      "name": "Malevolent Fire Cap"
+    },
+    {
+      "name": "Malevolent Fire Wand"
+    },
+    {
+      "name": "Malevolent Ice Cap"
+    },
+    {
+      "name": "Malevolent Ice Wand"
+    },
+    {
+      "name": "Malevolent Life Cap"
+    },
+    {
+      "name": "Malevolent Life Wand"
+    },
+    {
+      "name": "Malevolent Myth Cap"
+    },
+    {
+      "name": "Malevolent Myth Wand"
+    },
+    {
+      "name": "Malevolent Power Cap"
+    },
+    {
+      "name": "Malevolent Power Wand"
+    },
+    {
+      "name": "Malevolent Storm Cap"
+    },
+    {
+      "name": "Malevolent Storm Wand"
+    },
+    {
+      "name": "Maltese Tiger Lily"
+    },
+    {
+      "name": "Marzipan Maize"
+    },
+    {
+      "name": "Massive Pest Zapper"
+    },
+    {
+      "name": "Medic Opal"
+    },
+    {
+      "name": "Melting Cheese Tree"
+    },
+    {
+      "name": "Merciless Balance Cap"
+    },
+    {
+      "name": "Merciless Balance Wand"
+    },
+    {
+      "name": "Merciless Death Cap"
+    },
+    {
+      "name": "Merciless Death Wand"
+    },
+    {
+      "name": "Merciless Fire Cap"
+    },
+    {
+      "name": "Merciless Fire Wand"
+    },
+    {
+      "name": "Merciless Ice Cap"
+    },
+    {
+      "name": "Merciless Ice Wand"
+    },
+    {
+      "name": "Merciless Life Cap"
+    },
+    {
+      "name": "Merciless Life Wand"
+    },
+    {
+      "name": "Merciless Myth Cap"
+    },
+    {
+      "name": "Merciless Myth Wand"
+    },
+    {
+      "name": "Merciless Storm Cap"
+    },
+    {
+      "name": "Merciless Storm Wand"
+    },
+    {
+      "name": "Miniature Bloodbats"
+    },
+    {
+      "name": "Missile Toe"
+    },
+    {
+      "name": "Mockenspiel"
+    },
+    {
+      "name": "Moon Flower"
+    },
+    {
+      "name": "Moon Pie"
+    },
+    {
+      "name": "MooShu Cheddar"
+    },
+    {
+      "name": "Myth Assailant Peridot"
+    },
+    {
+      "name": "Myth Prism"
+    },
+    {
+      "name": "Myth Striker Peridot"
+    },
+    {
+      "name": "Myth-Boon Peridot"
+    },
+    {
+      "name": "Myth-Giver Peridot"
+    },
+    {
+      "name": "Myth-Proof Peridot"
+    },
+    {
+      "name": "Myth-Sniper Peridot"
+    },
+    {
+      "name": "Myth-Ward Peridot"
+    },
+    {
+      "name": "Nested Fury"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Fig"
+    },
+    {
+      "name": "No Pain, No Gain Onyx"
+    },
+    {
+      "name": "Old One's Endgame"
+    },
+    {
+      "name": "Orange Bell Pepper"
+    },
+    {
+      "name": "Orange Dandelion"
+    },
+    {
+      "name": "Periodic Table Poster"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Pineapple Spears"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pink Laugh-O-Dil"
+    },
+    {
+      "name": "Poncherello Chips"
+    },
+    {
+      "name": "Potato Chips"
+    },
+    {
+      "name": "Power-Taker Ruby"
+    },
+    {
+      "name": "Prickly Bear Cactus"
+    },
+    {
+      "name": "Pungent Bug Spray"
+    },
+    {
+      "name": "Purple Bell Pepper"
+    },
+    {
+      "name": "Purple Grapes of Wrath"
+    },
+    {
+      "name": "Purple Snow Apples"
+    },
+    {
+      "name": "Putrid Bug Spray"
+    },
+    {
+      "name": "Puzzle Cube"
+    },
+    {
+      "name": "Pyrosaurus Rex Ruby"
+    },
+    {
+      "name": "Qismah's Curse"
+    },
+    {
+      "name": "Quartermane Citrine"
+    },
+    {
+      "name": "Queen Crape Myrtle"
+    },
+    {
+      "name": "Raging Bull"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Red Couch Potatoes"
+    },
+    {
+      "name": "Red Grapes of Wrath"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Rock and Roll Candy"
+    },
+    {
+      "name": "Rotten Beets"
+    },
+    {
+      "name": "Rusalka's Wrath"
+    },
+    {
+      "name": "Rye Bread Fruit Bush"
+    },
+    {
+      "name": "S'more Machine"
+    },
+    {
+      "name": "Sand Wurm"
+    },
+    {
+      "name": "Saw Palmetto"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Scion of Balance"
+    },
+    {
+      "name": "Scion of Death"
+    },
+    {
+      "name": "Scion of Fire"
+    },
+    {
+      "name": "Scion of Ice"
+    },
+    {
+      "name": "Scion of Life"
+    },
+    {
+      "name": "Scion of Myth"
+    },
+    {
+      "name": "Scion of Storm"
+    },
+    {
+      "name": "Scorching Scimitars"
+    },
+    {
+      "name": "Shatterhorn"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Sirens"
+    },
+    {
+      "name": "Sliced Watermelon"
+    },
+    {
+      "name": "Snack Attack"
+    },
+    {
+      "name": "Snake Charmer"
+    },
+    {
+      "name": "Snap Dragon"
+    },
+    {
+      "name": "Snow Apples"
+    },
+    {
+      "name": "Snowball Barrage"
+    },
+    {
+      "name": "Sound of Musicology"
+    },
+    {
+      "name": "Sour Fickle Pickle"
+    },
+    {
+      "name": "Sparkling Accurate Amethyst +13%"
+    },
+    {
+      "name": "Sparkling Accurate Citrine +13%"
+    },
+    {
+      "name": "Sparkling Accurate Hematite +13%"
+    },
+    {
+      "name": "Sparkling Accurate Jade +13%"
+    },
+    {
+      "name": "Sparkling Accurate Onyx +13%"
+    },
+    {
+      "name": "Sparkling Accurate Peridot +13%"
+    },
+    {
+      "name": "Sparkling Accurate Ruby +13%"
+    },
+    {
+      "name": "Sparkling Accurate Sapphire +13%"
+    },
+    {
+      "name": "Sparkling Blocking Amethyst +17"
+    },
+    {
+      "name": "Sparkling Blocking Citrine +17"
+    },
+    {
+      "name": "Sparkling Blocking Hematite +17"
+    },
+    {
+      "name": "Sparkling Blocking Jade +17"
+    },
+    {
+      "name": "Sparkling Blocking Onyx +17"
+    },
+    {
+      "name": "Sparkling Blocking Opal +9"
+    },
+    {
+      "name": "Sparkling Blocking Peridot +17"
+    },
+    {
+      "name": "Sparkling Blocking Ruby +17"
+    },
+    {
+      "name": "Sparkling Blocking Sapphire +17"
+    },
+    {
+      "name": "Sparkling Critical Amethyst +17"
+    },
+    {
+      "name": "Sparkling Critical Citrine +17"
+    },
+    {
+      "name": "Sparkling Critical Jade +17"
+    },
+    {
+      "name": "Sparkling Critical Onyx +17"
+    },
+    {
+      "name": "Sparkling Critical Peridot +17"
+    },
+    {
+      "name": "Sparkling Critical Ruby +17"
+    },
+    {
+      "name": "Sparkling Critical Sapphire +17"
+    },
+    {
+      "name": "Sparkling Damage Amethyst +27"
+    },
+    {
+      "name": "Sparkling Damage Hematite +54"
+    },
+    {
+      "name": "Sparkling Damage Onyx +27"
+    },
+    {
+      "name": "Sparkling Damage Opal +14"
+    },
+    {
+      "name": "Sparkling Damage Peridot +27"
+    },
+    {
+      "name": "Sparkling Damage Ruby +27"
+    },
+    {
+      "name": "Sparkling Damage Sapphire +27"
+    },
+    {
+      "name": "Sparkling Defense Amethyst +53"
+    },
+    {
+      "name": "Sparkling Defense Amethyst +54"
+    },
+    {
+      "name": "Sparkling Defense Citrine +53"
+    },
+    {
+      "name": "Sparkling Defense Hematite +53"
+    },
+    {
+      "name": "Sparkling Defense Hematite +54"
+    },
+    {
+      "name": "Sparkling Defense Jade +53"
+    },
+    {
+      "name": "Sparkling Defense Jade +54"
+    },
+    {
+      "name": "Sparkling Defense Onyx +53"
+    },
+    {
+      "name": "Sparkling Defense Onyx +54"
+    },
+    {
+      "name": "Sparkling Defense Opal +27"
+    },
+    {
+      "name": "Sparkling Defense Peridot +53"
+    },
+    {
+      "name": "Sparkling Defense Peridot +54"
+    },
+    {
+      "name": "Sparkling Defense Ruby +53"
+    },
+    {
+      "name": "Sparkling Defense Ruby +54"
+    },
+    {
+      "name": "Sparkling Defense Sapphire +53"
+    },
+    {
+      "name": "Sparkling Defense Sapphire +54"
+    },
+    {
+      "name": "Sparkling Health Opal +116"
+    },
+    {
+      "name": "Sparkling Health Opal +117"
+    },
+    {
+      "name": "Sparkling Health Opal +118"
+    },
+    {
+      "name": "Sparkling Health Opal +119"
+    },
+    {
+      "name": "Sparkling Mana Opal +49"
+    },
+    {
+      "name": "Spell-Proof Opal"
+    },
+    {
+      "name": "Spicy Popcorn"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprinkle Cupcake"
+    },
+    {
+      "name": "Square Root"
+    },
+    {
+      "name": "Squash"
+    },
+    {
+      "name": "Star Cookie"
+    },
+    {
+      "name": "Storm Prism"
+    },
+    {
+      "name": "Storm Shield"
+    },
+    {
+      "name": "Storm-Away Amethyst"
+    },
+    {
+      "name": "Storm-Boon Amethyst"
+    },
+    {
+      "name": "Storm-Proof Amethyst"
+    },
+    {
+      "name": "Storm-Shot Amethyst"
+    },
+    {
+      "name": "Storm-Ward Amethyst"
+    },
+    {
+      "name": "Stun Recalcitrant Opal"
+    },
+    {
+      "name": "Stun Resistant Opal"
+    },
+    {
+      "name": "Sugar Donut"
+    },
+    {
+      "name": "Sugar Khrystal"
+    },
+    {
+      "name": "Sunion"
+    },
+    {
+      "name": "Super Cold Popsicle"
+    },
+    {
+      "name": "Supreme Ancient One Athame"
+    },
+    {
+      "name": "Supreme Ancient One Deck"
+    },
+    {
+      "name": "Supreme Ancient One Ring"
+    },
+    {
+      "name": "Supreme Ancient One Robe"
+    },
+    {
+      "name": "Supreme Ancient One Shoes"
+    },
+    {
+      "name": "Supreme Ancient One Staff"
+    },
+    {
+      "name": "Supreme Ancient One Talisman"
+    },
+    {
+      "name": "Supreme Barbarian Deck"
+    },
+    {
+      "name": "Supreme Barbarian Hat"
+    },
+    {
+      "name": "Supreme Barbarian Ring"
+    },
+    {
+      "name": "Supreme Barbarian Robe"
+    },
+    {
+      "name": "Supreme Barbarian Shoes"
+    },
+    {
+      "name": "Supreme Barbarian Staff"
+    },
+    {
+      "name": "Supreme Barbarian Talisman"
+    },
+    {
+      "name": "Supreme Cold Steel Athame"
+    },
+    {
+      "name": "Supreme Cold Steel Deck"
+    },
+    {
+      "name": "Supreme Cold Steel Robe"
+    },
+    {
+      "name": "Supreme Cold Steel Shoes"
+    },
+    {
+      "name": "Supreme Deadly Athame"
+    },
+    {
+      "name": "Supreme Deadly Robe"
+    },
+    {
+      "name": "Supreme Deadly Shoes"
+    },
+    {
+      "name": "Supreme Deflector Deck"
+    },
+    {
+      "name": "Supreme Deflector Robe"
+    },
+    {
+      "name": "Supreme Deflector Shoes"
+    },
+    {
+      "name": "Supreme Deflector Staff"
+    },
+    {
+      "name": "Supreme Detective Athame"
+    },
+    {
+      "name": "Supreme Detective Hat"
+    },
+    {
+      "name": "Supreme Detective Robe"
+    },
+    {
+      "name": "Supreme Detective Shoes"
+    },
+    {
+      "name": "Supreme Detective Staff"
+    },
+    {
+      "name": "Supreme Electric Ring"
+    },
+    {
+      "name": "Supreme Electric Robe"
+    },
+    {
+      "name": "Supreme Electric Shoes"
+    },
+    {
+      "name": "Supreme Electric Staff"
+    },
+    {
+      "name": "Supreme Eruption Athame"
+    },
+    {
+      "name": "Supreme Eruption Ring"
+    },
+    {
+      "name": "Supreme Eruption Robe"
+    },
+    {
+      "name": "Supreme Eruption Shoes"
+    },
+    {
+      "name": "Supreme Eruption Staff"
+    },
+    {
+      "name": "Supreme Ferocious Ring"
+    },
+    {
+      "name": "Supreme Ferocious Robe"
+    },
+    {
+      "name": "Supreme Ferocious Shoes"
+    },
+    {
+      "name": "Supreme Ferocious Talisman"
+    },
+    {
+      "name": "Supreme Firewall Robe"
+    },
+    {
+      "name": "Supreme Firewall Shoes"
+    },
+    {
+      "name": "Supreme Firewall Staff"
+    },
+    {
+      "name": "Supreme Firewall Talisman"
+    },
+    {
+      "name": "Supreme Founder's Athame"
+    },
+    {
+      "name": "Supreme Founder's Deck"
+    },
+    {
+      "name": "Supreme Founder's Hat"
+    },
+    {
+      "name": "Supreme Founder's Ring"
+    },
+    {
+      "name": "Supreme Founder's Robe"
+    },
+    {
+      "name": "Supreme Founder's Shoes"
+    },
+    {
+      "name": "Supreme Founder's Talisman"
+    },
+    {
+      "name": "Supreme Freezer Athame"
+    },
+    {
+      "name": "Supreme Freezer Deck"
+    },
+    {
+      "name": "Supreme Freezer Hat"
+    },
+    {
+      "name": "Supreme Freezer Robe"
+    },
+    {
+      "name": "Supreme Freezer Shoes"
+    },
+    {
+      "name": "Supreme Freezer Staff"
+    },
+    {
+      "name": "Supreme Freezer Talisman"
+    },
+    {
+      "name": "Supreme Hex Deck"
+    },
+    {
+      "name": "Supreme Hex Hat"
+    },
+    {
+      "name": "Supreme Hex Ring"
+    },
+    {
+      "name": "Supreme Hex Robe"
+    },
+    {
+      "name": "Supreme Hex Shoes"
+    },
+    {
+      "name": "Supreme Hex Talisman"
+    },
+    {
+      "name": "Supreme Horror Deck"
+    },
+    {
+      "name": "Supreme Horror Hat"
+    },
+    {
+      "name": "Supreme Horror Robe"
+    },
+    {
+      "name": "Supreme Horror Shoes"
+    },
+    {
+      "name": "Supreme Jungle Ring"
+    },
+    {
+      "name": "Supreme Jungle Robe"
+    },
+    {
+      "name": "Supreme Jungle Shoes"
+    },
+    {
+      "name": "Supreme Jungle Talisman"
+    },
+    {
+      "name": "Supreme Lifeforce Athame"
+    },
+    {
+      "name": "Supreme Lifeforce Deck"
+    },
+    {
+      "name": "Supreme Lifeforce Hat"
+    },
+    {
+      "name": "Supreme Lifeforce Robe"
+    },
+    {
+      "name": "Supreme Lifeforce Shoes"
+    },
+    {
+      "name": "Supreme Lifeforce Staff"
+    },
+    {
+      "name": "Supreme Old Judge Deck"
+    },
+    {
+      "name": "Supreme Old Judge Ring"
+    },
+    {
+      "name": "Supreme Old Judge Robe"
+    },
+    {
+      "name": "Supreme Old Judge Shoes"
+    },
+    {
+      "name": "Supreme Old Judge Talisman"
+    },
+    {
+      "name": "Supreme Preservation Athame"
+    },
+    {
+      "name": "Supreme Preservation Hat"
+    },
+    {
+      "name": "Supreme Preservation Robe"
+    },
+    {
+      "name": "Supreme Preservation Shoes"
+    },
+    {
+      "name": "Supreme Preservation Talisman"
+    },
+    {
+      "name": "Supreme Science Athame"
+    },
+    {
+      "name": "Supreme Science Robe"
+    },
+    {
+      "name": "Supreme Science Shoes"
+    },
+    {
+      "name": "Supreme Stability Athame"
+    },
+    {
+      "name": "Supreme Stability Deck"
+    },
+    {
+      "name": "Supreme Stability Ring"
+    },
+    {
+      "name": "Supreme Stability Robe"
+    },
+    {
+      "name": "Supreme Stability Shoes"
+    },
+    {
+      "name": "Supreme Sunburst"
+    },
+    {
+      "name": "Supreme Teleological Athame"
+    },
+    {
+      "name": "Supreme Teleological Hat"
+    },
+    {
+      "name": "Supreme Teleological Robe"
+    },
+    {
+      "name": "Supreme Teleological Shoes"
+    },
+    {
+      "name": "Supreme Teleological Staff"
+    },
+    {
+      "name": "Supreme Teleological Talisman"
+    },
+    {
+      "name": "Supreme Undaunting Athame"
+    },
+    {
+      "name": "Supreme Undaunting Ring"
+    },
+    {
+      "name": "Supreme Undaunting Robe"
+    },
+    {
+      "name": "Supreme Undaunting Shoes"
+    },
+    {
+      "name": "Supreme Undaunting Talisman"
+    },
+    {
+      "name": "Supreme Undead Athame"
+    },
+    {
+      "name": "Supreme Undead Deck"
+    },
+    {
+      "name": "Supreme Undead Robe"
+    },
+    {
+      "name": "Supreme Undead Shoes"
+    },
+    {
+      "name": "Supreme Undead Staff"
+    },
+    {
+      "name": "Supreme Undead Talisman"
+    },
+    {
+      "name": "Supreme Volcanic Deck"
+    },
+    {
+      "name": "Supreme Volcanic Ring"
+    },
+    {
+      "name": "Supreme Volcanic Robe"
+    },
+    {
+      "name": "Supreme Volcanic Shoes"
+    },
+    {
+      "name": "Supreme Volcanic Staff"
+    },
+    {
+      "name": "Swirled Lollipop"
+    },
+    {
+      "name": "Sword Fern"
+    },
+    {
+      "name": "Synthonium"
+    },
+    {
+      "name": "Taco"
+    },
+    {
+      "name": "Taco Town Special"
+    },
+    {
+      "name": "Tatzlewurm Terror"
+    },
+    {
+      "name": "Tiger Lily (Seed)"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tiny Fish"
+    },
+    {
+      "name": "Titanium"
+    },
+    {
+      "name": "Tomato Soup"
+    },
+    {
+      "name": "Triage"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Ultra Alligator Pear Tree"
+    },
+    {
+      "name": "Ultra Boom Shroom"
+    },
+    {
+      "name": "Ultra Dandelion"
+    },
+    {
+      "name": "Ultra Fly Trap"
+    },
+    {
+      "name": "Ultra Huckleberries"
+    },
+    {
+      "name": "Ultra Ninja Fig"
+    },
+    {
+      "name": "Ultra Snap Dragon"
+    },
+    {
+      "name": "Ultra Snow Apples"
+    },
+    {
+      "name": "Ultra Tiger Lily"
+    },
+    {
+      "name": "Ultra Trumpet Vine"
+    },
+    {
+      "name": "Unbalancer Citrine"
+    },
+    {
+      "name": "Uncanny Magic"
+    },
+    {
+      "name": "Vampire Carrots"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "White Desparagus"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Winged Sorrow"
+    },
+    {
+      "name": "Wings of Fate"
+    },
+    {
+      "name": "Witch's House Call"
+    },
+    {
+      "name": "Yellow Bell Pepper"
+    },
+    {
+      "name": "Zounds...Bees!"
+    }
   ],
   "authors": "BartleBot",
   "options": [

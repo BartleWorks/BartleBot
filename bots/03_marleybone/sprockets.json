@@ -10,108 +10,312 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "Admirable Shoes",
-    "Alluring Robes",
-    "Angled Gravemarker",
-    "Artificial Robe",
-    "Bewitching Shoes",
-    "Blizzard Sapphire",
-    "Boots of the Nucleus",
-    "Bronze Gear",
-    "Cap of the Unicorn",
-    "Caramel Popcorn",
-    "Cat Burglar's Cap",
-    "Chipped Accurate Citrine +3%",
-    "Chipped Accurate Onyx +3%",
-    "Chipped Damage Onyx +8",
-    "Chipped Defense Jade +15",
-    "Chipped Defense Ruby +15",
-    "Chipped Health Opal +25",
-    "Clear Path Opal",
-    "Cloak of Clarity",
-    "Copper",
-    "Crossbone Gravestone",
-    "Dexterous Vest",
-    "Double Wall Lamp",
-    "Dryad",
-    "Exacting Boots",
-    "Exquisite Slippers",
-    "Feline's Invigorating Robe",
-    "Feline's Whimsical Robe",
-    "Flawed Damage Sapphire +10",
-    "Flawed Defense Amethyst +17",
-    "Flawed Defense Citrine +17",
-    "Flawed Defense Onyx +17",
-    "Flawed Defense Peridot +17",
-    "Flawed Health Opal +26",
-    "Flawed PIP Opal +3%",
-    "Footwraps of Anguish",
-    "Garment of the Supreme",
-    "Gummy Bloodbat",
-    "Heck Hound",
-    "Ice Wyvern",
-    "Iron",
-    "Jerrycan",
-    "Jinxed Hat",
-    "Lead",
-    "Magnificent Boots",
-    "Marleybone Theme 3",
-    "Marleybonian Pilot Painting",
-    "Medium Fish",
-    "Mist Wood",
-    "Myth-Proof Peridot",
-    "Nickel",
-    "Park Bench (Inactive)",
-    "Polished Garments",
-    "Premium Footwraps",
-    "Rat Magician",
-    "Redskin Peanut",
-    "Ring of Clarity",
-    "Ring of Effect",
-    "Ring of the Unicorn",
-    "Robe of the Bubble",
-    "Sandals of Delusion",
-    "Sandstorm",
-    "Satyr",
-    "Scrap Iron",
-    "Shaman's Hat",
-    "Shoes of the Devoted",
-    "Silent Canine Cowl",
-    "Slippers of Predominance",
-    "Slippers of the Worrier",
-    "Spider Silk",
-    "Spirit Armor",
-    "Sprockets' Amulet",
-    "Sprockets' Basking Athame",
-    "Sprockets' Charming Shoes",
-    "Sprockets' Enticing Boots",
-    "Sprockets' Equivalent Robe",
-    "Sprockets' Hat of the Feline",
-    "Sprockets' Invigorating Hat",
-    "Sprockets' Marvelous Boots",
-    "Sprockets' Medicinal Ring",
-    "Sprockets' Shoes of Ideals",
-    "Sprockets' Slippers",
-    "Sprockets' Urbane Cowl",
-    "Sprockets' Vestment",
-    "Sprockets's Cultured Cap",
-    "Sprockets's Robe",
-    "Sprockets's Victorian Vest",
-    "Square Watermelon",
-    "Stinky Cheese",
-    "Super-Pass Opal",
-    "Superstitious Canine Cowl",
-    "Tin",
-    "Tunic of Symmetry",
-    "Tunic of the Clever",
-    "Vest of Predominance",
-    "Vestment of Expertise",
-    "Vestment of the Sun",
-    "Watchman's Athame",
-    "Wheat Cracker",
-    "Winter Canine Cowl",
-    "Wisp Bonus Opal",
-    "Wyldfire Ruby"
+    {
+      "name": "Admirable Shoes"
+    },
+    {
+      "name": "Alluring Robes"
+    },
+    {
+      "name": "Angled Gravemarker"
+    },
+    {
+      "name": "Artificial Robe"
+    },
+    {
+      "name": "Bewitching Shoes"
+    },
+    {
+      "name": "Blizzard Sapphire"
+    },
+    {
+      "name": "Boots of the Nucleus"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cap of the Unicorn"
+    },
+    {
+      "name": "Caramel Popcorn"
+    },
+    {
+      "name": "Cat Burglar's Cap"
+    },
+    {
+      "name": "Chipped Accurate Citrine +3%"
+    },
+    {
+      "name": "Chipped Accurate Onyx +3%"
+    },
+    {
+      "name": "Chipped Damage Onyx +8"
+    },
+    {
+      "name": "Chipped Defense Jade +15"
+    },
+    {
+      "name": "Chipped Defense Ruby +15"
+    },
+    {
+      "name": "Chipped Health Opal +25"
+    },
+    {
+      "name": "Clear Path Opal"
+    },
+    {
+      "name": "Cloak of Clarity"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Crossbone Gravestone"
+    },
+    {
+      "name": "Dexterous Vest"
+    },
+    {
+      "name": "Double Wall Lamp"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Exacting Boots"
+    },
+    {
+      "name": "Exquisite Slippers"
+    },
+    {
+      "name": "Feline's Invigorating Robe"
+    },
+    {
+      "name": "Feline's Whimsical Robe"
+    },
+    {
+      "name": "Flawed Damage Sapphire +10"
+    },
+    {
+      "name": "Flawed Defense Amethyst +17"
+    },
+    {
+      "name": "Flawed Defense Citrine +17"
+    },
+    {
+      "name": "Flawed Defense Onyx +17"
+    },
+    {
+      "name": "Flawed Defense Peridot +17"
+    },
+    {
+      "name": "Flawed Health Opal +26"
+    },
+    {
+      "name": "Flawed PIP Opal +3%"
+    },
+    {
+      "name": "Footwraps of Anguish"
+    },
+    {
+      "name": "Garment of the Supreme"
+    },
+    {
+      "name": "Gummy Bloodbat"
+    },
+    {
+      "name": "Heck Hound"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Jerrycan"
+    },
+    {
+      "name": "Jinxed Hat"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Magnificent Boots"
+    },
+    {
+      "name": "Marleybone Theme 3"
+    },
+    {
+      "name": "Marleybonian Pilot Painting"
+    },
+    {
+      "name": "Medium Fish"
+    },
+    {
+      "name": "Mist Wood"
+    },
+    {
+      "name": "Myth-Proof Peridot"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Park Bench (Inactive)"
+    },
+    {
+      "name": "Polished Garments"
+    },
+    {
+      "name": "Premium Footwraps"
+    },
+    {
+      "name": "Rat Magician"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Ring of Clarity"
+    },
+    {
+      "name": "Ring of Effect"
+    },
+    {
+      "name": "Ring of the Unicorn"
+    },
+    {
+      "name": "Robe of the Bubble"
+    },
+    {
+      "name": "Sandals of Delusion"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Satyr"
+    },
+    {
+      "name": "Scrap Iron"
+    },
+    {
+      "name": "Shaman's Hat"
+    },
+    {
+      "name": "Shoes of the Devoted"
+    },
+    {
+      "name": "Silent Canine Cowl"
+    },
+    {
+      "name": "Slippers of Predominance"
+    },
+    {
+      "name": "Slippers of the Worrier"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Sprockets' Amulet"
+    },
+    {
+      "name": "Sprockets' Basking Athame"
+    },
+    {
+      "name": "Sprockets' Charming Shoes"
+    },
+    {
+      "name": "Sprockets' Enticing Boots"
+    },
+    {
+      "name": "Sprockets' Equivalent Robe"
+    },
+    {
+      "name": "Sprockets' Hat of the Feline"
+    },
+    {
+      "name": "Sprockets' Invigorating Hat"
+    },
+    {
+      "name": "Sprockets' Marvelous Boots"
+    },
+    {
+      "name": "Sprockets' Medicinal Ring"
+    },
+    {
+      "name": "Sprockets' Shoes of Ideals"
+    },
+    {
+      "name": "Sprockets' Slippers"
+    },
+    {
+      "name": "Sprockets' Urbane Cowl"
+    },
+    {
+      "name": "Sprockets' Vestment"
+    },
+    {
+      "name": "Sprockets's Cultured Cap"
+    },
+    {
+      "name": "Sprockets's Robe"
+    },
+    {
+      "name": "Sprockets's Victorian Vest"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Stinky Cheese"
+    },
+    {
+      "name": "Super-Pass Opal"
+    },
+    {
+      "name": "Superstitious Canine Cowl"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tunic of Symmetry"
+    },
+    {
+      "name": "Tunic of the Clever"
+    },
+    {
+      "name": "Vest of Predominance"
+    },
+    {
+      "name": "Vestment of Expertise"
+    },
+    {
+      "name": "Vestment of the Sun"
+    },
+    {
+      "name": "Watchman's Athame"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "Winter Canine Cowl"
+    },
+    {
+      "name": "Wisp Bonus Opal"
+    },
+    {
+      "name": "Wyldfire Ruby"
+    }
   ],
   "authors": "BartleBot",
   "options": [

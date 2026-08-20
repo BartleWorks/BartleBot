@@ -8,213 +8,627 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Mirage",
   "drops": [
-    "Aether",
-    "Agave Leaves",
-    "Agave Nectar",
-    "Age of Reckoning",
-    "Alligator Pear Tree",
-    "Amber",
-    "Amber Dust",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Aquamarine",
-    "Ashen Bones",
-    "Astral Shard",
-    "Astraphobia",
-    "Avenging Fossil",
-    "Baby Carrots",
-    "Bamboo Shoots",
-    "Basilisk",
-    "Beast Wellington",
-    "Beetle Cream Soda",
-    "Bell Pepper",
-    "Blue Huckleberries",
-    "Boiled Peanuts",
-    "Boom Shroom",
-    "Boon Tree",
-    "Braided Vine",
-    "Bread Fruit Bush",
-    "Celestial Calendar",
-    "Chalupacabra",
-    "Climaclysm",
-    "Clockwork Flower",
-    "Combustion",
-    "Couch Potatoes",
-    "Cycle of Life Opal",
-    "Dandelion",
-    "Deadly Helephant Ears",
-    "Deadly Ninja Fig",
-    "Desparagus (Seed)",
-    "Dr. Von's Monster",
-    "Draconium",
-    "Epic Opal",
-    "Evil Magma Peas",
-    "Evil Snow Peas",
-    "Eye Candy",
-    "Face Palm",
-    "Fickle Pickle",
-    "Fiery Boom Shroom",
-    "Fire Blossom",
-    "Fish on a Vine",
-    "Frostfang",
-    "Frozen Fly Trap",
-    "Golden Couch Potatoes",
-    "Golden Pearl",
-    "Grapes of Wrath",
-    "Green Snow Apples",
-    "Hard Boiled Beetle Eggs",
-    "Hardy Rubal Bow",
-    "Honey Sickle",
-    "Hot Cross Buns",
-    "Iridium",
-    "Ivy League",
-    "King Artorius (Balance)",
-    "King Artorius (Death)",
-    "King Artorius (Fire)",
-    "King Artorius (Ice)",
-    "King Artorius (Life)",
-    "King Artorius (Myth)",
-    "King Artorius (Storm)",
-    "King Parsley",
-    "Kobra Choker of Acumen",
-    "Kobra Choker of Amity",
-    "Kobra Choker of Demise",
-    "Kobra Choker of Fury",
-    "Kobra Choker of Mettle",
-    "Kobra Choker of Rigor",
-    "Kobra Hand of Mettle",
-    "Kobra Hand of Rigor",
-    "Laugh-O-Dil",
-    "Lord of Winter",
-    "MaCaw",
-    "Maelstrom Snap Dragon",
-    "Magnify Opal",
-    "Maltese Tiger Lily",
-    "Melting Cheese Tree",
-    "Merle's Whisker",
-    "Mirage Canyon Combat Theme",
-    "Mirage Caravan Theme",
-    "Mirage Chronoverge Theme",
-    "Mirage Den of Thieves Theme",
-    "Mirage Desert Canyons Theme",
-    "Mirage Desert Combat Theme",
-    "Mirage Jungle Combat Theme",
-    "Mirage Jungle Theme",
-    "Mirage Magic Carpet Theme",
-    "Mirage Serpent Theme",
-    "Missile Toe",
-    "Mithril",
-    "Mustachios",
-    "Namaste",
-    "Nested Fury",
-    "Ninja Fig",
-    "Orichalcum",
-    "Pink Huckleberries",
-    "Pink Laugh-O-Dil",
-    "Prickly Bear Cactus",
-    "Purple Bell Pepper",
-    "Purple Grapes of Wrath",
-    "Queen Crape Myrtle",
-    "Raging Bull",
-    "Red Bell Pepper",
-    "Red Couch Potatoes",
-    "Red Huckleberries",
-    "Reliquary Opal",
-    "Renew Opal",
-    "Rubal Bow of Conflagration",
-    "Rubal Sleetfall Bow",
-    "Rusalka's Wrath",
-    "Sabertooth",
-    "Saga of Heroes",
-    "Sand Sea Cowl of Ashes",
-    "Sand Sea Cowl of Hardiness",
-    "Sand Sea Cowl of Havoc",
-    "Sand Sea Dagger of Accord",
-    "Sand Sea Dagger of Ashes",
-    "Sand Sea Dagger of Blusters",
-    "Sand Sea Dagger of Emptiness",
-    "Sand Sea Dagger of Explosion",
-    "Sand Sea Hand of Decorum",
-    "Sand Sea Hand of Hardiness",
-    "Sand Sea Hand of Shivers",
-    "Sand Sea Outfit of Ashes",
-    "Sand Sea Outfit of Decorum",
-    "Sand Sea Outfit of Hardiness",
-    "Sand Sea Outfit of Havoc",
-    "Sand Sea Outfit of Mischief",
-    "Sand Sea Ring of Ardor",
-    "Sand Sea Ring of Blight",
-    "Sand Sea Ring of Decorum",
-    "Sand Sea Ring of Emptiness",
-    "Sand Wurm",
-    "Satyr Chow",
-    "Saw Palmetto",
-    "Scales",
-    "Scorching Scimitars",
-    "Shiny Blocking Citrine +16",
-    "Shiny Blocking Ruby +16",
-    "Shiny Critical Hematite +16",
-    "Shiny Critical Jade +16",
-    "Shiny Critical Onyx +16",
-    "Shiny Critical Ruby +16",
-    "Shiny Critical Sapphire +16",
-    "Shiny Damage Amethyst +25",
-    "Shiny Damage Citrine +26",
-    "Shiny Damage Hematite +52",
-    "Shiny Damage Onyx +26",
-    "Shiny Damage Sapphire +26",
-    "Shiny Defense Amethyst +49",
-    "Shiny Defense Amethyst +51",
-    "Shiny Defense Hematite +51",
-    "Shiny Defense Jade +51",
-    "Shiny Defense Jade +52",
-    "Shiny Defense Peridot +52",
-    "Shiny Defense Sapphire +51",
-    "Shiny Defense Sapphire +52",
-    "Shiny Health Opal +111",
-    "Shiny Health Opal +112",
-    "Shiny Health Opal +113",
-    "Shiny Mana Opal +45",
-    "Shiny Mana Opal +46",
-    "Shiny Mana Opal +47",
-    "Shiny PIP Hematite +2",
-    "Ships 'n' Queso",
-    "Silver",
-    "Silver Trumpet Vine",
-    "Sirens",
-    "Snowball Barrage",
-    "Spinysaur",
-    "Stardust",
-    "Steel",
-    "Sugar Khrystal",
-    "Sun Serpent",
-    "Sunion",
-    "Sunstone",
-    "Sword Fern",
-    "Thundering Rubal Bow",
-    "Titanium",
-    "Trumpet Vine",
-    "Tungsten",
-    "Turmeric",
-    "Turquoise",
-    "Veggie Juice",
-    "Vine",
-    "Vizier's Shoes of Apathy",
-    "Vizier's Windswept Shoes",
-    "Voltaic Durvish Armaments",
-    "White Tiger Lily",
-    "Winged Sorrow",
-    "Wings of Fate",
-    "Witch's House Call",
-    "Woolly Mammoth",
-    "Yellow Bell Pepper",
-    "Zruvan Galesh of Acumen",
-    "Zruvan Galesh of Amity",
-    "Zruvan Galesh of Flashfloods",
-    "Zruvan Galesh of Fury",
-    "Zruvan Helmet of Acumen",
-    "Zruvan Helmet of Mettle",
-    "Zruvan Helmet of Rigor"
+    {
+      "name": "Aether"
+    },
+    {
+      "name": "Agave Leaves"
+    },
+    {
+      "name": "Agave Nectar"
+    },
+    {
+      "name": "Age of Reckoning"
+    },
+    {
+      "name": "Alligator Pear Tree"
+    },
+    {
+      "name": "Amber"
+    },
+    {
+      "name": "Amber Dust"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Ashen Bones"
+    },
+    {
+      "name": "Astral Shard"
+    },
+    {
+      "name": "Astraphobia"
+    },
+    {
+      "name": "Avenging Fossil"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Bamboo Shoots"
+    },
+    {
+      "name": "Basilisk"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Beetle Cream Soda"
+    },
+    {
+      "name": "Bell Pepper"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Boom Shroom"
+    },
+    {
+      "name": "Boon Tree"
+    },
+    {
+      "name": "Braided Vine"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Celestial Calendar"
+    },
+    {
+      "name": "Chalupacabra"
+    },
+    {
+      "name": "Climaclysm"
+    },
+    {
+      "name": "Clockwork Flower"
+    },
+    {
+      "name": "Combustion"
+    },
+    {
+      "name": "Couch Potatoes"
+    },
+    {
+      "name": "Cycle of Life Opal"
+    },
+    {
+      "name": "Dandelion"
+    },
+    {
+      "name": "Deadly Helephant Ears"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Desparagus (Seed)"
+    },
+    {
+      "name": "Dr. Von's Monster"
+    },
+    {
+      "name": "Draconium"
+    },
+    {
+      "name": "Epic Opal"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Fickle Pickle"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Blossom"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Frostfang"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Golden Couch Potatoes"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "Grapes of Wrath"
+    },
+    {
+      "name": "Green Snow Apples"
+    },
+    {
+      "name": "Hard Boiled Beetle Eggs"
+    },
+    {
+      "name": "Hardy Rubal Bow"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Iridium"
+    },
+    {
+      "name": "Ivy League"
+    },
+    {
+      "name": "King Artorius (Balance)"
+    },
+    {
+      "name": "King Artorius (Death)"
+    },
+    {
+      "name": "King Artorius (Fire)"
+    },
+    {
+      "name": "King Artorius (Ice)"
+    },
+    {
+      "name": "King Artorius (Life)"
+    },
+    {
+      "name": "King Artorius (Myth)"
+    },
+    {
+      "name": "King Artorius (Storm)"
+    },
+    {
+      "name": "King Parsley"
+    },
+    {
+      "name": "Kobra Choker of Acumen"
+    },
+    {
+      "name": "Kobra Choker of Amity"
+    },
+    {
+      "name": "Kobra Choker of Demise"
+    },
+    {
+      "name": "Kobra Choker of Fury"
+    },
+    {
+      "name": "Kobra Choker of Mettle"
+    },
+    {
+      "name": "Kobra Choker of Rigor"
+    },
+    {
+      "name": "Kobra Hand of Mettle"
+    },
+    {
+      "name": "Kobra Hand of Rigor"
+    },
+    {
+      "name": "Laugh-O-Dil"
+    },
+    {
+      "name": "Lord of Winter"
+    },
+    {
+      "name": "MaCaw"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Magnify Opal"
+    },
+    {
+      "name": "Maltese Tiger Lily"
+    },
+    {
+      "name": "Melting Cheese Tree"
+    },
+    {
+      "name": "Merle's Whisker"
+    },
+    {
+      "name": "Mirage Canyon Combat Theme"
+    },
+    {
+      "name": "Mirage Caravan Theme"
+    },
+    {
+      "name": "Mirage Chronoverge Theme"
+    },
+    {
+      "name": "Mirage Den of Thieves Theme"
+    },
+    {
+      "name": "Mirage Desert Canyons Theme"
+    },
+    {
+      "name": "Mirage Desert Combat Theme"
+    },
+    {
+      "name": "Mirage Jungle Combat Theme"
+    },
+    {
+      "name": "Mirage Jungle Theme"
+    },
+    {
+      "name": "Mirage Magic Carpet Theme"
+    },
+    {
+      "name": "Mirage Serpent Theme"
+    },
+    {
+      "name": "Missile Toe"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Mustachios"
+    },
+    {
+      "name": "Namaste"
+    },
+    {
+      "name": "Nested Fury"
+    },
+    {
+      "name": "Ninja Fig"
+    },
+    {
+      "name": "Orichalcum"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pink Laugh-O-Dil"
+    },
+    {
+      "name": "Prickly Bear Cactus"
+    },
+    {
+      "name": "Purple Bell Pepper"
+    },
+    {
+      "name": "Purple Grapes of Wrath"
+    },
+    {
+      "name": "Queen Crape Myrtle"
+    },
+    {
+      "name": "Raging Bull"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Red Couch Potatoes"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Reliquary Opal"
+    },
+    {
+      "name": "Renew Opal"
+    },
+    {
+      "name": "Rubal Bow of Conflagration"
+    },
+    {
+      "name": "Rubal Sleetfall Bow"
+    },
+    {
+      "name": "Rusalka's Wrath"
+    },
+    {
+      "name": "Sabertooth"
+    },
+    {
+      "name": "Saga of Heroes"
+    },
+    {
+      "name": "Sand Sea Cowl of Ashes"
+    },
+    {
+      "name": "Sand Sea Cowl of Hardiness"
+    },
+    {
+      "name": "Sand Sea Cowl of Havoc"
+    },
+    {
+      "name": "Sand Sea Dagger of Accord"
+    },
+    {
+      "name": "Sand Sea Dagger of Ashes"
+    },
+    {
+      "name": "Sand Sea Dagger of Blusters"
+    },
+    {
+      "name": "Sand Sea Dagger of Emptiness"
+    },
+    {
+      "name": "Sand Sea Dagger of Explosion"
+    },
+    {
+      "name": "Sand Sea Hand of Decorum"
+    },
+    {
+      "name": "Sand Sea Hand of Hardiness"
+    },
+    {
+      "name": "Sand Sea Hand of Shivers"
+    },
+    {
+      "name": "Sand Sea Outfit of Ashes"
+    },
+    {
+      "name": "Sand Sea Outfit of Decorum"
+    },
+    {
+      "name": "Sand Sea Outfit of Hardiness"
+    },
+    {
+      "name": "Sand Sea Outfit of Havoc"
+    },
+    {
+      "name": "Sand Sea Outfit of Mischief"
+    },
+    {
+      "name": "Sand Sea Ring of Ardor"
+    },
+    {
+      "name": "Sand Sea Ring of Blight"
+    },
+    {
+      "name": "Sand Sea Ring of Decorum"
+    },
+    {
+      "name": "Sand Sea Ring of Emptiness"
+    },
+    {
+      "name": "Sand Wurm"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Saw Palmetto"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Scorching Scimitars"
+    },
+    {
+      "name": "Shiny Blocking Citrine +16"
+    },
+    {
+      "name": "Shiny Blocking Ruby +16"
+    },
+    {
+      "name": "Shiny Critical Hematite +16"
+    },
+    {
+      "name": "Shiny Critical Jade +16"
+    },
+    {
+      "name": "Shiny Critical Onyx +16"
+    },
+    {
+      "name": "Shiny Critical Ruby +16"
+    },
+    {
+      "name": "Shiny Critical Sapphire +16"
+    },
+    {
+      "name": "Shiny Damage Amethyst +25"
+    },
+    {
+      "name": "Shiny Damage Citrine +26"
+    },
+    {
+      "name": "Shiny Damage Hematite +52"
+    },
+    {
+      "name": "Shiny Damage Onyx +26"
+    },
+    {
+      "name": "Shiny Damage Sapphire +26"
+    },
+    {
+      "name": "Shiny Defense Amethyst +49"
+    },
+    {
+      "name": "Shiny Defense Amethyst +51"
+    },
+    {
+      "name": "Shiny Defense Hematite +51"
+    },
+    {
+      "name": "Shiny Defense Jade +51"
+    },
+    {
+      "name": "Shiny Defense Jade +52"
+    },
+    {
+      "name": "Shiny Defense Peridot +52"
+    },
+    {
+      "name": "Shiny Defense Sapphire +51"
+    },
+    {
+      "name": "Shiny Defense Sapphire +52"
+    },
+    {
+      "name": "Shiny Health Opal +111"
+    },
+    {
+      "name": "Shiny Health Opal +112"
+    },
+    {
+      "name": "Shiny Health Opal +113"
+    },
+    {
+      "name": "Shiny Mana Opal +45"
+    },
+    {
+      "name": "Shiny Mana Opal +46"
+    },
+    {
+      "name": "Shiny Mana Opal +47"
+    },
+    {
+      "name": "Shiny PIP Hematite +2"
+    },
+    {
+      "name": "Ships 'n' Queso"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Sirens"
+    },
+    {
+      "name": "Snowball Barrage"
+    },
+    {
+      "name": "Spinysaur"
+    },
+    {
+      "name": "Stardust"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Sugar Khrystal"
+    },
+    {
+      "name": "Sun Serpent"
+    },
+    {
+      "name": "Sunion"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Sword Fern"
+    },
+    {
+      "name": "Thundering Rubal Bow"
+    },
+    {
+      "name": "Titanium"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turmeric"
+    },
+    {
+      "name": "Turquoise"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Vine"
+    },
+    {
+      "name": "Vizier's Shoes of Apathy"
+    },
+    {
+      "name": "Vizier's Windswept Shoes"
+    },
+    {
+      "name": "Voltaic Durvish Armaments"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Winged Sorrow"
+    },
+    {
+      "name": "Wings of Fate"
+    },
+    {
+      "name": "Witch's House Call"
+    },
+    {
+      "name": "Woolly Mammoth"
+    },
+    {
+      "name": "Yellow Bell Pepper"
+    },
+    {
+      "name": "Zruvan Galesh of Acumen"
+    },
+    {
+      "name": "Zruvan Galesh of Amity"
+    },
+    {
+      "name": "Zruvan Galesh of Flashfloods"
+    },
+    {
+      "name": "Zruvan Galesh of Fury"
+    },
+    {
+      "name": "Zruvan Helmet of Acumen"
+    },
+    {
+      "name": "Zruvan Helmet of Mettle"
+    },
+    {
+      "name": "Zruvan Helmet of Rigor"
+    }
   ],
   "authors": "BartleBot",
   "options": [

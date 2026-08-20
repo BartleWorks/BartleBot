@@ -9,180 +9,528 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Polaris",
   "drops": [
-    "Aether",
-    "Agave Leaves",
-    "Agave Nectar",
-    "Amber",
-    "Amber Dust",
-    "Angel Oak",
-    "Aquamarine",
-    "Arcanum Theme",
-    "Arcticzilla",
-    "Astral Shard",
-    "Astraphobia",
-    "Balefrost",
-    "Beast Wellington",
-    "Bleaks Band of Snowstorms",
-    "Bleaks Circle of Pyres",
-    "Bleaks Cutter of Despair",
-    "Bleaks Dagger of Vigor",
-    "Bleaks Dirk of Mischief",
-    "Bleaks Knife of Snowstorms",
-    "Bleaks Medallion of Vigor",
-    "Bleaks Pendant of Mischief",
-    "Bleaks Seal of Despair",
-    "Bleaks Signet of Mischief",
-    "Bleaks Torc of Snowstorms",
-    "Boiled Peanuts",
-    "Burning Snap Dragon",
-    "Chalupacabra",
-    "Cornbread Fruit Bush",
-    "Couch Potatoes",
-    "Counterforce",
-    "Deathspear",
-    "Deepwater Toffee",
-    "Dual Balanceblade Citrine",
-    "Dual Deathblade Onyx",
-    "Dual Fireblade Ruby",
-    "Dual Iceblade Sapphire",
-    "Dual Lifeblade Jade",
-    "Dual Mythblade Peridot",
-    "Dual Shadowblade Hematite",
-    "Dual Stormblade Amethyst",
-    "Efreet",
-    "Enchanter's Fervid Cloak",
-    "Enchanter's Set of Frostbite",
-    "Evil Snow Peas",
-    "Evoker's Boots of Squalls",
-    "Evoker's Brim of Acuity",
-    "Evoker's Brim of Squalls",
-    "Evoker's Ember Walkers",
-    "Evoker's Forlorn Robes",
-    "Evoker's Forlorn Stalkers",
-    "Evoker's Gallant Brim",
-    "Evoker's Gallant Drape",
-    "Evoker's Gallant Footwear",
-    "Evoker's Gelid Robes",
-    "Evoker's Stalwart Brim",
-    "Evoker's Stalwart Cloak",
-    "Evoker's Stalwart Footgear",
-    "Evoker's Wrap of Acuity",
-    "Eye Candy",
-    "Face Palm",
-    "Fiery Colossus",
-    "Fire Blossom",
-    "Fish Fin",
-    "Fish on a Vine",
-    "Frostfang",
-    "Frosty Sugar Cubes",
-    "Frozen Fly Trap",
-    "Glacier Dragon",
-    "Gnomes!",
-    "Golden Pearl",
-    "Goose Tree",
-    "Green Snow Apples",
-    "High Road Haggis",
-    "Hot Cross Buns",
-    "Icebird",
-    "Katabatic Wind",
-    "King Artorius (Balance)",
-    "King Artorius (Death)",
-    "King Artorius (Fire)",
-    "King Artorius (Ice)",
-    "King Artorius (Life)",
-    "King Artorius (Myth)",
-    "King Artorius (Storm)",
-    "King Parsley",
-    "Kossack Parcel of Redress",
-    "Kossack Saber of Chills",
-    "Kossack Spread of Chills",
-    "Kossack Stack of Purpose",
-    "Kossack Sword of Counsel",
-    "Kossack Sword of Travail",
-    "Large Keeper Aquarium",
-    "Large Small Fry Aquarium",
-    "Lustrous Accurate Jade +11%",
-    "Lustrous Damage Opal +12",
-    "Lustrous Damage Ruby +24",
-    "Lustrous Defense Jade +48",
-    "Maelstrom Snap Dragon",
-    "Medusa",
-    "Memento of the Bleaks",
-    "Mithril",
-    "Moon Flower",
-    "Mustachios",
-    "Mutate Colossus",
-    "Mythspear",
-    "Namaste",
-    "Noble Strand of the Bleaks",
-    "Nodori Winged Ram",
-    "Obsidian Colossus (420)",
-    "Orichalcum",
-    "Palladium",
-    "Penne Dreadful",
-    "Pink Huckleberries",
-    "Polar Bear Cub",
-    "Polarian Evoker's Boots",
-    "Polaris Baba Yaga Theme",
-    "Polaris Fries",
-    "Polaris Frozen Combat Theme",
-    "Polaris Frozen Forest Theme",
-    "Polaris Gulag Combat Theme",
-    "Polaris Gulag Theme",
-    "Polaris Ice Block Theme",
-    "Polaris Mine Combat Theme",
-    "Polaris Mine Theme",
-    "Polaris Opera Theme",
-    "Polaris Rasputin Combat Theme",
-    "Purple Snow Apples",
-    "Queen Crape Myrtle",
-    "Ra",
-    "Radiant Kossack Sword",
-    "Raging Bull",
-    "Rain of Fire",
-    "Red Huckleberries",
-    "Regular Keeper Aquarium",
-    "Regular Small Fry Aquarium",
-    "Rusalka's Wrath",
-    "Sabertooth",
-    "Sandstone Colossus",
-    "Satyr Chow",
-    "Scales",
-    "Ships 'n' Queso",
-    "Shock Colossus",
-    "Silver",
-    "Skeletal Dragon",
-    "Snap Dragon",
-    "Snow Angel",
-    "Snow Apples",
-    "Snowball Barrage",
-    "Spinysaur",
-    "Stardust",
-    "Steel",
-    "Stone Colossus",
-    "Storm Owl",
-    "Sunstone",
-    "Tayg Chisel of Leveling",
-    "Tayg Pendant of Vitality",
-    "The Goat Horns",
-    "The Kroktop",
-    "The Warlock",
-    "Titanium",
-    "Tundarian Iceblade",
-    "Tundarian Sword of Dread",
-    "Tungsten",
-    "Turquoise",
-    "Ultra Snap Dragon",
-    "Ultra Snow Apples",
-    "Veggie Juice",
-    "Vine",
-    "Walruskberg Combat Theme",
-    "Walruskberg Liberated Theme",
-    "Walruskberg Theme",
-    "Winged Sorrow",
-    "Winged Sorrow",
-    "Witch's House Call",
-    "Woolly Mammoth"
+    {
+      "name": "Aether"
+    },
+    {
+      "name": "Agave Leaves"
+    },
+    {
+      "name": "Agave Nectar"
+    },
+    {
+      "name": "Amber"
+    },
+    {
+      "name": "Amber Dust"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Arcanum Theme"
+    },
+    {
+      "name": "Arcticzilla"
+    },
+    {
+      "name": "Astral Shard"
+    },
+    {
+      "name": "Astraphobia"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Bleaks Band of Snowstorms"
+    },
+    {
+      "name": "Bleaks Circle of Pyres"
+    },
+    {
+      "name": "Bleaks Cutter of Despair"
+    },
+    {
+      "name": "Bleaks Dagger of Vigor"
+    },
+    {
+      "name": "Bleaks Dirk of Mischief"
+    },
+    {
+      "name": "Bleaks Knife of Snowstorms"
+    },
+    {
+      "name": "Bleaks Medallion of Vigor"
+    },
+    {
+      "name": "Bleaks Pendant of Mischief"
+    },
+    {
+      "name": "Bleaks Seal of Despair"
+    },
+    {
+      "name": "Bleaks Signet of Mischief"
+    },
+    {
+      "name": "Bleaks Torc of Snowstorms"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Burning Snap Dragon"
+    },
+    {
+      "name": "Chalupacabra"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Couch Potatoes"
+    },
+    {
+      "name": "Counterforce"
+    },
+    {
+      "name": "Deathspear"
+    },
+    {
+      "name": "Deepwater Toffee"
+    },
+    {
+      "name": "Dual Balanceblade Citrine"
+    },
+    {
+      "name": "Dual Deathblade Onyx"
+    },
+    {
+      "name": "Dual Fireblade Ruby"
+    },
+    {
+      "name": "Dual Iceblade Sapphire"
+    },
+    {
+      "name": "Dual Lifeblade Jade"
+    },
+    {
+      "name": "Dual Mythblade Peridot"
+    },
+    {
+      "name": "Dual Shadowblade Hematite"
+    },
+    {
+      "name": "Dual Stormblade Amethyst"
+    },
+    {
+      "name": "Efreet"
+    },
+    {
+      "name": "Enchanter's Fervid Cloak"
+    },
+    {
+      "name": "Enchanter's Set of Frostbite"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Evoker's Boots of Squalls"
+    },
+    {
+      "name": "Evoker's Brim of Acuity"
+    },
+    {
+      "name": "Evoker's Brim of Squalls"
+    },
+    {
+      "name": "Evoker's Ember Walkers"
+    },
+    {
+      "name": "Evoker's Forlorn Robes"
+    },
+    {
+      "name": "Evoker's Forlorn Stalkers"
+    },
+    {
+      "name": "Evoker's Gallant Brim"
+    },
+    {
+      "name": "Evoker's Gallant Drape"
+    },
+    {
+      "name": "Evoker's Gallant Footwear"
+    },
+    {
+      "name": "Evoker's Gelid Robes"
+    },
+    {
+      "name": "Evoker's Stalwart Brim"
+    },
+    {
+      "name": "Evoker's Stalwart Cloak"
+    },
+    {
+      "name": "Evoker's Stalwart Footgear"
+    },
+    {
+      "name": "Evoker's Wrap of Acuity"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Fiery Colossus"
+    },
+    {
+      "name": "Fire Blossom"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Frostfang"
+    },
+    {
+      "name": "Frosty Sugar Cubes"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Glacier Dragon"
+    },
+    {
+      "name": "Gnomes!"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "Goose Tree"
+    },
+    {
+      "name": "Green Snow Apples"
+    },
+    {
+      "name": "High Road Haggis"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Icebird"
+    },
+    {
+      "name": "Katabatic Wind"
+    },
+    {
+      "name": "King Artorius (Balance)"
+    },
+    {
+      "name": "King Artorius (Death)"
+    },
+    {
+      "name": "King Artorius (Fire)"
+    },
+    {
+      "name": "King Artorius (Ice)"
+    },
+    {
+      "name": "King Artorius (Life)"
+    },
+    {
+      "name": "King Artorius (Myth)"
+    },
+    {
+      "name": "King Artorius (Storm)"
+    },
+    {
+      "name": "King Parsley"
+    },
+    {
+      "name": "Kossack Parcel of Redress"
+    },
+    {
+      "name": "Kossack Saber of Chills"
+    },
+    {
+      "name": "Kossack Spread of Chills"
+    },
+    {
+      "name": "Kossack Stack of Purpose"
+    },
+    {
+      "name": "Kossack Sword of Counsel"
+    },
+    {
+      "name": "Kossack Sword of Travail"
+    },
+    {
+      "name": "Large Keeper Aquarium"
+    },
+    {
+      "name": "Large Small Fry Aquarium"
+    },
+    {
+      "name": "Lustrous Accurate Jade +11%"
+    },
+    {
+      "name": "Lustrous Damage Opal +12"
+    },
+    {
+      "name": "Lustrous Damage Ruby +24"
+    },
+    {
+      "name": "Lustrous Defense Jade +48"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Medusa"
+    },
+    {
+      "name": "Memento of the Bleaks"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Moon Flower"
+    },
+    {
+      "name": "Mustachios"
+    },
+    {
+      "name": "Mutate Colossus"
+    },
+    {
+      "name": "Mythspear"
+    },
+    {
+      "name": "Namaste"
+    },
+    {
+      "name": "Noble Strand of the Bleaks"
+    },
+    {
+      "name": "Nodori Winged Ram"
+    },
+    {
+      "name": "Obsidian Colossus (420)"
+    },
+    {
+      "name": "Orichalcum"
+    },
+    {
+      "name": "Palladium"
+    },
+    {
+      "name": "Penne Dreadful"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Polar Bear Cub"
+    },
+    {
+      "name": "Polarian Evoker's Boots"
+    },
+    {
+      "name": "Polaris Baba Yaga Theme"
+    },
+    {
+      "name": "Polaris Fries"
+    },
+    {
+      "name": "Polaris Frozen Combat Theme"
+    },
+    {
+      "name": "Polaris Frozen Forest Theme"
+    },
+    {
+      "name": "Polaris Gulag Combat Theme"
+    },
+    {
+      "name": "Polaris Gulag Theme"
+    },
+    {
+      "name": "Polaris Ice Block Theme"
+    },
+    {
+      "name": "Polaris Mine Combat Theme"
+    },
+    {
+      "name": "Polaris Mine Theme"
+    },
+    {
+      "name": "Polaris Opera Theme"
+    },
+    {
+      "name": "Polaris Rasputin Combat Theme"
+    },
+    {
+      "name": "Purple Snow Apples"
+    },
+    {
+      "name": "Queen Crape Myrtle"
+    },
+    {
+      "name": "Ra"
+    },
+    {
+      "name": "Radiant Kossack Sword"
+    },
+    {
+      "name": "Raging Bull"
+    },
+    {
+      "name": "Rain of Fire"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Regular Keeper Aquarium"
+    },
+    {
+      "name": "Regular Small Fry Aquarium"
+    },
+    {
+      "name": "Rusalka's Wrath"
+    },
+    {
+      "name": "Sabertooth"
+    },
+    {
+      "name": "Sandstone Colossus"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Ships 'n' Queso"
+    },
+    {
+      "name": "Shock Colossus"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Skeletal Dragon"
+    },
+    {
+      "name": "Snap Dragon"
+    },
+    {
+      "name": "Snow Angel"
+    },
+    {
+      "name": "Snow Apples"
+    },
+    {
+      "name": "Snowball Barrage"
+    },
+    {
+      "name": "Spinysaur"
+    },
+    {
+      "name": "Stardust"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storm Owl"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Tayg Chisel of Leveling"
+    },
+    {
+      "name": "Tayg Pendant of Vitality"
+    },
+    {
+      "name": "The Goat Horns"
+    },
+    {
+      "name": "The Kroktop"
+    },
+    {
+      "name": "The Warlock"
+    },
+    {
+      "name": "Titanium"
+    },
+    {
+      "name": "Tundarian Iceblade"
+    },
+    {
+      "name": "Tundarian Sword of Dread"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turquoise"
+    },
+    {
+      "name": "Ultra Snap Dragon"
+    },
+    {
+      "name": "Ultra Snow Apples"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Vine"
+    },
+    {
+      "name": "Walruskberg Combat Theme"
+    },
+    {
+      "name": "Walruskberg Liberated Theme"
+    },
+    {
+      "name": "Walruskberg Theme"
+    },
+    {
+      "name": "Winged Sorrow"
+    },
+    {
+      "name": "Winged Sorrow"
+    },
+    {
+      "name": "Witch's House Call"
+    },
+    {
+      "name": "Woolly Mammoth"
+    }
   ],
   "authors": "BartleBot",
   "options": [

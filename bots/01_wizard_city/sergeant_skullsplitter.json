@@ -9,97 +9,279 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Antique Footguards",
-    "Antique Overshirt",
-    "Armored Tunic",
-    "Ashen Cloak",
-    "Banshee",
-    "Blonde Strawberry",
-    "Bloomshroud",
-    "Bone",
-    "Boots of Embers",
-    "Cap of Advantages",
-    "Charged Cover",
-    "Cheese Broccoli",
-    "Chillcloak",
-    "Chipped Knife",
-    "Chocolate Strawberry",
-    "Cloak of Vigilance",
-    "Cowl of the Discreet",
-    "Cowl of Wisdom",
-    "Dark Stone Tower",
-    "Death Trap",
-    "Double Sided Hat",
-    "Dulled Athame",
-    "Ectoplasm",
-    "Elven Storm Cap",
-    "Engraved Amethyst Ring",
-    "Engraved Citrine Ring",
-    "Engraved Jade Ring",
-    "Engraved Onyx Ring",
-    "Engraved Peridot Ring",
-    "Engraved Ruby Ring",
-    "Fairy Cap",
-    "Fairy's Wand",
-    "Fire Cat",
-    "Fire Shield",
-    "Fireguard Slippers",
-    "Firestorm Vestment",
-    "Flametouched Hat",
-    "Flash Frozen Choker",
-    "Footwraps of Seasons",
-    "Frost Beetle",
-    "Frostshroud",
-    "Frostshroud",
-    "Fur-Lined Hood",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hardened Boots",
-    "Hardened Cap",
-    "Hat of Eradication",
-    "Helm of Audacity",
-    "Honey Sickle",
-    "Hood of Storms",
-    "Hood of Tension",
-    "Imp",
-    "Imp Lord's Helm",
-    "Insulated Wand",
-    "Keen Eyes",
-    "Knife of Winter",
-    "Lightning Bats",
-    "Locust Swarm",
-    "Lord's Signet",
-    "Pixie",
-    "Prop House 1",
-    "Raiment of Storms",
-    "Robe of All Trades",
-    "Robe of Embers",
-    "Robe of the Blizzard",
-    "Roughspun Robe",
-    "Sapphyra's Studded Boots",
-    "Senior Novice's Robe",
-    "Senior Novice's Shoes",
-    "Shimmering Cloak",
-    "Skullsplitter's Signet",
-    "Slippers of Excitement",
-    "Small Orange Symbol Rug",
-    "Snow Serpent",
-    "Snow Shield",
-    "Storm Shield",
-    "Stormcaller's Boots",
-    "Stormcaller's Robe",
-    "Studded Knife",
-    "Sugar Donut",
-    "Symmetrical Shoes",
-    "Thunder Snake",
-    "Time of Legend",
-    "Tough",
-    "Triton Statue",
-    "Troll",
-    "Venomous Cowl",
-    "Vestment of Panic",
-    "Vrixx's Verdant Robes",
-    "Wondershroud"
+    {
+      "name": "Antique Footguards"
+    },
+    {
+      "name": "Antique Overshirt"
+    },
+    {
+      "name": "Armored Tunic"
+    },
+    {
+      "name": "Ashen Cloak"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Blonde Strawberry"
+    },
+    {
+      "name": "Bloomshroud"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of Embers"
+    },
+    {
+      "name": "Cap of Advantages"
+    },
+    {
+      "name": "Charged Cover"
+    },
+    {
+      "name": "Cheese Broccoli"
+    },
+    {
+      "name": "Chillcloak"
+    },
+    {
+      "name": "Chipped Knife"
+    },
+    {
+      "name": "Chocolate Strawberry"
+    },
+    {
+      "name": "Cloak of Vigilance"
+    },
+    {
+      "name": "Cowl of the Discreet"
+    },
+    {
+      "name": "Cowl of Wisdom"
+    },
+    {
+      "name": "Dark Stone Tower"
+    },
+    {
+      "name": "Death Trap"
+    },
+    {
+      "name": "Double Sided Hat"
+    },
+    {
+      "name": "Dulled Athame"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Elven Storm Cap"
+    },
+    {
+      "name": "Engraved Amethyst Ring"
+    },
+    {
+      "name": "Engraved Citrine Ring"
+    },
+    {
+      "name": "Engraved Jade Ring"
+    },
+    {
+      "name": "Engraved Onyx Ring"
+    },
+    {
+      "name": "Engraved Peridot Ring"
+    },
+    {
+      "name": "Engraved Ruby Ring"
+    },
+    {
+      "name": "Fairy Cap"
+    },
+    {
+      "name": "Fairy's Wand"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Shield"
+    },
+    {
+      "name": "Fireguard Slippers"
+    },
+    {
+      "name": "Firestorm Vestment"
+    },
+    {
+      "name": "Flametouched Hat"
+    },
+    {
+      "name": "Flash Frozen Choker"
+    },
+    {
+      "name": "Footwraps of Seasons"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Frostshroud"
+    },
+    {
+      "name": "Frostshroud"
+    },
+    {
+      "name": "Fur-Lined Hood"
+    },
+    {
+      "name": "Guiding Light"
+    },
+    {
+      "name": "Gummy Firecat"
+    },
+    {
+      "name": "Hardened Boots"
+    },
+    {
+      "name": "Hardened Cap"
+    },
+    {
+      "name": "Hat of Eradication"
+    },
+    {
+      "name": "Helm of Audacity"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hood of Storms"
+    },
+    {
+      "name": "Hood of Tension"
+    },
+    {
+      "name": "Imp"
+    },
+    {
+      "name": "Imp Lord's Helm"
+    },
+    {
+      "name": "Insulated Wand"
+    },
+    {
+      "name": "Keen Eyes"
+    },
+    {
+      "name": "Knife of Winter"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Lord's Signet"
+    },
+    {
+      "name": "Pixie"
+    },
+    {
+      "name": "Prop House 1"
+    },
+    {
+      "name": "Raiment of Storms"
+    },
+    {
+      "name": "Robe of All Trades"
+    },
+    {
+      "name": "Robe of Embers"
+    },
+    {
+      "name": "Robe of the Blizzard"
+    },
+    {
+      "name": "Roughspun Robe"
+    },
+    {
+      "name": "Sapphyra's Studded Boots"
+    },
+    {
+      "name": "Senior Novice's Robe"
+    },
+    {
+      "name": "Senior Novice's Shoes"
+    },
+    {
+      "name": "Shimmering Cloak"
+    },
+    {
+      "name": "Skullsplitter's Signet"
+    },
+    {
+      "name": "Slippers of Excitement"
+    },
+    {
+      "name": "Small Orange Symbol Rug"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Snow Shield"
+    },
+    {
+      "name": "Storm Shield"
+    },
+    {
+      "name": "Stormcaller's Boots"
+    },
+    {
+      "name": "Stormcaller's Robe"
+    },
+    {
+      "name": "Studded Knife"
+    },
+    {
+      "name": "Sugar Donut"
+    },
+    {
+      "name": "Symmetrical Shoes"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Triton Statue"
+    },
+    {
+      "name": "Troll"
+    },
+    {
+      "name": "Venomous Cowl"
+    },
+    {
+      "name": "Vestment of Panic"
+    },
+    {
+      "name": "Vrixx's Verdant Robes"
+    },
+    {
+      "name": "Wondershroud"
+    }
   ],
   "authors": "BartleBot",
   "options": [

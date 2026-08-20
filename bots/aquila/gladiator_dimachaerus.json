@@ -10,35 +10,93 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
-    "Alpha and Omega Ring",
-    "Amber",
-    "Aquila Atlantea Theme",
-    "Aquila Boss Combat Theme",
-    "Aquila Combat Theme",
-    "Aquila Epic Combat Theme",
-    "Aquila Olympus Theme",
-    "Aquila Tartarus Theme",
-    "Board of Gorgon Imprisonment (Level 90+)",
-    "Board of Gorgon Infamy (Level 90+)",
-    "Board of Gorgon Petrification (Level 90+)",
-    "Board of Gorgon Suffering (Level 90+)",
-    "Board of Gorgon Venom (Level 90+)",
-    "Board of Gorgon Volatility (Level 90+)",
-    "Board of Gorgon's Gaze (Level 90+)",
-    "Exalted Balance Amulet",
-    "Exalted Death Amulet",
-    "Exalted Fire Amulet",
-    "Exalted Ice Amulet",
-    "Exalted Life Amulet",
-    "Exalted Myth Amulet",
-    "Exalted Storm Amulet",
-    "Fires of Mars",
-    "Jupiter's Might",
-    "Neptune's Fury",
-    "Phoebus' Will",
-    "Pluto's Peril",
-    "Saturn's Reaping",
-    "Terminus' Strike"
+    {
+      "name": "Alpha and Omega Ring"
+    },
+    {
+      "name": "Amber"
+    },
+    {
+      "name": "Aquila Atlantea Theme"
+    },
+    {
+      "name": "Aquila Boss Combat Theme"
+    },
+    {
+      "name": "Aquila Combat Theme"
+    },
+    {
+      "name": "Aquila Epic Combat Theme"
+    },
+    {
+      "name": "Aquila Olympus Theme"
+    },
+    {
+      "name": "Aquila Tartarus Theme"
+    },
+    {
+      "name": "Board of Gorgon Imprisonment (Level 90+)"
+    },
+    {
+      "name": "Board of Gorgon Infamy (Level 90+)"
+    },
+    {
+      "name": "Board of Gorgon Petrification (Level 90+)"
+    },
+    {
+      "name": "Board of Gorgon Suffering (Level 90+)"
+    },
+    {
+      "name": "Board of Gorgon Venom (Level 90+)"
+    },
+    {
+      "name": "Board of Gorgon Volatility (Level 90+)"
+    },
+    {
+      "name": "Board of Gorgon's Gaze (Level 90+)"
+    },
+    {
+      "name": "Exalted Balance Amulet"
+    },
+    {
+      "name": "Exalted Death Amulet"
+    },
+    {
+      "name": "Exalted Fire Amulet"
+    },
+    {
+      "name": "Exalted Ice Amulet"
+    },
+    {
+      "name": "Exalted Life Amulet"
+    },
+    {
+      "name": "Exalted Myth Amulet"
+    },
+    {
+      "name": "Exalted Storm Amulet"
+    },
+    {
+      "name": "Fires of Mars"
+    },
+    {
+      "name": "Jupiter's Might"
+    },
+    {
+      "name": "Neptune's Fury"
+    },
+    {
+      "name": "Phoebus' Will"
+    },
+    {
+      "name": "Pluto's Peril"
+    },
+    {
+      "name": "Saturn's Reaping"
+    },
+    {
+      "name": "Terminus' Strike"
+    }
   ],
   "authors": "BartleBot",
   "options": [

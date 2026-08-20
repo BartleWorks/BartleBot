@@ -9,7 +9,9 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "The Commons",
   "drops": [
-    "Nothing"
+    {
+      "name": "Nothing"
+    }
   ],
   "authors": "BartleBot",
   "options": [

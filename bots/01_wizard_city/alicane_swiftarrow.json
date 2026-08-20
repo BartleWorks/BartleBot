@@ -9,124 +9,360 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Adventurer's Boots",
-    "Alicane's Band",
-    "Alicane's Cowl",
-    "Alicane's Dirk",
-    "Alicane's Flame Staff",
-    "Alicane's Helm",
-    "Ancient Koi",
-    "Ankylosaurus",
-    "Auroch",
-    "Barkskin Boots",
-    "Barkskin Tunic",
-    "Bat Wings",
-    "Bengal Tiger",
-    "Black Stallion",
-    "Blonde Strawberry",
-    "Blood Bat",
-    "Boots of the Adverse",
-    "Branded Footguards",
-    "Canvas Wraps",
-    "Cheese Broccoli",
-    "Chestnut Pony",
-    "Chillcloak",
-    "Chocolate Strawberry",
-    "Cloak of Calamity",
-    "Cloak of Foresight",
-    "Crokagator",
-    "Dark Redwing",
-    "Death Trap",
-    "Elven Fire Robe",
-    "Enchanted Broom",
-    "Evil Snowman",
-    "Explorer Boots",
-    "Fairy Cloak",
-    "Fairy Shoes",
-    "Faithful Dragoness",
-    "Fire Bush",
-    "Fire Cat",
-    "Fire Elf",
-    "Fire Shield",
-    "Firecat Statue",
-    "Firestorm Cap",
-    "Firestorm Wraps",
-    "Flawed Opal Band",
-    "Flawed Pearl Ring",
-    "Frost Beetle",
-    "Ghoul",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hallowed Band",
-    "Hardened Boots",
-    "Healer's Cowl",
-    "Helm of Stability",
-    "Helm of Supremacy",
-    "Hippogriff",
-    "Hood of Storms",
-    "Horned Sweeper",
-    "Imp",
-    "Imp Lord's Helm",
-    "Jeweled Dagger",
-    "Keen Eyes",
-    "Leather Straps",
-    "Lightning Bats",
-    "Locust Swarm",
-    "Martyr's Wraps",
-    "Moonlight Pony",
-    "Myth Shield",
-    "Nightflame Pegasus",
-    "Novice's Hat",
-    "Novice's Robe",
-    "Novice's Shoes",
-    "Orange Fairy Wings",
-    "Panther",
-    "Pixie",
-    "Plated Boots",
-    "Prop House 2",
-    "Prop Mountains 1",
-    "Prop Mountains 2",
-    "Renaissance Wings",
-    "Ritual Athame",
-    "Robe of Antiquities",
-    "Roughspun Hat",
-    "Rugged Seahorse",
-    "Scarab",
-    "Sea Turtle",
-    "Senior Novice's Robe",
-    "Seraph Wings",
-    "Shortblade of the Quick",
-    "Simple Dirk",
-    "Slippers of Rites",
-    "Small Fern",
-    "Snappy Lobster",
-    "Snow Ram",
-    "Snow Shield",
-    "Soft Hood",
-    "Soldiers Wraps",
-    "Spider Silk",
-    "Sprite",
-    "Spritely Seahorse",
-    "Starlight Pony",
-    "Sturdy Boots",
-    "Sturdy Coat",
-    "Sugar Donut",
-    "Sunshine Pony",
-    "Swift Gryphon",
-    "Swift Shark",
-    "Swiftarrow's Boots",
-    "Swiftarrow's Mantle",
-    "Swiftarrow's Necklace",
-    "Swiftarrow's Signet",
-    "Swiftarrow's Staff",
-    "Swiftarrow's Windmane",
-    "Swiftshadow Wings",
-    "Time of Legend",
-    "Tough",
-    "Twice Stitched Robe",
-    "Vestment of the Adverse",
-    "White Mare",
-    "Wizard101 Theme"
+    {
+      "name": "Adventurer's Boots"
+    },
+    {
+      "name": "Alicane's Band"
+    },
+    {
+      "name": "Alicane's Cowl"
+    },
+    {
+      "name": "Alicane's Dirk"
+    },
+    {
+      "name": "Alicane's Flame Staff"
+    },
+    {
+      "name": "Alicane's Helm"
+    },
+    {
+      "name": "Ancient Koi"
+    },
+    {
+      "name": "Ankylosaurus"
+    },
+    {
+      "name": "Auroch"
+    },
+    {
+      "name": "Barkskin Boots"
+    },
+    {
+      "name": "Barkskin Tunic"
+    },
+    {
+      "name": "Bat Wings"
+    },
+    {
+      "name": "Bengal Tiger"
+    },
+    {
+      "name": "Black Stallion"
+    },
+    {
+      "name": "Blonde Strawberry"
+    },
+    {
+      "name": "Blood Bat"
+    },
+    {
+      "name": "Boots of the Adverse"
+    },
+    {
+      "name": "Branded Footguards"
+    },
+    {
+      "name": "Canvas Wraps"
+    },
+    {
+      "name": "Cheese Broccoli"
+    },
+    {
+      "name": "Chestnut Pony"
+    },
+    {
+      "name": "Chillcloak"
+    },
+    {
+      "name": "Chocolate Strawberry"
+    },
+    {
+      "name": "Cloak of Calamity"
+    },
+    {
+      "name": "Cloak of Foresight"
+    },
+    {
+      "name": "Crokagator"
+    },
+    {
+      "name": "Dark Redwing"
+    },
+    {
+      "name": "Death Trap"
+    },
+    {
+      "name": "Elven Fire Robe"
+    },
+    {
+      "name": "Enchanted Broom"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Explorer Boots"
+    },
+    {
+      "name": "Fairy Cloak"
+    },
+    {
+      "name": "Fairy Shoes"
+    },
+    {
+      "name": "Faithful Dragoness"
+    },
+    {
+      "name": "Fire Bush"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire Shield"
+    },
+    {
+      "name": "Firecat Statue"
+    },
+    {
+      "name": "Firestorm Cap"
+    },
+    {
+      "name": "Firestorm Wraps"
+    },
+    {
+      "name": "Flawed Opal Band"
+    },
+    {
+      "name": "Flawed Pearl Ring"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Ghoul"
+    },
+    {
+      "name": "Guiding Light"
+    },
+    {
+      "name": "Gummy Firecat"
+    },
+    {
+      "name": "Hallowed Band"
+    },
+    {
+      "name": "Hardened Boots"
+    },
+    {
+      "name": "Healer's Cowl"
+    },
+    {
+      "name": "Helm of Stability"
+    },
+    {
+      "name": "Helm of Supremacy"
+    },
+    {
+      "name": "Hippogriff"
+    },
+    {
+      "name": "Hood of Storms"
+    },
+    {
+      "name": "Horned Sweeper"
+    },
+    {
+      "name": "Imp"
+    },
+    {
+      "name": "Imp Lord's Helm"
+    },
+    {
+      "name": "Jeweled Dagger"
+    },
+    {
+      "name": "Keen Eyes"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Martyr's Wraps"
+    },
+    {
+      "name": "Moonlight Pony"
+    },
+    {
+      "name": "Myth Shield"
+    },
+    {
+      "name": "Nightflame Pegasus"
+    },
+    {
+      "name": "Novice's Hat"
+    },
+    {
+      "name": "Novice's Robe"
+    },
+    {
+      "name": "Novice's Shoes"
+    },
+    {
+      "name": "Orange Fairy Wings"
+    },
+    {
+      "name": "Panther"
+    },
+    {
+      "name": "Pixie"
+    },
+    {
+      "name": "Plated Boots"
+    },
+    {
+      "name": "Prop House 2"
+    },
+    {
+      "name": "Prop Mountains 1"
+    },
+    {
+      "name": "Prop Mountains 2"
+    },
+    {
+      "name": "Renaissance Wings"
+    },
+    {
+      "name": "Ritual Athame"
+    },
+    {
+      "name": "Robe of Antiquities"
+    },
+    {
+      "name": "Roughspun Hat"
+    },
+    {
+      "name": "Rugged Seahorse"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Sea Turtle"
+    },
+    {
+      "name": "Senior Novice's Robe"
+    },
+    {
+      "name": "Seraph Wings"
+    },
+    {
+      "name": "Shortblade of the Quick"
+    },
+    {
+      "name": "Simple Dirk"
+    },
+    {
+      "name": "Slippers of Rites"
+    },
+    {
+      "name": "Small Fern"
+    },
+    {
+      "name": "Snappy Lobster"
+    },
+    {
+      "name": "Snow Ram"
+    },
+    {
+      "name": "Snow Shield"
+    },
+    {
+      "name": "Soft Hood"
+    },
+    {
+      "name": "Soldiers Wraps"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprite"
+    },
+    {
+      "name": "Spritely Seahorse"
+    },
+    {
+      "name": "Starlight Pony"
+    },
+    {
+      "name": "Sturdy Boots"
+    },
+    {
+      "name": "Sturdy Coat"
+    },
+    {
+      "name": "Sugar Donut"
+    },
+    {
+      "name": "Sunshine Pony"
+    },
+    {
+      "name": "Swift Gryphon"
+    },
+    {
+      "name": "Swift Shark"
+    },
+    {
+      "name": "Swiftarrow's Boots"
+    },
+    {
+      "name": "Swiftarrow's Mantle"
+    },
+    {
+      "name": "Swiftarrow's Necklace"
+    },
+    {
+      "name": "Swiftarrow's Signet"
+    },
+    {
+      "name": "Swiftarrow's Staff"
+    },
+    {
+      "name": "Swiftarrow's Windmane"
+    },
+    {
+      "name": "Swiftshadow Wings"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Twice Stitched Robe"
+    },
+    {
+      "name": "Vestment of the Adverse"
+    },
+    {
+      "name": "White Mare"
+    },
+    {
+      "name": "Wizard101 Theme"
+    }
   ],
   "authors": "BartleBot",
   "options": [

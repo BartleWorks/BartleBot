@@ -10,160 +10,468 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Mooshu",
   "drops": [
-    "Abstract Shroud",
-    "Abstract Vestment",
-    "Accurate",
-    "Ape Grapes",
-    "Balefrost",
-    "Bell Pagoda",
-    "Benign Slippers",
-    "Blemished Damage Onyx +11",
-    "Blemished Damage Ruby +11",
-    "Blemished Defense Opal +11",
-    "Blemished Health Opal +40",
-    "Blemished Mana Opal +17",
-    "Blended Wool Cap",
-    "Blight Hound",
-    "Bodkin of the Hearty",
-    "Bone",
-    "Boots of the Lithe",
-    "Brass",
-    "Bronze Gear",
-    "Cap of Consideration",
-    "Cap of the Verse",
-    "Cloak of Deliberation",
-    "Cobalt",
-    "Cowl of Fiction",
-    "Cowl of Tact",
-    "Cowl of Watchfulness",
-    "Crossed Naginata Spears",
-    "Crunch Apple",
-    "Deadly Ninja Fig",
-    "Death Ninja",
-    "Deck of the Lotus",
-    "Diseased Wildclaw",
-    "Ectoplasm",
-    "Evil Snowman",
-    "Fancy Bench",
-    "Fancy Lantern",
-    "Fiery Boom Shroom",
-    "Fire Cat",
-    "Fire Cracker",
-    "Fire Elf",
-    "Fire-Giver Ruby",
-    "Firewing",
-    "Flawed Accurate Jade +4%",
-    "Flawed Defense Sapphire +18",
-    "Flawed Health Opal +32",
-    "Flawed Mending Opal +2%",
-    "Footwraps of Generations",
-    "Footwraps of Predicament",
-    "Friendly Garments",
-    "Friendly Helm",
-    "Frost Beetle",
-    "Garment of Dilemma",
-    "Garment of Sandcastles",
-    "Garments of Predicament",
-    "Gearhead Destroyer",
-    "Golden Peanut",
-    "Golden Squash",
-    "Grand Imperial Banner",
-    "Green Sword Display",
-    "Gripping Boots",
-    "Hanging Naginata Spear",
-    "Haskarr's Barbarish Cap",
-    "Hat of the Observant",
-    "Heedful Headwraps",
-    "Humongofrog Peridot",
-    "Hydra",
-    "Ice Wyvern",
-    "Ice Wyvern Sapphire",
-    "Immolate",
-    "Indoor Shrine",
-    "Indulgent Boots",
-    "Indulgent Vestment",
-    "Invigorating Signet",
-    "Kraken",
-    "Large Fish",
-    "Large Watermelon",
-    "Lead",
-    "Leather Straps",
-    "Light-As-Air Cloak",
-    "Light-As-Air Slippers",
-    "Lightning Bats",
-    "Lyrical Footwraps",
-    "Lyrical Garments",
-    "Maelstrom Snap Dragon",
-    "Magma Spider",
-    "Minotaur",
-    "Moodha Bust",
-    "MooShu Battle Theme",
-    "MooShu Haunted Theme",
-    "MooShu Mystical Theme",
-    "MooShu War Theme",
-    "Nickel",
-    "Ninja Pigs",
-    "Nunu's Mask of the Twisted",
-    "Pagoda Brazier",
-    "Pest Zapper",
-    "Phoenix",
-    "Pink Dandelion",
-    "Problematic Headwraps",
-    "Professor Wu",
-    "Proficient Shoes",
-    "Pyrite",
-    "rank 1-5 elemental spellements",
-    "Red Samoorai Armor",
-    "Robe of Hinderance",
-    "Robe of the Verse",
-    "Ruby Ring of Focus",
-    "Samoorai",
-    "Sanctuary",
-    "Sandals of the Determined",
-    "Scarab",
-    "Scarecrow",
-    "School design gear",
-    "Seraph Jade",
-    "Small Woodpile",
-    "Snow Serpent",
-    "Soji Screen Art",
-    "Spectral Blast",
-    "Square Root",
-    "Stone Base",
-    "Stone Dog Statue",
-    "Stone Pedestal Base",
-    "Storm Shark",
-    "Stormzilla",
-    "Sunbird",
-    "Tall Boulder",
-    "Thunder Snake",
-    "Tin",
-    "Tormented Cloak",
-    "Tunic of Impression",
-    "Vestment of Fiction",
-    "Vestment of the Eager",
-    "Vigilant Sandals",
-    "War Oni's Astute Tunic",
-    "War Oni's Disillusioned Hat",
-    "War Oni's Footwraps",
-    "War Oni's Gripping Garments",
-    "War Oni's Gripping Helm",
-    "War Oni's Tempestial Circle",
-    "War Torn Cowl of Awareness",
-    "White Laugh-O-Dil",
-    "Wooden Skeleton Key",
-    "Wyldfire",
-    "Yakedo's Abstract Shoes",
-    "Yakedo's Boots",
-    "Yakedo's Brainstorming Robe",
-    "Yakedo's Cap of Premise",
-    "Yakedo's Hypothetical Helm",
-    "Yakedo's Hypothetical Robe",
-    "Yakedo's Rational Cloak",
-    "Yakedo's Sandals of Belief",
-    "Yakedo's Shroud",
-    "Yakedo's Slippers",
-    "Zippy Tunic"
+    {
+      "name": "Abstract Shroud"
+    },
+    {
+      "name": "Abstract Vestment"
+    },
+    {
+      "name": "Accurate"
+    },
+    {
+      "name": "Ape Grapes"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Bell Pagoda"
+    },
+    {
+      "name": "Benign Slippers"
+    },
+    {
+      "name": "Blemished Damage Onyx +11"
+    },
+    {
+      "name": "Blemished Damage Ruby +11"
+    },
+    {
+      "name": "Blemished Defense Opal +11"
+    },
+    {
+      "name": "Blemished Health Opal +40"
+    },
+    {
+      "name": "Blemished Mana Opal +17"
+    },
+    {
+      "name": "Blended Wool Cap"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Bodkin of the Hearty"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of the Lithe"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cap of Consideration"
+    },
+    {
+      "name": "Cap of the Verse"
+    },
+    {
+      "name": "Cloak of Deliberation"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Cowl of Fiction"
+    },
+    {
+      "name": "Cowl of Tact"
+    },
+    {
+      "name": "Cowl of Watchfulness"
+    },
+    {
+      "name": "Crossed Naginata Spears"
+    },
+    {
+      "name": "Crunch Apple"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Ninja"
+    },
+    {
+      "name": "Deck of the Lotus"
+    },
+    {
+      "name": "Diseased Wildclaw"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Fancy Bench"
+    },
+    {
+      "name": "Fancy Lantern"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Cracker"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire-Giver Ruby"
+    },
+    {
+      "name": "Firewing"
+    },
+    {
+      "name": "Flawed Accurate Jade +4%"
+    },
+    {
+      "name": "Flawed Defense Sapphire +18"
+    },
+    {
+      "name": "Flawed Health Opal +32"
+    },
+    {
+      "name": "Flawed Mending Opal +2%"
+    },
+    {
+      "name": "Footwraps of Generations"
+    },
+    {
+      "name": "Footwraps of Predicament"
+    },
+    {
+      "name": "Friendly Garments"
+    },
+    {
+      "name": "Friendly Helm"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Garment of Dilemma"
+    },
+    {
+      "name": "Garment of Sandcastles"
+    },
+    {
+      "name": "Garments of Predicament"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Golden Peanut"
+    },
+    {
+      "name": "Golden Squash"
+    },
+    {
+      "name": "Grand Imperial Banner"
+    },
+    {
+      "name": "Green Sword Display"
+    },
+    {
+      "name": "Gripping Boots"
+    },
+    {
+      "name": "Hanging Naginata Spear"
+    },
+    {
+      "name": "Haskarr's Barbarish Cap"
+    },
+    {
+      "name": "Hat of the Observant"
+    },
+    {
+      "name": "Heedful Headwraps"
+    },
+    {
+      "name": "Humongofrog Peridot"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Ice Wyvern Sapphire"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Indoor Shrine"
+    },
+    {
+      "name": "Indulgent Boots"
+    },
+    {
+      "name": "Indulgent Vestment"
+    },
+    {
+      "name": "Invigorating Signet"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Large Fish"
+    },
+    {
+      "name": "Large Watermelon"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Light-As-Air Cloak"
+    },
+    {
+      "name": "Light-As-Air Slippers"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Lyrical Footwraps"
+    },
+    {
+      "name": "Lyrical Garments"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Magma Spider"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Moodha Bust"
+    },
+    {
+      "name": "MooShu Battle Theme"
+    },
+    {
+      "name": "MooShu Haunted Theme"
+    },
+    {
+      "name": "MooShu Mystical Theme"
+    },
+    {
+      "name": "MooShu War Theme"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Pigs"
+    },
+    {
+      "name": "Nunu's Mask of the Twisted"
+    },
+    {
+      "name": "Pagoda Brazier"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Problematic Headwraps"
+    },
+    {
+      "name": "Professor Wu"
+    },
+    {
+      "name": "Proficient Shoes"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "rank 1-5 elemental spellements"
+    },
+    {
+      "name": "Red Samoorai Armor"
+    },
+    {
+      "name": "Robe of Hinderance"
+    },
+    {
+      "name": "Robe of the Verse"
+    },
+    {
+      "name": "Ruby Ring of Focus"
+    },
+    {
+      "name": "Samoorai"
+    },
+    {
+      "name": "Sanctuary"
+    },
+    {
+      "name": "Sandals of the Determined"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "School design gear"
+    },
+    {
+      "name": "Seraph Jade"
+    },
+    {
+      "name": "Small Woodpile"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Soji Screen Art"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Square Root"
+    },
+    {
+      "name": "Stone Base"
+    },
+    {
+      "name": "Stone Dog Statue"
+    },
+    {
+      "name": "Stone Pedestal Base"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Tall Boulder"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tormented Cloak"
+    },
+    {
+      "name": "Tunic of Impression"
+    },
+    {
+      "name": "Vestment of Fiction"
+    },
+    {
+      "name": "Vestment of the Eager"
+    },
+    {
+      "name": "Vigilant Sandals"
+    },
+    {
+      "name": "War Oni's Astute Tunic"
+    },
+    {
+      "name": "War Oni's Disillusioned Hat"
+    },
+    {
+      "name": "War Oni's Footwraps"
+    },
+    {
+      "name": "War Oni's Gripping Garments"
+    },
+    {
+      "name": "War Oni's Gripping Helm"
+    },
+    {
+      "name": "War Oni's Tempestial Circle"
+    },
+    {
+      "name": "War Torn Cowl of Awareness"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wooden Skeleton Key"
+    },
+    {
+      "name": "Wyldfire"
+    },
+    {
+      "name": "Yakedo's Abstract Shoes"
+    },
+    {
+      "name": "Yakedo's Boots"
+    },
+    {
+      "name": "Yakedo's Brainstorming Robe"
+    },
+    {
+      "name": "Yakedo's Cap of Premise"
+    },
+    {
+      "name": "Yakedo's Hypothetical Helm"
+    },
+    {
+      "name": "Yakedo's Hypothetical Robe"
+    },
+    {
+      "name": "Yakedo's Rational Cloak"
+    },
+    {
+      "name": "Yakedo's Sandals of Belief"
+    },
+    {
+      "name": "Yakedo's Shroud"
+    },
+    {
+      "name": "Yakedo's Slippers"
+    },
+    {
+      "name": "Zippy Tunic"
+    }
   ],
   "authors": "BartleBot",
   "options": [

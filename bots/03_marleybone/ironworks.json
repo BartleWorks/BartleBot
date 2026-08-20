@@ -8,228 +8,672 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "Affable Cloak",
-    "Animated Canine Cloak",
-    "Artificial Headwrap",
-    "Athame of Chivalry",
-    "Athame of the Sleuth",
-    "Ball of Yellow Yarn",
-    "Bandit's Footwraps",
-    "Banshee Onyx",
-    "Barkford",
-    "Biting Garment",
-    "Black Mantle",
-    "Bone",
-    "Boots of Fabrication",
-    "Boots of Heartache",
-    "Boots of Sparking Energy",
-    "Brady's Boots of the Cultured",
-    "Brady's Conventional Ring",
-    "Brady's Deck of the Kraken",
-    "Brady's Distressed Deck",
-    "Brady's Formal Slippers",
-    "Brady's Frigid Garment",
-    "Brady's Hat of Extinction",
-    "Brady's Hat of History",
-    "Brady's Hat of Reverence",
-    "Brady's Provincial Kris",
-    "Brady's Provincial Ring",
-    "Brady's Robe of the Cyclops",
-    "Brady's Solar Cowl",
-    "Brady's Staff of Intensity",
-    "Brady's Stylish Sandals",
-    "Bronze Gear",
-    "Cap of Expertise",
-    "Cap of Poise",
-    "Cap of Symmetry",
-    "Caramel Popcorn",
-    "Cat Burglar's Shoes",
-    "Charming Garment",
-    "Chipped Damage Sapphire +7",
-    "Chipped Defense Opal +7",
-    "Chipped Defense Opal +8",
-    "Chipped Health Opal +21",
-    "Chipped Health Opal +23",
-    "Chipped Mana Opal +10",
-    "Cloak of Civility",
-    "Comedian's Robe",
-    "Copper",
-    "Cowl of Diplomacy",
-    "Cracked Damage Opal +3",
-    "Crumpled Newspaper",
-    "Cyclops Peridot",
-    "Dandy Hat",
-    "Dawdle Opal",
-    "Debonair Garments",
-    "Dirk of Nobles",
-    "Distinct Slippers",
-    "Distinguished Robe",
-    "Distressing Garment",
-    "Dryad",
-    "Effective Opal",
-    "Empty Tin Cans",
-    "Enticing Robe",
-    "Evil Snowman",
-    "Evil Snowman",
-    "Evil Snowman (Tier 2b)",
-    "Evil Snowman Sapphire",
-    "Finely Finished Cloak",
-    "Finely Finished Mask",
-    "Fire Elf",
-    "Fishbones",
-    "Flawed Damage Opal +5",
-    "Flawed Health Opal +29",
-    "Flawed Health Opal +30",
-    "Flawed Resilient Opal +2%",
-    "Footwraps of Dreamland",
-    "Frost Beetle",
-    "Giant",
-    "Grandiose Headwraps",
-    "Gummy Bloodbat",
-    "Headwrap of the Affected",
-    "Headwraps of Preference",
-    "Healer Opal",
-    "Helm of Intolerance",
-    "High Statue Base",
-    "Ice-Proof Sapphire",
-    "Immolate",
-    "Iron",
-    "Jolting Boots",
-    "Kraken",
-    "Lead",
-    "Leather Straps",
-    "Life-Shot Jade",
-    "Lightning Bats",
-    "Lightning Bats (Tier 2b)",
-    "Locust Swarm",
-    "Locust Swarm Citrine",
-    "Marleybone Dance Theme",
-    "Marleybone Theme 1",
-    "Marleybonian Street Sign",
-    "Masterful Canine Cloak",
-    "Masterful Canine Cowl",
-    "Medium Fish",
-    "Medium Purple Rug",
-    "Metal Wall Lamp",
-    "Monstrous",
-    "Nailed Boards",
-    "Nails O'Leary's Footwraps",
-    "Nails O'Leary's Shoes",
-    "Nails' Band of Stasis",
-    "Nails' Debonair Slippers",
-    "Nails' Hat of Parity",
-    "Nails' Helm of the Clever",
-    "Nails' Medical Hat",
-    "Nails' Obligatory Sandals",
-    "Nails' Singed Headwrap",
-    "Nails' Singed Tunic",
-    "Nails' Smooth Spun Boots",
-    "Nails' Soothing Helm",
-    "Nails' Sophisticated Shoes",
-    "Nails' Tunic of Equation",
-    "Nails' Tunic of Reverence",
-    "Nails' Vestment of Invention",
-    "Nails' Vestment of the Mender",
-    "Nickel",
-    "O'Leary Jinxed Staff",
-    "O'Leary's Briney Amulet",
-    "O'Leary's Deck of Unicorns",
-    "O'Leary's Deck of Winter",
-    "O'Leary's Forest Band",
-    "O'Leary's Vestment",
-    "Old Smokey's Band",
-    "Old Smokey's Boots",
-    "Old Smokey's Dagger",
-    "Old Smokey's Footwraps",
-    "Old Smokey's Formal Cap",
-    "Old Smokey's Froggy Loop",
-    "Old Smokey's Hat",
-    "Old Smokey's Noble Hat",
-    "Old Smokey's Proficient Hat",
-    "Old Smokey's Vestment",
-    "Open Furnace",
-    "Pops O'Leary Shifty Dagger",
-    "Pops O'Leary Slippers",
-    "Pops O'Leary's Savvy Shoes",
-    "Pops O'Leary's Shoes",
-    "Pops O'Leary's Sun Visor",
-    "Pops' Band of Stability",
-    "Pops' Deck of Stasis",
-    "Pops' Headwrap of Equity",
-    "Pops' Icy Hat of the Feline",
-    "Pops' Puzzling Cap",
-    "Pops' Sandals of Expertise",
-    "Pops' Skillful Boots",
-    "Pops' Theraputic Hat",
-    "Pops' Tunic of Severity",
-    "Pops' Tunic of Subtlety",
-    "Pops' Uniform of Horrors",
-    "Pops' Vest of Invigoration",
-    "Pops's Band of the Mender",
-    "Power Enfused Blade",
-    "Power Play",
-    "Pyrite",
-    "Rainslicker",
-    "Redskin Peanut",
-    "Remarkable Robe",
-    "Ring of Rejuvenation",
-    "Robe of Paramount",
-    "Robe of Politeness",
-    "Robe of the Aristocrat",
-    "Sandals of Dedication",
-    "Sandstorm",
-    "Satyr",
-    "Scarab",
-    "Scorpion (Tier 2b)",
-    "Scrap Iron",
-    "Shoes of Bottled Anger",
-    "Shoes of Certainty",
-    "Shoes of Humanity",
-    "Shoes of the Breakneck",
-    "Short Roof Vent",
-    "Shroud of Predominance",
-    "Slippers of Tranquility",
-    "Smokey's Clever Dagger",
-    "Smokey's Cultured Cloak",
-    "Smokey's Emotional Shoes",
-    "Smokey's Genteel Vest",
-    "Smokey's Intense Band",
-    "Smokey's Pompous Cloak",
-    "Smokey's Pompous Dagger",
-    "Smokey's Robe of Integrity",
-    "Smokey's Sandals of Clarity",
-    "Smokey's Staff of the Sun",
-    "Smooth Spun Hat",
-    "Sneak's Frightful Hat",
-    "Sneak's Frosty Headwrap",
-    "Sneak's Robe of Parity",
-    "Sniper",
-    "Snow Serpent",
-    "Snow Serpent (Tier 2b)",
-    "Spider Silk",
-    "Spirit Armor",
-    "Sprite Jade",
-    "Square Watermelon",
-    "Stack of 3 Books",
-    "Staff of the Ice Wyvern",
-    "Stinky Cheese",
-    "Storm Shark",
-    "Storm Shark (Tier 2b)",
-    "Storm Shark Amethyst",
-    "Storm Trap",
-    "Sunbird",
-    "Sunbird (Tier 2b)",
-    "Sunbird Ruby",
-    "Tall Crate",
-    "The Sneak's Noble Shoes",
-    "The Sneak's Phobic Robe",
-    "The Sneak's Puzzling Robes",
-    "Thunder Snake",
-    "Tin",
-    "Tough",
-    "Urbane Robe",
-    "Vestment of Fright",
-    "Wheat Cracker"
+    {
+      "name": "Affable Cloak"
+    },
+    {
+      "name": "Animated Canine Cloak"
+    },
+    {
+      "name": "Artificial Headwrap"
+    },
+    {
+      "name": "Athame of Chivalry"
+    },
+    {
+      "name": "Athame of the Sleuth"
+    },
+    {
+      "name": "Ball of Yellow Yarn"
+    },
+    {
+      "name": "Bandit's Footwraps"
+    },
+    {
+      "name": "Banshee Onyx"
+    },
+    {
+      "name": "Barkford"
+    },
+    {
+      "name": "Biting Garment"
+    },
+    {
+      "name": "Black Mantle"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of Fabrication"
+    },
+    {
+      "name": "Boots of Heartache"
+    },
+    {
+      "name": "Boots of Sparking Energy"
+    },
+    {
+      "name": "Brady's Boots of the Cultured"
+    },
+    {
+      "name": "Brady's Conventional Ring"
+    },
+    {
+      "name": "Brady's Deck of the Kraken"
+    },
+    {
+      "name": "Brady's Distressed Deck"
+    },
+    {
+      "name": "Brady's Formal Slippers"
+    },
+    {
+      "name": "Brady's Frigid Garment"
+    },
+    {
+      "name": "Brady's Hat of Extinction"
+    },
+    {
+      "name": "Brady's Hat of History"
+    },
+    {
+      "name": "Brady's Hat of Reverence"
+    },
+    {
+      "name": "Brady's Provincial Kris"
+    },
+    {
+      "name": "Brady's Provincial Ring"
+    },
+    {
+      "name": "Brady's Robe of the Cyclops"
+    },
+    {
+      "name": "Brady's Solar Cowl"
+    },
+    {
+      "name": "Brady's Staff of Intensity"
+    },
+    {
+      "name": "Brady's Stylish Sandals"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cap of Expertise"
+    },
+    {
+      "name": "Cap of Poise"
+    },
+    {
+      "name": "Cap of Symmetry"
+    },
+    {
+      "name": "Caramel Popcorn"
+    },
+    {
+      "name": "Cat Burglar's Shoes"
+    },
+    {
+      "name": "Charming Garment"
+    },
+    {
+      "name": "Chipped Damage Sapphire +7"
+    },
+    {
+      "name": "Chipped Defense Opal +7"
+    },
+    {
+      "name": "Chipped Defense Opal +8"
+    },
+    {
+      "name": "Chipped Health Opal +21"
+    },
+    {
+      "name": "Chipped Health Opal +23"
+    },
+    {
+      "name": "Chipped Mana Opal +10"
+    },
+    {
+      "name": "Cloak of Civility"
+    },
+    {
+      "name": "Comedian's Robe"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cowl of Diplomacy"
+    },
+    {
+      "name": "Cracked Damage Opal +3"
+    },
+    {
+      "name": "Crumpled Newspaper"
+    },
+    {
+      "name": "Cyclops Peridot"
+    },
+    {
+      "name": "Dandy Hat"
+    },
+    {
+      "name": "Dawdle Opal"
+    },
+    {
+      "name": "Debonair Garments"
+    },
+    {
+      "name": "Dirk of Nobles"
+    },
+    {
+      "name": "Distinct Slippers"
+    },
+    {
+      "name": "Distinguished Robe"
+    },
+    {
+      "name": "Distressing Garment"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Effective Opal"
+    },
+    {
+      "name": "Empty Tin Cans"
+    },
+    {
+      "name": "Enticing Robe"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman (Tier 2b)"
+    },
+    {
+      "name": "Evil Snowman Sapphire"
+    },
+    {
+      "name": "Finely Finished Cloak"
+    },
+    {
+      "name": "Finely Finished Mask"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fishbones"
+    },
+    {
+      "name": "Flawed Damage Opal +5"
+    },
+    {
+      "name": "Flawed Health Opal +29"
+    },
+    {
+      "name": "Flawed Health Opal +30"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%"
+    },
+    {
+      "name": "Footwraps of Dreamland"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Giant"
+    },
+    {
+      "name": "Grandiose Headwraps"
+    },
+    {
+      "name": "Gummy Bloodbat"
+    },
+    {
+      "name": "Headwrap of the Affected"
+    },
+    {
+      "name": "Headwraps of Preference"
+    },
+    {
+      "name": "Healer Opal"
+    },
+    {
+      "name": "Helm of Intolerance"
+    },
+    {
+      "name": "High Statue Base"
+    },
+    {
+      "name": "Ice-Proof Sapphire"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Jolting Boots"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Life-Shot Jade"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Lightning Bats (Tier 2b)"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Locust Swarm Citrine"
+    },
+    {
+      "name": "Marleybone Dance Theme"
+    },
+    {
+      "name": "Marleybone Theme 1"
+    },
+    {
+      "name": "Marleybonian Street Sign"
+    },
+    {
+      "name": "Masterful Canine Cloak"
+    },
+    {
+      "name": "Masterful Canine Cowl"
+    },
+    {
+      "name": "Medium Fish"
+    },
+    {
+      "name": "Medium Purple Rug"
+    },
+    {
+      "name": "Metal Wall Lamp"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "Nailed Boards"
+    },
+    {
+      "name": "Nails O'Leary's Footwraps"
+    },
+    {
+      "name": "Nails O'Leary's Shoes"
+    },
+    {
+      "name": "Nails' Band of Stasis"
+    },
+    {
+      "name": "Nails' Debonair Slippers"
+    },
+    {
+      "name": "Nails' Hat of Parity"
+    },
+    {
+      "name": "Nails' Helm of the Clever"
+    },
+    {
+      "name": "Nails' Medical Hat"
+    },
+    {
+      "name": "Nails' Obligatory Sandals"
+    },
+    {
+      "name": "Nails' Singed Headwrap"
+    },
+    {
+      "name": "Nails' Singed Tunic"
+    },
+    {
+      "name": "Nails' Smooth Spun Boots"
+    },
+    {
+      "name": "Nails' Soothing Helm"
+    },
+    {
+      "name": "Nails' Sophisticated Shoes"
+    },
+    {
+      "name": "Nails' Tunic of Equation"
+    },
+    {
+      "name": "Nails' Tunic of Reverence"
+    },
+    {
+      "name": "Nails' Vestment of Invention"
+    },
+    {
+      "name": "Nails' Vestment of the Mender"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "O'Leary Jinxed Staff"
+    },
+    {
+      "name": "O'Leary's Briney Amulet"
+    },
+    {
+      "name": "O'Leary's Deck of Unicorns"
+    },
+    {
+      "name": "O'Leary's Deck of Winter"
+    },
+    {
+      "name": "O'Leary's Forest Band"
+    },
+    {
+      "name": "O'Leary's Vestment"
+    },
+    {
+      "name": "Old Smokey's Band"
+    },
+    {
+      "name": "Old Smokey's Boots"
+    },
+    {
+      "name": "Old Smokey's Dagger"
+    },
+    {
+      "name": "Old Smokey's Footwraps"
+    },
+    {
+      "name": "Old Smokey's Formal Cap"
+    },
+    {
+      "name": "Old Smokey's Froggy Loop"
+    },
+    {
+      "name": "Old Smokey's Hat"
+    },
+    {
+      "name": "Old Smokey's Noble Hat"
+    },
+    {
+      "name": "Old Smokey's Proficient Hat"
+    },
+    {
+      "name": "Old Smokey's Vestment"
+    },
+    {
+      "name": "Open Furnace"
+    },
+    {
+      "name": "Pops O'Leary Shifty Dagger"
+    },
+    {
+      "name": "Pops O'Leary Slippers"
+    },
+    {
+      "name": "Pops O'Leary's Savvy Shoes"
+    },
+    {
+      "name": "Pops O'Leary's Shoes"
+    },
+    {
+      "name": "Pops O'Leary's Sun Visor"
+    },
+    {
+      "name": "Pops' Band of Stability"
+    },
+    {
+      "name": "Pops' Deck of Stasis"
+    },
+    {
+      "name": "Pops' Headwrap of Equity"
+    },
+    {
+      "name": "Pops' Icy Hat of the Feline"
+    },
+    {
+      "name": "Pops' Puzzling Cap"
+    },
+    {
+      "name": "Pops' Sandals of Expertise"
+    },
+    {
+      "name": "Pops' Skillful Boots"
+    },
+    {
+      "name": "Pops' Theraputic Hat"
+    },
+    {
+      "name": "Pops' Tunic of Severity"
+    },
+    {
+      "name": "Pops' Tunic of Subtlety"
+    },
+    {
+      "name": "Pops' Uniform of Horrors"
+    },
+    {
+      "name": "Pops' Vest of Invigoration"
+    },
+    {
+      "name": "Pops's Band of the Mender"
+    },
+    {
+      "name": "Power Enfused Blade"
+    },
+    {
+      "name": "Power Play"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Rainslicker"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Remarkable Robe"
+    },
+    {
+      "name": "Ring of Rejuvenation"
+    },
+    {
+      "name": "Robe of Paramount"
+    },
+    {
+      "name": "Robe of Politeness"
+    },
+    {
+      "name": "Robe of the Aristocrat"
+    },
+    {
+      "name": "Sandals of Dedication"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Satyr"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scorpion (Tier 2b)"
+    },
+    {
+      "name": "Scrap Iron"
+    },
+    {
+      "name": "Shoes of Bottled Anger"
+    },
+    {
+      "name": "Shoes of Certainty"
+    },
+    {
+      "name": "Shoes of Humanity"
+    },
+    {
+      "name": "Shoes of the Breakneck"
+    },
+    {
+      "name": "Short Roof Vent"
+    },
+    {
+      "name": "Shroud of Predominance"
+    },
+    {
+      "name": "Slippers of Tranquility"
+    },
+    {
+      "name": "Smokey's Clever Dagger"
+    },
+    {
+      "name": "Smokey's Cultured Cloak"
+    },
+    {
+      "name": "Smokey's Emotional Shoes"
+    },
+    {
+      "name": "Smokey's Genteel Vest"
+    },
+    {
+      "name": "Smokey's Intense Band"
+    },
+    {
+      "name": "Smokey's Pompous Cloak"
+    },
+    {
+      "name": "Smokey's Pompous Dagger"
+    },
+    {
+      "name": "Smokey's Robe of Integrity"
+    },
+    {
+      "name": "Smokey's Sandals of Clarity"
+    },
+    {
+      "name": "Smokey's Staff of the Sun"
+    },
+    {
+      "name": "Smooth Spun Hat"
+    },
+    {
+      "name": "Sneak's Frightful Hat"
+    },
+    {
+      "name": "Sneak's Frosty Headwrap"
+    },
+    {
+      "name": "Sneak's Robe of Parity"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Snow Serpent (Tier 2b)"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Sprite Jade"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Stack of 3 Books"
+    },
+    {
+      "name": "Staff of the Ice Wyvern"
+    },
+    {
+      "name": "Stinky Cheese"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)"
+    },
+    {
+      "name": "Storm Shark Amethyst"
+    },
+    {
+      "name": "Storm Trap"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunbird (Tier 2b)"
+    },
+    {
+      "name": "Sunbird Ruby"
+    },
+    {
+      "name": "Tall Crate"
+    },
+    {
+      "name": "The Sneak's Noble Shoes"
+    },
+    {
+      "name": "The Sneak's Phobic Robe"
+    },
+    {
+      "name": "The Sneak's Puzzling Robes"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Urbane Robe"
+    },
+    {
+      "name": "Vestment of Fright"
+    },
+    {
+      "name": "Wheat Cracker"
+    }
   ],
   "authors": "BartleBot",
   "options": [

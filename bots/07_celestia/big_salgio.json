@@ -9,269 +9,795 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Celestia",
   "drops": [
-    "Atavistic Balance Cards",
-    "Atavistic Balance Staff",
-    "Atavistic Death Cards",
-    "Atavistic Death Staff",
-    "Atavistic Fire Cards",
-    "Atavistic Fire Tiki",
-    "Atavistic Ice Cards",
-    "Atavistic Ice Trident",
-    "Atavistic Life Cards",
-    "Atavistic Life Staff",
-    "Atavistic Myth Cards",
-    "Atavistic Myth Spyglass",
-    "Atavistic Storm Cards",
-    "Atavistic Storm Trident",
-    "Balance Crushing Pin (60, Death)",
-    "Balance Crushing Pin (60, Fire)",
-    "Balance Crushing Pin (60, Ice)",
-    "Balance Crushing Pin (60, Life)",
-    "Balance Crushing Pin (60, Myth)",
-    "Balance Crushing Pin (60, Storm)",
-    "Balance Disabling Pin (60, Death)",
-    "Balance Disabling Pin (60, Fire)",
-    "Balance Disabling Pin (60, Ice)",
-    "Balance Disabling Pin (60, Life)",
-    "Balance Disabling Pin (60, Myth)",
-    "Balance Disabling Pin (60, Storm)",
-    "Balance Punishing Pin (50, Death)",
-    "Balance Punishing Pin (50, Fire)",
-    "Balance Punishing Pin (50, Ice)",
-    "Balance Punishing Pin (50, Life)",
-    "Balance Punishing Pin (50, Myth)",
-    "Balance Punishing Pin (50, Storm)",
-    "Balance Punishing Pin (60, Death)",
-    "Balance Punishing Pin (60, Ice)",
-    "Balance Punishing Pin (60, Myth)",
-    "Banshee",
-    "Blemished Damage Amethyst +12",
-    "Blemished Damage Jade +12",
-    "Blight Hound",
-    "Bygone Balance Cards",
-    "Bygone Balance Tiki",
-    "Bygone Death Cards",
-    "Bygone Death Tiki",
-    "Bygone Fire Cards",
-    "Bygone Fire Tiki",
-    "Bygone Ice Cards",
-    "Bygone Ice Tiki",
-    "Bygone Life Cards",
-    "Bygone Life Tiki",
-    "Bygone Myth Cards",
-    "Bygone Myth Tiki",
-    "Bygone Storm Cards",
-    "Bygone Storm Tiki",
-    "Cauliflowers",
-    "Centaur",
-    "Cobalt",
-    "Colossus",
-    "Cyclops",
-    "Cyclops Minion",
-    "Deadly Fly Trap",
-    "Death Crushing Pin (60, Balance)",
-    "Death Crushing Pin (60, Fire)",
-    "Death Crushing Pin (60, Ice)",
-    "Death Crushing Pin (60, Life)",
-    "Death Crushing Pin (60, Myth)",
-    "Death Crushing Pin (60, Storm)",
-    "Death Disabling Pin (60, Balance)",
-    "Death Disabling Pin (60, Fire)",
-    "Death Disabling Pin (60, Ice)",
-    "Death Disabling Pin (60, Life)",
-    "Death Disabling Pin (60, Myth)",
-    "Death Disabling Pin (60, Storm)",
-    "Death Punishing Pin (50, Balance)",
-    "Death Punishing Pin (50, Fire)",
-    "Death Punishing Pin (50, Ice)",
-    "Death Punishing Pin (50, Life)",
-    "Death Punishing Pin (50, Myth)",
-    "Death Punishing Pin (50, Storm)",
-    "Death Punishing Pin (60, Balance)",
-    "Death Punishing Pin (60, Ice)",
-    "Death Punishing Pin (60, Myth)",
-    "Delicious Cookie",
-    "Dull Critical Opal +2",
-    "Earth Walker",
-    "Engineer's Knife",
-    "Ethereal Athame",
-    "Evil Snowman",
-    "Facade of the Firestar",
-    "Fire Crushing Pin (60, Balance)",
-    "Fire Crushing Pin (60, Death)",
-    "Fire Crushing Pin (60, Ice)",
-    "Fire Crushing Pin (60, Life)",
-    "Fire Crushing Pin (60, Myth)",
-    "Fire Crushing Pin (60, Storm)",
-    "Fire Disabling Pin (60, Balance)",
-    "Fire Disabling Pin (60, Death)",
-    "Fire Disabling Pin (60, Ice)",
-    "Fire Disabling Pin (60, Life)",
-    "Fire Disabling Pin (60, Myth)",
-    "Fire Disabling Pin (60, Storm)",
-    "Fire Dragon",
-    "Fire Punishing Pin (50, Balance)",
-    "Fire Punishing Pin (50, Death)",
-    "Fire Punishing Pin (50, Ice)",
-    "Fire Punishing Pin (50, Life)",
-    "Fire Punishing Pin (50, Myth)",
-    "Fire Punishing Pin (50, Storm)",
-    "Fire Punishing Pin (60, Balance)",
-    "Fire Punishing Pin (60, Death)",
-    "Fire Punishing Pin (60, Ice)",
-    "Fire Punishing Pin (60, Myth)",
-    "Fire Trap",
-    "Fish Fin",
-    "Fish on a Vine",
-    "Flaming Dagger",
-    "Forest Lord",
-    "Frost Giant",
-    "Gale Force Greaves",
-    "Gearhead Destroyer",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Helephant",
-    "Hydra",
-    "Ice Crushing Pin (60, Balance)",
-    "Ice Crushing Pin (60, Death)",
-    "Ice Crushing Pin (60, Fire)",
-    "Ice Crushing Pin (60, Life)",
-    "Ice Crushing Pin (60, Myth)",
-    "Ice Crushing Pin (60, Storm)",
-    "Ice Disabling Pin (60, Balance)",
-    "Ice Disabling Pin (60, Death)",
-    "Ice Disabling Pin (60, Fire)",
-    "Ice Disabling Pin (60, Life)",
-    "Ice Disabling Pin (60, Myth)",
-    "Ice Disabling Pin (60, Storm)",
-    "Ice Punishing Pin (50, Balance)",
-    "Ice Punishing Pin (50, Death)",
-    "Ice Punishing Pin (50, Fire)",
-    "Ice Punishing Pin (50, Life)",
-    "Ice Punishing Pin (50, Myth)",
-    "Ice Punishing Pin (50, Storm)",
-    "Ice Punishing Pin (60, Balance)",
-    "Ice Punishing Pin (60, Death)",
-    "Ice Punishing Pin (60, Myth)",
-    "Ice Wyvern",
-    "Immolate",
-    "Jewel of the Dragons",
-    "Kraken",
-    "Life Crushing Pin (60, Balance)",
-    "Life Crushing Pin (60, Death)",
-    "Life Crushing Pin (60, Fire)",
-    "Life Crushing Pin (60, Ice)",
-    "Life Crushing Pin (60, Myth)",
-    "Life Crushing Pin (60, Storm)",
-    "Life Disabling Pin (60, Balance)",
-    "Life Disabling Pin (60, Death)",
-    "Life Disabling Pin (60, Fire)",
-    "Life Disabling Pin (60, Ice)",
-    "Life Disabling Pin (60, Myth)",
-    "Life Disabling Pin (60, Storm)",
-    "Life Punishing Pin (50, Balance)",
-    "Life Punishing Pin (50, Death)",
-    "Life Punishing Pin (50, Fire)",
-    "Life Punishing Pin (50, Ice)",
-    "Life Punishing Pin (50, Myth)",
-    "Life Punishing Pin (50, Storm)",
-    "Life Punishing Pin (60, Balance)",
-    "Life Punishing Pin (60, Death)",
-    "Life Punishing Pin (60, Ice)",
-    "Life Punishing Pin (60, Myth)",
-    "Lifeforce Cover",
-    "Locust Swarm",
-    "Maelstrom Snap Dragon",
-    "Mass Life Prism Jade",
-    "Minotaur",
-    "Monstrous",
-    "Myth Crushing Pin (60, Balance)",
-    "Myth Crushing Pin (60, Death)",
-    "Myth Crushing Pin (60, Fire)",
-    "Myth Crushing Pin (60, Ice)",
-    "Myth Crushing Pin (60, Life)",
-    "Myth Crushing Pin (60, Storm)",
-    "Myth Disabling Pin (60, Balance)",
-    "Myth Disabling Pin (60, Death)",
-    "Myth Disabling Pin (60, Fire)",
-    "Myth Disabling Pin (60, Ice)",
-    "Myth Disabling Pin (60, Life)",
-    "Myth Disabling Pin (60, Storm)",
-    "Myth Punishing Pin (50, Balance)",
-    "Myth Punishing Pin (50, Death)",
-    "Myth Punishing Pin (50, Fire)",
-    "Myth Punishing Pin (50, Ice)",
-    "Myth Punishing Pin (50, Life)",
-    "Myth Punishing Pin (50, Storm)",
-    "Myth Punishing Pin (60, Balance)",
-    "Myth Punishing Pin (60, Death)",
-    "Myth Punishing Pin (60, Ice)",
-    "Nature's Wrath",
-    "Nickel",
-    "Orthrus",
-    "Phoenix",
-    "Piercemonger Peridot",
-    "Pink Dandelion",
-    "Plain Blocking Opal +3",
-    "Plain Defense Opal +16",
-    "Power Nova",
-    "Power-Taker Ruby",
-    "Pyrosaurus Rex Ruby",
-    "Salgio's Loop of Lava",
-    "Salgio's Tinder Cloak",
-    "Sandstone",
-    "Scales",
-    "Scarecrow",
-    "Secret Shoes",
-    "Seraph",
-    "Shark Tooth",
-    "Silver Trumpet Vine",
-    "Skeletal Pirate",
-    "Sniper",
-    "Spectral Blast",
-    "Spirit Armor Jade",
-    "Star Wisher's Robe",
-    "Steel",
-    "Stone Colossus",
-    "Storm Crushing Pin (60, Balance)",
-    "Storm Crushing Pin (60, Death)",
-    "Storm Crushing Pin (60, Fire)",
-    "Storm Crushing Pin (60, Ice)",
-    "Storm Crushing Pin (60, Life)",
-    "Storm Crushing Pin (60, Myth)",
-    "Storm Disabling Pin (60, Balance)",
-    "Storm Disabling Pin (60, Death)",
-    "Storm Disabling Pin (60, Fire)",
-    "Storm Disabling Pin (60, Ice)",
-    "Storm Disabling Pin (60, Life)",
-    "Storm Disabling Pin (60, Myth)",
-    "Storm Lord",
-    "Storm Punishing Pin (50, Balance)",
-    "Storm Punishing Pin (50, Death)",
-    "Storm Punishing Pin (50, Fire)",
-    "Storm Punishing Pin (50, Ice)",
-    "Storm Punishing Pin (50, Life)",
-    "Storm Punishing Pin (50, Myth)",
-    "Storm Punishing Pin (60, Balance)",
-    "Storm Punishing Pin (60, Death)",
-    "Storm Punishing Pin (60, Ice)",
-    "Storm Punishing Pin (60, Myth)",
-    "Storm Shark",
-    "Stormy Cover",
-    "Stormzilla",
-    "Strawberry Cupcake",
-    "Sublime Band",
-    "Submarine Sandwich",
-    "Sunbird",
-    "Sunstone",
-    "Tall Tiki Totem",
-    "Tin",
-    "Triton",
-    "Vampire",
-    "Vengeance",
-    "Vengeance Talent Opal",
-    "Vial of Stormy Seas",
-    "Wraith"
+    {
+      "name": "Atavistic Balance Cards"
+    },
+    {
+      "name": "Atavistic Balance Staff"
+    },
+    {
+      "name": "Atavistic Death Cards"
+    },
+    {
+      "name": "Atavistic Death Staff"
+    },
+    {
+      "name": "Atavistic Fire Cards"
+    },
+    {
+      "name": "Atavistic Fire Tiki"
+    },
+    {
+      "name": "Atavistic Ice Cards"
+    },
+    {
+      "name": "Atavistic Ice Trident"
+    },
+    {
+      "name": "Atavistic Life Cards"
+    },
+    {
+      "name": "Atavistic Life Staff"
+    },
+    {
+      "name": "Atavistic Myth Cards"
+    },
+    {
+      "name": "Atavistic Myth Spyglass"
+    },
+    {
+      "name": "Atavistic Storm Cards"
+    },
+    {
+      "name": "Atavistic Storm Trident"
+    },
+    {
+      "name": "Balance Crushing Pin (60, Death)"
+    },
+    {
+      "name": "Balance Crushing Pin (60, Fire)"
+    },
+    {
+      "name": "Balance Crushing Pin (60, Ice)"
+    },
+    {
+      "name": "Balance Crushing Pin (60, Life)"
+    },
+    {
+      "name": "Balance Crushing Pin (60, Myth)"
+    },
+    {
+      "name": "Balance Crushing Pin (60, Storm)"
+    },
+    {
+      "name": "Balance Disabling Pin (60, Death)"
+    },
+    {
+      "name": "Balance Disabling Pin (60, Fire)"
+    },
+    {
+      "name": "Balance Disabling Pin (60, Ice)"
+    },
+    {
+      "name": "Balance Disabling Pin (60, Life)"
+    },
+    {
+      "name": "Balance Disabling Pin (60, Myth)"
+    },
+    {
+      "name": "Balance Disabling Pin (60, Storm)"
+    },
+    {
+      "name": "Balance Punishing Pin (50, Death)"
+    },
+    {
+      "name": "Balance Punishing Pin (50, Fire)"
+    },
+    {
+      "name": "Balance Punishing Pin (50, Ice)"
+    },
+    {
+      "name": "Balance Punishing Pin (50, Life)"
+    },
+    {
+      "name": "Balance Punishing Pin (50, Myth)"
+    },
+    {
+      "name": "Balance Punishing Pin (50, Storm)"
+    },
+    {
+      "name": "Balance Punishing Pin (60, Death)"
+    },
+    {
+      "name": "Balance Punishing Pin (60, Ice)"
+    },
+    {
+      "name": "Balance Punishing Pin (60, Myth)"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Blemished Damage Amethyst +12"
+    },
+    {
+      "name": "Blemished Damage Jade +12"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Bygone Balance Cards"
+    },
+    {
+      "name": "Bygone Balance Tiki"
+    },
+    {
+      "name": "Bygone Death Cards"
+    },
+    {
+      "name": "Bygone Death Tiki"
+    },
+    {
+      "name": "Bygone Fire Cards"
+    },
+    {
+      "name": "Bygone Fire Tiki"
+    },
+    {
+      "name": "Bygone Ice Cards"
+    },
+    {
+      "name": "Bygone Ice Tiki"
+    },
+    {
+      "name": "Bygone Life Cards"
+    },
+    {
+      "name": "Bygone Life Tiki"
+    },
+    {
+      "name": "Bygone Myth Cards"
+    },
+    {
+      "name": "Bygone Myth Tiki"
+    },
+    {
+      "name": "Bygone Storm Cards"
+    },
+    {
+      "name": "Bygone Storm Tiki"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Cyclops Minion"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Death Crushing Pin (60, Balance)"
+    },
+    {
+      "name": "Death Crushing Pin (60, Fire)"
+    },
+    {
+      "name": "Death Crushing Pin (60, Ice)"
+    },
+    {
+      "name": "Death Crushing Pin (60, Life)"
+    },
+    {
+      "name": "Death Crushing Pin (60, Myth)"
+    },
+    {
+      "name": "Death Crushing Pin (60, Storm)"
+    },
+    {
+      "name": "Death Disabling Pin (60, Balance)"
+    },
+    {
+      "name": "Death Disabling Pin (60, Fire)"
+    },
+    {
+      "name": "Death Disabling Pin (60, Ice)"
+    },
+    {
+      "name": "Death Disabling Pin (60, Life)"
+    },
+    {
+      "name": "Death Disabling Pin (60, Myth)"
+    },
+    {
+      "name": "Death Disabling Pin (60, Storm)"
+    },
+    {
+      "name": "Death Punishing Pin (50, Balance)"
+    },
+    {
+      "name": "Death Punishing Pin (50, Fire)"
+    },
+    {
+      "name": "Death Punishing Pin (50, Ice)"
+    },
+    {
+      "name": "Death Punishing Pin (50, Life)"
+    },
+    {
+      "name": "Death Punishing Pin (50, Myth)"
+    },
+    {
+      "name": "Death Punishing Pin (50, Storm)"
+    },
+    {
+      "name": "Death Punishing Pin (60, Balance)"
+    },
+    {
+      "name": "Death Punishing Pin (60, Ice)"
+    },
+    {
+      "name": "Death Punishing Pin (60, Myth)"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Dull Critical Opal +2"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Engineer's Knife"
+    },
+    {
+      "name": "Ethereal Athame"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Facade of the Firestar"
+    },
+    {
+      "name": "Fire Crushing Pin (60, Balance)"
+    },
+    {
+      "name": "Fire Crushing Pin (60, Death)"
+    },
+    {
+      "name": "Fire Crushing Pin (60, Ice)"
+    },
+    {
+      "name": "Fire Crushing Pin (60, Life)"
+    },
+    {
+      "name": "Fire Crushing Pin (60, Myth)"
+    },
+    {
+      "name": "Fire Crushing Pin (60, Storm)"
+    },
+    {
+      "name": "Fire Disabling Pin (60, Balance)"
+    },
+    {
+      "name": "Fire Disabling Pin (60, Death)"
+    },
+    {
+      "name": "Fire Disabling Pin (60, Ice)"
+    },
+    {
+      "name": "Fire Disabling Pin (60, Life)"
+    },
+    {
+      "name": "Fire Disabling Pin (60, Myth)"
+    },
+    {
+      "name": "Fire Disabling Pin (60, Storm)"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fire Punishing Pin (50, Balance)"
+    },
+    {
+      "name": "Fire Punishing Pin (50, Death)"
+    },
+    {
+      "name": "Fire Punishing Pin (50, Ice)"
+    },
+    {
+      "name": "Fire Punishing Pin (50, Life)"
+    },
+    {
+      "name": "Fire Punishing Pin (50, Myth)"
+    },
+    {
+      "name": "Fire Punishing Pin (50, Storm)"
+    },
+    {
+      "name": "Fire Punishing Pin (60, Balance)"
+    },
+    {
+      "name": "Fire Punishing Pin (60, Death)"
+    },
+    {
+      "name": "Fire Punishing Pin (60, Ice)"
+    },
+    {
+      "name": "Fire Punishing Pin (60, Myth)"
+    },
+    {
+      "name": "Fire Trap"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Flaming Dagger"
+    },
+    {
+      "name": "Forest Lord"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Gale Force Greaves"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Crushing Pin (60, Balance)"
+    },
+    {
+      "name": "Ice Crushing Pin (60, Death)"
+    },
+    {
+      "name": "Ice Crushing Pin (60, Fire)"
+    },
+    {
+      "name": "Ice Crushing Pin (60, Life)"
+    },
+    {
+      "name": "Ice Crushing Pin (60, Myth)"
+    },
+    {
+      "name": "Ice Crushing Pin (60, Storm)"
+    },
+    {
+      "name": "Ice Disabling Pin (60, Balance)"
+    },
+    {
+      "name": "Ice Disabling Pin (60, Death)"
+    },
+    {
+      "name": "Ice Disabling Pin (60, Fire)"
+    },
+    {
+      "name": "Ice Disabling Pin (60, Life)"
+    },
+    {
+      "name": "Ice Disabling Pin (60, Myth)"
+    },
+    {
+      "name": "Ice Disabling Pin (60, Storm)"
+    },
+    {
+      "name": "Ice Punishing Pin (50, Balance)"
+    },
+    {
+      "name": "Ice Punishing Pin (50, Death)"
+    },
+    {
+      "name": "Ice Punishing Pin (50, Fire)"
+    },
+    {
+      "name": "Ice Punishing Pin (50, Life)"
+    },
+    {
+      "name": "Ice Punishing Pin (50, Myth)"
+    },
+    {
+      "name": "Ice Punishing Pin (50, Storm)"
+    },
+    {
+      "name": "Ice Punishing Pin (60, Balance)"
+    },
+    {
+      "name": "Ice Punishing Pin (60, Death)"
+    },
+    {
+      "name": "Ice Punishing Pin (60, Myth)"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Jewel of the Dragons"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Life Crushing Pin (60, Balance)"
+    },
+    {
+      "name": "Life Crushing Pin (60, Death)"
+    },
+    {
+      "name": "Life Crushing Pin (60, Fire)"
+    },
+    {
+      "name": "Life Crushing Pin (60, Ice)"
+    },
+    {
+      "name": "Life Crushing Pin (60, Myth)"
+    },
+    {
+      "name": "Life Crushing Pin (60, Storm)"
+    },
+    {
+      "name": "Life Disabling Pin (60, Balance)"
+    },
+    {
+      "name": "Life Disabling Pin (60, Death)"
+    },
+    {
+      "name": "Life Disabling Pin (60, Fire)"
+    },
+    {
+      "name": "Life Disabling Pin (60, Ice)"
+    },
+    {
+      "name": "Life Disabling Pin (60, Myth)"
+    },
+    {
+      "name": "Life Disabling Pin (60, Storm)"
+    },
+    {
+      "name": "Life Punishing Pin (50, Balance)"
+    },
+    {
+      "name": "Life Punishing Pin (50, Death)"
+    },
+    {
+      "name": "Life Punishing Pin (50, Fire)"
+    },
+    {
+      "name": "Life Punishing Pin (50, Ice)"
+    },
+    {
+      "name": "Life Punishing Pin (50, Myth)"
+    },
+    {
+      "name": "Life Punishing Pin (50, Storm)"
+    },
+    {
+      "name": "Life Punishing Pin (60, Balance)"
+    },
+    {
+      "name": "Life Punishing Pin (60, Death)"
+    },
+    {
+      "name": "Life Punishing Pin (60, Ice)"
+    },
+    {
+      "name": "Life Punishing Pin (60, Myth)"
+    },
+    {
+      "name": "Lifeforce Cover"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Mass Life Prism Jade"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "Myth Crushing Pin (60, Balance)"
+    },
+    {
+      "name": "Myth Crushing Pin (60, Death)"
+    },
+    {
+      "name": "Myth Crushing Pin (60, Fire)"
+    },
+    {
+      "name": "Myth Crushing Pin (60, Ice)"
+    },
+    {
+      "name": "Myth Crushing Pin (60, Life)"
+    },
+    {
+      "name": "Myth Crushing Pin (60, Storm)"
+    },
+    {
+      "name": "Myth Disabling Pin (60, Balance)"
+    },
+    {
+      "name": "Myth Disabling Pin (60, Death)"
+    },
+    {
+      "name": "Myth Disabling Pin (60, Fire)"
+    },
+    {
+      "name": "Myth Disabling Pin (60, Ice)"
+    },
+    {
+      "name": "Myth Disabling Pin (60, Life)"
+    },
+    {
+      "name": "Myth Disabling Pin (60, Storm)"
+    },
+    {
+      "name": "Myth Punishing Pin (50, Balance)"
+    },
+    {
+      "name": "Myth Punishing Pin (50, Death)"
+    },
+    {
+      "name": "Myth Punishing Pin (50, Fire)"
+    },
+    {
+      "name": "Myth Punishing Pin (50, Ice)"
+    },
+    {
+      "name": "Myth Punishing Pin (50, Life)"
+    },
+    {
+      "name": "Myth Punishing Pin (50, Storm)"
+    },
+    {
+      "name": "Myth Punishing Pin (60, Balance)"
+    },
+    {
+      "name": "Myth Punishing Pin (60, Death)"
+    },
+    {
+      "name": "Myth Punishing Pin (60, Ice)"
+    },
+    {
+      "name": "Nature's Wrath"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Piercemonger Peridot"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Plain Blocking Opal +3"
+    },
+    {
+      "name": "Plain Defense Opal +16"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Power-Taker Ruby"
+    },
+    {
+      "name": "Pyrosaurus Rex Ruby"
+    },
+    {
+      "name": "Salgio's Loop of Lava"
+    },
+    {
+      "name": "Salgio's Tinder Cloak"
+    },
+    {
+      "name": "Sandstone"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Secret Shoes"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Shark Tooth"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Spirit Armor Jade"
+    },
+    {
+      "name": "Star Wisher's Robe"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storm Crushing Pin (60, Balance)"
+    },
+    {
+      "name": "Storm Crushing Pin (60, Death)"
+    },
+    {
+      "name": "Storm Crushing Pin (60, Fire)"
+    },
+    {
+      "name": "Storm Crushing Pin (60, Ice)"
+    },
+    {
+      "name": "Storm Crushing Pin (60, Life)"
+    },
+    {
+      "name": "Storm Crushing Pin (60, Myth)"
+    },
+    {
+      "name": "Storm Disabling Pin (60, Balance)"
+    },
+    {
+      "name": "Storm Disabling Pin (60, Death)"
+    },
+    {
+      "name": "Storm Disabling Pin (60, Fire)"
+    },
+    {
+      "name": "Storm Disabling Pin (60, Ice)"
+    },
+    {
+      "name": "Storm Disabling Pin (60, Life)"
+    },
+    {
+      "name": "Storm Disabling Pin (60, Myth)"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm Punishing Pin (50, Balance)"
+    },
+    {
+      "name": "Storm Punishing Pin (50, Death)"
+    },
+    {
+      "name": "Storm Punishing Pin (50, Fire)"
+    },
+    {
+      "name": "Storm Punishing Pin (50, Ice)"
+    },
+    {
+      "name": "Storm Punishing Pin (50, Life)"
+    },
+    {
+      "name": "Storm Punishing Pin (50, Myth)"
+    },
+    {
+      "name": "Storm Punishing Pin (60, Balance)"
+    },
+    {
+      "name": "Storm Punishing Pin (60, Death)"
+    },
+    {
+      "name": "Storm Punishing Pin (60, Ice)"
+    },
+    {
+      "name": "Storm Punishing Pin (60, Myth)"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Stormy Cover"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Sublime Band"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Tall Tiki Totem"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vengeance"
+    },
+    {
+      "name": "Vengeance Talent Opal"
+    },
+    {
+      "name": "Vial of Stormy Seas"
+    },
+    {
+      "name": "Wraith"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -8,238 +8,702 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Wallaru",
   "drops": [
-    "Amazing Accurate Amethyst +15%",
-    "Amazing Accurate Citrine +15%",
-    "Amazing Accurate Jade +15%",
-    "Amazing Accurate Onyx +15%",
-    "Amazing Accurate Peridot +15%",
-    "Amazing Accurate Sapphire +15%",
-    "Amazing Archmastery Opal +14 (Tear)",
-    "Amazing Health Opal +136",
-    "Amazing Health Opal +137",
-    "Amazing Health Opal +139",
-    "Amazing Health Opal +140",
-    "Amazing Health Opal +143",
-    "Amazing Health Opal +144",
-    "Amazing Health Opal +145",
-    "Amazing Mana Opal +58",
-    "Amazing Mana Opal +59",
-    "Arcticzilla",
-    "Ashen Bones",
-    "Balance Crushing Pin (150, Storm)",
-    "Balance Crushing Pin (160, Life)",
-    "Balance Crushing Pin (160, Storm)",
-    "Balance Disabling Pin (150, Storm)",
-    "Balance Disabling Pin (160, Storm)",
-    "Balance Punishing Pin (150, Storm)",
-    "Balance Punishing Pin (160, Fire)",
-    "Balance Punishing Pin (160, Storm)",
-    "Balanceblade",
-    "Banshee (Tier 2b)",
-    "Barbarian's Saga",
-    "Bell Pepper Steak",
-    "Black Sun Seeds",
-    "Blast Off!",
-    "Blood Bat (Tier 2b)",
-    "Bone",
-    "Brass",
-    "Bunyip's Rage",
-    "Cleanse Charm",
-    "Cobalt",
-    "Copper",
-    "Count Croakula",
-    "Cracker",
-    "Cyclops (Tier 2b)",
-    "Dark & Stormy",
-    "Dark Sprite (Tier 2b)",
-    "Deadly Minotaur",
-    "Death Crushing Pin (150, Storm)",
-    "Death Crushing Pin (160, Storm)",
-    "Death Disabling Pin (150, Fire)",
-    "Death Disabling Pin (150, Storm)",
-    "Death Punishing Pin (150, Myth)",
-    "Death Punishing Pin (150, Storm)",
-    "Death Punishing Pin (160, Storm)",
-    "Deathly Depths",
-    "Dog Tracy Amethyst",
-    "Drop Bear Fury",
-    "Duck Savage Sapphire",
-    "Dynamic Enforcer's Boots",
-    "Dynamic Enforcer's Uniform",
-    "Dynamic Protector's Boots",
-    "Dynamic Protector's Uniform",
-    "Ectoplasm",
-    "Elemental Blade",
-    "Elemental Trap",
-    "Empower",
-    "Evil Carrot",
-    "Evil Snowman (Tier 2b)",
-    "Fern Jelly",
-    "Fire Cat (Tier 2b)",
-    "Fire Crushing Pin (150, Myth)",
-    "Fire Crushing Pin (150, Storm)",
-    "Fire Crushing Pin (160, Storm)",
-    "Fire Disabling Pin (150, Storm)",
-    "Fire Disabling Pin (160, Storm)",
-    "Fire Elf (Tier 2b)",
-    "Fire Punishing Pin (150, Storm)",
-    "Fire Trap",
-    "Fireblade",
-    "Fish Fin",
-    "Flaming Carrot",
-    "Flaming Jalapeno",
-    "Flawless Accurate Amethyst +16%",
-    "Flawless Accurate Citrine +16%",
-    "Flawless Accurate Onyx +16%",
-    "Flawless Accurate Peridot +16%",
-    "Flawless Accurate Sapphire +16%",
-    "Flawless Archmastery Opal +15 (Tear)",
-    "Flawless Health Opal +147",
-    "Flawless Health Opal +148",
-    "Flawless Health Opal +149",
-    "Flawless Health Opal +150",
-    "Flawless Health Opal +151",
-    "Flawless Health Opal +152",
-    "Flawless Health Opal +153",
-    "Flawless Health Opal +154",
-    "Flawless Health Opal +155",
-    "Flawless Mana Opal +61",
-    "Flawless Mana Opal +62",
-    "Flawless Mana Opal +63",
-    "Flawless Mana Opal +64",
-    "Freeze Ray",
-    "Frost Beetle (Tier 2b)",
-    "Furious Enforcer's Boots",
-    "Furious Enforcer's Uniform",
-    "Furious Protector's Boots",
-    "Furious Protector's Uniform",
-    "Ghoul (Tier 2b)",
-    "Glimpse of Infinity",
-    "Glimpse of Infinity Ruby",
-    "Glowing Dragon Fruit",
-    "Gravestorm",
-    "Grim Reader",
-    "Grrnadier",
-    "Harmattan Maxios",
-    "Heavenly Bubblegum",
-    "Hex",
-    "Ice Crushing Pin (150, Myth)",
-    "Ice Crushing Pin (150, Storm)",
-    "Ice Disabing Pin (150, Storm)",
-    "Ice Disabling Pin (160, Storm)",
-    "Ice Punishing Pin (150, Storm)",
-    "Ice Punishing Pin (160, Storm)",
-    "Iceblade",
-    "Imp (Tier 2b)",
-    "Improbable Gaze",
-    "Just Enforcer's Boots",
-    "Just Enforcer's Uniform",
-    "Just Protector's Boots",
-    "Just Protector's Uniform",
-    "Lava Guava",
-    "Legendary Enforcer's Boots",
-    "Legendary Enforcer's Uniform",
-    "Legendary Protector's Boots",
-    "Legendary Protector's Uniform",
-    "Leprechaun (Tier 2b)",
-    "Life Crushing Pin (150, Fire)",
-    "Life Crushing Pin (160, Storm)",
-    "Life Disabling Pin (150, Fire)",
-    "Life Disabling Pin (150, Storm)",
-    "Life Disabling Pin (160, Storm)",
-    "Life Punishing Pin (150, Storm)",
-    "Lifeblade",
-    "Lightning Bats (Tier 2b)",
-    "Locust Swarm (Tier 2b)",
-    "Lord of the Jungle",
-    "Lord of the Squall",
-    "Mandar Peridot",
-    "Mini Pumpkin",
-    "Misfortune Cookie",
-    "Mockenspiel",
-    "Morbid Enforcer's Boots",
-    "Morbid Enforcer's Uniform",
-    "Morbid Protector's Boots",
-    "Morbid Protector's Uniform",
-    "Myth Crushing Pin (150, Storm)",
-    "Myth Crushing Pin (160, Balance)",
-    "Myth Crushing Pin (160, Storm)",
-    "Myth Disabling Pin (150, Storm)",
-    "Myth Disabling Pin (160, Storm)",
-    "Myth Punishing Pin (150, Storm)",
-    "Myth Punishing Pin (160, Death)",
-    "Myth Punishing Pin (160, Storm)",
-    "Myth Trap",
-    "Nana's Pumpkin Spice Milkshake",
-    "Nature's Wrath (Tier 2b)",
-    "Nickel",
-    "Old One's Endgame",
-    "PB Cookie",
-    "Phantasmania!",
-    "Pierce",
-    "Popsicle",
-    "Raging Bull",
-    "Rainbow Serpent",
-    "Reshuffle",
-    "Rusalka's Wrath",
-    "S'more Machine",
-    "Scales of Destiny",
-    "Scales of Destiny Citrine",
-    "Scarab (Tier 2b)",
-    "Scion of Balance",
-    "Scion of Ice",
-    "Scion of Life",
-    "Scorpion (Tier 2b)",
-    "Shatterhorn",
-    "Sirocco Djinni",
-    "Snack Attack",
-    "Snow Serpent (Tier 2b)",
-    "Snowball Barrage",
-    "Solomon Crane Onyx",
-    "Sound of Musicology",
-    "Spicy Chips",
-    "Spirit Blade",
-    "Spirit Trap",
-    "Starspawn",
-    "Starspawn Jade",
-    "Steely Enforcer's Boots",
-    "Steely Enforcer's Uniform",
-    "Steely Protector's Boots",
-    "Steely Protector's Uniform",
-    "Storm Punishing Pin (150, Life)",
-    "Storm Shark (Tier 2b)",
-    "Storm Trap",
-    "Stormblade",
-    "Sunbird (Tier 2b)",
-    "Tamales",
-    "Tatzlewurm Terror",
-    "Thunder Snake (Tier 2b)",
-    "Thunderous Enforcer's Boots",
-    "Thunderous Enforcer's Uniform",
-    "Thunderous Protector's Boots",
-    "Thunderous Protector's Uniform",
-    "Tree of Strife",
-    "Troll (Tier 2b)",
-    "Tungsten",
-    "Turmeric",
-    "Wallaru Billabong Resort Com Theme",
-    "Wallaru Billabong Resort Theme",
-    "Wallaru Doom Moon Combat Theme",
-    "Wallaru Doom Moon Theme",
-    "Wallaru Eucalyptus Forest Com Theme",
-    "Wallaru Eucalyptus Forest Theme",
-    "Wallaru Hope Springs Theme",
-    "Wallaru Outback Theme",
-    "Wallaru Ranch Combat Theme",
-    "Wallaru The Dreaming Theme",
-    "Wallaru Wobbegong Combat Theme",
-    "Wallaru Wobbegong Theme",
-    "Winged Sorrow",
-    "Wings of Fate",
-    "Witch's House Call",
-    "Wobbegong Frenzy",
-    "Wrath's Grape Juice",
-    "Zand the Bandit"
+    {
+      "name": "Amazing Accurate Amethyst +15%"
+    },
+    {
+      "name": "Amazing Accurate Citrine +15%"
+    },
+    {
+      "name": "Amazing Accurate Jade +15%"
+    },
+    {
+      "name": "Amazing Accurate Onyx +15%"
+    },
+    {
+      "name": "Amazing Accurate Peridot +15%"
+    },
+    {
+      "name": "Amazing Accurate Sapphire +15%"
+    },
+    {
+      "name": "Amazing Archmastery Opal +14 (Tear)"
+    },
+    {
+      "name": "Amazing Health Opal +136"
+    },
+    {
+      "name": "Amazing Health Opal +137"
+    },
+    {
+      "name": "Amazing Health Opal +139"
+    },
+    {
+      "name": "Amazing Health Opal +140"
+    },
+    {
+      "name": "Amazing Health Opal +143"
+    },
+    {
+      "name": "Amazing Health Opal +144"
+    },
+    {
+      "name": "Amazing Health Opal +145"
+    },
+    {
+      "name": "Amazing Mana Opal +58"
+    },
+    {
+      "name": "Amazing Mana Opal +59"
+    },
+    {
+      "name": "Arcticzilla"
+    },
+    {
+      "name": "Ashen Bones"
+    },
+    {
+      "name": "Balance Crushing Pin (150, Storm)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Life)"
+    },
+    {
+      "name": "Balance Crushing Pin (160, Storm)"
+    },
+    {
+      "name": "Balance Disabling Pin (150, Storm)"
+    },
+    {
+      "name": "Balance Disabling Pin (160, Storm)"
+    },
+    {
+      "name": "Balance Punishing Pin (150, Storm)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Fire)"
+    },
+    {
+      "name": "Balance Punishing Pin (160, Storm)"
+    },
+    {
+      "name": "Balanceblade"
+    },
+    {
+      "name": "Banshee (Tier 2b)"
+    },
+    {
+      "name": "Barbarian's Saga"
+    },
+    {
+      "name": "Bell Pepper Steak"
+    },
+    {
+      "name": "Black Sun Seeds"
+    },
+    {
+      "name": "Blast Off!"
+    },
+    {
+      "name": "Blood Bat (Tier 2b)"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bunyip's Rage"
+    },
+    {
+      "name": "Cleanse Charm"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Count Croakula"
+    },
+    {
+      "name": "Cracker"
+    },
+    {
+      "name": "Cyclops (Tier 2b)"
+    },
+    {
+      "name": "Dark & Stormy"
+    },
+    {
+      "name": "Dark Sprite (Tier 2b)"
+    },
+    {
+      "name": "Deadly Minotaur"
+    },
+    {
+      "name": "Death Crushing Pin (150, Storm)"
+    },
+    {
+      "name": "Death Crushing Pin (160, Storm)"
+    },
+    {
+      "name": "Death Disabling Pin (150, Fire)"
+    },
+    {
+      "name": "Death Disabling Pin (150, Storm)"
+    },
+    {
+      "name": "Death Punishing Pin (150, Myth)"
+    },
+    {
+      "name": "Death Punishing Pin (150, Storm)"
+    },
+    {
+      "name": "Death Punishing Pin (160, Storm)"
+    },
+    {
+      "name": "Deathly Depths"
+    },
+    {
+      "name": "Dog Tracy Amethyst"
+    },
+    {
+      "name": "Drop Bear Fury"
+    },
+    {
+      "name": "Duck Savage Sapphire"
+    },
+    {
+      "name": "Dynamic Enforcer's Boots"
+    },
+    {
+      "name": "Dynamic Enforcer's Uniform"
+    },
+    {
+      "name": "Dynamic Protector's Boots"
+    },
+    {
+      "name": "Dynamic Protector's Uniform"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Elemental Blade"
+    },
+    {
+      "name": "Elemental Trap"
+    },
+    {
+      "name": "Empower"
+    },
+    {
+      "name": "Evil Carrot"
+    },
+    {
+      "name": "Evil Snowman (Tier 2b)"
+    },
+    {
+      "name": "Fern Jelly"
+    },
+    {
+      "name": "Fire Cat (Tier 2b)"
+    },
+    {
+      "name": "Fire Crushing Pin (150, Myth)"
+    },
+    {
+      "name": "Fire Crushing Pin (150, Storm)"
+    },
+    {
+      "name": "Fire Crushing Pin (160, Storm)"
+    },
+    {
+      "name": "Fire Disabling Pin (150, Storm)"
+    },
+    {
+      "name": "Fire Disabling Pin (160, Storm)"
+    },
+    {
+      "name": "Fire Elf (Tier 2b)"
+    },
+    {
+      "name": "Fire Punishing Pin (150, Storm)"
+    },
+    {
+      "name": "Fire Trap"
+    },
+    {
+      "name": "Fireblade"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Flaming Carrot"
+    },
+    {
+      "name": "Flaming Jalapeno"
+    },
+    {
+      "name": "Flawless Accurate Amethyst +16%"
+    },
+    {
+      "name": "Flawless Accurate Citrine +16%"
+    },
+    {
+      "name": "Flawless Accurate Onyx +16%"
+    },
+    {
+      "name": "Flawless Accurate Peridot +16%"
+    },
+    {
+      "name": "Flawless Accurate Sapphire +16%"
+    },
+    {
+      "name": "Flawless Archmastery Opal +15 (Tear)"
+    },
+    {
+      "name": "Flawless Health Opal +147"
+    },
+    {
+      "name": "Flawless Health Opal +148"
+    },
+    {
+      "name": "Flawless Health Opal +149"
+    },
+    {
+      "name": "Flawless Health Opal +150"
+    },
+    {
+      "name": "Flawless Health Opal +151"
+    },
+    {
+      "name": "Flawless Health Opal +152"
+    },
+    {
+      "name": "Flawless Health Opal +153"
+    },
+    {
+      "name": "Flawless Health Opal +154"
+    },
+    {
+      "name": "Flawless Health Opal +155"
+    },
+    {
+      "name": "Flawless Mana Opal +61"
+    },
+    {
+      "name": "Flawless Mana Opal +62"
+    },
+    {
+      "name": "Flawless Mana Opal +63"
+    },
+    {
+      "name": "Flawless Mana Opal +64"
+    },
+    {
+      "name": "Freeze Ray"
+    },
+    {
+      "name": "Frost Beetle (Tier 2b)"
+    },
+    {
+      "name": "Furious Enforcer's Boots"
+    },
+    {
+      "name": "Furious Enforcer's Uniform"
+    },
+    {
+      "name": "Furious Protector's Boots"
+    },
+    {
+      "name": "Furious Protector's Uniform"
+    },
+    {
+      "name": "Ghoul (Tier 2b)"
+    },
+    {
+      "name": "Glimpse of Infinity"
+    },
+    {
+      "name": "Glimpse of Infinity Ruby"
+    },
+    {
+      "name": "Glowing Dragon Fruit"
+    },
+    {
+      "name": "Gravestorm"
+    },
+    {
+      "name": "Grim Reader"
+    },
+    {
+      "name": "Grrnadier"
+    },
+    {
+      "name": "Harmattan Maxios"
+    },
+    {
+      "name": "Heavenly Bubblegum"
+    },
+    {
+      "name": "Hex"
+    },
+    {
+      "name": "Ice Crushing Pin (150, Myth)"
+    },
+    {
+      "name": "Ice Crushing Pin (150, Storm)"
+    },
+    {
+      "name": "Ice Disabing Pin (150, Storm)"
+    },
+    {
+      "name": "Ice Disabling Pin (160, Storm)"
+    },
+    {
+      "name": "Ice Punishing Pin (150, Storm)"
+    },
+    {
+      "name": "Ice Punishing Pin (160, Storm)"
+    },
+    {
+      "name": "Iceblade"
+    },
+    {
+      "name": "Imp (Tier 2b)"
+    },
+    {
+      "name": "Improbable Gaze"
+    },
+    {
+      "name": "Just Enforcer's Boots"
+    },
+    {
+      "name": "Just Enforcer's Uniform"
+    },
+    {
+      "name": "Just Protector's Boots"
+    },
+    {
+      "name": "Just Protector's Uniform"
+    },
+    {
+      "name": "Lava Guava"
+    },
+    {
+      "name": "Legendary Enforcer's Boots"
+    },
+    {
+      "name": "Legendary Enforcer's Uniform"
+    },
+    {
+      "name": "Legendary Protector's Boots"
+    },
+    {
+      "name": "Legendary Protector's Uniform"
+    },
+    {
+      "name": "Leprechaun (Tier 2b)"
+    },
+    {
+      "name": "Life Crushing Pin (150, Fire)"
+    },
+    {
+      "name": "Life Crushing Pin (160, Storm)"
+    },
+    {
+      "name": "Life Disabling Pin (150, Fire)"
+    },
+    {
+      "name": "Life Disabling Pin (150, Storm)"
+    },
+    {
+      "name": "Life Disabling Pin (160, Storm)"
+    },
+    {
+      "name": "Life Punishing Pin (150, Storm)"
+    },
+    {
+      "name": "Lifeblade"
+    },
+    {
+      "name": "Lightning Bats (Tier 2b)"
+    },
+    {
+      "name": "Locust Swarm (Tier 2b)"
+    },
+    {
+      "name": "Lord of the Jungle"
+    },
+    {
+      "name": "Lord of the Squall"
+    },
+    {
+      "name": "Mandar Peridot"
+    },
+    {
+      "name": "Mini Pumpkin"
+    },
+    {
+      "name": "Misfortune Cookie"
+    },
+    {
+      "name": "Mockenspiel"
+    },
+    {
+      "name": "Morbid Enforcer's Boots"
+    },
+    {
+      "name": "Morbid Enforcer's Uniform"
+    },
+    {
+      "name": "Morbid Protector's Boots"
+    },
+    {
+      "name": "Morbid Protector's Uniform"
+    },
+    {
+      "name": "Myth Crushing Pin (150, Storm)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Balance)"
+    },
+    {
+      "name": "Myth Crushing Pin (160, Storm)"
+    },
+    {
+      "name": "Myth Disabling Pin (150, Storm)"
+    },
+    {
+      "name": "Myth Disabling Pin (160, Storm)"
+    },
+    {
+      "name": "Myth Punishing Pin (150, Storm)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Death)"
+    },
+    {
+      "name": "Myth Punishing Pin (160, Storm)"
+    },
+    {
+      "name": "Myth Trap"
+    },
+    {
+      "name": "Nana's Pumpkin Spice Milkshake"
+    },
+    {
+      "name": "Nature's Wrath (Tier 2b)"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Old One's Endgame"
+    },
+    {
+      "name": "PB Cookie"
+    },
+    {
+      "name": "Phantasmania!"
+    },
+    {
+      "name": "Pierce"
+    },
+    {
+      "name": "Popsicle"
+    },
+    {
+      "name": "Raging Bull"
+    },
+    {
+      "name": "Rainbow Serpent"
+    },
+    {
+      "name": "Reshuffle"
+    },
+    {
+      "name": "Rusalka's Wrath"
+    },
+    {
+      "name": "S'more Machine"
+    },
+    {
+      "name": "Scales of Destiny"
+    },
+    {
+      "name": "Scales of Destiny Citrine"
+    },
+    {
+      "name": "Scarab (Tier 2b)"
+    },
+    {
+      "name": "Scion of Balance"
+    },
+    {
+      "name": "Scion of Ice"
+    },
+    {
+      "name": "Scion of Life"
+    },
+    {
+      "name": "Scorpion (Tier 2b)"
+    },
+    {
+      "name": "Shatterhorn"
+    },
+    {
+      "name": "Sirocco Djinni"
+    },
+    {
+      "name": "Snack Attack"
+    },
+    {
+      "name": "Snow Serpent (Tier 2b)"
+    },
+    {
+      "name": "Snowball Barrage"
+    },
+    {
+      "name": "Solomon Crane Onyx"
+    },
+    {
+      "name": "Sound of Musicology"
+    },
+    {
+      "name": "Spicy Chips"
+    },
+    {
+      "name": "Spirit Blade"
+    },
+    {
+      "name": "Spirit Trap"
+    },
+    {
+      "name": "Starspawn"
+    },
+    {
+      "name": "Starspawn Jade"
+    },
+    {
+      "name": "Steely Enforcer's Boots"
+    },
+    {
+      "name": "Steely Enforcer's Uniform"
+    },
+    {
+      "name": "Steely Protector's Boots"
+    },
+    {
+      "name": "Steely Protector's Uniform"
+    },
+    {
+      "name": "Storm Punishing Pin (150, Life)"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)"
+    },
+    {
+      "name": "Storm Trap"
+    },
+    {
+      "name": "Stormblade"
+    },
+    {
+      "name": "Sunbird (Tier 2b)"
+    },
+    {
+      "name": "Tamales"
+    },
+    {
+      "name": "Tatzlewurm Terror"
+    },
+    {
+      "name": "Thunder Snake (Tier 2b)"
+    },
+    {
+      "name": "Thunderous Enforcer's Boots"
+    },
+    {
+      "name": "Thunderous Enforcer's Uniform"
+    },
+    {
+      "name": "Thunderous Protector's Boots"
+    },
+    {
+      "name": "Thunderous Protector's Uniform"
+    },
+    {
+      "name": "Tree of Strife"
+    },
+    {
+      "name": "Troll (Tier 2b)"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turmeric"
+    },
+    {
+      "name": "Wallaru Billabong Resort Com Theme"
+    },
+    {
+      "name": "Wallaru Billabong Resort Theme"
+    },
+    {
+      "name": "Wallaru Doom Moon Combat Theme"
+    },
+    {
+      "name": "Wallaru Doom Moon Theme"
+    },
+    {
+      "name": "Wallaru Eucalyptus Forest Com Theme"
+    },
+    {
+      "name": "Wallaru Eucalyptus Forest Theme"
+    },
+    {
+      "name": "Wallaru Hope Springs Theme"
+    },
+    {
+      "name": "Wallaru Outback Theme"
+    },
+    {
+      "name": "Wallaru Ranch Combat Theme"
+    },
+    {
+      "name": "Wallaru The Dreaming Theme"
+    },
+    {
+      "name": "Wallaru Wobbegong Combat Theme"
+    },
+    {
+      "name": "Wallaru Wobbegong Theme"
+    },
+    {
+      "name": "Winged Sorrow"
+    },
+    {
+      "name": "Wings of Fate"
+    },
+    {
+      "name": "Witch's House Call"
+    },
+    {
+      "name": "Wobbegong Frenzy"
+    },
+    {
+      "name": "Wrath's Grape Juice"
+    },
+    {
+      "name": "Zand the Bandit"
+    }
   ],
   "authors": "BartleBot",
   "options": [

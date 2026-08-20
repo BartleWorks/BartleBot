@@ -8,250 +8,738 @@
   "recovery_state": "state_4",
   "start_location": "Anywhere in Karamelle",
   "drops": [
-    "Aether",
-    "Agave Leaves",
-    "Agave Nectar",
-    "Ally Glacial Shield Ruby",
-    "Ally Thermic Shield Amethyst",
-    "Amber",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Aquamarine",
-    "Astral Shard",
-    "Aztecan Hot Chocolate",
-    "Baby Carrots",
-    "Balance Striker Citrine",
-    "Balance-Dealer Citrine",
-    "Balance-Off Citrine",
-    "Balance-Ward Citrine",
-    "Bamboo Shoots",
-    "BBQ Drumstick",
-    "Beast Wellington",
-    "Bell Pepper",
-    "Blue Huckleberries",
-    "Boiled Peanuts",
-    "Boom Shroom",
-    "Braided Vine",
-    "Brass",
-    "Bread Fruit Bush",
-    "Brilliant Light",
-    "Bronze Gear",
-    "Burning Snap Dragon",
-    "Cherry Pie",
-    "Chief's Biohazard Boots",
-    "Chief's Cryo Rope",
-    "Chief's Pressure Meter",
-    "Chief's Thermal Suit",
-    "Clockwork Flower",
-    "Cobalt",
-    "Consultant Biohazard Box",
-    "Consultant Insulated Rope",
-    "Consultant Thermal Suit",
-    "Cornbread Fruit Bush",
-    "Cupcake",
-    "Deadly Ninja Fig",
-    "Death Prism",
-    "Death-Away Onyx",
-    "Death-Eye Onyx",
-    "Death-Giver Onyx",
-    "Death-Proof Onyx",
-    "Death-Sniper Onyx",
-    "Death-Ward Onyx",
-    "Director Cryo Suit",
-    "Director Hazmat Hood",
-    "Director Insulated Hood",
-    "Director Protective Hood",
-    "Director Survival Hood",
-    "Discord Grape Jelly",
-    "Draconium",
-    "Dragon Fruit",
-    "Drumstick",
-    "Elemental Blade",
-    "Elemental Shield",
-    "Elemental Spear",
-    "Ether Shield",
-    "Evil Magma Peas",
-    "Evil Snow Peas",
-    "Executive Cryo Rope",
-    "Executive Thermal Boots",
-    "Eye Candy",
-    "Face Palm",
-    "Fiery Boom Shroom",
-    "Fire Prism",
-    "Fire Striker Ruby",
-    "Fire-Dealer Ruby",
-    "Fire-Giver Ruby",
-    "Fish on a Vine",
-    "Flute Symphony",
-    "Frosty Sugar Cubes",
-    "Frozen Fly Trap",
-    "Glass Sliver",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Golden Pearl",
-    "Goose Tree",
-    "Grapes of Wrath",
-    "Grrnadier",
-    "Gum Drop Container",
-    "Guten Artisan Cap",
-    "Guten Candymancer Cap",
-    "Guten Dreamsearcher Cap",
-    "Guten Freshbaker Cap",
-    "Guten Sciencer Cap",
-    "Guten Sentamentalist Cap",
-    "Guten Sweetsmith Cap",
-    "Guten Wonderneer Cap",
-    "Healthy Opal",
-    "Helephant Ears",
-    "Honey Bee Plant",
-    "Honey Sickle",
-    "Hot Cross Buns",
-    "Ice Assailant Sapphire",
-    "Ice Prism",
-    "Ice-Dealer Sapphire",
-    "Ice-Giver Sapphire",
-    "Ice-Sniper Sapphire",
-    "Icespear",
-    "Infector Onyx",
-    "Ivy League",
-    "Karamelle Cavity Combat Theme",
-    "Karamelle Chunk",
-    "Karamelle City Combat Theme",
-    "Karamelle Neglected Com Theme",
-    "Karamelle Neglected Theme",
-    "Karamelle Rural Combat Theme",
-    "Karamelle Worker Theme",
-    "Key Limes",
-    "Krakamari",
-    "Laugh-O-Dil",
-    "Lead's Cryo Knife",
-    "Lead's Hazmat Rope",
-    "Lead's Pressure Boots",
-    "Lead's Protective Ring",
-    "Licorice Tree",
-    "Life-Away Jade",
-    "Life-Boon Jade",
-    "Life-Proof Jade",
-    "Life-Ward Jade",
-    "Lifespear",
-    "Maelstrom Snap Dragon",
-    "Maltese Tiger Lily",
-    "Medic Opal",
-    "Merle's Whisker",
-    "Miniature Bloodbats",
-    "Mithril",
-    "Mockenspiel",
-    "Myth Assailant Peridot",
-    "Myth Prism",
-    "Myth-Away Peridot",
-    "Myth-Sniper Peridot",
-    "Mythspear",
-    "Nickel",
-    "Orange Dandelion",
-    "Pest Zapper",
-    "Pink Huckleberries",
-    "Pink Laugh-O-Dil",
-    "Pizza",
-    "Power Play",
-    "Producer's Pressure Hood",
-    "Producer's Protective Hood",
-    "Producer's Survival Hood",
-    "Producer's Thermal Hood",
-    "Putrid Bug Spray",
-    "Queen Crape Myrtle",
-    "Rage of Winter Sapphire",
-    "Red Bell Pepper",
-    "Red Grapes of Wrath",
-    "Red Huckleberries",
-    "Rock and Roll Candy",
-    "Roly Poly Fishheads",
-    "Rusalka's Wrath",
-    "Rye Bread Fruit Bush",
-    "S'more Machine",
-    "Sanctuary",
-    "Sand Wurm",
-    "Satyr Chow",
-    "Saw Palmetto",
-    "Scales",
-    "Scion of Death",
-    "Scion of Fire",
-    "Scion of Storm",
-    "Scorching Scimitars",
-    "Screen Ruby",
-    "Shatterhorn",
-    "Shiny Accurate Citrine +12%",
-    "Shiny Accurate Onyx +12%",
-    "Shiny Critical Onyx +16",
-    "Shiny Damage Jade +26",
-    "Shiny Damage Ruby +25",
-    "Shiny Defense Amethyst +51",
-    "Shiny Defense Onyx +50",
-    "Shiny Health Opal +112",
-    "Ships 'n' Queso",
-    "Silver",
-    "Snack Attack",
-    "Snap Dragon",
-    "Sound of Musicology",
-    "Sour Fickle Pickle",
-    "Sparkling Accurate Jade +13%",
-    "Sparkling Blocking Peridot +17",
-    "Sparkling Damage Amethyst +27",
-    "Sparkling Damage Hematite +54",
-    "Sparkling Damage Jade +27",
-    "Sparkling Damage Peridot +27",
-    "Sparkling Defense Citrine +53",
-    "Sparkling Defense Hematite +53",
-    "Sparkling Defense Jade +54",
-    "Sparkling Health Opal +117",
-    "Sparkling Health Opal +119",
-    "Sparkling Mana Opal +49",
-    "Specialist Biohazard Box",
-    "Specialist Cryo Rope",
-    "Spider Silk",
-    "Sprinkle Cupcake",
-    "Stardust",
-    "Steel",
-    "Storm Prism",
-    "Storm Striker Amethyst",
-    "Storm-Dealer Amethyst",
-    "Storm-Proof Amethyst",
-    "Storm-Ward Amethyst",
-    "Stormspear",
-    "Sugar Khrystal",
-    "Sunstone",
-    "Supervisor Biohazard Boots",
-    "Supervisor Cryo Rope",
-    "Supervisor Insulated Rope",
-    "Supervisor Insulated Suit",
-    "Supreme Sunburst",
-    "Tasty Rainbow",
-    "Tatzlewurm Terror",
-    "Tatzlewurm Terror",
-    "Tin",
-    "Toffee Bean",
-    "Trash Pile",
-    "Tungsten",
-    "Turquoise",
-    "Uber Artisan Cap",
-    "Uber Candymancer Cap",
-    "Uber Freshbaker Cap",
-    "Uber Sentamentalist Cap",
-    "Uber Sweetsmith Cap",
-    "Uber Wonderneer Cap",
-    "Ultra Boom Shroom",
-    "Ultra Ninja Fig",
-    "Veggie Juice",
-    "Venus Fly Trap",
-    "Vine",
-    "Waterworks Wonton",
-    "White Tiger Lily",
-    "Wunderbar Candymancer Cap",
-    "Wunderbar Dreamsearcher Cap",
-    "Wunderbar Freshbaker Cap",
-    "Wunderbar Sciencer Cap",
-    "Wunderbar Sweetsmith Cap",
-    "Wunderbar Wonderneer Cap",
-    "Yellow Bell Pepper"
+    {
+      "name": "Aether"
+    },
+    {
+      "name": "Agave Leaves"
+    },
+    {
+      "name": "Agave Nectar"
+    },
+    {
+      "name": "Ally Glacial Shield Ruby"
+    },
+    {
+      "name": "Ally Thermic Shield Amethyst"
+    },
+    {
+      "name": "Amber"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Astral Shard"
+    },
+    {
+      "name": "Aztecan Hot Chocolate"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Balance Striker Citrine"
+    },
+    {
+      "name": "Balance-Dealer Citrine"
+    },
+    {
+      "name": "Balance-Off Citrine"
+    },
+    {
+      "name": "Balance-Ward Citrine"
+    },
+    {
+      "name": "Bamboo Shoots"
+    },
+    {
+      "name": "BBQ Drumstick"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Bell Pepper"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Boom Shroom"
+    },
+    {
+      "name": "Braided Vine"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Brilliant Light"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Burning Snap Dragon"
+    },
+    {
+      "name": "Cherry Pie"
+    },
+    {
+      "name": "Chief's Biohazard Boots"
+    },
+    {
+      "name": "Chief's Cryo Rope"
+    },
+    {
+      "name": "Chief's Pressure Meter"
+    },
+    {
+      "name": "Chief's Thermal Suit"
+    },
+    {
+      "name": "Clockwork Flower"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Consultant Biohazard Box"
+    },
+    {
+      "name": "Consultant Insulated Rope"
+    },
+    {
+      "name": "Consultant Thermal Suit"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Cupcake"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Prism"
+    },
+    {
+      "name": "Death-Away Onyx"
+    },
+    {
+      "name": "Death-Eye Onyx"
+    },
+    {
+      "name": "Death-Giver Onyx"
+    },
+    {
+      "name": "Death-Proof Onyx"
+    },
+    {
+      "name": "Death-Sniper Onyx"
+    },
+    {
+      "name": "Death-Ward Onyx"
+    },
+    {
+      "name": "Director Cryo Suit"
+    },
+    {
+      "name": "Director Hazmat Hood"
+    },
+    {
+      "name": "Director Insulated Hood"
+    },
+    {
+      "name": "Director Protective Hood"
+    },
+    {
+      "name": "Director Survival Hood"
+    },
+    {
+      "name": "Discord Grape Jelly"
+    },
+    {
+      "name": "Draconium"
+    },
+    {
+      "name": "Dragon Fruit"
+    },
+    {
+      "name": "Drumstick"
+    },
+    {
+      "name": "Elemental Blade"
+    },
+    {
+      "name": "Elemental Shield"
+    },
+    {
+      "name": "Elemental Spear"
+    },
+    {
+      "name": "Ether Shield"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Executive Cryo Rope"
+    },
+    {
+      "name": "Executive Thermal Boots"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Prism"
+    },
+    {
+      "name": "Fire Striker Ruby"
+    },
+    {
+      "name": "Fire-Dealer Ruby"
+    },
+    {
+      "name": "Fire-Giver Ruby"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Flute Symphony"
+    },
+    {
+      "name": "Frosty Sugar Cubes"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Glass Sliver"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "Goose Tree"
+    },
+    {
+      "name": "Grapes of Wrath"
+    },
+    {
+      "name": "Grrnadier"
+    },
+    {
+      "name": "Gum Drop Container"
+    },
+    {
+      "name": "Guten Artisan Cap"
+    },
+    {
+      "name": "Guten Candymancer Cap"
+    },
+    {
+      "name": "Guten Dreamsearcher Cap"
+    },
+    {
+      "name": "Guten Freshbaker Cap"
+    },
+    {
+      "name": "Guten Sciencer Cap"
+    },
+    {
+      "name": "Guten Sentamentalist Cap"
+    },
+    {
+      "name": "Guten Sweetsmith Cap"
+    },
+    {
+      "name": "Guten Wonderneer Cap"
+    },
+    {
+      "name": "Healthy Opal"
+    },
+    {
+      "name": "Helephant Ears"
+    },
+    {
+      "name": "Honey Bee Plant"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Ice Assailant Sapphire"
+    },
+    {
+      "name": "Ice Prism"
+    },
+    {
+      "name": "Ice-Dealer Sapphire"
+    },
+    {
+      "name": "Ice-Giver Sapphire"
+    },
+    {
+      "name": "Ice-Sniper Sapphire"
+    },
+    {
+      "name": "Icespear"
+    },
+    {
+      "name": "Infector Onyx"
+    },
+    {
+      "name": "Ivy League"
+    },
+    {
+      "name": "Karamelle Cavity Combat Theme"
+    },
+    {
+      "name": "Karamelle Chunk"
+    },
+    {
+      "name": "Karamelle City Combat Theme"
+    },
+    {
+      "name": "Karamelle Neglected Com Theme"
+    },
+    {
+      "name": "Karamelle Neglected Theme"
+    },
+    {
+      "name": "Karamelle Rural Combat Theme"
+    },
+    {
+      "name": "Karamelle Worker Theme"
+    },
+    {
+      "name": "Key Limes"
+    },
+    {
+      "name": "Krakamari"
+    },
+    {
+      "name": "Laugh-O-Dil"
+    },
+    {
+      "name": "Lead's Cryo Knife"
+    },
+    {
+      "name": "Lead's Hazmat Rope"
+    },
+    {
+      "name": "Lead's Pressure Boots"
+    },
+    {
+      "name": "Lead's Protective Ring"
+    },
+    {
+      "name": "Licorice Tree"
+    },
+    {
+      "name": "Life-Away Jade"
+    },
+    {
+      "name": "Life-Boon Jade"
+    },
+    {
+      "name": "Life-Proof Jade"
+    },
+    {
+      "name": "Life-Ward Jade"
+    },
+    {
+      "name": "Lifespear"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Maltese Tiger Lily"
+    },
+    {
+      "name": "Medic Opal"
+    },
+    {
+      "name": "Merle's Whisker"
+    },
+    {
+      "name": "Miniature Bloodbats"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Mockenspiel"
+    },
+    {
+      "name": "Myth Assailant Peridot"
+    },
+    {
+      "name": "Myth Prism"
+    },
+    {
+      "name": "Myth-Away Peridot"
+    },
+    {
+      "name": "Myth-Sniper Peridot"
+    },
+    {
+      "name": "Mythspear"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Orange Dandelion"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pink Laugh-O-Dil"
+    },
+    {
+      "name": "Pizza"
+    },
+    {
+      "name": "Power Play"
+    },
+    {
+      "name": "Producer's Pressure Hood"
+    },
+    {
+      "name": "Producer's Protective Hood"
+    },
+    {
+      "name": "Producer's Survival Hood"
+    },
+    {
+      "name": "Producer's Thermal Hood"
+    },
+    {
+      "name": "Putrid Bug Spray"
+    },
+    {
+      "name": "Queen Crape Myrtle"
+    },
+    {
+      "name": "Rage of Winter Sapphire"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Red Grapes of Wrath"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Rock and Roll Candy"
+    },
+    {
+      "name": "Roly Poly Fishheads"
+    },
+    {
+      "name": "Rusalka's Wrath"
+    },
+    {
+      "name": "Rye Bread Fruit Bush"
+    },
+    {
+      "name": "S'more Machine"
+    },
+    {
+      "name": "Sanctuary"
+    },
+    {
+      "name": "Sand Wurm"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Saw Palmetto"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Scion of Death"
+    },
+    {
+      "name": "Scion of Fire"
+    },
+    {
+      "name": "Scion of Storm"
+    },
+    {
+      "name": "Scorching Scimitars"
+    },
+    {
+      "name": "Screen Ruby"
+    },
+    {
+      "name": "Shatterhorn"
+    },
+    {
+      "name": "Shiny Accurate Citrine +12%"
+    },
+    {
+      "name": "Shiny Accurate Onyx +12%"
+    },
+    {
+      "name": "Shiny Critical Onyx +16"
+    },
+    {
+      "name": "Shiny Damage Jade +26"
+    },
+    {
+      "name": "Shiny Damage Ruby +25"
+    },
+    {
+      "name": "Shiny Defense Amethyst +51"
+    },
+    {
+      "name": "Shiny Defense Onyx +50"
+    },
+    {
+      "name": "Shiny Health Opal +112"
+    },
+    {
+      "name": "Ships 'n' Queso"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Snack Attack"
+    },
+    {
+      "name": "Snap Dragon"
+    },
+    {
+      "name": "Sound of Musicology"
+    },
+    {
+      "name": "Sour Fickle Pickle"
+    },
+    {
+      "name": "Sparkling Accurate Jade +13%"
+    },
+    {
+      "name": "Sparkling Blocking Peridot +17"
+    },
+    {
+      "name": "Sparkling Damage Amethyst +27"
+    },
+    {
+      "name": "Sparkling Damage Hematite +54"
+    },
+    {
+      "name": "Sparkling Damage Jade +27"
+    },
+    {
+      "name": "Sparkling Damage Peridot +27"
+    },
+    {
+      "name": "Sparkling Defense Citrine +53"
+    },
+    {
+      "name": "Sparkling Defense Hematite +53"
+    },
+    {
+      "name": "Sparkling Defense Jade +54"
+    },
+    {
+      "name": "Sparkling Health Opal +117"
+    },
+    {
+      "name": "Sparkling Health Opal +119"
+    },
+    {
+      "name": "Sparkling Mana Opal +49"
+    },
+    {
+      "name": "Specialist Biohazard Box"
+    },
+    {
+      "name": "Specialist Cryo Rope"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprinkle Cupcake"
+    },
+    {
+      "name": "Stardust"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Storm Prism"
+    },
+    {
+      "name": "Storm Striker Amethyst"
+    },
+    {
+      "name": "Storm-Dealer Amethyst"
+    },
+    {
+      "name": "Storm-Proof Amethyst"
+    },
+    {
+      "name": "Storm-Ward Amethyst"
+    },
+    {
+      "name": "Stormspear"
+    },
+    {
+      "name": "Sugar Khrystal"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Supervisor Biohazard Boots"
+    },
+    {
+      "name": "Supervisor Cryo Rope"
+    },
+    {
+      "name": "Supervisor Insulated Rope"
+    },
+    {
+      "name": "Supervisor Insulated Suit"
+    },
+    {
+      "name": "Supreme Sunburst"
+    },
+    {
+      "name": "Tasty Rainbow"
+    },
+    {
+      "name": "Tatzlewurm Terror"
+    },
+    {
+      "name": "Tatzlewurm Terror"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Toffee Bean"
+    },
+    {
+      "name": "Trash Pile"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turquoise"
+    },
+    {
+      "name": "Uber Artisan Cap"
+    },
+    {
+      "name": "Uber Candymancer Cap"
+    },
+    {
+      "name": "Uber Freshbaker Cap"
+    },
+    {
+      "name": "Uber Sentamentalist Cap"
+    },
+    {
+      "name": "Uber Sweetsmith Cap"
+    },
+    {
+      "name": "Uber Wonderneer Cap"
+    },
+    {
+      "name": "Ultra Boom Shroom"
+    },
+    {
+      "name": "Ultra Ninja Fig"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "Vine"
+    },
+    {
+      "name": "Waterworks Wonton"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Wunderbar Candymancer Cap"
+    },
+    {
+      "name": "Wunderbar Dreamsearcher Cap"
+    },
+    {
+      "name": "Wunderbar Freshbaker Cap"
+    },
+    {
+      "name": "Wunderbar Sciencer Cap"
+    },
+    {
+      "name": "Wunderbar Sweetsmith Cap"
+    },
+    {
+      "name": "Wunderbar Wonderneer Cap"
+    },
+    {
+      "name": "Yellow Bell Pepper"
+    }
   ],
   "authors": "BartleBot",
   "options": [

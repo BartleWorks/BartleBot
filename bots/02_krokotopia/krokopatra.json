@@ -9,206 +9,606 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Krokotopia",
   "drops": [
-    "Alligator Pear Tree",
-    "Amulet of Eyes",
-    "Athame of Adaption",
-    "Augmented Mantle",
-    "Band of the Bastion",
-    "Band of the Skies",
-    "Big Boost Opal",
-    "Biti Nirini's Torrid Boots",
-    "Black Cat",
-    "Boat Tent",
-    "Bone",
-    "Boo Pumpkin Mask",
-    "Boots of Talent",
-    "Boots of the Citadel",
-    "Boots of the Whirlwind",
-    "Bountiful Wand",
-    "Brass",
-    "Bunny Wand",
-    "Charmed Clover Wand",
-    "Chipped Accurate Amethyst +3%",
-    "Chipped Accurate Jade +3%",
-    "Chipped Defense Citrine +13",
-    "Chipped Defense Onyx +13",
-    "Chipped Defense Ruby +13",
-    "Chipped Health Opal +16",
-    "Chipped Mana Opal +11",
-    "Chipped Mana Opal +12",
-    "Chipped Mana Opal +9",
-    "Clay Post Opal",
-    "Clear Path Opal",
-    "Cloak of the Skies",
-    "Copper",
-    "Cowl of the Fortress",
-    "Cracked Damage Amethyst +5",
-    "Cracked Damage Onyx +6",
-    "Cracked Damage Opal +2",
-    "Cracked Damage Sapphire +5",
-    "Cracked Damage Sapphire +6",
-    "Cracked Defense Jade +11",
-    "Cracker",
-    "Cryptkeeper's Circlet",
-    "Cupig",
-    "Dagger of Annihilation",
-    "Dagger of Downpour",
-    "Death-Boon Onyx",
-    "Death-Shot Onyx",
-    "Dependable Opal",
-    "Dirk of Harmony",
-    "Diviner's Hat of Squalls",
-    "Dryad",
-    "Dusty Robe",
-    "Egg Basket Wand",
-    "Evil Snowman",
-    "Evil Snowman",
-    "Evil Snowman (Tier 2b)",
-    "Fang Bat",
-    "Fire Cat",
-    "Fire Cat (Tier 2b)",
-    "Fire Elf",
-    "Fire Elf (Tier 2b)",
-    "Flowering Band",
-    "Footwraps of the Arctic",
-    "Frost Beetle",
-    "Frost Beetle (Tier 2b)",
-    "Ghoul Onyx",
-    "Gingerbread Wand",
-    "Glacial Shield Ruby",
-    "Golden Goose",
-    "Goofy Pumpkin Mask",
-    "Green Grapes",
-    "Hallowe'en Robe",
-    "Happy Holidaisy",
-    "Hardy Boots",
-    "Harp of the Lucky",
-    "Helm of the Citadel",
-    "Hieroglyphic Ice Tablet",
-    "Humongofrog",
-    "Ice Trap",
-    "Ice-Boon Sapphire",
-    "Ill-Omened Striders",
-    "Iron",
-    "Kitty Pumpkin Mask",
-    "Krokopatra Exalted Duel",
-    "Krokopatra Master Duel",
-    "Krokopatra's Cap",
-    "Krokopatra's Circlet",
-    "Krokopatra's Footwraps",
-    "Krokopatra's Garments",
-    "Krokopatra's Robe",
-    "Krokopatra's Shoes",
-    "Krokopatra's Silent Cloak",
-    "Krokotillian",
-    "Krokotopia Theme 4",
-    "Krokotopian Balance Modius",
-    "Krokotopian Death Modius",
-    "Krokotopian Life Modius",
-    "Krokotopian Modius",
-    "Krokotopian Storm Modius",
-    "Large Archway",
-    "Lead",
-    "Life Troll",
-    "Lightning Bats",
-    "Lightning Bats (Tier 2b)",
-    "Lightning Bats Amethyst",
-    "Locust Swarm",
-    "Locust Swarm (Tier 2b)",
-    "Loop of Quietude",
-    "Loop of the Defender",
-    "Lovely Leopard",
-    "Magma-Walkers",
-    "Maple Moose",
-    "Mummy Costume Bodywraps",
-    "Mummy Costume Footwraps",
-    "Myth-Shot Peridot",
-    "Nettle Root",
-    "Nickel",
-    "Novice's Socket Wrench",
-    "Overtake Opal",
-    "Parched Kris",
-    "Parched Sandals",
-    "Pet Egg",
-    "Phantasmal Raiment",
-    "Pink Dandelion",
-    "Pip O'Plenty Opal",
-    "Polar Shoes",
-    "Powerful Ring",
-    "Powerful Vestment",
-    "Pyrite",
-    "Raised Storm Sarcophagus",
-    "Redskin Peanut",
-    "Rescue Rover",
-    "Ring of the Badlands",
-    "Robe of the Bastion",
-    "Robe of the Mirage",
-    "Rod of Regard",
-    "Rough-Hewn Hood",
-    "Row of Scrolls",
-    "Runed Hood",
-    "Sandals of Energy",
-    "Santa Hat",
-    "Scarab",
-    "Scarab (Tier 2b)",
-    "Scorpion",
-    "Scorpion (Tier 2b)",
-    "Scorpion Citrine",
-    "Seal of the Conqueror",
-    "Seraph Wings",
-    "Shamrock Scepter",
-    "Shoes of the Desert",
-    "Shroud of Rationality",
-    "Silence Opal",
-    "Silent Jewel",
-    "Sniper",
-    "Snow Serpent",
-    "Snow Serpent (Tier 2b)",
-    "Snowball",
-    "Snowglobe",
-    "Snowman",
-    "Soothsayer's Helm",
-    "Sparkling Band",
-    "Sphinx's Vestment",
-    "Spider Silk",
-    "Spring Chicken Scepter",
-    "Sprite",
-    "Square Watermelon",
-    "Staff of Commitment",
-    "Stinky Cheese",
-    "Storm Shark",
-    "Storm Shark",
-    "Storm Shark (Tier 2b)",
-    "Storm-Away Amethyst",
-    "Storm-Shot Amethyst",
-    "Stormrider Hare",
-    "Stout Hood",
-    "Sturdy Hood",
-    "Sturdy Robe",
-    "Sunbird",
-    "Sunbird (Tier 2b)",
-    "Sweet Staff",
-    "Tall Palm Tree",
-    "Theurge's Hat",
-    "Threadbare Hood",
-    "Thunder Snake",
-    "Thunder Snake (Tier 2b)",
-    "Tin",
-    "Tiny Fish",
-    "To The Oasis",
-    "Tree Wrapped Gift",
-    "Troll Peridot",
-    "Vampire Costume Boots",
-    "Vest of Somnolence",
-    "Vest of the Desert",
-    "Vest of the Oasis",
-    "Vestment of Darkness",
-    "Vestment of Ignition",
-    "Volcanic Shield Sapphire",
-    "Weakness",
-    "Whirlwind Dagger",
-    "Yuletide Lg. Small Fry Aquarium",
-    "Yuletide Spirit"
+    {
+      "name": "Alligator Pear Tree"
+    },
+    {
+      "name": "Amulet of Eyes"
+    },
+    {
+      "name": "Athame of Adaption"
+    },
+    {
+      "name": "Augmented Mantle"
+    },
+    {
+      "name": "Band of the Bastion"
+    },
+    {
+      "name": "Band of the Skies"
+    },
+    {
+      "name": "Big Boost Opal"
+    },
+    {
+      "name": "Biti Nirini's Torrid Boots"
+    },
+    {
+      "name": "Black Cat"
+    },
+    {
+      "name": "Boat Tent"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boo Pumpkin Mask"
+    },
+    {
+      "name": "Boots of Talent"
+    },
+    {
+      "name": "Boots of the Citadel"
+    },
+    {
+      "name": "Boots of the Whirlwind"
+    },
+    {
+      "name": "Bountiful Wand"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bunny Wand"
+    },
+    {
+      "name": "Charmed Clover Wand"
+    },
+    {
+      "name": "Chipped Accurate Amethyst +3%"
+    },
+    {
+      "name": "Chipped Accurate Jade +3%"
+    },
+    {
+      "name": "Chipped Defense Citrine +13"
+    },
+    {
+      "name": "Chipped Defense Onyx +13"
+    },
+    {
+      "name": "Chipped Defense Ruby +13"
+    },
+    {
+      "name": "Chipped Health Opal +16"
+    },
+    {
+      "name": "Chipped Mana Opal +11"
+    },
+    {
+      "name": "Chipped Mana Opal +12"
+    },
+    {
+      "name": "Chipped Mana Opal +9"
+    },
+    {
+      "name": "Clay Post Opal"
+    },
+    {
+      "name": "Clear Path Opal"
+    },
+    {
+      "name": "Cloak of the Skies"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cowl of the Fortress"
+    },
+    {
+      "name": "Cracked Damage Amethyst +5"
+    },
+    {
+      "name": "Cracked Damage Onyx +6"
+    },
+    {
+      "name": "Cracked Damage Opal +2"
+    },
+    {
+      "name": "Cracked Damage Sapphire +5"
+    },
+    {
+      "name": "Cracked Damage Sapphire +6"
+    },
+    {
+      "name": "Cracked Defense Jade +11"
+    },
+    {
+      "name": "Cracker"
+    },
+    {
+      "name": "Cryptkeeper's Circlet"
+    },
+    {
+      "name": "Cupig"
+    },
+    {
+      "name": "Dagger of Annihilation"
+    },
+    {
+      "name": "Dagger of Downpour"
+    },
+    {
+      "name": "Death-Boon Onyx"
+    },
+    {
+      "name": "Death-Shot Onyx"
+    },
+    {
+      "name": "Dependable Opal"
+    },
+    {
+      "name": "Dirk of Harmony"
+    },
+    {
+      "name": "Diviner's Hat of Squalls"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Dusty Robe"
+    },
+    {
+      "name": "Egg Basket Wand"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman (Tier 2b)"
+    },
+    {
+      "name": "Fang Bat"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Cat (Tier 2b)"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire Elf (Tier 2b)"
+    },
+    {
+      "name": "Flowering Band"
+    },
+    {
+      "name": "Footwraps of the Arctic"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Frost Beetle (Tier 2b)"
+    },
+    {
+      "name": "Ghoul Onyx"
+    },
+    {
+      "name": "Gingerbread Wand"
+    },
+    {
+      "name": "Glacial Shield Ruby"
+    },
+    {
+      "name": "Golden Goose"
+    },
+    {
+      "name": "Goofy Pumpkin Mask"
+    },
+    {
+      "name": "Green Grapes"
+    },
+    {
+      "name": "Hallowe'en Robe"
+    },
+    {
+      "name": "Happy Holidaisy"
+    },
+    {
+      "name": "Hardy Boots"
+    },
+    {
+      "name": "Harp of the Lucky"
+    },
+    {
+      "name": "Helm of the Citadel"
+    },
+    {
+      "name": "Hieroglyphic Ice Tablet"
+    },
+    {
+      "name": "Humongofrog"
+    },
+    {
+      "name": "Ice Trap"
+    },
+    {
+      "name": "Ice-Boon Sapphire"
+    },
+    {
+      "name": "Ill-Omened Striders"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Kitty Pumpkin Mask"
+    },
+    {
+      "name": "Krokopatra Exalted Duel"
+    },
+    {
+      "name": "Krokopatra Master Duel"
+    },
+    {
+      "name": "Krokopatra's Cap"
+    },
+    {
+      "name": "Krokopatra's Circlet"
+    },
+    {
+      "name": "Krokopatra's Footwraps"
+    },
+    {
+      "name": "Krokopatra's Garments"
+    },
+    {
+      "name": "Krokopatra's Robe"
+    },
+    {
+      "name": "Krokopatra's Shoes"
+    },
+    {
+      "name": "Krokopatra's Silent Cloak"
+    },
+    {
+      "name": "Krokotillian"
+    },
+    {
+      "name": "Krokotopia Theme 4"
+    },
+    {
+      "name": "Krokotopian Balance Modius"
+    },
+    {
+      "name": "Krokotopian Death Modius"
+    },
+    {
+      "name": "Krokotopian Life Modius"
+    },
+    {
+      "name": "Krokotopian Modius"
+    },
+    {
+      "name": "Krokotopian Storm Modius"
+    },
+    {
+      "name": "Large Archway"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Life Troll"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Lightning Bats (Tier 2b)"
+    },
+    {
+      "name": "Lightning Bats Amethyst"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Locust Swarm (Tier 2b)"
+    },
+    {
+      "name": "Loop of Quietude"
+    },
+    {
+      "name": "Loop of the Defender"
+    },
+    {
+      "name": "Lovely Leopard"
+    },
+    {
+      "name": "Magma-Walkers"
+    },
+    {
+      "name": "Maple Moose"
+    },
+    {
+      "name": "Mummy Costume Bodywraps"
+    },
+    {
+      "name": "Mummy Costume Footwraps"
+    },
+    {
+      "name": "Myth-Shot Peridot"
+    },
+    {
+      "name": "Nettle Root"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Novice's Socket Wrench"
+    },
+    {
+      "name": "Overtake Opal"
+    },
+    {
+      "name": "Parched Kris"
+    },
+    {
+      "name": "Parched Sandals"
+    },
+    {
+      "name": "Pet Egg"
+    },
+    {
+      "name": "Phantasmal Raiment"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Pip O'Plenty Opal"
+    },
+    {
+      "name": "Polar Shoes"
+    },
+    {
+      "name": "Powerful Ring"
+    },
+    {
+      "name": "Powerful Vestment"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Raised Storm Sarcophagus"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Rescue Rover"
+    },
+    {
+      "name": "Ring of the Badlands"
+    },
+    {
+      "name": "Robe of the Bastion"
+    },
+    {
+      "name": "Robe of the Mirage"
+    },
+    {
+      "name": "Rod of Regard"
+    },
+    {
+      "name": "Rough-Hewn Hood"
+    },
+    {
+      "name": "Row of Scrolls"
+    },
+    {
+      "name": "Runed Hood"
+    },
+    {
+      "name": "Sandals of Energy"
+    },
+    {
+      "name": "Santa Hat"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scarab (Tier 2b)"
+    },
+    {
+      "name": "Scorpion"
+    },
+    {
+      "name": "Scorpion (Tier 2b)"
+    },
+    {
+      "name": "Scorpion Citrine"
+    },
+    {
+      "name": "Seal of the Conqueror"
+    },
+    {
+      "name": "Seraph Wings"
+    },
+    {
+      "name": "Shamrock Scepter"
+    },
+    {
+      "name": "Shoes of the Desert"
+    },
+    {
+      "name": "Shroud of Rationality"
+    },
+    {
+      "name": "Silence Opal"
+    },
+    {
+      "name": "Silent Jewel"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Snow Serpent (Tier 2b)"
+    },
+    {
+      "name": "Snowball"
+    },
+    {
+      "name": "Snowglobe"
+    },
+    {
+      "name": "Snowman"
+    },
+    {
+      "name": "Soothsayer's Helm"
+    },
+    {
+      "name": "Sparkling Band"
+    },
+    {
+      "name": "Sphinx's Vestment"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spring Chicken Scepter"
+    },
+    {
+      "name": "Sprite"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Staff of Commitment"
+    },
+    {
+      "name": "Stinky Cheese"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)"
+    },
+    {
+      "name": "Storm-Away Amethyst"
+    },
+    {
+      "name": "Storm-Shot Amethyst"
+    },
+    {
+      "name": "Stormrider Hare"
+    },
+    {
+      "name": "Stout Hood"
+    },
+    {
+      "name": "Sturdy Hood"
+    },
+    {
+      "name": "Sturdy Robe"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunbird (Tier 2b)"
+    },
+    {
+      "name": "Sweet Staff"
+    },
+    {
+      "name": "Tall Palm Tree"
+    },
+    {
+      "name": "Theurge's Hat"
+    },
+    {
+      "name": "Threadbare Hood"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Thunder Snake (Tier 2b)"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tiny Fish"
+    },
+    {
+      "name": "To The Oasis"
+    },
+    {
+      "name": "Tree Wrapped Gift"
+    },
+    {
+      "name": "Troll Peridot"
+    },
+    {
+      "name": "Vampire Costume Boots"
+    },
+    {
+      "name": "Vest of Somnolence"
+    },
+    {
+      "name": "Vest of the Desert"
+    },
+    {
+      "name": "Vest of the Oasis"
+    },
+    {
+      "name": "Vestment of Darkness"
+    },
+    {
+      "name": "Vestment of Ignition"
+    },
+    {
+      "name": "Volcanic Shield Sapphire"
+    },
+    {
+      "name": "Weakness"
+    },
+    {
+      "name": "Whirlwind Dagger"
+    },
+    {
+      "name": "Yuletide Lg. Small Fry Aquarium"
+    },
+    {
+      "name": "Yuletide Spirit"
+    }
   ],
   "authors": "BartleBot",
   "options": [

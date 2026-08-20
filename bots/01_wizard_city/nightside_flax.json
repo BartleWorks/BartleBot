@@ -9,8 +9,12 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Flax",
-    "Frosted Flax"
+    {
+      "name": "Flax"
+    },
+    {
+      "name": "Frosted Flax"
+    }
   ],
   "authors": "BartleBot",
   "options": [

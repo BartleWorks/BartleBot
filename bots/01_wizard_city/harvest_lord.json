@@ -9,76 +9,216 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Adventurer's Robe",
-    "Blonde Strawberry",
-    "Bone",
-    "Boots of Embers",
-    "Boots of Obstruction",
-    "Boots of the Adverse",
-    "Charged Coat",
-    "Cheese Broccoli",
-    "Chillcloak",
-    "Chocolate Strawberry",
-    "Cloak of Calamity",
-    "Elven Pendant",
-    "Elven Storm Cap",
-    "Explorer Boots",
-    "Fairy Cloak",
-    "Fairy Shoes",
-    "Fine Jade Ring",
-    "Fire Cat",
-    "Fire Elf",
-    "Fire Shield",
-    "Firestorm Cap",
-    "Frost Beetle",
-    "Ghoul",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hardened Boots",
-    "Harvest Lord",
-    "Harvest Lord's Mantle",
-    "Heated Stone Tower",
-    "Helm of Nightmares",
-    "Helm of Tales",
-    "Honey Sickle",
-    "Hood of Storms",
-    "Keen Eyes",
-    "Leather Straps",
-    "Lightning Bats",
-    "Locust Swarm",
-    "Myth Shield",
-    "Novice's Hat",
-    "Novice's Robe",
-    "Novice's Shoes",
-    "Novitiate Boots",
-    "Novitiate Robe",
-    "Peridot Studded Athame",
-    "Plated Boots",
-    "Prop Mountains 1",
-    "Pumpkin",
-    "Reaper's Athame",
-    "Ritual Athame",
-    "Robe of the Lifeblood",
-    "Roughspun Hat",
-    "Roughspun Shoes",
-    "Simple Dirk",
-    "Slippers of Rites",
-    "Snow Shield",
-    "Soot Stained Boots",
-    "Soot Stained Tunic",
-    "Storm Shield",
-    "Stormcaller's Robe",
-    "Sugar Donut",
-    "Symmetrical Wand",
-    "Tall Vase",
-    "Time of Legend",
-    "Tough",
-    "Trollskin Boots",
-    "Twice Stitched Boots",
-    "Vestment of the Adverse",
-    "Wand of Repose",
-    "Windrunners",
-    "Wizard City Haunted Theme"
+    {
+      "name": "Adventurer's Robe"
+    },
+    {
+      "name": "Blonde Strawberry"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of Embers"
+    },
+    {
+      "name": "Boots of Obstruction"
+    },
+    {
+      "name": "Boots of the Adverse"
+    },
+    {
+      "name": "Charged Coat"
+    },
+    {
+      "name": "Cheese Broccoli"
+    },
+    {
+      "name": "Chillcloak"
+    },
+    {
+      "name": "Chocolate Strawberry"
+    },
+    {
+      "name": "Cloak of Calamity"
+    },
+    {
+      "name": "Elven Pendant"
+    },
+    {
+      "name": "Elven Storm Cap"
+    },
+    {
+      "name": "Explorer Boots"
+    },
+    {
+      "name": "Fairy Cloak"
+    },
+    {
+      "name": "Fairy Shoes"
+    },
+    {
+      "name": "Fine Jade Ring"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire Shield"
+    },
+    {
+      "name": "Firestorm Cap"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Ghoul"
+    },
+    {
+      "name": "Guiding Light"
+    },
+    {
+      "name": "Gummy Firecat"
+    },
+    {
+      "name": "Hardened Boots"
+    },
+    {
+      "name": "Harvest Lord"
+    },
+    {
+      "name": "Harvest Lord's Mantle"
+    },
+    {
+      "name": "Heated Stone Tower"
+    },
+    {
+      "name": "Helm of Nightmares"
+    },
+    {
+      "name": "Helm of Tales"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hood of Storms"
+    },
+    {
+      "name": "Keen Eyes"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Myth Shield"
+    },
+    {
+      "name": "Novice's Hat"
+    },
+    {
+      "name": "Novice's Robe"
+    },
+    {
+      "name": "Novice's Shoes"
+    },
+    {
+      "name": "Novitiate Boots"
+    },
+    {
+      "name": "Novitiate Robe"
+    },
+    {
+      "name": "Peridot Studded Athame"
+    },
+    {
+      "name": "Plated Boots"
+    },
+    {
+      "name": "Prop Mountains 1"
+    },
+    {
+      "name": "Pumpkin"
+    },
+    {
+      "name": "Reaper's Athame"
+    },
+    {
+      "name": "Ritual Athame"
+    },
+    {
+      "name": "Robe of the Lifeblood"
+    },
+    {
+      "name": "Roughspun Hat"
+    },
+    {
+      "name": "Roughspun Shoes"
+    },
+    {
+      "name": "Simple Dirk"
+    },
+    {
+      "name": "Slippers of Rites"
+    },
+    {
+      "name": "Snow Shield"
+    },
+    {
+      "name": "Soot Stained Boots"
+    },
+    {
+      "name": "Soot Stained Tunic"
+    },
+    {
+      "name": "Storm Shield"
+    },
+    {
+      "name": "Stormcaller's Robe"
+    },
+    {
+      "name": "Sugar Donut"
+    },
+    {
+      "name": "Symmetrical Wand"
+    },
+    {
+      "name": "Tall Vase"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Trollskin Boots"
+    },
+    {
+      "name": "Twice Stitched Boots"
+    },
+    {
+      "name": "Vestment of the Adverse"
+    },
+    {
+      "name": "Wand of Repose"
+    },
+    {
+      "name": "Windrunners"
+    },
+    {
+      "name": "Wizard City Haunted Theme"
+    }
   ],
   "authors": "BartleBot",
   "options": [

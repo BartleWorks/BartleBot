@@ -9,8 +9,12 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Azteca",
   "drops": [
-    "Blood Moss",
-    "Red Mandrake"
+    {
+      "name": "Blood Moss"
+    },
+    {
+      "name": "Red Mandrake"
+    }
   ],
   "authors": "BartleBot",
   "options": [
