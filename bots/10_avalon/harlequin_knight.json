@@ -116,7 +116,8 @@
       "name": "Fire Dragon"
     },
     {
-      "name": "Fire Trap Ruby (Triangle)"
+      "name": "Fire Trap Ruby (Triangle)",
+      "match_name": "Fire Trap Ruby"
     },
     {
       "name": "Flaming Soup"
@@ -218,7 +219,8 @@
       "name": "Leviathan"
     },
     {
-      "name": "Life Trap Jade (Triangle)"
+      "name": "Life Trap Jade (Triangle)",
+      "match_name": "Life Trap Jade"
     },
     {
       "name": "Life-Eye Jade"

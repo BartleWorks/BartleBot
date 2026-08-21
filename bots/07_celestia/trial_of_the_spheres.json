@@ -88,22 +88,28 @@
       "name": "Baby Bird Wand"
     },
     {
-      "name": "Balance Blocking Pin (60, Death)"
+      "name": "Balance Blocking Pin (60, Death)",
+      "match_name": "Balance Blocking Pin (60)"
     },
     {
-      "name": "Balance Blocking Pin (60, Fire)"
+      "name": "Balance Blocking Pin (60, Fire)",
+      "match_name": "Balance Blocking Pin (60)"
     },
     {
-      "name": "Balance Blocking Pin (60, Ice)"
+      "name": "Balance Blocking Pin (60, Ice)",
+      "match_name": "Balance Blocking Pin (60)"
     },
     {
-      "name": "Balance Blocking Pin (60, Life)"
+      "name": "Balance Blocking Pin (60, Life)",
+      "match_name": "Balance Blocking Pin (60)"
     },
     {
-      "name": "Balance Blocking Pin (60, Myth)"
+      "name": "Balance Blocking Pin (60, Myth)",
+      "match_name": "Balance Blocking Pin (60)"
     },
     {
-      "name": "Balance Blocking Pin (60, Storm)"
+      "name": "Balance Blocking Pin (60, Storm)",
+      "match_name": "Balance Blocking Pin (60)"
     },
     {
       "name": "Balance Mending Pin (50)"
@@ -112,40 +118,52 @@
       "name": "Balance Mending Pin (60)"
     },
     {
-      "name": "Balance Resist Pin (50, Death)"
+      "name": "Balance Resist Pin (50, Death)",
+      "match_name": "Balance Resist Pin (50)"
     },
     {
-      "name": "Balance Resist Pin (50, Fire)"
+      "name": "Balance Resist Pin (50, Fire)",
+      "match_name": "Balance Resist Pin (50)"
     },
     {
-      "name": "Balance Resist Pin (50, Ice)"
+      "name": "Balance Resist Pin (50, Ice)",
+      "match_name": "Balance Resist Pin (50)"
     },
     {
-      "name": "Balance Resist Pin (50, Life)"
+      "name": "Balance Resist Pin (50, Life)",
+      "match_name": "Balance Resist Pin (50)"
     },
     {
-      "name": "Balance Resist Pin (50, Myth)"
+      "name": "Balance Resist Pin (50, Myth)",
+      "match_name": "Balance Resist Pin (50)"
     },
     {
-      "name": "Balance Resist Pin (50, Storm)"
+      "name": "Balance Resist Pin (50, Storm)",
+      "match_name": "Balance Resist Pin (50)"
     },
     {
-      "name": "Balance Resist Pin (60, Death)"
+      "name": "Balance Resist Pin (60, Death)",
+      "match_name": "Balance Resist Pin (60)"
     },
     {
-      "name": "Balance Resist Pin (60, Fire)"
+      "name": "Balance Resist Pin (60, Fire)",
+      "match_name": "Balance Resist Pin (60)"
     },
     {
-      "name": "Balance Resist Pin (60, Ice)"
+      "name": "Balance Resist Pin (60, Ice)",
+      "match_name": "Balance Resist Pin (60)"
     },
     {
-      "name": "Balance Resist Pin (60, Life)"
+      "name": "Balance Resist Pin (60, Life)",
+      "match_name": "Balance Resist Pin (60)"
     },
     {
-      "name": "Balance Resist Pin (60, Myth)"
+      "name": "Balance Resist Pin (60, Myth)",
+      "match_name": "Balance Resist Pin (60)"
     },
     {
-      "name": "Balance Resist Pin (60, Storm)"
+      "name": "Balance Resist Pin (60, Storm)",
+      "match_name": "Balance Resist Pin (60)"
     },
     {
       "name": "Balanceblade Talent Citrine"
@@ -340,31 +358,40 @@
       "name": "Deadly Fly Trap"
     },
     {
-      "name": "Death Blocking Pin (60, Balance)"
+      "name": "Death Blocking Pin (60, Balance)",
+      "match_name": "Death Blocking Pin (60)"
     },
     {
-      "name": "Death Blocking Pin (60, Ice)"
+      "name": "Death Blocking Pin (60, Ice)",
+      "match_name": "Death Blocking Pin (60)"
     },
     {
-      "name": "Death Blocking Pin (60, Myth)"
+      "name": "Death Blocking Pin (60, Myth)",
+      "match_name": "Death Blocking Pin (60)"
     },
     {
-      "name": "Death Resist Pin (50, Balance)"
+      "name": "Death Resist Pin (50, Balance)",
+      "match_name": "Death Resist Pin (50)"
     },
     {
-      "name": "Death Resist Pin (50, Ice)"
+      "name": "Death Resist Pin (50, Ice)",
+      "match_name": "Death Resist Pin (50)"
     },
     {
-      "name": "Death Resist Pin (50, Myth)"
+      "name": "Death Resist Pin (50, Myth)",
+      "match_name": "Death Resist Pin (50)"
     },
     {
-      "name": "Death Resist Pin (60, Balance)"
+      "name": "Death Resist Pin (60, Balance)",
+      "match_name": "Death Resist Pin (60)"
     },
     {
-      "name": "Death Resist Pin (60, Ice)"
+      "name": "Death Resist Pin (60, Ice)",
+      "match_name": "Death Resist Pin (60)"
     },
     {
-      "name": "Death Resist Pin (60, Myth)"
+      "name": "Death Resist Pin (60, Myth)",
+      "match_name": "Death Resist Pin (60)"
     },
     {
       "name": "Delicious Cookie"
@@ -490,13 +517,16 @@
       "name": "Fiery Boom Shroom"
     },
     {
-      "name": "Fire Blocking Pin (60, Balance)"
+      "name": "Fire Blocking Pin (60, Balance)",
+      "match_name": "Fire Blocking Pin (60)"
     },
     {
-      "name": "Fire Blocking Pin (60, Life)"
+      "name": "Fire Blocking Pin (60, Life)",
+      "match_name": "Fire Blocking Pin (60)"
     },
     {
-      "name": "Fire Blocking Pin (60, Storm)"
+      "name": "Fire Blocking Pin (60, Storm)",
+      "match_name": "Fire Blocking Pin (60)"
     },
     {
       "name": "Fire Dragon"
@@ -508,13 +538,16 @@
       "name": "Fire Mending Pin (60)"
     },
     {
-      "name": "Fire Resist Pin (50, Balance)"
+      "name": "Fire Resist Pin (50, Balance)",
+      "match_name": "Fire Resist Pin (50)"
     },
     {
-      "name": "Fire Resist Pin (50, Life)"
+      "name": "Fire Resist Pin (50, Life)",
+      "match_name": "Fire Resist Pin (50)"
     },
     {
-      "name": "Fire Resist Pin (50, Storm)"
+      "name": "Fire Resist Pin (50, Storm)",
+      "match_name": "Fire Resist Pin (50)"
     },
     {
       "name": "Fish Fin"
@@ -625,25 +658,31 @@
       "name": "Hydra"
     },
     {
-      "name": "Ice Blocking Pin (60, Balance)"
+      "name": "Ice Blocking Pin (60, Balance)",
+      "match_name": "Ice Blocking Pin (60)"
     },
     {
-      "name": "Ice Blocking Pin (60, Fire)"
+      "name": "Ice Blocking Pin (60, Fire)",
+      "match_name": "Ice Blocking Pin (60)"
     },
     {
-      "name": "Ice Blocking Pin (60, Myth)"
+      "name": "Ice Blocking Pin (60, Myth)",
+      "match_name": "Ice Blocking Pin (60)"
     },
     {
       "name": "Ice Rangers"
     },
     {
-      "name": "Ice Resist Pin (50, Balance)"
+      "name": "Ice Resist Pin (50, Balance)",
+      "match_name": "Ice Resist Pin (50)"
     },
     {
-      "name": "Ice Resist Pin (50, Fire)"
+      "name": "Ice Resist Pin (50, Fire)",
+      "match_name": "Ice Resist Pin (50)"
     },
     {
-      "name": "Ice Resist Pin (50, Myth)"
+      "name": "Ice Resist Pin (50, Myth)",
+      "match_name": "Ice Resist Pin (50)"
     },
     {
       "name": "Ice Wyvern"
@@ -706,13 +745,16 @@
       "name": "Librarian's Mantle"
     },
     {
-      "name": "Life Blocking Pin (60, Balance)"
+      "name": "Life Blocking Pin (60, Balance)",
+      "match_name": "Life Blocking Pin (60)"
     },
     {
-      "name": "Life Blocking Pin (60, Death)"
+      "name": "Life Blocking Pin (60, Death)",
+      "match_name": "Life Blocking Pin (60)"
     },
     {
-      "name": "Life Blocking Pin (60, Storm)"
+      "name": "Life Blocking Pin (60, Storm)",
+      "match_name": "Life Blocking Pin (60)"
     },
     {
       "name": "Life Mending Pin (40)"
@@ -721,13 +763,16 @@
       "name": "Life Mending Pin (60)"
     },
     {
-      "name": "Life Resist Pin (50, Balance)"
+      "name": "Life Resist Pin (50, Balance)",
+      "match_name": "Life Resist Pin (50)"
     },
     {
-      "name": "Life Resist Pin (50, Death)"
+      "name": "Life Resist Pin (50, Death)",
+      "match_name": "Life Resist Pin (50)"
     },
     {
-      "name": "Life Resist Pin (50, Storm)"
+      "name": "Life Resist Pin (50, Storm)",
+      "match_name": "Life Resist Pin (50)"
     },
     {
       "name": "Life-Boon Jade"
@@ -823,22 +868,28 @@
       "name": "Mysterious Costume"
     },
     {
-      "name": "Myth Blocking Pin (60, Balance)"
+      "name": "Myth Blocking Pin (60, Balance)",
+      "match_name": "Myth Blocking Pin (60)"
     },
     {
-      "name": "Myth Blocking Pin (60, Fire)"
+      "name": "Myth Blocking Pin (60, Fire)",
+      "match_name": "Myth Blocking Pin (60)"
     },
     {
-      "name": "Myth Blocking Pin (60, Life)"
+      "name": "Myth Blocking Pin (60, Life)",
+      "match_name": "Myth Blocking Pin (60)"
     },
     {
-      "name": "Myth Resist Pin (50, Balance)"
+      "name": "Myth Resist Pin (50, Balance)",
+      "match_name": "Myth Resist Pin (50)"
     },
     {
-      "name": "Myth Resist Pin (50, Fire)"
+      "name": "Myth Resist Pin (50, Fire)",
+      "match_name": "Myth Resist Pin (50)"
     },
     {
-      "name": "Myth Resist Pin (50, Life)"
+      "name": "Myth Resist Pin (50, Life)",
+      "match_name": "Myth Resist Pin (50)"
     },
     {
       "name": "Myth-Eye Peridot"
@@ -1063,13 +1114,16 @@
       "name": "Storied Celestian Sabatons"
     },
     {
-      "name": "Storm Blocking Pin (60, Balance)"
+      "name": "Storm Blocking Pin (60, Balance)",
+      "match_name": "Storm Blocking Pin (60)"
     },
     {
-      "name": "Storm Blocking Pin (60, Death)"
+      "name": "Storm Blocking Pin (60, Death)",
+      "match_name": "Storm Blocking Pin (60)"
     },
     {
-      "name": "Storm Blocking Pin (60, Ice)"
+      "name": "Storm Blocking Pin (60, Ice)",
+      "match_name": "Storm Blocking Pin (60)"
     },
     {
       "name": "Storm Lord"
@@ -1081,22 +1135,28 @@
       "name": "Storm Mending Pin (60)"
     },
     {
-      "name": "Storm Resist Pin (50, Balance)"
+      "name": "Storm Resist Pin (50, Balance)",
+      "match_name": "Storm Resist Pin (50)"
     },
     {
-      "name": "Storm Resist Pin (50, Death)"
+      "name": "Storm Resist Pin (50, Death)",
+      "match_name": "Storm Resist Pin (50)"
     },
     {
-      "name": "Storm Resist Pin (50, Ice)"
+      "name": "Storm Resist Pin (50, Ice)",
+      "match_name": "Storm Resist Pin (50)"
     },
     {
-      "name": "Storm Resist Pin (60, Balance)"
+      "name": "Storm Resist Pin (60, Balance)",
+      "match_name": "Storm Resist Pin (60)"
     },
     {
-      "name": "Storm Resist Pin (60, Death)"
+      "name": "Storm Resist Pin (60, Death)",
+      "match_name": "Storm Resist Pin (60)"
     },
     {
-      "name": "Storm Resist Pin (60, Ice)"
+      "name": "Storm Resist Pin (60, Ice)",
+      "match_name": "Storm Resist Pin (60)"
     },
     {
       "name": "Storm Shark"

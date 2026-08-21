@@ -114,31 +114,38 @@
     },
     {
       "name": "Ring of Gorgon Imprisonment (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Imprisonment"
     },
     {
       "name": "Ring of Gorgon Infamy (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Infamy"
     },
     {
       "name": "Ring of Gorgon Petrification (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Petrification"
     },
     {
       "name": "Ring of Gorgon Suffering (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Suffering"
     },
     {
       "name": "Ring of Gorgon Venom (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Venom"
     },
     {
       "name": "Ring of Gorgon Volatility (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Volatility"
     },
     {
       "name": "Ring of Gorgon's Gaze (Level 90+)",
-      "category": "Rings"
+      "category": "Rings",
+      "match_name": "Ring of Gorgon's Gaze"
     },
     {
       "name": "Saturn's Reaping",

@@ -42,31 +42,38 @@
     },
     {
       "name": "Charm of Gorgon Imprisonment (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Imprisonment"
     },
     {
       "name": "Charm of Gorgon Infamy (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Infamy"
     },
     {
       "name": "Charm of Gorgon Petrification (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Petrification"
     },
     {
       "name": "Charm of Gorgon Suffering (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Suffering"
     },
     {
       "name": "Charm of Gorgon Venom (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Venom"
     },
     {
       "name": "Charm of Gorgon Volatility (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Volatility"
     },
     {
       "name": "Charm of Gorgon's Gaze (Level 90+)",
-      "category": "Amulets"
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon's Gaze"
     },
     {
       "name": "Deck of Immortal Might",

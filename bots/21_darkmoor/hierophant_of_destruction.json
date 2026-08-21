@@ -38,319 +38,398 @@
     },
     {
       "name": "Bright Critical Amethyst +44 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Amethyst +44"
     },
     {
       "name": "Bright Critical Amethyst +48 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Amethyst +48"
     },
     {
       "name": "Bright Critical Amethyst +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Amethyst +52"
     },
     {
       "name": "Bright Critical Amethyst +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Amethyst +56"
     },
     {
       "name": "Bright Critical Amethyst +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Amethyst +57"
     },
     {
       "name": "Bright Critical Amethyst +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Amethyst +63"
     },
     {
       "name": "Bright Critical Citrine +44 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Citrine +44"
     },
     {
       "name": "Bright Critical Citrine +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Citrine +52"
     },
     {
       "name": "Bright Critical Citrine +54 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Citrine +54"
     },
     {
       "name": "Bright Critical Citrine +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Citrine +56"
     },
     {
       "name": "Bright Critical Citrine +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Citrine +57"
     },
     {
       "name": "Bright Critical Citrine +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Citrine +63"
     },
     {
       "name": "Bright Critical Jade +48 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Jade +48"
     },
     {
       "name": "Bright Critical Jade +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Jade +52"
     },
     {
       "name": "Bright Critical Jade +54 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Jade +54"
     },
     {
       "name": "Bright Critical Jade +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Jade +56"
     },
     {
       "name": "Bright Critical Jade +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Jade +57"
     },
     {
       "name": "Bright Critical Jade +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Jade +63"
     },
     {
       "name": "Bright Critical Onyx +44 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +44"
     },
     {
       "name": "Bright Critical Onyx +48 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +48"
     },
     {
       "name": "Bright Critical Onyx +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +52"
     },
     {
       "name": "Bright Critical Onyx +54 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +54"
     },
     {
       "name": "Bright Critical Onyx +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +56"
     },
     {
       "name": "Bright Critical Onyx +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +57"
     },
     {
       "name": "Bright Critical Onyx +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Onyx +63"
     },
     {
       "name": "Bright Critical Peridot +44 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +44"
     },
     {
       "name": "Bright Critical Peridot +48 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +48"
     },
     {
       "name": "Bright Critical Peridot +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +52"
     },
     {
       "name": "Bright Critical Peridot +54 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +54"
     },
     {
       "name": "Bright Critical Peridot +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +56"
     },
     {
       "name": "Bright Critical Peridot +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +57"
     },
     {
       "name": "Bright Critical Peridot +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Peridot +63"
     },
     {
       "name": "Bright Critical Ruby +44 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +44"
     },
     {
       "name": "Bright Critical Ruby +48 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +48"
     },
     {
       "name": "Bright Critical Ruby +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +52"
     },
     {
       "name": "Bright Critical Ruby +54 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +54"
     },
     {
       "name": "Bright Critical Ruby +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +56"
     },
     {
       "name": "Bright Critical Ruby +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +57"
     },
     {
       "name": "Bright Critical Ruby +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Ruby +63"
     },
     {
       "name": "Bright Critical Sapphire +44 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +44"
     },
     {
       "name": "Bright Critical Sapphire +48 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +48"
     },
     {
       "name": "Bright Critical Sapphire +52 (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +52"
     },
     {
       "name": "Bright Critical Sapphire +54 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +54"
     },
     {
       "name": "Bright Critical Sapphire +56 (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +56"
     },
     {
       "name": "Bright Critical Sapphire +57 (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +57"
     },
     {
       "name": "Bright Critical Sapphire +63 (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Critical Sapphire +63"
     },
     {
       "name": "Bright Damage Amethyst +10% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Amethyst +10%"
     },
     {
       "name": "Bright Damage Amethyst +10% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Amethyst +10%"
     },
     {
       "name": "Bright Damage Citrine +11% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Citrine +11%"
     },
     {
       "name": "Bright Damage Citrine +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Citrine +11%"
     },
     {
       "name": "Bright Damage Citrine +11% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Citrine +11%"
     },
     {
       "name": "Bright Damage Citrine +11% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Citrine +11%"
     },
     {
       "name": "Bright Damage Citrine +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Citrine +11%"
     },
     {
       "name": "Bright Damage Jade +10% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +10%"
     },
     {
       "name": "Bright Damage Jade +10% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +10%"
     },
     {
       "name": "Bright Damage Jade +11% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +11%"
     },
     {
       "name": "Bright Damage Jade +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +11%"
     },
     {
       "name": "Bright Damage Jade +11% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +11%"
     },
     {
       "name": "Bright Damage Jade +11% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +11%"
     },
     {
       "name": "Bright Damage Jade +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Jade +11%"
     },
     {
       "name": "Bright Damage Onyx +10% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Onyx +10%"
     },
     {
       "name": "Bright Damage Onyx +10% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Onyx +10%"
     },
     {
       "name": "Bright Damage Peridot +11% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Peridot +11%"
     },
     {
       "name": "Bright Damage Peridot +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Peridot +11%"
     },
     {
       "name": "Bright Damage Peridot +11% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Peridot +11%"
     },
     {
       "name": "Bright Damage Peridot +11% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Peridot +11%"
     },
     {
       "name": "Bright Damage Peridot +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Peridot +11%"
     },
     {
       "name": "Bright Damage Ruby +11% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Ruby +11%"
     },
     {
       "name": "Bright Damage Ruby +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Ruby +11%"
     },
     {
       "name": "Bright Damage Ruby +11% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Ruby +11%"
     },
     {
       "name": "Bright Damage Ruby +11% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Ruby +11%"
     },
     {
       "name": "Bright Damage Ruby +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Ruby +11%"
     },
     {
       "name": "Bright Damage Sapphire +10% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +10%"
     },
     {
       "name": "Bright Damage Sapphire +10% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +10%"
     },
     {
       "name": "Bright Damage Sapphire +11% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +11%"
     },
     {
       "name": "Bright Damage Sapphire +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +11%"
     },
     {
       "name": "Bright Damage Sapphire +11% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +11%"
     },
     {
       "name": "Bright Damage Sapphire +11% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +11%"
     },
     {
       "name": "Bright Damage Sapphire +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Bright Damage Sapphire +11%"
     },
     {
       "name": "Bunyip's Rage",
@@ -602,79 +681,98 @@
     },
     {
       "name": "Unearthly Critical Amethyst +48 (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +48"
     },
     {
       "name": "Unearthly Critical Citrine +44 (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +44"
     },
     {
       "name": "Unearthly Critical Jade +42 (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +42"
     },
     {
       "name": "Unearthly Damage Amethyst +10% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +10%"
     },
     {
       "name": "Unearthly Damage Amethyst +10% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +10%"
     },
     {
       "name": "Unearthly Damage Amethyst +10% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +10%"
     },
     {
       "name": "Unearthly Damage Amethyst +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +11%"
     },
     {
       "name": "Unearthly Damage Amethyst +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +11%"
     },
     {
       "name": "Unearthly Damage Citrine +9% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +9%"
     },
     {
       "name": "Unearthly Damage Citrine +9% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +9%"
     },
     {
       "name": "Unearthly Damage Onyx +10% (Balance)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +10%"
     },
     {
       "name": "Unearthly Damage Onyx +10% (Fire)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +10%"
     },
     {
       "name": "Unearthly Damage Onyx +10% (Myth)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +10%"
     },
     {
       "name": "Unearthly Damage Onyx +11% (Death)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +11%"
     },
     {
       "name": "Unearthly Damage Onyx +11% (Storm)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +11%"
     },
     {
       "name": "Unearthly Damage Peridot +9% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +9%"
     },
     {
       "name": "Unearthly Damage Peridot +9% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +9%"
     },
     {
       "name": "Unearthly Damage Ruby +9% (Ice)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +9%"
     },
     {
       "name": "Unearthly Damage Ruby +9% (Life)",
-      "category": "Jewels"
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +9%"
     },
     {
       "name": "Wheel of Fortune",

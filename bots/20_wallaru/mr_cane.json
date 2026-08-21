@@ -27,7 +27,8 @@
       "name": "Amazing Accurate Sapphire +15%"
     },
     {
-      "name": "Amazing Archmastery Opal +14 (Tear)"
+      "name": "Amazing Archmastery Opal +14 (Tear)",
+      "match_name": "Amazing Archmastery Opal +14"
     },
     {
       "name": "Amazing Health Opal +136"
@@ -63,28 +64,36 @@
       "name": "Ashen Bones"
     },
     {
-      "name": "Balance Crushing Pin (150, Storm)"
+      "name": "Balance Crushing Pin (150, Storm)",
+      "match_name": "Balance Crushing Pin (150)"
     },
     {
-      "name": "Balance Crushing Pin (160, Life)"
+      "name": "Balance Crushing Pin (160, Life)",
+      "match_name": "Balance Crushing Pin (160)"
     },
     {
-      "name": "Balance Crushing Pin (160, Storm)"
+      "name": "Balance Crushing Pin (160, Storm)",
+      "match_name": "Balance Crushing Pin (160)"
     },
     {
-      "name": "Balance Disabling Pin (150, Storm)"
+      "name": "Balance Disabling Pin (150, Storm)",
+      "match_name": "Balance Disabling Pin (150)"
     },
     {
-      "name": "Balance Disabling Pin (160, Storm)"
+      "name": "Balance Disabling Pin (160, Storm)",
+      "match_name": "Balance Disabling Pin (160)"
     },
     {
-      "name": "Balance Punishing Pin (150, Storm)"
+      "name": "Balance Punishing Pin (150, Storm)",
+      "match_name": "Balance Punishing Pin (150)"
     },
     {
-      "name": "Balance Punishing Pin (160, Fire)"
+      "name": "Balance Punishing Pin (160, Fire)",
+      "match_name": "Balance Punishing Pin (160)"
     },
     {
-      "name": "Balance Punishing Pin (160, Storm)"
+      "name": "Balance Punishing Pin (160, Storm)",
+      "match_name": "Balance Punishing Pin (160)"
     },
     {
       "name": "Balanceblade"
@@ -144,25 +153,32 @@
       "name": "Deadly Minotaur"
     },
     {
-      "name": "Death Crushing Pin (150, Storm)"
+      "name": "Death Crushing Pin (150, Storm)",
+      "match_name": "Death Crushing Pin (150)"
     },
     {
-      "name": "Death Crushing Pin (160, Storm)"
+      "name": "Death Crushing Pin (160, Storm)",
+      "match_name": "Death Crushing Pin (160)"
     },
     {
-      "name": "Death Disabling Pin (150, Fire)"
+      "name": "Death Disabling Pin (150, Fire)",
+      "match_name": "Death Disabling Pin (150)"
     },
     {
-      "name": "Death Disabling Pin (150, Storm)"
+      "name": "Death Disabling Pin (150, Storm)",
+      "match_name": "Death Disabling Pin (150)"
     },
     {
-      "name": "Death Punishing Pin (150, Myth)"
+      "name": "Death Punishing Pin (150, Myth)",
+      "match_name": "Death Punishing Pin (150)"
     },
     {
-      "name": "Death Punishing Pin (150, Storm)"
+      "name": "Death Punishing Pin (150, Storm)",
+      "match_name": "Death Punishing Pin (150)"
     },
     {
-      "name": "Death Punishing Pin (160, Storm)"
+      "name": "Death Punishing Pin (160, Storm)",
+      "match_name": "Death Punishing Pin (160)"
     },
     {
       "name": "Deathly Depths"
@@ -213,25 +229,31 @@
       "name": "Fire Cat (Tier 2b)"
     },
     {
-      "name": "Fire Crushing Pin (150, Myth)"
+      "name": "Fire Crushing Pin (150, Myth)",
+      "match_name": "Fire Crushing Pin (150)"
     },
     {
-      "name": "Fire Crushing Pin (150, Storm)"
+      "name": "Fire Crushing Pin (150, Storm)",
+      "match_name": "Fire Crushing Pin (150)"
     },
     {
-      "name": "Fire Crushing Pin (160, Storm)"
+      "name": "Fire Crushing Pin (160, Storm)",
+      "match_name": "Fire Crushing Pin (160)"
     },
     {
-      "name": "Fire Disabling Pin (150, Storm)"
+      "name": "Fire Disabling Pin (150, Storm)",
+      "match_name": "Fire Disabling Pin (150)"
     },
     {
-      "name": "Fire Disabling Pin (160, Storm)"
+      "name": "Fire Disabling Pin (160, Storm)",
+      "match_name": "Fire Disabling Pin (160)"
     },
     {
       "name": "Fire Elf (Tier 2b)"
     },
     {
-      "name": "Fire Punishing Pin (150, Storm)"
+      "name": "Fire Punishing Pin (150, Storm)",
+      "match_name": "Fire Punishing Pin (150)"
     },
     {
       "name": "Fire Trap"
@@ -264,7 +286,8 @@
       "name": "Flawless Accurate Sapphire +16%"
     },
     {
-      "name": "Flawless Archmastery Opal +15 (Tear)"
+      "name": "Flawless Archmastery Opal +15 (Tear)",
+      "match_name": "Flawless Archmastery Opal +15"
     },
     {
       "name": "Flawless Health Opal +147"
@@ -354,22 +377,28 @@
       "name": "Hex"
     },
     {
-      "name": "Ice Crushing Pin (150, Myth)"
+      "name": "Ice Crushing Pin (150, Myth)",
+      "match_name": "Ice Crushing Pin (150)"
     },
     {
-      "name": "Ice Crushing Pin (150, Storm)"
+      "name": "Ice Crushing Pin (150, Storm)",
+      "match_name": "Ice Crushing Pin (150)"
     },
     {
-      "name": "Ice Disabing Pin (150, Storm)"
+      "name": "Ice Disabing Pin (150, Storm)",
+      "match_name": "Ice Disabing Pin (150)"
     },
     {
-      "name": "Ice Disabling Pin (160, Storm)"
+      "name": "Ice Disabling Pin (160, Storm)",
+      "match_name": "Ice Disabling Pin (160)"
     },
     {
-      "name": "Ice Punishing Pin (150, Storm)"
+      "name": "Ice Punishing Pin (150, Storm)",
+      "match_name": "Ice Punishing Pin (150)"
     },
     {
-      "name": "Ice Punishing Pin (160, Storm)"
+      "name": "Ice Punishing Pin (160, Storm)",
+      "match_name": "Ice Punishing Pin (160)"
     },
     {
       "name": "Iceblade"
@@ -411,22 +440,28 @@
       "name": "Leprechaun (Tier 2b)"
     },
     {
-      "name": "Life Crushing Pin (150, Fire)"
+      "name": "Life Crushing Pin (150, Fire)",
+      "match_name": "Life Crushing Pin (150)"
     },
     {
-      "name": "Life Crushing Pin (160, Storm)"
+      "name": "Life Crushing Pin (160, Storm)",
+      "match_name": "Life Crushing Pin (160)"
     },
     {
-      "name": "Life Disabling Pin (150, Fire)"
+      "name": "Life Disabling Pin (150, Fire)",
+      "match_name": "Life Disabling Pin (150)"
     },
     {
-      "name": "Life Disabling Pin (150, Storm)"
+      "name": "Life Disabling Pin (150, Storm)",
+      "match_name": "Life Disabling Pin (150)"
     },
     {
-      "name": "Life Disabling Pin (160, Storm)"
+      "name": "Life Disabling Pin (160, Storm)",
+      "match_name": "Life Disabling Pin (160)"
     },
     {
-      "name": "Life Punishing Pin (150, Storm)"
+      "name": "Life Punishing Pin (150, Storm)",
+      "match_name": "Life Punishing Pin (150)"
     },
     {
       "name": "Lifeblade"
@@ -468,28 +503,36 @@
       "name": "Morbid Protector's Uniform"
     },
     {
-      "name": "Myth Crushing Pin (150, Storm)"
+      "name": "Myth Crushing Pin (150, Storm)",
+      "match_name": "Myth Crushing Pin (150)"
     },
     {
-      "name": "Myth Crushing Pin (160, Balance)"
+      "name": "Myth Crushing Pin (160, Balance)",
+      "match_name": "Myth Crushing Pin (160)"
     },
     {
-      "name": "Myth Crushing Pin (160, Storm)"
+      "name": "Myth Crushing Pin (160, Storm)",
+      "match_name": "Myth Crushing Pin (160)"
     },
     {
-      "name": "Myth Disabling Pin (150, Storm)"
+      "name": "Myth Disabling Pin (150, Storm)",
+      "match_name": "Myth Disabling Pin (150)"
     },
     {
-      "name": "Myth Disabling Pin (160, Storm)"
+      "name": "Myth Disabling Pin (160, Storm)",
+      "match_name": "Myth Disabling Pin (160)"
     },
     {
-      "name": "Myth Punishing Pin (150, Storm)"
+      "name": "Myth Punishing Pin (150, Storm)",
+      "match_name": "Myth Punishing Pin (150)"
     },
     {
-      "name": "Myth Punishing Pin (160, Death)"
+      "name": "Myth Punishing Pin (160, Death)",
+      "match_name": "Myth Punishing Pin (160)"
     },
     {
-      "name": "Myth Punishing Pin (160, Storm)"
+      "name": "Myth Punishing Pin (160, Storm)",
+      "match_name": "Myth Punishing Pin (160)"
     },
     {
       "name": "Myth Trap"
@@ -603,7 +646,8 @@
       "name": "Steely Protector's Uniform"
     },
     {
-      "name": "Storm Punishing Pin (150, Life)"
+      "name": "Storm Punishing Pin (150, Life)",
+      "match_name": "Storm Punishing Pin (150)"
     },
     {
       "name": "Storm Shark (Tier 2b)"

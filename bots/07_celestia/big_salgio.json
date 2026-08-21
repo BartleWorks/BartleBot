@@ -52,67 +52,88 @@
       "name": "Atavistic Storm Trident"
     },
     {
-      "name": "Balance Crushing Pin (60, Death)"
+      "name": "Balance Crushing Pin (60, Death)",
+      "match_name": "Balance Crushing Pin (60)"
     },
     {
-      "name": "Balance Crushing Pin (60, Fire)"
+      "name": "Balance Crushing Pin (60, Fire)",
+      "match_name": "Balance Crushing Pin (60)"
     },
     {
-      "name": "Balance Crushing Pin (60, Ice)"
+      "name": "Balance Crushing Pin (60, Ice)",
+      "match_name": "Balance Crushing Pin (60)"
     },
     {
-      "name": "Balance Crushing Pin (60, Life)"
+      "name": "Balance Crushing Pin (60, Life)",
+      "match_name": "Balance Crushing Pin (60)"
     },
     {
-      "name": "Balance Crushing Pin (60, Myth)"
+      "name": "Balance Crushing Pin (60, Myth)",
+      "match_name": "Balance Crushing Pin (60)"
     },
     {
-      "name": "Balance Crushing Pin (60, Storm)"
+      "name": "Balance Crushing Pin (60, Storm)",
+      "match_name": "Balance Crushing Pin (60)"
     },
     {
-      "name": "Balance Disabling Pin (60, Death)"
+      "name": "Balance Disabling Pin (60, Death)",
+      "match_name": "Balance Disabling Pin (60)"
     },
     {
-      "name": "Balance Disabling Pin (60, Fire)"
+      "name": "Balance Disabling Pin (60, Fire)",
+      "match_name": "Balance Disabling Pin (60)"
     },
     {
-      "name": "Balance Disabling Pin (60, Ice)"
+      "name": "Balance Disabling Pin (60, Ice)",
+      "match_name": "Balance Disabling Pin (60)"
     },
     {
-      "name": "Balance Disabling Pin (60, Life)"
+      "name": "Balance Disabling Pin (60, Life)",
+      "match_name": "Balance Disabling Pin (60)"
     },
     {
-      "name": "Balance Disabling Pin (60, Myth)"
+      "name": "Balance Disabling Pin (60, Myth)",
+      "match_name": "Balance Disabling Pin (60)"
     },
     {
-      "name": "Balance Disabling Pin (60, Storm)"
+      "name": "Balance Disabling Pin (60, Storm)",
+      "match_name": "Balance Disabling Pin (60)"
     },
     {
-      "name": "Balance Punishing Pin (50, Death)"
+      "name": "Balance Punishing Pin (50, Death)",
+      "match_name": "Balance Punishing Pin (50)"
     },
     {
-      "name": "Balance Punishing Pin (50, Fire)"
+      "name": "Balance Punishing Pin (50, Fire)",
+      "match_name": "Balance Punishing Pin (50)"
     },
     {
-      "name": "Balance Punishing Pin (50, Ice)"
+      "name": "Balance Punishing Pin (50, Ice)",
+      "match_name": "Balance Punishing Pin (50)"
     },
     {
-      "name": "Balance Punishing Pin (50, Life)"
+      "name": "Balance Punishing Pin (50, Life)",
+      "match_name": "Balance Punishing Pin (50)"
     },
     {
-      "name": "Balance Punishing Pin (50, Myth)"
+      "name": "Balance Punishing Pin (50, Myth)",
+      "match_name": "Balance Punishing Pin (50)"
     },
     {
-      "name": "Balance Punishing Pin (50, Storm)"
+      "name": "Balance Punishing Pin (50, Storm)",
+      "match_name": "Balance Punishing Pin (50)"
     },
     {
-      "name": "Balance Punishing Pin (60, Death)"
+      "name": "Balance Punishing Pin (60, Death)",
+      "match_name": "Balance Punishing Pin (60)"
     },
     {
-      "name": "Balance Punishing Pin (60, Ice)"
+      "name": "Balance Punishing Pin (60, Ice)",
+      "match_name": "Balance Punishing Pin (60)"
     },
     {
-      "name": "Balance Punishing Pin (60, Myth)"
+      "name": "Balance Punishing Pin (60, Myth)",
+      "match_name": "Balance Punishing Pin (60)"
     },
     {
       "name": "Banshee"
@@ -190,67 +211,88 @@
       "name": "Deadly Fly Trap"
     },
     {
-      "name": "Death Crushing Pin (60, Balance)"
+      "name": "Death Crushing Pin (60, Balance)",
+      "match_name": "Death Crushing Pin (60)"
     },
     {
-      "name": "Death Crushing Pin (60, Fire)"
+      "name": "Death Crushing Pin (60, Fire)",
+      "match_name": "Death Crushing Pin (60)"
     },
     {
-      "name": "Death Crushing Pin (60, Ice)"
+      "name": "Death Crushing Pin (60, Ice)",
+      "match_name": "Death Crushing Pin (60)"
     },
     {
-      "name": "Death Crushing Pin (60, Life)"
+      "name": "Death Crushing Pin (60, Life)",
+      "match_name": "Death Crushing Pin (60)"
     },
     {
-      "name": "Death Crushing Pin (60, Myth)"
+      "name": "Death Crushing Pin (60, Myth)",
+      "match_name": "Death Crushing Pin (60)"
     },
     {
-      "name": "Death Crushing Pin (60, Storm)"
+      "name": "Death Crushing Pin (60, Storm)",
+      "match_name": "Death Crushing Pin (60)"
     },
     {
-      "name": "Death Disabling Pin (60, Balance)"
+      "name": "Death Disabling Pin (60, Balance)",
+      "match_name": "Death Disabling Pin (60)"
     },
     {
-      "name": "Death Disabling Pin (60, Fire)"
+      "name": "Death Disabling Pin (60, Fire)",
+      "match_name": "Death Disabling Pin (60)"
     },
     {
-      "name": "Death Disabling Pin (60, Ice)"
+      "name": "Death Disabling Pin (60, Ice)",
+      "match_name": "Death Disabling Pin (60)"
     },
     {
-      "name": "Death Disabling Pin (60, Life)"
+      "name": "Death Disabling Pin (60, Life)",
+      "match_name": "Death Disabling Pin (60)"
     },
     {
-      "name": "Death Disabling Pin (60, Myth)"
+      "name": "Death Disabling Pin (60, Myth)",
+      "match_name": "Death Disabling Pin (60)"
     },
     {
-      "name": "Death Disabling Pin (60, Storm)"
+      "name": "Death Disabling Pin (60, Storm)",
+      "match_name": "Death Disabling Pin (60)"
     },
     {
-      "name": "Death Punishing Pin (50, Balance)"
+      "name": "Death Punishing Pin (50, Balance)",
+      "match_name": "Death Punishing Pin (50)"
     },
     {
-      "name": "Death Punishing Pin (50, Fire)"
+      "name": "Death Punishing Pin (50, Fire)",
+      "match_name": "Death Punishing Pin (50)"
     },
     {
-      "name": "Death Punishing Pin (50, Ice)"
+      "name": "Death Punishing Pin (50, Ice)",
+      "match_name": "Death Punishing Pin (50)"
     },
     {
-      "name": "Death Punishing Pin (50, Life)"
+      "name": "Death Punishing Pin (50, Life)",
+      "match_name": "Death Punishing Pin (50)"
     },
     {
-      "name": "Death Punishing Pin (50, Myth)"
+      "name": "Death Punishing Pin (50, Myth)",
+      "match_name": "Death Punishing Pin (50)"
     },
     {
-      "name": "Death Punishing Pin (50, Storm)"
+      "name": "Death Punishing Pin (50, Storm)",
+      "match_name": "Death Punishing Pin (50)"
     },
     {
-      "name": "Death Punishing Pin (60, Balance)"
+      "name": "Death Punishing Pin (60, Balance)",
+      "match_name": "Death Punishing Pin (60)"
     },
     {
-      "name": "Death Punishing Pin (60, Ice)"
+      "name": "Death Punishing Pin (60, Ice)",
+      "match_name": "Death Punishing Pin (60)"
     },
     {
-      "name": "Death Punishing Pin (60, Myth)"
+      "name": "Death Punishing Pin (60, Myth)",
+      "match_name": "Death Punishing Pin (60)"
     },
     {
       "name": "Delicious Cookie"
@@ -274,73 +316,95 @@
       "name": "Facade of the Firestar"
     },
     {
-      "name": "Fire Crushing Pin (60, Balance)"
+      "name": "Fire Crushing Pin (60, Balance)",
+      "match_name": "Fire Crushing Pin (60)"
     },
     {
-      "name": "Fire Crushing Pin (60, Death)"
+      "name": "Fire Crushing Pin (60, Death)",
+      "match_name": "Fire Crushing Pin (60)"
     },
     {
-      "name": "Fire Crushing Pin (60, Ice)"
+      "name": "Fire Crushing Pin (60, Ice)",
+      "match_name": "Fire Crushing Pin (60)"
     },
     {
-      "name": "Fire Crushing Pin (60, Life)"
+      "name": "Fire Crushing Pin (60, Life)",
+      "match_name": "Fire Crushing Pin (60)"
     },
     {
-      "name": "Fire Crushing Pin (60, Myth)"
+      "name": "Fire Crushing Pin (60, Myth)",
+      "match_name": "Fire Crushing Pin (60)"
     },
     {
-      "name": "Fire Crushing Pin (60, Storm)"
+      "name": "Fire Crushing Pin (60, Storm)",
+      "match_name": "Fire Crushing Pin (60)"
     },
     {
-      "name": "Fire Disabling Pin (60, Balance)"
+      "name": "Fire Disabling Pin (60, Balance)",
+      "match_name": "Fire Disabling Pin (60)"
     },
     {
-      "name": "Fire Disabling Pin (60, Death)"
+      "name": "Fire Disabling Pin (60, Death)",
+      "match_name": "Fire Disabling Pin (60)"
     },
     {
-      "name": "Fire Disabling Pin (60, Ice)"
+      "name": "Fire Disabling Pin (60, Ice)",
+      "match_name": "Fire Disabling Pin (60)"
     },
     {
-      "name": "Fire Disabling Pin (60, Life)"
+      "name": "Fire Disabling Pin (60, Life)",
+      "match_name": "Fire Disabling Pin (60)"
     },
     {
-      "name": "Fire Disabling Pin (60, Myth)"
+      "name": "Fire Disabling Pin (60, Myth)",
+      "match_name": "Fire Disabling Pin (60)"
     },
     {
-      "name": "Fire Disabling Pin (60, Storm)"
+      "name": "Fire Disabling Pin (60, Storm)",
+      "match_name": "Fire Disabling Pin (60)"
     },
     {
       "name": "Fire Dragon"
     },
     {
-      "name": "Fire Punishing Pin (50, Balance)"
+      "name": "Fire Punishing Pin (50, Balance)",
+      "match_name": "Fire Punishing Pin (50)"
     },
     {
-      "name": "Fire Punishing Pin (50, Death)"
+      "name": "Fire Punishing Pin (50, Death)",
+      "match_name": "Fire Punishing Pin (50)"
     },
     {
-      "name": "Fire Punishing Pin (50, Ice)"
+      "name": "Fire Punishing Pin (50, Ice)",
+      "match_name": "Fire Punishing Pin (50)"
     },
     {
-      "name": "Fire Punishing Pin (50, Life)"
+      "name": "Fire Punishing Pin (50, Life)",
+      "match_name": "Fire Punishing Pin (50)"
     },
     {
-      "name": "Fire Punishing Pin (50, Myth)"
+      "name": "Fire Punishing Pin (50, Myth)",
+      "match_name": "Fire Punishing Pin (50)"
     },
     {
-      "name": "Fire Punishing Pin (50, Storm)"
+      "name": "Fire Punishing Pin (50, Storm)",
+      "match_name": "Fire Punishing Pin (50)"
     },
     {
-      "name": "Fire Punishing Pin (60, Balance)"
+      "name": "Fire Punishing Pin (60, Balance)",
+      "match_name": "Fire Punishing Pin (60)"
     },
     {
-      "name": "Fire Punishing Pin (60, Death)"
+      "name": "Fire Punishing Pin (60, Death)",
+      "match_name": "Fire Punishing Pin (60)"
     },
     {
-      "name": "Fire Punishing Pin (60, Ice)"
+      "name": "Fire Punishing Pin (60, Ice)",
+      "match_name": "Fire Punishing Pin (60)"
     },
     {
-      "name": "Fire Punishing Pin (60, Myth)"
+      "name": "Fire Punishing Pin (60, Myth)",
+      "match_name": "Fire Punishing Pin (60)"
     },
     {
       "name": "Fire Trap"
@@ -379,67 +443,88 @@
       "name": "Hydra"
     },
     {
-      "name": "Ice Crushing Pin (60, Balance)"
+      "name": "Ice Crushing Pin (60, Balance)",
+      "match_name": "Ice Crushing Pin (60)"
     },
     {
-      "name": "Ice Crushing Pin (60, Death)"
+      "name": "Ice Crushing Pin (60, Death)",
+      "match_name": "Ice Crushing Pin (60)"
     },
     {
-      "name": "Ice Crushing Pin (60, Fire)"
+      "name": "Ice Crushing Pin (60, Fire)",
+      "match_name": "Ice Crushing Pin (60)"
     },
     {
-      "name": "Ice Crushing Pin (60, Life)"
+      "name": "Ice Crushing Pin (60, Life)",
+      "match_name": "Ice Crushing Pin (60)"
     },
     {
-      "name": "Ice Crushing Pin (60, Myth)"
+      "name": "Ice Crushing Pin (60, Myth)",
+      "match_name": "Ice Crushing Pin (60)"
     },
     {
-      "name": "Ice Crushing Pin (60, Storm)"
+      "name": "Ice Crushing Pin (60, Storm)",
+      "match_name": "Ice Crushing Pin (60)"
     },
     {
-      "name": "Ice Disabling Pin (60, Balance)"
+      "name": "Ice Disabling Pin (60, Balance)",
+      "match_name": "Ice Disabling Pin (60)"
     },
     {
-      "name": "Ice Disabling Pin (60, Death)"
+      "name": "Ice Disabling Pin (60, Death)",
+      "match_name": "Ice Disabling Pin (60)"
     },
     {
-      "name": "Ice Disabling Pin (60, Fire)"
+      "name": "Ice Disabling Pin (60, Fire)",
+      "match_name": "Ice Disabling Pin (60)"
     },
     {
-      "name": "Ice Disabling Pin (60, Life)"
+      "name": "Ice Disabling Pin (60, Life)",
+      "match_name": "Ice Disabling Pin (60)"
     },
     {
-      "name": "Ice Disabling Pin (60, Myth)"
+      "name": "Ice Disabling Pin (60, Myth)",
+      "match_name": "Ice Disabling Pin (60)"
     },
     {
-      "name": "Ice Disabling Pin (60, Storm)"
+      "name": "Ice Disabling Pin (60, Storm)",
+      "match_name": "Ice Disabling Pin (60)"
     },
     {
-      "name": "Ice Punishing Pin (50, Balance)"
+      "name": "Ice Punishing Pin (50, Balance)",
+      "match_name": "Ice Punishing Pin (50)"
     },
     {
-      "name": "Ice Punishing Pin (50, Death)"
+      "name": "Ice Punishing Pin (50, Death)",
+      "match_name": "Ice Punishing Pin (50)"
     },
     {
-      "name": "Ice Punishing Pin (50, Fire)"
+      "name": "Ice Punishing Pin (50, Fire)",
+      "match_name": "Ice Punishing Pin (50)"
     },
     {
-      "name": "Ice Punishing Pin (50, Life)"
+      "name": "Ice Punishing Pin (50, Life)",
+      "match_name": "Ice Punishing Pin (50)"
     },
     {
-      "name": "Ice Punishing Pin (50, Myth)"
+      "name": "Ice Punishing Pin (50, Myth)",
+      "match_name": "Ice Punishing Pin (50)"
     },
     {
-      "name": "Ice Punishing Pin (50, Storm)"
+      "name": "Ice Punishing Pin (50, Storm)",
+      "match_name": "Ice Punishing Pin (50)"
     },
     {
-      "name": "Ice Punishing Pin (60, Balance)"
+      "name": "Ice Punishing Pin (60, Balance)",
+      "match_name": "Ice Punishing Pin (60)"
     },
     {
-      "name": "Ice Punishing Pin (60, Death)"
+      "name": "Ice Punishing Pin (60, Death)",
+      "match_name": "Ice Punishing Pin (60)"
     },
     {
-      "name": "Ice Punishing Pin (60, Myth)"
+      "name": "Ice Punishing Pin (60, Myth)",
+      "match_name": "Ice Punishing Pin (60)"
     },
     {
       "name": "Ice Wyvern"
@@ -454,70 +539,92 @@
       "name": "Kraken"
     },
     {
-      "name": "Life Crushing Pin (60, Balance)"
+      "name": "Life Crushing Pin (60, Balance)",
+      "match_name": "Life Crushing Pin (60)"
     },
     {
-      "name": "Life Crushing Pin (60, Death)"
+      "name": "Life Crushing Pin (60, Death)",
+      "match_name": "Life Crushing Pin (60)"
     },
     {
-      "name": "Life Crushing Pin (60, Fire)"
+      "name": "Life Crushing Pin (60, Fire)",
+      "match_name": "Life Crushing Pin (60)"
     },
     {
-      "name": "Life Crushing Pin (60, Ice)"
+      "name": "Life Crushing Pin (60, Ice)",
+      "match_name": "Life Crushing Pin (60)"
     },
     {
-      "name": "Life Crushing Pin (60, Myth)"
+      "name": "Life Crushing Pin (60, Myth)",
+      "match_name": "Life Crushing Pin (60)"
     },
     {
-      "name": "Life Crushing Pin (60, Storm)"
+      "name": "Life Crushing Pin (60, Storm)",
+      "match_name": "Life Crushing Pin (60)"
     },
     {
-      "name": "Life Disabling Pin (60, Balance)"
+      "name": "Life Disabling Pin (60, Balance)",
+      "match_name": "Life Disabling Pin (60)"
     },
     {
-      "name": "Life Disabling Pin (60, Death)"
+      "name": "Life Disabling Pin (60, Death)",
+      "match_name": "Life Disabling Pin (60)"
     },
     {
-      "name": "Life Disabling Pin (60, Fire)"
+      "name": "Life Disabling Pin (60, Fire)",
+      "match_name": "Life Disabling Pin (60)"
     },
     {
-      "name": "Life Disabling Pin (60, Ice)"
+      "name": "Life Disabling Pin (60, Ice)",
+      "match_name": "Life Disabling Pin (60)"
     },
     {
-      "name": "Life Disabling Pin (60, Myth)"
+      "name": "Life Disabling Pin (60, Myth)",
+      "match_name": "Life Disabling Pin (60)"
     },
     {
-      "name": "Life Disabling Pin (60, Storm)"
+      "name": "Life Disabling Pin (60, Storm)",
+      "match_name": "Life Disabling Pin (60)"
     },
     {
-      "name": "Life Punishing Pin (50, Balance)"
+      "name": "Life Punishing Pin (50, Balance)",
+      "match_name": "Life Punishing Pin (50)"
     },
     {
-      "name": "Life Punishing Pin (50, Death)"
+      "name": "Life Punishing Pin (50, Death)",
+      "match_name": "Life Punishing Pin (50)"
     },
     {
-      "name": "Life Punishing Pin (50, Fire)"
+      "name": "Life Punishing Pin (50, Fire)",
+      "match_name": "Life Punishing Pin (50)"
     },
     {
-      "name": "Life Punishing Pin (50, Ice)"
+      "name": "Life Punishing Pin (50, Ice)",
+      "match_name": "Life Punishing Pin (50)"
     },
     {
-      "name": "Life Punishing Pin (50, Myth)"
+      "name": "Life Punishing Pin (50, Myth)",
+      "match_name": "Life Punishing Pin (50)"
     },
     {
-      "name": "Life Punishing Pin (50, Storm)"
+      "name": "Life Punishing Pin (50, Storm)",
+      "match_name": "Life Punishing Pin (50)"
     },
     {
-      "name": "Life Punishing Pin (60, Balance)"
+      "name": "Life Punishing Pin (60, Balance)",
+      "match_name": "Life Punishing Pin (60)"
     },
     {
-      "name": "Life Punishing Pin (60, Death)"
+      "name": "Life Punishing Pin (60, Death)",
+      "match_name": "Life Punishing Pin (60)"
     },
     {
-      "name": "Life Punishing Pin (60, Ice)"
+      "name": "Life Punishing Pin (60, Ice)",
+      "match_name": "Life Punishing Pin (60)"
     },
     {
-      "name": "Life Punishing Pin (60, Myth)"
+      "name": "Life Punishing Pin (60, Myth)",
+      "match_name": "Life Punishing Pin (60)"
     },
     {
       "name": "Lifeforce Cover"
@@ -538,67 +645,88 @@
       "name": "Monstrous"
     },
     {
-      "name": "Myth Crushing Pin (60, Balance)"
+      "name": "Myth Crushing Pin (60, Balance)",
+      "match_name": "Myth Crushing Pin (60)"
     },
     {
-      "name": "Myth Crushing Pin (60, Death)"
+      "name": "Myth Crushing Pin (60, Death)",
+      "match_name": "Myth Crushing Pin (60)"
     },
     {
-      "name": "Myth Crushing Pin (60, Fire)"
+      "name": "Myth Crushing Pin (60, Fire)",
+      "match_name": "Myth Crushing Pin (60)"
     },
     {
-      "name": "Myth Crushing Pin (60, Ice)"
+      "name": "Myth Crushing Pin (60, Ice)",
+      "match_name": "Myth Crushing Pin (60)"
     },
     {
-      "name": "Myth Crushing Pin (60, Life)"
+      "name": "Myth Crushing Pin (60, Life)",
+      "match_name": "Myth Crushing Pin (60)"
     },
     {
-      "name": "Myth Crushing Pin (60, Storm)"
+      "name": "Myth Crushing Pin (60, Storm)",
+      "match_name": "Myth Crushing Pin (60)"
     },
     {
-      "name": "Myth Disabling Pin (60, Balance)"
+      "name": "Myth Disabling Pin (60, Balance)",
+      "match_name": "Myth Disabling Pin (60)"
     },
     {
-      "name": "Myth Disabling Pin (60, Death)"
+      "name": "Myth Disabling Pin (60, Death)",
+      "match_name": "Myth Disabling Pin (60)"
     },
     {
-      "name": "Myth Disabling Pin (60, Fire)"
+      "name": "Myth Disabling Pin (60, Fire)",
+      "match_name": "Myth Disabling Pin (60)"
     },
     {
-      "name": "Myth Disabling Pin (60, Ice)"
+      "name": "Myth Disabling Pin (60, Ice)",
+      "match_name": "Myth Disabling Pin (60)"
     },
     {
-      "name": "Myth Disabling Pin (60, Life)"
+      "name": "Myth Disabling Pin (60, Life)",
+      "match_name": "Myth Disabling Pin (60)"
     },
     {
-      "name": "Myth Disabling Pin (60, Storm)"
+      "name": "Myth Disabling Pin (60, Storm)",
+      "match_name": "Myth Disabling Pin (60)"
     },
     {
-      "name": "Myth Punishing Pin (50, Balance)"
+      "name": "Myth Punishing Pin (50, Balance)",
+      "match_name": "Myth Punishing Pin (50)"
     },
     {
-      "name": "Myth Punishing Pin (50, Death)"
+      "name": "Myth Punishing Pin (50, Death)",
+      "match_name": "Myth Punishing Pin (50)"
     },
     {
-      "name": "Myth Punishing Pin (50, Fire)"
+      "name": "Myth Punishing Pin (50, Fire)",
+      "match_name": "Myth Punishing Pin (50)"
     },
     {
-      "name": "Myth Punishing Pin (50, Ice)"
+      "name": "Myth Punishing Pin (50, Ice)",
+      "match_name": "Myth Punishing Pin (50)"
     },
     {
-      "name": "Myth Punishing Pin (50, Life)"
+      "name": "Myth Punishing Pin (50, Life)",
+      "match_name": "Myth Punishing Pin (50)"
     },
     {
-      "name": "Myth Punishing Pin (50, Storm)"
+      "name": "Myth Punishing Pin (50, Storm)",
+      "match_name": "Myth Punishing Pin (50)"
     },
     {
-      "name": "Myth Punishing Pin (60, Balance)"
+      "name": "Myth Punishing Pin (60, Balance)",
+      "match_name": "Myth Punishing Pin (60)"
     },
     {
-      "name": "Myth Punishing Pin (60, Death)"
+      "name": "Myth Punishing Pin (60, Death)",
+      "match_name": "Myth Punishing Pin (60)"
     },
     {
-      "name": "Myth Punishing Pin (60, Ice)"
+      "name": "Myth Punishing Pin (60, Ice)",
+      "match_name": "Myth Punishing Pin (60)"
     },
     {
       "name": "Nature's Wrath"
@@ -682,73 +810,95 @@
       "name": "Stone Colossus"
     },
     {
-      "name": "Storm Crushing Pin (60, Balance)"
+      "name": "Storm Crushing Pin (60, Balance)",
+      "match_name": "Storm Crushing Pin (60)"
     },
     {
-      "name": "Storm Crushing Pin (60, Death)"
+      "name": "Storm Crushing Pin (60, Death)",
+      "match_name": "Storm Crushing Pin (60)"
     },
     {
-      "name": "Storm Crushing Pin (60, Fire)"
+      "name": "Storm Crushing Pin (60, Fire)",
+      "match_name": "Storm Crushing Pin (60)"
     },
     {
-      "name": "Storm Crushing Pin (60, Ice)"
+      "name": "Storm Crushing Pin (60, Ice)",
+      "match_name": "Storm Crushing Pin (60)"
     },
     {
-      "name": "Storm Crushing Pin (60, Life)"
+      "name": "Storm Crushing Pin (60, Life)",
+      "match_name": "Storm Crushing Pin (60)"
     },
     {
-      "name": "Storm Crushing Pin (60, Myth)"
+      "name": "Storm Crushing Pin (60, Myth)",
+      "match_name": "Storm Crushing Pin (60)"
     },
     {
-      "name": "Storm Disabling Pin (60, Balance)"
+      "name": "Storm Disabling Pin (60, Balance)",
+      "match_name": "Storm Disabling Pin (60)"
     },
     {
-      "name": "Storm Disabling Pin (60, Death)"
+      "name": "Storm Disabling Pin (60, Death)",
+      "match_name": "Storm Disabling Pin (60)"
     },
     {
-      "name": "Storm Disabling Pin (60, Fire)"
+      "name": "Storm Disabling Pin (60, Fire)",
+      "match_name": "Storm Disabling Pin (60)"
     },
     {
-      "name": "Storm Disabling Pin (60, Ice)"
+      "name": "Storm Disabling Pin (60, Ice)",
+      "match_name": "Storm Disabling Pin (60)"
     },
     {
-      "name": "Storm Disabling Pin (60, Life)"
+      "name": "Storm Disabling Pin (60, Life)",
+      "match_name": "Storm Disabling Pin (60)"
     },
     {
-      "name": "Storm Disabling Pin (60, Myth)"
+      "name": "Storm Disabling Pin (60, Myth)",
+      "match_name": "Storm Disabling Pin (60)"
     },
     {
       "name": "Storm Lord"
     },
     {
-      "name": "Storm Punishing Pin (50, Balance)"
+      "name": "Storm Punishing Pin (50, Balance)",
+      "match_name": "Storm Punishing Pin (50)"
     },
     {
-      "name": "Storm Punishing Pin (50, Death)"
+      "name": "Storm Punishing Pin (50, Death)",
+      "match_name": "Storm Punishing Pin (50)"
     },
     {
-      "name": "Storm Punishing Pin (50, Fire)"
+      "name": "Storm Punishing Pin (50, Fire)",
+      "match_name": "Storm Punishing Pin (50)"
     },
     {
-      "name": "Storm Punishing Pin (50, Ice)"
+      "name": "Storm Punishing Pin (50, Ice)",
+      "match_name": "Storm Punishing Pin (50)"
     },
     {
-      "name": "Storm Punishing Pin (50, Life)"
+      "name": "Storm Punishing Pin (50, Life)",
+      "match_name": "Storm Punishing Pin (50)"
     },
     {
-      "name": "Storm Punishing Pin (50, Myth)"
+      "name": "Storm Punishing Pin (50, Myth)",
+      "match_name": "Storm Punishing Pin (50)"
     },
     {
-      "name": "Storm Punishing Pin (60, Balance)"
+      "name": "Storm Punishing Pin (60, Balance)",
+      "match_name": "Storm Punishing Pin (60)"
     },
     {
-      "name": "Storm Punishing Pin (60, Death)"
+      "name": "Storm Punishing Pin (60, Death)",
+      "match_name": "Storm Punishing Pin (60)"
     },
     {
-      "name": "Storm Punishing Pin (60, Ice)"
+      "name": "Storm Punishing Pin (60, Ice)",
+      "match_name": "Storm Punishing Pin (60)"
     },
     {
-      "name": "Storm Punishing Pin (60, Myth)"
+      "name": "Storm Punishing Pin (60, Myth)",
+      "match_name": "Storm Punishing Pin (60)"
     },
     {
       "name": "Storm Shark"

@@ -46,31 +46,38 @@
     },
     {
       "name": "Board of Gorgon Imprisonment (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon Imprisonment"
     },
     {
       "name": "Board of Gorgon Infamy (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon Infamy"
     },
     {
       "name": "Board of Gorgon Petrification (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon Petrification"
     },
     {
       "name": "Board of Gorgon Suffering (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon Suffering"
     },
     {
       "name": "Board of Gorgon Venom (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon Venom"
     },
     {
       "name": "Board of Gorgon Volatility (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon Volatility"
     },
     {
       "name": "Board of Gorgon's Gaze (Level 90+)",
-      "category": "Decks"
+      "category": "Decks",
+      "match_name": "Board of Gorgon's Gaze"
     },
     {
       "name": "Braided Vine",

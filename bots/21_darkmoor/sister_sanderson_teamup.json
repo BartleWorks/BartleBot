@@ -18,40 +18,52 @@
       "name": "Anubis"
     },
     {
-      "name": "Balance Blocking Pin (150, Death)"
+      "name": "Balance Blocking Pin (150, Death)",
+      "match_name": "Balance Blocking Pin (150)"
     },
     {
-      "name": "Balance Blocking Pin (150, Fire)"
+      "name": "Balance Blocking Pin (150, Fire)",
+      "match_name": "Balance Blocking Pin (150)"
     },
     {
-      "name": "Balance Blocking Pin (150, Ice)"
+      "name": "Balance Blocking Pin (150, Ice)",
+      "match_name": "Balance Blocking Pin (150)"
     },
     {
-      "name": "Balance Blocking Pin (150, Life)"
+      "name": "Balance Blocking Pin (150, Life)",
+      "match_name": "Balance Blocking Pin (150)"
     },
     {
-      "name": "Balance Blocking Pin (150, Myth)"
+      "name": "Balance Blocking Pin (150, Myth)",
+      "match_name": "Balance Blocking Pin (150)"
     },
     {
-      "name": "Balance Blocking Pin (150, Storm)"
+      "name": "Balance Blocking Pin (150, Storm)",
+      "match_name": "Balance Blocking Pin (150)"
     },
     {
-      "name": "Balance Blocking Pin (160, Death)"
+      "name": "Balance Blocking Pin (160, Death)",
+      "match_name": "Balance Blocking Pin (160)"
     },
     {
-      "name": "Balance Blocking Pin (160, Fire)"
+      "name": "Balance Blocking Pin (160, Fire)",
+      "match_name": "Balance Blocking Pin (160)"
     },
     {
-      "name": "Balance Blocking Pin (160, Ice)"
+      "name": "Balance Blocking Pin (160, Ice)",
+      "match_name": "Balance Blocking Pin (160)"
     },
     {
-      "name": "Balance Blocking Pin (160, Life)"
+      "name": "Balance Blocking Pin (160, Life)",
+      "match_name": "Balance Blocking Pin (160)"
     },
     {
-      "name": "Balance Blocking Pin (160, Myth)"
+      "name": "Balance Blocking Pin (160, Myth)",
+      "match_name": "Balance Blocking Pin (160)"
     },
     {
-      "name": "Balance Blocking Pin (160, Storm)"
+      "name": "Balance Blocking Pin (160, Storm)",
+      "match_name": "Balance Blocking Pin (160)"
     },
     {
       "name": "Balance Mending Pin (170)"
@@ -60,22 +72,28 @@
       "name": "Balance Mending Pin (180)"
     },
     {
-      "name": "Balance Resist Pin (140, Death)"
+      "name": "Balance Resist Pin (140, Death)",
+      "match_name": "Balance Resist Pin (140)"
     },
     {
-      "name": "Balance Resist Pin (140, Fire)"
+      "name": "Balance Resist Pin (140, Fire)",
+      "match_name": "Balance Resist Pin (140)"
     },
     {
-      "name": "Balance Resist Pin (140, Ice)"
+      "name": "Balance Resist Pin (140, Ice)",
+      "match_name": "Balance Resist Pin (140)"
     },
     {
-      "name": "Balance Resist Pin (140, Life)"
+      "name": "Balance Resist Pin (140, Life)",
+      "match_name": "Balance Resist Pin (140)"
     },
     {
-      "name": "Balance Resist Pin (140, Myth)"
+      "name": "Balance Resist Pin (140, Myth)",
+      "match_name": "Balance Resist Pin (140)"
     },
     {
-      "name": "Balance Resist Pin (140, Storm)"
+      "name": "Balance Resist Pin (140, Storm)",
+      "match_name": "Balance Resist Pin (140)"
     },
     {
       "name": "Barbarian's Saga"
@@ -99,28 +117,36 @@
       "name": "Dark & Stormy"
     },
     {
-      "name": "Death Blocking Pin (150, Ice)"
+      "name": "Death Blocking Pin (150, Ice)",
+      "match_name": "Death Blocking Pin (150)"
     },
     {
-      "name": "Death Blocking Pin (150, Myth)"
+      "name": "Death Blocking Pin (150, Myth)",
+      "match_name": "Death Blocking Pin (150)"
     },
     {
-      "name": "Death Blocking Pin (160, Balance)"
+      "name": "Death Blocking Pin (160, Balance)",
+      "match_name": "Death Blocking Pin (160)"
     },
     {
-      "name": "Death Blocking Pin (160, Ice)"
+      "name": "Death Blocking Pin (160, Ice)",
+      "match_name": "Death Blocking Pin (160)"
     },
     {
-      "name": "Death Blocking Pin (160, Myth)"
+      "name": "Death Blocking Pin (160, Myth)",
+      "match_name": "Death Blocking Pin (160)"
     },
     {
-      "name": "Death Resist Pin (150, Balance)"
+      "name": "Death Resist Pin (150, Balance)",
+      "match_name": "Death Resist Pin (150)"
     },
     {
-      "name": "Death Resist Pin (150, Ice)"
+      "name": "Death Resist Pin (150, Ice)",
+      "match_name": "Death Resist Pin (150)"
     },
     {
-      "name": "Death Resist Pin (150, Myth)"
+      "name": "Death Resist Pin (150, Myth)",
+      "match_name": "Death Resist Pin (150)"
     },
     {
       "name": "Deathly Depths"
@@ -132,19 +158,24 @@
       "name": "Drop Bear Fury"
     },
     {
-      "name": "Fire Blocking Pin (150, Life)"
+      "name": "Fire Blocking Pin (150, Life)",
+      "match_name": "Fire Blocking Pin (150)"
     },
     {
-      "name": "Fire Blocking Pin (150, Storm)"
+      "name": "Fire Blocking Pin (150, Storm)",
+      "match_name": "Fire Blocking Pin (150)"
     },
     {
-      "name": "Fire Blocking Pin (160, Balance)"
+      "name": "Fire Blocking Pin (160, Balance)",
+      "match_name": "Fire Blocking Pin (160)"
     },
     {
-      "name": "Fire Blocking Pin (160, Life)"
+      "name": "Fire Blocking Pin (160, Life)",
+      "match_name": "Fire Blocking Pin (160)"
     },
     {
-      "name": "Fire Blocking Pin (160, Storm)"
+      "name": "Fire Blocking Pin (160, Storm)",
+      "match_name": "Fire Blocking Pin (160)"
     },
     {
       "name": "Fire Mending Pin (170)"
@@ -153,13 +184,16 @@
       "name": "Fire Mending Pin (180)"
     },
     {
-      "name": "Fire Resist Pin (140, Balance)"
+      "name": "Fire Resist Pin (140, Balance)",
+      "match_name": "Fire Resist Pin (140)"
     },
     {
-      "name": "Fire Resist Pin (140, Life)"
+      "name": "Fire Resist Pin (140, Life)",
+      "match_name": "Fire Resist Pin (140)"
     },
     {
-      "name": "Fire Resist Pin (140, Storm)"
+      "name": "Fire Resist Pin (140, Storm)",
+      "match_name": "Fire Resist Pin (140)"
     },
     {
       "name": "Freeze Ray"
@@ -177,28 +211,36 @@
       "name": "Heqet"
     },
     {
-      "name": "Ice Blocking Pin (150, Fire)"
+      "name": "Ice Blocking Pin (150, Fire)",
+      "match_name": "Ice Blocking Pin (150)"
     },
     {
-      "name": "Ice Blocking Pin (150, Myth)"
+      "name": "Ice Blocking Pin (150, Myth)",
+      "match_name": "Ice Blocking Pin (150)"
     },
     {
-      "name": "Ice Blocking Pin (160, Balance)"
+      "name": "Ice Blocking Pin (160, Balance)",
+      "match_name": "Ice Blocking Pin (160)"
     },
     {
-      "name": "Ice Blocking Pin (160, Fire)"
+      "name": "Ice Blocking Pin (160, Fire)",
+      "match_name": "Ice Blocking Pin (160)"
     },
     {
-      "name": "Ice Blocking Pin (160, Myth)"
+      "name": "Ice Blocking Pin (160, Myth)",
+      "match_name": "Ice Blocking Pin (160)"
     },
     {
-      "name": "Ice Resist Pin (140, Balance)"
+      "name": "Ice Resist Pin (140, Balance)",
+      "match_name": "Ice Resist Pin (140)"
     },
     {
-      "name": "Ice Resist Pin (140, Fire)"
+      "name": "Ice Resist Pin (140, Fire)",
+      "match_name": "Ice Resist Pin (140)"
     },
     {
-      "name": "Ice Resist Pin (140, Myth)"
+      "name": "Ice Resist Pin (140, Myth)",
+      "match_name": "Ice Resist Pin (140)"
     },
     {
       "name": "Improbable Gaze"
@@ -207,19 +249,24 @@
       "name": "Legendary Socket Wrench"
     },
     {
-      "name": "Life Blocking Pin (150, Death)"
+      "name": "Life Blocking Pin (150, Death)",
+      "match_name": "Life Blocking Pin (150)"
     },
     {
-      "name": "Life Blocking Pin (150, Storm)"
+      "name": "Life Blocking Pin (150, Storm)",
+      "match_name": "Life Blocking Pin (150)"
     },
     {
-      "name": "Life Blocking Pin (160, Balance)"
+      "name": "Life Blocking Pin (160, Balance)",
+      "match_name": "Life Blocking Pin (160)"
     },
     {
-      "name": "Life Blocking Pin (160, Death)"
+      "name": "Life Blocking Pin (160, Death)",
+      "match_name": "Life Blocking Pin (160)"
     },
     {
-      "name": "Life Blocking Pin (160, Storm)"
+      "name": "Life Blocking Pin (160, Storm)",
+      "match_name": "Life Blocking Pin (160)"
     },
     {
       "name": "Life Mending Pin (170)"
@@ -228,13 +275,16 @@
       "name": "Life Mending Pin (180)"
     },
     {
-      "name": "Life Resist Pin (140, Balance)"
+      "name": "Life Resist Pin (140, Balance)",
+      "match_name": "Life Resist Pin (140)"
     },
     {
-      "name": "Life Resist Pin (140, Death)"
+      "name": "Life Resist Pin (140, Death)",
+      "match_name": "Life Resist Pin (140)"
     },
     {
-      "name": "Life Resist Pin (140, Storm)"
+      "name": "Life Resist Pin (140, Storm)",
+      "match_name": "Life Resist Pin (140)"
     },
     {
       "name": "Lord of the Jungle"
@@ -243,19 +293,24 @@
       "name": "Mortality"
     },
     {
-      "name": "Myth Blocking Pin (150, Fire)"
+      "name": "Myth Blocking Pin (150, Fire)",
+      "match_name": "Myth Blocking Pin (150)"
     },
     {
-      "name": "Myth Blocking Pin (150, Life)"
+      "name": "Myth Blocking Pin (150, Life)",
+      "match_name": "Myth Blocking Pin (150)"
     },
     {
-      "name": "Myth Blocking Pin (160, Balance)"
+      "name": "Myth Blocking Pin (160, Balance)",
+      "match_name": "Myth Blocking Pin (160)"
     },
     {
-      "name": "Myth Blocking Pin (160, Fire)"
+      "name": "Myth Blocking Pin (160, Fire)",
+      "match_name": "Myth Blocking Pin (160)"
     },
     {
-      "name": "Myth Blocking Pin (160, Life)"
+      "name": "Myth Blocking Pin (160, Life)",
+      "match_name": "Myth Blocking Pin (160)"
     },
     {
       "name": "Myth Mending Pin (170)"
@@ -264,13 +319,16 @@
       "name": "Myth Mending Pin (180)"
     },
     {
-      "name": "Myth Resist Pin (140, Balance)"
+      "name": "Myth Resist Pin (140, Balance)",
+      "match_name": "Myth Resist Pin (140)"
     },
     {
-      "name": "Myth Resist Pin (140, Fire)"
+      "name": "Myth Resist Pin (140, Fire)",
+      "match_name": "Myth Resist Pin (140)"
     },
     {
-      "name": "Myth Resist Pin (140, Life)"
+      "name": "Myth Resist Pin (140, Life)",
+      "match_name": "Myth Resist Pin (140)"
     },
     {
       "name": "Mythic Abomination Ring"
@@ -327,19 +385,24 @@
       "name": "Starspawn"
     },
     {
-      "name": "Storm Blocking Pin (150, Death)"
+      "name": "Storm Blocking Pin (150, Death)",
+      "match_name": "Storm Blocking Pin (150)"
     },
     {
-      "name": "Storm Blocking Pin (150, Ice)"
+      "name": "Storm Blocking Pin (150, Ice)",
+      "match_name": "Storm Blocking Pin (150)"
     },
     {
-      "name": "Storm Blocking Pin (160, Balance)"
+      "name": "Storm Blocking Pin (160, Balance)",
+      "match_name": "Storm Blocking Pin (160)"
     },
     {
-      "name": "Storm Blocking Pin (160, Death)"
+      "name": "Storm Blocking Pin (160, Death)",
+      "match_name": "Storm Blocking Pin (160)"
     },
     {
-      "name": "Storm Blocking Pin (160, Ice)"
+      "name": "Storm Blocking Pin (160, Ice)",
+      "match_name": "Storm Blocking Pin (160)"
     },
     {
       "name": "Storm Mending Pin (160)"
@@ -348,19 +411,24 @@
       "name": "Storm Mending Pin (170)"
     },
     {
-      "name": "Storm Resist Pin (130, Death)"
+      "name": "Storm Resist Pin (130, Death)",
+      "match_name": "Storm Resist Pin (130)"
     },
     {
-      "name": "Storm Resist Pin (130, Ice)"
+      "name": "Storm Resist Pin (130, Ice)",
+      "match_name": "Storm Resist Pin (130)"
     },
     {
-      "name": "Storm Resist Pin (160, Balance)"
+      "name": "Storm Resist Pin (160, Balance)",
+      "match_name": "Storm Resist Pin (160)"
     },
     {
-      "name": "Storm Resist Pin (160, Death)"
+      "name": "Storm Resist Pin (160, Death)",
+      "match_name": "Storm Resist Pin (160)"
     },
     {
-      "name": "Storm Resist Pin (160, Ice)"
+      "name": "Storm Resist Pin (160, Ice)",
+      "match_name": "Storm Resist Pin (160)"
     },
     {
       "name": "Taweret"

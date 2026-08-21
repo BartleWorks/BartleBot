@@ -11,9 +11,20 @@ it just rewrites itself into the structured form the next time the app saves it.
 script does that rewrite up front, so the whole library changes shape in one reviewable
 commit rather than a file at a time as bots happen to get edited.
 
+It also backfills ``match_name``: the name the *game* shows, where the wiki's title
+carries a disambiguating suffix the game does not.  Unlike the category, this one is
+derivable from what is already on disk — ``bartlebot/wiki_drops.py`` computes it from
+the name and, where the rule needs one, the category::
+
+    {"name": "Balance Crushing Pin (60, Death)"}
+      ->  {"name": "Balance Crushing Pin (60, Death)",
+           "match_name": "Balance Crushing Pin (60)"}
+
 Categories cannot be backfilled: they only exist on the Wizard101 Central page the
 drops were imported from, and nothing on disk records which page that was.  Migrated
-drops stay uncategorized until the bot is re-imported from the wiki.
+drops stay uncategorized until the bot is re-imported from the wiki — and because two
+of the ``match_name`` rules are gated on the category, an uncategorized drop can gain
+one on re-import later.
 
 Run from the project root.  Reports only by default; pass ``--apply`` to write:
 
@@ -33,8 +44,11 @@ import tempfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
-_stats = {"scanned": 0, "converted": 0, "written": 0, "errors": 0}
+from bartlebot.wiki_drops import match_name_for  # noqa: E402
+
+_stats = {"scanned": 0, "converted": 0, "matched": 0, "written": 0, "errors": 0}
 
 
 # ---------------------------------------------------------------------------
@@ -42,29 +56,37 @@ _stats = {"scanned": 0, "converted": 0, "written": 0, "errors": 0}
 # ---------------------------------------------------------------------------
 
 
-def migrate_drops(data: dict) -> int:
-    """Convert bare-string drops in *data* to entry dicts, in place.
+def migrate_drops(data: dict) -> tuple[int, int]:
+    """Bring *data*'s drops up to date, in place.
 
-    Returns the number of drops converted.  Zero means the file is already migrated
-    and must not be rewritten.  Order is preserved, and entries that are already
-    dicts are left exactly as they are — including any category they carry.
+    Converts bare-string drops to entry dicts and fills in ``match_name`` wherever
+    the wiki name differs from the in-game one.  Returns ``(converted, matched)``;
+    ``(0, 0)`` means the file is already current and must not be rewritten.
+
+    Order is preserved, categories are never touched, and an existing ``match_name``
+    is left alone — someone may have corrected one by hand, and re-deriving it would
+    silently undo that.
     """
     drops = data.get("drops")
     if not isinstance(drops, list):
-        return 0
+        return 0, 0
 
-    converted = 0
+    converted = matched = 0
     new_drops = []
     for drop in drops:
         if isinstance(drop, str):
-            new_drops.append({"name": drop})
+            drop = {"name": drop}
             converted += 1
-        else:
-            new_drops.append(drop)
+        if isinstance(drop, dict) and "match_name" not in drop and isinstance(drop.get("name"), str):
+            match_name = match_name_for(drop["name"], drop.get("category"))
+            if match_name is not None:
+                drop = {**drop, "match_name": match_name}
+                matched += 1
+        new_drops.append(drop)
 
-    if converted:
+    if converted or matched:
         data["drops"] = new_drops
-    return converted
+    return converted, matched
 
 
 # ---------------------------------------------------------------------------
@@ -124,28 +146,35 @@ def main() -> None:
         try:
             with open(path, encoding="utf-8") as f:
                 data = json.load(f)
-            converted = migrate_drops(data)
+            converted, matched = migrate_drops(data)
         except Exception as exc:
             print(f"  [ERR]  {rel}: {exc}")
             _stats["errors"] += 1
             continue
 
-        if not converted:
+        if not converted and not matched:
             continue
 
         _stats["converted"] += converted
-        print(f"  [ok]   {rel}: {converted} drop(s) -> entry form")
+        _stats["matched"] += matched
+        changes = []
+        if converted:
+            changes.append(f"{converted} drop(s) -> entry form")
+        if matched:
+            changes.append(f"{matched} in-game name(s) filled in")
+        print(f"  [ok]   {rel}: {', '.join(changes)}")
 
         if apply_changes:
             _write_atomic(path, data)
             _stats["written"] += 1
 
     print(
-        f"\nScanned {_stats['scanned']} file(s): {_stats['converted']} drop(s) converted, {_stats['errors']} error(s)."
+        f"\nScanned {_stats['scanned']} file(s): {_stats['converted']} drop(s) converted, "
+        f"{_stats['matched']} in-game name(s) filled in, {_stats['errors']} error(s)."
     )
     if apply_changes:
         print(f"Wrote {_stats['written']} file(s).")
-    elif _stats["converted"]:
+    elif _stats["converted"] or _stats["matched"]:
         print("Dry run — re-run with --apply to write these changes.")
     else:
         print("Nothing to do.")
