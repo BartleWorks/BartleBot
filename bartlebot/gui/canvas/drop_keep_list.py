@@ -47,6 +47,10 @@ _COL_CATEGORY = 2
 
 _TABLE_MAX_HEIGHT = 220
 
+#: The ParamField key this widget renders. It owns that param, so it supplies the
+#: value itself rather than taking it from the form's context.
+_VALUE_PARAM_KEY = "keep_list"
+
 
 # ---------------------------------------------------------------------------
 # Pure logic
@@ -247,8 +251,20 @@ class DropKeepListWidget(QWidget):
         self.refresh()
 
     def set_context(self, params: dict) -> None:
-        """Supply the node's other params, whose sell_* bools imply extra keywords."""
-        self._context = dict(params)
+        """Supply the node's other params, whose sell_* bools affect what is kept.
+
+        The form pushes this on every edit, including the widget's own, so it
+        returns early when nothing relevant moved. Without that, each keystroke in
+        the keyword line rebuilt every row's state twice: once for the edit, then
+        again for the context push the resulting ``changed`` signal triggers.
+        """
+        # The widget's own param is excluded rather than compared: it changes on
+        # every keystroke, which would defeat the guard, and _apply_states reads it
+        # straight from the widget anyway.
+        params = {k: v for k, v in params.items() if k != _VALUE_PARAM_KEY}
+        if params == self._context:
+            return
+        self._context = params
         self.refresh()
 
     def refresh(self) -> None:
@@ -328,7 +344,7 @@ class DropKeepListWidget(QWidget):
         # node ever sees. Zipped positionally rather than looked up by name: several
         # drops can share one in-game name, and a dict would collapse them.
         match_keys = [entry.match_key for entry in entries]
-        params = {**self._context, "keep_list": self.get_value()}
+        params = {**self._context, _VALUE_PARAM_KEY: self.get_value()}
         states = quicksell.drop_keep_states(match_keys, params)
         shared = Counter(key.casefold() for key in match_keys)
         # Categories a sell_* bool spares wholesale. Unlike the never-sold set these
@@ -546,5 +562,9 @@ class DropKeepListWidget(QWidget):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             self._apply_styles()
-            # The summary's bold spans carry an inline colour, so re-render them too.
-            self.refresh()
+            # Only the summary needs redoing: its bold spans carry an inline colour,
+            # which a style sheet cannot reach. Re-deriving every row's keep state
+            # for a palette change would be wasted work on a 600-row table. Guarded
+            # because the no-drops message lives in the same label.
+            if self._rows:
+                self._render_summary()

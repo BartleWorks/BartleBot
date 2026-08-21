@@ -623,3 +623,61 @@ def test_the_quicksell_form_feeds_its_pets_bool_to_the_widget(qapp):
     form.load_schema(PARAM_SCHEMA, {"keep_list": [], "sell_pets": False})
     widget = next(w for w in form.findChildren(DropKeepListWidget))
     assert _checked(widget, "Fierce Hound") and not _enabled(widget, "Fierce Hound")
+
+
+# ---------------------------------------------------------------------------
+# Refresh economy
+#
+# The form pushes context on every edit, including edits this widget caused, so
+# the cheap paths have to stay cheap on a 600-row table.
+# ---------------------------------------------------------------------------
+
+
+def _count_refreshes(w, monkeypatch):
+    calls = []
+    real = w.refresh
+    monkeypatch.setattr(w, "refresh", lambda: calls.append(1) or real())
+    return calls
+
+
+def test_an_unchanged_context_does_not_refresh(qapp, monkeypatch):
+    w = _make(qapp)
+    calls = _count_refreshes(w, monkeypatch)
+    w.set_context(dict(_SELL_ALL))
+    assert calls == []
+
+
+def test_the_widgets_own_param_does_not_count_as_a_context_change(qapp, monkeypatch):
+    # get_params() includes keep_list, so comparing it would defeat the guard on
+    # every keystroke — which is exactly when the guard has to hold.
+    w = _make(qapp, keep_list=["Amber"])
+    calls = _count_refreshes(w, monkeypatch)
+    w.set_context({**_SELL_ALL, "keep_list": ["something", "different"]})
+    assert calls == []
+
+
+def test_a_real_context_change_still_refreshes(qapp, monkeypatch):
+    w = _make(qapp)
+    calls = _count_refreshes(w, monkeypatch)
+    w.set_context({**_SELL_ALL, "sell_socket_wrenches": False})
+    assert len(calls) == 1
+    assert _checked(w, "Socket Wrench")
+
+
+def test_a_theme_change_repaints_without_rebuilding_state(qapp, monkeypatch):
+    from PyQt6.QtCore import QEvent
+
+    w = _make(qapp, keep_list=["Amber"])
+    before = _plain(w._summary.text())
+    calls = _count_refreshes(w, monkeypatch)
+    w.changeEvent(QEvent(QEvent.Type.StyleChange))
+    assert calls == []
+    assert _plain(w._summary.text()) == before
+
+
+def test_a_theme_change_leaves_the_no_drops_message_alone(qapp, monkeypatch):
+    from PyQt6.QtCore import QEvent
+
+    w = _make(qapp, drops=[])
+    w.changeEvent(QEvent(QEvent.Type.StyleChange))
+    assert "no drops listed" in w._summary.text()

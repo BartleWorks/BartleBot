@@ -123,6 +123,14 @@ CATEGORY_SELL_FLAGS: dict[str, str] = {"sell_pets": "Pets"}
 # Keys must match the category strings the wiki import produces. Run
 # ``poetry run python tools/drop_categories.py`` after importing new bots to
 # catch a category nobody has classified yet.
+#
+# Provenance: established by hand from how the game behaves, not from any file we
+# can read or any check that runs. Nothing here is verified automatically, and a
+# game update that made one of these quicksellable would go unnoticed. That is
+# tolerable because of which way the error falls — a wrong entry hides a row from
+# the picker, it never sells something the user asked to keep. Re-checking one is
+# cheap: open the quicksell window with the item in the backpack and see whether
+# it is listed.
 NEVER_QUICKSOLD_CATEGORIES: dict[str, str] = {
     "Reagents": "Reagents cannot be quicksold.",
     "Snacks": "Snacks cannot be quicksold.",
