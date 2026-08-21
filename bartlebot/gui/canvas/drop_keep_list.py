@@ -11,6 +11,7 @@ filter change.
 
 from __future__ import annotations
 
+from collections import Counter
 from collections.abc import Callable
 from typing import Any
 
@@ -33,6 +34,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
+from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds
@@ -58,6 +60,7 @@ def row_visible(
     query: str,
     category_filter: str | None,
     kept_only: bool,
+    match_name: str | None = None,
 ) -> bool:
     """Whether one drop row survives the current filters.
 
@@ -75,9 +78,11 @@ def row_visible(
     An *unknown* category is never hidden this way: most of the library predates
     categories, and unknown is not the same as unsellable.
 
-    The query test is deliberately the same case-insensitive substring rule as
-    ``quicksell.matching_keyword``: the rows a search shows are exactly the drops
-    that search text would keep if typed into the keep list.
+    The query test is the same case-insensitive substring rule as
+    ``quicksell.matching_keyword``, applied to the in-game name as well as the
+    displayed one. Testing the in-game name is what keeps the search honest — that
+    is the string the node matches against — while still testing the displayed name
+    means searching for the wiki text on screen finds the row it is looking at.
     """
     if category in quicksell.NEVER_QUICKSOLD_CATEGORIES and category_filter != category:
         return False
@@ -86,7 +91,9 @@ def row_visible(
     if category_filter is not None and category != category_filter:
         return False
     query = query.strip().lower()
-    return not query or query in name.lower()
+    if not query:
+        return True
+    return query in name.lower() or (match_name is not None and query in match_name.lower())
 
 
 def bulk_needs_confirmation(count: int) -> bool:
@@ -120,6 +127,11 @@ class DropKeepListWidget(QWidget):
     Rows kept by something a checkbox cannot express — a partial keyword like
     "Amber" sparing "Amber Ring", or one of the sell_* bools — are checked but
     disabled, with a tooltip naming the keyword responsible.
+
+    Ticking a row adds the drop's *in-game* name, which is not always the wiki name
+    the row displays (see ``bartlebot/wiki_drops.py``). Where several drops share
+    one in-game name the game gives the node no way to tell them apart, so they
+    tick and untick as a group and say so in their tooltip.
     """
 
     changed = pyqtSignal()
@@ -132,6 +144,12 @@ class DropKeepListWidget(QWidget):
         self._context: dict[str, Any] = {}
         self._suppress = False
         self._rows: list[_DropItem] = []
+        self._entries: list[DropModel] = []
+        # The keep list itself, not the line edit's text. Keeping the list
+        # authoritative means a ticked name never has to survive a round trip
+        # through comma-separated text, which item names containing a comma
+        # ("No Pain, No Gain Onyx") do not.
+        self._value: list[str] = []
         self._kept_total = (0, 0, 0)  # kept, sellable, never-quicksold
 
         outer = QVBoxLayout(self)
@@ -219,11 +237,12 @@ class DropKeepListWidget(QWidget):
     # ------------------------------------------------------------------
 
     def get_value(self) -> list[str]:
-        return [x.strip().strip("'\"") for x in self._edit.text().strip("[] ").split(",") if x.strip().strip("'\"")]
+        return list(self._value)
 
     def set_value(self, value: list[str]) -> None:
         self._suppress = True
-        self._edit.setText(", ".join(str(v) for v in value) if isinstance(value, list) else str(value or ""))
+        self._value = [str(v) for v in value] if isinstance(value, list) else parse_list_text(str(value or ""))
+        self._edit.setText(format_list_text(self._value))
         self._suppress = False
         self.refresh()
 
@@ -239,8 +258,8 @@ class DropKeepListWidget(QWidget):
         state is updated in place, so a filter or a tick never costs a teardown.
         """
         entries = self._get_drops()
-        if [(row.text(_COL_ITEM), row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole)) for row in self._rows] != [
-            (entry.name, entry.category or "") for entry in entries
+        if [(e.name, e.category, e.match_name) for e in self._entries] != [
+            (e.name, e.category, e.match_name) for e in entries
         ]:
             self._rebuild_rows(entries)
         self._apply_states(entries)
@@ -255,10 +274,12 @@ class DropKeepListWidget(QWidget):
         self._tree.setSortingEnabled(False)
         self._tree.clear()
         self._rows = []
+        self._entries = list(entries)
         for entry in entries:
             category = entry.category or ""
             row = _DropItem(["", entry.name, category or UNCATEGORIZED_DISPLAY])
             row.setData(_COL_CATEGORY, Qt.ItemDataRole.UserRole, category)
+            row.setData(_COL_ITEM, Qt.ItemDataRole.UserRole, entry)
             row.setFlags(row.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
             self._tree.addTopLevelItem(row)
@@ -303,17 +324,16 @@ class DropKeepListWidget(QWidget):
         # "All categories" plus one entry is not a choice.
         self._category.setVisible(self._category.count() > 2)
 
-        states = quicksell.drop_keep_states(
-            [entry.name for entry in entries], {**self._context, "keep_list": self.get_value()}
-        )
-        by_name = {state.name: state for state in states}
+        # Matching happens in in-game-name space, because that is the only text the
+        # node ever sees. Zipped positionally rather than looked up by name: several
+        # drops can share one in-game name, and a dict would collapse them.
+        match_keys = [entry.match_key for entry in entries]
+        states = quicksell.drop_keep_states(match_keys, {**self._context, "keep_list": self.get_value()})
+        shared = Counter(key.casefold() for key in match_keys)
 
         self._suppress = True
         kept = sellable = 0
-        for row in self._rows:
-            state = by_name.get(row.text(_COL_ITEM))
-            if state is None:
-                continue
+        for row, entry, state in zip(self._rows, entries, states):
             never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(
                 row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
             )
@@ -337,11 +357,24 @@ class DropKeepListWidget(QWidget):
                     _COL_ITEM, f"Kept by the keyword {state.keyword!r}, not by its own name — change that above."
                 )
             else:
-                row.setToolTip(_COL_ITEM, "Sell this item." if state.kept else "Keep this item when quickselling.")
+                row.setToolTip(_COL_ITEM, self._row_tooltip(entry, state, shared[entry.match_key.casefold()]))
         self._suppress = False
 
         self._kept_total = (kept, sellable, len(states) - sellable)
         self._render_summary()
+
+    @staticmethod
+    def _row_tooltip(entry: DropModel, state: quicksell.DropKeepState, sharing: int) -> str:
+        """What ticking this row does, spelling out any consequence beyond itself."""
+        lines = ["Sell this item." if state.kept else "Keep this item when quickselling."]
+        if entry.match_name:
+            lines.append(f"The game shows this as {entry.match_name!r}, which is what the keep list matches.")
+        if sharing > 1:
+            # Phrased as what the click does, to match the first line: the six pins
+            # read identically in the quicksell window, so the node cannot be told
+            # to treat one differently from the other five.
+            lines.append(f"{sharing} drops share that name in-game, so this applies to all {sharing}.")
+        return "\n".join(lines)
 
     def _render_summary(self) -> None:
         kept, sellable, never = self._kept_total
@@ -365,6 +398,7 @@ class DropKeepListWidget(QWidget):
         category_filter = self._category.currentData()
         kept_only = self._kept_only.isChecked()
         for row in self._rows:
+            entry = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
             row.setHidden(
                 not row_visible(
                     row.text(_COL_ITEM),
@@ -373,6 +407,7 @@ class DropKeepListWidget(QWidget):
                     query,
                     category_filter,
                     kept_only,
+                    match_name=entry.match_name if entry is not None else None,
                 )
             )
         if self._rows:
@@ -393,22 +428,31 @@ class DropKeepListWidget(QWidget):
     def _on_item_changed(self, item: QTreeWidgetItem, column: int) -> None:
         if self._suppress or column != _COL_KEEP:
             return
+        entry = item.data(_COL_ITEM, Qt.ItemDataRole.UserRole)
         keep = item.checkState(_COL_KEEP) == Qt.CheckState.Checked
-        self._set_keep_list(quicksell.toggle_drop_in_keep_list(self.get_value(), item.text(_COL_ITEM), keep))
+        self._set_keep_list(quicksell.toggle_drop_in_keep_list(self.get_value(), entry.match_key, keep))
 
     def _on_bulk(self, *, keep: bool) -> None:
         """Check or uncheck every visible, unlocked row.
 
         Locked rows are skipped: their fate is decided by a keyword or a sell_*
         bool, which a checkbox cannot rewrite. Hidden rows are never touched.
+
+        Counted and applied in in-game names, deduplicated: six pins that read the
+        same in-game are one entry in the keep list, so the confirmation should not
+        claim six.
         """
-        names = [
-            row.text(_COL_ITEM)
-            for row in self._rows
-            if not row.isHidden()
-            and bool(row.flags() & Qt.ItemFlag.ItemIsEnabled)
-            and (row.checkState(_COL_KEEP) == Qt.CheckState.Checked) != keep
-        ]
+        names: list[str] = []
+        seen: set[str] = set()
+        for row in self._rows:
+            if row.isHidden() or not row.flags() & Qt.ItemFlag.ItemIsEnabled:
+                continue
+            if (row.checkState(_COL_KEEP) == Qt.CheckState.Checked) == keep:
+                continue
+            key = row.data(_COL_ITEM, Qt.ItemDataRole.UserRole).match_key
+            if key.casefold() not in seen:
+                seen.add(key.casefold())
+                names.append(key)
         if not names or not self._confirm_bulk(len(names), keep=keep):
             return
         self._set_keep_list(quicksell.set_drops_in_keep_list(self.get_value(), names, keep))
@@ -437,15 +481,19 @@ class DropKeepListWidget(QWidget):
 
     def _set_keep_list(self, keep_list: list[str]) -> None:
         self._suppress = True
-        self._edit.setText(", ".join(keep_list))
+        self._value = list(keep_list)
+        self._edit.setText(format_list_text(self._value))
         self._suppress = False
-        self._apply_states(self._get_drops())
-        self._apply_filter()
+        # Via refresh() rather than _apply_states() directly, so the rows are still
+        # rebuilt if the drop table changed underneath us — the states are zipped
+        # against the entries positionally and must not go out of step.
+        self.refresh()
         self.changed.emit()
 
     def _on_text_edited(self) -> None:
         if self._suppress:
             return
+        self._value = parse_list_text(self._edit.text())
         self.refresh()
         self.changed.emit()
 

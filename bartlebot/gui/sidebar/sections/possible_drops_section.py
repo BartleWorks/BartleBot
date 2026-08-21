@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
+from bartlebot.wiki_drops import match_name_for
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -52,10 +53,12 @@ def rename_drop(entries: list[DropModel], index: int, new_text: str) -> list[Dro
     """Return *entries* with the drop at *index* renamed to *new_text*.
 
     The drop keeps its category — renaming "Amber" to "Ambers" does not make it
-    uncategorized. Blank text or an out-of-range index leaves the list unchanged.
-    If the new name already appears elsewhere the two entries collapse into one,
-    matching the dedup behaviour of adding a drop that is already listed; the
-    first of the two in list order is the one kept, along with its category.
+    uncategorized. Its in-game name is re-derived from the new text rather than
+    carried over, since the old one described the old name. Blank text or an
+    out-of-range index leaves the list unchanged. If the new name already appears
+    elsewhere the two entries collapse into one, matching the dedup behaviour of
+    adding a drop that is already listed; the first of the two in list order is the
+    one kept, along with its category.
     """
     new_text = new_text.strip()
     if not new_text or not 0 <= index < len(entries):
@@ -63,7 +66,15 @@ def rename_drop(entries: list[DropModel], index: int, new_text: str) -> list[Dro
     result: list[DropModel] = []
     seen: set[str] = set()
     for i, entry in enumerate(entries):
-        candidate = DropModel(name=new_text, category=entry.category) if i == index else entry
+        candidate = (
+            DropModel(
+                name=new_text,
+                category=entry.category,
+                match_name=match_name_for(new_text, entry.category),
+            )
+            if i == index
+            else entry
+        )
         if candidate.name not in seen:
             seen.add(candidate.name)
             result.append(candidate)
@@ -75,7 +86,10 @@ def merge_drops(existing: list[DropModel], incoming: list[DropModel]) -> list[Dr
 
     A re-import also backfills: a drop already listed without a category picks up
     one when the incoming entry has it. That is the only way drops added before
-    categories existed — or added by hand — ever get categorized.
+    categories existed — or added by hand — ever get categorized. Gaining a
+    category can also settle what the game calls the item (the school suffix on a
+    jewel is only strippable once we know it is a jewel), so the in-game name is
+    re-derived at the same time.
     """
     incoming_by_name: dict[str, DropModel] = {}
     for entry in incoming:
@@ -87,7 +101,13 @@ def merge_drops(existing: list[DropModel], incoming: list[DropModel]) -> list[Dr
     for entry in existing:
         match = incoming_by_name.get(entry.name)
         if entry.category is None and match is not None and match.category is not None:
-            result.append(DropModel(name=entry.name, category=match.category))
+            result.append(
+                DropModel(
+                    name=entry.name,
+                    category=match.category,
+                    match_name=match_name_for(entry.name, match.category),
+                )
+            )
         else:
             result.append(entry)
 
@@ -224,7 +244,8 @@ class _DropsListWidget(QWidget):
     def _on_add(self) -> None:
         text, ok = QInputDialog.getText(self, "Add Drop", "Item name:")
         if ok and text.strip():
-            self.add_items([DropModel(name=text.strip())])
+            name = text.strip()
+            self.add_items([DropModel(name=name, match_name=match_name_for(name))])
 
     def _on_edit(self) -> None:
         items = self._list.selectedItems()

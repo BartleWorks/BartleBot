@@ -40,6 +40,7 @@ from bartlebot.bot.schema import DropModel, FlagCondition, FlagGroup, StateModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 
 # ---------------------------------------------------------------------------
@@ -436,9 +437,7 @@ class _DynamicParamForm(QWidget):
             elif isinstance(w, _IntListLineEdit):
                 result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
-                result[key] = [
-                    x.strip().strip("'\"") for x in w.text().strip("[] ").split(",") if x.strip().strip("'\"")
-                ]
+                result[key] = parse_list_text(w.text())
             elif isinstance(w, _ZoneWidget):
                 result[key] = w.text()
             elif isinstance(w, QLineEdit):
@@ -516,7 +515,7 @@ class _DynamicParamForm(QWidget):
         if field_type == "str_list":
             w = _StrListLineEdit()
             if isinstance(val, list):
-                w.setText(", ".join(str(v) for v in val))
+                w.setText(format_list_text([str(v) for v in val]))
             else:
                 w.setText(str(val) if val else "")
             w.setPlaceholderText("e.g. ItemA, ItemB")

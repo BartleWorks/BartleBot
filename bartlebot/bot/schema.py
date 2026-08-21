@@ -15,16 +15,33 @@ class XYZModel(BaseModel):
 
 
 class DropModel(BaseModel):
-    """One item a bot can drop, and the wiki category it came from.
+    """One item a bot can drop, as the wiki names it and as the game names it.
 
     ``category`` is whatever the Wizard101 Central page grouped the item under
     ("Reagents", "Hats", …). It is None for drops added by hand and for every bot
     written before drops carried a category — there is no way to derive it after
     the fact, so those simply stay uncategorized until the bot is re-imported.
+
+    ``name`` is the wiki's title for the item, which is what the drop list shows
+    and what makes an entry unique. It is *not* always what the game displays: a
+    wiki page cannot hold two entries under one title, so it disambiguates
+    variants by suffix ("Balance Crushing Pin (60, Death)") where the game shows
+    only "Balance Crushing Pin (60)" and puts the school in an icon column.
+
+    ``match_name`` carries that in-game form when it differs, and is None when the
+    two agree — the common case, kept out of the file by ``exclude_none``. Any
+    code comparing a drop against text read off the game's UI wants
+    :attr:`match_key`, never ``name``. ``bartlebot/wiki_drops.py`` derives it.
     """
 
     name: str
     category: str | None = None
+    match_name: str | None = None
+
+    @property
+    def match_key(self) -> str:
+        """The name to match against text the game displays."""
+        return self.match_name or self.name
 
 
 class FlagCondition(BaseModel):

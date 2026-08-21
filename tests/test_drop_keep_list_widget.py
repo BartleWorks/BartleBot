@@ -419,3 +419,126 @@ def test_the_default_category_entry_counts_what_it_shows(qapp):
 def test_the_default_category_entry_says_all_categories_when_nothing_is_hidden(qapp):
     w = _make(qapp, drops=[DropModel(name="Amber", category="Jewels")])
     assert w._category.itemText(0) == "All categories (1)"
+
+
+# ---------------------------------------------------------------------------
+# Wiki names vs in-game names
+#
+# The wiki disambiguates variants the game shows identically, so ticking a row has
+# to store the in-game name — the only text the node ever reads. Storing the wiki
+# name instead produced a keep-list entry matching nothing, and the item sold.
+# ---------------------------------------------------------------------------
+
+_PINS = [
+    DropModel(
+        name=f"Balance Crushing Pin (140, {school})",
+        category="Pins",
+        match_name="Balance Crushing Pin (140)",
+    )
+    for school in ("Fire", "Ice", "Storm", "Myth", "Life", "Death")
+] + [DropModel(name="Amber", category="Jewels")]
+
+
+def test_ticking_stores_the_in_game_name_not_the_wiki_name(qapp):
+    w = _make(qapp, drops=_PINS)
+    _row(w, "Balance Crushing Pin (140, Fire)").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert w.get_value() == ["Balance Crushing Pin (140)"]
+
+
+def test_a_ticked_row_stays_tickable(qapp):
+    # The row must not lock itself: the stored keyword equals the item's in-game
+    # name, so the checkbox alone is enough to undo it.
+    w = _make(qapp, drops=_PINS)
+    _row(w, "Balance Crushing Pin (140, Fire)").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert _enabled(w, "Balance Crushing Pin (140, Fire)")
+
+
+def test_unticking_removes_the_entry_again(qapp):
+    w = _make(qapp, drops=_PINS)
+    row = _row(w, "Balance Crushing Pin (140, Fire)")
+    row.setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
+    assert w.get_value() == []
+
+
+def test_drops_sharing_an_in_game_name_tick_together(qapp):
+    # The game shows all six as one string, so there is no keep list that separates
+    # them. The picker has to show that rather than imply per-school control.
+    w = _make(qapp, drops=_PINS)
+    _row(w, "Balance Crushing Pin (140, Fire)").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert all(_checked(w, f"Balance Crushing Pin (140, {s})") for s in ("Fire", "Ice", "Storm", "Myth"))
+    assert not _checked(w, "Amber")
+
+
+def test_a_shared_name_says_so_in_its_tooltip(qapp):
+    w = _make(qapp, drops=_PINS)
+    tooltip = _row(w, "Balance Crushing Pin (140, Fire)").toolTip(_COL_ITEM)
+    assert "Balance Crushing Pin (140)" in tooltip
+    assert "6 drops share that name in-game, so this applies to all 6." in tooltip
+
+
+def test_an_undecorated_drop_has_no_extra_tooltip_lines(qapp):
+    w = _make(qapp, drops=_PINS)
+    assert _row(w, "Amber").toolTip(_COL_ITEM) == "Keep this item when quickselling."
+
+
+def test_bulk_counts_in_game_names_not_rows(qapp, monkeypatch):
+    # Six rows, one keep-list entry: the confirmation must not claim six.
+    seen = {}
+    monkeypatch.setattr(
+        QMessageBox, "exec", lambda self: seen.update(title=self.windowTitle()) or QMessageBox.StandardButton.Ok
+    )
+    w = _make(qapp, drops=_PINS)
+    w._btn_check_all.click()
+    assert w.get_value() == ["Balance Crushing Pin (140)", "Amber"]
+    assert not seen  # 2 entries is under the confirmation threshold
+
+
+def test_searching_the_in_game_name_finds_the_wiki_named_rows(qapp):
+    w = _make(qapp, drops=_PINS)
+    w._search.setText("Balance Crushing Pin (140)")
+    assert len(w.visible_rows()) == 6
+
+
+def test_searching_the_displayed_name_still_works(qapp):
+    w = _make(qapp, drops=_PINS)
+    w._search.setText("(140, Ice)")
+    assert w.visible_rows() == ["Balance Crushing Pin (140, Ice)"]
+
+
+# ---------------------------------------------------------------------------
+# Item names containing a comma
+# ---------------------------------------------------------------------------
+
+_COMMA_DROPS = [
+    DropModel(name="No Pain, No Gain Onyx", category="Jewels"),
+    DropModel(name="Amber", category="Jewels"),
+]
+
+
+def test_a_comma_in_an_item_name_survives_ticking(qapp):
+    w = _make(qapp, drops=_COMMA_DROPS)
+    _row(w, "No Pain, No Gain Onyx").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert w.get_value() == ["No Pain, No Gain Onyx"]
+
+
+def test_a_comma_named_row_does_not_lock_itself(qapp):
+    w = _make(qapp, drops=_COMMA_DROPS)
+    _row(w, "No Pain, No Gain Onyx").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert _enabled(w, "No Pain, No Gain Onyx")
+    assert not _checked(w, "Amber")
+
+
+def test_a_comma_named_entry_can_be_unticked(qapp):
+    w = _make(qapp, drops=_COMMA_DROPS)
+    row = _row(w, "No Pain, No Gain Onyx")
+    row.setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
+    assert w.get_value() == []
+
+
+def test_a_comma_named_entry_round_trips_through_the_form(qapp):
+    form = _DynamicParamForm()
+    form.set_drops_getter(lambda: list(_COMMA_DROPS))
+    form.load_schema(PARAM_SCHEMA, {"keep_list": ["No Pain, No Gain Onyx"]})
+    assert form.get_params()["keep_list"] == ["No Pain, No Gain Onyx"]

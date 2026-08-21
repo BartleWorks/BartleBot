@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
+from bartlebot.wiki_drops import match_name_for
 
 logger = logging.getLogger(__name__)
 
@@ -410,7 +411,12 @@ class WikiImportDialog(QDialog):
             for j in range(cat.childCount()):
                 child = cat.child(j)
                 if child.checkState(0) == Qt.CheckState.Checked:
-                    self._selected.append(DropModel(name=child.text(0), category=category))
+                    name = child.text(0)
+                    # The wiki disambiguates variants the game shows identically, so
+                    # record the in-game form now — the category is only in hand here.
+                    self._selected.append(
+                        DropModel(name=name, category=category, match_name=match_name_for(name, category))
+                    )
         self.accept()
 
     # ------------------------------------------------------------------
