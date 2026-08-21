@@ -9,376 +9,500 @@
   "start_location": "Anywhere in Mooshu",
   "drops": [
     {
-      "name": "Abstract Shroud"
+      "name": "Abstract Shroud",
+      "category": "Hats"
     },
     {
-      "name": "Ape Grapes"
+      "name": "Ape Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Band of Hope"
+      "name": "Band of Hope",
+      "category": "Rings"
     },
     {
-      "name": "Benign Slippers"
+      "name": "Benign Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Blemished Defense Amethyst +21"
+      "name": "Blemished Defense Amethyst +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Onyx +21"
+      "name": "Blemished Defense Onyx +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Peridot +21"
+      "name": "Blemished Defense Peridot +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Ruby +21"
+      "name": "Blemished Defense Ruby +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Sapphire +21"
+      "name": "Blemished Defense Sapphire +21",
+      "category": "Jewels"
     },
     {
-      "name": "Blended Wool Cap"
+      "name": "Blended Wool Cap",
+      "category": "Hats"
     },
     {
-      "name": "Blight Hound"
+      "name": "Blight Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Boots of Awareness"
+      "name": "Boots of Awareness",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Consideration"
+      "name": "Boots of Consideration",
+      "category": "Boots"
     },
     {
-      "name": "Boots of Disillusion"
+      "name": "Boots of Disillusion",
+      "category": "Boots"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Cap of Dilemma"
+      "name": "Cap of Dilemma",
+      "category": "Hats"
     },
     {
-      "name": "Cap of Hinderance"
+      "name": "Cap of Hinderance",
+      "category": "Hats"
     },
     {
-      "name": "Cap of Preoccupation"
+      "name": "Cap of Preoccupation",
+      "category": "Hats"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of Arias"
+      "name": "Cowl of Arias",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Fiction"
+      "name": "Cowl of Fiction",
+      "category": "Hats"
     },
     {
-      "name": "Crunch Apple"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Deadly Ninja Fig"
+      "name": "Deadly Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Do-Daga's Band"
+      "name": "Do-Daga's Band",
+      "category": "Rings"
     },
     {
-      "name": "Do-Daga's Cloak of Disorder"
+      "name": "Do-Daga's Cloak of Disorder",
+      "category": "Robes"
     },
     {
-      "name": "Do-Daga's Dagger of Intent"
+      "name": "Do-Daga's Dagger of Intent",
+      "category": "Athames"
     },
     {
-      "name": "Do-Daga's Hat of Unrest"
+      "name": "Do-Daga's Hat of Unrest",
+      "category": "Hats"
     },
     {
-      "name": "Do-Daga's Staff of Cognition"
+      "name": "Do-Daga's Staff of Cognition",
+      "category": "Wands"
     },
     {
-      "name": "Do-Daga's Tuned Vest"
+      "name": "Do-Daga's Tuned Vest",
+      "category": "Robes"
     },
     {
-      "name": "Donate Power"
+      "name": "Donate Power",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Doom and Gloom"
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Druidic Cowl"
+      "name": "Druidic Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Druidic Tunic"
+      "name": "Druidic Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Engrossed Robes"
+      "name": "Engrossed Robes",
+      "category": "Robes"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Spellements"
     },
     {
-      "name": "Fancy Bench"
+      "name": "Fancy Bench",
+      "category": "Housing Items"
     },
     {
-      "name": "Fancy Lantern"
+      "name": "Fancy Lantern",
+      "category": "Housing Items"
     },
     {
-      "name": "Fiery Boom Shroom"
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Flawed Damage Opal +5"
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Citrine +18"
+      "name": "Flawed Defense Citrine +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Defense Ruby +18"
+      "name": "Flawed Defense Ruby +18",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +31"
+      "name": "Flawed Health Opal +31",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Health Opal +33"
+      "name": "Flawed Health Opal +33",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Mana Opal +15"
+      "name": "Flawed Mana Opal +15",
+      "category": "Jewels"
     },
     {
-      "name": "Flawed Resilient Opal +2%"
+      "name": "Flawed Resilient Opal +2%",
+      "category": "Jewels"
     },
     {
-      "name": "Friendly Helm"
+      "name": "Friendly Helm",
+      "category": "Hats"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Futon Pillow"
+      "name": "Futon Pillow",
+      "category": "Housing Items"
     },
     {
-      "name": "Garments of Predicament"
+      "name": "Garments of Predicament",
+      "category": "Robes"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Golden Peanut"
+      "name": "Golden Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Golden Squash"
+      "name": "Golden Squash",
+      "category": "Snacks"
     },
     {
-      "name": "Gripping Boots"
+      "name": "Gripping Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hat of Charity"
+      "name": "Hat of Charity",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Eager"
+      "name": "Hat of the Eager",
+      "category": "Hats"
     },
     {
-      "name": "Hat of the Observant"
+      "name": "Hat of the Observant",
+      "category": "Hats"
     },
     {
-      "name": "Haystack"
+      "name": "Haystack",
+      "category": "Housing Items"
     },
     {
-      "name": "Hearty Opal"
+      "name": "Hearty Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Helm of Struggling"
+      "name": "Helm of Struggling",
+      "category": "Hats"
     },
     {
-      "name": "Hood of Chimes"
+      "name": "Hood of Chimes",
+      "category": "Hats"
     },
     {
-      "name": "Hood of Melodies"
+      "name": "Hood of Melodies",
+      "category": "Hats"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Immolate"
+      "name": "Immolate",
+      "category": "Spellements"
     },
     {
-      "name": "Iron"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Kraken"
+      "name": "Kraken",
+      "category": "Spellements"
     },
     {
-      "name": "Kris of the Pensive Ones"
+      "name": "Kris of the Pensive Ones",
+      "category": "Athames"
     },
     {
-      "name": "Landscape Painting"
+      "name": "Landscape Painting",
+      "category": "Housing Items"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Watermelon"
+      "name": "Large Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Leather Straps"
+      "name": "Leather Straps",
+      "category": "Reagents"
     },
     {
-      "name": "Light-As-Air Cloak"
+      "name": "Light-As-Air Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Light-As-Air Slippers"
+      "name": "Light-As-Air Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Logical Band"
+      "name": "Logical Band",
+      "category": "Rings"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Monstrous"
+      "name": "Monstrous",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Pigs"
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Nunu's Twisted Slippers"
+      "name": "Nunu's Twisted Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Painful Slippers"
+      "name": "Painful Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Paper Lantern"
+      "name": "Paper Lantern",
+      "category": "Housing Items"
     },
     {
-      "name": "Pest Zapper"
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Phoenix"
+      "name": "Phoenix",
+      "category": "Spellements"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Prospective Boots"
+      "name": "Prospective Boots",
+      "category": "Boots"
     },
     {
-      "name": "Pupil's Cap"
+      "name": "Pupil's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Pupil's Uniform"
+      "name": "Pupil's Uniform",
+      "category": "Robes"
     },
     {
-      "name": "Pyrite"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Ring of Detachment"
+      "name": "Ring of Detachment",
+      "category": "Rings"
     },
     {
-      "name": "Robe of Hinderance"
+      "name": "Robe of Hinderance",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Universe"
+      "name": "Robe of the Universe",
+      "category": "Robes"
     },
     {
-      "name": "Scarab"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Scorpion"
+      "name": "Scorpion",
+      "category": "Spellements"
     },
     {
-      "name": "Shoes of Watchfulness"
+      "name": "Shoes of Watchfulness",
+      "category": "Boots"
     },
     {
-      "name": "Shortblade of a Daydreamer"
+      "name": "Shortblade of a Daydreamer",
+      "category": "Athames"
     },
     {
-      "name": "Shroud of Deliberation"
+      "name": "Shroud of Deliberation",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of Scruples"
+      "name": "Shroud of Scruples",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of the Universe"
+      "name": "Shroud of the Universe",
+      "category": "Hats"
     },
     {
-      "name": "Shroud of Woe"
+      "name": "Shroud of Woe",
+      "category": "Hats"
     },
     {
-      "name": "Single Bed"
+      "name": "Single Bed",
+      "category": "Housing Items"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Small Woodpile"
+      "name": "Small Woodpile",
+      "category": "Housing Items"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Snow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Square Root"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Stone Base"
+      "name": "Stone Base",
+      "category": "Housing Items"
     },
     {
-      "name": "Storm Shark"
+      "name": "Storm Shark",
+      "category": "Spellements"
     },
     {
-      "name": "Stormzilla"
+      "name": "Stormzilla",
+      "category": "Spellements"
     },
     {
-      "name": "Straw Pile"
+      "name": "Straw Pile",
+      "category": "Housing Items"
     },
     {
-      "name": "Sunbird"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Systematic Boots"
+      "name": "Systematic Boots",
+      "category": "Boots"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Thunder Snake",
+      "category": "Spellements"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tormented Sandals"
+      "name": "Tormented Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Tough"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tunic of Scruples"
+      "name": "Tunic of Scruples",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Fiction"
+      "name": "Vestment of Fiction",
+      "category": "Robes"
     },
     {
-      "name": "Warbled Shoes"
+      "name": "Warbled Shoes",
+      "category": "Boots"
     },
     {
-      "name": "White Laugh-O-Dil"
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
     }
   ],
   "authors": "BartleBot",
