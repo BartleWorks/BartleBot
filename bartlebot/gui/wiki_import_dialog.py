@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import urlparse
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -94,20 +95,49 @@ class _FetchWorker(QThread):
 # ---------------------------------------------------------------------------
 
 
+def wiki_page_path(url: str) -> str | None:
+    """The ``/wiki/...`` path *url* points to on the wiki, or None if it does not.
+
+    Relative hrefs are accepted as-is; an absolute URL must be https and its host
+    must be exactly the wiki's.
+
+    The host is compared against the parsed hostname rather than searched for in
+    the raw string. A substring test accepts every one of these, all of which
+    resolve to an attacker's server:
+
+        https://wiki.wizard101central.com.evil.co/wiki/Creature:X
+        https://evil.co/wiki/?ref=wiki.wizard101central.com
+        https://evil.co/wiki.wizard101central.com/wiki/X
+        https://wiki.wizard101central.com@evil.co/wiki/X
+
+    Userinfo is rejected outright. The last form above does reach the real wiki
+    when the hostname is what is compared, but a URL that *reads* as one host and
+    resolves to another has no legitimate use here.
+    """
+    url = url.strip()
+    if not url:
+        return None
+    if not url.lower().startswith(("http://", "https://")):
+        # A relative href from a fetched page — same-origin by construction.
+        path = "/" + url.lstrip("/")
+        return path if path.startswith("/wiki/") else None
+
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        return None
+    if parsed.username or parsed.password:
+        return None
+    if (parsed.hostname or "").lower() != _WIKI_HOST:
+        return None
+    return parsed.path if parsed.path.startswith("/wiki/") else None
+
+
 def _is_item_link(href: str) -> bool:
     """Return True if *href* links to an obtainable in-game item page."""
-    path = href
-    if path.startswith("http"):
-        if _WIKI_HOST not in path:
-            return False
-        idx = path.find("/wiki/")
-        if idx == -1:
-            return False
-        path = path[idx:]
-    path = path.lstrip("/")
-    if not path.startswith("wiki/"):
+    path = wiki_page_path(href)
+    if path is None:
         return False
-    page = path[len("wiki/") :]
+    page = path[len("/wiki/") :]
     ns = page.split(":")[0] if ":" in page else ""
     return ns in _ITEM_NAMESPACES
 
@@ -425,13 +455,16 @@ class WikiImportDialog(QDialog):
 
     @staticmethod
     def _validate_url(url: str) -> str | None:
-        """Return an error string, or None if the URL is acceptable."""
-        if not url.startswith("https://"):
+        """Return an error string, or None if the URL is acceptable.
+
+        The fetch that follows impersonates Chrome against whatever this allows, so
+        the host check has to be exact — see :func:`wiki_page_path`.
+        """
+        url = url.strip()
+        if not url.lower().startswith("https://"):
             return "URL must start with https://"
-        if _WIKI_HOST not in url:
-            return f"URL must be from {_WIKI_HOST}"
-        if "/wiki/" not in url:
-            return "URL must point to a wiki page (must contain /wiki/)"
+        if wiki_page_path(url) is None:
+            return f"URL must be an https://{_WIKI_HOST}/wiki/… page"
         return None
 
     def _set_status(self, msg: str, *, error: bool = False) -> None:
