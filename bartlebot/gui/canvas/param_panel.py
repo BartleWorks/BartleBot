@@ -42,6 +42,7 @@ from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 # ---------------------------------------------------------------------------
 # Sentinel QLineEdit subclasses  (identified by get_params())
@@ -54,6 +55,29 @@ class _IntListLineEdit(QLineEdit):
     Stores values as a comma-separated string (e.g. "1, 2, 3") and is
     identified by get_params() to deserialise back to list[int].
     """
+
+
+class _WikiPageLineEdit(QLineEdit):
+    """Line edit for a 'wiki_page' param.
+
+    Stores a bare page title. A pasted URL is normalised to its title on edit, so
+    whichever form the user has to hand produces the same thing on disk — and a bot
+    file never carries a host of its own. See bartlebot/wiki_pages.py.
+    """
+
+    def normalise(self) -> None:
+        """Rewrite a pasted URL as its page title, leaving anything else alone."""
+        raw = self.text().strip()
+        if "://" not in raw:
+            return
+        title = page_title(raw)
+        if title is not None and title != raw:
+            self.setText(title)
+
+    def is_usable(self) -> bool:
+        """Whether the current text is empty or resolves to a wiki page."""
+        raw = self.text().strip()
+        return not raw or page_title(raw) is not None
 
 
 class _StrListLineEdit(QLineEdit):
@@ -393,6 +417,17 @@ class _DynamicParamForm(QWidget):
         self._push_context()
         self._validate_required_fields()
 
+    def set_param_value(self, key: str, value) -> None:
+        """Set one param's widget from outside, as if the user had typed it.
+
+        Emits changed() so the edit is saved and undoable, but only when the value
+        actually moves — re-importing the same page should not dirty the bot.
+        """
+        w = self._widgets.get(key)
+        if not isinstance(w, _WikiPageLineEdit) or w.text().strip() == str(value).strip():
+            return
+        w.setText(str(value))
+
     def _push_context(self) -> None:
         """Hand drop-aware widgets the form's other params, which affect what is kept."""
         for w in self._widgets.values():
@@ -438,6 +473,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
                 result[key] = parse_list_text(w.text())
+            elif isinstance(w, _WikiPageLineEdit):
+                result[key] = page_title(w.text()) or w.text().strip()
             elif isinstance(w, _ZoneWidget):
                 result[key] = w.text()
             elif isinstance(w, QLineEdit):
@@ -511,6 +548,15 @@ class _DynamicParamForm(QWidget):
             if help_text:
                 w.setToolTip(help_text)
             w.changed.connect(self._emit_changed)
+            return w
+        if field_type == "wiki_page":
+            w = _WikiPageLineEdit()
+            w.setText(str(val) if val else "")
+            w.setPlaceholderText("Creature:Luska Charmbeak")
+            if help_text:
+                w.setToolTip(help_text)
+            w.editingFinished.connect(w.normalise)
+            w.textChanged.connect(self._emit_changed)
             return w
         if field_type == "str_list":
             w = _StrListLineEdit()
@@ -1623,6 +1669,13 @@ class _ParamPanel(QWidget):
             entries = dialog.selected_entries()
             if entries:
                 self.wiki_import_completed.emit(entries)
+            # Record where they came from on the node that imported them. The panel
+            # is only shown for handle_combat, so this is the fight whose boss page
+            # was just fetched — the association the import flow already implied and
+            # previously discarded.
+            page = dialog.selected_page()
+            if page:
+                self._param_form.set_param_value(WIKI_PAGE_PARAM, page)
 
     # ------------------------------------------------------------------
     # Recording

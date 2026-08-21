@@ -26,6 +26,21 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="targets the closest available mob",
     ),
     ParamField(
+        key="wiki_page",
+        type="wiki_page",
+        label="Wiki Page",
+        help=(
+            "Wizard101 Central page for the boss this node fights, e.g. 'Creature:Luska Charmbeak'. "
+            "Paste the page's URL and it will be stored as the title. Records where the bot's drop "
+            "table came from so it can be refreshed later — a dungeon with two bosses records one "
+            "page per fight. Leave empty for mob fights, which have no single page. "
+            "Not used while the bot runs."
+        ),
+        default="",
+        required=False,
+        default_hint="no source page recorded",
+    ),
+    ParamField(
         key="use_default_strategy",
         type="bool",
         label="Use default strategy",

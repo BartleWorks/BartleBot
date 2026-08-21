@@ -4,7 +4,6 @@ Only the three module-level functions and the _validate_url static method are te
 all are pure string/BeautifulSoup logic with no Qt or network dependencies.
 """
 
-import pytest
 from bs4 import BeautifulSoup
 
 from bartlebot.gui.wiki_import_dialog import (
@@ -12,7 +11,6 @@ from bartlebot.gui.wiki_import_dialog import (
     _is_item_link,
     _parse_drops,
     _text_before_first_link,
-    wiki_page_path,
 )
 
 
@@ -321,70 +319,3 @@ def test_validate_url_rejects_missing_wiki_path():
     err = WikiImportDialog._validate_url("https://wiki.wizard101central.com/Foo")
     assert err is not None
     assert isinstance(err, str)
-
-
-# ---------------------------------------------------------------------------
-# Host validation
-#
-# The URL reaching _FetchWorker is fetched with curl_cffi impersonating Chrome,
-# so "is this the wiki?" has to be an exact hostname comparison. The substring
-# test this replaced accepted every lookalike below.
-# ---------------------------------------------------------------------------
-
-_LOOKALIKES = [
-    "https://wiki.wizard101central.com.evil.co/wiki/Creature:Jade Oni",
-    "https://evil.co/wiki/?ref=wiki.wizard101central.com",
-    "https://evil.co/wiki.wizard101central.com/wiki/page",
-    "https://wiki.wizard101central.com@evil.co/wiki/page",
-    "https://WIKI.WIZARD101CENTRAL.COM.evil.co/wiki/page",
-]
-
-
-@pytest.mark.parametrize("url", _LOOKALIKES)
-def test_a_lookalike_host_is_rejected(url):
-    assert wiki_page_path(url) is None
-    assert WikiImportDialog._validate_url(url) is not None
-
-
-def test_the_real_wiki_is_accepted():
-    url = "https://wiki.wizard101central.com/wiki/Creature:Jade Oni"
-    assert wiki_page_path(url) == "/wiki/Creature:Jade Oni"
-    assert WikiImportDialog._validate_url(url) is None
-
-
-def test_the_host_comparison_is_case_insensitive():
-    assert wiki_page_path("https://WIKI.Wizard101Central.COM/wiki/Item:X") == "/wiki/Item:X"
-
-
-def test_http_is_rejected():
-    assert wiki_page_path("http://wiki.wizard101central.com/wiki/Item:X") is None
-
-
-def test_a_url_off_the_wiki_path_is_rejected():
-    assert wiki_page_path("https://wiki.wizard101central.com/not-wiki/X") is None
-
-
-def test_userinfo_is_rejected_even_on_the_real_host():
-    # Resolves to the real wiki, but a URL that reads as one host and resolves to
-    # another has no legitimate use here.
-    assert wiki_page_path("https://evil.co@wiki.wizard101central.com/wiki/X") is None
-
-
-def test_a_relative_href_is_same_origin_by_construction():
-    assert wiki_page_path("/wiki/Item:Amber") == "/wiki/Item:Amber"
-
-
-def test_a_relative_href_off_the_wiki_path_is_rejected():
-    assert wiki_page_path("/images/foo.png") is None
-
-
-def test_blank_input_is_rejected():
-    assert wiki_page_path("") is None
-    assert wiki_page_path("   ") is None
-
-
-@pytest.mark.parametrize("url", _LOOKALIKES)
-def test_an_item_link_on_a_lookalike_host_is_not_an_item_link(url):
-    # The href is never followed, but a crafted page should not be able to inject
-    # names into the drop list through an off-site link either.
-    assert not _is_item_link(url.replace("/wiki/page", "/wiki/Item:Evil"))

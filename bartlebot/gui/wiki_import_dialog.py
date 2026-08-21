@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from urllib.parse import urlparse
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -22,10 +21,11 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
 from bartlebot.wiki_drops import match_name_for
+from bartlebot.wiki_pages import WIKI_HOST as _WIKI_HOST
+from bartlebot.wiki_pages import page_title, wiki_page_path
 
 logger = logging.getLogger(__name__)
 
-_WIKI_HOST = "wiki.wizard101central.com"
 _WIKI_PREFIX = f"https://{_WIKI_HOST}/wiki/"
 
 # Wiki namespaces that represent obtainable in-game items.
@@ -93,43 +93,6 @@ class _FetchWorker(QThread):
 # ---------------------------------------------------------------------------
 # HTML parsing
 # ---------------------------------------------------------------------------
-
-
-def wiki_page_path(url: str) -> str | None:
-    """The ``/wiki/...`` path *url* points to on the wiki, or None if it does not.
-
-    Relative hrefs are accepted as-is; an absolute URL must be https and its host
-    must be exactly the wiki's.
-
-    The host is compared against the parsed hostname rather than searched for in
-    the raw string. A substring test accepts every one of these, all of which
-    resolve to an attacker's server:
-
-        https://wiki.wizard101central.com.evil.co/wiki/Creature:X
-        https://evil.co/wiki/?ref=wiki.wizard101central.com
-        https://evil.co/wiki.wizard101central.com/wiki/X
-        https://wiki.wizard101central.com@evil.co/wiki/X
-
-    Userinfo is rejected outright. The last form above does reach the real wiki
-    when the hostname is what is compared, but a URL that *reads* as one host and
-    resolves to another has no legitimate use here.
-    """
-    url = url.strip()
-    if not url:
-        return None
-    if not url.lower().startswith(("http://", "https://")):
-        # A relative href from a fetched page — same-origin by construction.
-        path = "/" + url.lstrip("/")
-        return path if path.startswith("/wiki/") else None
-
-    parsed = urlparse(url)
-    if parsed.scheme != "https":
-        return None
-    if parsed.username or parsed.password:
-        return None
-    if (parsed.hostname or "").lower() != _WIKI_HOST:
-        return None
-    return parsed.path if parsed.path.startswith("/wiki/") else None
 
 
 def _is_item_link(href: str) -> bool:
@@ -223,6 +186,7 @@ class WikiImportDialog(QDialog):
         self.resize(540, 580)
         self._worker: _FetchWorker | None = None
         self._selected: list[DropModel] = []
+        self._page: str | None = None
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -236,6 +200,13 @@ class WikiImportDialog(QDialog):
     def selected_entries(self) -> list[DropModel]:
         """Return the checked items with the wiki category each was listed under."""
         return list(self._selected)
+
+    def selected_page(self) -> str | None:
+        """The title of the page these drops came from, for the caller to record.
+
+        A title rather than the URL the user pasted — see bartlebot/wiki_pages.py.
+        """
+        return self._page
 
     # ------------------------------------------------------------------
     # UI construction
@@ -334,6 +305,7 @@ class WikiImportDialog(QDialog):
             self._set_status(err, error=True)
             return
 
+        self._page = page_title(url)
         self._set_status("Fetching…")
         self._btn_fetch.setEnabled(False)
         self._tree.clear()

@@ -32,10 +32,13 @@ class ParamField:
     Attributes:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list" |
-                      "int_choice" | "player_list" | "drop_keep_list".
+                      "int_choice" | "player_list" | "drop_keep_list" | "wiki_page".
                       "text" renders as a multi-line QPlainTextEdit.
                       "drop_keep_list" is a str_list of quicksell keep-list keywords, shown alongside the bot's
                       drop table with a checkbox per drop; the value on disk is a plain list of strings.
+                      "wiki_page" records the Wizard101 Central page a node's data came from. Editor-only —
+                      no node reads it at run time. Stored as a bare page title, never a URL; resolve it
+                      through bartlebot.wiki_pages.resolve_wiki_page() and never by hand.
         label:        Human-readable form label.
         help:         Tooltip / documentation text shown on hover.
         default:      Value used when no existing param data is present.
