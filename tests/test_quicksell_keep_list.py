@@ -1,6 +1,7 @@
 """Tests for the quicksell keep-list logic shared by the node and the properties panel."""
 
 from bartlebot.nodes.utility.quicksell import (
+    category_keep_reasons,
     drop_keep_states,
     effective_keep_list,
     matching_keyword,
@@ -153,3 +154,42 @@ def test_bulk_matches_repeated_singular_toggles():
     for name in names:
         one_at_a_time = toggle_drop_in_keep_list(one_at_a_time, name, True)
     assert one_at_a_time == set_drops_in_keep_list(["hat"], names, True)
+
+
+# ---------------------------------------------------------------------------
+# category_keep_reasons
+#
+# sell_pets is the one sell_* bool that is not a name match: the node deselects
+# the whole Pet tab, so no keep-list keyword describes it. The picker needs to be
+# told separately, or it shows a pet as "will be sold" while the config says the
+# opposite.
+# ---------------------------------------------------------------------------
+
+
+def test_no_categories_are_spared_by_default():
+    assert category_keep_reasons({}) == {}
+
+
+def test_selling_pets_spares_nothing():
+    assert category_keep_reasons({"sell_pets": True}) == {}
+
+
+def test_not_selling_pets_spares_the_pets_category():
+    assert set(category_keep_reasons({"sell_pets": False})) == {"Pets"}
+
+
+def test_the_reason_names_the_param_that_causes_it():
+    # The user has to know where to undo it, and it is not the keep list.
+    assert category_keep_reasons({"sell_pets": False})["Pets"] == "Kept because Sell Pets is off, not by the keep list."
+
+
+def test_an_omitted_param_uses_the_schema_default():
+    # sell_pets defaults to True, unlike the other sell_* bools, so an absent
+    # param must not read as "not selling".
+    assert category_keep_reasons({"keep_list": []}) == {}
+
+
+def test_category_flags_do_not_leak_into_the_keyword_list():
+    # A spared category is not expressible as a keyword, so it must not appear as
+    # one — the run loop would then match "pets" against item names.
+    assert effective_keep_list({**_SELL_ALL, "sell_pets": False}) == []

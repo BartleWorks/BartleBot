@@ -106,6 +106,15 @@ IMPLIED_KEEP_KEYWORDS: dict[str, str] = {
     "sell_skeleton_keys": "skeleton key",
 }
 
+# Bool params that spare a whole wiki category when switched *off*, rather than
+# adding a keyword. sell_pets is not a name match at all: the node deselects the
+# Pet tab wholesale, so no keep-list entry describes what it does.
+#
+# Editor-only, like NEVER_QUICKSOLD_CATEGORIES and for the same reason — the node
+# never sees a category. This exists so the picker does not show a pet as "will be
+# sold" while the config plainly says otherwise.
+CATEGORY_SELL_FLAGS: dict[str, str] = {"sell_pets": "Pets"}
+
 # Wiki drop categories this node will never sell, and why. Editor-only: the node
 # reads item names off the quicksell window and never sees a category, so this
 # cannot be consulted at run time — it exists so the keep-list picker can leave
@@ -153,6 +162,26 @@ def _typed_keywords(params: dict) -> list[str]:
 def _implied_keywords(params: dict) -> list[str]:
     """The keywords contributed by the sell_* bools rather than by the keep_list."""
     return [keyword for param_key, keyword in IMPLIED_KEEP_KEYWORDS.items() if not params.get(param_key, False)]
+
+
+def category_keep_reasons(params: dict) -> dict[str, str]:
+    """Categories this config spares wholesale, mapped to why.
+
+    Distinct from NEVER_QUICKSOLD_CATEGORIES, which is a fact about the game: these
+    depend on the node's params, and flipping the bool sells the category again.
+    The picker keeps such rows in the sellable count for that reason — they *are*
+    sellable, this config just is not selling them.
+    """
+    reasons = {}
+    for param_key, category in CATEGORY_SELL_FLAGS.items():
+        field = next((f for f in PARAM_SCHEMA if f.key == param_key), None)
+        # The field's own default, so this cannot drift from what run() would read
+        # for a param the bot file omits.
+        default = field.default if field is not None else True
+        if not params.get(param_key, default):
+            label = field.label if field is not None else param_key
+            reasons[category] = f"Kept because {label} is off, not by the keep list."
+    return reasons
 
 
 def effective_keep_list(params: dict) -> list[str]:

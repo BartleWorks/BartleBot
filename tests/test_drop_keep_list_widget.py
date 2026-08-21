@@ -542,3 +542,84 @@ def test_a_comma_named_entry_round_trips_through_the_form(qapp):
     form.set_drops_getter(lambda: list(_COMMA_DROPS))
     form.load_schema(PARAM_SCHEMA, {"keep_list": ["No Pain, No Gain Onyx"]})
     assert form.get_params()["keep_list"] == ["No Pain, No Gain Onyx"]
+
+
+# ---------------------------------------------------------------------------
+# Categories a sell_* bool spares wholesale
+#
+# sell_pets deselects the Pet tab rather than matching a name, so no keep-list
+# entry describes it. Without the picker knowing that, a pet renders as "will be
+# sold" while the config plainly says otherwise.
+# ---------------------------------------------------------------------------
+
+_PETS = [
+    DropModel(name="Fierce Hound", category="Pets"),
+    DropModel(name="Enchanted Owl", category="Pets"),
+    DropModel(name="Amber Ring", category="Rings"),
+    DropModel(name="Mandrake", category="Reagents"),
+]
+_KEEP_PETS = {**_SELL_ALL, "sell_pets": False}
+
+
+def test_pets_are_unchecked_while_the_node_sells_them(qapp):
+    w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
+    assert not _checked(w, "Fierce Hound")
+    assert _enabled(w, "Fierce Hound")
+
+
+def test_pets_are_checked_when_the_node_is_not_selling_them(qapp):
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    assert _checked(w, "Fierce Hound")
+    assert _checked(w, "Enchanted Owl")
+
+
+def test_a_spared_pet_is_locked_and_says_where_to_undo_it(qapp):
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    assert not _enabled(w, "Fierce Hound")
+    assert _row(w, "Fierce Hound").toolTip(_COL_ITEM) == "Kept because Sell Pets is off, not by the keep list."
+
+
+def test_sparing_pets_leaves_other_categories_alone(qapp):
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    assert not _checked(w, "Amber Ring")
+    assert _enabled(w, "Amber Ring")
+
+
+def test_spared_pets_stay_visible_and_counted(qapp):
+    # Unlike a never-quicksold category, these are sellable — the config just is
+    # not selling them — so hiding them or dropping them from the denominator
+    # would misreport what the node does.
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    assert "Fierce Hound" in w.visible_rows()
+    assert "Currently keeping 2 out of 3 sellable drops" in _plain(w._summary.text())
+
+
+def test_spared_pets_stay_out_of_bulk_changes(qapp):
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    w._btn_uncheck_all.click()
+    assert _checked(w, "Fierce Hound")
+    assert w.get_value() == []
+
+
+def test_a_spared_pet_shows_under_the_kept_only_filter(qapp):
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    w._kept_only.setChecked(True)
+    assert w.visible_rows() == ["Fierce Hound", "Enchanted Owl"]
+
+
+def test_flipping_the_pets_bool_updates_the_rows(qapp):
+    w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
+    assert not _checked(w, "Fierce Hound")
+    w.set_context(_KEEP_PETS)
+    assert _checked(w, "Fierce Hound")
+    w.set_context({**_SELL_ALL, "sell_pets": True})
+    assert not _checked(w, "Fierce Hound")
+    assert _enabled(w, "Fierce Hound")
+
+
+def test_the_quicksell_form_feeds_its_pets_bool_to_the_widget(qapp):
+    form = _DynamicParamForm()
+    form.set_drops_getter(lambda: list(_PETS))
+    form.load_schema(PARAM_SCHEMA, {"keep_list": [], "sell_pets": False})
+    widget = next(w for w in form.findChildren(DropKeepListWidget))
+    assert _checked(widget, "Fierce Hound") and not _enabled(widget, "Fierce Hound")

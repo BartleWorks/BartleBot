@@ -328,15 +328,19 @@ class DropKeepListWidget(QWidget):
         # node ever sees. Zipped positionally rather than looked up by name: several
         # drops can share one in-game name, and a dict would collapse them.
         match_keys = [entry.match_key for entry in entries]
-        states = quicksell.drop_keep_states(match_keys, {**self._context, "keep_list": self.get_value()})
+        params = {**self._context, "keep_list": self.get_value()}
+        states = quicksell.drop_keep_states(match_keys, params)
         shared = Counter(key.casefold() for key in match_keys)
+        # Categories a sell_* bool spares wholesale. Unlike the never-sold set these
+        # are still sellable, so their rows stay visible and stay in the count —
+        # they are just not the keep list's to decide.
+        category_kept = quicksell.category_keep_reasons(params)
 
         self._suppress = True
         kept = sellable = 0
         for row, entry, state in zip(self._rows, entries, states):
-            never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(
-                row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
-            )
+            category = row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
+            never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(category)
             if never_reason:
                 # Hidden by default; shown checked and inert if the user filters to
                 # this category, because the item does survive — it is just never
@@ -347,12 +351,19 @@ class DropKeepListWidget(QWidget):
                 continue
 
             sellable += 1
-            kept += bool(state.kept)
-            row.setCheckState(_COL_KEEP, Qt.CheckState.Checked if state.kept else Qt.CheckState.Unchecked)
-            locked = state.kept and not state.exact
+            category_reason = category_kept.get(category)
+            row_kept = state.kept or category_reason is not None
+            kept += bool(row_kept)
+            row.setCheckState(_COL_KEEP, Qt.CheckState.Checked if row_kept else Qt.CheckState.Unchecked)
+            # Locked either way: a checkbox can rewrite neither a broader keyword nor
+            # a sell_* bool. Which one is responsible is what the tooltip has to say,
+            # since they are undone in different places.
+            locked = category_reason is not None or (state.kept and not state.exact)
             flags = row.flags()
             row.setFlags(flags & ~Qt.ItemFlag.ItemIsEnabled if locked else flags | Qt.ItemFlag.ItemIsEnabled)
-            if locked:
+            if category_reason is not None:
+                row.setToolTip(_COL_ITEM, category_reason)
+            elif locked:
                 row.setToolTip(
                     _COL_ITEM, f"Kept by the keyword {state.keyword!r}, not by its own name — change that above."
                 )
