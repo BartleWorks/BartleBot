@@ -298,3 +298,67 @@ async def test_clicks_the_window_the_checks_passed_on():
         result = await cp.run(FakeMachine(), [client], {"path": _PATH, "availability_timeout": 0, "match_index": 2})
     assert result == "SUCCESS"
     mock_click.assert_awaited_once_with(client, chosen)
+
+
+# ---------------------------------------------------------------------------
+# Click Clients: the UI is only open on some clients
+# ---------------------------------------------------------------------------
+
+
+async def test_click_clients_limits_the_node_to_the_selected_clients():
+    """Client 2 has no such path; selecting only client 1 still succeeds."""
+    client1 = FakeClient()
+    client2 = FakeClient()
+    seen = []
+
+    async def _resolve(client, path, **kwargs):
+        seen.append(client)
+        return (_make_window(), 1) if client is client1 else (None, 0)
+
+    with (
+        patch.object(cp, "resolve_path_match", _resolve),
+        patch.object(cp, "click_window", AsyncMock(return_value=True)) as mock_click,
+    ):
+        result = await cp.run(
+            FakeMachine(),
+            [client1, client2],
+            {"path": _PATH, "click_clients": [1], "availability_timeout": 0},
+        )
+    assert result == "SUCCESS"
+    assert seen == [client1]
+    assert mock_click.await_count == 1
+
+
+async def test_click_clients_empty_means_every_client():
+    """No selection keeps the old behaviour: every client must find the path."""
+    client1 = FakeClient()
+    client2 = FakeClient()
+
+    async def _resolve(client, path, **kwargs):
+        return (_make_window(), 1) if client is client1 else (None, 0)
+
+    with (
+        patch.object(cp, "resolve_path_match", _resolve),
+        patch.object(cp, "click_window", AsyncMock(return_value=True)),
+    ):
+        result = await cp.run(
+            FakeMachine(),
+            [client1, client2],
+            {"path": _PATH, "click_clients": [], "availability_timeout": 0},
+        )
+    assert result == "FAILURE"
+
+
+async def test_click_clients_selecting_an_absent_client_is_a_no_op():
+    """A selection naming only clients that are not connected succeeds without clicking."""
+    with (
+        patch.object(cp, "resolve_path_match", _resolver(_make_window())),
+        patch.object(cp, "click_window", AsyncMock(return_value=True)) as mock_click,
+    ):
+        result = await cp.run(
+            FakeMachine(),
+            [FakeClient()],
+            {"path": _PATH, "click_clients": [3], "availability_timeout": 0},
+        )
+    assert result == "SUCCESS"
+    mock_click.assert_not_called()

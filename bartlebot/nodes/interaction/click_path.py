@@ -22,6 +22,19 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
+        key="click_clients",
+        type="player_list",
+        label="Click Clients",
+        help=(
+            "Which players click the element. Leave all unchecked to click on every client, "
+            "which is what this node has always done. Select a subset when the UI is only open "
+            "on some clients — a menu opened by interact_menu with a narrower Interact Clients "
+            "is not present on the others, and the path matches nothing there."
+        ),
+        default=[],
+        default_hint="all clients",
+    ),
+    ParamField(
         key="match_text",
         type="str",
         label="Match Text",
@@ -120,6 +133,8 @@ NODE_SPEC = NodeSpec(
         "Paths match on window NAME only, and several elements can share one path — a list menu "
         "whose rows are structurally identical is the usual case. Without Match Text or Match Index "
         "the first match in tree order is clicked, and the log warns when there was more than one. "
+        "Every client clicks unless Click Clients narrows it, so a menu that only some clients "
+        "opened needs the same selection here that opened it. "
         "The confirm path is useful when a click opens a dialog or changes a button state "
         "that the next node depends on; it always uses its first match and takes no match params."
     ),
@@ -137,6 +152,7 @@ def _describe_miss(count: int, match_text: str, match_index: int) -> str:
 
 async def run(machine, clients: list, params: dict) -> str:
     path: list[str] = params.get("path", [])
+    click_clients: list[int] = params.get("click_clients") or []
     match_text: str = params.get("match_text", "")
     match_text_exact: bool = params.get("match_text_exact", False)
     match_index: int = params.get("match_index", 0)
@@ -148,6 +164,16 @@ async def run(machine, clients: list, params: dict) -> str:
     if not path:
         machine.log("click_path: FAILURE — path parameter is empty", logging.WARNING)
         return "FAILURE"
+
+    # Empty means every client, not none: this node predates the param, and existing bot
+    # files carry no value for it.
+    if click_clients:
+        indices = [n - 1 for n in click_clients if 0 < n <= len(clients)]
+        clients = [clients[i] for i in indices]
+        if not clients:
+            machine.log("click_path: no selected client is connected — SUCCESS")
+            return "SUCCESS"
+        machine.log(f"click_path: clicking on client(s) {[i + 1 for i in indices]}", logging.DEBUG)
 
     selector = ""
     if match_text:
