@@ -4,19 +4,24 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QHBoxLayout,
+    QHeaderView,
     QInputDialog,
-    QListWidget,
     QPushButton,
     QSizePolicy,
+    QTreeWidget,
+    QTreeWidgetItem,
     QVBoxLayout,
     QWidget,
 )
 
+from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
+from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
+from bartlebot.wiki_drops import match_name_for
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -24,30 +29,141 @@ if TYPE_CHECKING:
 _BASE_TITLE = "Possible Drops"
 
 
+_UNCATEGORIZED_HINT = (
+    "Drops imported before categories existed have none. Re-import this bot from the wiki to add them — "
+    "categories let the quicksell keep-list picker group drops and leave out the ones it can never sell."
+)
+
+
+def drops_header_text(entries: list[DropModel]) -> str:
+    """Section title with the drop count, calling out drops that have no category.
+
+    The uncategorized count is the only prompt to re-import: nothing else tells a
+    user that a bot predates categories, and without one they never appear.
+    """
+    if not entries:
+        return _BASE_TITLE
+    uncategorized = sum(1 for entry in entries if not entry.category)
+    if not uncategorized:
+        return f"{_BASE_TITLE} ({len(entries)})"
+    return f"{_BASE_TITLE} ({len(entries)} · {uncategorized} uncategorized)"
+
+
+def rename_drop(entries: list[DropModel], index: int, new_text: str) -> list[DropModel]:
+    """Return *entries* with the drop at *index* renamed to *new_text*.
+
+    The drop keeps its category — renaming "Amber" to "Ambers" does not make it
+    uncategorized. Its in-game name is re-derived from the new text rather than
+    carried over, since the old one described the old name. Blank text or an
+    out-of-range index leaves the list unchanged. If the new name already appears
+    elsewhere the two entries collapse into one, matching the dedup behaviour of
+    adding a drop that is already listed; the first of the two in list order is the
+    one kept, along with its category.
+    """
+    new_text = new_text.strip()
+    if not new_text or not 0 <= index < len(entries):
+        return list(entries)
+    result: list[DropModel] = []
+    seen: set[str] = set()
+    for i, entry in enumerate(entries):
+        candidate = (
+            DropModel(
+                name=new_text,
+                category=entry.category,
+                match_name=match_name_for(new_text, entry.category),
+            )
+            if i == index
+            else entry
+        )
+        if candidate.name not in seen:
+            seen.add(candidate.name)
+            result.append(candidate)
+    return result
+
+
+def merge_drops(existing: list[DropModel], incoming: list[DropModel]) -> list[DropModel]:
+    """Return *existing* plus any of *incoming* not already listed, by name.
+
+    A re-import also backfills: a drop already listed without a category picks up
+    one when the incoming entry has it. That is the only way drops added before
+    categories existed — or added by hand — ever get categorized. Gaining a
+    category can also settle what the game calls the item (the school suffix on a
+    jewel is only strippable once we know it is a jewel), so the in-game name is
+    re-derived at the same time.
+    """
+    incoming_by_name: dict[str, DropModel] = {}
+    for entry in incoming:
+        incoming_by_name.setdefault(entry.name, entry)
+
+    # Rebuild rather than mutate: callers compare the result against the original
+    # to decide whether anything changed, which in-place edits would hide.
+    result: list[DropModel] = []
+    for entry in existing:
+        match = incoming_by_name.get(entry.name)
+        if entry.category is None and match is not None and match.category is not None:
+            result.append(
+                DropModel(
+                    name=entry.name,
+                    category=match.category,
+                    match_name=match_name_for(entry.name, match.category),
+                )
+            )
+        else:
+            result.append(entry)
+
+    seen = {entry.name for entry in existing}
+    for entry in incoming:
+        if entry.name not in seen:
+            seen.add(entry.name)
+            result.append(entry)
+    return result
+
+
 class _DropsListWidget(QWidget):
-    """Scrollable list of drop item strings with edit controls.
+    """Sortable Item / Category table of a bot's drops, with edit controls.
+
+    Sorting by category is the point of the second column: it groups a 600-entry
+    drop table into something you can curate, and it puts the uncategorized rows
+    together so it is obvious which bots still need a wiki re-import.
+
+    The view's sort order never reaches storage — get_items() always returns
+    entries in name order, so clicking a header does not rewrite the bot file.
 
     Always visible; the button row is shown only in edit mode via set_editable().
-    Emits changed(list[str]) whenever the list is modified.
+    Emits changed(list[DropModel]) whenever the list is modified.
     Emits import_requested() when the user clicks Import from Wiki…
     """
 
     changed = pyqtSignal(list)
     import_requested = pyqtSignal()
 
+    _COL_NAME = 0
+    _COL_CATEGORY = 1
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._editable = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        self._list = QListWidget()
+        self._list = QTreeWidget()
+        self._list.setHeaderLabels(["Item", "Category"])
+        self._list.setRootIsDecorated(False)
+        self._list.setUniformRowHeights(True)
+        self._list.setSortingEnabled(True)
+        self._list.sortByColumn(self._COL_NAME, Qt.SortOrder.AscendingOrder)
+        self._list.setTextElideMode(Qt.TextElideMode.ElideRight)
         self._list.setMinimumHeight(120)
         self._list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        header = self._list.header()
+        header.setSectionResizeMode(self._COL_NAME, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self._COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
+        self._list.setColumnWidth(self._COL_CATEGORY, 92)
         layout.addWidget(self._list, 1)
 
         # Button row — shown only in edit mode
@@ -57,11 +173,13 @@ class _DropsListWidget(QWidget):
         btn_layout.setSpacing(3)
 
         self._btn_add = self._make_btn("Add")
+        self._btn_edit = self._make_btn("Edit")
         self._btn_remove = self._make_btn("Remove")
         self._btn_clear = self._make_btn("Clear")
         self._btn_import = self._make_btn("Import from Wiki…")
 
         btn_layout.addWidget(self._btn_add)
+        btn_layout.addWidget(self._btn_edit)
         btn_layout.addWidget(self._btn_remove)
         btn_layout.addWidget(self._btn_clear)
         btn_layout.addStretch()
@@ -71,47 +189,98 @@ class _DropsListWidget(QWidget):
         self._btn_row.setVisible(False)
 
         self._btn_add.clicked.connect(self._on_add)
+        self._btn_edit.clicked.connect(self._on_edit)
         self._btn_remove.clicked.connect(self._on_remove)
         self._btn_clear.clicked.connect(self._on_clear)
         self._btn_import.clicked.connect(self.import_requested)
+        self._list.itemDoubleClicked.connect(self._on_item_double_clicked)
+        self._list.itemSelectionChanged.connect(self._update_button_state)
+        self._update_button_state()
 
     @staticmethod
     def _make_btn(text: str) -> QPushButton:
         return QPushButton(text)
 
     def set_editable(self, editable: bool) -> None:
+        self._editable = editable
         self._btn_row.setVisible(editable)
 
-    def set_items(self, items: list[str]) -> None:
-        """Replace list contents, sorted alphabetically."""
+    def set_items(self, entries: list[DropModel]) -> None:
+        """Replace table contents. The view keeps whichever column the user sorted by."""
         self._list.clear()
-        for item in sorted(items, key=str.casefold):
-            self._list.addItem(item)
+        for entry in entries:
+            item = CaseInsensitiveTreeItem([entry.name, entry.category or UNCATEGORIZED_DISPLAY])
+            item.setData(self._COL_NAME, Qt.ItemDataRole.UserRole, entry)
+            self._list.addTopLevelItem(item)
+        self._update_button_state()
 
-    def get_items(self) -> list[str]:
-        return [self._list.item(i).text() for i in range(self._list.count())]
+    def _update_button_state(self) -> None:
+        selected = len(self._list.selectedItems())
+        self._btn_edit.setEnabled(selected == 1)
+        self._btn_remove.setEnabled(selected > 0)
+        self._btn_clear.setEnabled(self._list.topLevelItemCount() > 0)
 
-    def add_items(self, items: list[str]) -> None:
-        """Append items not already in the list, then re-sort. Emits changed."""
-        existing = set(self.get_items())
-        new_items = [x for x in items if x not in existing]
-        if not new_items:
+    def get_items(self) -> list[DropModel]:
+        """Entries in name order, whatever the view is sorted by.
+
+        Sorting is a view concern: letting it reach here would rewrite the bot
+        file's drop order every time someone clicked a column header.
+        """
+        entries = [
+            self._list.topLevelItem(i).data(self._COL_NAME, Qt.ItemDataRole.UserRole)
+            for i in range(self._list.topLevelItemCount())
+        ]
+        return sorted(entries, key=lambda e: e.name.casefold())
+
+    def add_items(self, entries: list[DropModel]) -> None:
+        """Append drops not already listed, then re-sort. Emits changed."""
+        existing = self.get_items()
+        merged = merge_drops(existing, entries)
+        if merged == existing:
             return
-        self.set_items(list(existing) + new_items)
+        self.set_items(merged)
         self.changed.emit(self.get_items())
 
     def _on_add(self) -> None:
         text, ok = QInputDialog.getText(self, "Add Drop", "Item name:")
         if ok and text.strip():
-            self.add_items([text.strip()])
+            name = text.strip()
+            self.add_items([DropModel(name=name, match_name=match_name_for(name))])
+
+    def _on_edit(self) -> None:
+        items = self._list.selectedItems()
+        if len(items) != 1:
+            return
+        self._edit_item(items[0])
+
+    def _on_item_double_clicked(self, item: QTreeWidgetItem, _column: int = 0) -> None:
+        if self._editable:
+            self._edit_item(item)
+
+    def _edit_item(self, item: QTreeWidgetItem) -> None:
+        entries = self.get_items()
+        name = item.text(self._COL_NAME)
+        # Index into get_items(), not the view: the two differ whenever the user
+        # has sorted by category. Names are unique, so this is well defined.
+        row = next((i for i, entry in enumerate(entries) if entry.name == name), -1)
+        text, ok = QInputDialog.getText(self, "Edit Drop", "Item name:", text=name)
+        if not ok:
+            return
+        updated = rename_drop(entries, row, text)
+        if updated == self.get_items():
+            return
+        self.set_items(updated)
+        self.changed.emit(self.get_items())
 
     def _on_remove(self) -> None:
         for item in self._list.selectedItems():
-            self._list.takeItem(self._list.row(item))
+            self._list.takeTopLevelItem(self._list.indexOfTopLevelItem(item))
+        self._update_button_state()
         self.changed.emit(self.get_items())
 
     def _on_clear(self) -> None:
         self._list.clear()
+        self._update_button_state()
         self.changed.emit([])
 
 
@@ -147,17 +316,17 @@ class PossibleDropsSection(SidebarSection):
     def set_editable(self, editable: bool) -> None:
         self._drops_widget.set_editable(editable)
 
-    def add_drops(self, items: list[str]) -> None:
-        """Append *items* to the drops list, deduplicating. Triggers save via drops_changed."""
+    def add_drops(self, entries: list[DropModel]) -> None:
+        """Append *entries* to the drops list, deduplicating. Triggers save via drops_changed."""
         if self._config is None:
             return
-        self._drops_widget.add_items(items)
+        self._drops_widget.add_items(entries)
 
-    def _on_drops_changed(self, items: list[str]) -> None:
+    def _on_drops_changed(self, entries: list[DropModel]) -> None:
         if self._config is None:
             return
-        self._config.drops = items
-        self._update_header(items)
+        self._config.drops = entries
+        self._update_header(entries)
         self.drops_changed.emit()
 
     def _on_import_requested(self) -> None:
@@ -165,9 +334,8 @@ class PossibleDropsSection(SidebarSection):
 
         dialog = WikiImportDialog(parent=self.window())
         if dialog.exec():
-            self._drops_widget.add_items(dialog.selected_items())
+            self._drops_widget.add_items(dialog.selected_entries())
 
-    def _update_header(self, items: list[str]) -> None:
-        n = len(items)
-        title = f"{_BASE_TITLE} ({n})" if n else _BASE_TITLE
-        self._header.label.setText(title)
+    def _update_header(self, entries: list[DropModel]) -> None:
+        self._header.label.setText(drops_header_text(entries))
+        self._header.label.setToolTip(_UNCATEGORIZED_HINT if any(not e.category for e in entries) else "")

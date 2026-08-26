@@ -6,298 +6,1164 @@
   "clients": "all",
   "initial": "state_12",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Adventurer's Robe",
-    "Alphyn",
-    "Ancient Koi",
-    "Ankylosaurus",
-    "Antiquated Knife",
-    "Antiquated Wand",
-    "Antique Deck",
-    "Antique Footguards",
-    "Antique Helm",
-    "Augmented Mantle",
-    "Auroch",
-    "Autumn Wand",
-    "Bat Wings",
-    "Bengal Tiger",
-    "Big Holiday Tree",
-    "Black Cat",
-    "Black Stallion",
-    "Blightshroud",
-    "Blonde Strawberry",
-    "Blood Bat",
-    "Blue Banshee",
-    "Blue Dragon",
-    "Blue Fairy Wings",
-    "Blue Holiday Ornament",
-    "Boo Pumpkin Mask",
-    "Boon Tree",
-    "Boots of Embers",
-    "Boots of Obstruction",
-    "Branded Dagger",
-    "Branded Footguards",
-    "Branded Wand",
-    "Brown Warg",
-    "Bruin Ram",
-    "Bunny Feet",
-    "Bunny Hood",
-    "Bunny Suit",
-    "Camel",
-    "Candle Wand",
-    "Candy Wand",
-    "Canvas Cloak",
-    "Carbonshroud",
-    "Carol of the Bells Theme",
-    "Charged Coat",
-    "Charged Cover",
-    "Charged Kris",
-    "Charged Wand",
-    "Cheese Broccoli",
-    "Chestnut Pony",
-    "Chillcloak",
-    "Chocolate Strawberry",
-    "Christmas Elf",
-    "Cloudburst Helm",
-    "Cloudburst Wraps",
-    "Clover Wand",
-    "Color Light Strand",
-    "Cool Pumpkin Mask",
-    "Corny Wand",
-    "Crokagator",
-    "Cupig",
-    "Cyclops Pumpkin Mask",
-    "Dagger of Repose",
-    "Dark Redwing",
-    "Dark Sprite",
-    "Dark Wood Crate",
-    "Death Trap",
-    "Deck the Halls Theme",
-    "Dulled Athame",
-    "Ectoplasm",
-    "Elven Pendant",
-    "Embershroud",
-    "Enchanted Broom",
-    "Fairy's Athame",
-    "Faithful Dragoness",
-    "Fall Wand",
-    "Fine Dagger",
-    "Fine Jade Ring",
-    "Fire Cat",
-    "Fire Elf",
-    "Fire Shield",
-    "Fireguard Robe",
-    "Floppy-Eared Wand",
-    "Frost Beetle",
-    "Frost Wolf Cloak",
-    "Frostman",
-    "Frozen Pedestal",
-    "Fur-Lined Hood",
-    "Ghost Dragon",
-    "Ghoul",
-    "Gingerbread House",
-    "Gingerbread Wand",
-    "Gold-Stringed Harp",
-    "Golden Goose",
-    "Goldleaf Shoes",
-    "Goofy Pumpkin Mask",
-    "Green Holiday Ornament",
-    "Grey Warg",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hallowe'en Hat",
-    "Hallowe'en Robe",
-    "Hallowe'en Shoes",
-    "Hallowed Band",
-    "Hallowed Robes",
-    "Happy Holidaisy",
-    "Happy Pumpkin Mask",
-    "Hardened Boots",
-    "Hardened Cap",
-    "Hatchling Wand",
-    "Headdress",
-    "Healer's Vestment",
-    "Heartbow Scepter",
-    "Helm of Nightmares",
-    "Helm of Supremacy",
-    "Helm of Tales",
-    "Hippogriff",
-    "Holiday Fireplace",
-    "Holiday Wreath",
-    "Honed Athame",
-    "Honey Sickle",
-    "Hood of Storms",
-    "Horned Sweeper",
-    "Imp",
-    "Imp Lord's Helm",
-    "Insulated Dirk",
-    "Jacket of Withstanding",
-    "Jaguar",
-    "Jingle Bells Theme",
-    "Keen Eyes",
-    "Kitty Pumpkin Mask",
-    "Large Cypress Tree",
-    "Large Snowflake",
-    "Leather Straps",
-    "Lightning Bats",
-    "Locust Swarm",
-    "Lollipop Wand",
-    "Lord Nightshade (Attack)",
-    "Lord Nightshade's Boots",
-    "Lord Nightshade's Cloak",
-    "Lord Nightshade's Robe",
-    "Lovely Ladybug",
-    "Lovely Leopard",
-    "Low Wooden Table",
-    "Lucky Leprechaun",
-    "Lump of Coal",
-    "Manta Ray",
-    "Maple Moose",
-    "Martyr's Raiment",
-    "Mean Pumpkin Staff",
-    "Midnight Sprite",
-    "Midsummer's Cowl",
-    "Milk and Cookies",
-    "Mint Staff",
-    "Mint Standee",
-    "Mint Swirl",
-    "Moonlight Pony",
-    "Mummy Costume Bodywraps",
-    "Mummy Costume Footwraps",
-    "Mummy Costume Headwraps",
-    "Myth Shield",
-    "Nightflame Pegasus",
-    "Nightmare",
-    "Nightshade's Bones",
-    "Nightshade's Choker",
-    "Nightshade's Cowl",
-    "Nightshade's Hood",
-    "Nightshade's Shoes",
-    "Ninja Pig Hat",
-    "Ninja Pig Robe",
-    "Ninja Pig Shoes",
-    "Novitiate Boots",
-    "Novitiate Hat",
-    "Novitiate Robe",
-    "Nutcracker",
-    "Nutcracker",
-    "Nutcracker Wand",
-    "Orange Fairy Wings",
-    "Ornamental Paper Staff",
-    "Ostrich",
-    "Owl",
-    "Panther",
-    "Pet Egg",
-    "Pilgrim Boots",
-    "Pilgrim Hat",
-    "Pilgrim Robe",
-    "Pirate Pumpkin Mask",
-    "Pixie",
-    "Plain Pumpkin Mask",
-    "Polka Dot Wrapped Gift",
-    "Polka Dot Wrapped Long Gift",
-    "Pot o' Gold Wand",
-    "Prop House 2",
-    "Prop Mountains 2",
-    "Purple Fairy Wings",
-    "Purple Glider",
-    "Reaper's Athame",
-    "Red Holiday Ornament",
-    "Regular Small Fry Aquarium",
-    "Renaissance Wings",
-    "Rescue Rover",
-    "Robe of Embers",
-    "Robe of Horror",
-    "Robe of Savvy",
-    "Robe of the Lifeblood",
-    "Rod of Unity",
-    "Roseate Wand",
-    "Roughspun Robe",
-    "Royal Sofa",
-    "Rugged Seahorse",
-    "Sad Pumpkin Staff",
-    "Santa Boots",
-    "Santa Hat",
-    "Santa Robe",
-    "Sapphyra's Vestment",
-    "Scarab",
-    "Scary Pumpkin Mask",
-    "Scepter of the Shield",
-    "Scholarly Robes",
-    "Sea Turtle",
-    "Senior Novice's Robe",
-    "Seraph Wings",
-    "Shoes of the Troll King",
-    "Silly Pumpkin Staff",
-    "Skyracer Pegasus",
-    "Small Color Light Strand",
-    "Small Snowflake",
-    "Snappy Lobster",
-    "Snow Ram",
-    "Snow Serpent",
-    "Snow Shield",
-    "Snowball",
-    "Snowflake Wrapped Gift",
-    "Snowglobe",
-    "Snowman",
-    "Snowman Wrapped Gift",
-    "Soot Stained Tunic",
-    "Spiral Wrapped Gift",
-    "Spooky Bob",
-    "Spring Egg Wand",
-    "Spritely Seahorse",
-    "Star Staff",
-    "Star Wrapped Gift",
-    "Starlight Pony",
-    "Starshine Pony",
-    "Storm Shield",
-    "Stormcaller's Robe",
-    "Stormforged Boots",
-    "Stormforged Mantle",
-    "Stormrider Hare",
-    "Sturdy Blade",
-    "Sugar Donut",
-    "Sundae (Wizard City)",
-    "Sunshine Pony",
-    "Sweet Staff",
-    "Swift Gryphon",
-    "Swift Shark",
-    "Swiftshadow Wings",
-    "Symmetrical Dirk",
-    "Symmetrical Shoes",
-    "Tawny Ram",
-    "Thunder Snake",
-    "Time of Legend",
-    "To The Commons",
-    "Tough",
-    "Tree Wrapped Gift",
-    "Triceratops",
-    "Troll",
-    "Trollskin Boots",
-    "Trollskin Cloak",
-    "Trollskin Hat",
-    "Tunic of Disturbance",
-    "Turkey Hat",
-    "Valentine Pig",
-    "Vampire Costume Boots",
-    "Vampire Costume Coat",
-    "Vampire Costume Wig",
-    "Veil of Sparks",
-    "Venomous Cowl",
-    "Vestment of Essence",
-    "Vestment of Tremors",
-    "Vrixx's Verdant Cowl",
-    "Wand of Veneration",
-    "Watchtower Boots",
-    "White Mare",
-    "Windrunners",
-    "Witch's Broom",
-    "Wooden Skeleton Key",
-    "Yuletide Lg. Small Fry Aquarium",
-    "Yuletide Spirit",
-    "Yuletide Tall Small Fry Aquarium"
+    {
+      "name": "Adventurer's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Alphyn",
+      "category": "Mounts"
+    },
+    {
+      "name": "Ancient Koi",
+      "category": "Mounts"
+    },
+    {
+      "name": "Ankylosaurus",
+      "category": "Mounts"
+    },
+    {
+      "name": "Antiquated Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Antiquated Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Antique Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Antique Footguards",
+      "category": "Boots"
+    },
+    {
+      "name": "Antique Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Augmented Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Auroch",
+      "category": "Mounts"
+    },
+    {
+      "name": "Autumn Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Bat Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Bengal Tiger",
+      "category": "Mounts"
+    },
+    {
+      "name": "Big Holiday Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Black Cat",
+      "category": "Pets"
+    },
+    {
+      "name": "Black Stallion",
+      "category": "Mounts"
+    },
+    {
+      "name": "Blightshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Blood Bat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Blue Banshee",
+      "category": "Pets"
+    },
+    {
+      "name": "Blue Dragon",
+      "category": "Mounts"
+    },
+    {
+      "name": "Blue Fairy Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Blue Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Boo Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Boon Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Boots of Embers",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of Obstruction",
+      "category": "Boots"
+    },
+    {
+      "name": "Branded Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Branded Footguards",
+      "category": "Boots"
+    },
+    {
+      "name": "Branded Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Brown Warg",
+      "category": "Mounts"
+    },
+    {
+      "name": "Bruin Ram",
+      "category": "Mounts"
+    },
+    {
+      "name": "Bunny Feet",
+      "category": "Boots"
+    },
+    {
+      "name": "Bunny Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Bunny Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Camel",
+      "category": "Mounts"
+    },
+    {
+      "name": "Candle Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Candy Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Canvas Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Carbonshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Carol of the Bells Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Charged Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Charged Cover",
+      "category": "Hats"
+    },
+    {
+      "name": "Charged Kris",
+      "category": "Athames"
+    },
+    {
+      "name": "Charged Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
+    },
+    {
+      "name": "Chestnut Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Chillcloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Christmas Elf",
+      "category": "Pets"
+    },
+    {
+      "name": "Cloudburst Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Cloudburst Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Clover Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Color Light Strand",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cool Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Corny Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Crokagator",
+      "category": "Mounts"
+    },
+    {
+      "name": "Cupig",
+      "category": "Pets"
+    },
+    {
+      "name": "Cyclops Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Dagger of Repose",
+      "category": "Athames"
+    },
+    {
+      "name": "Dark Redwing",
+      "category": "Mounts"
+    },
+    {
+      "name": "Dark Sprite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dark Wood Crate",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Death Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deck the Halls Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Dulled Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Elven Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Embershroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Enchanted Broom",
+      "category": "Mounts"
+    },
+    {
+      "name": "Fairy's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Faithful Dragoness",
+      "category": "Mounts"
+    },
+    {
+      "name": "Fall Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Fine Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Fine Jade Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fireguard Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Floppy-Eared Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Frost Wolf Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Frostman",
+      "category": "Pets"
+    },
+    {
+      "name": "Frozen Pedestal",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fur-Lined Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Ghost Dragon",
+      "category": "Pets"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gingerbread House",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Gingerbread Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Gold-Stringed Harp",
+      "category": "Wands"
+    },
+    {
+      "name": "Golden Goose",
+      "category": "Pets"
+    },
+    {
+      "name": "Goldleaf Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Goofy Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Green Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Grey Warg",
+      "category": "Mounts"
+    },
+    {
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gummy Firecat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hallowe'en Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Hallowe'en Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Hallowe'en Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Hallowed Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Hallowed Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Happy Holidaisy",
+      "category": "Seeds"
+    },
+    {
+      "name": "Happy Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Hardened Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Hardened Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Hatchling Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Headdress",
+      "category": "Hats"
+    },
+    {
+      "name": "Healer's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Heartbow Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Helm of Nightmares",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Supremacy",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Tales",
+      "category": "Hats"
+    },
+    {
+      "name": "Hippogriff",
+      "category": "Mounts"
+    },
+    {
+      "name": "Holiday Fireplace",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Holiday Wreath",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Honed Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Honey Sickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hood of Storms",
+      "category": "Hats"
+    },
+    {
+      "name": "Horned Sweeper",
+      "category": "Mounts"
+    },
+    {
+      "name": "Imp",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Insulated Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Jacket of Withstanding",
+      "category": "Robes"
+    },
+    {
+      "name": "Jaguar",
+      "category": "Mounts"
+    },
+    {
+      "name": "Jingle Bells Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Kitty Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Large Cypress Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Snowflake",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lollipop Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Lord Nightshade (Attack)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lord Nightshade's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Lord Nightshade's Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Lord Nightshade's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Lovely Ladybug",
+      "category": "Pets"
+    },
+    {
+      "name": "Lovely Leopard",
+      "category": "Pets"
+    },
+    {
+      "name": "Low Wooden Table",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lucky Leprechaun",
+      "category": "Pets"
+    },
+    {
+      "name": "Lump of Coal",
+      "category": "Pets"
+    },
+    {
+      "name": "Manta Ray",
+      "category": "Mounts"
+    },
+    {
+      "name": "Maple Moose",
+      "category": "Pets"
+    },
+    {
+      "name": "Martyr's Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Mean Pumpkin Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Midnight Sprite",
+      "category": "Pets"
+    },
+    {
+      "name": "Midsummer's Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Milk and Cookies",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mint Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Mint Standee",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mint Swirl",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Moonlight Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Mummy Costume Bodywraps",
+      "category": "Robes"
+    },
+    {
+      "name": "Mummy Costume Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Mummy Costume Headwraps",
+      "category": "Hats"
+    },
+    {
+      "name": "Myth Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nightflame Pegasus",
+      "category": "Mounts"
+    },
+    {
+      "name": "Nightmare",
+      "category": "Pets"
+    },
+    {
+      "name": "Nightshade's Bones",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nightshade's Choker",
+      "category": "Amulets"
+    },
+    {
+      "name": "Nightshade's Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Nightshade's Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Nightshade's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Ninja Pig Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Ninja Pig Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Ninja Pig Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Novitiate Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Novitiate Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Novitiate Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Nutcracker",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nutcracker",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nutcracker Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Orange Fairy Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Ornamental Paper Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Ostrich",
+      "category": "Mounts"
+    },
+    {
+      "name": "Owl",
+      "category": "Mounts"
+    },
+    {
+      "name": "Panther",
+      "category": "Mounts"
+    },
+    {
+      "name": "Pet Egg",
+      "category": "Pets"
+    },
+    {
+      "name": "Pilgrim Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Pilgrim Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Pilgrim Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Pirate Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Pixie",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Plain Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Polka Dot Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Polka Dot Wrapped Long Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pot o' Gold Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Prop House 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prop Mountains 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Purple Fairy Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Purple Glider",
+      "category": "Mounts"
+    },
+    {
+      "name": "Reaper's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Red Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Regular Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Renaissance Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Rescue Rover",
+      "category": "Pets"
+    },
+    {
+      "name": "Robe of Embers",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Horror",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Savvy",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Lifeblood",
+      "category": "Robes"
+    },
+    {
+      "name": "Rod of Unity",
+      "category": "Wands"
+    },
+    {
+      "name": "Roseate Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Roughspun Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Royal Sofa",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rugged Seahorse",
+      "category": "Mounts"
+    },
+    {
+      "name": "Sad Pumpkin Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Santa Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Santa Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Santa Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Sapphyra's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Scarab",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scary Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Scepter of the Shield",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholarly Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Sea Turtle",
+      "category": "Mounts"
+    },
+    {
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Seraph Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Shoes of the Troll King",
+      "category": "Boots"
+    },
+    {
+      "name": "Silly Pumpkin Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Skyracer Pegasus",
+      "category": "Mounts"
+    },
+    {
+      "name": "Small Color Light Strand",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Small Snowflake",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snappy Lobster",
+      "category": "Mounts"
+    },
+    {
+      "name": "Snow Ram",
+      "category": "Mounts"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snowball",
+      "category": "Pets"
+    },
+    {
+      "name": "Snowflake Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snowglobe",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snowman",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snowman Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Soot Stained Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Spiral Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Spooky Bob",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Spring Egg Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Spritely Seahorse",
+      "category": "Mounts"
+    },
+    {
+      "name": "Star Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Star Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Starlight Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Starshine Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stormcaller's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Stormforged Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Stormforged Mantle",
+      "category": "Robes"
+    },
+    {
+      "name": "Stormrider Hare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Sturdy Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Sugar Donut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sundae (Wizard City)",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Sunshine Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Sweet Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Swift Gryphon",
+      "category": "Mounts"
+    },
+    {
+      "name": "Swift Shark",
+      "category": "Mounts"
+    },
+    {
+      "name": "Swiftshadow Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Symmetrical Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Symmetrical Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Tawny Ram",
+      "category": "Mounts"
+    },
+    {
+      "name": "Thunder Snake",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "To The Commons",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tree Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Triceratops",
+      "category": "Mounts"
+    },
+    {
+      "name": "Troll",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Trollskin Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Trollskin Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Trollskin Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Tunic of Disturbance",
+      "category": "Robes"
+    },
+    {
+      "name": "Turkey Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Valentine Pig",
+      "category": "Pets"
+    },
+    {
+      "name": "Vampire Costume Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vampire Costume Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Vampire Costume Wig",
+      "category": "Hats"
+    },
+    {
+      "name": "Veil of Sparks",
+      "category": "Hats"
+    },
+    {
+      "name": "Venomous Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Vestment of Essence",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Tremors",
+      "category": "Robes"
+    },
+    {
+      "name": "Vrixx's Verdant Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Wand of Veneration",
+      "category": "Wands"
+    },
+    {
+      "name": "Watchtower Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "White Mare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Windrunners",
+      "category": "Boots"
+    },
+    {
+      "name": "Witch's Broom",
+      "category": "Wands"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Lg. Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Spirit",
+      "category": "Pets"
+    },
+    {
+      "name": "Yuletide Tall Small Fry Aquarium",
+      "category": "Housing Items"
+    }
   ],
   "authors": "BartleBot",
   "options": [

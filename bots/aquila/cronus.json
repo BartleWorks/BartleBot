@@ -6,49 +6,171 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nfeint mass | feint[potent]@boss | feint @ boss | crow[epic]\n\n### p2\nany<aura & out_damage> | lord[epic] | tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
-    "Amber",
-    "Aquila Atlantea Theme",
-    "Aquila Boss Combat Theme",
-    "Aquila Combat Theme",
-    "Aquila Epic Combat Theme",
-    "Aquila Olympus Theme",
-    "Aquila Tartarus Theme",
-    "Blade of the Felled Titan",
-    "Brass",
-    "Bronze",
-    "Death-Boon Onyx",
-    "Exalted Balance Amulet",
-    "Exalted Death Amulet",
-    "Exalted Fire Amulet",
-    "Exalted Ice Amulet",
-    "Exalted Life Amulet",
-    "Exalted Myth Amulet",
-    "Exalted Storm Amulet",
-    "Fires of Mars",
-    "Forceful Opal",
-    "Jupiter's Might",
-    "Neptune's Fury",
-    "Phoebus' Will",
-    "Pluto's Peril",
-    "Polished Blocking Peridot +11",
-    "Polished Blocking Ruby +11",
-    "Ring of Gorgon Imprisonment (Level 90+)",
-    "Ring of Gorgon Infamy (Level 90+)",
-    "Ring of Gorgon Petrification (Level 90+)",
-    "Ring of Gorgon Suffering (Level 90+)",
-    "Ring of Gorgon Venom (Level 90+)",
-    "Ring of Gorgon Volatility (Level 90+)",
-    "Ring of Gorgon's Gaze (Level 90+)",
-    "Saturn's Reaping",
-    "Silver",
-    "Steel",
-    "Stonewall Opal",
-    "Terminus' Strike",
-    "Tungsten"
+    {
+      "name": "Amber",
+      "category": "Reagents"
+    },
+    {
+      "name": "Aquila Atlantea Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Boss Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Epic Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Olympus Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Tartarus Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Blade of the Felled Titan",
+      "category": "Athames"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze",
+      "category": "Reagents"
+    },
+    {
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Exalted Balance Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Death Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Fire Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Ice Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Life Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Myth Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Storm Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fires of Mars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Forceful Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Jupiter's Might",
+      "category": "Spellements"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Polished Blocking Peridot +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Ruby +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ring of Gorgon Imprisonment (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Imprisonment"
+    },
+    {
+      "name": "Ring of Gorgon Infamy (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Infamy"
+    },
+    {
+      "name": "Ring of Gorgon Petrification (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Petrification"
+    },
+    {
+      "name": "Ring of Gorgon Suffering (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Suffering"
+    },
+    {
+      "name": "Ring of Gorgon Venom (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Venom"
+    },
+    {
+      "name": "Ring of Gorgon Volatility (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon Volatility"
+    },
+    {
+      "name": "Ring of Gorgon's Gaze (Level 90+)",
+      "category": "Rings",
+      "match_name": "Ring of Gorgon's Gaze"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Silver",
+      "category": "Reagents"
+    },
+    {
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Stonewall Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
+    }
   ],
   "authors": "BartleBot",
   "options": [

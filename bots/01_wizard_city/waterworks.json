@@ -8,199 +8,585 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Accurate",
-    "Amber Dust",
-    "Amplify",
-    "Animate Skeleton Onyx",
-    "Aquamarine",
-    "Availing Hands Citrine",
-    "Baby Carrot",
-    "Balance Mastery Amulet",
-    "Balefrost",
-    "Black Widow Onyx",
-    "Blade of Ice Sapphire",
-    "Boots of Catastrophe",
-    "Boots of Esprit",
-    "Boots of Judgment",
-    "Brass",
-    "Brilliant Light Jade",
-    "Brimstone Boots",
-    "Bronze",
-    "Buff Minion Peridot",
-    "Bullheaded Peridot",
-    "Burning Pixie",
-    "Cape of Esprit",
-    "Cape of Judgment",
-    "Captain Canteloupe",
-    "Cauliflowers",
-    "Cherry Tomato",
-    "Clear Blocking Hematite +10",
-    "Clear Blocking Opal +5",
-    "Clear Critical Amethyst +10",
-    "Clear Critical Jade +10",
-    "Clear Critical Peridot +10",
-    "Clear Damage Citrine +19",
-    "Clear Damage Onyx +19",
-    "Clear Damage Peridot +19",
-    "Clear Defense Hematite +40",
-    "Cobalt",
-    "Combustible Band",
-    "Crab Apples",
-    "Cubby Broccoli",
-    "Cyclops Minion Peridot",
-    "Dagger of Typhoons",
-    "Darkwind",
-    "Dastardly Radish",
-    "Deadly Fly Trap",
-    "Death Mastery Amulet",
-    "Delectable Hooves",
-    "Delicious Cookie",
-    "Detonate Ruby",
-    "Devoted Vestment",
-    "Dimension Shift Peridot",
-    "Dirk of Delusion",
-    "Donate Power",
-    "Doom and Gloom",
-    "Dragonflies",
-    "Dragonhorned Melon",
-    "Draw Health Sapphire",
-    "Empower",
-    "Enfeeble Amethyst",
-    "Facade of Fairness",
-    "Fancy Yogurt",
-    "Fire Mastery Amulet",
-    "Firestarter's Boots",
-    "Firestarter's Cape",
-    "Firestarter's Hood",
-    "Fish Fin",
-    "Flowering Pineapple",
-    "Forgotten Facade",
-    "Fossil",
-    "Frostbit Boots",
-    "Frostbit Cape",
-    "Frostbit Footguards",
-    "Frostbit Hood",
-    "Frozen Armor Sapphire",
-    "Gargantuan",
-    "Get Sunbird Ruby",
-    "Giant",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Golden Grapes",
-    "Golden Wheat Bread",
-    "Golem Minion Peridot",
-    "Great Learner Opal",
-    "Green Tomato",
-    "Hambrosia",
-    "Hangman's Boots",
-    "Hangman's Cape",
-    "Hangman's Hood",
-    "Heart o'Pixie Jade",
-    "Helm of Burning Ambition",
-    "Hexster Citrine",
-    "Hood of Esprit",
-    "Hood of Judgment",
-    "Ice Mastery Amulet",
-    "Ice Rangers",
-    "Icestar Stalkers",
-    "Insightful Topper",
-    "Kris of the Piscean Guard",
-    "Life Mastery Amulet",
-    "Lifeforce Blade",
-    "Maelstrom Snap Dragon",
-    "Majestic Signet",
-    "Mander Minion Citrine",
-    "Mass Triage Jade",
-    "Mend Minion Peridot",
-    "Merle's Whisker",
-    "Minotaur",
-    "Mithril",
-    "Mutate Snowman (Fire)",
-    "Mutate Snowman (Storm)",
-    "Mysterious Costume",
-    "Mystic Dragon Fruit",
-    "Myth Mastery Amulet",
-    "Natural Boots",
-    "Nereus's Hoarfrost Helm",
-    "Ninja Pig Opal",
-    "No Pain, No Gain Onyx",
-    "Opaque Blocking Sapphire +8",
-    "Opaque Damage Citrine +17",
-    "Opaque Damage Sapphire +17",
-    "Opaque Defense Opal +18",
-    "Pest Zapper",
-    "Pink Dandelion",
-    "Pink Jellyfish",
-    "Polar Boots",
-    "Polished Blocking Opal +6",
-    "Polished Critical Amethyst +11",
-    "Polished Critical Citrine +11",
-    "Polished Damage Onyx +21",
-    "Polished Damage Peridot +21",
-    "Polished Damage Sapphire +21",
-    "Polished Defense Opal +22",
-    "Polished Health Opal +90",
-    "Power Link Ruby",
-    "Precision",
-    "Purloin Health Talent Citrine",
-    "Purloin Power Amethyst",
-    "Reckless Raiment",
-    "Rime Runners",
-    "Ring of Rare Origins",
-    "Rising Tide Topper",
-    "Salgio's Tinder Cloak",
-    "Sanctuary",
-    "Sandstone",
-    "Savory Shroud",
-    "Scales",
-    "Shell",
-    "Shroud of Solitude",
-    "Silver",
-    "Silver Trumpet Vine",
-    "Skyscream Boots",
-    "Skyscream Cape",
-    "Skyscream Hood",
-    "Sniper",
-    "Sniper Talent Opal",
-    "Snow Drift Sapphire",
-    "Spartan Jade",
-    "Spicy Drumstick",
-    "Spirit Armor",
-    "Steel",
-    "Stone Block",
-    "Storm Elemental Opal",
-    "Storm Mastery Amulet",
-    "Stormclaw Amethyst",
-    "Storyteller's Cap",
-    "Storyteller's Tunic",
-    "Strawberry Cupcake",
-    "Submarine Sandwich",
-    "Sun Fruit",
-    "Sunbird",
-    "Sunstone",
-    "Synthesis Cover",
-    "Take Power Ruby",
-    "Talos Peridot",
-    "Tasty Tunic",
-    "Thundercloud Coif",
-    "Time Skip Sapphire",
-    "Titanium",
-    "Tolerant Boots",
-    "Tragic Tunic",
-    "Tricksy Boots",
-    "Tricksy Cape",
-    "Tricksy Hood",
-    "Tungsten",
-    "Turbulent Tunic",
-    "Typhoon Band",
-    "Unstoppable",
-    "Virtue Shoes",
-    "Virulent Plague Onyx",
-    "Vital Headdress",
-    "Whimsical Surcoat",
-    "Wraps of Rapport",
-    "Wyldfire",
-    "Yellow Corn"
+    {
+      "name": "Accurate"
+    },
+    {
+      "name": "Amber Dust"
+    },
+    {
+      "name": "Amplify"
+    },
+    {
+      "name": "Animate Skeleton Onyx"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Availing Hands Citrine"
+    },
+    {
+      "name": "Baby Carrot"
+    },
+    {
+      "name": "Balance Mastery Amulet"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Black Widow Onyx"
+    },
+    {
+      "name": "Blade of Ice Sapphire"
+    },
+    {
+      "name": "Boots of Catastrophe"
+    },
+    {
+      "name": "Boots of Esprit"
+    },
+    {
+      "name": "Boots of Judgment"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Brilliant Light Jade"
+    },
+    {
+      "name": "Brimstone Boots"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Buff Minion Peridot"
+    },
+    {
+      "name": "Bullheaded Peridot"
+    },
+    {
+      "name": "Burning Pixie"
+    },
+    {
+      "name": "Cape of Esprit"
+    },
+    {
+      "name": "Cape of Judgment"
+    },
+    {
+      "name": "Captain Canteloupe"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Cherry Tomato"
+    },
+    {
+      "name": "Clear Blocking Hematite +10"
+    },
+    {
+      "name": "Clear Blocking Opal +5"
+    },
+    {
+      "name": "Clear Critical Amethyst +10"
+    },
+    {
+      "name": "Clear Critical Jade +10"
+    },
+    {
+      "name": "Clear Critical Peridot +10"
+    },
+    {
+      "name": "Clear Damage Citrine +19"
+    },
+    {
+      "name": "Clear Damage Onyx +19"
+    },
+    {
+      "name": "Clear Damage Peridot +19"
+    },
+    {
+      "name": "Clear Defense Hematite +40"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Combustible Band"
+    },
+    {
+      "name": "Crab Apples"
+    },
+    {
+      "name": "Cubby Broccoli"
+    },
+    {
+      "name": "Cyclops Minion Peridot"
+    },
+    {
+      "name": "Dagger of Typhoons"
+    },
+    {
+      "name": "Darkwind"
+    },
+    {
+      "name": "Dastardly Radish"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Death Mastery Amulet"
+    },
+    {
+      "name": "Delectable Hooves"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Detonate Ruby"
+    },
+    {
+      "name": "Devoted Vestment"
+    },
+    {
+      "name": "Dimension Shift Peridot"
+    },
+    {
+      "name": "Dirk of Delusion"
+    },
+    {
+      "name": "Donate Power"
+    },
+    {
+      "name": "Doom and Gloom"
+    },
+    {
+      "name": "Dragonflies"
+    },
+    {
+      "name": "Dragonhorned Melon"
+    },
+    {
+      "name": "Draw Health Sapphire"
+    },
+    {
+      "name": "Empower"
+    },
+    {
+      "name": "Enfeeble Amethyst"
+    },
+    {
+      "name": "Facade of Fairness"
+    },
+    {
+      "name": "Fancy Yogurt"
+    },
+    {
+      "name": "Fire Mastery Amulet"
+    },
+    {
+      "name": "Firestarter's Boots"
+    },
+    {
+      "name": "Firestarter's Cape"
+    },
+    {
+      "name": "Firestarter's Hood"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Flowering Pineapple"
+    },
+    {
+      "name": "Forgotten Facade"
+    },
+    {
+      "name": "Fossil"
+    },
+    {
+      "name": "Frostbit Boots"
+    },
+    {
+      "name": "Frostbit Cape"
+    },
+    {
+      "name": "Frostbit Footguards"
+    },
+    {
+      "name": "Frostbit Hood"
+    },
+    {
+      "name": "Frozen Armor Sapphire"
+    },
+    {
+      "name": "Gargantuan"
+    },
+    {
+      "name": "Get Sunbird Ruby"
+    },
+    {
+      "name": "Giant"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Golden Grapes"
+    },
+    {
+      "name": "Golden Wheat Bread"
+    },
+    {
+      "name": "Golem Minion Peridot"
+    },
+    {
+      "name": "Great Learner Opal"
+    },
+    {
+      "name": "Green Tomato"
+    },
+    {
+      "name": "Hambrosia"
+    },
+    {
+      "name": "Hangman's Boots"
+    },
+    {
+      "name": "Hangman's Cape"
+    },
+    {
+      "name": "Hangman's Hood"
+    },
+    {
+      "name": "Heart o'Pixie Jade"
+    },
+    {
+      "name": "Helm of Burning Ambition"
+    },
+    {
+      "name": "Hexster Citrine"
+    },
+    {
+      "name": "Hood of Esprit"
+    },
+    {
+      "name": "Hood of Judgment"
+    },
+    {
+      "name": "Ice Mastery Amulet"
+    },
+    {
+      "name": "Ice Rangers"
+    },
+    {
+      "name": "Icestar Stalkers"
+    },
+    {
+      "name": "Insightful Topper"
+    },
+    {
+      "name": "Kris of the Piscean Guard"
+    },
+    {
+      "name": "Life Mastery Amulet"
+    },
+    {
+      "name": "Lifeforce Blade"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Majestic Signet"
+    },
+    {
+      "name": "Mander Minion Citrine"
+    },
+    {
+      "name": "Mass Triage Jade"
+    },
+    {
+      "name": "Mend Minion Peridot"
+    },
+    {
+      "name": "Merle's Whisker"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Mutate Snowman (Fire)"
+    },
+    {
+      "name": "Mutate Snowman (Storm)"
+    },
+    {
+      "name": "Mysterious Costume"
+    },
+    {
+      "name": "Mystic Dragon Fruit"
+    },
+    {
+      "name": "Myth Mastery Amulet"
+    },
+    {
+      "name": "Natural Boots"
+    },
+    {
+      "name": "Nereus's Hoarfrost Helm"
+    },
+    {
+      "name": "Ninja Pig Opal"
+    },
+    {
+      "name": "No Pain, No Gain Onyx"
+    },
+    {
+      "name": "Opaque Blocking Sapphire +8"
+    },
+    {
+      "name": "Opaque Damage Citrine +17"
+    },
+    {
+      "name": "Opaque Damage Sapphire +17"
+    },
+    {
+      "name": "Opaque Defense Opal +18"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Pink Jellyfish"
+    },
+    {
+      "name": "Polar Boots"
+    },
+    {
+      "name": "Polished Blocking Opal +6"
+    },
+    {
+      "name": "Polished Critical Amethyst +11"
+    },
+    {
+      "name": "Polished Critical Citrine +11"
+    },
+    {
+      "name": "Polished Damage Onyx +21"
+    },
+    {
+      "name": "Polished Damage Peridot +21"
+    },
+    {
+      "name": "Polished Damage Sapphire +21"
+    },
+    {
+      "name": "Polished Defense Opal +22"
+    },
+    {
+      "name": "Polished Health Opal +90"
+    },
+    {
+      "name": "Power Link Ruby"
+    },
+    {
+      "name": "Precision"
+    },
+    {
+      "name": "Purloin Health Talent Citrine"
+    },
+    {
+      "name": "Purloin Power Amethyst"
+    },
+    {
+      "name": "Reckless Raiment"
+    },
+    {
+      "name": "Rime Runners"
+    },
+    {
+      "name": "Ring of Rare Origins"
+    },
+    {
+      "name": "Rising Tide Topper"
+    },
+    {
+      "name": "Salgio's Tinder Cloak"
+    },
+    {
+      "name": "Sanctuary"
+    },
+    {
+      "name": "Sandstone"
+    },
+    {
+      "name": "Savory Shroud"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Shell"
+    },
+    {
+      "name": "Shroud of Solitude"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Skyscream Boots"
+    },
+    {
+      "name": "Skyscream Cape"
+    },
+    {
+      "name": "Skyscream Hood"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Sniper Talent Opal"
+    },
+    {
+      "name": "Snow Drift Sapphire"
+    },
+    {
+      "name": "Spartan Jade"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Block"
+    },
+    {
+      "name": "Storm Elemental Opal"
+    },
+    {
+      "name": "Storm Mastery Amulet"
+    },
+    {
+      "name": "Stormclaw Amethyst"
+    },
+    {
+      "name": "Storyteller's Cap"
+    },
+    {
+      "name": "Storyteller's Tunic"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sun Fruit"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Synthesis Cover"
+    },
+    {
+      "name": "Take Power Ruby"
+    },
+    {
+      "name": "Talos Peridot"
+    },
+    {
+      "name": "Tasty Tunic"
+    },
+    {
+      "name": "Thundercloud Coif"
+    },
+    {
+      "name": "Time Skip Sapphire"
+    },
+    {
+      "name": "Titanium"
+    },
+    {
+      "name": "Tolerant Boots"
+    },
+    {
+      "name": "Tragic Tunic"
+    },
+    {
+      "name": "Tricksy Boots"
+    },
+    {
+      "name": "Tricksy Cape"
+    },
+    {
+      "name": "Tricksy Hood"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turbulent Tunic"
+    },
+    {
+      "name": "Typhoon Band"
+    },
+    {
+      "name": "Unstoppable"
+    },
+    {
+      "name": "Virtue Shoes"
+    },
+    {
+      "name": "Virulent Plague Onyx"
+    },
+    {
+      "name": "Vital Headdress"
+    },
+    {
+      "name": "Whimsical Surcoat"
+    },
+    {
+      "name": "Wraps of Rapport"
+    },
+    {
+      "name": "Wyldfire"
+    },
+    {
+      "name": "Yellow Corn"
+    }
   ],
   "authors": "BartleBot",
   "options": [
@@ -1425,7 +1811,14 @@
           "Mastery",
           "Savory Shroud",
           "Tasty Tunic",
-          "Delectable Hooves"
+          "Delectable Hooves",
+          "Skyscream",
+          "Frostbit",
+          "Firestarter",
+          "Hangman",
+          "Tricksy",
+          "Esprit",
+          "Judgment"
         ],
         "sell_pets": true,
         "sell_socket_wrenches": false,

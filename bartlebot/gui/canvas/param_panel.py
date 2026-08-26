@@ -36,10 +36,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import FlagCondition, FlagGroup, StateModel, TransitionModel
+from bartlebot.bot.schema import DropModel, FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
+from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 # ---------------------------------------------------------------------------
 # Sentinel QLineEdit subclasses  (identified by get_params())
@@ -52,6 +55,29 @@ class _IntListLineEdit(QLineEdit):
     Stores values as a comma-separated string (e.g. "1, 2, 3") and is
     identified by get_params() to deserialise back to list[int].
     """
+
+
+class _WikiPageLineEdit(QLineEdit):
+    """Line edit for a 'wiki_page' param.
+
+    Stores a bare page title. A pasted URL is normalised to its title on edit, so
+    whichever form the user has to hand produces the same thing on disk — and a bot
+    file never carries a host of its own. See bartlebot/wiki_pages.py.
+    """
+
+    def normalise(self) -> None:
+        """Rewrite a pasted URL as its page title, leaving anything else alone."""
+        raw = self.text().strip()
+        if "://" not in raw:
+            return
+        title = page_title(raw)
+        if title is not None and title != raw:
+            self.setText(title)
+
+    def is_usable(self) -> bool:
+        """Whether the current text is empty or resolves to a wiki page."""
+        raw = self.text().strip()
+        return not raw or page_title(raw) is not None
 
 
 class _StrListLineEdit(QLineEdit):
@@ -305,6 +331,18 @@ class _DynamicParamForm(QWidget):
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
+        self._get_drops: Callable[[], list[DropModel]] = lambda: []
+
+    def set_drops_getter(self, fn: Callable[[], list[DropModel]]) -> None:
+        """Pass a callable returning the current bot's drop table."""
+        self._get_drops = fn
+        self.refresh_drops()
+
+    def refresh_drops(self) -> None:
+        """Re-read the drop table into any drop-aware widget on the form."""
+        for w in self._widgets.values():
+            if isinstance(w, DropKeepListWidget):
+                w.refresh()
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
@@ -376,7 +414,25 @@ class _DynamicParamForm(QWidget):
                     display_w.setEnabled(not controller.text().strip())
                     controller.textChanged.connect(lambda text, w=display_w: w.setEnabled(not text.strip()))
         self._suppress = False
+        self._push_context()
         self._validate_required_fields()
+
+    def set_param_value(self, key: str, value) -> None:
+        """Set one param's widget from outside, as if the user had typed it.
+
+        Emits changed() so the edit is saved and undoable, but only when the value
+        actually moves — re-importing the same page should not dirty the bot.
+        """
+        w = self._widgets.get(key)
+        if not isinstance(w, _WikiPageLineEdit) or w.text().strip() == str(value).strip():
+            return
+        w.setText(str(value))
+
+    def _push_context(self) -> None:
+        """Hand drop-aware widgets the form's other params, which affect what is kept."""
+        for w in self._widgets.values():
+            if isinstance(w, DropKeepListWidget):
+                w.set_context(self.get_params())
 
     def _validate_required_fields(self) -> None:
         """Apply or clear a red border on required input widgets based on whether they are empty."""
@@ -411,14 +467,14 @@ class _DynamicParamForm(QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
-            elif isinstance(w, _PlayerListWidget):
+            elif isinstance(w, _PlayerListWidget | DropKeepListWidget):
                 result[key] = w.get_value()
             elif isinstance(w, _IntListLineEdit):
                 result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
-                result[key] = [
-                    x.strip().strip("'\"") for x in w.text().strip("[] ").split(",") if x.strip().strip("'\"")
-                ]
+                result[key] = parse_list_text(w.text())
+            elif isinstance(w, _WikiPageLineEdit):
+                result[key] = page_title(w.text()) or w.text().strip()
             elif isinstance(w, _ZoneWidget):
                 result[key] = w.text()
             elif isinstance(w, QLineEdit):
@@ -486,10 +542,26 @@ class _DynamicParamForm(QWidget):
                 w.setToolTip(help_text)
             w.changed.connect(self._emit_changed)
             return w
+        if field_type == "drop_keep_list":
+            w = DropKeepListWidget(lambda: self._get_drops())
+            w.set_value(val if isinstance(val, list) else [])
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
+        if field_type == "wiki_page":
+            w = _WikiPageLineEdit()
+            w.setText(str(val) if val else "")
+            w.setPlaceholderText("Creature:Luska Charmbeak")
+            if help_text:
+                w.setToolTip(help_text)
+            w.editingFinished.connect(w.normalise)
+            w.textChanged.connect(self._emit_changed)
+            return w
         if field_type == "str_list":
             w = _StrListLineEdit()
             if isinstance(val, list):
-                w.setText(", ".join(str(v) for v in val))
+                w.setText(format_list_text([str(v) for v in val]))
             else:
                 w.setText(str(val) if val else "")
             w.setPlaceholderText("e.g. ItemA, ItemB")
@@ -609,6 +681,7 @@ class _DynamicParamForm(QWidget):
 
     def _emit_changed(self, *_) -> None:
         if not self._suppress:
+            self._push_context()
             self._validate_required_fields()
             self.changed.emit()
 
@@ -1091,7 +1164,7 @@ class _ParamPanel(QWidget):
     # Args: old_source, old_when (str|None), old_dest, new_source, new_dest
     edge_endpoints_changed = pyqtSignal(str, object, str, str, str)
     # Emitted when the user completes a wiki import from the handle_combat node panel.
-    # Carries the list of selected item name strings to be added to the bot's drops.
+    # Carries the list of selected DropModel entries to be added to the bot's drops.
     wiki_import_completed = pyqtSignal(list)
     # Emitted when the user clicks a connection row to navigate to an edge or state.
     select_edge_requested = pyqtSignal(object)  # TransitionModel
@@ -1356,6 +1429,14 @@ class _ParamPanel(QWidget):
                 " border: none; padding: 0; font-size: 11px; background: transparent; }"
             )
 
+    def set_drops_getter(self, fn: Callable[[], list[DropModel]]) -> None:
+        """Pass a callable returning the current bot's drop table (BotConfig.drops)."""
+        self._param_form.set_drops_getter(fn)
+
+    def refresh_drops(self) -> None:
+        """Re-read the drop table — call when the bot's drops are edited elsewhere."""
+        self._param_form.refresh_drops()
+
     def show_idle(self) -> None:
         self._cancel_record()
         self._state = None
@@ -1585,9 +1666,16 @@ class _ParamPanel(QWidget):
 
         dialog = WikiImportDialog(parent=self.window())
         if dialog.exec():
-            items = dialog.selected_items()
-            if items:
-                self.wiki_import_completed.emit(items)
+            entries = dialog.selected_entries()
+            if entries:
+                self.wiki_import_completed.emit(entries)
+            # Record where they came from on the node that imported them. The panel
+            # is only shown for handle_combat, so this is the fight whose boss page
+            # was just fetched — the association the import flow already implied and
+            # previously discarded.
+            page = dialog.selected_page()
+            if page:
+                self._param_form.set_param_value(WIKI_PAGE_PARAM, page)
 
     # ------------------------------------------------------------------
     # Recording

@@ -7,259 +7,765 @@
   "initial": "state_1",
   "start_location": "Mirage - Thieves' Den",
   "drops": [
-    "Agave Leaves",
-    "Age of Reckoning",
-    "Alligator Pear Tree",
-    "Amber Dust",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Antheneum Delight",
-    "Aquamarine",
-    "Arcticzilla",
-    "Astral Shard",
-    "Astraphobia",
-    "Aztecan Hot Chocolate",
-    "Baby Carrots",
-    "Balefrost",
-    "Beast Wellington",
-    "Beetle Cream Soda",
-    "Bell Pepper",
-    "Blue Huckleberries",
-    "Blue Phoenix",
-    "Boiled Peanuts",
-    "Boom Shroom",
-    "Bread Fruit Bush",
-    "Bread Fruit Fruit",
-    "Burning Snap Dragon",
-    "Chalupacabra",
-    "Charred Eerem Givehs",
-    "Charred Eerem Raiment",
-    "Coldiron",
-    "Combustion",
-    "Cornbread Fruit Bush",
-    "Couch Potatoes",
-    "Crystal Spider",
-    "Dandelion",
-    "Deadly Fly Trap",
-    "Deadly Ninja Fig",
-    "Death Troll",
-    "Deathspear",
-    "Eerem Frostfall Razor",
-    "Eerem Gallery of Ability",
-    "Eerem Gallery of Agony",
-    "Eerem Gallery of Ciphers",
-    "Eerem Gallery of Clouds",
-    "Eerem Gallery of Elation",
-    "Eerem Gallery of Eruption",
-    "Eerem Gallery of Frostfall",
-    "Eerem Givehs of Hail",
-    "Eerem Givehs of Pulse",
-    "Eerem Headwrap of Discovery",
-    "Eerem Headwrap of Hail",
-    "Eerem Headwrap of Menace",
-    "Eerem Necklace of Ability",
-    "Eerem Necklace of Agony",
-    "Eerem Necklace of Ciphers",
-    "Eerem Necklace of Clouds",
-    "Eerem Necklace of Elation",
-    "Eerem Necklace of Eruption",
-    "Eerem Necklace of Frostfall",
-    "Eerem Raiment of Clangor",
-    "Eerem Raiment of Discovery",
-    "Eerem Raiment of Pulse",
-    "Eerem Razor of Ability",
-    "Eerem Razor of Agony",
-    "Eerem Razor of Ciphers",
-    "Eerem Razor of Clouds",
-    "Eerem Razor of Elation",
-    "Eerem Razor of Eruption",
-    "Eerem Signet of Ability",
-    "Eerem Signet of Agony",
-    "Eerem Signet of Ciphers",
-    "Eerem Signet of Clouds",
-    "Eerem Signet of Eruption",
-    "Eerem Signet of Frostfall",
-    "Elemental Spear",
-    "Evil Magma Peas",
-    "Evil Snow Peas",
-    "Eye Candy",
-    "Face Palm",
-    "Fern Jelly",
-    "Fickle Pickle",
-    "Fiery Colossus",
-    "Fire Passion Fruit",
-    "Firespear",
-    "Fish Fin",
-    "Fish on a Vine",
-    "Frostfang",
-    "Frosty Sugar Cubes",
-    "Frozen Fly Trap",
-    "Gallant Istanboa Khanjar",
-    "Gallant Istanboa Pendant",
-    "Gallant Istanboa Signet",
-    "Gallant Mottoman Helm",
-    "Gallant Mottoman Runners",
-    "Gallant Mottoman Uniform",
-    "Glass Sliver",
-    "Golden Pearl",
-    "Grapes of Wrath",
-    "Green Snow Apples",
-    "Green Tomato",
-    "Hard Boiled Beetle Eggs",
-    "Helephant Ears",
-    "High Road Haggis",
-    "Honey Sickle",
-    "Hot Cross Buns",
-    "Icebird",
-    "Icespear",
-    "Iridium",
-    "Istanboa Array of Enigmas",
-    "Istanboa Array of Scruples",
-    "Istanboa Pendant of Enigmas",
-    "Istanboa Pendant of Icefall",
-    "Istanboa Sandspouts Array",
-    "Istanboa Sandspouts Khanjar",
-    "Istanboa Sandspouts Pendant",
-    "Istanboa Signet of Enigmas",
-    "Istanboa Signet of Icefall",
-    "Istanboa Signet of Scruples",
-    "Ivy League",
-    "Jolly Rancher",
-    "Katabatic Wind",
-    "Laugh-O-Dil",
-    "Lifespear",
-    "Lustrous Accurate Citrine +11%",
-    "Lustrous Accurate Onyx +11%",
-    "Lustrous Critical Peridot +13",
-    "Lustrous Damage Citrine +23",
-    "Lustrous Defense Onyx +45",
-    "Lustrous Defense Peridot +45",
-    "Lustrous Defense Ruby +45",
-    "Lustrous Mana Opal +42",
-    "Maelstrom Snap Dragon",
-    "Magma Colossus",
-    "Maltese Tiger Lily",
-    "Mithril",
-    "Mottoman Heatwave Runners",
-    "Mottoman Heatwave Uniform",
-    "Mottoman Helm of Enigmas",
-    "Mottoman Helm of Ruin",
-    "Mottoman Helm of Scruples",
-    "Mottoman Icefall Runners",
-    "Mottoman Icefall Uniform",
-    "Mottoman Runners of Enigmas",
-    "Mottoman Runners of Ruin",
-    "Mottoman Runners of Scruples",
-    "Mottoman Sandspouts Helm",
-    "Mottoman Sandspouts Runners",
-    "Mottoman Sandspouts Uniform",
-    "Mottoman Uniform of Enigmas",
-    "Mottoman Uniform of Ruin",
-    "Mottoman Uniform of Scruples",
-    "Mustachios",
-    "Mutate Colossus (Fire)",
-    "Mutate Colossus (Storm)",
-    "Myriarch Tabarzin of Chaos",
-    "Myriarch Tabarzin of Fright",
-    "Myriarch Tabarzin of Renown",
-    "Mythspear",
-    "Namaste",
-    "Obsidian Colossus (420)",
-    "Orange Dandelion",
-    "Pink Huckleberries",
-    "Pink Laugh-O-Dil",
-    "Polished Accurate Hematite +10%",
-    "Polished Blocking Amethyst +12",
-    "Polished Blocking Citrine +12",
-    "Polished Blocking Hematite +11",
-    "Polished Blocking Jade +12",
-    "Polished Blocking Onyx +12",
-    "Polished Blocking Peridot +12",
-    "Polished Blocking Ruby +12",
-    "Polished Blocking Sapphire +12",
-    "Polished Critical Amethyst +11",
-    "Polished Critical Citrine +11",
-    "Polished Critical Hematite +11",
-    "Polished Critical Jade +11",
-    "Polished Critical Onyx +11",
-    "Polished Critical Peridot +11",
-    "Polished Critical Ruby +11",
-    "Polished Critical Sapphire +11",
-    "Polished Damage Amethyst +21",
-    "Polished Damage Citrine +21",
-    "Polished Damage Hematite +42",
-    "Polished Damage Jade +21",
-    "Polished Damage Onyx +21",
-    "Polished Damage Peridot +21",
-    "Polished Damage Ruby +21",
-    "Polished Damage Sapphire +21",
-    "Polished Defense Amethyst +43",
-    "Polished Defense Amethyst +44",
-    "Polished Defense Citrine +43",
-    "Polished Defense Citrine +44",
-    "Polished Defense Hematite +41",
-    "Polished Defense Jade +43",
-    "Polished Defense Jade +44",
-    "Polished Defense Onyx +43",
-    "Polished Defense Onyx +44",
-    "Polished Defense Peridot +43",
-    "Polished Defense Peridot +44",
-    "Polished Defense Ruby +43",
-    "Polished Defense Ruby +44",
-    "Polished Defense Sapphire +43",
-    "Polished Defense Sapphire +44",
-    "Polished Piercing Amethyst +6%",
-    "Polished Piercing Citrine +6%",
-    "Polished Piercing Hematite +5%",
-    "Polished Piercing Jade +6%",
-    "Polished Piercing Onyx +6%",
-    "Polished Piercing Peridot +6%",
-    "Polished Piercing Ruby +6%",
-    "Polished Piercing Sapphire +6%",
-    "Purple Bell Pepper",
-    "Purple Grapes of Wrath",
-    "Red Bell Pepper",
-    "Red Couch Potatoes",
-    "Red Huckleberries",
-    "Rhubarbed Wire",
-    "Rye Bread Fruit Bush",
-    "Saga of Heroes",
-    "Sandstone Colossus",
-    "Satyr Chow",
-    "Scales",
-    "Shift",
-    "Ships 'n' Queso",
-    "Shock Colossus",
-    "Silver",
-    "Smouldering Tetrus Baton",
-    "Snap Dragon",
-    "Sour Fickle Pickle",
-    "Spirit Spear",
-    "Stardust",
-    "Steel",
-    "Steel Colossus",
-    "Stone Block",
-    "Stone Colossus",
-    "Stormspear",
-    "Sugar Khrystal",
-    "Sunstone",
-    "Tetrus Baton of Blizzards",
-    "Tetrus Baton of Opposition",
-    "Tetrus Baton of Readiness",
-    "Tetrus Baton of Sophistry",
-    "Tetrus Baton of Torrents",
-    "Tetrus Baton of Woe",
-    "Trumpet Vine",
-    "Tungsten",
-    "Turquoise",
-    "Veggie Juice",
-    "Venus Fly Trap",
-    "Vine",
-    "Wheat Cracker",
-    "White Desparagus",
-    "White Laugh-O-Dil",
-    "White Tiger Lily",
-    "Yellow Troll"
+    {
+      "name": "Agave Leaves"
+    },
+    {
+      "name": "Age of Reckoning"
+    },
+    {
+      "name": "Alligator Pear Tree"
+    },
+    {
+      "name": "Amber Dust"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Antheneum Delight"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Arcticzilla"
+    },
+    {
+      "name": "Astral Shard"
+    },
+    {
+      "name": "Astraphobia"
+    },
+    {
+      "name": "Aztecan Hot Chocolate"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Beetle Cream Soda"
+    },
+    {
+      "name": "Bell Pepper"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Blue Phoenix"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Boom Shroom"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Bread Fruit Fruit"
+    },
+    {
+      "name": "Burning Snap Dragon"
+    },
+    {
+      "name": "Chalupacabra"
+    },
+    {
+      "name": "Charred Eerem Givehs"
+    },
+    {
+      "name": "Charred Eerem Raiment"
+    },
+    {
+      "name": "Coldiron"
+    },
+    {
+      "name": "Combustion"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Couch Potatoes"
+    },
+    {
+      "name": "Crystal Spider"
+    },
+    {
+      "name": "Dandelion"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Death Troll"
+    },
+    {
+      "name": "Deathspear"
+    },
+    {
+      "name": "Eerem Frostfall Razor"
+    },
+    {
+      "name": "Eerem Gallery of Ability"
+    },
+    {
+      "name": "Eerem Gallery of Agony"
+    },
+    {
+      "name": "Eerem Gallery of Ciphers"
+    },
+    {
+      "name": "Eerem Gallery of Clouds"
+    },
+    {
+      "name": "Eerem Gallery of Elation"
+    },
+    {
+      "name": "Eerem Gallery of Eruption"
+    },
+    {
+      "name": "Eerem Gallery of Frostfall"
+    },
+    {
+      "name": "Eerem Givehs of Hail"
+    },
+    {
+      "name": "Eerem Givehs of Pulse"
+    },
+    {
+      "name": "Eerem Headwrap of Discovery"
+    },
+    {
+      "name": "Eerem Headwrap of Hail"
+    },
+    {
+      "name": "Eerem Headwrap of Menace"
+    },
+    {
+      "name": "Eerem Necklace of Ability"
+    },
+    {
+      "name": "Eerem Necklace of Agony"
+    },
+    {
+      "name": "Eerem Necklace of Ciphers"
+    },
+    {
+      "name": "Eerem Necklace of Clouds"
+    },
+    {
+      "name": "Eerem Necklace of Elation"
+    },
+    {
+      "name": "Eerem Necklace of Eruption"
+    },
+    {
+      "name": "Eerem Necklace of Frostfall"
+    },
+    {
+      "name": "Eerem Raiment of Clangor"
+    },
+    {
+      "name": "Eerem Raiment of Discovery"
+    },
+    {
+      "name": "Eerem Raiment of Pulse"
+    },
+    {
+      "name": "Eerem Razor of Ability"
+    },
+    {
+      "name": "Eerem Razor of Agony"
+    },
+    {
+      "name": "Eerem Razor of Ciphers"
+    },
+    {
+      "name": "Eerem Razor of Clouds"
+    },
+    {
+      "name": "Eerem Razor of Elation"
+    },
+    {
+      "name": "Eerem Razor of Eruption"
+    },
+    {
+      "name": "Eerem Signet of Ability"
+    },
+    {
+      "name": "Eerem Signet of Agony"
+    },
+    {
+      "name": "Eerem Signet of Ciphers"
+    },
+    {
+      "name": "Eerem Signet of Clouds"
+    },
+    {
+      "name": "Eerem Signet of Eruption"
+    },
+    {
+      "name": "Eerem Signet of Frostfall"
+    },
+    {
+      "name": "Elemental Spear"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Fern Jelly"
+    },
+    {
+      "name": "Fickle Pickle"
+    },
+    {
+      "name": "Fiery Colossus"
+    },
+    {
+      "name": "Fire Passion Fruit"
+    },
+    {
+      "name": "Firespear"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Frostfang"
+    },
+    {
+      "name": "Frosty Sugar Cubes"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Gallant Istanboa Khanjar"
+    },
+    {
+      "name": "Gallant Istanboa Pendant"
+    },
+    {
+      "name": "Gallant Istanboa Signet"
+    },
+    {
+      "name": "Gallant Mottoman Helm"
+    },
+    {
+      "name": "Gallant Mottoman Runners"
+    },
+    {
+      "name": "Gallant Mottoman Uniform"
+    },
+    {
+      "name": "Glass Sliver"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "Grapes of Wrath"
+    },
+    {
+      "name": "Green Snow Apples"
+    },
+    {
+      "name": "Green Tomato"
+    },
+    {
+      "name": "Hard Boiled Beetle Eggs"
+    },
+    {
+      "name": "Helephant Ears"
+    },
+    {
+      "name": "High Road Haggis"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Icebird"
+    },
+    {
+      "name": "Icespear"
+    },
+    {
+      "name": "Iridium"
+    },
+    {
+      "name": "Istanboa Array of Enigmas"
+    },
+    {
+      "name": "Istanboa Array of Scruples"
+    },
+    {
+      "name": "Istanboa Pendant of Enigmas"
+    },
+    {
+      "name": "Istanboa Pendant of Icefall"
+    },
+    {
+      "name": "Istanboa Sandspouts Array"
+    },
+    {
+      "name": "Istanboa Sandspouts Khanjar"
+    },
+    {
+      "name": "Istanboa Sandspouts Pendant"
+    },
+    {
+      "name": "Istanboa Signet of Enigmas"
+    },
+    {
+      "name": "Istanboa Signet of Icefall"
+    },
+    {
+      "name": "Istanboa Signet of Scruples"
+    },
+    {
+      "name": "Ivy League"
+    },
+    {
+      "name": "Jolly Rancher"
+    },
+    {
+      "name": "Katabatic Wind"
+    },
+    {
+      "name": "Laugh-O-Dil"
+    },
+    {
+      "name": "Lifespear"
+    },
+    {
+      "name": "Lustrous Accurate Citrine +11%"
+    },
+    {
+      "name": "Lustrous Accurate Onyx +11%"
+    },
+    {
+      "name": "Lustrous Critical Peridot +13"
+    },
+    {
+      "name": "Lustrous Damage Citrine +23"
+    },
+    {
+      "name": "Lustrous Defense Onyx +45"
+    },
+    {
+      "name": "Lustrous Defense Peridot +45"
+    },
+    {
+      "name": "Lustrous Defense Ruby +45"
+    },
+    {
+      "name": "Lustrous Mana Opal +42"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Magma Colossus"
+    },
+    {
+      "name": "Maltese Tiger Lily"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Mottoman Heatwave Runners"
+    },
+    {
+      "name": "Mottoman Heatwave Uniform"
+    },
+    {
+      "name": "Mottoman Helm of Enigmas"
+    },
+    {
+      "name": "Mottoman Helm of Ruin"
+    },
+    {
+      "name": "Mottoman Helm of Scruples"
+    },
+    {
+      "name": "Mottoman Icefall Runners"
+    },
+    {
+      "name": "Mottoman Icefall Uniform"
+    },
+    {
+      "name": "Mottoman Runners of Enigmas"
+    },
+    {
+      "name": "Mottoman Runners of Ruin"
+    },
+    {
+      "name": "Mottoman Runners of Scruples"
+    },
+    {
+      "name": "Mottoman Sandspouts Helm"
+    },
+    {
+      "name": "Mottoman Sandspouts Runners"
+    },
+    {
+      "name": "Mottoman Sandspouts Uniform"
+    },
+    {
+      "name": "Mottoman Uniform of Enigmas"
+    },
+    {
+      "name": "Mottoman Uniform of Ruin"
+    },
+    {
+      "name": "Mottoman Uniform of Scruples"
+    },
+    {
+      "name": "Mustachios"
+    },
+    {
+      "name": "Mutate Colossus (Fire)"
+    },
+    {
+      "name": "Mutate Colossus (Storm)"
+    },
+    {
+      "name": "Myriarch Tabarzin of Chaos"
+    },
+    {
+      "name": "Myriarch Tabarzin of Fright"
+    },
+    {
+      "name": "Myriarch Tabarzin of Renown"
+    },
+    {
+      "name": "Mythspear"
+    },
+    {
+      "name": "Namaste"
+    },
+    {
+      "name": "Obsidian Colossus (420)"
+    },
+    {
+      "name": "Orange Dandelion"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pink Laugh-O-Dil"
+    },
+    {
+      "name": "Polished Accurate Hematite +10%"
+    },
+    {
+      "name": "Polished Blocking Amethyst +12"
+    },
+    {
+      "name": "Polished Blocking Citrine +12"
+    },
+    {
+      "name": "Polished Blocking Hematite +11"
+    },
+    {
+      "name": "Polished Blocking Jade +12"
+    },
+    {
+      "name": "Polished Blocking Onyx +12"
+    },
+    {
+      "name": "Polished Blocking Peridot +12"
+    },
+    {
+      "name": "Polished Blocking Ruby +12"
+    },
+    {
+      "name": "Polished Blocking Sapphire +12"
+    },
+    {
+      "name": "Polished Critical Amethyst +11"
+    },
+    {
+      "name": "Polished Critical Citrine +11"
+    },
+    {
+      "name": "Polished Critical Hematite +11"
+    },
+    {
+      "name": "Polished Critical Jade +11"
+    },
+    {
+      "name": "Polished Critical Onyx +11"
+    },
+    {
+      "name": "Polished Critical Peridot +11"
+    },
+    {
+      "name": "Polished Critical Ruby +11"
+    },
+    {
+      "name": "Polished Critical Sapphire +11"
+    },
+    {
+      "name": "Polished Damage Amethyst +21"
+    },
+    {
+      "name": "Polished Damage Citrine +21"
+    },
+    {
+      "name": "Polished Damage Hematite +42"
+    },
+    {
+      "name": "Polished Damage Jade +21"
+    },
+    {
+      "name": "Polished Damage Onyx +21"
+    },
+    {
+      "name": "Polished Damage Peridot +21"
+    },
+    {
+      "name": "Polished Damage Ruby +21"
+    },
+    {
+      "name": "Polished Damage Sapphire +21"
+    },
+    {
+      "name": "Polished Defense Amethyst +43"
+    },
+    {
+      "name": "Polished Defense Amethyst +44"
+    },
+    {
+      "name": "Polished Defense Citrine +43"
+    },
+    {
+      "name": "Polished Defense Citrine +44"
+    },
+    {
+      "name": "Polished Defense Hematite +41"
+    },
+    {
+      "name": "Polished Defense Jade +43"
+    },
+    {
+      "name": "Polished Defense Jade +44"
+    },
+    {
+      "name": "Polished Defense Onyx +43"
+    },
+    {
+      "name": "Polished Defense Onyx +44"
+    },
+    {
+      "name": "Polished Defense Peridot +43"
+    },
+    {
+      "name": "Polished Defense Peridot +44"
+    },
+    {
+      "name": "Polished Defense Ruby +43"
+    },
+    {
+      "name": "Polished Defense Ruby +44"
+    },
+    {
+      "name": "Polished Defense Sapphire +43"
+    },
+    {
+      "name": "Polished Defense Sapphire +44"
+    },
+    {
+      "name": "Polished Piercing Amethyst +6%"
+    },
+    {
+      "name": "Polished Piercing Citrine +6%"
+    },
+    {
+      "name": "Polished Piercing Hematite +5%"
+    },
+    {
+      "name": "Polished Piercing Jade +6%"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%"
+    },
+    {
+      "name": "Polished Piercing Peridot +6%"
+    },
+    {
+      "name": "Polished Piercing Ruby +6%"
+    },
+    {
+      "name": "Polished Piercing Sapphire +6%"
+    },
+    {
+      "name": "Purple Bell Pepper"
+    },
+    {
+      "name": "Purple Grapes of Wrath"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Red Couch Potatoes"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Rhubarbed Wire"
+    },
+    {
+      "name": "Rye Bread Fruit Bush"
+    },
+    {
+      "name": "Saga of Heroes"
+    },
+    {
+      "name": "Sandstone Colossus"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Shift"
+    },
+    {
+      "name": "Ships 'n' Queso"
+    },
+    {
+      "name": "Shock Colossus"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Smouldering Tetrus Baton"
+    },
+    {
+      "name": "Snap Dragon"
+    },
+    {
+      "name": "Sour Fickle Pickle"
+    },
+    {
+      "name": "Spirit Spear"
+    },
+    {
+      "name": "Stardust"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Steel Colossus"
+    },
+    {
+      "name": "Stone Block"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Stormspear"
+    },
+    {
+      "name": "Sugar Khrystal"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Tetrus Baton of Blizzards"
+    },
+    {
+      "name": "Tetrus Baton of Opposition"
+    },
+    {
+      "name": "Tetrus Baton of Readiness"
+    },
+    {
+      "name": "Tetrus Baton of Sophistry"
+    },
+    {
+      "name": "Tetrus Baton of Torrents"
+    },
+    {
+      "name": "Tetrus Baton of Woe"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turquoise"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "Vine"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "White Desparagus"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Yellow Troll"
+    }
   ],
   "authors": "BartleBot",
   "options": [

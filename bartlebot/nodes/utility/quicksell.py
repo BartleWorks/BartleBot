@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from dataclasses import dataclass
 
 from wizwalker import Keycode
 
@@ -27,12 +28,13 @@ from bartlebot.nodes.paths import (
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="keep_list",
-        type="str_list",
+        type="drop_keep_list",
         label="Keep List",
         help=(
             "Keywords to match against item names when quickselling. "
             "Any item whose name contains one of these strings (case-insensitive) will NOT be sold. "
-            "Partial matches count — 'hat' will keep any item with 'hat' in the name."
+            "Partial matches count — 'hat' will keep any item with 'hat' in the name. "
+            "Tick an item below to add its exact name to the list."
         ),
         default=[],
         required=False,
@@ -98,6 +100,175 @@ from bartlebot.nodes.timing import POLL_INTERVAL, QUICKSELL_COMPLETE_TIMEOUT  # 
 
 _ROWS_PER_PAGE = 10
 
+# Bool params that add a keyword to the keep list when switched *off*.
+IMPLIED_KEEP_KEYWORDS: dict[str, str] = {
+    "sell_socket_wrenches": "socket wrench",
+    "sell_skeleton_keys": "skeleton key",
+}
+
+# Bool params that spare a whole wiki category when switched *off*, rather than
+# adding a keyword. sell_pets is not a name match at all: the node deselects the
+# Pet tab wholesale, so no keep-list entry describes what it does.
+#
+# Editor-only, like NEVER_QUICKSOLD_CATEGORIES and for the same reason — the node
+# never sees a category. This exists so the picker does not show a pet as "will be
+# sold" while the config plainly says otherwise.
+CATEGORY_SELL_FLAGS: dict[str, str] = {"sell_pets": "Pets"}
+
+# Wiki drop categories this node will never sell, and why. Editor-only: the node
+# reads item names off the quicksell window and never sees a category, so this
+# cannot be consulted at run time — it exists so the keep-list picker can leave
+# out rows where there is no decision to make.
+#
+# Keys must match the category strings the wiki import produces. Run
+# ``poetry run python tools/drop_categories.py`` after importing new bots to
+# catch a category nobody has classified yet.
+#
+# Provenance: established by hand from how the game behaves, not from any file we
+# can read or any check that runs. Nothing here is verified automatically, and a
+# game update that made one of these quicksellable would go unnoticed. That is
+# tolerable because of which way the error falls — a wrong entry hides a row from
+# the picker, it never sells something the user asked to keep. Re-checking one is
+# cheap: open the quicksell window with the item in the backpack and see whether
+# it is listed.
+NEVER_QUICKSOLD_CATEGORIES: dict[str, str] = {
+    "Reagents": "Reagents cannot be quicksold.",
+    "Snacks": "Snacks cannot be quicksold.",
+    "Spellements": "Spellements cannot be quicksold.",
+    "Mounts": "Mounts cannot be quicksold.",
+    "Treasure Cards": "Treasure cards sell through a separate UI this node does not use.",
+}
+
+# Categories confirmed to go through the quicksell window. Tracked alongside the
+# never-sold set so tools/drop_categories.py can tell "known to sell" apart from
+# "not yet looked at" — Pins are listed because quicksell treats them as Jewels.
+QUICKSELLABLE_CATEGORIES: frozenset[str] = frozenset(
+    {
+        "Amulets",
+        "Athames",
+        "Boots",
+        "Decks",
+        "Hats",
+        "Housing Items",
+        "Jewels",
+        "Pets",
+        "Pins",
+        "Rings",
+        "Robes",
+        "Seeds",
+        "Wands",
+    }
+)
+
+
+def _typed_keywords(params: dict) -> list[str]:
+    """The keep_list param, lowercased. Blank entries are dropped: an empty keyword
+    is a substring of every name and would silently keep the entire backpack."""
+    return [k for k in (kw.lower().strip() for kw in (params.get("keep_list") or [])) if k]
+
+
+def _implied_keywords(params: dict) -> list[str]:
+    """The keywords contributed by the sell_* bools rather than by the keep_list."""
+    return [keyword for param_key, keyword in IMPLIED_KEEP_KEYWORDS.items() if not params.get(param_key, False)]
+
+
+def category_keep_reasons(params: dict) -> dict[str, str]:
+    """Categories this config spares wholesale, mapped to why.
+
+    Distinct from NEVER_QUICKSOLD_CATEGORIES, which is a fact about the game: these
+    depend on the node's params, and flipping the bool sells the category again.
+    The picker keeps such rows in the sellable count for that reason — they *are*
+    sellable, this config just is not selling them.
+    """
+    reasons = {}
+    for param_key, category in CATEGORY_SELL_FLAGS.items():
+        field = next((f for f in PARAM_SCHEMA if f.key == param_key), None)
+        # The field's own default, so this cannot drift from what run() would read
+        # for a param the bot file omits.
+        default = field.default if field is not None else True
+        if not params.get(param_key, default):
+            label = field.label if field is not None else param_key
+            reasons[category] = f"Kept because {label} is off, not by the keep list."
+    return reasons
+
+
+def effective_keep_list(params: dict) -> list[str]:
+    """Return the lowercased keywords this config keeps items by."""
+    return [*_typed_keywords(params), *_implied_keywords(params)]
+
+
+def matching_keyword(item_name: str, keywords: list[str]) -> str | None:
+    """Return the first keyword in *keywords* that keeps *item_name*, or None.
+
+    Matching is the case-insensitive substring test the quicksell page loop uses,
+    so the answer is exactly what the node will do to that item.
+    """
+    lowered = item_name.lower()
+    for keyword in keywords:
+        if keyword and keyword in lowered:
+            return keyword
+    return None
+
+
+@dataclass(frozen=True)
+class DropKeepState:
+    """How one item from a bot's drop table fares under a quicksell config.
+
+    Attributes:
+        name:    The item name as it appears in the drop table.
+        keyword: The keep-list keyword that spares it, or None when it will be sold.
+        exact:   True when *keyword* is a keep_list entry equal to the item's own
+                 name, so ticking or unticking the item is enough to change its
+                 fate. False for a partial match, and false for an implied keyword
+                 even when it happens to equal the name ("Socket Wrench") — removing
+                 that one means flipping the sell_* bool, not editing the keep list.
+    """
+
+    name: str
+    keyword: str | None
+    exact: bool
+
+    @property
+    def kept(self) -> bool:
+        return self.keyword is not None
+
+
+def drop_keep_states(drops: list[str], params: dict) -> list[DropKeepState]:
+    """Report what a quicksell config does to each item in a bot's drop table."""
+    typed = _typed_keywords(params)
+    implied = _implied_keywords(params)
+    states = []
+    for name in drops:
+        keyword = matching_keyword(name, typed)
+        if keyword is not None:
+            states.append(DropKeepState(name, keyword, exact=keyword == name.lower().strip()))
+        else:
+            states.append(DropKeepState(name, matching_keyword(name, implied), exact=False))
+    return states
+
+
+def set_drops_in_keep_list(keep_list: list[str], names: list[str], keep: bool) -> list[str]:
+    """Return *keep_list* with every name in *names* added or removed, in one pass.
+
+    The bulk form of toggle_drop_in_keep_list, for the picker's check/uncheck-all
+    buttons: doing it one name at a time would rescan the list per name, and a
+    drop table can hold hundreds of entries.
+    """
+    targets = {name.lower().strip() for name in names}
+    remaining = [k for k in keep_list if k.lower().strip() not in targets]
+    return [*remaining, *names] if keep else remaining
+
+
+def toggle_drop_in_keep_list(keep_list: list[str], name: str, keep: bool) -> list[str]:
+    """Return *keep_list* with the exact item *name* added or removed.
+
+    Only entries equal to *name* are touched, so a broader keyword the user typed
+    themselves survives an untick — it simply cannot be removed from here.
+    """
+    target = name.lower().strip()
+    remaining = [k for k in keep_list if k.lower().strip() != target]
+    return [*remaining, name] if keep else remaining
+
 
 async def run(machine, clients: list, params: dict) -> str:
     """
@@ -106,9 +277,9 @@ async def run(machine, clients: list, params: dict) -> str:
           node_helpers.click_by_path(), node_helpers.get_text_by_path()
 
     Flow (per client, run concurrently via asyncio.gather):
-      1. Build the effective keep_list: start from the keep_list param, then append
-         'socket wrench' if sell_socket_wrenches is False, 'skeleton key' if
-         sell_skeleton_keys is False.
+      1. Build the effective keep_list via effective_keep_list(): the keep_list param
+         plus the keywords implied by the sell_* bools. The properties panel calls the
+         same function to show which of the bot's drops this config will keep.
       2. Open the inventory page (B key); read backpack_space() to check if full.
       3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
       4. If neither is full, close the backpack and return SUCCESS.
@@ -131,14 +302,10 @@ async def run(machine, clients: list, params: dict) -> str:
     FAILURE: quicksell open button did not appear; shop UI did not appear;
     sell confirmation dialog did not appear.
     """
-    keep_list = [k.lower() for k in (params.get("keep_list") or [])]
+    keep_list = effective_keep_list(params)
     sell_pets: bool = params.get("sell_pets", True)
     sell_socket_wrenches: bool = params.get("sell_socket_wrenches", False)
     sell_skeleton_keys: bool = params.get("sell_skeleton_keys", False)
-    if not sell_socket_wrenches:
-        keep_list.append("socket wrench")
-    if not sell_skeleton_keys:
-        keep_list.append("skeleton key")
     machine.log(
         f"quicksell: keep_list={keep_list!r} sell_pets={sell_pets} "
         f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
@@ -338,7 +505,7 @@ async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
             text = await node_helpers.get_text_by_path(client, quicksell_item_title_path(row))
             if not text:
                 continue
-            if any(kw in text.lower() for kw in keep_list):
+            if matching_keyword(text, keep_list) is not None:
                 # Uncheck this item so it is not sold.
                 await node_helpers.click_by_path(client, quicksell_item_checkbox_path(row))
 

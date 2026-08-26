@@ -5,13 +5,43 @@ from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class XYZModel(BaseModel):
     x: float
     y: float
     z: float
+
+
+class DropModel(BaseModel):
+    """One item a bot can drop, as the wiki names it and as the game names it.
+
+    ``category`` is whatever the Wizard101 Central page grouped the item under
+    ("Reagents", "Hats", …). It is None for drops added by hand and for every bot
+    written before drops carried a category — there is no way to derive it after
+    the fact, so those simply stay uncategorized until the bot is re-imported.
+
+    ``name`` is the wiki's title for the item, which is what the drop list shows
+    and what makes an entry unique. It is *not* always what the game displays: a
+    wiki page cannot hold two entries under one title, so it disambiguates
+    variants by suffix ("Balance Crushing Pin (60, Death)") where the game shows
+    only "Balance Crushing Pin (60)" and puts the school in an icon column.
+
+    ``match_name`` carries that in-game form when it differs, and is None when the
+    two agree — the common case, kept out of the file by ``exclude_none``. Any
+    code comparing a drop against text read off the game's UI wants
+    :attr:`match_key`, never ``name``. ``bartlebot/wiki_drops.py`` derives it.
+    """
+
+    name: str
+    category: str | None = None
+    match_name: str | None = None
+
+    @property
+    def match_key(self) -> str:
+        """The name to match against text the game displays."""
+        return self.match_name or self.name
 
 
 class FlagCondition(BaseModel):
@@ -122,12 +152,25 @@ class BotConfig(BaseModel):
     # Optional state to jump to after a client reconnects. If None, the bot stops on disconnect.
     recovery_state: str | None = None
     start_location: str | None = None
-    drops: list[str] = Field(default_factory=list)
+    drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
     options: list[BotOptionModel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel]
     regions: list[RegionModel] = Field(default_factory=list)
+
+    @field_validator("drops", mode="before")
+    @classmethod
+    def accept_bare_drop_names(cls, value):
+        """Accept the pre-category form where each drop was just its name.
+
+        Needed for more than old files on disk: UndoManager round-trips a config
+        through model_dump/model_validate on every edit, and users carry bot files
+        that scripts/migrate_drop_entries.py has never been run against.
+        """
+        if isinstance(value, list):
+            return [{"name": v} if isinstance(v, str) else v for v in value]
+        return value
 
     @model_validator(mode="after")
     def initial_state_exists(self) -> "BotConfig":

@@ -8,94 +8,270 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Arcanum",
   "drops": [
-    "Ammut",
-    "Arcticzilla",
-    "Balance Accurate Pin (100)",
-    "Balance Conversion Pin (160)",
-    "Barbarian's Saga",
-    "Blast Off!",
-    "Broken Branch Loss Cards",
-    "Broken Branch Loss Mask",
-    "Broken Branch Luckless Cards",
-    "Broken Branch Luckless Mask",
-    "Broken Branch Neglect Cards",
-    "Broken Branch Neglect Mask",
-    "Broken Branch Panic Cards",
-    "Broken Branch Panic Mask",
-    "Broken Branch Rage Cards",
-    "Broken Branch Rage Mask",
-    "Broken Branch Sorrow Cards",
-    "Broken Branch Sorrow Mask",
-    "Broken Branch Terror Cards",
-    "Broken Branch Terror Mask",
-    "Bunyip's Rage",
-    "Cards of False Promises",
-    "Cards of the Burnt Forest",
-    "Cards of the Changing Tide",
-    "Cards of the Coldhearted",
-    "Cards of the Doomed",
-    "Cards of the Living Lie",
-    "Cards of the Turning Wheel",
-    "Chameleon Clash",
-    "Cobalt",
-    "Count Croakula",
-    "Dark & Stormy",
-    "Darkmoor Castle Theme",
-    "Darkmoor Tragedy Theme",
-    "Death Accurate Pin (100)",
-    "Death Conversion Pin (160)",
-    "Death Conversion Pin (170)",
-    "Deathly Depths",
-    "Drop Bear Fury",
-    "Ectoplasm",
-    "Fire Accurate Pin (100)",
-    "Flawless Blocking Jade +24",
-    "Flawless Blocking Peridot +24",
-    "Flawless Critical Amethyst +23",
-    "Flawless Critical Citrine +23",
-    "Flawless Critical Onyx +24",
-    "Flawless Critical Peridot +24",
-    "Flawless Critical Sapphire +23",
-    "Flawless Critical Sapphire +24",
-    "Gravestorm",
-    "Harmattan Maxios",
-    "Heqet",
-    "Improbable Gaze",
-    "Mask of False Promises",
-    "Mask of the Burnt Forest",
-    "Mask of the Changing Tide",
-    "Mask of the Coldhearted",
-    "Mask of the Doomed",
-    "Mask of the Living Lie",
-    "Mask of the Turning Wheel",
-    "Mortality",
-    "Myth Accurate Pin (100)",
-    "Old One's Endgame",
-    "Phantasmania!",
-    "Polished Piercing Jade +6%",
-    "Polished Piercing Onyx +6%",
-    "Polished Piercing Ruby +6%",
-    "Raging Bull",
-    "Rusalka's Wrath",
-    "Scales of Destiny",
-    "Shu",
-    "Snowball Barrage",
-    "Starspawn",
-    "Storm Accurate Pin (80)",
-    "Taweret",
-    "The Chariot",
-    "The Hierophant",
-    "The Tower",
-    "The World",
-    "Thoth",
-    "Unearthly Critical Onyx +44 (Life)",
-    "Unearthly Critical Ruby +42 (Ice)",
-    "Unearthly Critical Sapphire +48 (Balance)",
-    "Unearthly Damage Citrine +11% (Storm)",
-    "Unearthly Damage Peridot +10% (Fire)",
-    "Unearthly Damage Ruby +9% (Ice)",
-    "Wobbegong Frenzy",
-    "Zand the Bandit"
+    {
+      "name": "Ammut"
+    },
+    {
+      "name": "Arcticzilla"
+    },
+    {
+      "name": "Balance Accurate Pin (100)"
+    },
+    {
+      "name": "Balance Conversion Pin (160)"
+    },
+    {
+      "name": "Barbarian's Saga"
+    },
+    {
+      "name": "Blast Off!"
+    },
+    {
+      "name": "Broken Branch Loss Cards"
+    },
+    {
+      "name": "Broken Branch Loss Mask"
+    },
+    {
+      "name": "Broken Branch Luckless Cards"
+    },
+    {
+      "name": "Broken Branch Luckless Mask"
+    },
+    {
+      "name": "Broken Branch Neglect Cards"
+    },
+    {
+      "name": "Broken Branch Neglect Mask"
+    },
+    {
+      "name": "Broken Branch Panic Cards"
+    },
+    {
+      "name": "Broken Branch Panic Mask"
+    },
+    {
+      "name": "Broken Branch Rage Cards"
+    },
+    {
+      "name": "Broken Branch Rage Mask"
+    },
+    {
+      "name": "Broken Branch Sorrow Cards"
+    },
+    {
+      "name": "Broken Branch Sorrow Mask"
+    },
+    {
+      "name": "Broken Branch Terror Cards"
+    },
+    {
+      "name": "Broken Branch Terror Mask"
+    },
+    {
+      "name": "Bunyip's Rage"
+    },
+    {
+      "name": "Cards of False Promises"
+    },
+    {
+      "name": "Cards of the Burnt Forest"
+    },
+    {
+      "name": "Cards of the Changing Tide"
+    },
+    {
+      "name": "Cards of the Coldhearted"
+    },
+    {
+      "name": "Cards of the Doomed"
+    },
+    {
+      "name": "Cards of the Living Lie"
+    },
+    {
+      "name": "Cards of the Turning Wheel"
+    },
+    {
+      "name": "Chameleon Clash"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Count Croakula"
+    },
+    {
+      "name": "Dark & Stormy"
+    },
+    {
+      "name": "Darkmoor Castle Theme"
+    },
+    {
+      "name": "Darkmoor Tragedy Theme"
+    },
+    {
+      "name": "Death Accurate Pin (100)"
+    },
+    {
+      "name": "Death Conversion Pin (160)"
+    },
+    {
+      "name": "Death Conversion Pin (170)"
+    },
+    {
+      "name": "Deathly Depths"
+    },
+    {
+      "name": "Drop Bear Fury"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Fire Accurate Pin (100)"
+    },
+    {
+      "name": "Flawless Blocking Jade +24"
+    },
+    {
+      "name": "Flawless Blocking Peridot +24"
+    },
+    {
+      "name": "Flawless Critical Amethyst +23"
+    },
+    {
+      "name": "Flawless Critical Citrine +23"
+    },
+    {
+      "name": "Flawless Critical Onyx +24"
+    },
+    {
+      "name": "Flawless Critical Peridot +24"
+    },
+    {
+      "name": "Flawless Critical Sapphire +23"
+    },
+    {
+      "name": "Flawless Critical Sapphire +24"
+    },
+    {
+      "name": "Gravestorm"
+    },
+    {
+      "name": "Harmattan Maxios"
+    },
+    {
+      "name": "Heqet"
+    },
+    {
+      "name": "Improbable Gaze"
+    },
+    {
+      "name": "Mask of False Promises"
+    },
+    {
+      "name": "Mask of the Burnt Forest"
+    },
+    {
+      "name": "Mask of the Changing Tide"
+    },
+    {
+      "name": "Mask of the Coldhearted"
+    },
+    {
+      "name": "Mask of the Doomed"
+    },
+    {
+      "name": "Mask of the Living Lie"
+    },
+    {
+      "name": "Mask of the Turning Wheel"
+    },
+    {
+      "name": "Mortality"
+    },
+    {
+      "name": "Myth Accurate Pin (100)"
+    },
+    {
+      "name": "Old One's Endgame"
+    },
+    {
+      "name": "Phantasmania!"
+    },
+    {
+      "name": "Polished Piercing Jade +6%"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%"
+    },
+    {
+      "name": "Polished Piercing Ruby +6%"
+    },
+    {
+      "name": "Raging Bull"
+    },
+    {
+      "name": "Rusalka's Wrath"
+    },
+    {
+      "name": "Scales of Destiny"
+    },
+    {
+      "name": "Shu"
+    },
+    {
+      "name": "Snowball Barrage"
+    },
+    {
+      "name": "Starspawn"
+    },
+    {
+      "name": "Storm Accurate Pin (80)"
+    },
+    {
+      "name": "Taweret"
+    },
+    {
+      "name": "The Chariot"
+    },
+    {
+      "name": "The Hierophant"
+    },
+    {
+      "name": "The Tower"
+    },
+    {
+      "name": "The World"
+    },
+    {
+      "name": "Thoth"
+    },
+    {
+      "name": "Unearthly Critical Onyx +44 (Life)"
+    },
+    {
+      "name": "Unearthly Critical Ruby +42 (Ice)"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +48 (Balance)"
+    },
+    {
+      "name": "Unearthly Damage Citrine +11% (Storm)"
+    },
+    {
+      "name": "Unearthly Damage Peridot +10% (Fire)"
+    },
+    {
+      "name": "Unearthly Damage Ruby +9% (Ice)"
+    },
+    {
+      "name": "Wobbegong Frenzy"
+    },
+    {
+      "name": "Zand the Bandit"
+    }
   ],
   "authors": "BartleBot",
   "options": [

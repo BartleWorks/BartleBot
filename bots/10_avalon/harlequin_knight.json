@@ -10,146 +10,428 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Avalon",
   "drops": [
-    "Angel Oak",
-    "Argent Rose Deck",
-    "Avalon Glorious Theme",
-    "Avalon Haunting Theme",
-    "Bad Host Band",
-    "Bananas! Opal",
-    "Bannerman's Honorbound Ring",
-    "Basilisk",
-    "Black Lotus",
-    "Blight Hound",
-    "Blue Huckleberries",
-    "Brass",
-    "Brave Steel",
-    "Bronze",
-    "Cat Tail",
-    "Centaur",
-    "Chaos Knight's Blazing Helm",
-    "Chimera",
-    "Clear Critical Citrine +9",
-    "Clear Defense Citrine +37",
-    "Clear Piercing Amethyst +5%",
-    "Cobalt",
-    "Colossus",
-    "Courageous Knight's Boots",
-    "Deadly Fly Trap",
-    "Deep Mushroom",
-    "Delicious Cookie",
-    "Dependable Opal",
-    "Deviled Eggs",
-    "Dr. Von's Monster",
-    "Dragonbreath Bow",
-    "Earth Walker",
-    "Efreet",
-    "Evil Magma Peas",
-    "Fire Dragon",
-    "Fire Trap Ruby (Triangle)",
-    "Flaming Soup",
-    "Flapjacks",
-    "Forest Lord",
-    "Frost Flower",
-    "Frost Giant",
-    "Frost Giant",
-    "Frostbite",
-    "Frozen Armor",
-    "Gargantuan",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Gnomes!",
-    "Golden Apple",
-    "Golden Grapes",
-    "Gummy Humongofrog",
-    "Gummy Wyrms",
-    "Hanging Stones Armor",
-    "Hanging Stones Striders",
-    "Helephant",
-    "Honor Bound Helm",
-    "Honor Bound Surcoat",
-    "Horned One's Iron",
-    "Huge Rally Opal",
-    "Hydra",
-    "Ice-Shot Sapphire",
-    "Jelly Baby",
-    "Jousting Rack",
-    "King Banana",
-    "Knight of the Wyrd Armor",
-    "Lava Lily",
-    "Legion Shield",
-    "Leviathan",
-    "Leviathan",
-    "Life Trap Jade (Triangle)",
-    "Life-Eye Jade",
-    "Mask of the Crystal Caves",
-    "Mask of the Silent Hunter",
-    "Medusa",
-    "Minotaur",
-    "Mist Wood",
-    "No Passing Opal",
-    "Opaque Damage Jade +18",
-    "Opaque Damage Sapphire +18",
-    "Opaque Defense Amethyst +35",
-    "Opaque Defense Citrine +35",
-    "Opaque Defense Jade +35",
-    "Opaque Piercing Sapphire +4%",
-    "Ore",
-    "Orthrus",
-    "Orthrus",
-    "Paladin's Frosty Helmet",
-    "Parchment",
-    "Pearl",
-    "Phoenix",
-    "Pigeon Pie",
-    "Pink Dandelion",
-    "Power Nova",
-    "Power Nova",
-    "Quick-Witted Opal",
-    "Ra",
-    "Ra",
-    "Rain of Fire",
-    "Rebirth",
-    "Rebirth",
-    "Red Huckleberries",
-    "Red Mandrake",
-    "Red Thorn Hammer on Pedestal",
-    "Roasted Chickpeas",
-    "Scarecrow",
-    "Scarecrow",
-    "Shell",
-    "Shillelagh of the Squire",
-    "Silver Trumpet Vine",
-    "Sir Corwin's Ring",
-    "Sirens",
-    "Skeletal Dragon",
-    "Skeletal Pirate",
-    "Small Arms Weapons Rack",
-    "Snow Angel",
-    "Spectral Blast",
-    "Spicy Drumstick",
-    "Splashing Stream Waders",
-    "Steal Ward",
-    "Steel",
-    "Stone Block",
-    "Stone Colossus",
-    "Storm Lord",
-    "Storm Lord",
-    "Storm-Shot Amethyst",
-    "Stormzilla",
-    "Strawberry Cupcake",
-    "Stupefy Opal",
-    "Submarine Sandwich",
-    "Sworn Champion's Footguards",
-    "Tin",
-    "Torc of Hidden Wisdom",
-    "Torc of the Faithful Squire",
-    "Triton",
-    "Trumpet Vine",
-    "Unstoppable",
-    "White Tiger Lily",
-    "Woolly Mammoth",
-    "Wraith",
-    "Wrath of the Wild"
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Argent Rose Deck"
+    },
+    {
+      "name": "Avalon Glorious Theme"
+    },
+    {
+      "name": "Avalon Haunting Theme"
+    },
+    {
+      "name": "Bad Host Band"
+    },
+    {
+      "name": "Bananas! Opal"
+    },
+    {
+      "name": "Bannerman's Honorbound Ring"
+    },
+    {
+      "name": "Basilisk"
+    },
+    {
+      "name": "Black Lotus"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Brave Steel"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Cat Tail"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Chaos Knight's Blazing Helm"
+    },
+    {
+      "name": "Chimera"
+    },
+    {
+      "name": "Clear Critical Citrine +9"
+    },
+    {
+      "name": "Clear Defense Citrine +37"
+    },
+    {
+      "name": "Clear Piercing Amethyst +5%"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Courageous Knight's Boots"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Deep Mushroom"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Dependable Opal"
+    },
+    {
+      "name": "Deviled Eggs"
+    },
+    {
+      "name": "Dr. Von's Monster"
+    },
+    {
+      "name": "Dragonbreath Bow"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Efreet"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fire Trap Ruby (Triangle)",
+      "match_name": "Fire Trap Ruby"
+    },
+    {
+      "name": "Flaming Soup"
+    },
+    {
+      "name": "Flapjacks"
+    },
+    {
+      "name": "Forest Lord"
+    },
+    {
+      "name": "Frost Flower"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Frostbite"
+    },
+    {
+      "name": "Frozen Armor"
+    },
+    {
+      "name": "Gargantuan"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Gnomes!"
+    },
+    {
+      "name": "Golden Apple"
+    },
+    {
+      "name": "Golden Grapes"
+    },
+    {
+      "name": "Gummy Humongofrog"
+    },
+    {
+      "name": "Gummy Wyrms"
+    },
+    {
+      "name": "Hanging Stones Armor"
+    },
+    {
+      "name": "Hanging Stones Striders"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Honor Bound Helm"
+    },
+    {
+      "name": "Honor Bound Surcoat"
+    },
+    {
+      "name": "Horned One's Iron"
+    },
+    {
+      "name": "Huge Rally Opal"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice-Shot Sapphire"
+    },
+    {
+      "name": "Jelly Baby"
+    },
+    {
+      "name": "Jousting Rack"
+    },
+    {
+      "name": "King Banana"
+    },
+    {
+      "name": "Knight of the Wyrd Armor"
+    },
+    {
+      "name": "Lava Lily"
+    },
+    {
+      "name": "Legion Shield"
+    },
+    {
+      "name": "Leviathan"
+    },
+    {
+      "name": "Leviathan"
+    },
+    {
+      "name": "Life Trap Jade (Triangle)",
+      "match_name": "Life Trap Jade"
+    },
+    {
+      "name": "Life-Eye Jade"
+    },
+    {
+      "name": "Mask of the Crystal Caves"
+    },
+    {
+      "name": "Mask of the Silent Hunter"
+    },
+    {
+      "name": "Medusa"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Mist Wood"
+    },
+    {
+      "name": "No Passing Opal"
+    },
+    {
+      "name": "Opaque Damage Jade +18"
+    },
+    {
+      "name": "Opaque Damage Sapphire +18"
+    },
+    {
+      "name": "Opaque Defense Amethyst +35"
+    },
+    {
+      "name": "Opaque Defense Citrine +35"
+    },
+    {
+      "name": "Opaque Defense Jade +35"
+    },
+    {
+      "name": "Opaque Piercing Sapphire +4%"
+    },
+    {
+      "name": "Ore"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Paladin's Frosty Helmet"
+    },
+    {
+      "name": "Parchment"
+    },
+    {
+      "name": "Pearl"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pigeon Pie"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Quick-Witted Opal"
+    },
+    {
+      "name": "Ra"
+    },
+    {
+      "name": "Ra"
+    },
+    {
+      "name": "Rain of Fire"
+    },
+    {
+      "name": "Rebirth"
+    },
+    {
+      "name": "Rebirth"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Red Mandrake"
+    },
+    {
+      "name": "Red Thorn Hammer on Pedestal"
+    },
+    {
+      "name": "Roasted Chickpeas"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Shell"
+    },
+    {
+      "name": "Shillelagh of the Squire"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Sir Corwin's Ring"
+    },
+    {
+      "name": "Sirens"
+    },
+    {
+      "name": "Skeletal Dragon"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Small Arms Weapons Rack"
+    },
+    {
+      "name": "Snow Angel"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Splashing Stream Waders"
+    },
+    {
+      "name": "Steal Ward"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Block"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm-Shot Amethyst"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Stupefy Opal"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sworn Champion's Footguards"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Torc of Hidden Wisdom"
+    },
+    {
+      "name": "Torc of the Faithful Squire"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Unstoppable"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Woolly Mammoth"
+    },
+    {
+      "name": "Wraith"
+    },
+    {
+      "name": "Wrath of the Wild"
+    }
   ],
   "authors": "BartleBot",
   "options": [

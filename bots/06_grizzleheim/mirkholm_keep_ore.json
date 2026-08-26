@@ -9,13 +9,27 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Grizzleheim",
   "drops": [
-    "Cattail",
-    "Diamonds",
-    "Frost Flower",
-    "Grendelweed",
-    "Kelp",
-    "Ore",
-    "Water Lily"
+    {
+      "name": "Cattail"
+    },
+    {
+      "name": "Diamonds"
+    },
+    {
+      "name": "Frost Flower"
+    },
+    {
+      "name": "Grendelweed"
+    },
+    {
+      "name": "Kelp"
+    },
+    {
+      "name": "Ore"
+    },
+    {
+      "name": "Water Lily"
+    }
   ],
   "authors": "BartleBot",
   "options": [

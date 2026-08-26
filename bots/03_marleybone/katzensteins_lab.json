@@ -8,252 +8,744 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "Air Dales Sign",
-    "Alluring Boots",
-    "Alluring Robes",
-    "Altar with Candles",
-    "Amulet of Chilled Creatures",
-    "Angled Gravemarker",
-    "Animated Canine Cowl",
-    "Aristocrat's Dagger",
-    "Artificial Robe",
-    "Attentive Opal",
-    "Azoth",
-    "Banshee Onyx",
-    "Blue Knotted Rug",
-    "Boots of the Elements",
-    "Boots of the Nucleus",
-    "Brisk Cap",
-    "Bronze Gear",
-    "Brown Rat Magician",
-    "Cap of the Inventor",
-    "Cap of the Unicorn",
-    "Caramel Popcorn",
-    "Cat Burglar's Cap",
-    "Charged Knife",
-    "Chipped Accurate Jade +3%",
-    "Chipped Damage Amethyst +8",
-    "Chipped Damage Sapphire +8",
-    "Clanker's Boots of Lucidity",
-    "Clanker's Choker of Bones",
-    "Clanker's Convulsive Shoes",
-    "Clanker's Deck of Mending",
-    "Clanker's Dirk of Endurance",
-    "Clanker's Enigmatic Staff",
-    "Clanker's Exquisite Cloak",
-    "Clanker's High Quality Cowl",
-    "Clanker's Irritating Shoes",
-    "Clanker's Lifeline Dagger",
-    "Clanker's Magnificent Hat",
-    "Clanker's Noteworthy Robe",
-    "Clanker's Premium Cap",
-    "Clanker's Provoked Boots",
-    "Clanker's Refined Cap",
-    "Clanker's Ring of Symmetry",
-    "Clanker's Robe",
-    "Clanker's Soothing Ring",
-    "Clanker's Trapdoor",
-    "Clanker's Vest of Certainty",
-    "Cloak",
-    "Cloak of Clarity",
-    "Cloak of Fascination",
-    "Closed Furnace",
-    "Copper",
-    "Crossbone Gravestone",
-    "Cyclops Peridot",
-    "Dawdle Opal",
-    "Death-Shot Onyx",
-    "Deck of Intensity",
-    "Deck of the Aurora",
-    "Delicate Slippers",
-    "Dexterous Vest",
-    "Distinguished Slippers",
-    "Doctor's Robe of Aurora",
-    "Doctor's Robe of the Kraken",
-    "Doctor's Surgical Knife",
-    "Doctor's Urbane Shoes",
-    "Doctor's Visor of Severity",
-    "Dr. Von's Affable Shoes",
-    "Dr. Von's Shrouded Tunic",
-    "Drain Opal",
-    "Dryad",
-    "Ectoplasm",
-    "Electrified Kris",
-    "Energy Opal",
-    "Evil Snowman",
-    "Evil Snowman Sapphire",
-    "Exacting Boots",
-    "Exclusive Boots",
-    "Exclusive Cap",
-    "Exquisite Slippers",
-    "Fancy Garments",
-    "Fancy Slippers",
-    "Feline's Charged Hat",
-    "Feline's Fiery Robe",
-    "Feline's Invigorating Robe",
-    "Feline's Somber Robe",
-    "Feline's Whimsical Robe",
-    "Fire Cat",
-    "Fire Elf",
-    "Fire Elf (Tier 2b)",
-    "Fire Trap",
-    "Flawed Accurate Opal +2%",
-    "Flawed Damage Amethyst +10",
-    "Flawed Damage Jade +10",
-    "Flawed Damage Onyx +10",
-    "Flawed Damage Opal +5",
-    "Flawed Defense Opal +9",
-    "Flawed Health Opal +26",
-    "Flawed Resilient Opal +2%",
-    "Flowering Canine Cloak",
-    "Flowering Canine Cowl",
-    "Frost Beetle",
-    "Frost Beetle (Tier 2b)",
-    "Galvanic Glaive",
-    "Garment of the Supreme",
-    "Gearhead Destroyer",
-    "Genteel Cap",
-    "Giant",
-    "Glowing Canine Cowl",
-    "Glowing Canine Hat",
-    "Grandiose Sandals",
-    "Gummy Bloodbat",
-    "Hat of Rising Stakes",
-    "High Quality Boots",
-    "High Quality Cloak",
-    "Ice Wyvern",
-    "Immolate",
-    "Informant's Dirk",
-    "Iron",
-    "Katzenstein's Athame",
-    "Katzenstein's Band",
-    "Katzenstein's Boots",
-    "Katzenstein's Facemask",
-    "Katzenstein's Helm",
-    "Katzenstein's Necklace",
-    "Katzenstein's Robe",
-    "Katzenstein's Slippers",
-    "Katzenstein's Tragic Helm",
-    "Katzenstein's Tunic",
-    "Kraken",
-    "Large Maroon Rug",
-    "Large Stone Fountain",
-    "Lava Spider",
-    "Lead",
-    "Life-Proof Jade",
-    "Lightning Bats",
-    "Locust Swarm Citrine",
-    "Magma Spider",
-    "Magnificent Boots",
-    "Marleybone Combat Theme",
-    "Marleybone Dance Theme",
-    "Marleybone Pet Derby Theme",
-    "Marvelous Shroud",
-    "Mechanical Ring",
-    "Medium Fish",
-    "Mugsy's Robe of Equity",
-    "Mysterious Band",
-    "Newspaper Page",
-    "Nickel",
-    "Noteworthy Slippers",
-    "Old Smokey's Dagger",
-    "Opportunists' Sandals",
-    "Ore",
-    "Pacify",
-    "Pixie Queen 29 (No Card)",
-    "Pleasing Sandals",
-    "Polished Garments",
-    "Precious Cap",
-    "Precious Cloak",
-    "Premium Footwraps",
-    "Puddle Stompers",
-    "Puppetmaster's Costume",
-    "Puppetmaster's Facade",
-    "Puppetmaster's Footwear",
-    "Pyrite",
-    "Quick-Witted Opal",
-    "Redskin Peanut",
-    "Remarkable Sandals",
-    "Ring of Effect",
-    "Robe of Superiority",
-    "Robe of the Bubble",
-    "Sandals of Delusion",
-    "Sandals of Paramount",
-    "Sandstorm",
-    "Satyr",
-    "Satyr Jade",
-    "Savvy Vestment",
-    "Shaman's Hat",
-    "Shaman's Uniform",
-    "Shoes of Sentiments",
-    "Shoes of the Chimera",
-    "Shoes of the Devoted",
-    "Shoes of the Exceptional",
-    "Shoes of the Windless",
-    "Short Metal Fence",
-    "Shortblade of Flowers",
-    "Skeletal Pirate",
-    "Slippers of Gusto",
-    "Slippers of Predominance",
-    "Slippers of the Worrier",
-    "Small Smoke Stack",
-    "Smogger's Affected Boots",
-    "Smogger's Auto Radiator",
-    "Smogger's Charged Robe",
-    "Smogger's Cowl of Courtesy",
-    "Smogger's Formal Robe",
-    "Smogger's Germane Boots",
-    "Smogger's Hat of Politeness",
-    "Smogger's Noble Vestment",
-    "Smogger's Sand Choker",
-    "Smogger's Shoes of Agony",
-    "Smogger's Shoes of Atlantis",
-    "Smogger's Shroud of Poise",
-    "Smooth Spun Cloak",
-    "Sniper",
-    "Snow Serpent",
-    "Spectral Blast Citrine",
-    "Spider Silk",
-    "Spirit Armor",
-    "Square Watermelon",
-    "Stable Salacot",
-    "Staff of the Ice Wyvern",
-    "Stein",
-    "Stinky Cheese",
-    "Storm Serpent",
-    "Storm Shark",
-    "Storm Shark (Tier 2b)",
-    "Storm Shark Amethyst",
-    "Storm-Proof Amethyst",
-    "Sunbird",
-    "Superstitious Canine Cowl",
-    "Tall Meter Stand",
-    "The Troll Hunter",
-    "Thinker's Ring",
-    "Thinker's Robe",
-    "Thunder Snake",
-    "Tin",
-    "Tin Can",
-    "Tough",
-    "Tri-Gage Meter Stand",
-    "Tunic of Chivalry",
-    "Tunic of Symmetry",
-    "Tunic of the Clever",
-    "Uniform of the Inventor",
-    "Uniform of the Proficient",
-    "Vestment of Assistance",
-    "Vestment of Expertise",
-    "Vestment of Stability",
-    "Vestment of the Beacon",
-    "Vestment of the Enigma",
-    "Vestment of the Sun",
-    "Victorian Hat",
-    "Watchman's Athame",
-    "Wheat Cracker",
-    "Wide Meter Stand",
-    "Winter Canine Cowl",
-    "Wooden Propellor",
-    "Wyldfire Ruby"
+    {
+      "name": "Air Dales Sign"
+    },
+    {
+      "name": "Alluring Boots"
+    },
+    {
+      "name": "Alluring Robes"
+    },
+    {
+      "name": "Altar with Candles"
+    },
+    {
+      "name": "Amulet of Chilled Creatures"
+    },
+    {
+      "name": "Angled Gravemarker"
+    },
+    {
+      "name": "Animated Canine Cowl"
+    },
+    {
+      "name": "Aristocrat's Dagger"
+    },
+    {
+      "name": "Artificial Robe"
+    },
+    {
+      "name": "Attentive Opal"
+    },
+    {
+      "name": "Azoth"
+    },
+    {
+      "name": "Banshee Onyx"
+    },
+    {
+      "name": "Blue Knotted Rug"
+    },
+    {
+      "name": "Boots of the Elements"
+    },
+    {
+      "name": "Boots of the Nucleus"
+    },
+    {
+      "name": "Brisk Cap"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Brown Rat Magician"
+    },
+    {
+      "name": "Cap of the Inventor"
+    },
+    {
+      "name": "Cap of the Unicorn"
+    },
+    {
+      "name": "Caramel Popcorn"
+    },
+    {
+      "name": "Cat Burglar's Cap"
+    },
+    {
+      "name": "Charged Knife"
+    },
+    {
+      "name": "Chipped Accurate Jade +3%"
+    },
+    {
+      "name": "Chipped Damage Amethyst +8"
+    },
+    {
+      "name": "Chipped Damage Sapphire +8"
+    },
+    {
+      "name": "Clanker's Boots of Lucidity"
+    },
+    {
+      "name": "Clanker's Choker of Bones"
+    },
+    {
+      "name": "Clanker's Convulsive Shoes"
+    },
+    {
+      "name": "Clanker's Deck of Mending"
+    },
+    {
+      "name": "Clanker's Dirk of Endurance"
+    },
+    {
+      "name": "Clanker's Enigmatic Staff"
+    },
+    {
+      "name": "Clanker's Exquisite Cloak"
+    },
+    {
+      "name": "Clanker's High Quality Cowl"
+    },
+    {
+      "name": "Clanker's Irritating Shoes"
+    },
+    {
+      "name": "Clanker's Lifeline Dagger"
+    },
+    {
+      "name": "Clanker's Magnificent Hat"
+    },
+    {
+      "name": "Clanker's Noteworthy Robe"
+    },
+    {
+      "name": "Clanker's Premium Cap"
+    },
+    {
+      "name": "Clanker's Provoked Boots"
+    },
+    {
+      "name": "Clanker's Refined Cap"
+    },
+    {
+      "name": "Clanker's Ring of Symmetry"
+    },
+    {
+      "name": "Clanker's Robe"
+    },
+    {
+      "name": "Clanker's Soothing Ring"
+    },
+    {
+      "name": "Clanker's Trapdoor"
+    },
+    {
+      "name": "Clanker's Vest of Certainty"
+    },
+    {
+      "name": "Cloak"
+    },
+    {
+      "name": "Cloak of Clarity"
+    },
+    {
+      "name": "Cloak of Fascination"
+    },
+    {
+      "name": "Closed Furnace"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Crossbone Gravestone"
+    },
+    {
+      "name": "Cyclops Peridot"
+    },
+    {
+      "name": "Dawdle Opal"
+    },
+    {
+      "name": "Death-Shot Onyx"
+    },
+    {
+      "name": "Deck of Intensity"
+    },
+    {
+      "name": "Deck of the Aurora"
+    },
+    {
+      "name": "Delicate Slippers"
+    },
+    {
+      "name": "Dexterous Vest"
+    },
+    {
+      "name": "Distinguished Slippers"
+    },
+    {
+      "name": "Doctor's Robe of Aurora"
+    },
+    {
+      "name": "Doctor's Robe of the Kraken"
+    },
+    {
+      "name": "Doctor's Surgical Knife"
+    },
+    {
+      "name": "Doctor's Urbane Shoes"
+    },
+    {
+      "name": "Doctor's Visor of Severity"
+    },
+    {
+      "name": "Dr. Von's Affable Shoes"
+    },
+    {
+      "name": "Dr. Von's Shrouded Tunic"
+    },
+    {
+      "name": "Drain Opal"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Electrified Kris"
+    },
+    {
+      "name": "Energy Opal"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman Sapphire"
+    },
+    {
+      "name": "Exacting Boots"
+    },
+    {
+      "name": "Exclusive Boots"
+    },
+    {
+      "name": "Exclusive Cap"
+    },
+    {
+      "name": "Exquisite Slippers"
+    },
+    {
+      "name": "Fancy Garments"
+    },
+    {
+      "name": "Fancy Slippers"
+    },
+    {
+      "name": "Feline's Charged Hat"
+    },
+    {
+      "name": "Feline's Fiery Robe"
+    },
+    {
+      "name": "Feline's Invigorating Robe"
+    },
+    {
+      "name": "Feline's Somber Robe"
+    },
+    {
+      "name": "Feline's Whimsical Robe"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire Elf (Tier 2b)"
+    },
+    {
+      "name": "Fire Trap"
+    },
+    {
+      "name": "Flawed Accurate Opal +2%"
+    },
+    {
+      "name": "Flawed Damage Amethyst +10"
+    },
+    {
+      "name": "Flawed Damage Jade +10"
+    },
+    {
+      "name": "Flawed Damage Onyx +10"
+    },
+    {
+      "name": "Flawed Damage Opal +5"
+    },
+    {
+      "name": "Flawed Defense Opal +9"
+    },
+    {
+      "name": "Flawed Health Opal +26"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%"
+    },
+    {
+      "name": "Flowering Canine Cloak"
+    },
+    {
+      "name": "Flowering Canine Cowl"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Frost Beetle (Tier 2b)"
+    },
+    {
+      "name": "Galvanic Glaive"
+    },
+    {
+      "name": "Garment of the Supreme"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Genteel Cap"
+    },
+    {
+      "name": "Giant"
+    },
+    {
+      "name": "Glowing Canine Cowl"
+    },
+    {
+      "name": "Glowing Canine Hat"
+    },
+    {
+      "name": "Grandiose Sandals"
+    },
+    {
+      "name": "Gummy Bloodbat"
+    },
+    {
+      "name": "Hat of Rising Stakes"
+    },
+    {
+      "name": "High Quality Boots"
+    },
+    {
+      "name": "High Quality Cloak"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Informant's Dirk"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Katzenstein's Athame"
+    },
+    {
+      "name": "Katzenstein's Band"
+    },
+    {
+      "name": "Katzenstein's Boots"
+    },
+    {
+      "name": "Katzenstein's Facemask"
+    },
+    {
+      "name": "Katzenstein's Helm"
+    },
+    {
+      "name": "Katzenstein's Necklace"
+    },
+    {
+      "name": "Katzenstein's Robe"
+    },
+    {
+      "name": "Katzenstein's Slippers"
+    },
+    {
+      "name": "Katzenstein's Tragic Helm"
+    },
+    {
+      "name": "Katzenstein's Tunic"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Large Maroon Rug"
+    },
+    {
+      "name": "Large Stone Fountain"
+    },
+    {
+      "name": "Lava Spider"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Life-Proof Jade"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Locust Swarm Citrine"
+    },
+    {
+      "name": "Magma Spider"
+    },
+    {
+      "name": "Magnificent Boots"
+    },
+    {
+      "name": "Marleybone Combat Theme"
+    },
+    {
+      "name": "Marleybone Dance Theme"
+    },
+    {
+      "name": "Marleybone Pet Derby Theme"
+    },
+    {
+      "name": "Marvelous Shroud"
+    },
+    {
+      "name": "Mechanical Ring"
+    },
+    {
+      "name": "Medium Fish"
+    },
+    {
+      "name": "Mugsy's Robe of Equity"
+    },
+    {
+      "name": "Mysterious Band"
+    },
+    {
+      "name": "Newspaper Page"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Noteworthy Slippers"
+    },
+    {
+      "name": "Old Smokey's Dagger"
+    },
+    {
+      "name": "Opportunists' Sandals"
+    },
+    {
+      "name": "Ore"
+    },
+    {
+      "name": "Pacify"
+    },
+    {
+      "name": "Pixie Queen 29 (No Card)"
+    },
+    {
+      "name": "Pleasing Sandals"
+    },
+    {
+      "name": "Polished Garments"
+    },
+    {
+      "name": "Precious Cap"
+    },
+    {
+      "name": "Precious Cloak"
+    },
+    {
+      "name": "Premium Footwraps"
+    },
+    {
+      "name": "Puddle Stompers"
+    },
+    {
+      "name": "Puppetmaster's Costume"
+    },
+    {
+      "name": "Puppetmaster's Facade"
+    },
+    {
+      "name": "Puppetmaster's Footwear"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Quick-Witted Opal"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Remarkable Sandals"
+    },
+    {
+      "name": "Ring of Effect"
+    },
+    {
+      "name": "Robe of Superiority"
+    },
+    {
+      "name": "Robe of the Bubble"
+    },
+    {
+      "name": "Sandals of Delusion"
+    },
+    {
+      "name": "Sandals of Paramount"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Satyr"
+    },
+    {
+      "name": "Satyr Jade"
+    },
+    {
+      "name": "Savvy Vestment"
+    },
+    {
+      "name": "Shaman's Hat"
+    },
+    {
+      "name": "Shaman's Uniform"
+    },
+    {
+      "name": "Shoes of Sentiments"
+    },
+    {
+      "name": "Shoes of the Chimera"
+    },
+    {
+      "name": "Shoes of the Devoted"
+    },
+    {
+      "name": "Shoes of the Exceptional"
+    },
+    {
+      "name": "Shoes of the Windless"
+    },
+    {
+      "name": "Short Metal Fence"
+    },
+    {
+      "name": "Shortblade of Flowers"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Slippers of Gusto"
+    },
+    {
+      "name": "Slippers of Predominance"
+    },
+    {
+      "name": "Slippers of the Worrier"
+    },
+    {
+      "name": "Small Smoke Stack"
+    },
+    {
+      "name": "Smogger's Affected Boots"
+    },
+    {
+      "name": "Smogger's Auto Radiator"
+    },
+    {
+      "name": "Smogger's Charged Robe"
+    },
+    {
+      "name": "Smogger's Cowl of Courtesy"
+    },
+    {
+      "name": "Smogger's Formal Robe"
+    },
+    {
+      "name": "Smogger's Germane Boots"
+    },
+    {
+      "name": "Smogger's Hat of Politeness"
+    },
+    {
+      "name": "Smogger's Noble Vestment"
+    },
+    {
+      "name": "Smogger's Sand Choker"
+    },
+    {
+      "name": "Smogger's Shoes of Agony"
+    },
+    {
+      "name": "Smogger's Shoes of Atlantis"
+    },
+    {
+      "name": "Smogger's Shroud of Poise"
+    },
+    {
+      "name": "Smooth Spun Cloak"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Spectral Blast Citrine"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Stable Salacot"
+    },
+    {
+      "name": "Staff of the Ice Wyvern"
+    },
+    {
+      "name": "Stein"
+    },
+    {
+      "name": "Stinky Cheese"
+    },
+    {
+      "name": "Storm Serpent"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)"
+    },
+    {
+      "name": "Storm Shark Amethyst"
+    },
+    {
+      "name": "Storm-Proof Amethyst"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Superstitious Canine Cowl"
+    },
+    {
+      "name": "Tall Meter Stand"
+    },
+    {
+      "name": "The Troll Hunter"
+    },
+    {
+      "name": "Thinker's Ring"
+    },
+    {
+      "name": "Thinker's Robe"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tin Can"
+    },
+    {
+      "name": "Tough"
+    },
+    {
+      "name": "Tri-Gage Meter Stand"
+    },
+    {
+      "name": "Tunic of Chivalry"
+    },
+    {
+      "name": "Tunic of Symmetry"
+    },
+    {
+      "name": "Tunic of the Clever"
+    },
+    {
+      "name": "Uniform of the Inventor"
+    },
+    {
+      "name": "Uniform of the Proficient"
+    },
+    {
+      "name": "Vestment of Assistance"
+    },
+    {
+      "name": "Vestment of Expertise"
+    },
+    {
+      "name": "Vestment of Stability"
+    },
+    {
+      "name": "Vestment of the Beacon"
+    },
+    {
+      "name": "Vestment of the Enigma"
+    },
+    {
+      "name": "Vestment of the Sun"
+    },
+    {
+      "name": "Victorian Hat"
+    },
+    {
+      "name": "Watchman's Athame"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "Wide Meter Stand"
+    },
+    {
+      "name": "Winter Canine Cowl"
+    },
+    {
+      "name": "Wooden Propellor"
+    },
+    {
+      "name": "Wyldfire Ruby"
+    }
   ],
   "authors": "BartleBot",
   "options": [

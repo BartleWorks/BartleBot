@@ -6,113 +6,424 @@
   "clients": "all",
   "initial": "state_7",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Adventurer's Helm",
-    "Adventurer's Robe",
-    "Antiquated Knife",
-    "Antiquated Wand",
-    "Antique Deck",
-    "Antique Footguards",
-    "Antique Helm",
-    "Blightshroud",
-    "Blonde Strawberry",
-    "Blood Bat",
-    "Boots of Embers",
-    "Boots of Obstruction",
-    "Branded Dagger",
-    "Branded Wand",
-    "Canvas Cloak",
-    "Carbonshroud",
-    "Charged Coat",
-    "Charged Cover",
-    "Charged Kris",
-    "Charged Wand",
-    "Cheese Broccoli",
-    "Chillcloak",
-    "Chocolate Strawberry",
-    "Cloak of Calamity",
-    "Crown of Seasons",
-    "Dagger of Repose",
-    "Dark Sprite",
-    "Dulled Athame",
-    "Durable Hood",
-    "Ectoplasm",
-    "Embershroud",
-    "Fairy's Athame",
-    "Fine Dagger",
-    "Fire Cat",
-    "Fire Shield",
-    "Fireguard Robe",
-    "Frost Wolf Cloak",
-    "Frozen Pedestal",
-    "Fur-Lined Hood",
-    "Ghost Touch",
-    "Ghoul",
-    "Goldleaf Shoes",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hallowed Robes",
-    "Hardened Boots",
-    "Healer's Vestment",
-    "Honed Athame",
-    "Honey Sickle",
-    "Hood of Storms",
-    "Imp",
-    "Imp Lord's Helm",
-    "Insulated Dirk",
-    "Leather Straps",
-    "Lightning Bats",
-    "Martyr's Hat",
-    "Martyr's Raiment",
-    "Myth Shield",
-    "Novice's Athame",
-    "Novice's Hat",
-    "Novitiate Boots",
-    "Novitiate Hat",
-    "Novitiate Robe",
-    "Pixie",
-    "Plated Boots",
-    "Prop Mountains 2",
-    "Robe of Embers",
-    "Robe of Savvy",
-    "Roughspun Robe",
-    "Roughspun Shoes",
-    "Sapphyra's Vestment",
-    "Scarab",
-    "Scavenger's Staff of Sagas",
-    "Scholarly Robes",
-    "Senior Novice's Robe",
-    "Shoes of the Troll King",
-    "Simple Opal Ring",
-    "Snow Serpent",
-    "Snow Shield",
-    "Soft Boots",
-    "Soft Hood",
-    "Soot Stained Tunic",
-    "Storm Shield",
-    "Stormcaller's Robe",
-    "Stormforged Boots",
-    "Stormforged Mantle",
-    "Sturdy Blade",
-    "Sturdy Coat",
-    "Sturdy Hat",
-    "Sugar Donut",
-    "Sundae (Wizard City)",
-    "Swiftshadow Wings",
-    "Symmetrical Dirk",
-    "Thunder Snake",
-    "Time of Legend",
-    "Tough",
-    "Trollskin Cloak",
-    "Trollskin Hat",
-    "Veil of Sparks",
-    "Venomous Cowl",
-    "Vestment of Essence",
-    "Vestment of Tremors",
-    "Vrixx's Verdant Cowl",
-    "Windrunners"
+    {
+      "name": "Adventurer's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Adventurer's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Antiquated Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Antiquated Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Antique Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Antique Footguards",
+      "category": "Boots"
+    },
+    {
+      "name": "Antique Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Blightshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Blood Bat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Boots of Embers",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of Obstruction",
+      "category": "Boots"
+    },
+    {
+      "name": "Branded Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Branded Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Canvas Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Carbonshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Charged Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Charged Cover",
+      "category": "Hats"
+    },
+    {
+      "name": "Charged Kris",
+      "category": "Athames"
+    },
+    {
+      "name": "Charged Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
+    },
+    {
+      "name": "Chillcloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cloak of Calamity",
+      "category": "Robes"
+    },
+    {
+      "name": "Crown of Seasons",
+      "category": "Hats"
+    },
+    {
+      "name": "Dagger of Repose",
+      "category": "Athames"
+    },
+    {
+      "name": "Dark Sprite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dulled Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Durable Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Embershroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Fairy's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Fine Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fireguard Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Frost Wolf Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Frozen Pedestal",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fur-Lined Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Ghost Touch",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Goldleaf Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gummy Firecat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hallowed Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Hardened Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Healer's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Honed Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Honey Sickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hood of Storms",
+      "category": "Hats"
+    },
+    {
+      "name": "Imp",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Insulated Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Martyr's Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Martyr's Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Myth Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Novice's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Novice's Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Novitiate Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Novitiate Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Novitiate Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Pixie",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Plated Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Prop Mountains 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Robe of Embers",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of Savvy",
+      "category": "Robes"
+    },
+    {
+      "name": "Roughspun Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Roughspun Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Sapphyra's Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Scarab",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scavenger's Staff of Sagas",
+      "category": "Wands"
+    },
+    {
+      "name": "Scholarly Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Shoes of the Troll King",
+      "category": "Boots"
+    },
+    {
+      "name": "Simple Opal Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Soft Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Soft Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Soot Stained Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stormcaller's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Stormforged Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Stormforged Mantle",
+      "category": "Robes"
+    },
+    {
+      "name": "Sturdy Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Sturdy Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Sturdy Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Sugar Donut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sundae (Wizard City)",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Swiftshadow Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Symmetrical Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Thunder Snake",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Trollskin Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Trollskin Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Veil of Sparks",
+      "category": "Hats"
+    },
+    {
+      "name": "Venomous Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Vestment of Essence",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Tremors",
+      "category": "Robes"
+    },
+    {
+      "name": "Vrixx's Verdant Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Windrunners",
+      "category": "Boots"
+    }
   ],
   "authors": "BartleBot",
   "options": [

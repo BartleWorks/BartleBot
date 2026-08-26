@@ -8,136 +8,464 @@
   "recovery_state": "state_10",
   "start_location": "Graveholm",
   "drops": [
-    "2 Outsider Relic",
-    "Ammut",
-    "Anubis",
-    "Balance Blocking Pin (150, Death)",
-    "Balance Blocking Pin (150, Fire)",
-    "Balance Blocking Pin (150, Ice)",
-    "Balance Blocking Pin (150, Life)",
-    "Balance Blocking Pin (150, Myth)",
-    "Balance Blocking Pin (150, Storm)",
-    "Balance Blocking Pin (160, Death)",
-    "Balance Blocking Pin (160, Fire)",
-    "Balance Blocking Pin (160, Ice)",
-    "Balance Blocking Pin (160, Life)",
-    "Balance Blocking Pin (160, Myth)",
-    "Balance Blocking Pin (160, Storm)",
-    "Balance Mending Pin (170)",
-    "Balance Mending Pin (180)",
-    "Balance Resist Pin (140, Death)",
-    "Balance Resist Pin (140, Fire)",
-    "Balance Resist Pin (140, Ice)",
-    "Balance Resist Pin (140, Life)",
-    "Balance Resist Pin (140, Myth)",
-    "Balance Resist Pin (140, Storm)",
-    "Barbarian's Saga",
-    "Blast Off!",
-    "Bunyip's Rage",
-    "Chameleon Clash",
-    "Chilling Abomination Ring",
-    "Count Croakula",
-    "Dark & Stormy",
-    "Death Blocking Pin (150, Ice)",
-    "Death Blocking Pin (150, Myth)",
-    "Death Blocking Pin (160, Balance)",
-    "Death Blocking Pin (160, Ice)",
-    "Death Blocking Pin (160, Myth)",
-    "Death Resist Pin (150, Balance)",
-    "Death Resist Pin (150, Ice)",
-    "Death Resist Pin (150, Myth)",
-    "Deathly Depths",
-    "Doomed Abomination Ring",
-    "Drop Bear Fury",
-    "Fire Blocking Pin (150, Life)",
-    "Fire Blocking Pin (150, Storm)",
-    "Fire Blocking Pin (160, Balance)",
-    "Fire Blocking Pin (160, Life)",
-    "Fire Blocking Pin (160, Storm)",
-    "Fire Mending Pin (170)",
-    "Fire Mending Pin (180)",
-    "Fire Resist Pin (140, Balance)",
-    "Fire Resist Pin (140, Life)",
-    "Fire Resist Pin (140, Storm)",
-    "Freeze Ray",
-    "Glimpse of Infinity",
-    "Gravestorm",
-    "Grim Reader",
-    "Heqet",
-    "Ice Blocking Pin (150, Fire)",
-    "Ice Blocking Pin (150, Myth)",
-    "Ice Blocking Pin (160, Balance)",
-    "Ice Blocking Pin (160, Fire)",
-    "Ice Blocking Pin (160, Myth)",
-    "Ice Resist Pin (140, Balance)",
-    "Ice Resist Pin (140, Fire)",
-    "Ice Resist Pin (140, Myth)",
-    "Improbable Gaze",
-    "Legendary Socket Wrench",
-    "Life Blocking Pin (150, Death)",
-    "Life Blocking Pin (150, Storm)",
-    "Life Blocking Pin (160, Balance)",
-    "Life Blocking Pin (160, Death)",
-    "Life Blocking Pin (160, Storm)",
-    "Life Mending Pin (170)",
-    "Life Mending Pin (180)",
-    "Life Resist Pin (140, Balance)",
-    "Life Resist Pin (140, Death)",
-    "Life Resist Pin (140, Storm)",
-    "Lord of the Jungle",
-    "Mortality",
-    "Myth Blocking Pin (150, Fire)",
-    "Myth Blocking Pin (150, Life)",
-    "Myth Blocking Pin (160, Balance)",
-    "Myth Blocking Pin (160, Fire)",
-    "Myth Blocking Pin (160, Life)",
-    "Myth Mending Pin (170)",
-    "Myth Mending Pin (180)",
-    "Myth Resist Pin (140, Balance)",
-    "Myth Resist Pin (140, Fire)",
-    "Myth Resist Pin (140, Life)",
-    "Mythic Abomination Ring",
-    "Old One's Endgame",
-    "Outsider Relic",
-    "Phantasmania!",
-    "Rainbow Serpent",
-    "Sanguine Abomination Ring",
-    "Scales of Destiny",
-    "Scary Abomination Ring",
-    "Scholomantic Death Ring",
-    "Scholomantic Destructive Ring",
-    "Scholomantic Devilish Ring",
-    "Scholomantic Fortune Ring",
-    "Scholomantic Justice Ring",
-    "Scholomantic Strength Ring",
-    "Scholomantic Worldly Ring",
-    "Shocking Abomination Ring",
-    "Shu",
-    "Starspawn",
-    "Storm Blocking Pin (150, Death)",
-    "Storm Blocking Pin (150, Ice)",
-    "Storm Blocking Pin (160, Balance)",
-    "Storm Blocking Pin (160, Death)",
-    "Storm Blocking Pin (160, Ice)",
-    "Storm Mending Pin (160)",
-    "Storm Mending Pin (170)",
-    "Storm Resist Pin (130, Death)",
-    "Storm Resist Pin (130, Ice)",
-    "Storm Resist Pin (160, Balance)",
-    "Storm Resist Pin (160, Death)",
-    "Storm Resist Pin (160, Ice)",
-    "Taweret",
-    "Tense Abomination Ring",
-    "The Chariot",
-    "The Emperor",
-    "The Hierophant",
-    "The Tower",
-    "The World",
-    "Thoth",
-    "Tree of Strife",
-    "Wheel of Fortune",
-    "Wobbegong Frenzy",
-    "Zand the Bandit"
+    {
+      "name": "2 Outsider Relic"
+    },
+    {
+      "name": "Ammut"
+    },
+    {
+      "name": "Anubis"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Death)",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Fire)",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Ice)",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Life)",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Myth)",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Storm)",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Death)",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Fire)",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Ice)",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Life)",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Myth)",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Storm)",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Mending Pin (170)"
+    },
+    {
+      "name": "Balance Mending Pin (180)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Death)",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Fire)",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Ice)",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Life)",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Myth)",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Storm)",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Barbarian's Saga"
+    },
+    {
+      "name": "Blast Off!"
+    },
+    {
+      "name": "Bunyip's Rage"
+    },
+    {
+      "name": "Chameleon Clash"
+    },
+    {
+      "name": "Chilling Abomination Ring"
+    },
+    {
+      "name": "Count Croakula"
+    },
+    {
+      "name": "Dark & Stormy"
+    },
+    {
+      "name": "Death Blocking Pin (150, Ice)",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (150, Myth)",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Balance)",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Ice)",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Myth)",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Resist Pin (150, Balance)",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Death Resist Pin (150, Ice)",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Death Resist Pin (150, Myth)",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Deathly Depths"
+    },
+    {
+      "name": "Doomed Abomination Ring"
+    },
+    {
+      "name": "Drop Bear Fury"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Life)",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Storm)",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Balance)",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Life)",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Storm)",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Mending Pin (170)"
+    },
+    {
+      "name": "Fire Mending Pin (180)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Balance)",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Life)",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Storm)",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Freeze Ray"
+    },
+    {
+      "name": "Glimpse of Infinity"
+    },
+    {
+      "name": "Gravestorm"
+    },
+    {
+      "name": "Grim Reader"
+    },
+    {
+      "name": "Heqet"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Fire)",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Myth)",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Balance)",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Fire)",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Myth)",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Balance)",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Fire)",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Myth)",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Improbable Gaze"
+    },
+    {
+      "name": "Legendary Socket Wrench"
+    },
+    {
+      "name": "Life Blocking Pin (150, Death)",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (150, Storm)",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Balance)",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Death)",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Storm)",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Mending Pin (170)"
+    },
+    {
+      "name": "Life Mending Pin (180)"
+    },
+    {
+      "name": "Life Resist Pin (140, Balance)",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Resist Pin (140, Death)",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Resist Pin (140, Storm)",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Lord of the Jungle"
+    },
+    {
+      "name": "Mortality"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Fire)",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Life)",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Balance)",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Fire)",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Life)",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Mending Pin (170)"
+    },
+    {
+      "name": "Myth Mending Pin (180)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Balance)",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Fire)",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Life)",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Mythic Abomination Ring"
+    },
+    {
+      "name": "Old One's Endgame"
+    },
+    {
+      "name": "Outsider Relic"
+    },
+    {
+      "name": "Phantasmania!"
+    },
+    {
+      "name": "Rainbow Serpent"
+    },
+    {
+      "name": "Sanguine Abomination Ring"
+    },
+    {
+      "name": "Scales of Destiny"
+    },
+    {
+      "name": "Scary Abomination Ring"
+    },
+    {
+      "name": "Scholomantic Death Ring"
+    },
+    {
+      "name": "Scholomantic Destructive Ring"
+    },
+    {
+      "name": "Scholomantic Devilish Ring"
+    },
+    {
+      "name": "Scholomantic Fortune Ring"
+    },
+    {
+      "name": "Scholomantic Justice Ring"
+    },
+    {
+      "name": "Scholomantic Strength Ring"
+    },
+    {
+      "name": "Scholomantic Worldly Ring"
+    },
+    {
+      "name": "Shocking Abomination Ring"
+    },
+    {
+      "name": "Shu"
+    },
+    {
+      "name": "Starspawn"
+    },
+    {
+      "name": "Storm Blocking Pin (150, Death)",
+      "match_name": "Storm Blocking Pin (150)"
+    },
+    {
+      "name": "Storm Blocking Pin (150, Ice)",
+      "match_name": "Storm Blocking Pin (150)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Balance)",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Death)",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Ice)",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Mending Pin (160)"
+    },
+    {
+      "name": "Storm Mending Pin (170)"
+    },
+    {
+      "name": "Storm Resist Pin (130, Death)",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (130, Ice)",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Balance)",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Death)",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Ice)",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Taweret"
+    },
+    {
+      "name": "Tense Abomination Ring"
+    },
+    {
+      "name": "The Chariot"
+    },
+    {
+      "name": "The Emperor"
+    },
+    {
+      "name": "The Hierophant"
+    },
+    {
+      "name": "The Tower"
+    },
+    {
+      "name": "The World"
+    },
+    {
+      "name": "Thoth"
+    },
+    {
+      "name": "Tree of Strife"
+    },
+    {
+      "name": "Wheel of Fortune"
+    },
+    {
+      "name": "Wobbegong Frenzy"
+    },
+    {
+      "name": "Zand the Bandit"
+    }
   ],
   "authors": "BartleBot",
   "options": [

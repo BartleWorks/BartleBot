@@ -9,9 +9,15 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Basilica",
   "drops": [
-    "Level 50 hat",
-    "robe",
-    "and boots"
+    {
+      "name": "Level 50 hat"
+    },
+    {
+      "name": "robe"
+    },
+    {
+      "name": "and boots"
+    }
   ],
   "authors": "BartleBot",
   "options": [

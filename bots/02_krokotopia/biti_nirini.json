@@ -9,169 +9,495 @@
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Krokotopia",
   "drops": [
-    "Ancient Circlet",
-    "Ancient Cloak",
-    "Ancient Sandals",
-    "Balance-Eye Citrine",
-    "Band of the Skies",
-    "Biti Nirini's Citrine Deck",
-    "Biti Nirini's Hood",
-    "Biti Nirini's Torrid Boots",
-    "Biti's Flamelicked Staff",
-    "Blazing Boots",
-    "Blazing Vest",
-    "Blood Bat Peridot",
-    "Boots of the Cyclone",
-    "Canny Opal",
-    "Cap of the Oasis",
-    "Charred Cowl",
-    "Chipped Mana Opal +10",
-    "Chipped Mana Opal +11",
-    "Chipped PIP Opal +1%",
-    "Cloak of Prediction",
-    "Copper",
-    "Cowl of Summertime",
-    "Cracked Accurate Amethyst +2%",
-    "Cracked Accurate Sapphire +2%",
-    "Cracked Damage Amethyst +2",
-    "Cracked Damage Citrine +2",
-    "Cracked Damage Peridot +2",
-    "Cracked Damage Ruby +2",
-    "Cracked Defense Amethyst +12",
-    "Cracked Defense Amethyst +7",
-    "Cracked Defense Citrine +11",
-    "Cracked Defense Citrine +12",
-    "Cracked Defense Citrine +7",
-    "Cracked Defense Citrine +8",
-    "Cracked Defense Jade +12",
-    "Cracked Defense Jade +8",
-    "Cracked Defense Onyx +12",
-    "Cracked Defense Onyx +7",
-    "Cracked Defense Onyx +8",
-    "Cracked Defense Opal +3",
-    "Cracked Defense Opal +4",
-    "Cracked Defense Peridot +12",
-    "Cracked Defense Peridot +8",
-    "Cracked Defense Ruby +12",
-    "Cracked Defense Ruby +8",
-    "Cracked Healing Opal +1%",
-    "Cracked Health Opal +11",
-    "Cracked Health Opal +12",
-    "Cracked Mana Opal +8",
-    "Cracked Mending Opal +1%",
-    "Cracked Resilient Opal +1%",
-    "Cracker",
-    "Cryptkeeper's Band",
-    "Cryptkeeper's Cloak",
-    "Cryptkeeper's Shoes",
-    "Crystalline Helm",
-    "Crystalline Vest",
-    "Cyclops",
-    "Dagger of Talent",
-    "Dark Sprite Onyx",
-    "Dead End Opal",
-    "Death Trap",
-    "Death-Away Onyx",
-    "Death-Boon Onyx",
-    "Death-Shot Onyx",
-    "Dirt Post Opal",
-    "Durable Boots",
-    "Durable Hood",
-    "Effervescent Opal",
-    "Evil Snowman",
-    "Evil Snowman (Tier 2b)",
-    "Fire Cat",
-    "Fire Cat (Tier 2b)",
-    "Fire Cat Ruby",
-    "Fire Elf",
-    "Fire Elf",
-    "Fire Elf (Tier 2b)",
-    "Fire Trap",
-    "Flowering Band",
-    "Flowering Mantle",
-    "Forceful Opal",
-    "Frigid Vestment",
-    "Frost Beetle",
-    "Frost Beetle (Tier 2b)",
-    "Frost Beetle Sapphire",
-    "Ghoul",
-    "Giant",
-    "Glacial Slippers",
-    "Glittering Dagger",
-    "Green Grapes",
-    "Hat of Figments",
-    "Healthy Opal",
-    "Helm of Ingenuity",
-    "Helm of Refuge",
-    "Helm of the Cyclone",
-    "Hood of the Phantom",
-    "Ice-Away Sapphire",
-    "Ice-Boon Sapphire",
-    "Ice-Giver Sapphire",
-    "Imp Jade",
-    "Initiate's Uniform",
-    "Iron",
-    "Krok Fire Tablet",
-    "Krok Hourglass Pillar",
-    "Krokotillian",
-    "Krokotopia Dance Theme",
-    "Leather Straps",
-    "Lightning Bats",
-    "Lightning Bats",
-    "Lightning Bats (Tier 2b)",
-    "Locust Swarm",
-    "Locust Swarm (Tier 2b)",
-    "Mana Boost Opal",
-    "Mutate Cat (Storm)",
-    "Myth-Boon Peridot",
-    "Nettle Root",
-    "Nickel",
-    "Novitiate Hat",
-    "Pacify",
-    "Pink Dandelion",
-    "Pixie",
-    "Power Play",
-    "Pyrite",
-    "Rally Opal",
-    "Rugged Opal",
-    "Sandstorm",
-    "Scarab",
-    "Scarab (Tier 2b)",
-    "Scarab Citrine",
-    "Scorpion",
-    "Scorpion (Tier 2b)",
-    "Shoes of Adaptation",
-    "Slippers of Burning Sands",
-    "Slippers of the Badlands",
-    "Sniper",
-    "Snow Serpent",
-    "Snow Serpent",
-    "Snow Serpent (Tier 2b)",
-    "Snowflake Cowl",
-    "Soothsayer's Sandals",
-    "Sphinx's Footwraps",
-    "Spirit Armor",
-    "Storm Shark",
-    "Storm Shark (Tier 2b)",
-    "Storm Trap",
-    "Storm-Giver Amethyst",
-    "Storm-Shot Amethyst",
-    "Sunbird",
-    "Sunbird (Tier 2b)",
-    "Superstitious Band",
-    "Sweltering Helm",
-    "Tempest Cowl",
-    "Threadbare Boots",
-    "Thunder Snake",
-    "Thunder Snake (Tier 2b)",
-    "Thunder Snake Amethyst",
-    "Time of Legend",
-    "Tiny Fish",
-    "Troll",
-    "Tunic of Tall Tales",
-    "Ultra Energy Opal",
-    "Vampire",
-    "Vest of the Cyclone"
+    {
+      "name": "Ancient Circlet"
+    },
+    {
+      "name": "Ancient Cloak"
+    },
+    {
+      "name": "Ancient Sandals"
+    },
+    {
+      "name": "Balance-Eye Citrine"
+    },
+    {
+      "name": "Band of the Skies"
+    },
+    {
+      "name": "Biti Nirini's Citrine Deck"
+    },
+    {
+      "name": "Biti Nirini's Hood"
+    },
+    {
+      "name": "Biti Nirini's Torrid Boots"
+    },
+    {
+      "name": "Biti's Flamelicked Staff"
+    },
+    {
+      "name": "Blazing Boots"
+    },
+    {
+      "name": "Blazing Vest"
+    },
+    {
+      "name": "Blood Bat Peridot"
+    },
+    {
+      "name": "Boots of the Cyclone"
+    },
+    {
+      "name": "Canny Opal"
+    },
+    {
+      "name": "Cap of the Oasis"
+    },
+    {
+      "name": "Charred Cowl"
+    },
+    {
+      "name": "Chipped Mana Opal +10"
+    },
+    {
+      "name": "Chipped Mana Opal +11"
+    },
+    {
+      "name": "Chipped PIP Opal +1%"
+    },
+    {
+      "name": "Cloak of Prediction"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cowl of Summertime"
+    },
+    {
+      "name": "Cracked Accurate Amethyst +2%"
+    },
+    {
+      "name": "Cracked Accurate Sapphire +2%"
+    },
+    {
+      "name": "Cracked Damage Amethyst +2"
+    },
+    {
+      "name": "Cracked Damage Citrine +2"
+    },
+    {
+      "name": "Cracked Damage Peridot +2"
+    },
+    {
+      "name": "Cracked Damage Ruby +2"
+    },
+    {
+      "name": "Cracked Defense Amethyst +12"
+    },
+    {
+      "name": "Cracked Defense Amethyst +7"
+    },
+    {
+      "name": "Cracked Defense Citrine +11"
+    },
+    {
+      "name": "Cracked Defense Citrine +12"
+    },
+    {
+      "name": "Cracked Defense Citrine +7"
+    },
+    {
+      "name": "Cracked Defense Citrine +8"
+    },
+    {
+      "name": "Cracked Defense Jade +12"
+    },
+    {
+      "name": "Cracked Defense Jade +8"
+    },
+    {
+      "name": "Cracked Defense Onyx +12"
+    },
+    {
+      "name": "Cracked Defense Onyx +7"
+    },
+    {
+      "name": "Cracked Defense Onyx +8"
+    },
+    {
+      "name": "Cracked Defense Opal +3"
+    },
+    {
+      "name": "Cracked Defense Opal +4"
+    },
+    {
+      "name": "Cracked Defense Peridot +12"
+    },
+    {
+      "name": "Cracked Defense Peridot +8"
+    },
+    {
+      "name": "Cracked Defense Ruby +12"
+    },
+    {
+      "name": "Cracked Defense Ruby +8"
+    },
+    {
+      "name": "Cracked Healing Opal +1%"
+    },
+    {
+      "name": "Cracked Health Opal +11"
+    },
+    {
+      "name": "Cracked Health Opal +12"
+    },
+    {
+      "name": "Cracked Mana Opal +8"
+    },
+    {
+      "name": "Cracked Mending Opal +1%"
+    },
+    {
+      "name": "Cracked Resilient Opal +1%"
+    },
+    {
+      "name": "Cracker"
+    },
+    {
+      "name": "Cryptkeeper's Band"
+    },
+    {
+      "name": "Cryptkeeper's Cloak"
+    },
+    {
+      "name": "Cryptkeeper's Shoes"
+    },
+    {
+      "name": "Crystalline Helm"
+    },
+    {
+      "name": "Crystalline Vest"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Dagger of Talent"
+    },
+    {
+      "name": "Dark Sprite Onyx"
+    },
+    {
+      "name": "Dead End Opal"
+    },
+    {
+      "name": "Death Trap"
+    },
+    {
+      "name": "Death-Away Onyx"
+    },
+    {
+      "name": "Death-Boon Onyx"
+    },
+    {
+      "name": "Death-Shot Onyx"
+    },
+    {
+      "name": "Dirt Post Opal"
+    },
+    {
+      "name": "Durable Boots"
+    },
+    {
+      "name": "Durable Hood"
+    },
+    {
+      "name": "Effervescent Opal"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman (Tier 2b)"
+    },
+    {
+      "name": "Fire Cat"
+    },
+    {
+      "name": "Fire Cat (Tier 2b)"
+    },
+    {
+      "name": "Fire Cat Ruby"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire Elf"
+    },
+    {
+      "name": "Fire Elf (Tier 2b)"
+    },
+    {
+      "name": "Fire Trap"
+    },
+    {
+      "name": "Flowering Band"
+    },
+    {
+      "name": "Flowering Mantle"
+    },
+    {
+      "name": "Forceful Opal"
+    },
+    {
+      "name": "Frigid Vestment"
+    },
+    {
+      "name": "Frost Beetle"
+    },
+    {
+      "name": "Frost Beetle (Tier 2b)"
+    },
+    {
+      "name": "Frost Beetle Sapphire"
+    },
+    {
+      "name": "Ghoul"
+    },
+    {
+      "name": "Giant"
+    },
+    {
+      "name": "Glacial Slippers"
+    },
+    {
+      "name": "Glittering Dagger"
+    },
+    {
+      "name": "Green Grapes"
+    },
+    {
+      "name": "Hat of Figments"
+    },
+    {
+      "name": "Healthy Opal"
+    },
+    {
+      "name": "Helm of Ingenuity"
+    },
+    {
+      "name": "Helm of Refuge"
+    },
+    {
+      "name": "Helm of the Cyclone"
+    },
+    {
+      "name": "Hood of the Phantom"
+    },
+    {
+      "name": "Ice-Away Sapphire"
+    },
+    {
+      "name": "Ice-Boon Sapphire"
+    },
+    {
+      "name": "Ice-Giver Sapphire"
+    },
+    {
+      "name": "Imp Jade"
+    },
+    {
+      "name": "Initiate's Uniform"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Krok Fire Tablet"
+    },
+    {
+      "name": "Krok Hourglass Pillar"
+    },
+    {
+      "name": "Krokotillian"
+    },
+    {
+      "name": "Krokotopia Dance Theme"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Lightning Bats"
+    },
+    {
+      "name": "Lightning Bats (Tier 2b)"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Locust Swarm (Tier 2b)"
+    },
+    {
+      "name": "Mana Boost Opal"
+    },
+    {
+      "name": "Mutate Cat (Storm)"
+    },
+    {
+      "name": "Myth-Boon Peridot"
+    },
+    {
+      "name": "Nettle Root"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Novitiate Hat"
+    },
+    {
+      "name": "Pacify"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Pixie"
+    },
+    {
+      "name": "Power Play"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Rally Opal"
+    },
+    {
+      "name": "Rugged Opal"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scarab (Tier 2b)"
+    },
+    {
+      "name": "Scarab Citrine"
+    },
+    {
+      "name": "Scorpion"
+    },
+    {
+      "name": "Scorpion (Tier 2b)"
+    },
+    {
+      "name": "Shoes of Adaptation"
+    },
+    {
+      "name": "Slippers of Burning Sands"
+    },
+    {
+      "name": "Slippers of the Badlands"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Snow Serpent"
+    },
+    {
+      "name": "Snow Serpent (Tier 2b)"
+    },
+    {
+      "name": "Snowflake Cowl"
+    },
+    {
+      "name": "Soothsayer's Sandals"
+    },
+    {
+      "name": "Sphinx's Footwraps"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm Shark (Tier 2b)"
+    },
+    {
+      "name": "Storm Trap"
+    },
+    {
+      "name": "Storm-Giver Amethyst"
+    },
+    {
+      "name": "Storm-Shot Amethyst"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunbird (Tier 2b)"
+    },
+    {
+      "name": "Superstitious Band"
+    },
+    {
+      "name": "Sweltering Helm"
+    },
+    {
+      "name": "Tempest Cowl"
+    },
+    {
+      "name": "Threadbare Boots"
+    },
+    {
+      "name": "Thunder Snake"
+    },
+    {
+      "name": "Thunder Snake (Tier 2b)"
+    },
+    {
+      "name": "Thunder Snake Amethyst"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tiny Fish"
+    },
+    {
+      "name": "Troll"
+    },
+    {
+      "name": "Tunic of Tall Tales"
+    },
+    {
+      "name": "Ultra Energy Opal"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vest of the Cyclone"
+    }
   ],
   "authors": "BartleBot",
   "options": [

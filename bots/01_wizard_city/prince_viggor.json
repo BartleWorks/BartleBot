@@ -10,58 +10,162 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Alchemical Crystals",
-    "Alchemical Extract",
-    "Alchemical reagents",
-    "Alchemical Salts",
-    "Antique Coins",
-    "Beast Wellington",
-    "Black Pearl",
-    "Blood Moss",
-    "Boom Shroom",
-    "Brain Jar",
-    "Bread Fruit Bush",
-    "Bronze Gear",
-    "Cobalt",
-    "Crab Alley Chaise",
-    "Daybreaker",
-    "Deadly Ninja Fig",
-    "Decimatoes",
-    "Discord Grape Jelly",
-    "Dragonspyre Vanguard's Boots",
-    "Ectoplasm",
-    "Evil Magma Peas",
-    "Face Palm",
-    "Fish",
-    "Frozen Fly Trap",
-    "Ginormous Apple",
-    "Mystic Pizza",
-    "Nickel",
-    "Nightbringer",
-    "Pizza",
-    "Red Bell Pepper",
-    "Rock and Roll Candy",
-    "Satyr Chow",
-    "Scales",
-    "Snow Apples",
-    "Spider Silk",
-    "Spring",
-    "Squash",
-    "Tin",
-    "Vanguard's Balanced Boots",
-    "Vanguard's Deadly Boots",
-    "Vanguard's Fiery Boots",
-    "Vanguard's helms",
-    "Vanguard's Icy Boots",
-    "Vanguard's Mythic Boots",
-    "Vanguard's Shocking Boots",
-    "Vanguard's Vibrant Boots",
-    "Veggie Juice",
-    "Watermelon Slice",
-    "WC Catacombs Combat Theme",
-    "WC Catacombs Theme",
-    "WC Drains Combat Theme",
-    "White Desparagus"
+    {
+      "name": "Alchemical Crystals"
+    },
+    {
+      "name": "Alchemical Extract"
+    },
+    {
+      "name": "Alchemical reagents"
+    },
+    {
+      "name": "Alchemical Salts"
+    },
+    {
+      "name": "Antique Coins"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Black Pearl"
+    },
+    {
+      "name": "Blood Moss"
+    },
+    {
+      "name": "Boom Shroom"
+    },
+    {
+      "name": "Brain Jar"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Crab Alley Chaise"
+    },
+    {
+      "name": "Daybreaker"
+    },
+    {
+      "name": "Deadly Ninja Fig"
+    },
+    {
+      "name": "Decimatoes"
+    },
+    {
+      "name": "Discord Grape Jelly"
+    },
+    {
+      "name": "Dragonspyre Vanguard's Boots"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Face Palm"
+    },
+    {
+      "name": "Fish"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Ginormous Apple"
+    },
+    {
+      "name": "Mystic Pizza"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Nightbringer"
+    },
+    {
+      "name": "Pizza"
+    },
+    {
+      "name": "Red Bell Pepper"
+    },
+    {
+      "name": "Rock and Roll Candy"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Snow Apples"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Spring"
+    },
+    {
+      "name": "Squash"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Vanguard's Balanced Boots"
+    },
+    {
+      "name": "Vanguard's Deadly Boots"
+    },
+    {
+      "name": "Vanguard's Fiery Boots"
+    },
+    {
+      "name": "Vanguard's helms"
+    },
+    {
+      "name": "Vanguard's Icy Boots"
+    },
+    {
+      "name": "Vanguard's Mythic Boots"
+    },
+    {
+      "name": "Vanguard's Shocking Boots"
+    },
+    {
+      "name": "Vanguard's Vibrant Boots"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Watermelon Slice"
+    },
+    {
+      "name": "WC Catacombs Combat Theme"
+    },
+    {
+      "name": "WC Catacombs Theme"
+    },
+    {
+      "name": "WC Drains Combat Theme"
+    },
+    {
+      "name": "White Desparagus"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -10,96 +10,277 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
-    "Angora Bunny Ears",
-    "Ape Grapes",
-    "Avalon Abbey Road Theme",
-    "Avalon Combat Theme",
-    "Avalon Glorious Theme",
-    "Avalon Haunting Theme",
-    "Avalon Main Theme",
-    "Avalon Tense Theme",
-    "Avalon Wyrd Theme",
-    "Black Lotus",
-    "Blizzard Lizard Sapphire",
-    "Blue Huckleberries",
-    "Blue Vine Wallpaper",
-    "Bowl of Tomatoes",
-    "Brass",
-    "Broken Palm Tree",
-    "Broken Stump",
-    "Bronze",
-    "Bronze Gear",
-    "Caramel Popcorn",
-    "Cauliflowers",
-    "Celestian Tree Sprig",
-    "Clear Accurate Sapphire +9%",
-    "Clear Blocking Ruby +9",
-    "Clear Critical Citrine +10",
-    "Clear Damage Onyx +19",
-    "Cobalt",
-    "Cross Section Floor Tile",
-    "Crunch Apple",
-    "Deadly Helephant Ears",
-    "Death-Away Onyx",
-    "Delicious Cookie",
-    "Elm Tree",
-    "Fire Bush",
-    "Fire Cracker",
-    "Flapjacks",
-    "Flowering Celestian Tree",
-    "Frost Flower",
-    "Glowing Rock Candy",
-    "Green Foodcart",
-    "Greenwarden's Energetic Boots",
-    "Greenwarden's Energetic Mask",
-    "Greenwarden's Energetic Shroud",
-    "Greenwarden's Energetic Staff",
-    "Gummy Bloodbat",
-    "Ice Trap Sapphire (Triangle)",
-    "Large Cypress Tree",
-    "Large Evergreen Tree",
-    "Large Fir Tree",
-    "Large Fish",
-    "Large Willow Tree",
-    "Leaning Palm Tree",
-    "Maple Tree",
-    "Mass Infection Onyx",
-    "Meat Soup",
-    "Medium Evergreen Tree",
-    "Medium Fir Tree",
-    "Medium Pine Tree",
-    "Nickel",
-    "Ninja Fig",
-    "Ninja Pig Opal",
-    "Red Huckleberries",
-    "Red Leaf Tree",
-    "Red Mandrake",
-    "Redskin Peanut",
-    "Rude Goblin",
-    "Shh! Opal",
-    "Small Bush",
-    "Small Cypress Tree",
-    "Small Maple Tree",
-    "Spicy Drumstick",
-    "Square Root",
-    "Stone Block Wallpaper",
-    "Strawberry Cupcake",
-    "Stucco Wallpaper",
-    "Submarine Sandwich",
-    "Sunflower",
-    "Tall Palm Tree",
-    "Tall Pumpkin",
-    "Tasty Biscuit",
-    "Tree Fountain",
-    "Unstoppable Talent Opal",
-    "Vestment of Chaos",
-    "Vestment of Earth",
-    "Vestment of Ember",
-    "Vestment of Equilibrium",
-    "Vestment of Frost",
-    "Wheat Cracker",
-    "Wooden Well",
-    "Yellow Flowers Wallpaper"
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Ape Grapes"
+    },
+    {
+      "name": "Avalon Abbey Road Theme"
+    },
+    {
+      "name": "Avalon Combat Theme"
+    },
+    {
+      "name": "Avalon Glorious Theme"
+    },
+    {
+      "name": "Avalon Haunting Theme"
+    },
+    {
+      "name": "Avalon Main Theme"
+    },
+    {
+      "name": "Avalon Tense Theme"
+    },
+    {
+      "name": "Avalon Wyrd Theme"
+    },
+    {
+      "name": "Black Lotus"
+    },
+    {
+      "name": "Blizzard Lizard Sapphire"
+    },
+    {
+      "name": "Blue Huckleberries"
+    },
+    {
+      "name": "Blue Vine Wallpaper"
+    },
+    {
+      "name": "Bowl of Tomatoes"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Broken Palm Tree"
+    },
+    {
+      "name": "Broken Stump"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Caramel Popcorn"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Celestian Tree Sprig"
+    },
+    {
+      "name": "Clear Accurate Sapphire +9%"
+    },
+    {
+      "name": "Clear Blocking Ruby +9"
+    },
+    {
+      "name": "Clear Critical Citrine +10"
+    },
+    {
+      "name": "Clear Damage Onyx +19"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Cross Section Floor Tile"
+    },
+    {
+      "name": "Crunch Apple"
+    },
+    {
+      "name": "Deadly Helephant Ears"
+    },
+    {
+      "name": "Death-Away Onyx"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Elm Tree"
+    },
+    {
+      "name": "Fire Bush"
+    },
+    {
+      "name": "Fire Cracker"
+    },
+    {
+      "name": "Flapjacks"
+    },
+    {
+      "name": "Flowering Celestian Tree"
+    },
+    {
+      "name": "Frost Flower"
+    },
+    {
+      "name": "Glowing Rock Candy"
+    },
+    {
+      "name": "Green Foodcart"
+    },
+    {
+      "name": "Greenwarden's Energetic Boots"
+    },
+    {
+      "name": "Greenwarden's Energetic Mask"
+    },
+    {
+      "name": "Greenwarden's Energetic Shroud"
+    },
+    {
+      "name": "Greenwarden's Energetic Staff"
+    },
+    {
+      "name": "Gummy Bloodbat"
+    },
+    {
+      "name": "Ice Trap Sapphire (Triangle)",
+      "match_name": "Ice Trap Sapphire"
+    },
+    {
+      "name": "Large Cypress Tree"
+    },
+    {
+      "name": "Large Evergreen Tree"
+    },
+    {
+      "name": "Large Fir Tree"
+    },
+    {
+      "name": "Large Fish"
+    },
+    {
+      "name": "Large Willow Tree"
+    },
+    {
+      "name": "Leaning Palm Tree"
+    },
+    {
+      "name": "Maple Tree"
+    },
+    {
+      "name": "Mass Infection Onyx"
+    },
+    {
+      "name": "Meat Soup"
+    },
+    {
+      "name": "Medium Evergreen Tree"
+    },
+    {
+      "name": "Medium Fir Tree"
+    },
+    {
+      "name": "Medium Pine Tree"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Fig"
+    },
+    {
+      "name": "Ninja Pig Opal"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Red Leaf Tree"
+    },
+    {
+      "name": "Red Mandrake"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Rude Goblin"
+    },
+    {
+      "name": "Shh! Opal"
+    },
+    {
+      "name": "Small Bush"
+    },
+    {
+      "name": "Small Cypress Tree"
+    },
+    {
+      "name": "Small Maple Tree"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Square Root"
+    },
+    {
+      "name": "Stone Block Wallpaper"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Stucco Wallpaper"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sunflower"
+    },
+    {
+      "name": "Tall Palm Tree"
+    },
+    {
+      "name": "Tall Pumpkin"
+    },
+    {
+      "name": "Tasty Biscuit"
+    },
+    {
+      "name": "Tree Fountain"
+    },
+    {
+      "name": "Unstoppable Talent Opal"
+    },
+    {
+      "name": "Vestment of Chaos"
+    },
+    {
+      "name": "Vestment of Earth"
+    },
+    {
+      "name": "Vestment of Ember"
+    },
+    {
+      "name": "Vestment of Equilibrium"
+    },
+    {
+      "name": "Vestment of Frost"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "Wooden Well"
+    },
+    {
+      "name": "Yellow Flowers Wallpaper"
+    }
   ],
   "authors": "BartleBot",
   "options": [

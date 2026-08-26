@@ -8,143 +8,418 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Krokotopia",
   "drops": [
-    "Ancient Rebus Headgear",
-    "Ancient Rebus Sandals",
-    "Ancient Rebus Vestment",
-    "Anubis' Cards of Veracity",
-    "Anubis' Crown of Judgment",
-    "Anubis' Staff of Redress",
-    "Anubis' Tunic of Judgment",
-    "Army of the Condemned Helm",
-    "Array of the Archaic Rebus",
-    "Baby Carrots",
-    "Biting Cold Broadsword",
-    "Blade of Anubis' Verdict",
-    "Blizzard Lizard Sapphire",
-    "Blood Hound",
-    "Bone",
-    "Boots of the Burning Scales",
-    "Boots of the Condemned",
-    "Boots of the Fire Sands",
-    "Boss Toad Peridot",
-    "Brass",
-    "Bronze",
-    "Bronze Gear",
-    "Burning Scales Headdress",
-    "Burning Scales Raiment",
-    "Case of the Virtuous Soul",
-    "Cat Bandit Opal",
-    "Cauliflowers",
-    "Cheese Broccoli",
-    "Chocolate Strawberry",
-    "Clear Blocking Hematite +10",
-    "Clear Blocking Onyx +10",
-    "Clear Blocking Opal +5",
-    "Clear Critical Jade +10",
-    "Clear Critical Onyx +10",
-    "Clear Critical Peridot +10",
-    "Clear Damage Ruby +19",
-    "Cobalt",
-    "Cracker",
-    "Crown of the Frozen Desert",
-    "Crown of the Sistrum",
-    "Crown of Upper Zigazag",
-    "Crystallize Sapphire",
-    "Dagger of the Cold Bones",
-    "Dagger of the Hidden Words",
-    "Deck of Sand Squalls",
-    "Deck of the Simmering Evil",
-    "Deep Mushroom",
-    "Desert Rain Mukluks",
-    "Detonate Ruby",
-    "Dull Critical Ruby +4",
-    "Dull Defense Jade +28",
-    "Dull Defense Ruby +28",
-    "Dune Storm Armor",
-    "Ectoplasm",
-    "Efreet",
-    "Evil Snow Peas",
-    "Fire Serpent",
-    "Footwraps of the Sistrum",
-    "Glowing Star Fruit",
-    "Greatsword of Adjudication",
-    "Greatsword of Redemption",
-    "Green Grapes",
-    "Greensleeves Jade",
-    "Gummy Firecat",
-    "Hands of Anubis Boots",
-    "Hands of Anubis Mantle",
-    "Hands of Anubis Staff",
-    "Hands of Anubis Uniform",
-    "Headgear of Dune Storms",
-    "Helm of the Ravenous Teeth",
-    "House of Scales Headdress",
-    "House of Scales Raiment",
-    "House of Scales Walkers",
-    "Ice-Giver Sapphire",
-    "Izft's Dirk of Incarnation",
-    "Jelly Baby",
-    "Key Limes",
-    "Kola Nuts",
-    "Kris of Thunderous Resolve",
-    "Krokotillian",
-    "Leather Straps",
-    "Life-Away Jade",
-    "Life-Giver Jade",
-    "Locust Swarm",
-    "Longblade of the Soul Eater",
-    "Lower Zigazag Headdress",
-    "Lower Zigazag Stalkers",
-    "Lower Zigazag Vestment",
-    "Merle's Whisker",
-    "Montante of the Immortals",
-    "Mote of Severity",
-    "Nettle Root",
-    "Nickel",
-    "Ore",
-    "Pipe Down! Opal",
-    "Plain Accurate Jade +7%",
-    "Plain Accurate Peridot +7%",
-    "Plain Critical Peridot +6",
-    "Plain Critical Sapphire +6",
-    "Plain Piercing Jade +3%",
-    "Plain Piercing Ruby +3%",
-    "Ra",
-    "Ravenous Teeth Garb",
-    "Ravenous Teeth Stompers",
-    "Rebus Breaker's Stave",
-    "Robes of the Fire Sands",
-    "Robes of the Frozen Desert",
-    "Robes of the Sistrum",
-    "Rod of the Burning Scales",
-    "Sandswells Greatblade",
-    "Scarab",
-    "Scorching Sands Greatsword",
-    "Scorpion",
-    "Shoes of Anubis' Judgment",
-    "Snap Dragon",
-    "Soul Devourer's Arcana (Triangle)",
-    "Soul Devourer's Footwraps",
-    "Soul Devourer's Greathelm",
-    "Soul Devourer's Tunic",
-    "Spider Silk",
-    "Stave of Cold Justice",
-    "Steel",
-    "Stone Colossus",
-    "Stone Skeleton Key",
-    "Stonewall Opal",
-    "Sugar Donut",
-    "Sunbird",
-    "Tin",
-    "Tiny Fish",
-    "Tunic of Upper Zigazag",
-    "Uniform of the Condemned",
-    "Upper Zigazag Striders",
-    "White Laugh-O-Dil",
-    "Wrath of Anubis Staff",
-    "Zigazag Desert Armor",
-    "Zigazag Desert Headgear",
-    "Zigazag Desert Mukluks"
+    {
+      "name": "Ancient Rebus Headgear"
+    },
+    {
+      "name": "Ancient Rebus Sandals"
+    },
+    {
+      "name": "Ancient Rebus Vestment"
+    },
+    {
+      "name": "Anubis' Cards of Veracity"
+    },
+    {
+      "name": "Anubis' Crown of Judgment"
+    },
+    {
+      "name": "Anubis' Staff of Redress"
+    },
+    {
+      "name": "Anubis' Tunic of Judgment"
+    },
+    {
+      "name": "Army of the Condemned Helm"
+    },
+    {
+      "name": "Array of the Archaic Rebus"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Biting Cold Broadsword"
+    },
+    {
+      "name": "Blade of Anubis' Verdict"
+    },
+    {
+      "name": "Blizzard Lizard Sapphire"
+    },
+    {
+      "name": "Blood Hound"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of the Burning Scales"
+    },
+    {
+      "name": "Boots of the Condemned"
+    },
+    {
+      "name": "Boots of the Fire Sands"
+    },
+    {
+      "name": "Boss Toad Peridot"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Burning Scales Headdress"
+    },
+    {
+      "name": "Burning Scales Raiment"
+    },
+    {
+      "name": "Case of the Virtuous Soul"
+    },
+    {
+      "name": "Cat Bandit Opal"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Cheese Broccoli"
+    },
+    {
+      "name": "Chocolate Strawberry"
+    },
+    {
+      "name": "Clear Blocking Hematite +10"
+    },
+    {
+      "name": "Clear Blocking Onyx +10"
+    },
+    {
+      "name": "Clear Blocking Opal +5"
+    },
+    {
+      "name": "Clear Critical Jade +10"
+    },
+    {
+      "name": "Clear Critical Onyx +10"
+    },
+    {
+      "name": "Clear Critical Peridot +10"
+    },
+    {
+      "name": "Clear Damage Ruby +19"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Cracker"
+    },
+    {
+      "name": "Crown of the Frozen Desert"
+    },
+    {
+      "name": "Crown of the Sistrum"
+    },
+    {
+      "name": "Crown of Upper Zigazag"
+    },
+    {
+      "name": "Crystallize Sapphire"
+    },
+    {
+      "name": "Dagger of the Cold Bones"
+    },
+    {
+      "name": "Dagger of the Hidden Words"
+    },
+    {
+      "name": "Deck of Sand Squalls"
+    },
+    {
+      "name": "Deck of the Simmering Evil"
+    },
+    {
+      "name": "Deep Mushroom"
+    },
+    {
+      "name": "Desert Rain Mukluks"
+    },
+    {
+      "name": "Detonate Ruby"
+    },
+    {
+      "name": "Dull Critical Ruby +4"
+    },
+    {
+      "name": "Dull Defense Jade +28"
+    },
+    {
+      "name": "Dull Defense Ruby +28"
+    },
+    {
+      "name": "Dune Storm Armor"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Efreet"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Fire Serpent"
+    },
+    {
+      "name": "Footwraps of the Sistrum"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Greatsword of Adjudication"
+    },
+    {
+      "name": "Greatsword of Redemption"
+    },
+    {
+      "name": "Green Grapes"
+    },
+    {
+      "name": "Greensleeves Jade"
+    },
+    {
+      "name": "Gummy Firecat"
+    },
+    {
+      "name": "Hands of Anubis Boots"
+    },
+    {
+      "name": "Hands of Anubis Mantle"
+    },
+    {
+      "name": "Hands of Anubis Staff"
+    },
+    {
+      "name": "Hands of Anubis Uniform"
+    },
+    {
+      "name": "Headgear of Dune Storms"
+    },
+    {
+      "name": "Helm of the Ravenous Teeth"
+    },
+    {
+      "name": "House of Scales Headdress"
+    },
+    {
+      "name": "House of Scales Raiment"
+    },
+    {
+      "name": "House of Scales Walkers"
+    },
+    {
+      "name": "Ice-Giver Sapphire"
+    },
+    {
+      "name": "Izft's Dirk of Incarnation"
+    },
+    {
+      "name": "Jelly Baby"
+    },
+    {
+      "name": "Key Limes"
+    },
+    {
+      "name": "Kola Nuts"
+    },
+    {
+      "name": "Kris of Thunderous Resolve"
+    },
+    {
+      "name": "Krokotillian"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Life-Away Jade"
+    },
+    {
+      "name": "Life-Giver Jade"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Longblade of the Soul Eater"
+    },
+    {
+      "name": "Lower Zigazag Headdress"
+    },
+    {
+      "name": "Lower Zigazag Stalkers"
+    },
+    {
+      "name": "Lower Zigazag Vestment"
+    },
+    {
+      "name": "Merle's Whisker"
+    },
+    {
+      "name": "Montante of the Immortals"
+    },
+    {
+      "name": "Mote of Severity"
+    },
+    {
+      "name": "Nettle Root"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ore"
+    },
+    {
+      "name": "Pipe Down! Opal"
+    },
+    {
+      "name": "Plain Accurate Jade +7%"
+    },
+    {
+      "name": "Plain Accurate Peridot +7%"
+    },
+    {
+      "name": "Plain Critical Peridot +6"
+    },
+    {
+      "name": "Plain Critical Sapphire +6"
+    },
+    {
+      "name": "Plain Piercing Jade +3%"
+    },
+    {
+      "name": "Plain Piercing Ruby +3%"
+    },
+    {
+      "name": "Ra"
+    },
+    {
+      "name": "Ravenous Teeth Garb"
+    },
+    {
+      "name": "Ravenous Teeth Stompers"
+    },
+    {
+      "name": "Rebus Breaker's Stave"
+    },
+    {
+      "name": "Robes of the Fire Sands"
+    },
+    {
+      "name": "Robes of the Frozen Desert"
+    },
+    {
+      "name": "Robes of the Sistrum"
+    },
+    {
+      "name": "Rod of the Burning Scales"
+    },
+    {
+      "name": "Sandswells Greatblade"
+    },
+    {
+      "name": "Scarab"
+    },
+    {
+      "name": "Scorching Sands Greatsword"
+    },
+    {
+      "name": "Scorpion"
+    },
+    {
+      "name": "Shoes of Anubis' Judgment"
+    },
+    {
+      "name": "Snap Dragon"
+    },
+    {
+      "name": "Soul Devourer's Arcana (Triangle)",
+      "match_name": "Soul Devourer's Arcana"
+    },
+    {
+      "name": "Soul Devourer's Footwraps"
+    },
+    {
+      "name": "Soul Devourer's Greathelm"
+    },
+    {
+      "name": "Soul Devourer's Tunic"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Stave of Cold Justice"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Stone Skeleton Key"
+    },
+    {
+      "name": "Stonewall Opal"
+    },
+    {
+      "name": "Sugar Donut"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tiny Fish"
+    },
+    {
+      "name": "Tunic of Upper Zigazag"
+    },
+    {
+      "name": "Uniform of the Condemned"
+    },
+    {
+      "name": "Upper Zigazag Striders"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wrath of Anubis Staff"
+    },
+    {
+      "name": "Zigazag Desert Armor"
+    },
+    {
+      "name": "Zigazag Desert Headgear"
+    },
+    {
+      "name": "Zigazag Desert Mukluks"
+    }
   ],
   "authors": "BartleBot",
   "options": [

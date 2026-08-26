@@ -8,229 +8,902 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Wizard City or Castle Darkmoor",
   "drops": [
-    "Alligator Pear",
-    "Ampul of Carpathes",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Arcana of Kan Davasi",
-    "Array of the Daystar",
-    "Astral Shard",
-    "Athame of the Blue Ague",
-    "Avenging Fossil",
-    "Balance-It Citrine",
-    "Banshee",
-    "Bell Pepper Steak",
-    "Berserk Talent Opal",
-    "Black Cat",
-    "Black Lotus",
-    "Black Pearl",
-    "Blackwater's Band",
-    "Blackwater's Dirk of Havoc",
-    "Blade of Kan Davasi",
-    "Blood Moss",
-    "Bludgeon of the Dark Skies",
-    "Blue Huckleberries",
-    "Bombardier Opal",
-    "Bone",
-    "Boom Stroganoff",
-    "Bread Fruit Fruit",
-    "Brimstone Boots of Darkmoor",
-    "Brimstone Gear of Darkmoor",
-    "Brimstone Helm of Darkmoor",
-    "Brimstone Revenant",
-    "Brimstone Torc of Darkmoor",
-    "Bronze",
-    "Bronze Gear",
-    "Cards of the Blue Ague",
-    "Cards of the Walking Dead",
-    "Catalan",
-    "Celestial Calendar",
-    "Chaplet of the Death Knight",
-    "Chastisement",
-    "Claw of the Bone Dragon",
-    "Clear Blocking Citrine +9",
-    "Clear Defense Onyx +40",
-    "Clear Health Opal +84",
-    "Clear Mana Opal +33",
-    "Clear Piercing Amethyst +5%",
-    "Cobalt",
-    "Cold Snap Peas",
-    "Collar of the Betrayed",
-    "Cornbread Fruit",
-    "Cycle of Life",
-    "Dagger of Bent Reality",
-    "Dark Tribute",
-    "Darkmoor Armor of Delusion",
-    "Darkmoor Armor of Shivers",
-    "Darkmoor Barbut of Delusion",
-    "Darkmoor Boots of Delusion",
-    "Darkmoor Combat Theme",
-    "Darkmoor Frost Collar",
-    "Darkmoor Helmet of Shivers",
-    "Darkmoor Herald's Gear",
-    "Darkmoor Herald's Mantle",
-    "Darkmoor Main Theme",
-    "Darkmoor Tense Theme",
-    "Darkmoor's Brimstone Deck",
-    "Darkmoor's Case of Scrutiny",
-    "Dead Beet Risotto",
-    "Death-Shot Onyx",
-    "Deck of Unchecked Passion",
-    "Deep Mushroom",
-    "Deer Knight",
-    "Dependable Opal",
-    "Deplete Opal",
-    "Depths of Darkmoor Cover",
-    "Depths of Darkmoor Raiment",
-    "Depths of Darkmoor Stalkers",
-    "Desparagus Quiche",
-    "Desparagus Salad",
-    "Determined Opal",
-    "Dirk of Unnatural Life",
-    "Discord Grape Jelly",
-    "Dr. Von's Monster",
-    "Draconium",
-    "Dragon's Tooth of Darkmoor",
-    "Dragonbone Blade",
-    "Drain Health Jade",
-    "Duplicitous Squire's Deck",
-    "Effervescent Opal",
-    "Embodiment of Death Charm",
-    "Evil Magma Soup",
-    "Fiery Boom Shroom",
-    "Fire Blossom",
-    "Fire-Shot Ruby",
-    "Fossil",
-    "Frozen Fly Trap",
-    "Furnace",
-    "Galvanic Field",
-    "Gargantuan Talent Opal",
-    "Gargoyle's Circle",
-    "Goat Monk",
-    "Golden Pearl",
-    "Granny Snow Apple",
-    "Gummy Bees",
-    "Handsome Fomori",
-    "Heart's Knife of Tenacity",
-    "Helm of the Living Dead",
-    "Herald of Darkmoor's Knife",
-    "Herald of Darkmoor's Seal",
-    "Herald of Darkmoor's Shoes",
-    "Hex",
-    "Hive Rinds",
-    "Honey Bee Plant",
-    "Honey Bombs",
-    "Honeycombs",
-    "Honeycrisp Apples",
-    "HoneyDon't Melon",
-    "Howling Werewolf's Collar",
-    "Huckleberry Pie",
-    "Hunter's Hound",
-    "Ice-Away Sapphire",
-    "Kan Davasi Medallion",
-    "Keeper of the Flame",
-    "Key Limes",
-    "King Parsley Soup",
-    "Kris of Cold Fury",
-    "Lady Blackhope",
-    "Lava Lily",
-    "Life-Boon Jade",
-    "Lilac Waves Wallpaper",
-    "Lord of Night",
-    "Lord of Winter",
-    "Lovelorn Spirit's Amulet",
-    "Luminous Weaver",
-    "Mace of the Outer Void",
-    "Mace of the Undying",
-    "Melting Cheese Tree",
-    "Mist Wood",
-    "Mithril",
-    "Moon Flower",
-    "Morning Star of Kan Davasi",
-    "Morning Star of Misery",
-    "Mote of Eternity",
-    "Nickel",
-    "Nightshade",
-    "Ninja Fig Bars",
-    "Ninja Pigs",
-    "Opaque Damage Jade +18",
-    "Opaque Piercing Opal +2%",
-    "Ore",
-    "Orichalcum",
-    "Parchment",
-    "Pendant of Love's Grace",
-    "Pink Dandelion",
-    "Pink Huckleberries",
-    "Plague",
-    "Plate of the Living Dead",
-    "Poison",
-    "Polished Blocking Amethyst +11",
-    "Polished Blocking Jade +11",
-    "Polished Critical Amethyst +11",
-    "Polished Critical Onyx +12",
-    "Polished Damage Hematite +42",
-    "Polished Damage Jade +21",
-    "Polished Damage Sapphire +21",
-    "Polished Defense Hematite +44",
-    "Polished Defense Opal +22",
-    "Power-Taker Ruby",
-    "Prickly Bear Punch",
-    "Punishment",
-    "Punk Rock Candy",
-    "Purple Waves Floor",
-    "Quick-Witted Opal",
-    "Raging Blackwater's Boots",
-    "Raging Blackwater's Helm",
-    "Raging Blackwater's Plate",
-    "Red Huckleberries",
-    "Red Mandrake",
-    "Relic of the Fetid Lagoon",
-    "Reliquary",
-    "Ring of Mortis",
-    "Rye Bread Fruit",
-    "Sabatons of Frozen Furor",
-    "Sabatons of the Living Dead",
-    "Sabertooth",
-    "Samoorai",
-    "Savage Paw",
-    "Saw Palmetto",
-    "Scrap Iron",
-    "Sharp Edge of the Void",
-    "Signet of the Howling Wolf",
-    "Silver",
-    "Skeletal Dragon",
-    "Sleet Storm",
-    "Soulful Knight",
-    "Spinysaur",
-    "Spirit of Darkmoor's Hand",
-    "Squire's Torc of Deception",
-    "Steal Health Onyx",
-    "Steel",
-    "Stone Block",
-    "Storm Owl",
-    "Storm-Giver Amethyst",
-    "Storm-Proof Amethyst",
-    "Stuffed Bell Pepper",
-    "Sugar Khrystals",
-    "Sun Serpent",
-    "Sunstone",
-    "The Bonekeeper",
-    "Thunderclap Spike",
-    "Thunderous Darkmoor Hand",
-    "Tin",
-    "Titanium",
-    "Tungsten",
-    "Turquoise",
-    "Ultra Mute Opal",
-    "Vampire",
-    "Vial From the Fetid Lagoon",
-    "Vial of the Unchecked Ego",
-    "Violet Waves Wallpaper",
-    "Virge of the Bitter Ghost",
-    "Virulence",
-    "Winter Moon",
-    "Wisp Bonus Opal",
-    "Wrath's Grape Juice"
+    {
+      "name": "Alligator Pear",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ampul of Carpathes",
+      "category": "Amulets"
+    },
+    {
+      "name": "Angel Oak",
+      "category": "Seeds"
+    },
+    {
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Arcana of Kan Davasi",
+      "category": "Decks"
+    },
+    {
+      "name": "Array of the Daystar",
+      "category": "Decks"
+    },
+    {
+      "name": "Astral Shard",
+      "category": "Reagents"
+    },
+    {
+      "name": "Athame of the Blue Ague",
+      "category": "Athames"
+    },
+    {
+      "name": "Avenging Fossil",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Balance-It Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Banshee",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bell Pepper Steak",
+      "category": "Snacks"
+    },
+    {
+      "name": "Berserk Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Black Cat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Black Lotus",
+      "category": "Reagents"
+    },
+    {
+      "name": "Black Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Blackwater's Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Blackwater's Dirk of Havoc",
+      "category": "Athames"
+    },
+    {
+      "name": "Blade of Kan Davasi",
+      "category": "Athames"
+    },
+    {
+      "name": "Blood Moss",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bludgeon of the Dark Skies",
+      "category": "Wands"
+    },
+    {
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Bombardier Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boom Stroganoff",
+      "category": "Snacks"
+    },
+    {
+      "name": "Bread Fruit Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Brimstone Boots of Darkmoor",
+      "category": "Boots"
+    },
+    {
+      "name": "Brimstone Gear of Darkmoor",
+      "category": "Robes"
+    },
+    {
+      "name": "Brimstone Helm of Darkmoor",
+      "category": "Hats"
+    },
+    {
+      "name": "Brimstone Revenant",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Brimstone Torc of Darkmoor",
+      "category": "Amulets"
+    },
+    {
+      "name": "Bronze",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Buff Minion Talent Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cards of the Blue Ague",
+      "category": "Decks"
+    },
+    {
+      "name": "Cards of the Walking Dead",
+      "category": "Decks"
+    },
+    {
+      "name": "Catalan",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Celestial Calendar",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Chaplet of the Death Knight",
+      "category": "Amulets"
+    },
+    {
+      "name": "Chastisement",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Claw of the Bone Dragon",
+      "category": "Athames"
+    },
+    {
+      "name": "Clear Blocking Citrine +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Defense Onyx +40",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Health Opal +84",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Mana Opal +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Piercing Amethyst +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cold Snap Peas",
+      "category": "Snacks"
+    },
+    {
+      "name": "Collar of the Betrayed",
+      "category": "Amulets"
+    },
+    {
+      "name": "Cornbread Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cycle of Life",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dagger of Bent Reality",
+      "category": "Athames"
+    },
+    {
+      "name": "Dark Tribute",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Darkmoor Armor of Delusion",
+      "category": "Robes"
+    },
+    {
+      "name": "Darkmoor Armor of Shivers",
+      "category": "Robes"
+    },
+    {
+      "name": "Darkmoor Barbut of Delusion",
+      "category": "Hats"
+    },
+    {
+      "name": "Darkmoor Boots of Delusion",
+      "category": "Boots"
+    },
+    {
+      "name": "Darkmoor Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Darkmoor Frost Collar",
+      "category": "Amulets"
+    },
+    {
+      "name": "Darkmoor Helmet of Shivers",
+      "category": "Hats"
+    },
+    {
+      "name": "Darkmoor Herald's Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Darkmoor Herald's Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Darkmoor Main Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Darkmoor Tense Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Darkmoor's Brimstone Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Darkmoor's Case of Scrutiny",
+      "category": "Decks"
+    },
+    {
+      "name": "Dead Beet Risotto",
+      "category": "Snacks"
+    },
+    {
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deck of Unchecked Passion",
+      "category": "Decks"
+    },
+    {
+      "name": "Deep Mushroom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Deer Knight",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dependable Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deplete Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Depths of Darkmoor Cover",
+      "category": "Hats"
+    },
+    {
+      "name": "Depths of Darkmoor Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Depths of Darkmoor Stalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Desparagus Quiche",
+      "category": "Snacks"
+    },
+    {
+      "name": "Desparagus Salad",
+      "category": "Snacks"
+    },
+    {
+      "name": "Determined Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dirk of Unnatural Life",
+      "category": "Athames"
+    },
+    {
+      "name": "Discord Grape Jelly",
+      "category": "Snacks"
+    },
+    {
+      "name": "Dr. Von's Monster",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Draconium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Dragon's Tooth of Darkmoor",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragonbone Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Drain Health Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Duplicitous Squire's Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Effervescent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Embodiment of Death Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Evil Magma Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Blossom",
+      "category": "Reagents"
+    },
+    {
+      "name": "Fire-Shot Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fossil",
+      "category": "Reagents"
+    },
+    {
+      "name": "Frozen Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Furnace",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Galvanic Field",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gargantuan Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Gargoyle's Circle",
+      "category": "Rings"
+    },
+    {
+      "name": "Goat Monk",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Golden Pearl",
+      "category": "Reagents"
+    },
+    {
+      "name": "Granny Snow Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gummy Bees",
+      "category": "Snacks"
+    },
+    {
+      "name": "Handsome Fomori",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Heart's Knife of Tenacity",
+      "category": "Athames"
+    },
+    {
+      "name": "Helm of the Living Dead",
+      "category": "Hats"
+    },
+    {
+      "name": "Herald of Darkmoor's Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Herald of Darkmoor's Seal",
+      "category": "Rings"
+    },
+    {
+      "name": "Herald of Darkmoor's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Hex",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Hive Rinds",
+      "category": "Snacks"
+    },
+    {
+      "name": "Honey Bee Plant",
+      "category": "Seeds"
+    },
+    {
+      "name": "Honey Bombs",
+      "category": "Snacks"
+    },
+    {
+      "name": "Honeycombs",
+      "category": "Snacks"
+    },
+    {
+      "name": "Honeycrisp Apples",
+      "category": "Snacks"
+    },
+    {
+      "name": "HoneyDon't Melon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Howling Werewolf's Collar",
+      "category": "Amulets"
+    },
+    {
+      "name": "Huckleberry Pie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hunter's Hound",
+      "category": "Pets"
+    },
+    {
+      "name": "Ice-Away Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Kan Davasi Medallion",
+      "category": "Amulets"
+    },
+    {
+      "name": "Keeper of the Flame",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Key Limes",
+      "category": "Seeds"
+    },
+    {
+      "name": "King Parsley Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Kris of Cold Fury",
+      "category": "Athames"
+    },
+    {
+      "name": "Lady Blackhope",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lava Lily",
+      "category": "Reagents"
+    },
+    {
+      "name": "Life-Boon Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Lilac Waves Wallpaper",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lord of Night",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lord of Winter",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lovelorn Spirit's Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Luminous Weaver",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mace of the Outer Void",
+      "category": "Wands"
+    },
+    {
+      "name": "Mace of the Undying",
+      "category": "Wands"
+    },
+    {
+      "name": "Melting Cheese Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Mist Wood",
+      "category": "Reagents"
+    },
+    {
+      "name": "Mithril",
+      "category": "Reagents"
+    },
+    {
+      "name": "Moon Flower",
+      "category": "Seeds"
+    },
+    {
+      "name": "Morning Star of Kan Davasi",
+      "category": "Wands"
+    },
+    {
+      "name": "Morning Star of Misery",
+      "category": "Wands"
+    },
+    {
+      "name": "Mote of Eternity",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nightshade",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Fig Bars",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ninja Pigs",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Opaque Damage Jade +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ore",
+      "category": "Reagents"
+    },
+    {
+      "name": "Orichalcum",
+      "category": "Reagents"
+    },
+    {
+      "name": "Parchment",
+      "category": "Reagents"
+    },
+    {
+      "name": "Pendant of Love's Grace",
+      "category": "Amulets"
+    },
+    {
+      "name": "Pink Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Plague",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Plate of the Living Dead",
+      "category": "Robes"
+    },
+    {
+      "name": "Poison",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Polished Blocking Amethyst +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Blocking Jade +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Amethyst +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Critical Onyx +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Hematite +42",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Jade +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Damage Sapphire +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Hematite +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Defense Opal +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Power-Taker Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Prickly Bear Punch",
+      "category": "Snacks"
+    },
+    {
+      "name": "Punishment",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Punk Rock Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Purple Waves Floor",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Quick-Witted Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Raging Blackwater's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Raging Blackwater's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Raging Blackwater's Plate",
+      "category": "Robes"
+    },
+    {
+      "name": "Red Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Mandrake",
+      "category": "Reagents"
+    },
+    {
+      "name": "Relic of the Fetid Lagoon",
+      "category": "Amulets"
+    },
+    {
+      "name": "Reliquary",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ring of Mortis",
+      "category": "Rings"
+    },
+    {
+      "name": "Rye Bread Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sabatons of Frozen Furor",
+      "category": "Boots"
+    },
+    {
+      "name": "Sabatons of the Living Dead",
+      "category": "Boots"
+    },
+    {
+      "name": "Sabertooth",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Samoorai",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Savage Paw",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Saw Palmetto",
+      "category": "Seeds"
+    },
+    {
+      "name": "Scrap Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sharp Edge of the Void",
+      "category": "Athames"
+    },
+    {
+      "name": "Signet of the Howling Wolf",
+      "category": "Rings"
+    },
+    {
+      "name": "Silver",
+      "category": "Reagents"
+    },
+    {
+      "name": "Skeletal Dragon",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sleet Storm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Soulful Knight",
+      "category": "Pets"
+    },
+    {
+      "name": "Spinysaur",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spirit of Darkmoor's Hand",
+      "category": "Decks"
+    },
+    {
+      "name": "Squire's Torc of Deception",
+      "category": "Amulets"
+    },
+    {
+      "name": "Steal Health Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Stone Block",
+      "category": "Reagents"
+    },
+    {
+      "name": "Storm Owl",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm-Giver Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Proof Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stuffed Bell Pepper",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sugar Khrystals",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sun Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sunstone",
+      "category": "Reagents"
+    },
+    {
+      "name": "The Bonekeeper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Thunderclap Spike",
+      "category": "Athames"
+    },
+    {
+      "name": "Thunderous Darkmoor Hand",
+      "category": "Decks"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Titanium",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tungsten",
+      "category": "Reagents"
+    },
+    {
+      "name": "Turquoise",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ultra Mute Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vampire",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Vial From the Fetid Lagoon",
+      "category": "Amulets"
+    },
+    {
+      "name": "Vial of the Unchecked Ego",
+      "category": "Amulets"
+    },
+    {
+      "name": "Violet Waves Wallpaper",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Virge of the Bitter Ghost",
+      "category": "Wands"
+    },
+    {
+      "name": "Virulence",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Winter Moon",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wrath's Grape Juice",
+      "category": "Snacks"
+    }
   ],
   "authors": "BartleBot",
   "options": [

@@ -6,81 +6,290 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "bunyip[epic] | tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
-    "15 Olympian Dust",
-    "16 Olympian Dust",
-    "17 Olympian Dust",
-    "18 Olympian Dust",
-    "25 Olympian Dust",
-    "Ares' Charred Spear",
-    "Ares' Spear of Bitter Cold",
-    "Ares' Spear of Destiny",
-    "Ares' Spear of Fortitude",
-    "Ares' Spear of Havoc",
-    "Ares' Spear of Valor",
-    "Ares' Windstorm Spear",
-    "Boots of Zeus' Alacrity",
-    "Boots of Zeus' Lore",
-    "Cowl of Zeus' Ire",
-    "Fiery Skeleturion",
-    "Fires of Mars",
-    "Helmet of Heavenly Gaze",
-    "Helmet of Zeus' Will",
-    "Jupiter's Might",
-    "Mythic Skeleturion",
-    "Neptune's Fury",
-    "Phoebus' Will",
-    "Pluto's Peril",
-    "Saturn's Reaping",
-    "Senator's Devious Mantle",
-    "Senator's Devious Sandals",
-    "Senator's Devious Toga",
-    "Senator's Guiding Sandals",
-    "Senator's Judicial Laurel",
-    "Senator's Judicial Shoes",
-    "Senator's Judicial Toga",
-    "Senator's Laurel of Truth",
-    "Senator's Mantle of Winter",
-    "Senator's Poetic Boots",
-    "Senator's Poetic Laurel",
-    "Senator's Poetic Toga",
-    "Senator's Radiant Laurel",
-    "Senator's Radiant Sandals",
-    "Senator's Radiant Toga",
-    "Senator's Raincloud Mantle",
-    "Senator's Raincloud Shoes",
-    "Senator's Raincloud Toga",
-    "Senator's Stirring Toga",
-    "Senator's Wintry Sandals",
-    "Senator's Wintry Toga",
-    "Sky Iron Hasta",
-    "Staff of Zeus' Immortality",
-    "Terminus' Strike",
-    "Vestment of Zeus' Aegis",
-    "Zeus' Armor of Supremacy",
-    "Zeus' Blazing Sun Raiment",
-    "Zeus' Blustering Footwraps",
-    "Zeus' Bolt of Arbitration",
-    "Zeus' Bolt of Gravity",
-    "Zeus' Boots of Rancor",
-    "Zeus' Boots of Skyfire",
-    "Zeus' Cloak of Fate",
-    "Zeus' Cloudstriders",
-    "Zeus' Falling Skies Staff",
-    "Zeus' Galea of Vitality",
-    "Zeus' Helm of Authority",
-    "Zeus' Helm of Tumult",
-    "Zeus' Lightning Striker",
-    "Zeus' Raiment of Flurries",
-    "Zeus' Robes of Judgment",
-    "Zeus' Staff of Hailstones",
-    "Zeus' Staff of Wildfires",
-    "Zeus' Thunderclap Drape",
-    "Zeus' Thunderstomp Boots",
-    "Zeus' Veil of Snowfall"
+    {
+      "name": "15 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "16 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "17 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "18 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "25 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ares' Charred Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Bitter Cold",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Destiny",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Fortitude",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Havoc",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Valor",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Windstorm Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Boots of Zeus' Alacrity",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of Zeus' Lore",
+      "category": "Boots"
+    },
+    {
+      "name": "Cowl of Zeus' Ire",
+      "category": "Hats"
+    },
+    {
+      "name": "Fiery Skeleturion"
+    },
+    {
+      "name": "Fires of Mars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Helmet of Heavenly Gaze",
+      "category": "Hats"
+    },
+    {
+      "name": "Helmet of Zeus' Will",
+      "category": "Hats"
+    },
+    {
+      "name": "Jupiter's Might",
+      "category": "Spellements"
+    },
+    {
+      "name": "Mythic Skeleturion",
+      "category": "Pets"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Senator's Devious Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Devious Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Devious Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Guiding Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Judicial Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Judicial Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Judicial Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Laurel of Truth",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Mantle of Winter",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Poetic Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Poetic Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Poetic Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Radiant Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Radiant Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Radiant Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Raincloud Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Raincloud Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Raincloud Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Stirring Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Wintry Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Wintry Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Sky Iron Hasta"
+    },
+    {
+      "name": "Staff of Zeus' Immortality",
+      "category": "Wands"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    },
+    {
+      "name": "Vestment of Zeus' Aegis",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Armor of Supremacy",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Blazing Sun Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Blustering Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Bolt of Arbitration",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Bolt of Gravity",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Boots of Rancor",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Boots of Skyfire",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Cloak of Fate",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Cloudstriders",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Falling Skies Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Galea of Vitality",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Helm of Authority",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Helm of Tumult",
+      "category": "Hats"
+    },
+    {
+      "name": "Zeus' Lightning Striker",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Raiment of Flurries",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Robes of Judgment",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Staff of Hailstones",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Staff of Wildfires",
+      "category": "Wands"
+    },
+    {
+      "name": "Zeus' Thunderclap Drape",
+      "category": "Robes"
+    },
+    {
+      "name": "Zeus' Thunderstomp Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Zeus' Veil of Snowfall",
+      "category": "Hats"
+    }
   ],
   "authors": "BartleBot",
   "options": [

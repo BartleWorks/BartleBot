@@ -8,157 +8,459 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Mirage",
   "drops": [
-    "Adapt Opal",
-    "Agave Leaves",
-    "Amber Dust",
-    "Angel Oak",
-    "Angora Bunny Ears",
-    "Antheneum Delight",
-    "Aquamarine",
-    "Astral Shard",
-    "Astraphobia",
-    "Baby Carrots",
-    "Beast Wellington",
-    "Beetle Cream Soda",
-    "Bell Pepper",
-    "Boiled Peanuts",
-    "Brace Opal",
-    "Bread Fruit Bush",
-    "Bread Fruit Fruit",
-    "Chalupacabra",
-    "Coldiron",
-    "Combustion",
-    "Cornbread Fruit Bush",
-    "Couch Potatoes",
-    "Deadly Helephant Ears",
-    "Desparagus (Seed)",
-    "Dragonspear",
-    "Epic Opal",
-    "Evil Magma Peas",
-    "Evil Snow Peas",
-    "Eye Candy",
-    "Fern Jelly",
-    "Fiery Boom Shroom",
-    "Fiery Colossus",
-    "Fish Fin",
-    "Fish on a Vine",
-    "Frostfang",
-    "Frozen Fly Trap",
-    "Glass Sliver",
-    "Golden Couch Potatoes",
-    "Golden Pearl",
-    "Grapes of Wrath",
-    "Green Tomato",
-    "Hard Boiled Beetle Eggs",
-    "High Road Haggis",
-    "Honey Sickle",
-    "Hot Cross Buns",
-    "Iridium",
-    "Ivy League",
-    "Jolly Rancher",
-    "Katabatic Wind",
-    "King Parsley",
-    "Kobra Choker of Mettle",
-    "Kobra Janbiya of Rigor",
-    "Kobra Sceptor of Rigor",
-    "Laugh-O-Dil",
-    "Lustrous Accurate Peridot +11%",
-    "Lustrous Blocking Peridot +13",
-    "Lustrous Critical Onyx +13",
-    "Lustrous Critical Sapphire +13",
-    "MaCaw",
-    "Mirage Caravan Theme",
-    "Mirage City Combat Theme",
-    "Mirage Den of Thieves Theme",
-    "Mirage Nomad Theme",
-    "Mirage Palace Theme",
-    "Missile Toe",
-    "Mithril",
-    "Moon Flower",
-    "Mustachios",
-    "Mutate Bats (Ice)",
-    "Mutate Beetle (Fire)",
-    "Mutate Bird (Storm)",
-    "Mutate Cat (Ice)",
-    "Mutate Swarm (Ice)",
-    "Mythspear",
-    "Namaste",
-    "Obsidian Colossus (420)",
-    "Orange Dandelion",
-    "Pink Huckleberries",
-    "Pink Laugh-O-Dil",
-    "Polished Accurate Peridot +10%",
-    "Polished Blocking Ruby +11",
-    "Polished Blocking Sapphire +11",
-    "Polished Damage Jade +21",
-    "Polished Damage Peridot +21",
-    "Polished Damage Ruby +21",
-    "Polished Defense Amethyst +42",
-    "Polished Defense Jade +42",
-    "Polished Defense Sapphire +41",
-    "Polished Health Opal +86",
-    "Polished Health Opal +92",
-    "Polished Health Opal +95",
-    "Polished Mana Opal +37",
-    "Polished Mana Opal +38",
-    "Polished Mana Opal +39",
-    "Radical Opal",
-    "Red Couch Potatoes",
-    "Red Huckleberries",
-    "Rhubarbed Wire",
-    "Rubal Sleetfall Bow",
-    "Rye Bread Fruit Bush",
-    "Saga of Heroes",
-    "Sand Sea Amulet of Ardor",
-    "Sand Sea Amulet of Bolts",
-    "Sand Sea Charm of Shivers",
-    "Sand Sea Cowl of Havoc",
-    "Sand Sea Dagger of Ashes",
-    "Sand Sea Dagger of Bolts",
-    "Sand Sea Dagger of Curiosity",
-    "Sand Sea Dagger of Havoc",
-    "Sand Sea Hand of Decorum",
-    "Sand Sea Outfit of Decorum",
-    "Sand Sea Ring of Accord",
-    "Satyr Chow",
-    "Saw Palmetto",
-    "Scales",
-    "Shift",
-    "Shiny Blocking Citrine +16",
-    "Shiny Blocking Hematite +16",
-    "Shiny Blocking Onyx +16",
-    "Shiny Critical Amethyst +16",
-    "Shiny Critical Peridot +16",
-    "Shiny Damage Citrine +26",
-    "Shiny Damage Hematite +52",
-    "Shiny Defense Amethyst +52",
-    "Shiny Defense Onyx +50",
-    "Shiny Defense Ruby +52",
-    "Shiny Defense Sapphire +51",
-    "Shiny Health Opal +111",
-    "Shiny Health Opal +112",
-    "Ships 'n' Queso",
-    "Shock Colossus",
-    "Silver",
-    "Steel",
-    "Steel Colossus",
-    "Sugar Khrystal",
-    "Sunstone",
-    "Sword Fern",
-    "Trumpet Vine",
-    "Tungsten",
-    "Turmeric",
-    "Veggie Juice",
-    "Venus Fly Trap",
-    "Vizier's Shoes of Apathy",
-    "Vizier's Shoes of Sagacity",
-    "Vizier's Shoes of Smolders",
-    "White Desparagus",
-    "White Tiger Lily",
-    "Yellow Troll",
-    "Zruvan Galesh of Mettle",
-    "Zruvan Helmet of Rigor",
-    "Zruvan Raiment of Mettle"
+    {
+      "name": "Adapt Opal"
+    },
+    {
+      "name": "Agave Leaves"
+    },
+    {
+      "name": "Amber Dust"
+    },
+    {
+      "name": "Angel Oak"
+    },
+    {
+      "name": "Angora Bunny Ears"
+    },
+    {
+      "name": "Antheneum Delight"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Astral Shard"
+    },
+    {
+      "name": "Astraphobia"
+    },
+    {
+      "name": "Baby Carrots"
+    },
+    {
+      "name": "Beast Wellington"
+    },
+    {
+      "name": "Beetle Cream Soda"
+    },
+    {
+      "name": "Bell Pepper"
+    },
+    {
+      "name": "Boiled Peanuts"
+    },
+    {
+      "name": "Brace Opal"
+    },
+    {
+      "name": "Bread Fruit Bush"
+    },
+    {
+      "name": "Bread Fruit Fruit"
+    },
+    {
+      "name": "Chalupacabra"
+    },
+    {
+      "name": "Coldiron"
+    },
+    {
+      "name": "Combustion"
+    },
+    {
+      "name": "Cornbread Fruit Bush"
+    },
+    {
+      "name": "Couch Potatoes"
+    },
+    {
+      "name": "Deadly Helephant Ears"
+    },
+    {
+      "name": "Desparagus (Seed)"
+    },
+    {
+      "name": "Dragonspear"
+    },
+    {
+      "name": "Epic Opal"
+    },
+    {
+      "name": "Evil Magma Peas"
+    },
+    {
+      "name": "Evil Snow Peas"
+    },
+    {
+      "name": "Eye Candy"
+    },
+    {
+      "name": "Fern Jelly"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fiery Colossus"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Frostfang"
+    },
+    {
+      "name": "Frozen Fly Trap"
+    },
+    {
+      "name": "Glass Sliver"
+    },
+    {
+      "name": "Golden Couch Potatoes"
+    },
+    {
+      "name": "Golden Pearl"
+    },
+    {
+      "name": "Grapes of Wrath"
+    },
+    {
+      "name": "Green Tomato"
+    },
+    {
+      "name": "Hard Boiled Beetle Eggs"
+    },
+    {
+      "name": "High Road Haggis"
+    },
+    {
+      "name": "Honey Sickle"
+    },
+    {
+      "name": "Hot Cross Buns"
+    },
+    {
+      "name": "Iridium"
+    },
+    {
+      "name": "Ivy League"
+    },
+    {
+      "name": "Jolly Rancher"
+    },
+    {
+      "name": "Katabatic Wind"
+    },
+    {
+      "name": "King Parsley"
+    },
+    {
+      "name": "Kobra Choker of Mettle"
+    },
+    {
+      "name": "Kobra Janbiya of Rigor"
+    },
+    {
+      "name": "Kobra Sceptor of Rigor"
+    },
+    {
+      "name": "Laugh-O-Dil"
+    },
+    {
+      "name": "Lustrous Accurate Peridot +11%"
+    },
+    {
+      "name": "Lustrous Blocking Peridot +13"
+    },
+    {
+      "name": "Lustrous Critical Onyx +13"
+    },
+    {
+      "name": "Lustrous Critical Sapphire +13"
+    },
+    {
+      "name": "MaCaw"
+    },
+    {
+      "name": "Mirage Caravan Theme"
+    },
+    {
+      "name": "Mirage City Combat Theme"
+    },
+    {
+      "name": "Mirage Den of Thieves Theme"
+    },
+    {
+      "name": "Mirage Nomad Theme"
+    },
+    {
+      "name": "Mirage Palace Theme"
+    },
+    {
+      "name": "Missile Toe"
+    },
+    {
+      "name": "Mithril"
+    },
+    {
+      "name": "Moon Flower"
+    },
+    {
+      "name": "Mustachios"
+    },
+    {
+      "name": "Mutate Bats (Ice)"
+    },
+    {
+      "name": "Mutate Beetle (Fire)"
+    },
+    {
+      "name": "Mutate Bird (Storm)"
+    },
+    {
+      "name": "Mutate Cat (Ice)"
+    },
+    {
+      "name": "Mutate Swarm (Ice)"
+    },
+    {
+      "name": "Mythspear"
+    },
+    {
+      "name": "Namaste"
+    },
+    {
+      "name": "Obsidian Colossus (420)"
+    },
+    {
+      "name": "Orange Dandelion"
+    },
+    {
+      "name": "Pink Huckleberries"
+    },
+    {
+      "name": "Pink Laugh-O-Dil"
+    },
+    {
+      "name": "Polished Accurate Peridot +10%"
+    },
+    {
+      "name": "Polished Blocking Ruby +11"
+    },
+    {
+      "name": "Polished Blocking Sapphire +11"
+    },
+    {
+      "name": "Polished Damage Jade +21"
+    },
+    {
+      "name": "Polished Damage Peridot +21"
+    },
+    {
+      "name": "Polished Damage Ruby +21"
+    },
+    {
+      "name": "Polished Defense Amethyst +42"
+    },
+    {
+      "name": "Polished Defense Jade +42"
+    },
+    {
+      "name": "Polished Defense Sapphire +41"
+    },
+    {
+      "name": "Polished Health Opal +86"
+    },
+    {
+      "name": "Polished Health Opal +92"
+    },
+    {
+      "name": "Polished Health Opal +95"
+    },
+    {
+      "name": "Polished Mana Opal +37"
+    },
+    {
+      "name": "Polished Mana Opal +38"
+    },
+    {
+      "name": "Polished Mana Opal +39"
+    },
+    {
+      "name": "Radical Opal"
+    },
+    {
+      "name": "Red Couch Potatoes"
+    },
+    {
+      "name": "Red Huckleberries"
+    },
+    {
+      "name": "Rhubarbed Wire"
+    },
+    {
+      "name": "Rubal Sleetfall Bow"
+    },
+    {
+      "name": "Rye Bread Fruit Bush"
+    },
+    {
+      "name": "Saga of Heroes"
+    },
+    {
+      "name": "Sand Sea Amulet of Ardor"
+    },
+    {
+      "name": "Sand Sea Amulet of Bolts"
+    },
+    {
+      "name": "Sand Sea Charm of Shivers"
+    },
+    {
+      "name": "Sand Sea Cowl of Havoc"
+    },
+    {
+      "name": "Sand Sea Dagger of Ashes"
+    },
+    {
+      "name": "Sand Sea Dagger of Bolts"
+    },
+    {
+      "name": "Sand Sea Dagger of Curiosity"
+    },
+    {
+      "name": "Sand Sea Dagger of Havoc"
+    },
+    {
+      "name": "Sand Sea Hand of Decorum"
+    },
+    {
+      "name": "Sand Sea Outfit of Decorum"
+    },
+    {
+      "name": "Sand Sea Ring of Accord"
+    },
+    {
+      "name": "Satyr Chow"
+    },
+    {
+      "name": "Saw Palmetto"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Shift"
+    },
+    {
+      "name": "Shiny Blocking Citrine +16"
+    },
+    {
+      "name": "Shiny Blocking Hematite +16"
+    },
+    {
+      "name": "Shiny Blocking Onyx +16"
+    },
+    {
+      "name": "Shiny Critical Amethyst +16"
+    },
+    {
+      "name": "Shiny Critical Peridot +16"
+    },
+    {
+      "name": "Shiny Damage Citrine +26"
+    },
+    {
+      "name": "Shiny Damage Hematite +52"
+    },
+    {
+      "name": "Shiny Defense Amethyst +52"
+    },
+    {
+      "name": "Shiny Defense Onyx +50"
+    },
+    {
+      "name": "Shiny Defense Ruby +52"
+    },
+    {
+      "name": "Shiny Defense Sapphire +51"
+    },
+    {
+      "name": "Shiny Health Opal +111"
+    },
+    {
+      "name": "Shiny Health Opal +112"
+    },
+    {
+      "name": "Ships 'n' Queso"
+    },
+    {
+      "name": "Shock Colossus"
+    },
+    {
+      "name": "Silver"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Steel Colossus"
+    },
+    {
+      "name": "Sugar Khrystal"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Sword Fern"
+    },
+    {
+      "name": "Trumpet Vine"
+    },
+    {
+      "name": "Tungsten"
+    },
+    {
+      "name": "Turmeric"
+    },
+    {
+      "name": "Veggie Juice"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "Vizier's Shoes of Apathy"
+    },
+    {
+      "name": "Vizier's Shoes of Sagacity"
+    },
+    {
+      "name": "Vizier's Shoes of Smolders"
+    },
+    {
+      "name": "White Desparagus"
+    },
+    {
+      "name": "White Tiger Lily"
+    },
+    {
+      "name": "Yellow Troll"
+    },
+    {
+      "name": "Zruvan Galesh of Mettle"
+    },
+    {
+      "name": "Zruvan Helmet of Rigor"
+    },
+    {
+      "name": "Zruvan Raiment of Mettle"
+    }
   ],
   "authors": "BartleBot",
   "options": [

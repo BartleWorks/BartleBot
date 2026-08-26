@@ -10,172 +10,504 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Celestia",
   "drops": [
-    "Accurate",
-    "Atavistic Balance Dirk",
-    "Atavistic Death Dirk",
-    "Atavistic Fire Dirk",
-    "Atavistic Ice Dirk",
-    "Atavistic Life Dirk",
-    "Atavistic Myth Dirk",
-    "Atavistic Storm Dirk",
-    "Balance Accurate Pin (30)",
-    "Balance Accurate Pin (60)",
-    "Banshee",
-    "Blade of Life Jade",
-    "Blight Hound",
-    "Blizzard Lizard Sapphire",
-    "Boots of Accord",
-    "Boots of Catastrophe",
-    "Boots of Celestian Totality",
-    "Brass",
-    "Bronze",
-    "Bygone Balance Dirk",
-    "Bygone Death Dirk",
-    "Bygone Fire Dirk",
-    "Bygone Ice Dirk",
-    "Bygone Life Dirk",
-    "Bygone Myth Dirk",
-    "Bygone Storm Dirk",
-    "Cat Bandit Opal",
-    "Cauliflowers",
-    "Celestian Abyss Boots",
-    "Celestian Cinder Shoes",
-    "Celestian Frostbit Footgear",
-    "Celestian Tempest Trekkers",
-    "Centaur",
-    "Cobalt",
-    "Colossus",
-    "Combustible Band",
-    "Cyclops",
-    "Cyclops Minion",
-    "Dagger of Typhoons",
-    "Darkwind",
-    "Deadly Fly Trap",
-    "Death Accurate Pin (30)",
-    "Death Accurate Pin (60)",
-    "Delicious Cookie",
-    "Devoted Vestment",
-    "Dirk of Delusion",
-    "Dragonflies",
-    "Dull Critical Opal +2",
-    "Dull Defense Sapphire +26",
-    "Dull Health Opal +51",
-    "Dull Health Opal +52",
-    "Dull Health Opal +53",
-    "Earth Walker",
-    "Everlasting Celestian Boots",
-    "Evil Snowman",
-    "Evil Snowman",
-    "Fire Accurate Pin (50)",
-    "Fire Dragon",
-    "Fire-Eye Ruby",
-    "Fish Fin",
-    "Fish on a Vine",
-    "Forest Lord",
-    "Forgotten Facade",
-    "Forsaken Headgear",
-    "Frost Giant",
-    "Gearhead Destroyer",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Helephant",
-    "Helm of Burning Ambition",
-    "Hexfin's Flurry Band",
-    "Hexfin's Frostbit Bodkin",
-    "Hydra",
-    "Ice Accurate Pin (30)",
-    "Ice Accurate Pin (60)",
-    "Ice Rangers",
-    "Ice Wyvern",
-    "Icestar Stalkers",
-    "Immolate",
-    "Insightful Topper",
-    "Kraken",
-    "Kris of the Piscean Guard",
-    "Large Willow Tree",
-    "Lead",
-    "Legendary Vial",
-    "Life Accurate Pin (20)",
-    "Life Accurate Pin (60)",
-    "Locust Swarm",
-    "Maelstrom Snap Dragon",
-    "Majestic Signet",
-    "Mako's Timeless Trekkers",
-    "Mako's Wanderlust Raiment",
-    "Mass Ice Prism Sapphire",
-    "Mass Life Prism Jade",
-    "Mass Myth Prism Peridot",
-    "Minotaur",
-    "Monstrous",
-    "Myth Accurate Pin (50)",
-    "Myth Accurate Pin (60)",
-    "Nature's Wrath",
-    "Nereus's Hoarfrost Helm",
-    "Nickel",
-    "Orthrus",
-    "Phoenix",
-    "Pink Dandelion",
-    "Plain Blocking Onyx +6",
-    "Plain Blocking Peridot +6",
-    "Plain Damage Ruby +15",
-    "Plain Damage Sapphire +15",
-    "Plain Defense Opal +16",
-    "Polar Boots",
-    "Power Nova",
-    "Precision",
-    "Reckless Raiment",
-    "Rime Runners",
-    "Ring of Rapport",
-    "Ring of Rare Origins",
-    "Rising Tide Topper",
-    "Salgio's Tinder Cloak",
-    "Sandstone",
-    "Scales",
-    "Scarecrow",
-    "Seraph",
-    "Shark Tooth",
-    "Shroud of Snowfall",
-    "Silver Trumpet Vine",
-    "Skeletal Pirate",
-    "Slick-N-Slide Opal",
-    "Sniper",
-    "Sniper Talent Opal",
-    "Spectral Blast",
-    "Spicy Drumstick",
-    "Sprite",
-    "Steel",
-    "Stone Colossus",
-    "Storied Celestian Sabatons",
-    "Storm Accurate Pin (50)",
-    "Storm Lord",
-    "Storm Shark",
-    "Storm-Tooth Amethyst",
-    "Stormzilla",
-    "Storyteller's Cap",
-    "Storyteller's Tunic",
-    "Strawberry Cupcake",
-    "Sturdy Opal",
-    "Submarine Sandwich",
-    "Sunbird",
-    "Sunstone",
-    "Synthesis Cover",
-    "Thundercloud Coif",
-    "Tin",
-    "Tolerant Boots",
-    "Tragic Tunic",
-    "Triton",
-    "Turbulent Tunic",
-    "Vampire",
-    "Vengeance",
-    "Versatile Celestian Boots",
-    "Versatile Steel",
-    "Vile Outfit",
-    "Virtue Shoes",
-    "Vital Headdress",
-    "Whimsical Surcoat",
-    "Wisp Bonus Opal",
-    "Wraith",
-    "Wyldfire"
+    {
+      "name": "Accurate"
+    },
+    {
+      "name": "Atavistic Balance Dirk"
+    },
+    {
+      "name": "Atavistic Death Dirk"
+    },
+    {
+      "name": "Atavistic Fire Dirk"
+    },
+    {
+      "name": "Atavistic Ice Dirk"
+    },
+    {
+      "name": "Atavistic Life Dirk"
+    },
+    {
+      "name": "Atavistic Myth Dirk"
+    },
+    {
+      "name": "Atavistic Storm Dirk"
+    },
+    {
+      "name": "Balance Accurate Pin (30)"
+    },
+    {
+      "name": "Balance Accurate Pin (60)"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Blade of Life Jade"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Blizzard Lizard Sapphire"
+    },
+    {
+      "name": "Boots of Accord"
+    },
+    {
+      "name": "Boots of Catastrophe"
+    },
+    {
+      "name": "Boots of Celestian Totality"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bronze"
+    },
+    {
+      "name": "Bygone Balance Dirk"
+    },
+    {
+      "name": "Bygone Death Dirk"
+    },
+    {
+      "name": "Bygone Fire Dirk"
+    },
+    {
+      "name": "Bygone Ice Dirk"
+    },
+    {
+      "name": "Bygone Life Dirk"
+    },
+    {
+      "name": "Bygone Myth Dirk"
+    },
+    {
+      "name": "Bygone Storm Dirk"
+    },
+    {
+      "name": "Cat Bandit Opal"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Celestian Abyss Boots"
+    },
+    {
+      "name": "Celestian Cinder Shoes"
+    },
+    {
+      "name": "Celestian Frostbit Footgear"
+    },
+    {
+      "name": "Celestian Tempest Trekkers"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Combustible Band"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Cyclops Minion"
+    },
+    {
+      "name": "Dagger of Typhoons"
+    },
+    {
+      "name": "Darkwind"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Death Accurate Pin (30)"
+    },
+    {
+      "name": "Death Accurate Pin (60)"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Devoted Vestment"
+    },
+    {
+      "name": "Dirk of Delusion"
+    },
+    {
+      "name": "Dragonflies"
+    },
+    {
+      "name": "Dull Critical Opal +2"
+    },
+    {
+      "name": "Dull Defense Sapphire +26"
+    },
+    {
+      "name": "Dull Health Opal +51"
+    },
+    {
+      "name": "Dull Health Opal +52"
+    },
+    {
+      "name": "Dull Health Opal +53"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Everlasting Celestian Boots"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Fire Accurate Pin (50)"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fire-Eye Ruby"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Forest Lord"
+    },
+    {
+      "name": "Forgotten Facade"
+    },
+    {
+      "name": "Forsaken Headgear"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Helm of Burning Ambition"
+    },
+    {
+      "name": "Hexfin's Flurry Band"
+    },
+    {
+      "name": "Hexfin's Frostbit Bodkin"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Accurate Pin (30)"
+    },
+    {
+      "name": "Ice Accurate Pin (60)"
+    },
+    {
+      "name": "Ice Rangers"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Icestar Stalkers"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Insightful Topper"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Kris of the Piscean Guard"
+    },
+    {
+      "name": "Large Willow Tree"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Legendary Vial"
+    },
+    {
+      "name": "Life Accurate Pin (20)"
+    },
+    {
+      "name": "Life Accurate Pin (60)"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Majestic Signet"
+    },
+    {
+      "name": "Mako's Timeless Trekkers"
+    },
+    {
+      "name": "Mako's Wanderlust Raiment"
+    },
+    {
+      "name": "Mass Ice Prism Sapphire"
+    },
+    {
+      "name": "Mass Life Prism Jade"
+    },
+    {
+      "name": "Mass Myth Prism Peridot"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "Myth Accurate Pin (50)"
+    },
+    {
+      "name": "Myth Accurate Pin (60)"
+    },
+    {
+      "name": "Nature's Wrath"
+    },
+    {
+      "name": "Nereus's Hoarfrost Helm"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Plain Blocking Onyx +6"
+    },
+    {
+      "name": "Plain Blocking Peridot +6"
+    },
+    {
+      "name": "Plain Damage Ruby +15"
+    },
+    {
+      "name": "Plain Damage Sapphire +15"
+    },
+    {
+      "name": "Plain Defense Opal +16"
+    },
+    {
+      "name": "Polar Boots"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Precision"
+    },
+    {
+      "name": "Reckless Raiment"
+    },
+    {
+      "name": "Rime Runners"
+    },
+    {
+      "name": "Ring of Rapport"
+    },
+    {
+      "name": "Ring of Rare Origins"
+    },
+    {
+      "name": "Rising Tide Topper"
+    },
+    {
+      "name": "Salgio's Tinder Cloak"
+    },
+    {
+      "name": "Sandstone"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Shark Tooth"
+    },
+    {
+      "name": "Shroud of Snowfall"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Slick-N-Slide Opal"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Sniper Talent Opal"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Sprite"
+    },
+    {
+      "name": "Steel"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storied Celestian Sabatons"
+    },
+    {
+      "name": "Storm Accurate Pin (50)"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Storm-Tooth Amethyst"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Storyteller's Cap"
+    },
+    {
+      "name": "Storyteller's Tunic"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Sturdy Opal"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Synthesis Cover"
+    },
+    {
+      "name": "Thundercloud Coif"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tolerant Boots"
+    },
+    {
+      "name": "Tragic Tunic"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Turbulent Tunic"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vengeance"
+    },
+    {
+      "name": "Versatile Celestian Boots"
+    },
+    {
+      "name": "Versatile Steel"
+    },
+    {
+      "name": "Vile Outfit"
+    },
+    {
+      "name": "Virtue Shoes"
+    },
+    {
+      "name": "Vital Headdress"
+    },
+    {
+      "name": "Whimsical Surcoat"
+    },
+    {
+      "name": "Wisp Bonus Opal"
+    },
+    {
+      "name": "Wraith"
+    },
+    {
+      "name": "Wyldfire"
+    }
   ],
   "authors": "BartleBot",
   "options": [

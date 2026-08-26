@@ -8,97 +8,279 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Mooshu",
   "drops": [
-    "Ape Grapes",
-    "Benign Cap",
-    "Blemished Accurate Onyx +5%",
-    "Blemished Damage Amethyst +11",
-    "Blemished Damage Citrine +11",
-    "Blemished Damage Ruby +11",
-    "Blended Wool Footwraps",
-    "Blended Wool Tunic",
-    "Boots of Chimes",
-    "Boots of Cooperation",
-    "Boots of Niceties",
-    "Brass",
-    "Cloak of Rhyming",
-    "Cobalt",
-    "Copper",
-    "Crunch Apple",
-    "Dragonflies",
-    "Effective Opal",
-    "Euphonic Cloak",
-    "Fiery Boom Shroom",
-    "Fire Cracker",
-    "Flawed Damage Onyx +10",
-    "Flawed Defense Citrine +20",
-    "Flawed Defense Onyx +20",
-    "Footwraps of Chants",
-    "Friendly Shoes",
-    "Garment of Watchfulness",
-    "Garments of Chants",
-    "Golden Peanut",
-    "Golden Squash",
-    "Hat of Enthusiasm",
-    "Healthy Opal",
-    "Heedful Robe",
-    "Hood of the Resolute",
-    "Ice Wyvern Sapphire",
-    "Koi Pond",
-    "Kraken Amethyst",
-    "Large Fish",
-    "Large Watermelon",
-    "Lead",
-    "Light-As-Air Hat",
-    "Loop of Refreshment",
-    "Lunar Tablet",
-    "Maelstrom Snap Dragon",
-    "Meteor Strike Ruby",
-    "Minotaur",
-    "Monstrous",
-    "Move It! Opal",
-    "Nickel",
-    "Pagoda Shrine",
-    "Potted Bobtail",
-    "Power Play Citrine",
-    "Problematic Boots",
-    "Profound Slippers",
-    "Ring of the Naturewalker",
-    "Robe of Consideration",
-    "Sandals of Exertion",
-    "Shoes of Struggling",
-    "Shoes of the Observant",
-    "Skeletal Pirate",
-    "Slippers of the Eager",
-    "Slippers of the Opus",
-    "Spider Silk",
-    "Sprightly Garments",
-    "Sprightly Slippers",
-    "Square Root",
-    "Surgeon's Scalpel",
-    "Tall Blue Vase",
-    "Time of Legend",
-    "Tin",
-    "Tormented Mask",
-    "Triton",
-    "Tunic of Preoccupation",
-    "Vestment of Cooperation",
-    "Vestment of Tribulations",
-    "Vigilant Cap",
-    "Warbled Hat",
-    "White Laugh-O-Dil",
-    "Wooden Skeleton Key",
-    "Youkai's Bonsai",
-    "Youkai's Cap of Brainstorms",
-    "Youkai's Cloak of Kindness",
-    "Youkai's Hat of Kindness",
-    "Youkai's Headwraps of Intent",
-    "Youkai's Rational Hat",
-    "Youkai's Robe of Premise",
-    "Youkai's Shoes",
-    "Youkai's Slippers",
-    "Youkai's Tunic of Intent",
-    "Youkai's Vacant Footwraps",
-    "Youkai's Vestment"
+    {
+      "name": "Ape Grapes"
+    },
+    {
+      "name": "Benign Cap"
+    },
+    {
+      "name": "Blemished Accurate Onyx +5%"
+    },
+    {
+      "name": "Blemished Damage Amethyst +11"
+    },
+    {
+      "name": "Blemished Damage Citrine +11"
+    },
+    {
+      "name": "Blemished Damage Ruby +11"
+    },
+    {
+      "name": "Blended Wool Footwraps"
+    },
+    {
+      "name": "Blended Wool Tunic"
+    },
+    {
+      "name": "Boots of Chimes"
+    },
+    {
+      "name": "Boots of Cooperation"
+    },
+    {
+      "name": "Boots of Niceties"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Cloak of Rhyming"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Crunch Apple"
+    },
+    {
+      "name": "Dragonflies"
+    },
+    {
+      "name": "Effective Opal"
+    },
+    {
+      "name": "Euphonic Cloak"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire Cracker"
+    },
+    {
+      "name": "Flawed Damage Onyx +10"
+    },
+    {
+      "name": "Flawed Defense Citrine +20"
+    },
+    {
+      "name": "Flawed Defense Onyx +20"
+    },
+    {
+      "name": "Footwraps of Chants"
+    },
+    {
+      "name": "Friendly Shoes"
+    },
+    {
+      "name": "Garment of Watchfulness"
+    },
+    {
+      "name": "Garments of Chants"
+    },
+    {
+      "name": "Golden Peanut"
+    },
+    {
+      "name": "Golden Squash"
+    },
+    {
+      "name": "Hat of Enthusiasm"
+    },
+    {
+      "name": "Healthy Opal"
+    },
+    {
+      "name": "Heedful Robe"
+    },
+    {
+      "name": "Hood of the Resolute"
+    },
+    {
+      "name": "Ice Wyvern Sapphire"
+    },
+    {
+      "name": "Koi Pond"
+    },
+    {
+      "name": "Kraken Amethyst"
+    },
+    {
+      "name": "Large Fish"
+    },
+    {
+      "name": "Large Watermelon"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Light-As-Air Hat"
+    },
+    {
+      "name": "Loop of Refreshment"
+    },
+    {
+      "name": "Lunar Tablet"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Meteor Strike Ruby"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Monstrous"
+    },
+    {
+      "name": "Move It! Opal"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Pagoda Shrine"
+    },
+    {
+      "name": "Potted Bobtail"
+    },
+    {
+      "name": "Power Play Citrine"
+    },
+    {
+      "name": "Problematic Boots"
+    },
+    {
+      "name": "Profound Slippers"
+    },
+    {
+      "name": "Ring of the Naturewalker"
+    },
+    {
+      "name": "Robe of Consideration"
+    },
+    {
+      "name": "Sandals of Exertion"
+    },
+    {
+      "name": "Shoes of Struggling"
+    },
+    {
+      "name": "Shoes of the Observant"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Slippers of the Eager"
+    },
+    {
+      "name": "Slippers of the Opus"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprightly Garments"
+    },
+    {
+      "name": "Sprightly Slippers"
+    },
+    {
+      "name": "Square Root"
+    },
+    {
+      "name": "Surgeon's Scalpel"
+    },
+    {
+      "name": "Tall Blue Vase"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tormented Mask"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Tunic of Preoccupation"
+    },
+    {
+      "name": "Vestment of Cooperation"
+    },
+    {
+      "name": "Vestment of Tribulations"
+    },
+    {
+      "name": "Vigilant Cap"
+    },
+    {
+      "name": "Warbled Hat"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wooden Skeleton Key"
+    },
+    {
+      "name": "Youkai's Bonsai"
+    },
+    {
+      "name": "Youkai's Cap of Brainstorms"
+    },
+    {
+      "name": "Youkai's Cloak of Kindness"
+    },
+    {
+      "name": "Youkai's Hat of Kindness"
+    },
+    {
+      "name": "Youkai's Headwraps of Intent"
+    },
+    {
+      "name": "Youkai's Rational Hat"
+    },
+    {
+      "name": "Youkai's Robe of Premise"
+    },
+    {
+      "name": "Youkai's Shoes"
+    },
+    {
+      "name": "Youkai's Slippers"
+    },
+    {
+      "name": "Youkai's Tunic of Intent"
+    },
+    {
+      "name": "Youkai's Vacant Footwraps"
+    },
+    {
+      "name": "Youkai's Vestment"
+    }
   ],
   "authors": "BartleBot",
   "options": [

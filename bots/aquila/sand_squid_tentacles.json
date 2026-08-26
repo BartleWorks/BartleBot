@@ -6,47 +6,142 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nfeint mass | any<blade>[sharp]@ally(0) | crow[epic]\n\n### p2\nany<aura & out_damage> | lord[epic] | tempest[epic] | bunyip[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Aquila",
   "drops": [
-    "Amber",
-    "Amber Dust",
-    "Aquila Atlantea Theme",
-    "Aquila Boss Combat Theme",
-    "Aquila Combat Theme",
-    "Aquila Epic Combat Theme",
-    "Aquila Olympus Theme",
-    "Aquila Tartarus Theme",
-    "Charm of Gorgon Imprisonment (Level 90+)",
-    "Charm of Gorgon Infamy (Level 90+)",
-    "Charm of Gorgon Petrification (Level 90+)",
-    "Charm of Gorgon Suffering (Level 90+)",
-    "Charm of Gorgon Venom (Level 90+)",
-    "Charm of Gorgon Volatility (Level 90+)",
-    "Charm of Gorgon's Gaze (Level 90+)",
-    "Deck of Immortal Might",
-    "Exalted Balance Amulet",
-    "Exalted Death Amulet",
-    "Exalted Fire Amulet",
-    "Exalted Ice Amulet",
-    "Exalted Life Amulet",
-    "Exalted Myth Amulet",
-    "Exalted Storm Amulet",
-    "Fires of Mars",
-    "Jupiter's Might",
-    "Neptune's Fury",
-    "Phoebus' Will",
-    "Pluto's Peril",
-    "Saturn's Reaping",
-    "Terminus' Strike"
+    {
+      "name": "Amber",
+      "category": "Reagents"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Aquila Atlantea Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Boss Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Epic Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Olympus Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Aquila Tartarus Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Charm of Gorgon Imprisonment (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Imprisonment"
+    },
+    {
+      "name": "Charm of Gorgon Infamy (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Infamy"
+    },
+    {
+      "name": "Charm of Gorgon Petrification (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Petrification"
+    },
+    {
+      "name": "Charm of Gorgon Suffering (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Suffering"
+    },
+    {
+      "name": "Charm of Gorgon Venom (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Venom"
+    },
+    {
+      "name": "Charm of Gorgon Volatility (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon Volatility"
+    },
+    {
+      "name": "Charm of Gorgon's Gaze (Level 90+)",
+      "category": "Amulets",
+      "match_name": "Charm of Gorgon's Gaze"
+    },
+    {
+      "name": "Deck of Immortal Might",
+      "category": "Decks"
+    },
+    {
+      "name": "Exalted Balance Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Death Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Fire Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Ice Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Life Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Myth Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Exalted Storm Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Fires of Mars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Jupiter's Might",
+      "category": "Spellements"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    }
   ],
   "authors": "BartleBot",
   "options": [
     {
       "name": "Safety Delay",
       "type": "float",
-      "default": 3,
+      "default": 3.0,
       "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
     },
     {

@@ -8,79 +8,225 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "Admirable Shoes",
-    "Alluring Robes",
-    "Bewitching Shoes",
-    "Big Energy Opal",
-    "Brisk Cap",
-    "Bronze Gear",
-    "Cap of the Unicorn",
-    "Caramel Popcorn",
-    "Cat Burglar's Cap",
-    "Chipped Accurate Ruby +3%",
-    "Chipped Damage Ruby +8",
-    "Chipped Defense Amethyst +15",
-    "Chipped Mana Opal +11",
-    "Cloak of Clarity",
-    "Cloak of Fascination",
-    "Copper",
-    "Crossbone Gravestone",
-    "Crusher's Deathly Robe",
-    "Crusher's Dexterous Shoes",
-    "Crusher's Hat",
-    "Crusher's Milk Bottle",
-    "Crusher's Mysterious Cap",
-    "Crusher's Winter Vestment",
-    "Deer Knight Onyx",
-    "Empty Milk Cartons",
-    "Exclusive Cap",
-    "Feline's Invigorating Robe",
-    "Flawed Defense Citrine +17",
-    "Flawed Defense Opal +10",
-    "Flawed Defense Ruby +17",
-    "Garment of the Supreme",
-    "Glowing Canine Hat",
-    "Grass Post Opal",
-    "Gummy Bloodbat",
-    "Ice Trap",
-    "Infernal Drape",
-    "Iron",
-    "Jinxed Hat",
-    "Leather Straps",
-    "Medium Fish",
-    "Milk Carton",
-    "Myth Ghoul",
-    "Nickel",
-    "Redskin Peanut",
-    "Regenerate",
-    "Robe of Excellence",
-    "Robe of the Bubble",
-    "Sandstorm",
-    "Savvy Vestment",
-    "Shoes of the Chimera",
-    "Slippers of the Worrier",
-    "Spike's Amulet of Smiting",
-    "Spike's Boots of Diplomacy",
-    "Spike's Boots of Excellence",
-    "Spike's Icicle-Spiked Hat",
-    "Spike's Mechanical Visor",
-    "Spike's Robe of the Phoenix",
-    "Spike's Vestment of History",
-    "Spirit Armor",
-    "Square Watermelon",
-    "Stinky Cheese",
-    "Storm Trap",
-    "Striders of the Verge",
-    "Time of Legend Peridot",
-    "Tin",
-    "Tin Can",
-    "Tunic of Symmetry",
-    "Tunic of the Clever",
-    "Vampire",
-    "Vest of Predominance",
-    "Vestment of Assistance",
-    "Wheat Cracker",
-    "White Rat Magician"
+    {
+      "name": "Admirable Shoes"
+    },
+    {
+      "name": "Alluring Robes"
+    },
+    {
+      "name": "Bewitching Shoes"
+    },
+    {
+      "name": "Big Energy Opal"
+    },
+    {
+      "name": "Brisk Cap"
+    },
+    {
+      "name": "Bronze Gear"
+    },
+    {
+      "name": "Cap of the Unicorn"
+    },
+    {
+      "name": "Caramel Popcorn"
+    },
+    {
+      "name": "Cat Burglar's Cap"
+    },
+    {
+      "name": "Chipped Accurate Ruby +3%"
+    },
+    {
+      "name": "Chipped Damage Ruby +8"
+    },
+    {
+      "name": "Chipped Defense Amethyst +15"
+    },
+    {
+      "name": "Chipped Mana Opal +11"
+    },
+    {
+      "name": "Cloak of Clarity"
+    },
+    {
+      "name": "Cloak of Fascination"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Crossbone Gravestone"
+    },
+    {
+      "name": "Crusher's Deathly Robe"
+    },
+    {
+      "name": "Crusher's Dexterous Shoes"
+    },
+    {
+      "name": "Crusher's Hat"
+    },
+    {
+      "name": "Crusher's Milk Bottle"
+    },
+    {
+      "name": "Crusher's Mysterious Cap"
+    },
+    {
+      "name": "Crusher's Winter Vestment"
+    },
+    {
+      "name": "Deer Knight Onyx"
+    },
+    {
+      "name": "Empty Milk Cartons"
+    },
+    {
+      "name": "Exclusive Cap"
+    },
+    {
+      "name": "Feline's Invigorating Robe"
+    },
+    {
+      "name": "Flawed Defense Citrine +17"
+    },
+    {
+      "name": "Flawed Defense Opal +10"
+    },
+    {
+      "name": "Flawed Defense Ruby +17"
+    },
+    {
+      "name": "Garment of the Supreme"
+    },
+    {
+      "name": "Glowing Canine Hat"
+    },
+    {
+      "name": "Grass Post Opal"
+    },
+    {
+      "name": "Gummy Bloodbat"
+    },
+    {
+      "name": "Ice Trap"
+    },
+    {
+      "name": "Infernal Drape"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Jinxed Hat"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Medium Fish"
+    },
+    {
+      "name": "Milk Carton"
+    },
+    {
+      "name": "Myth Ghoul"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Redskin Peanut"
+    },
+    {
+      "name": "Regenerate"
+    },
+    {
+      "name": "Robe of Excellence"
+    },
+    {
+      "name": "Robe of the Bubble"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Savvy Vestment"
+    },
+    {
+      "name": "Shoes of the Chimera"
+    },
+    {
+      "name": "Slippers of the Worrier"
+    },
+    {
+      "name": "Spike's Amulet of Smiting"
+    },
+    {
+      "name": "Spike's Boots of Diplomacy"
+    },
+    {
+      "name": "Spike's Boots of Excellence"
+    },
+    {
+      "name": "Spike's Icicle-Spiked Hat"
+    },
+    {
+      "name": "Spike's Mechanical Visor"
+    },
+    {
+      "name": "Spike's Robe of the Phoenix"
+    },
+    {
+      "name": "Spike's Vestment of History"
+    },
+    {
+      "name": "Spirit Armor"
+    },
+    {
+      "name": "Square Watermelon"
+    },
+    {
+      "name": "Stinky Cheese"
+    },
+    {
+      "name": "Storm Trap"
+    },
+    {
+      "name": "Striders of the Verge"
+    },
+    {
+      "name": "Time of Legend Peridot"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Tin Can"
+    },
+    {
+      "name": "Tunic of Symmetry"
+    },
+    {
+      "name": "Tunic of the Clever"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vest of Predominance"
+    },
+    {
+      "name": "Vestment of Assistance"
+    },
+    {
+      "name": "Wheat Cracker"
+    },
+    {
+      "name": "White Rat Magician"
+    }
   ],
   "authors": "BartleBot",
   "options": [

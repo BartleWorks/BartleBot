@@ -8,98 +8,282 @@
   "recovery_state": "state_1",
   "start_location": "Anywhere in Marleybone",
   "drops": [
-    "Adroit Opal",
-    "Balefrost",
-    "Band of Royal Infallibility",
-    "Banshee Onyx",
-    "Barkingham Boots of Brio",
-    "Barkingham Clogs of Repose",
-    "Black Spider",
-    "Blue Ghost",
-    "Bone",
-    "Boots of the Forlorn Watch",
-    "Buttered Bread",
-    "Cat Thug",
-    "Chipped Damage Citrine +7",
-    "Chipped Defense Opal +8",
-    "Chipped Defense Sapphire +14",
-    "Clockwork",
-    "Clockwork Spider",
-    "Copper",
-    "Crabling",
-    "Cyclops Peridot",
-    "Dark Sprite",
-    "Darkwind",
-    "Deadly Scratcher",
-    "Delicious Cookie",
-    "Doom and Gloom",
-    "Dr. Jalapeno",
-    "Ectoplasm",
-    "Evil Snowman Sapphire",
-    "Flaming Soup",
-    "Flapjacks",
-    "Flawed Accurate Opal +2%",
-    "Flawed Health Opal +29",
-    "Flawed Health Opal +30",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Goat Cheese",
-    "Golden Grapes",
-    "Gummy Humongofrog",
-    "Hat of the Forlorn Watch",
-    "Humongofrog",
-    "Ice Wyvern",
-    "Intrepid Opal",
-    "Iron",
-    "Iron Golem",
-    "Jelly Baby",
-    "King Banana",
-    "Kola Nuts",
-    "Kraken",
-    "Lead",
-    "Leather Straps",
-    "Leprechaun",
-    "Meteor Strike",
-    "Myth Potbelly",
-    "Nickel",
-    "Palace Guard's Firewalkers",
-    "Palace Guard's Rain Topper",
-    "Palace Guard's Rain Waders",
-    "Palace Guard's Stovepipe",
-    "Pest Zapper",
-    "Power Play",
-    "Pyrite",
-    "Quick Learner Opal",
-    "Red Ghost",
-    "Regal Token of Luminosity",
-    "Relic of Imperial Perpetuum",
-    "Relic of the Reign of Ice",
-    "Sanctuary",
-    "Sandstorm",
-    "Seraph",
-    "Seraph",
-    "Solemn Kingdom Heirloom",
-    "Spicy Drumstick",
-    "Spider Silk",
-    "Sprite Jade",
-    "Storm Shark Amethyst",
-    "Strawberry Cupcake",
-    "Street Sweeper",
-    "Submarine Sandwich",
-    "Sunbird Ruby",
-    "Time of Legend",
-    "Trophy of the Raucous Court",
-    "Uni-Corn",
-    "Vampire",
-    "Venus Fly Trap",
-    "White Laugh-O-Dil",
-    "Wooden Skeleton Key",
-    "Wyldfire",
-    "Yeoman's Shoes of Bounty",
-    "Yeoman's Top Hat of Reverie",
-    "Yeoman's Topper of Unity",
-    "Yeoman's Walkers of Unity",
-    "Yeoman's Winter Boots"
+    {
+      "name": "Adroit Opal"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Band of Royal Infallibility"
+    },
+    {
+      "name": "Banshee Onyx"
+    },
+    {
+      "name": "Barkingham Boots of Brio"
+    },
+    {
+      "name": "Barkingham Clogs of Repose"
+    },
+    {
+      "name": "Black Spider"
+    },
+    {
+      "name": "Blue Ghost"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of the Forlorn Watch"
+    },
+    {
+      "name": "Buttered Bread"
+    },
+    {
+      "name": "Cat Thug"
+    },
+    {
+      "name": "Chipped Damage Citrine +7"
+    },
+    {
+      "name": "Chipped Defense Opal +8"
+    },
+    {
+      "name": "Chipped Defense Sapphire +14"
+    },
+    {
+      "name": "Clockwork"
+    },
+    {
+      "name": "Clockwork Spider"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Crabling"
+    },
+    {
+      "name": "Cyclops Peridot"
+    },
+    {
+      "name": "Dark Sprite"
+    },
+    {
+      "name": "Darkwind"
+    },
+    {
+      "name": "Deadly Scratcher"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Doom and Gloom"
+    },
+    {
+      "name": "Dr. Jalapeno"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Evil Snowman Sapphire"
+    },
+    {
+      "name": "Flaming Soup"
+    },
+    {
+      "name": "Flapjacks"
+    },
+    {
+      "name": "Flawed Accurate Opal +2%"
+    },
+    {
+      "name": "Flawed Health Opal +29"
+    },
+    {
+      "name": "Flawed Health Opal +30"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Goat Cheese"
+    },
+    {
+      "name": "Golden Grapes"
+    },
+    {
+      "name": "Gummy Humongofrog"
+    },
+    {
+      "name": "Hat of the Forlorn Watch"
+    },
+    {
+      "name": "Humongofrog"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Intrepid Opal"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Iron Golem"
+    },
+    {
+      "name": "Jelly Baby"
+    },
+    {
+      "name": "King Banana"
+    },
+    {
+      "name": "Kola Nuts"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Leprechaun"
+    },
+    {
+      "name": "Meteor Strike"
+    },
+    {
+      "name": "Myth Potbelly"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Palace Guard's Firewalkers"
+    },
+    {
+      "name": "Palace Guard's Rain Topper"
+    },
+    {
+      "name": "Palace Guard's Rain Waders"
+    },
+    {
+      "name": "Palace Guard's Stovepipe"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Power Play"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Quick Learner Opal"
+    },
+    {
+      "name": "Red Ghost"
+    },
+    {
+      "name": "Regal Token of Luminosity"
+    },
+    {
+      "name": "Relic of Imperial Perpetuum"
+    },
+    {
+      "name": "Relic of the Reign of Ice"
+    },
+    {
+      "name": "Sanctuary"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Solemn Kingdom Heirloom"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprite Jade"
+    },
+    {
+      "name": "Storm Shark Amethyst"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Street Sweeper"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sunbird Ruby"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Trophy of the Raucous Court"
+    },
+    {
+      "name": "Uni-Corn"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wooden Skeleton Key"
+    },
+    {
+      "name": "Wyldfire"
+    },
+    {
+      "name": "Yeoman's Shoes of Bounty"
+    },
+    {
+      "name": "Yeoman's Top Hat of Reverie"
+    },
+    {
+      "name": "Yeoman's Topper of Unity"
+    },
+    {
+      "name": "Yeoman's Walkers of Unity"
+    },
+    {
+      "name": "Yeoman's Winter Boots"
+    }
   ],
   "authors": "BartleBot",
   "options": [

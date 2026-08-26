@@ -9,140 +9,408 @@
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Celestia",
   "drops": [
-    "Atavistic Balance Ampul",
-    "Atavistic Death Ampul",
-    "Atavistic Fire Ampul",
-    "Atavistic Ice Ampul",
-    "Atavistic Life Ampul",
-    "Atavistic Myth Ampul",
-    "Atavistic Storm Ampul",
-    "Balance Accurate Pin (30)",
-    "Balance Accurate Pin (60)",
-    "Banshee",
-    "Blight Hound",
-    "Boots of Catastrophe",
-    "Boots of Celestian Totality",
-    "Brass",
-    "Bygone Balance Ampul",
-    "Bygone Death Ampul",
-    "Bygone Fire Ampul",
-    "Bygone Ice Ampul",
-    "Bygone Life Ampul",
-    "Bygone Myth Ampul",
-    "Bygone Storm Ampul",
-    "Celestian Tempest Trekkers",
-    "Centaur",
-    "Centaur's Helm",
-    "Cobalt",
-    "Colossus",
-    "Copper",
-    "Cyclops",
-    "Cyclops Minion",
-    "Dagger of Typhoons",
-    "Deadly Fly Trap",
-    "Death Accurate Pin (30)",
-    "Death Accurate Pin (60)",
-    "Delicious Cookie",
-    "Dissipate Amethyst",
-    "Dog House",
-    "Donate Power",
-    "Dull Critical Jade +3",
-    "Dull Defense Amethyst +26",
-    "Earth Walker",
-    "Empower",
-    "Entangle Jade",
-    "Epic Greaves",
-    "Evil Snowman",
-    "Expert's Socket Wrench",
-    "Feinting Spell Onyx",
-    "Fire Accurate Pin (50)",
-    "Fire Dragon",
-    "Fish Fin",
-    "Fish on a Vine",
-    "Forbidden Mask",
-    "Forest Lord",
-    "Forgotten Facade",
-    "Frost Giant",
-    "Frostbit Footguards",
-    "Gargantuan",
-    "Gearhead Destroyer",
-    "Glowing Star Fruit",
-    "Glowing Taffy",
-    "Heck Hound",
-    "Helephant",
-    "Hydra",
-    "Ice Accurate Pin (30)",
-    "Ice Accurate Pin (60)",
-    "Ice Wyvern",
-    "Icestar Stalkers",
-    "Immolate",
-    "Kraken",
-    "Lawful Garment",
-    "Legendary Vial",
-    "Life Accurate Pin (20)",
-    "Life Accurate Pin (60)",
-    "Life-Shot Jade",
-    "Locust Swarm",
-    "Maelstrom Snap Dragon",
-    "Majestic Signet",
-    "Melt Sapphire",
-    "Minotaur",
-    "Mutate Elf (Ice)",
-    "Mutate Snowman (Fire)",
-    "Myth Accurate Pin (50)",
-    "Myth Accurate Pin (60)",
-    "Nature's Wrath",
-    "Nellek's Willow Ring",
-    "Nickel",
-    "Orthrus",
-    "Phoenix",
-    "Pink Dandelion",
-    "Plain Defense Citrine +29",
-    "Plain Defense Sapphire +29",
-    "Plain Health Opal +60",
-    "Power Nova",
-    "Precision",
-    "Raiment of Wonder",
-    "Razor of Rapture",
-    "Reckless Raiment",
-    "Rime Runners",
-    "Ring of Rapport",
-    "Rising Tide Topper",
-    "Sandstone",
-    "Scales",
-    "Scarecrow",
-    "Seraph",
-    "Shark Tooth",
-    "Shroud of Solitude",
-    "Silver Trumpet Vine",
-    "Skeletal Pirate",
-    "Sniper",
-    "Spectral Blast",
-    "Spicy Drumstick",
-    "Stone Colossus",
-    "Storm Accurate Pin (50)",
-    "Storm Lord",
-    "Storm Shark",
-    "Stormzilla",
-    "Storyteller's Tunic",
-    "Strangle Onyx",
-    "Strawberry Cupcake",
-    "Submarine Sandwich",
-    "Sunbird",
-    "Sunstone",
-    "Thunderstruck Striders",
-    "Triton",
-    "Typhoon Band",
-    "Unbalance Citrine",
-    "Unstoppable",
-    "Vampire",
-    "Vaporize Peridot",
-    "Versatile Steel",
-    "Vital Headdress",
-    "Whimsical Surcoat",
-    "Windstorm Choker",
-    "Wipeout Opal",
-    "Wraith"
+    {
+      "name": "Atavistic Balance Ampul"
+    },
+    {
+      "name": "Atavistic Death Ampul"
+    },
+    {
+      "name": "Atavistic Fire Ampul"
+    },
+    {
+      "name": "Atavistic Ice Ampul"
+    },
+    {
+      "name": "Atavistic Life Ampul"
+    },
+    {
+      "name": "Atavistic Myth Ampul"
+    },
+    {
+      "name": "Atavistic Storm Ampul"
+    },
+    {
+      "name": "Balance Accurate Pin (30)"
+    },
+    {
+      "name": "Balance Accurate Pin (60)"
+    },
+    {
+      "name": "Banshee"
+    },
+    {
+      "name": "Blight Hound"
+    },
+    {
+      "name": "Boots of Catastrophe"
+    },
+    {
+      "name": "Boots of Celestian Totality"
+    },
+    {
+      "name": "Brass"
+    },
+    {
+      "name": "Bygone Balance Ampul"
+    },
+    {
+      "name": "Bygone Death Ampul"
+    },
+    {
+      "name": "Bygone Fire Ampul"
+    },
+    {
+      "name": "Bygone Ice Ampul"
+    },
+    {
+      "name": "Bygone Life Ampul"
+    },
+    {
+      "name": "Bygone Myth Ampul"
+    },
+    {
+      "name": "Bygone Storm Ampul"
+    },
+    {
+      "name": "Celestian Tempest Trekkers"
+    },
+    {
+      "name": "Centaur"
+    },
+    {
+      "name": "Centaur's Helm"
+    },
+    {
+      "name": "Cobalt"
+    },
+    {
+      "name": "Colossus"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Cyclops"
+    },
+    {
+      "name": "Cyclops Minion"
+    },
+    {
+      "name": "Dagger of Typhoons"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Death Accurate Pin (30)"
+    },
+    {
+      "name": "Death Accurate Pin (60)"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Dissipate Amethyst"
+    },
+    {
+      "name": "Dog House"
+    },
+    {
+      "name": "Donate Power"
+    },
+    {
+      "name": "Dull Critical Jade +3"
+    },
+    {
+      "name": "Dull Defense Amethyst +26"
+    },
+    {
+      "name": "Earth Walker"
+    },
+    {
+      "name": "Empower"
+    },
+    {
+      "name": "Entangle Jade"
+    },
+    {
+      "name": "Epic Greaves"
+    },
+    {
+      "name": "Evil Snowman"
+    },
+    {
+      "name": "Expert's Socket Wrench"
+    },
+    {
+      "name": "Feinting Spell Onyx"
+    },
+    {
+      "name": "Fire Accurate Pin (50)"
+    },
+    {
+      "name": "Fire Dragon"
+    },
+    {
+      "name": "Fish Fin"
+    },
+    {
+      "name": "Fish on a Vine"
+    },
+    {
+      "name": "Forbidden Mask"
+    },
+    {
+      "name": "Forest Lord"
+    },
+    {
+      "name": "Forgotten Facade"
+    },
+    {
+      "name": "Frost Giant"
+    },
+    {
+      "name": "Frostbit Footguards"
+    },
+    {
+      "name": "Gargantuan"
+    },
+    {
+      "name": "Gearhead Destroyer"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Heck Hound"
+    },
+    {
+      "name": "Helephant"
+    },
+    {
+      "name": "Hydra"
+    },
+    {
+      "name": "Ice Accurate Pin (30)"
+    },
+    {
+      "name": "Ice Accurate Pin (60)"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Icestar Stalkers"
+    },
+    {
+      "name": "Immolate"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Lawful Garment"
+    },
+    {
+      "name": "Legendary Vial"
+    },
+    {
+      "name": "Life Accurate Pin (20)"
+    },
+    {
+      "name": "Life Accurate Pin (60)"
+    },
+    {
+      "name": "Life-Shot Jade"
+    },
+    {
+      "name": "Locust Swarm"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Majestic Signet"
+    },
+    {
+      "name": "Melt Sapphire"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Mutate Elf (Ice)"
+    },
+    {
+      "name": "Mutate Snowman (Fire)"
+    },
+    {
+      "name": "Myth Accurate Pin (50)"
+    },
+    {
+      "name": "Myth Accurate Pin (60)"
+    },
+    {
+      "name": "Nature's Wrath"
+    },
+    {
+      "name": "Nellek's Willow Ring"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Orthrus"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Plain Defense Citrine +29"
+    },
+    {
+      "name": "Plain Defense Sapphire +29"
+    },
+    {
+      "name": "Plain Health Opal +60"
+    },
+    {
+      "name": "Power Nova"
+    },
+    {
+      "name": "Precision"
+    },
+    {
+      "name": "Raiment of Wonder"
+    },
+    {
+      "name": "Razor of Rapture"
+    },
+    {
+      "name": "Reckless Raiment"
+    },
+    {
+      "name": "Rime Runners"
+    },
+    {
+      "name": "Ring of Rapport"
+    },
+    {
+      "name": "Rising Tide Topper"
+    },
+    {
+      "name": "Sandstone"
+    },
+    {
+      "name": "Scales"
+    },
+    {
+      "name": "Scarecrow"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Shark Tooth"
+    },
+    {
+      "name": "Shroud of Solitude"
+    },
+    {
+      "name": "Silver Trumpet Vine"
+    },
+    {
+      "name": "Skeletal Pirate"
+    },
+    {
+      "name": "Sniper"
+    },
+    {
+      "name": "Spectral Blast"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Stone Colossus"
+    },
+    {
+      "name": "Storm Accurate Pin (50)"
+    },
+    {
+      "name": "Storm Lord"
+    },
+    {
+      "name": "Storm Shark"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Storyteller's Tunic"
+    },
+    {
+      "name": "Strangle Onyx"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sunbird"
+    },
+    {
+      "name": "Sunstone"
+    },
+    {
+      "name": "Thunderstruck Striders"
+    },
+    {
+      "name": "Triton"
+    },
+    {
+      "name": "Typhoon Band"
+    },
+    {
+      "name": "Unbalance Citrine"
+    },
+    {
+      "name": "Unstoppable"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Vaporize Peridot"
+    },
+    {
+      "name": "Versatile Steel"
+    },
+    {
+      "name": "Vital Headdress"
+    },
+    {
+      "name": "Whimsical Surcoat"
+    },
+    {
+      "name": "Windstorm Choker"
+    },
+    {
+      "name": "Wipeout Opal"
+    },
+    {
+      "name": "Wraith"
+    }
   ],
   "authors": "BartleBot",
   "options": [

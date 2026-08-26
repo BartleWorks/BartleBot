@@ -6,127 +6,488 @@
   "clients": "all",
   "initial": "state_9",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
-    "Adventurer's Boots",
-    "Alicane's Band",
-    "Alicane's Cowl",
-    "Alicane's Dirk",
-    "Alicane's Flame Staff",
-    "Alicane's Helm",
-    "Ancient Koi",
-    "Ankylosaurus",
-    "Auroch",
-    "Barkskin Boots",
-    "Barkskin Tunic",
-    "Bat Wings",
-    "Bengal Tiger",
-    "Black Stallion",
-    "Blonde Strawberry",
-    "Blood Bat",
-    "Boots of the Adverse",
-    "Branded Footguards",
-    "Canvas Wraps",
-    "Cheese Broccoli",
-    "Chestnut Pony",
-    "Chillcloak",
-    "Chocolate Strawberry",
-    "Cloak of Calamity",
-    "Cloak of Foresight",
-    "Crokagator",
-    "Dark Redwing",
-    "Death Trap",
-    "Elven Fire Robe",
-    "Enchanted Broom",
-    "Evil Snowman",
-    "Explorer Boots",
-    "Fairy Cloak",
-    "Fairy Shoes",
-    "Faithful Dragoness",
-    "Fire Bush",
-    "Fire Cat",
-    "Fire Elf",
-    "Fire Shield",
-    "Firecat Statue",
-    "Firestorm Cap",
-    "Firestorm Wraps",
-    "Flawed Opal Band",
-    "Flawed Pearl Ring",
-    "Frost Beetle",
-    "Ghoul",
-    "Guiding Light",
-    "Gummy Firecat",
-    "Hallowed Band",
-    "Hardened Boots",
-    "Healer's Cowl",
-    "Helm of Stability",
-    "Helm of Supremacy",
-    "Hippogriff",
-    "Hood of Storms",
-    "Horned Sweeper",
-    "Imp",
-    "Imp Lord's Helm",
-    "Jeweled Dagger",
-    "Keen Eyes",
-    "Leather Straps",
-    "Lightning Bats",
-    "Locust Swarm",
-    "Martyr's Wraps",
-    "Moonlight Pony",
-    "Myth Shield",
-    "Nightflame Pegasus",
-    "Novice's Hat",
-    "Novice's Robe",
-    "Novice's Shoes",
-    "Orange Fairy Wings",
-    "Panther",
-    "Pixie",
-    "Plated Boots",
-    "Prop House 2",
-    "Prop Mountains 1",
-    "Prop Mountains 2",
-    "Renaissance Wings",
-    "Ritual Athame",
-    "Robe of Antiquities",
-    "Roughspun Hat",
-    "Rugged Seahorse",
-    "Scarab",
-    "Sea Turtle",
-    "Senior Novice's Robe",
-    "Seraph Wings",
-    "Shortblade of the Quick",
-    "Simple Dirk",
-    "Slippers of Rites",
-    "Small Fern",
-    "Snappy Lobster",
-    "Snow Ram",
-    "Snow Shield",
-    "Soft Hood",
-    "Soldiers Wraps",
-    "Spider Silk",
-    "Sprite",
-    "Spritely Seahorse",
-    "Starlight Pony",
-    "Sturdy Boots",
-    "Sturdy Coat",
-    "Sugar Donut",
-    "Sunshine Pony",
-    "Swift Gryphon",
-    "Swift Shark",
-    "Swiftarrow's Boots",
-    "Swiftarrow's Mantle",
-    "Swiftarrow's Necklace",
-    "Swiftarrow's Signet",
-    "Swiftarrow's Staff",
-    "Swiftarrow's Windmane",
-    "Swiftshadow Wings",
-    "Time of Legend",
-    "Tough",
-    "Twice Stitched Robe",
-    "Vestment of the Adverse",
-    "White Mare",
-    "Wizard101 Theme"
+    {
+      "name": "Adventurer's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Alicane's Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Alicane's Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Alicane's Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Alicane's Flame Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Alicane's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Ancient Koi",
+      "category": "Mounts"
+    },
+    {
+      "name": "Ankylosaurus",
+      "category": "Mounts"
+    },
+    {
+      "name": "Auroch",
+      "category": "Mounts"
+    },
+    {
+      "name": "Barkskin Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Barkskin Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Bat Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Bengal Tiger",
+      "category": "Mounts"
+    },
+    {
+      "name": "Black Stallion",
+      "category": "Mounts"
+    },
+    {
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Blood Bat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Boots of the Adverse",
+      "category": "Boots"
+    },
+    {
+      "name": "Branded Footguards",
+      "category": "Boots"
+    },
+    {
+      "name": "Canvas Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
+    },
+    {
+      "name": "Chestnut Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Chillcloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cloak of Calamity",
+      "category": "Robes"
+    },
+    {
+      "name": "Cloak of Foresight",
+      "category": "Robes"
+    },
+    {
+      "name": "Crokagator",
+      "category": "Mounts"
+    },
+    {
+      "name": "Dark Redwing",
+      "category": "Mounts"
+    },
+    {
+      "name": "Death Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Elven Fire Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Enchanted Broom",
+      "category": "Mounts"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Explorer Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Fairy Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Fairy Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Faithful Dragoness",
+      "category": "Mounts"
+    },
+    {
+      "name": "Fire Bush",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Firecat Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Firestorm Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Firestorm Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Flawed Opal Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Flawed Pearl Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gummy Firecat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hallowed Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Hardened Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Healer's Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Stability",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Supremacy",
+      "category": "Hats"
+    },
+    {
+      "name": "Hippogriff",
+      "category": "Mounts"
+    },
+    {
+      "name": "Hood of Storms",
+      "category": "Hats"
+    },
+    {
+      "name": "Horned Sweeper",
+      "category": "Mounts"
+    },
+    {
+      "name": "Imp",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Jeweled Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Martyr's Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Moonlight Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Myth Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Nightflame Pegasus",
+      "category": "Mounts"
+    },
+    {
+      "name": "Novice's Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Novice's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Novice's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Orange Fairy Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Panther",
+      "category": "Mounts"
+    },
+    {
+      "name": "Pixie",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Plated Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Prop House 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prop Mountains 1",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Prop Mountains 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Renaissance Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Ritual Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Robe of Antiquities",
+      "category": "Robes"
+    },
+    {
+      "name": "Roughspun Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Rugged Seahorse",
+      "category": "Mounts"
+    },
+    {
+      "name": "Scarab",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sea Turtle",
+      "category": "Mounts"
+    },
+    {
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Seraph Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Shortblade of the Quick",
+      "category": "Athames"
+    },
+    {
+      "name": "Simple Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Slippers of Rites",
+      "category": "Boots"
+    },
+    {
+      "name": "Small Fern",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snappy Lobster",
+      "category": "Mounts"
+    },
+    {
+      "name": "Snow Ram",
+      "category": "Mounts"
+    },
+    {
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Soft Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Soldiers Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Sprite",
+      "category": "Pets"
+    },
+    {
+      "name": "Spritely Seahorse",
+      "category": "Mounts"
+    },
+    {
+      "name": "Starlight Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Sturdy Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Sturdy Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Sugar Donut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sunshine Pony",
+      "category": "Mounts"
+    },
+    {
+      "name": "Swift Gryphon",
+      "category": "Mounts"
+    },
+    {
+      "name": "Swift Shark",
+      "category": "Mounts"
+    },
+    {
+      "name": "Swiftarrow's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Swiftarrow's Mantle",
+      "category": "Robes"
+    },
+    {
+      "name": "Swiftarrow's Necklace",
+      "category": "Amulets"
+    },
+    {
+      "name": "Swiftarrow's Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Swiftarrow's Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Swiftarrow's Windmane",
+      "category": "Robes"
+    },
+    {
+      "name": "Swiftshadow Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Tawny Ram",
+      "category": "Mounts"
+    },
+    {
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Twice Stitched Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Venemous Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Vestment of the Adverse",
+      "category": "Robes"
+    },
+    {
+      "name": "White Mare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Wizard101 Theme",
+      "category": "Housing Items"
+    }
   ],
   "authors": "BartleBot",
   "options": [

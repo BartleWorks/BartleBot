@@ -18,11 +18,14 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
+from bartlebot.wiki_drops import match_name_for
+from bartlebot.wiki_pages import WIKI_HOST as _WIKI_HOST
+from bartlebot.wiki_pages import page_title, wiki_page_path
 
 logger = logging.getLogger(__name__)
 
-_WIKI_HOST = "wiki.wizard101central.com"
 _WIKI_PREFIX = f"https://{_WIKI_HOST}/wiki/"
 
 # Wiki namespaces that represent obtainable in-game items.
@@ -94,18 +97,10 @@ class _FetchWorker(QThread):
 
 def _is_item_link(href: str) -> bool:
     """Return True if *href* links to an obtainable in-game item page."""
-    path = href
-    if path.startswith("http"):
-        if _WIKI_HOST not in path:
-            return False
-        idx = path.find("/wiki/")
-        if idx == -1:
-            return False
-        path = path[idx:]
-    path = path.lstrip("/")
-    if not path.startswith("wiki/"):
+    path = wiki_page_path(href)
+    if path is None:
         return False
-    page = path[len("wiki/") :]
+    page = path[len("/wiki/") :]
     ns = page.split(":")[0] if ":" in page else ""
     return ns in _ITEM_NAMESPACES
 
@@ -190,7 +185,8 @@ class WikiImportDialog(QDialog):
         self.setMinimumSize(480, 500)
         self.resize(540, 580)
         self._worker: _FetchWorker | None = None
-        self._selected: list[str] = []
+        self._selected: list[DropModel] = []
+        self._page: str | None = None
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -199,7 +195,18 @@ class WikiImportDialog(QDialog):
 
     def selected_items(self) -> list[str]:
         """Return the list of checked item names after the dialog is accepted."""
-        return self._selected
+        return [entry.name for entry in self._selected]
+
+    def selected_entries(self) -> list[DropModel]:
+        """Return the checked items with the wiki category each was listed under."""
+        return list(self._selected)
+
+    def selected_page(self) -> str | None:
+        """The title of the page these drops came from, for the caller to record.
+
+        A title rather than the URL the user pasted — see bartlebot/wiki_pages.py.
+        """
+        return self._page
 
     # ------------------------------------------------------------------
     # UI construction
@@ -298,6 +305,7 @@ class WikiImportDialog(QDialog):
             self._set_status(err, error=True)
             return
 
+        self._page = page_title(url)
         self._set_status("Fetching…")
         self._btn_fetch.setEnabled(False)
         self._tree.clear()
@@ -332,6 +340,7 @@ class WikiImportDialog(QDialog):
         self._tree.clear()
         for category, items in drops.items():
             cat_item = QTreeWidgetItem(self._tree, [f"{category}  ({len(items)})"])
+            cat_item.setData(0, Qt.ItemDataRole.UserRole, category)
             cat_item.setFlags(cat_item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             cat_item.setCheckState(0, Qt.CheckState.Checked)
             for name in sorted(items, key=str.casefold):
@@ -398,10 +407,18 @@ class WikiImportDialog(QDialog):
         self._selected = []
         for i in range(self._tree.topLevelItemCount()):
             cat = self._tree.topLevelItem(i)
+            # The header carries a count suffix for display; the category is stored
+            # separately so it survives back into the bot's drop table.
+            category = cat.data(0, Qt.ItemDataRole.UserRole)
             for j in range(cat.childCount()):
                 child = cat.child(j)
                 if child.checkState(0) == Qt.CheckState.Checked:
-                    self._selected.append(child.text(0))
+                    name = child.text(0)
+                    # The wiki disambiguates variants the game shows identically, so
+                    # record the in-game form now — the category is only in hand here.
+                    self._selected.append(
+                        DropModel(name=name, category=category, match_name=match_name_for(name, category))
+                    )
         self.accept()
 
     # ------------------------------------------------------------------
@@ -410,13 +427,16 @@ class WikiImportDialog(QDialog):
 
     @staticmethod
     def _validate_url(url: str) -> str | None:
-        """Return an error string, or None if the URL is acceptable."""
-        if not url.startswith("https://"):
+        """Return an error string, or None if the URL is acceptable.
+
+        The fetch that follows impersonates Chrome against whatever this allows, so
+        the host check has to be exact — see :func:`wiki_page_path`.
+        """
+        url = url.strip()
+        if not url.lower().startswith("https://"):
             return "URL must start with https://"
-        if _WIKI_HOST not in url:
-            return f"URL must be from {_WIKI_HOST}"
-        if "/wiki/" not in url:
-            return "URL must point to a wiki page (must contain /wiki/)"
+        if wiki_page_path(url) is None:
+            return f"URL must be an https://{_WIKI_HOST}/wiki/… page"
         return None
 
     def _set_status(self, msg: str, *, error: bool = False) -> None:

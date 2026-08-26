@@ -113,6 +113,24 @@ class _BotMeta:
     path: Path
 
 
+def _drop_names(raw: object) -> list[str]:
+    """Drop names from a bot file's raw ``drops``, in either storage form.
+
+    Read outside Pydantic, so it has to handle the pre-category ``["Amber"]`` shape
+    as well as ``[{"name": "Amber", "category": "Reagents"}]``. The library card only
+    counts and searches names, so the category is not carried here.
+    """
+    if not isinstance(raw, list):
+        return []
+    names = []
+    for entry in raw:
+        if isinstance(entry, str):
+            names.append(entry)
+        elif isinstance(entry, dict) and isinstance(entry.get("name"), str):
+            names.append(entry["name"])
+    return names
+
+
 def _read_bot_meta(path: Path) -> "_BotMeta | None":
     try:
         with path.open(encoding="utf-8") as f:
@@ -121,7 +139,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             name=data.get("name") or path.stem,
             description=data.get("description") or "",
             authors=data.get("authors") or "",
-            drops=data.get("drops") or [],
+            drops=_drop_names(data.get("drops")),
             start_location=data.get("start_location") or "",
             version=data.get("version") or "",
             path=path,
@@ -578,6 +596,7 @@ class BotCanvas(QWidget):
         self._scene = EditScene()
         self._view = _EditView(self._scene)
         self._param_panel = _ParamPanel()
+        self._param_panel.set_drops_getter(lambda: list(self._config.drops) if self._config else [])
 
         # ── Buttons ───────────────────────────────────────────────────
         self._run_pause_btn = _icon_btn("play", "Run bot")
@@ -818,6 +837,7 @@ class BotCanvas(QWidget):
         self._tab_idx = 0
         _inject_required_options(config)
         self._config = config
+        self._param_panel.refresh_drops()
         # Auto-layout when no positions are saved and the setting is enabled
         if (
             config.states
