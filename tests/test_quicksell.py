@@ -1,5 +1,6 @@
 """Unit tests for the quicksell node."""
 
+import logging
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.utility.quicksell as qs
@@ -286,3 +287,42 @@ async def test_is_jewel_backpack_full_parses_text():
 
         mock_text.return_value = ""
         assert await qs._is_jewel_backpack_full(FakeClient()) is False
+
+
+async def test_warns_that_a_keep_list_cannot_spare_a_pet():
+    """Sell Pets on plus a keep list is the case where a pet is silently sold."""
+    client = FakeClient()
+    client.backpack_space.return_value = (50, 100)
+    machine = FakeMachine()
+
+    p = _make_patchers(is_jewel_full_returns=False)
+    with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
+        await qs.run(machine, [client], {**_HAT_KEEPS, "sell_pets": True})
+
+    warnings = [msg for msg, level in machine.logs if level == logging.WARNING]
+    assert any("nickname" in msg for msg in warnings)
+
+
+async def test_no_pet_warning_without_a_keep_list():
+    """Nothing was asked to be kept, so there is nothing to be surprised by."""
+    client = FakeClient()
+    client.backpack_space.return_value = (50, 100)
+    machine = FakeMachine()
+
+    p = _make_patchers(is_jewel_full_returns=False)
+    with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
+        await qs.run(machine, [client], _NO_KEEPS)
+
+    assert not [msg for msg, level in machine.logs if level == logging.WARNING]
+
+
+async def test_no_pet_warning_when_pets_are_not_being_sold():
+    client = FakeClient()
+    client.backpack_space.return_value = (50, 100)
+    machine = FakeMachine()
+
+    p = _make_patchers(is_jewel_full_returns=False)
+    with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
+        await qs.run(machine, [client], {**_HAT_KEEPS, "sell_pets": False})
+
+    assert not [msg for msg, level in machine.logs if level == logging.WARNING]

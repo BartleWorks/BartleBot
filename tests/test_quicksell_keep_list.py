@@ -1,7 +1,10 @@
 """Tests for the quicksell keep-list logic shared by the node and the properties panel."""
 
 from bartlebot.nodes.utility.quicksell import (
+    NEVER_QUICKSOLD_CATEGORIES,
+    UNMATCHABLE_CATEGORIES,
     category_keep_reasons,
+    category_unmatchable_reasons,
     drop_keep_states,
     effective_keep_list,
     matching_keyword,
@@ -193,3 +196,38 @@ def test_category_flags_do_not_leak_into_the_keyword_list():
     # A spared category is not expressible as a keyword, so it must not appear as
     # one — the run loop would then match "pets" against item names.
     assert effective_keep_list({**_SELL_ALL, "sell_pets": False}) == []
+
+
+# ---------------------------------------------------------------------------
+# category_unmatchable_reasons
+#
+# A pet's quicksell row is the nickname its owner gave it, never the body type
+# the drop table lists. No keyword bridges that, so the picker has to say so
+# instead of showing a ticked pet as safe.
+# ---------------------------------------------------------------------------
+
+
+def test_pets_are_unmatchable_while_they_are_being_sold():
+    assert set(category_unmatchable_reasons({"sell_pets": True})) == {"Pets"}
+
+
+def test_pets_are_unmatchable_by_default():
+    # sell_pets defaults to True, so an absent param is the selling case.
+    assert set(category_unmatchable_reasons({})) == {"Pets"}
+
+
+def test_nothing_is_unmatchable_once_the_bool_keeps_it():
+    # The row is safely kept, so there is nothing to warn about — and warning
+    # anyway would contradict the "Kept because Sell Pets is off" tooltip.
+    assert category_unmatchable_reasons({"sell_pets": False}) == {}
+
+
+def test_the_reason_names_the_mismatch_and_the_way_out():
+    reason = category_unmatchable_reasons({})["Pets"]
+    assert "nickname" in reason and "Sell Pets" in reason
+    assert reason == UNMATCHABLE_CATEGORIES["Pets"]
+
+
+def test_unmatchable_categories_are_all_sellable():
+    # A category the node never sells needs no warning; it would only be noise.
+    assert set(UNMATCHABLE_CATEGORIES).isdisjoint(NEVER_QUICKSOLD_CATEGORIES)

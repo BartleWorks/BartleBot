@@ -43,7 +43,12 @@ PARAM_SCHEMA: list[ParamField] = [
         key="sell_pets",
         type="bool",
         label="Sell Pets",
-        help="If enabled, pets will be sold when the post-sell confirmation dialog appears.",
+        help=(
+            "If enabled, pets are sold along with everything else. "
+            "The keep list cannot spare an individual pet: the quicksell window lists a pet by the "
+            "nickname its owner gave it, never by the body type the drop table names it with, so a "
+            "keyword for a pet never matches. Turn this off to keep every pet."
+        ),
         default=True,
         required=False,
     ),
@@ -70,7 +75,9 @@ NODE_SPEC = NodeSpec(
         "Checks if the main backpack or jewel pouch is full. "
         "If either is full, opens the quicksell UI and sells all items except those "
         "whose names match a keyword in keep_list. "
-        "sell_pets controls whether pets are included. Crowns items are always included."
+        "sell_pets controls whether pets are included — it is all-or-nothing, because the "
+        "quicksell window shows a pet's nickname rather than its body type and no keep-list "
+        "keyword can match it. Crowns items are always included."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -92,7 +99,9 @@ NODE_SPEC = NodeSpec(
     safety_warning=(
         "This bot quicksells items when your backpack is full. "
         "Ensure that you have locked any valuable items or have added them "
-        "to the keep list in the quicksell node parameters."
+        "to the keep list in the quicksell node parameters. "
+        "Pets are the exception: the quicksell window lists them by nickname, so the keep list "
+        "cannot spare one — turn Sell Pets off to keep your pets."
     ),
 )
 
@@ -114,6 +123,24 @@ IMPLIED_KEEP_KEYWORDS: dict[str, str] = {
 # never sees a category. This exists so the picker does not show a pet as "will be
 # sold" while the config plainly says otherwise.
 CATEGORY_SELL_FLAGS: dict[str, str] = {"sell_pets": "Pets"}
+
+# Categories the quicksell window labels with something other than the item's own
+# name, so no keep-list keyword can ever match a row in them.
+#
+# Pets are the only one, and the mismatch is total rather than partial: the drop
+# table names a pet by its body type ("Storm Potbelly"), while the quicksell row
+# shows the nickname its owner gave it ("Princess Sparkles"). The two strings
+# share nothing, so a keep-list entry for a pet silently fails and the pet is
+# sold. Turning Sell Pets off is the only thing that keeps one, because it
+# deselects the Pet tab wholesale instead of matching text.
+#
+# Editor-only, like the two sets below: the node sees names, never categories.
+UNMATCHABLE_CATEGORIES: dict[str, str] = {
+    "Pets": (
+        "The quicksell window lists a pet by its nickname, not the body type shown here, "
+        "so no keep-list keyword can spare it. Turn Sell Pets off to keep every pet."
+    ),
+}
 
 # Wiki drop categories this node will never sell, and why. Editor-only: the node
 # reads item names off the quicksell window and never sees a category, so this
@@ -190,6 +217,18 @@ def category_keep_reasons(params: dict) -> dict[str, str]:
             label = field.label if field is not None else param_key
             reasons[category] = f"Kept because {label} is off, not by the keep list."
     return reasons
+
+
+def category_unmatchable_reasons(params: dict) -> dict[str, str]:
+    """Categories the keep list cannot act on under this config, mapped to why.
+
+    A category already spared by a sell_* bool is left out: category_keep_reasons
+    has the say there, and a row that is safely kept needs no warning. So this is
+    empty for Pets when Sell Pets is off, and names Pets when it is on — exactly
+    when a ticked pet would be sold anyway.
+    """
+    spared = category_keep_reasons(params)
+    return {category: reason for category, reason in UNMATCHABLE_CATEGORIES.items() if category not in spared}
 
 
 def effective_keep_list(params: dict) -> list[str]:
@@ -310,6 +349,17 @@ async def run(machine, clients: list, params: dict) -> str:
         f"quicksell: keep_list={keep_list!r} sell_pets={sell_pets} "
         f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
     )
+
+    # Only when the user typed keywords of their own: the implied ones can never
+    # name a pet, so keying off the effective list would fire this on every bot
+    # that leaves the defaults alone.
+    if sell_pets and _typed_keywords(params):
+        machine.log(
+            "quicksell: Sell Pets is on — the quicksell window lists pets by their nickname, not the "
+            "body type a keep list names them by, so no keyword can spare a pet. Turn Sell Pets off "
+            "to keep pets.",
+            logging.WARNING,
+        )
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     results = await asyncio.gather(

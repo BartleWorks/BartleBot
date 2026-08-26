@@ -132,6 +132,11 @@ class DropKeepListWidget(QWidget):
     "Amber" sparing "Amber Ring", or one of the sell_* bools — are checked but
     disabled, with a tooltip naming the keyword responsible.
 
+    Rows the keep list cannot reach at all are locked the other way: a pet is
+    listed in the quicksell window under the nickname its owner gave it, never
+    under the body type the drop table names it by, so it shows unchecked however
+    the keep list reads, and a warning line under the summary says why.
+
     Ticking a row adds the drop's *in-game* name, which is not always the wiki name
     the row displays (see ``bartlebot/wiki_drops.py``). Where several drops share
     one in-game name the game gives the node no way to tell them apart, so they
@@ -155,6 +160,8 @@ class DropKeepListWidget(QWidget):
         # ("No Pain, No Gain Onyx") do not.
         self._value: list[str] = []
         self._kept_total = (0, 0, 0)  # kept, sellable, never-quicksold
+        # Category -> how many of its rows the keep list cannot act on at all.
+        self._unmatchable_counts: dict[str, int] = {}
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
@@ -173,6 +180,15 @@ class DropKeepListWidget(QWidget):
         self._summary = QLabel()
         self._summary.setWordWrap(True)
         outer.addWidget(self._summary)
+
+        # Shown only when the drop table holds rows the keep list cannot act on —
+        # a pet, whose quicksell row is its nickname. The tooltip on those rows
+        # says the same thing, but a user who never hovers a locked row would
+        # otherwise learn about it by losing the pet.
+        self._warning = QLabel()
+        self._warning.setWordWrap(True)
+        self._warning.setVisible(False)
+        outer.addWidget(self._warning)
 
         outer.addLayout(self._build_filter_row())
 
@@ -335,6 +351,8 @@ class DropKeepListWidget(QWidget):
         if not has_drops:
             self._summary.setText("This bot has no drops listed. Add some in Possible Drops to pick them here.")
             self._empty.setVisible(False)
+            self._unmatchable_counts = {}
+            self._render_warning()
             return
         # A bot whose drops are all uncategorized has nothing to choose between:
         # "All categories" plus one entry is not a choice.
@@ -351,9 +369,13 @@ class DropKeepListWidget(QWidget):
         # are still sellable, so their rows stay visible and stay in the count —
         # they are just not the keep list's to decide.
         category_kept = quicksell.category_keep_reasons(params)
+        # Categories where ticking a row would do nothing, because the quicksell
+        # window labels the item with something the keep list never sees.
+        unmatchable = quicksell.category_unmatchable_reasons(params)
 
         self._suppress = True
         kept = sellable = 0
+        unmatchable_counts: dict[str, int] = {}
         for row, entry, state in zip(self._rows, entries, states):
             category = row.data(_COL_CATEGORY, Qt.ItemDataRole.UserRole) or ""
             never_reason = quicksell.NEVER_QUICKSOLD_CATEGORIES.get(category)
@@ -367,6 +389,17 @@ class DropKeepListWidget(QWidget):
                 continue
 
             sellable += 1
+            warn_reason = unmatchable.get(category)
+            if warn_reason is not None:
+                # Sold whatever the keep list says, so the row shows what will
+                # actually happen — unchecked and inert — and the tooltip explains
+                # why ticking it would not have helped.
+                unmatchable_counts[category] = unmatchable_counts.get(category, 0) + 1
+                row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
+                row.setFlags(row.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+                row.setToolTip(_COL_ITEM, self._unmatchable_tooltip(entry, state, warn_reason))
+                continue
+
             category_reason = category_kept.get(category)
             row_kept = state.kept or category_reason is not None
             kept += bool(row_kept)
@@ -388,7 +421,9 @@ class DropKeepListWidget(QWidget):
         self._suppress = False
 
         self._kept_total = (kept, sellable, len(states) - sellable)
+        self._unmatchable_counts = unmatchable_counts
         self._render_summary()
+        self._render_warning()
 
     @staticmethod
     def _row_tooltip(entry: DropModel, state: quicksell.DropKeepState, sharing: int) -> str:
@@ -402,6 +437,27 @@ class DropKeepListWidget(QWidget):
             # to treat one differently from the other five.
             lines.append(f"{sharing} drops share that name in-game, so this applies to all {sharing}.")
         return "\n".join(lines)
+
+    @staticmethod
+    def _unmatchable_tooltip(entry: DropModel, state: quicksell.DropKeepState, reason: str) -> str:
+        """Why this row is locked unchecked, and what the keep list did instead."""
+        lines = [reason]
+        if state.kept:
+            # The keyword is in the list and matches the name shown here, which is
+            # exactly the trap: it will never match anything in the game's window.
+            lines.append(f"{entry.match_key!r} is in the keep list, but that name never appears there.")
+        return "\n".join(lines)
+
+    def _render_warning(self) -> None:
+        if not self._unmatchable_counts:
+            self._warning.setVisible(False)
+            return
+        lines = [
+            f"{self._emphasis(count)} {category}: {quicksell.UNMATCHABLE_CATEGORIES[category]}"
+            for category, count in sorted(self._unmatchable_counts.items())
+        ]
+        self._warning.setText("<br>".join(lines))
+        self._warning.setVisible(True)
 
     def _render_summary(self) -> None:
         kept, sellable, never = self._kept_total
@@ -542,6 +598,7 @@ class DropKeepListWidget(QWidget):
         self._rule.setStyleSheet(line)
         self._summary.setStyleSheet(line)
         self._empty.setStyleSheet(line)
+        self._warning.setStyleSheet(f"color: {THEME.warning}; font-size: 10px;")
         self._search.setStyleSheet(
             f"padding: 2px 6px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"
         )
@@ -568,3 +625,4 @@ class DropKeepListWidget(QWidget):
             # because the no-drops message lives in the same label.
             if self._rows:
                 self._render_summary()
+                self._render_warning()
