@@ -519,11 +519,8 @@ async def _process_quicksell_pages(client, keep_list: list[str]) -> None:
 
 async def _is_jewel_backpack_full(client) -> bool:
     """Check jewel pouch fullness by reading the 'X/Y' capacity text in the jewel page UI."""
-    import re
-
-    text = await node_helpers.get_text_by_path(client, JEWEL_INVENTORY_SPACE_PATH)
     # The game wraps the value in HTML (e.g. "<center>100/100"), so strip tags first.
-    text = re.sub(r"<[^>]+>", "", text).strip()
+    text = node_helpers.strip_html(await node_helpers.get_text_by_path(client, JEWEL_INVENTORY_SPACE_PATH))
     parts = text.split("/")
     if len(parts) != 2:
         return False

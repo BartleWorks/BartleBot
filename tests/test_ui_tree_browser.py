@@ -13,12 +13,15 @@ from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
 
 from bartlebot.gui.ui_tree_browser import (
     _COL_ELEMENT,
+    _TEXT_ROLE,
     _VISIBLE_ROLE,
     apply_filter,
     decode_flags,
     format_state,
+    format_text,
     has_greyed_field,
     row_matches,
+    subtree_items,
 )
 
 # Raw m_Flags bit values (wizwalker WindowFlags).
@@ -125,9 +128,11 @@ def test_row_matches_both_criteria_must_hold():
 # ----------------------------------------------------------------------
 
 
-def _make_item(tree_or_parent, label: str, visible: bool | None):
-    item = QTreeWidgetItem(tree_or_parent, [label, "", "", ""])
+def _make_item(tree_or_parent, label: str, visible: bool | None, window_text: str | None = None):
+    """A tree row.  ``window_text=None`` is a row whose text has not been read yet."""
+    item = QTreeWidgetItem(tree_or_parent, [label, window_text or "", "", "", ""])
     item.setData(_COL_ELEMENT, _VISIBLE_ROLE, visible)
+    item.setData(_COL_ELEMENT, _TEXT_ROLE, window_text)
     return item
 
 
@@ -136,7 +141,7 @@ def test_hide_invisible_keeps_invisible_parent_of_visible_child(qapp):
     reads False while its child button reads True.  Hiding the container would
     hide the very row the user is looking for."""
     tree = QTreeWidget()
-    tree.setColumnCount(4)
+    tree.setColumnCount(5)
     parent = _make_item(tree, "[wndFriendsList]  Window", False)
     child = _make_item(parent, "[btnFriendListClose]  ControlButton", True)
 
@@ -149,7 +154,7 @@ def test_hide_invisible_keeps_invisible_parent_of_visible_child(qapp):
 
 def test_hide_invisible_hides_a_wholly_invisible_subtree(qapp):
     tree = QTreeWidget()
-    tree.setColumnCount(4)
+    tree.setColumnCount(5)
     parent = _make_item(tree, "[wndHidden]  Window", False)
     child = _make_item(parent, "[btnHidden]  ControlButton", False)
 
@@ -161,7 +166,7 @@ def test_hide_invisible_hides_a_wholly_invisible_subtree(qapp):
 
 def test_text_filter_keeps_matching_child_and_its_parent(qapp):
     tree = QTreeWidget()
-    tree.setColumnCount(4)
+    tree.setColumnCount(5)
     parent = _make_item(tree, "[wndRoot]  Window", True)
     match = _make_item(parent, "[btnFriendListClose]  ControlButton", True)
     other = _make_item(parent, "[btnCombat]  ControlButton", True)
@@ -171,3 +176,124 @@ def test_text_filter_keeps_matching_child_and_its_parent(qapp):
     assert parent.isHidden() is False
     assert match.isHidden() is False
     assert other.isHidden() is True
+
+
+# ----------------------------------------------------------------------
+# format_text
+# ----------------------------------------------------------------------
+
+
+def test_format_text_shows_a_dash_for_windows_without_text():
+    assert format_text("") == "—"
+
+
+def test_format_text_leaves_unread_text_blank():
+    """An unread row must not look like a row that carries no text."""
+    assert format_text(None) == ""
+    assert format_text(None) != format_text("")
+
+
+def test_format_text_passes_short_text_through():
+    assert format_text("Krokotopia") == "Krokotopia"
+
+
+def test_format_text_truncates_a_paragraph():
+    """Some windows hold whole lines of dialogue; the column must survive them."""
+    rendered = format_text("x" * 200)
+    assert len(rendered) < 200
+    assert rendered.endswith("…")
+
+
+# ----------------------------------------------------------------------
+# Filtering on the Text column
+#
+# A menu of identically-named rows is findable by the label it displays and by
+# nothing else, so the filter has to look at the window text too.
+# ----------------------------------------------------------------------
+
+
+def test_row_matches_finds_a_row_by_its_window_text():
+    assert row_matches("[Row]  Window", True, "krokotopia", False, "Krokotopia") is True
+
+
+def test_row_matches_still_rejects_a_row_matching_neither_column():
+    assert row_matches("[Row]  Window", True, "mooshu", False, "Krokotopia") is False
+
+
+def test_row_matches_ignores_text_column_when_empty():
+    assert row_matches("[Row]  Window", True, "row", False, "") is True
+
+
+def test_text_filter_finds_one_of_several_identically_named_rows(qapp):
+    tree = QTreeWidget()
+    tree.setColumnCount(5)
+    parent = _make_item(tree, "[wndMenu]  Window", True)
+    krok = _make_item(parent, "[Row]  Window", True, "Krokotopia")
+    marley = _make_item(parent, "[Row]  Window", True, "Marleybone")
+
+    apply_filter(tree.invisibleRootItem(), "marleybone", False)
+
+    assert marley.isHidden() is False
+    assert krok.isHidden() is True
+    assert parent.isHidden() is False
+
+
+# ----------------------------------------------------------------------
+# subtree_items — what Load Text reads
+#
+# Text is read on demand because reading it for every node froze the dialog on
+# load.  This is the bound on how much one Load Text press can cost.
+# ----------------------------------------------------------------------
+
+
+def test_subtree_items_collects_the_node_and_its_descendants(qapp):
+    tree = QTreeWidget()
+    tree.setColumnCount(5)
+    parent = _make_item(tree, "[wndMenu]  Window", True)
+    row = _make_item(parent, "[Row]  Window", True)
+    label = _make_item(row, "[Label]  ControlText", True)
+
+    items, truncated = subtree_items(parent)
+
+    assert items == [parent, row, label]
+    assert truncated is False
+
+
+def test_subtree_items_excludes_siblings_of_the_selected_node(qapp):
+    tree = QTreeWidget()
+    tree.setColumnCount(5)
+    root = _make_item(tree, "[root]  Window", True)
+    chosen = _make_item(root, "[wndMenu]  Window", True)
+    _make_item(root, "[wndOther]  Window", True)
+
+    items, _ = subtree_items(chosen)
+
+    assert items == [chosen]
+
+
+def test_subtree_items_is_breadth_first(qapp):
+    """The rows under the selected node matter more than one row's internals."""
+    tree = QTreeWidget()
+    tree.setColumnCount(5)
+    parent = _make_item(tree, "[wndMenu]  Window", True)
+    first = _make_item(parent, "[Row]  Window", True)
+    deep = _make_item(first, "[Label]  ControlText", True)
+    second = _make_item(parent, "[Row]  Window", True)
+
+    items, _ = subtree_items(parent)
+
+    assert items.index(second) < items.index(deep)
+
+
+def test_subtree_items_stops_at_the_limit(qapp):
+    """Selecting the root row must not walk the whole tree — that is the freeze."""
+    tree = QTreeWidget()
+    tree.setColumnCount(5)
+    parent = _make_item(tree, "[root]  Window", True)
+    for _ in range(20):
+        _make_item(parent, "[Row]  Window", True)
+
+    items, truncated = subtree_items(parent, limit=5)
+
+    assert len(items) == 5
+    assert truncated is True

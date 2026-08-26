@@ -377,6 +377,37 @@ any other locale. To add a dialog: append to `KNOWN_KEYS`, run
 uniquely. An unrecognised caption returns `None`, and callers must fall back rather
 than treat it as "no dialog".
 
+### Ambiguous UI paths
+
+Window-tree paths match on **name only**. `_get_window_from_path` walks depth-first and
+returns the first branch that completes the path, backtracking out of dead ends — which is
+what makes Wizard101's duplicate `ButtonLayout` siblings safe to path through, as long as
+only one branch completes.
+
+When *several* branches complete it — a list menu whose rows are structurally identical —
+the first wins silently. Narrow it instead:
+
+| need | use |
+|---|---|
+| every match, to count or iterate | `find_windows_by_path(parent, path)` |
+| one match, chosen by label or position | `resolve_path_match(client, path, match_text=…, match_index=…)` |
+| click the one you chose | `click_window(client, window)`, not `click_by_path` |
+
+`click_path` exposes this as **Match Text** / **Match Text: Exact** / **Match Index**, and
+warns when a path matched more than one element and neither param narrowed it. Match Index
+applies *after* Match Text. The text is matched against the element and any element inside
+it, case-insensitively, with the game's HTML wrapping stripped (`strip_html`).
+
+Find the text in the **UI Tree Browser's Text column** — that is what distinguishes rows a
+path cannot. Select a row to read its text, or press **Load Text** to fill the column for
+the selected element and everything inside it; Copy Text puts the full string on the
+clipboard. Text is never read for the whole tree: `maybe_text()` is one synchronous
+`ReadProcessMemory` each, and doing it for several thousand windows freezes the dialog on
+load. Any new per-node read in that browser has the same problem.
+
+Resolve once and act on the window: re-walking the path for the visibility check and again
+for the click can land on two different rows.
+
 ### Bumping a pin
 
 Local edits do **not** affect the app until they are pushed and the pin moves:
