@@ -34,6 +34,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_skeleton_keys: bool = False
     auto_group_players: bool = True
     auto_select_character: bool = True
+    disable_quick_friend_teleport: bool = True
 
 
 class _GameEmbedSettings(BaseModel):
@@ -80,6 +81,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_skeleton_keys": False,
         "auto_group_players": True,
         "auto_select_character": True,
+        "disable_quick_friend_teleport": True,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -273,6 +275,19 @@ class SettingsManager:
     @auto_select_character.setter
     def auto_select_character(self, value: bool) -> None:
         self.set_general("auto_select_character", bool(value))
+
+    @property
+    def disable_quick_friend_teleport(self) -> bool:
+        """Whether launched clients get the game's quick friend teleport option turned off.
+
+        With it on, double-clicking a friends list row teleports instead of opening that
+        friend's profile, which is what the friends list nodes are trying to do.
+        """
+        return bool(self.get_general("disable_quick_friend_teleport", default=True))
+
+    @disable_quick_friend_teleport.setter
+    def disable_quick_friend_teleport(self, value: bool) -> None:
+        self.set_general("disable_quick_friend_teleport", bool(value))
 
     @property
     def accounts(self) -> list[dict]:

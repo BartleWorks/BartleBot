@@ -7,6 +7,7 @@ the GUI via SettingsManager and CredentialStore.
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 from collections.abc import Awaitable, Callable
 
@@ -23,6 +24,8 @@ from wizwalker.utils import (
 from bartlebot.credentials import CredentialStore
 from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
 from bartlebot.settings_manager import SettingsManager
+
+logger = logging.getLogger(__name__)
 
 # Advances one launched window from auto-login to in-game, keyed by window title.
 # Injected by the caller rather than imported so the launcher stays independent of
@@ -50,11 +53,31 @@ def _patch_xml_fields(path, updates: dict[str, str]) -> None:
     file (declaration, encoding, whitespace, attribute formatting) byte-for-byte
     identical to what the game wrote — which matters because the game's parser
     is strict about the declaration format.
+
+    A tag the file does not contain is logged and skipped: these files are written by
+    the game, so a missing tag means the game stopped writing it, and inventing one at
+    an arbitrary place in the tree is likelier to confuse its parser than to be read.
     """
     text = path.read_text(encoding="utf-8")
     for tag, value in updates.items():
-        text = re.sub(rf"(<{tag}\b[^>]*>)[^<]*(</\s*{tag}\s*>)", rf"\g<1>{value}\2", text)
+        text, count = re.subn(rf"(<{tag}\b[^>]*>)[^<]*(</\s*{tag}\s*>)", rf"\g<1>{value}\2", text)
+        if count == 0:
+            logger.warning("No <%s> element in %s — leaving it unset", tag, path.name)
     path.write_text(text, encoding="utf-8")
+
+
+def _launch_config_updates() -> dict[str, str]:
+    """The config.xml settings to force before launch, beyond window placement.
+
+    Quick friend teleport turns a double-click on a friends list row into a teleport.
+    Nodes that drive that list double-click rows to open a friend's profile, so with the
+    option on the click teleports instead and the node quietly does the wrong thing
+    (#111). The game only reads this at startup, which is why it is patched here rather
+    than toggled through the in-game options window.
+    """
+    if not SettingsManager.instance().disable_quick_friend_teleport:
+        return {}
+    return {"QuickFriendTeleport": "0"}
 
 
 def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
@@ -66,7 +89,10 @@ def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
     """
     bin_dir = get_wiz_install() / "Bin"
     _patch_xml_fields(bin_dir / "preferences.xml", {"Resolution": f"{width}x{height}"})
-    _patch_xml_fields(bin_dir / "config.xml", {"WindowedX": str(x), "WindowedY": str(y)})
+    _patch_xml_fields(
+        bin_dir / "config.xml",
+        {"WindowedX": str(x), "WindowedY": str(y), **_launch_config_updates()},
+    )
 
 
 async def _wait_for_login_screen(handle: int) -> None:
