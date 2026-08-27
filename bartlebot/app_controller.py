@@ -465,13 +465,22 @@ class AppController(QObject):
         a half-built deck that looked like a success.
 
         Nothing is shown for a clean apply, which is the common case when the
-        deck and the wizard are the same one it was saved from.
+        deck and the wizard are the same one it was saved from.  A *successful*
+        archmastery change counts as clean: opting in is what asked for it, and
+        a dialog on every apply would train the user to dismiss these.  Failing
+        to make one does not — it was asked for and silently did nothing.
         """
         if report.is_clean:
             return
 
         lines: list[str] = []
+        if report.archmastery_failed:
+            lines.append(
+                f"Could not set the archmastery school to {report.archmastery_failed}. The school was left as it was."
+            )
         if report.substitutions:
+            if lines:
+                lines.append("")
             lines.append("Used a lower tier than the deck asked for:")
             lines += [f"    {used}  (deck wanted {req})" for req, used in sorted(report.substitutions.items())]
         if report.short:
@@ -493,7 +502,11 @@ class AppController(QObject):
             self._show_deck_notice(title, f"{body}\n\n" + "\n".join(lines), warn=True)
             return
 
-        self._show_deck_notice(f"Deck applied for P{slot}, with changes", "\n".join(lines), warn=bool(report.skipped))
+        self._show_deck_notice(
+            f"Deck applied for P{slot}, with changes",
+            "\n".join(lines),
+            warn=bool(report.skipped or report.archmastery_failed),
+        )
 
     @staticmethod
     def _describe_skipped(name: str, report: DeckApplyReport) -> str:

@@ -33,8 +33,18 @@ WHAT IS ALREADY KNOWN
         does not announce itself in the window tree either.  So section C
         cannot name the menu's entries, and a click-driven implementation would
         have to click blind and poll ``archmastery_school()`` to confirm.
-      * That is the fallback.  Section D exists to find out whether it is needed
-        at all.
+      * **The memory route is dead.**  Section D was run: writing
+        ``m_archmasterySchool`` reads back changed and the client even repaints
+        the pip once something else forces the deck page to redraw — but it does
+        not survive a relog and never reaches combat.  The client believes it
+        and the server never hears.  That is outcome 2 below, the one that would
+        demo perfectly and do nothing on a real run.
+      * So the click path is what shipped: see ``set_archmastery_school`` in
+        ``bartlebot/deck_io.py``.  Section D is kept because a future build could
+        change the answer, and because re-deriving why it was rejected is
+        expensive.  Note that *reading* the value stays trustworthy — a school
+        changed through the UI reads back correctly, which is what makes it a
+        usable confirmation oracle for the click path.
 
 WHAT IT DOES
     A. Reports the school the behavior currently holds, so there is a known

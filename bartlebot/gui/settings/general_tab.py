@@ -212,6 +212,18 @@ class GeneralTab(QWidget):
         self._sell_skeleton_keys_cb.setToolTip(_quicksell_tip)
         bot_form.addRow("Quicksell default — Sell Skeleton Keys:", self._sell_skeleton_keys_cb)
 
+        self._apply_archmastery_cb = QCheckBox()
+        self._apply_archmastery_cb.setChecked(sm.get_general("default_apply_archmastery", default=False))
+        self._apply_archmastery_cb.setToolTip(
+            "Whether applying a saved deck also sets the wizard's archmastery school to the one "
+            "the deck was saved with.\n\n"
+            "Off by default: the school is a persistent character setting that outlives the run, "
+            "and most decks do not care what it is. Turn this on if your decks depend on "
+            "archmastery pips of a particular school.\n\n"
+            "An individual deck can pin its own answer, which wins over this."
+        )
+        bot_form.addRow("Set archmastery school on deck apply:", self._apply_archmastery_cb)
+
         layout.addLayout(bot_form)
         layout.addStretch()
 
@@ -249,3 +261,4 @@ class GeneralTab(QWidget):
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())
+        sm.set_general("default_apply_archmastery", self._apply_archmastery_cb.isChecked())

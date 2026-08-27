@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.strategy_models import DeckData
+from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.gui.theme import THEME
 
 
@@ -45,7 +46,14 @@ class DeckViewDialog(QDialog):
         # "Archmastery: —" would imply the wizard has none, and None only ever
         # means the value could not be read or was never set.
         if deck.archmastery_school:
-            school = QLabel(f"Archmastery: {deck.archmastery_school}")
+            # Resolved, not just stored: whether the school will actually be set
+            # depends on the app setting unless this deck pins an answer, and a
+            # dialog that showed only the saved school would leave the user to
+            # guess which. Saying where the answer came from is the rest of it.
+            will_set, source = resolve_apply_archmastery(deck)
+            verb = "set on apply" if will_set else "not set on apply"
+            school = QLabel(f"Archmastery: {deck.archmastery_school} — {verb} ({source})")
+            school.setWordWrap(True)
             school.setStyleSheet(f"color: {THEME.text};")
             layout.addWidget(school)
 

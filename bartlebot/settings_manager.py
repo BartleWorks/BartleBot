@@ -32,6 +32,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_pets: bool = True
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
+    default_apply_archmastery: bool = False
     auto_group_players: bool = True
     auto_select_character: bool = True
     disable_quick_friend_teleport: bool = True
@@ -79,6 +80,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_pets": True,
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
+        "default_apply_archmastery": False,
         "auto_group_players": True,
         "auto_select_character": True,
         "disable_quick_friend_teleport": True,
