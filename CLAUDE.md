@@ -91,6 +91,25 @@ def changeEvent(self, event: QEvent) -> None:
 
 Widgets that read THEME at paint time (e.g. `QGraphicsItem.paint()`) update automatically and don't need this.
 
+### Popup menus
+
+Build every `QMenu` through `bartlebot/gui/menu_utils.py` — `popup_menu(anchor)` for a
+menu built per invocation, `anchor_menu_to_window(QMenu(btn))` for a long-lived one
+handed to `QToolButton.setMenu()`.
+
+Qt gives a popup the `QWindow` of its parent's nearest *native* ancestor as transient
+parent. Embedding a game client makes `ClientTile` native, and Qt then promotes its
+siblings — the left sidebar, the canvas — to native windows of their own. A menu
+parented to a button inside one resolves to a `QWidgetWindow` that is not top level,
+which Qt refuses outright: `... must be a top level window` (#119), leaving the popup
+with no transient parent at all.
+
+The helper swaps the menu onto its top-level window on `aboutToShow` and hands it back
+on `aboutToHide`. The swap cannot happen at construction: a menu built in a widget's
+`__init__` has no window yet, and `window()` would return the widget itself.
+
+A menu with no parent, or one parented directly to a window or dialog, is already fine.
+
 ### qasync + Python 3.13 task re-entrancy rule
 
 **Never call a blocking Qt method (e.g. `QDialog.exec()`, `QMessageBox.exec()`) from inside an `async` function that is running as an asyncio Task.**

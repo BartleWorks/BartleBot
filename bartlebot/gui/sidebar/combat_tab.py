@@ -40,6 +40,7 @@ from bartlebot.combat_grouping import (
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.gui.icon_utils import svg_icon
+from bartlebot.gui.menu_utils import anchor_menu_to_window
 from bartlebot.gui.sidebar.sidebar_section import (
     DISCLOSURE_PX,
     NEST_INDENT_PX,
@@ -224,7 +225,7 @@ class _PlayerDecksSection(SidebarSection):
             menu_btn.setToolTip("More deck actions")
             menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
             menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-            slot_menu = QMenu(menu_btn)
+            slot_menu = anchor_menu_to_window(QMenu(menu_btn))
             slot_menu.addAction("Save to Library", lambda _=False, slot=i: self.save_to_library_requested.emit(slot))
             slot_menu.addAction(
                 "Load from Library", lambda _=False, slot=i: self.load_from_library_requested.emit(slot)
@@ -675,7 +676,7 @@ class _DuelBindingPanel(QWidget):
         self._menu_btn.setToolTip("Strategy actions")
         self._menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-        self._menu = QMenu(self._menu_btn)
+        self._menu = anchor_menu_to_window(QMenu(self._menu_btn))
         # A disabled action has to be able to say why — see _rebuild_menu.
         self._menu.setToolTipsVisible(True)
         self._menu.aboutToShow.connect(self._rebuild_menu)
@@ -973,7 +974,7 @@ class CombatTab(QWidget):
         self._bcs_menu_btn.setToolTip("Manage Bot Combat Strategies (New, Rename, Duplicate, Delete)")
         self._bcs_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._bcs_menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-        bcs_menu = QMenu(self._bcs_menu_btn)
+        bcs_menu = anchor_menu_to_window(QMenu(self._bcs_menu_btn))
         bcs_menu.addAction("New", self._on_new_bcs)
         bcs_menu.addAction("Rename", self._on_rename_bcs)
         bcs_menu.addAction("Duplicate", self._on_duplicate_bcs)

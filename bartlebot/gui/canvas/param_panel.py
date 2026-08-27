@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -39,6 +38,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel, FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -286,7 +286,7 @@ class _ZoneWidget(QWidget):
         if len(clients) == 1:
             asyncio.ensure_future(self._fill_from_player(0))
             return
-        menu = QMenu(btn)
+        menu = popup_menu(btn)
         for i in range(len(clients)):
             action = menu.addAction(f"Fill from Player {i + 1}")
             action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
@@ -767,7 +767,7 @@ class _DynamicParamForm(QWidget):
         if len(clients) == 1:
             asyncio.ensure_future(self._fill_xyz_from_player(key, 0))
             return
-        menu = QMenu(btn)
+        menu = popup_menu(btn)
         for i in range(len(clients)):
             action = menu.addAction(f"Fill from Player {i + 1}")
             action.triggered.connect(

@@ -12,11 +12,11 @@ from PyQt6.QtGui import QDrag
 from PyQt6.QtWidgets import (
     QApplication,
     QHBoxLayout,
-    QMenu,
     QPushButton,
     QWidget,
 )
 
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
@@ -157,7 +157,7 @@ class _SlotButton(QPushButton):
     # ------------------------------------------------------------------
 
     def contextMenuEvent(self, event) -> None:  # noqa: ANN001
-        menu = QMenu(self)
+        menu = popup_menu(self)
         assign_act = menu.addAction("Assign node…")
         menu.addSeparator()
         clear_act = menu.addAction("Clear")

@@ -27,6 +27,7 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.gui.icon_utils import svg_icon
+from bartlebot.gui.menu_utils import anchor_menu_to_window
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
@@ -141,7 +142,7 @@ class _AssignmentRow(QWidget):
         self._menu_btn.setAutoRaise(True)
         self._menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self._menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-        self._menu = QMenu(self._menu_btn)
+        self._menu = anchor_menu_to_window(QMenu(self._menu_btn))
         self._menu.aboutToShow.connect(self._rebuild_menu)
         self._menu_btn.setMenu(self._menu)
         top.addWidget(self._menu_btn)
