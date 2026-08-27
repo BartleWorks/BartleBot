@@ -120,6 +120,19 @@ class EdgeItem(QGraphicsPathItem):
     def when(self) -> str | None:
         return self._when
 
+    def set_when(self, when: str | None) -> None:
+        """Change the return value this edge fires on and reroute it.
+
+        ``when`` picks the source port, the pen colour and, for a backward edge,
+        whether it routes above or below the node row — so it cannot be changed
+        on the model alone.
+        """
+        if self._when == when:
+            return
+        self._when = when
+        self._rebuild()
+        self.update()
+
     def set_has_flags(self, has_flags: bool) -> None:
         """Update whether this edge has boolean flag conditions (affects pen style)."""
         if self._has_flags != has_flags:

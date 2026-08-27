@@ -477,6 +477,21 @@ class EditScene(QGraphicsScene):
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(bounds)
 
+    @property
+    def config(self) -> BotConfig | None:
+        """The BotConfig this scene was set up from, or None before setup()."""
+        return self._config
+
+    @property
+    def node_items(self) -> dict[str, NodeItem]:
+        """State ID -> NodeItem for every node currently on the scene."""
+        return self._node_items
+
+    @property
+    def edge_items(self) -> list[tuple[str, str | None, str, EdgeItem]]:
+        """(source, when, dest, EdgeItem) for every edge currently on the scene."""
+        return self._edge_items
+
     def refresh_initial(self, initial_id: str) -> None:
         """Update the initial-state purple-border indicator."""
         for node_id, node in self._node_items.items():
@@ -920,14 +935,18 @@ class EditScene(QGraphicsScene):
         """Recompute forward-edge mid_x offsets for all (source, dest) groups.
 
         Handles bidirectional separation and N-parallel-edge spreading.  Also
-        calls _rebuild() on every non-loop edge so fan arrival-port positions
-        (option A) and Z-channel positions (option C) are both updated in one pass.
+        calls _rebuild() on every edge so fan arrival-port positions (option A) and
+        Z-channel positions (option C) are both updated in one pass.  Self-loops
+        take no offset, but they still need the rebuild: an edge rewired into a
+        loop keeps drawing its old two-node path otherwise.
         """
         PARALLEL_STEP = 22.0
         sd_groups: dict[tuple[str, str], list] = defaultdict(list)
         for s, w, d, edge in self._edge_items:
             if s != d:
                 sd_groups[(s, d)].append((s, w, d, edge))
+            else:
+                edge._rebuild()
         non_loop_pairs = {(s, d) for s, _w, d, _ in self._edge_items if s != d}
         for (s, d), group in sd_groups.items():
             group_sorted = sorted(group, key=lambda x: x[1] or "")
@@ -1224,6 +1243,46 @@ class EditScene(QGraphicsScene):
         self.graph_changed.emit()
         return True
 
+    def change_edge_when(
+        self,
+        source: str,
+        old_when: object,  # str | None
+        dest: str,
+        new_when: object,  # str | None
+    ) -> None:
+        """Reroute a scene edge after its ``when`` was changed via the properties panel.
+
+        The TransitionModel is already updated by the param panel before this is
+        called; the caller owns the undo snapshot, as for change_edge_endpoints.
+
+        The ``when`` is part of the edge's identity in ``_edge_items``, so the record
+        has to be re-keyed here too — every later lookup (flag refresh, selection,
+        a subsequent endpoint rewire) matches on the (source, when, dest) triple and
+        would silently miss the edge otherwise.
+        """
+        if self._config is None:
+            return
+        old_when_str: str | None = old_when  # type: ignore[assignment]
+        new_when_str: str | None = new_when  # type: ignore[assignment]
+        record_idx: int | None = None
+        for i, (s, w, d, _ei) in enumerate(self._edge_items):
+            if s == source and w == old_when_str and d == dest:
+                record_idx = i
+                break
+        if record_idx is None:
+            return
+        edge_item = self._edge_items[record_idx][3]
+        edge_item.set_when(new_when_str)
+        self._edge_items[record_idx] = (source, new_when_str, dest, edge_item)
+
+        # Parallel edges between the same pair are laned by `when`, so the whole
+        # group's offsets shift when one of them is relabelled.
+        self._recompute_offsets()
+
+        self._update_scene_rect()
+        self.refresh_errors()
+        self.graph_changed.emit()
+
     def change_edge_endpoints(
         self,
         old_src: str,
@@ -1236,10 +1295,13 @@ class EditScene(QGraphicsScene):
 
         The TransitionModel itself is already updated by the param panel before this
         is called.  This method updates the visual EdgeItem and all data structures.
+
+        The caller owns the undo snapshot: it has to be taken *before* the model is
+        mutated, which is earlier than this method can see (the param panel emits
+        ``structural_property_changed`` for that).
         """
         if self._config is None:
             return
-        self._pre_edit("Rewire Edge")
         old_when_str: str | None = old_when  # type: ignore[assignment]
         # Locate the edge record
         record_idx: int | None = None

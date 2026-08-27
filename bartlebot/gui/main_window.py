@@ -185,8 +185,8 @@ class MainWindow(QMainWindow):
         self.bot_canvas.open_bot_requested.connect(self.action_open.trigger)
         self.bot_canvas.open_recent_requested.connect(self.open_recent_requested)
         # Wire undo/redo
-        self.action_undo.triggered.connect(self.bot_canvas._on_undo)
-        self.action_redo.triggered.connect(self.bot_canvas._on_redo)
+        self.action_undo.triggered.connect(self.bot_canvas.undo)
+        self.action_redo.triggered.connect(self.bot_canvas.redo)
         self.bot_canvas.undo_state_changed.connect(self._on_undo_state_changed)
 
         # Set by AppController once ClientManager exists; see set_auto_select_driver

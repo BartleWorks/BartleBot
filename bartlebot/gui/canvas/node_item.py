@@ -333,6 +333,16 @@ class NodeItem(QGraphicsItem):
         self._label = label or self.state_id
         self.update()
 
+    @property
+    def node_type(self) -> str:
+        """The node type currently drawn as the sub-label."""
+        return self._node_type
+
+    @property
+    def returns(self) -> list[str]:
+        """The named output ports currently drawn on the right edge."""
+        return list(self._returns)
+
     def set_node_type(self, node_type: str) -> None:
         """Update the displayed node type sub-label."""
         self._node_type = node_type

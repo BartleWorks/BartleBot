@@ -803,9 +803,11 @@ class BotCanvas(QWidget):
         self._scene.graph_changed.connect(self._on_scene_changed)
         self._scene.node_type_chosen.connect(self._on_node_type_chosen)
         self._param_panel.structural_property_changed.connect(self._on_about_to_change)
+        self._param_panel.structural_property_applied.connect(self._on_structural_property_applied)
         self._param_panel.properties_changed.connect(self._on_param_changed)
         self._param_panel.label_committed.connect(self._on_node_label_committed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
+        self._param_panel.edge_when_changed.connect(self._scene.change_edge_when)
         self._param_panel.select_edge_requested.connect(self._on_select_edge_requested)
         self._param_panel.select_state_requested.connect(self._on_select_state_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
@@ -1010,6 +1012,11 @@ class BotCanvas(QWidget):
     @property
     def config(self) -> "BotConfig | None":
         return self._config
+
+    @property
+    def scene(self) -> "EditScene":
+        """The EditScene holding the node/edge graph."""
+        return self._scene
 
     @property
     def param_panel(self) -> QWidget:
@@ -1391,7 +1398,21 @@ class BotCanvas(QWidget):
 
     def _on_about_to_change(self, desc: str) -> None:
         if self._config is not None and self._mode == BotMode.EDIT:
+            self._undo_mgr.cancel_debounce()
             self._undo_mgr.push(self._config, desc)
+
+    def _on_structural_property_applied(self) -> None:
+        """A node type switch or an edge rewire landed in the model from the panel.
+
+        These change the graph itself — a node's type sub-label and output ports, an
+        edge's endpoints — so they need the same full refresh a scene-side edit gets,
+        not the param-edit path, which only revalidates.  The undo snapshot was
+        already pushed by structural_property_changed, so this must not open a
+        debounced one on top of it.
+        """
+        if self._scene.config is not None:
+            self._scene.config.sort_transitions()
+        self._on_scene_changed()
 
     def _on_node_label_committed(self) -> None:
         state = self._param_panel._state
@@ -1436,6 +1457,14 @@ class BotCanvas(QWidget):
         if node is not None:
             node.setSelected(True)
             self._view.centerOn(node)
+
+    def undo(self) -> None:
+        """Undo the last edit. Wired to the Edit menu's Undo action."""
+        self._on_undo()
+
+    def redo(self) -> None:
+        """Redo the last undone edit. Wired to the Edit menu's Redo action."""
+        self._on_redo()
 
     def _on_undo(self) -> None:
         if self._config is None or self._mode != BotMode.EDIT:
