@@ -220,10 +220,13 @@ async def test_dungeon_warning_dialog_appears_late():
             return False
         polls += 1
         # Each poll takes real time so elapsed accumulates; dialog shows on the 3rd.
-        await asyncio.sleep(0.007)
+        # Three of these have to fit inside the Safety Delay below, and that is a race a
+        # loaded machine can lose — it once got one poll into a 0.05s window. Keep the
+        # window an order of magnitude wider than the polls nominally cost.
+        await asyncio.sleep(0.015)
         return polls >= 3
 
-    machine = FakeMachine(options={"Safety Delay": 0.05})
+    machine = FakeMachine(options={"Safety Delay": 0.5})
     click_by_path_mock = AsyncMock(return_value=True)
 
     with (
