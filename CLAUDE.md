@@ -14,6 +14,7 @@ poetry run python bartlebot.py
 ```bash
 poetry install              # all deps including dev
 poetry run pytest           # pytest-asyncio, asyncio_mode = "auto"
+poetry run pytest -n auto   # same suite in parallel (~10s vs ~33s); what CI runs
 poetry run ruff check       # lint
 poetry run ruff format      # auto-format
 ```
@@ -210,6 +211,42 @@ deliberately rather than by find-and-replace.
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
 
 Every new node, background task, or non-trivial utility class must ship with a corresponding test file. Cover at minimum: the success path, one failure path, and any timeout/retry behavior. The exception is pure `QWidget` subclasses that can't be tested without a `QApplication`; extract any testable logic into a plain function or class.
+
+#### Keeping the suite fast
+
+A node test that sleeps through a production cadence costs that time on every run, so
+compress the constants the code under test reads — `monkeypatch.setattr` on the *module
+that imported them*, not on `timing.py`. `_fast_settle` in `tests/test_deck_io.py` and
+`fast` in `tests/test_auto_select.py` are the pattern.
+
+Two things make this less obvious than it looks:
+
+- **Windows schedules waits on a ~15.6 ms tick.** Every `asyncio.sleep` shorter than that
+  costs a full tick anyway, so dropping an interval from 10 ms to 2 ms buys *nothing*. The
+  session fixture `_fine_grained_timers` in `conftest.py` calls `timeBeginPeriod(1)` to
+  drop the tick to ~1 ms, which is what makes short intervals worth compressing at all.
+  Don't remove it: it was worth ~7 s across the suite on its own.
+- **Compress cadences, never ceilings.** A poll interval can go as low as the tick allows,
+  because the fakes it drives count iterations rather than seconds. A *ceiling* — a
+  `timeout=`, a `wait_for`, a Safety Delay — is what the code races against, and cutting
+  one does not make a test faster so much as change which branch it takes. Undershooting
+  `AUTO_SELECT_TREE_TIMEOUT` sent the drive down its blind fallback path on CI, where the
+  assertions about the sighted path no longer meant anything, and the test failed with no
+  hint that it had stopped testing what it names.
+- **A ceiling that something is read after is a race, too.** `timeout=0.05` on a call whose
+  result the test then inspects passes alone and fails in parallel, when the cancel lands
+  before the object exists — see `test_apply_deck_closes_the_builder_on_timeout`. Same for
+  a window several polls have to fit inside: keep it an order of magnitude wider than the
+  polls nominally cost, as `test_dungeon_warning_dialog_appears_late` now does.
+
+These bite only under load, so they pass locally and fail on a 2-core CI runner. CI runs
+`-n auto` rather than a fixed worker count for the same reason — a count picked on a
+16-core machine oversubscribes a runner 4:1 and stretches every wall-clock test until it
+breaks.
+
+Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
+in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
+`_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
 
 ### Use public API across class boundaries
 

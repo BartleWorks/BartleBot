@@ -18,6 +18,18 @@ import pytest
 
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor, _traverse_path
 
+# The watcher's cadence, compressed. Every integration test below starts the watcher and
+# has to let one poll go by; at the production 0.25s that is most of this file's runtime.
+# The poll is a plain sleep between full passes, so a shorter one exercises the same pass.
+_FAST_POLL = 0.005
+_ONE_PASS = 0.05  # comfortably more than one _FAST_POLL, still 8x faster than before
+
+
+@pytest.fixture(autouse=True)
+def fast_poll(monkeypatch):
+    monkeypatch.setattr("bartlebot.bot.client_health_monitor.POLL_INTERVAL", _FAST_POLL)
+
+
 # ---------------------------------------------------------------------------
 # Fake window tree helpers
 # ---------------------------------------------------------------------------
@@ -176,7 +188,7 @@ async def test_watcher_detects_disconnect_fires_recovery():
 
     with patch.object(ClientHealthMonitor, "_force_kill_process") as mock_kill:
         task = asyncio.create_task(monitor._disconnect_dialog_watcher())
-        await asyncio.sleep(0.4)  # allow one POLL_INTERVAL (0.25 s) to pass
+        await asyncio.sleep(_ONE_PASS)  # allow at least one poll to go by
         stop_flag.set()
         task.cancel()
         try:
@@ -198,7 +210,7 @@ async def test_watcher_does_not_fire_for_non_disconnect_modal():
 
     with patch.object(ClientHealthMonitor, "_force_kill_process") as mock_kill:
         task = asyncio.create_task(monitor._disconnect_dialog_watcher())
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(_ONE_PASS)
         stop_flag.set()
         task.cancel()
         try:
@@ -219,7 +231,7 @@ async def test_watcher_skips_already_flagged_client():
 
     with patch.object(ClientHealthMonitor, "_force_kill_process") as mock_kill:
         task = asyncio.create_task(monitor._disconnect_dialog_watcher())
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(_ONE_PASS)
         stop_flag.set()
         task.cancel()
         try:
@@ -239,7 +251,7 @@ async def test_watcher_does_not_fire_when_no_modal():
 
     with patch.object(ClientHealthMonitor, "_force_kill_process") as mock_kill:
         task = asyncio.create_task(monitor._disconnect_dialog_watcher())
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(_ONE_PASS)
         stop_flag.set()
         task.cancel()
         try:
@@ -260,7 +272,7 @@ async def test_watcher_still_fires_recovery_when_kill_raises():
 
     with patch.object(ClientHealthMonitor, "_force_kill_process", side_effect=OSError("access denied")):
         task = asyncio.create_task(monitor._disconnect_dialog_watcher())
-        await asyncio.sleep(0.4)
+        await asyncio.sleep(_ONE_PASS)
         stop_flag.set()
         task.cancel()
         try:

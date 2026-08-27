@@ -27,6 +27,7 @@ WizSprinter = {git = "https://github.com/The-World-Tree/wizsprinter.git", rev = 
 pytest = "^9.0"
 pytest-asyncio = "^1.0"
 ruff = "^0.15"
+pytest-xdist = "^3.6"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

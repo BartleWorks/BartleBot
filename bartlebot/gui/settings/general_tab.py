@@ -169,6 +169,20 @@ class GeneralTab(QWidget):
         )
         bot_form.addRow("Automatically select a character:", self._auto_select_cb)
 
+        self._quick_tp_cb = QCheckBox()
+        self._quick_tp_cb.setChecked(sm.disable_quick_friend_teleport)
+        self._quick_tp_cb.setToolTip(
+            "Turn off the game's quick friend teleport option in every client this app "
+            "launches.\n\n"
+            "With that option on, double-clicking a name in the Friends List teleports to "
+            "the friend. Nodes that work with the Friends List double-click a name to open "
+            "the friend's profile, so they teleport instead and quietly do the wrong "
+            "thing.\n\n"
+            "The game only reads this at startup, so it applies to clients launched from "
+            "here — not to one that is already running."
+        )
+        bot_form.addRow("Disable quick friend teleport:", self._quick_tp_cb)
+
         # Defaults, not policy: a quicksell node whose matching param is left on
         # "Use app setting" follows these, and one that pins Yes or No does not.
         # Labelled that way so nobody reads the row as a guarantee.
@@ -231,6 +245,7 @@ class GeneralTab(QWidget):
         sm.default_safety_delay = self._safety_delay_sb.value()
         sm.auto_group_players = self._auto_group_cb.isChecked()
         sm.auto_select_character = self._auto_select_cb.isChecked()
+        sm.disable_quick_friend_teleport = self._quick_tp_cb.isChecked()
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())

@@ -125,7 +125,15 @@ def keys():
 
 @pytest.fixture
 def fast(monkeypatch):
-    """Compress the real cadences so the suite does not spend two minutes asleep."""
+    """Compress the real cadences so the suite does not spend two minutes asleep.
+
+    These values are balanced against each other and are not free to shrink further.
+    AUTO_SELECT_TREE_TIMEOUT has to stay long enough for a loaded machine to read a fake
+    tree, or the sighted tests silently take the blind fallback path and stop testing what
+    they name; it also has to expire before ``Hooked(after=40)`` fires at the key interval
+    above, or the blind fallback tests never reach the fallback at all. Tightening either
+    one breaks tests at the other end of that range.
+    """
     monkeypatch.setattr(auto_select, "AUTO_SELECT_FIRST_SCREEN_DELAY", 0.03)
     monkeypatch.setattr(auto_select, "AUTO_SELECT_KEY_INTERVAL", 0.01)
     monkeypatch.setattr(auto_select, "AUTO_SELECT_TREE_TIMEOUT", 0.2)

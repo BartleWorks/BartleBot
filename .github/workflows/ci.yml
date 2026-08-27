@@ -32,4 +32,7 @@ jobs:
         run: poetry run ruff format --check
 
       - name: Test
-        run: poetry run pytest
+        # -n auto, not a fixed count: GitHub runners have far fewer cores than a
+        # dev machine, and oversubscribing them stretches the suite's few
+        # wall-clock-sensitive tests until they fail.
+        run: poetry run pytest -n auto
