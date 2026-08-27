@@ -19,6 +19,15 @@ Python frame in the dump named the exact ``drawText`` call in one run.
 
 Dumps are throttled per distinct stack, because the failure repeats four times
 per glyph per repaint — a single pan produced hundreds of lines.
+
+The handler also swallows the ``qt.qpa.screen`` monitor-enumeration warnings of
+issues #42 and #120.  Windows tears the monitor's device instance out of the
+device tree when the display powers down, so Qt's screen enumeration fails with
+``0xe0000225`` (``ERROR_NO_SUCH_DEVINST``) on every re-check until it wakes.
+Nothing is wrong — the screens come back with the monitor — but an overnight run
+buries the log in it, so it is logged once per
+``DISPLAY_NOISE_INTERVAL_SECONDS`` at DEBUG with a count, and never echoed to
+stderr.
 """
 
 import hashlib
@@ -33,6 +42,22 @@ logger = logging.getLogger(__name__)
 
 #: How long to wait before dumping full detail for the same stack again.
 DUMP_INTERVAL_SECONDS = 10.0
+
+#: How long to wait before acknowledging the monitor-asleep warnings again.
+DISPLAY_NOISE_INTERVAL_SECONDS = 300.0
+
+#: Signature the display-noise messages are throttled under, as a group.
+DISPLAY_NOISE_SIGNATURE = "qt.qpa.screen-display-asleep"
+
+#: Fragments Qt's Windows QPA plugin emits while a monitor is powered down.
+#: Matched as substrings: the tail varies (device path, adapter id, and a
+#: locale-dependent ``FormatMessage`` string), and the head varies too — the
+#: category prefix and surrounding quotes are present in some renderings of the
+#: same message and absent in others.
+_DISPLAY_NOISE_FRAGMENTS = (
+    "Unable to open monitor interface to",
+    "Unable to get device information for",
+)
 
 _QT_LEVELS = {
     QtMsgType.QtDebugMsg: logging.DEBUG,
@@ -51,6 +76,19 @@ _QT_LEVELS = {
 def is_painter_message(message: str) -> bool:
     """True for the QPainter messages worth a stack trace."""
     return message.startswith("QPainter::")
+
+
+def is_display_noise(message: str, category: str | None = None) -> bool:
+    """True for the screen warnings a powered-down monitor produces (#42, #120).
+
+    Narrow on purpose.  ``qt.qpa.screen`` also reports things worth seeing, so
+    the two known monitor-enumeration failures are matched by text rather than
+    the whole category being dropped.  ``category`` is checked when Qt supplies
+    one, but is not required: the same messages have been seen uncategorised.
+    """
+    if category is not None and category not in ("qt.qpa.screen", "default"):
+        return False
+    return any(fragment in message for fragment in _DISPLAY_NOISE_FRAGMENTS)
 
 
 def relevant_frames(frames: list[str]) -> list[str]:
@@ -115,17 +153,34 @@ def format_dump(message: str, frames: list[str], signature: str, suppressed: int
 # ---------------------------------------------------------------------------
 
 _tracker = BurstTracker()
+_display_noise_tracker = BurstTracker(DISPLAY_NOISE_INTERVAL_SECONDS)
 _installed = False
 
 
 def _handler(msg_type: QtMsgType, context, message: str) -> None:
-    level = _QT_LEVELS.get(msg_type, logging.WARNING)
+    category = None
     location = ""
     try:
-        if context is not None and context.file:
-            location = f" [{context.file}:{context.line}]"
+        if context is not None:
+            category = context.category
+            if context.file:
+                location = f" [{context.file}:{context.line}]"
     except (AttributeError, RuntimeError):
         pass
+
+    if is_display_noise(message, category):
+        if _display_noise_tracker.should_dump(DISPLAY_NOISE_SIGNATURE, time.monotonic()):
+            suppressed = _display_noise_tracker.drain_suppressed(DISPLAY_NOISE_SIGNATURE)
+            logger.debug(
+                "Qt screen enumeration failing while the monitor is asleep — expected, ignoring. "
+                "Last message: %s%s (%d suppressed since the previous note)",
+                message,
+                location,
+                suppressed,
+            )
+        return
+
+    level = _QT_LEVELS.get(msg_type, logging.WARNING)
     logger.log(level, "Qt: %s%s", message, location)
 
     # Ours replaces Qt's handler, so keep the console output it was providing.
@@ -144,10 +199,11 @@ def _handler(msg_type: QtMsgType, context, message: str) -> None:
 
 def install(interval: float = DUMP_INTERVAL_SECONDS) -> None:
     """Install the Qt message handler. Safe to call more than once."""
-    global _installed, _tracker
+    global _installed, _tracker, _display_noise_tracker
     if _installed:
         return
     _tracker = BurstTracker(interval)
+    _display_noise_tracker = BurstTracker(DISPLAY_NOISE_INTERVAL_SECONDS)
     qInstallMessageHandler(_handler)
     _installed = True
     logger.info("Qt message handler installed")

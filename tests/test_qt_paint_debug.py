@@ -6,8 +6,10 @@ CLAUDE.md's testing convention for Qt code.
 """
 
 from bartlebot.qt_paint_debug import (
+    DISPLAY_NOISE_SIGNATURE,
     BurstTracker,
     format_dump,
+    is_display_noise,
     is_painter_message,
     relevant_frames,
     stack_signature,
@@ -37,6 +39,52 @@ def test_every_message_in_the_reported_burst_is_recognised():
 def test_unrelated_qt_warnings_are_ignored():
     assert not is_painter_message("QWindowsWindow::setGeometry: Unable to set geometry")
     assert not is_painter_message("QFontDatabase: Cannot find font directory")
+
+
+# ---------------------------------------------------------------------------
+# Monitor-asleep noise (#42, #120)
+# ---------------------------------------------------------------------------
+
+# Verbatim from issue #42, in both the rendering that carries the category
+# prefix and the bare one a message handler receives.
+DISPLAY_NOISE = [
+    r'qt.qpa.screen: "Unable to open monitor interface to \\.\DISPLAY1:" "Unknown error 0xe0000225."',
+    'qt.qpa.screen: "Unable to get device information for 516:" "The operation completed successfully."',
+    r"Unable to open monitor interface to \\.\DISPLAY1: Unknown error 0xe0000225.",
+    "Unable to get device information for 516: The operation completed successfully.",
+]
+
+
+def test_every_monitor_asleep_message_is_recognised():
+    assert all(is_display_noise(m) for m in DISPLAY_NOISE)
+
+
+def test_the_category_qt_reports_them_under_is_accepted():
+    assert is_display_noise(DISPLAY_NOISE[0], "qt.qpa.screen")
+    assert is_display_noise(DISPLAY_NOISE[0], "default")
+
+
+def test_the_same_text_under_another_category_is_not_suppressed():
+    assert not is_display_noise(DISPLAY_NOISE[0], "qt.qpa.window")
+
+
+def test_other_screen_warnings_are_still_reported():
+    assert not is_display_noise("QScreen: Cannot find window ancestor", "qt.qpa.screen")
+    assert not is_display_noise("Unable to set geometry", "qt.qpa.screen")
+
+
+def test_monitor_asleep_noise_is_not_mistaken_for_a_painter_message():
+    assert not any(is_painter_message(m) for m in DISPLAY_NOISE)
+
+
+def test_an_overnight_burst_of_noise_collapses_to_one_note_per_interval():
+    tracker = BurstTracker(interval=300.0)
+    now = 1000.0
+    assert tracker.should_dump(DISPLAY_NOISE_SIGNATURE, now)
+    for i in range(1, 600):  # every half second for five minutes
+        assert not tracker.should_dump(DISPLAY_NOISE_SIGNATURE, now + i * 0.5)
+    assert tracker.should_dump(DISPLAY_NOISE_SIGNATURE, now + 300.0)
+    assert tracker.drain_suppressed(DISPLAY_NOISE_SIGNATURE) == 599
 
 
 # ---------------------------------------------------------------------------
