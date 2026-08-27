@@ -14,6 +14,7 @@ poetry run python bartlebot.py
 ```bash
 poetry install              # all deps including dev
 poetry run pytest           # pytest-asyncio, asyncio_mode = "auto"
+poetry run pytest -n 8      # same suite in parallel (~10s vs ~33s); what CI runs
 poetry run ruff check       # lint
 poetry run ruff format      # auto-format
 ```
@@ -210,6 +211,29 @@ deliberately rather than by find-and-replace.
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
 
 Every new node, background task, or non-trivial utility class must ship with a corresponding test file. Cover at minimum: the success path, one failure path, and any timeout/retry behavior. The exception is pure `QWidget` subclasses that can't be tested without a `QApplication`; extract any testable logic into a plain function or class.
+
+#### Keeping the suite fast
+
+A node test that sleeps through a production cadence costs that time on every run, so
+compress the constants the code under test reads — `monkeypatch.setattr` on the *module
+that imported them*, not on `timing.py`. `_fast_settle` in `tests/test_deck_io.py` and
+`fast` in `tests/test_auto_select.py` are the pattern.
+
+Two things make this less obvious than it looks:
+
+- **Windows schedules waits on a ~15.6 ms tick.** Every `asyncio.sleep` shorter than that
+  costs a full tick anyway, so dropping an interval from 10 ms to 2 ms buys *nothing*. The
+  session fixture `_fine_grained_timers` in `conftest.py` calls `timeBeginPeriod(1)` to
+  drop the tick to ~1 ms, which is what makes short intervals worth compressing at all.
+  Don't remove it: it was worth ~7 s across the suite on its own.
+- **A wall-clock ceiling that something is read after is a race.** `timeout=0.05` on a call
+  whose result the test then inspects will pass alone and fail under `-n 8`, when the
+  cancel can land before the object exists. Give those a ceiling well clear of the setup —
+  see `test_apply_deck_closes_the_builder_on_timeout`.
+
+Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
+in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
+`_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
 
 ### Use public API across class boundaries
 

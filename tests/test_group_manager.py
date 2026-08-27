@@ -1295,7 +1295,12 @@ async def _timed(coro_factory, patches):
 # The one settle a regroup still cannot poll away: nothing on the Group tab distinguishes
 # it from the other tabs, so the opening membership survey has to wait a fixed time before
 # reading. It is concurrent across clients, so a pair costs one of these, not two.
-_SETTLE = 2.0
+#
+# Only the ratio to _BUDGET below matters, not the absolute value — the tests ask whether
+# the exchange paid one settle or three, and both sides scale together. Kept well above the
+# few milliseconds these fakes actually spend working, so scheduling noise cannot pass for
+# a settle, and low enough that the two tests do not dominate the file's runtime.
+_SETTLE = 0.5
 
 # Everything an invite exchange used to add on top of that — a sleep for the friend profile
 # to draw, a sleep to see whether the refusal popup appeared, and a second full settle to

@@ -125,10 +125,16 @@ def keys():
 
 @pytest.fixture
 def fast(monkeypatch):
-    """Compress the real cadences so the suite does not spend two minutes asleep."""
-    monkeypatch.setattr(auto_select, "AUTO_SELECT_FIRST_SCREEN_DELAY", 0.03)
-    monkeypatch.setattr(auto_select, "AUTO_SELECT_KEY_INTERVAL", 0.01)
-    monkeypatch.setattr(auto_select, "AUTO_SELECT_TREE_TIMEOUT", 0.2)
+    """Compress the real cadences so the suite does not spend two minutes asleep.
+
+    The intervals are cadences rather than ceilings, and the fakes they drive count
+    iterations rather than seconds, so shrinking them costs no coverage. They stay well
+    clear of the sub-millisecond range where asyncio's own scheduling overhead starts to
+    race the condition being polled — see FakeMachine.get_option in conftest.
+    """
+    monkeypatch.setattr(auto_select, "AUTO_SELECT_FIRST_SCREEN_DELAY", 0.01)
+    monkeypatch.setattr(auto_select, "AUTO_SELECT_KEY_INTERVAL", 0.002)
+    monkeypatch.setattr(auto_select, "AUTO_SELECT_TREE_TIMEOUT", 0.05)
     monkeypatch.setattr(auto_select, "AUTO_SELECT_CLEANUP_INTERVAL", 0.0)
     monkeypatch.setattr(auto_select, "_KEY_HOLD", 0.0)
 
@@ -189,7 +195,10 @@ async def test_gives_up_pressing_enter_after_the_cap(keys, fast, game, monkeypat
     """A character select that eats every press must not be hammered forever."""
     monkeypatch.setattr(auto_select, "AUTO_SELECT_MAX_ENTER", 3)
     keys.on_key = None  # Enter never takes
-    reached = await auto_select_character(TITLE, Hooked(after=None), lambda: game, timeout=0.4)
+    # The cap has to be what ends this drive, not the clock. This client never reads, so
+    # every press waits out AUTO_SELECT_TREE_TIMEOUT first and the three of them cost 3x
+    # that; the timeout is set to twice the total so a slow machine still sees all three.
+    reached = await auto_select_character(TITLE, Hooked(after=None), lambda: game, timeout=0.3)
     assert reached is False
     assert keys.keys_down.count(_VK_RETURN) == 3
 
@@ -246,13 +255,13 @@ async def test_falls_back_to_blind_when_no_client_is_available(keys, fast):
 
 async def test_timeout_returns_false_without_raising(keys, fast):
     """A client that never loads in gives up rather than hanging the launch."""
-    assert await auto_select_character(TITLE, Hooked(after=None), timeout=0.3) is False
+    assert await auto_select_character(TITLE, Hooked(after=None), timeout=0.1) is False
 
 
 async def test_missing_window_does_not_raise(keys, fast):
     """FindWindowW returning 0 (window closed mid-drive) is survivable."""
     keys.window_missing()
-    reached = await auto_select_character(TITLE, Hooked(after=None), timeout=0.3)
+    reached = await auto_select_character(TITLE, Hooked(after=None), timeout=0.1)
     assert reached is False
     assert keys.keys_down == []
 
@@ -305,7 +314,7 @@ async def test_drive_runs_cleanup_on_success(keys, fast, game):
 async def test_drive_skips_cleanup_on_timeout(keys, fast):
     cleanup = AsyncMock()
     with patch.object(auto_select, "clean_up_after_auto_select", cleanup):
-        reached = await drive_client_in(TITLE, Hooked(after=None), lambda: None, timeout=0.3)
+        reached = await drive_client_in(TITLE, Hooked(after=None), lambda: None, timeout=0.1)
     assert reached is False
     cleanup.assert_not_awaited()
 

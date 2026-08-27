@@ -1,6 +1,8 @@
 """Shared test doubles for node unit tests."""
 
+import ctypes
 import logging
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -236,3 +238,36 @@ def isolated_settings(tmp_path, monkeypatch):
 
     monkeypatch.setenv("APPDATA", str(tmp_path))
     monkeypatch.setattr(SettingsManager, "_instance", None)
+
+
+# ---------------------------------------------------------------------------
+# Timer resolution
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _fine_grained_timers():
+    """Raise the Windows timer resolution for the duration of the test session.
+
+    Windows schedules waits on a ~15.6 ms tick by default, so every ``asyncio.sleep``
+    shorter than that still costs a full tick. The suite is mostly nodes polling on
+    short intervals, which means thousands of 1-10 ms sleeps each rounding up to 15.6 ms
+    — well over half the wall time, and none of it doing anything.
+
+    ``timeBeginPeriod(1)`` drops the tick to ~1 ms. It cannot make a sleep return early,
+    so nothing that asserts a lower bound on elapsed time can be affected; it only stops
+    the short ones overshooting. The app itself does not do this — its own cadences are
+    tenths of seconds, where the tick does not matter.
+
+    Session-scoped and paired with ``timeEndPeriod`` because the setting is process-wide
+    and refcounted by the OS.
+    """
+    if sys.platform != "win32":
+        yield
+        return
+    winmm = ctypes.WinDLL("winmm")
+    winmm.timeBeginPeriod(1)
+    try:
+        yield
+    finally:
+        winmm.timeEndPeriod(1)

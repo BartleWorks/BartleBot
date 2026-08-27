@@ -63,6 +63,14 @@ def _fast_settle(monkeypatch):
     # never grows gives up at once instead of waiting out 2s per attempt.
     monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_CONFIRM_TIMEOUT", 0.0)
     monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_CONFIRM_POLL", 0.001)
+    for name in (
+        "DECK_ITEM_PAGE_SETTLE",
+        "DECK_ITEM_TOGGLE_SETTLE",
+        "DECK_FUSION_FLYOUT_SETTLE",
+        "DECK_SPELL_PAGE_SETTLE",
+        "DECK_FUSION_CLICK_SETTLE",
+    ):
+        monkeypatch.setattr(f"bartlebot.deck_io.{name}", 0.0)
 
 
 def _async_returning(value):
@@ -486,8 +494,13 @@ async def test_apply_deck_closes_the_builder_on_timeout(fake_deck_builder, monke
     _CtxDeckBuilder.instances = []
     monkeypatch.setattr("wizwalker.extensions.scripting.deck_builder.DeckBuilder", _HangingDeckBuilder)
 
+    # Longer than test_apply_deck_times_out needs, because this one reads the builder
+    # afterwards: the timeout has to outlast constructing it, or on a loaded machine the
+    # apply is cancelled before there is an instance and the assert below raises
+    # IndexError instead of failing. The builder stalls for 60s either way, so the exact
+    # ceiling does not change what is being tested.
     with pytest.raises(TimeoutError):
-        await apply_deck(FakeClient(), DeckData(normal={"Tempest": 1}), timeout=0.05)
+        await apply_deck(FakeClient(), DeckData(normal={"Tempest": 1}), timeout=0.3)
 
     assert _HangingDeckBuilder.instances[0].exited
 
