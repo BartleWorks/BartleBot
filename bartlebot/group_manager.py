@@ -62,6 +62,8 @@ from bartlebot.nodes.paths import (
 from bartlebot.nodes.timing import (
     GROUP_ADD_RETRIES,
     GROUP_INVITE_TIMEOUT,
+    GROUP_JOIN_HINT_TIMEOUT,
+    GROUP_PROFILE_TIMEOUT,
     GROUP_UI_SETTLE,
     GROUP_VERIFY_TIMEOUT,
     POLL_INTERVAL,
@@ -153,7 +155,7 @@ class GroupResult:
         return "; ".join(parts) or "nothing to do"
 
 
-async def _open_social_window(client) -> bool:
+async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) -> bool:
     """Open the social window on the Group tab. Returns True if it is showing.
 
     The HUD button toggles the window, so it is only clicked when the window is not
@@ -171,6 +173,14 @@ async def _open_social_window(client) -> bool:
     reintroduce either optimisation without a fresh probe run — an indicator that is
     always true makes this function return immediately, so the window never reaches the
     Group tab and membership is read off whichever page happened to be showing.
+
+    `ready` escapes that sleep for the one caller that has something specific to wait for.
+    A membership *survey* does not: both answers are plausible, so no observation can end
+    the wait early and the fixed settle is the floor. Confirming a join is the opposite —
+    only "grouped" is being waited for, and its arrival is proof the page has populated —
+    so that caller passes the Leave Group button as `ready` and returns as soon as it
+    appears. Absence for the whole `ready_timeout` is then the answer too, not a read taken
+    too early, which is why the fixed settle is skipped rather than added afterwards.
     """
     if not await node_helpers.is_visible_by_path(client, SOCIAL_WINDOW_PATH):
         # An open friends list covers the social HUD button, so the click lands on the list
@@ -192,7 +202,10 @@ async def _open_social_window(client) -> bool:
             return False
 
     await node_helpers.click_by_path(client, SOCIAL_GROUP_TAB_PATH)
-    await asyncio.sleep(jitter(GROUP_UI_SETTLE))
+    if ready is not None:
+        await node_helpers.poll_until(ready, timeout=ready_timeout, poll_interval=POLL_INTERVAL)
+    else:
+        await asyncio.sleep(jitter(GROUP_UI_SETTLE))
     return True
 
 
@@ -264,7 +277,7 @@ async def _read_roster(client) -> tuple[str, ...]:
 _ROSTER_PLACEHOLDERS = frozenset({"left"})
 
 
-async def read_group_state(client) -> GroupState:
+async def read_group_state(client, confirm_grouped_timeout: float | None = None) -> GroupState:
     """Return this client's membership flag and group roster in one social-window visit.
 
     Membership is read from the *visibility* of the Leave Group button on the social
@@ -281,12 +294,26 @@ async def read_group_state(client) -> GroupState:
     memory reads on top of a window that is already showing. Reading it separately would
     double the cost of the slowest and most failure-prone step for no benefit.
 
+    `confirm_grouped_timeout` says "I am expecting this client to be grouped, wait up to
+    this long for it". It replaces the fixed GROUP_UI_SETTLE with a poll for the Leave
+    Group button, so a join that has already landed is read at once instead of a second
+    later — see _open_social_window. Leave it None for a survey, where the answer is
+    genuinely unknown and there is nothing to poll for. Zero is distinct from None and
+    still means poll: it is what a caller whose deadline has run out passes, and reverting
+    it to the blind settle would hand back the second the caller was trying to save.
+
     Returns a blank state on any failure: the caller's next move is the same either way
     (try to add this client), and one unreadable client must not abort a regroup for the
     rest.
     """
     try:
-        if not await _open_social_window(client):
+        ready = None
+        if confirm_grouped_timeout is not None:
+
+            async def ready():
+                return await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH)
+
+        if not await _open_social_window(client, ready=ready, ready_timeout=confirm_grouped_timeout or 0.0):
             logger.debug("Social window did not open; treating client as ungrouped")
             return GroupState()
         grouped = await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH)
@@ -715,49 +742,39 @@ async def _invite_and_accept(leader, target, name: str, log, leader_name: str | 
     """Run one full invite exchange and report whether the target joined the leader's group."""
     async with leader.mouse_handler:
         await node_helpers.open_friend_profile(leader, name)
-        await asyncio.sleep(jitter(GROUP_UI_SETTLE))
+        # The profile popup is drawn locally, so it is normally up within a frame or two —
+        # polled rather than slept through. A timeout here is not fatal on its own: the
+        # click below then fails and reports what it actually found, which is a better
+        # diagnosis than "the popup was late".
+        if not await node_helpers.poll_until(
+            lambda: node_helpers.is_visible_by_path(leader, CHARACTER_PROFILE_PATH),
+            timeout=GROUP_PROFILE_TIMEOUT,
+            poll_interval=POLL_INTERVAL,
+        ):
+            log(f"Friend profile for {name} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
 
         if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
             diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
             log(f"Group invite button unavailable for {name}: {diagnosis}", logging.DEBUG)
             return False
 
+    invited, refused = await _await_invite_outcome(leader, target)
+    if refused:
         # The game rejects the invite outright if that player is already in a group —
         # someone else's, since form_group skips clients known to be in one. Dismiss the
         # popup so it does not block the next invite, and stop: retrying cannot help.
-        await asyncio.sleep(jitter(GROUP_UI_SETTLE))
-        if await node_helpers.is_visible_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH):
-            await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
-            raise AlreadyInAnotherGroup(f"{name} is already in another group")
-
-    # Accept on the invited client. PartyInviteWindow is specific to group invitations, so
-    # unlike the shared MessageBoxModalWindow there is no risk of confirming some unrelated
-    # dialog that happened to be open. The prompt is server-relayed, so it lags the click.
-    invited = await node_helpers.poll_until(
-        lambda: node_helpers.is_visible_by_path(target, GROUP_INVITE_ACCEPT_PATH),
-        timeout=GROUP_INVITE_TIMEOUT,
-        poll_interval=POLL_INTERVAL,
-    )
+        await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
+        raise AlreadyInAnotherGroup(f"{name} is already in another group")
     if not invited:
         log(f"No group invitation appeared for {name} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
         return False
 
     await node_helpers.click_by_path(target, GROUP_INVITE_ACCEPT_PATH)
 
-    # The game opens the social window by itself on joining, so its appearance is the
-    # first sign the accept was processed. Waiting on it is cheap — no clicks — but it is
-    # only a hint, so membership is confirmed properly below.
-    await node_helpers.poll_until(
-        lambda: node_helpers.is_visible_by_path(target, SOCIAL_WINDOW_PATH),
-        timeout=GROUP_VERIFY_TIMEOUT,
-        poll_interval=POLL_INTERVAL,
-    )
-
     # Authoritative check: the Leave Group button is only visible when actually grouped.
-    # The social window it needs is already open here, so this costs one click, not two.
     # Cleanup is left to _add_one's `finally`, which runs on the failure paths too —
     # closing here as well would double up and mask ordering bugs in the cleanup.
-    state = await read_group_state(target)
+    state = await _confirm_joined(target)
     if not state.grouped:
         return False
 
@@ -771,6 +788,67 @@ async def _invite_and_accept(leader, target, name: str, log, leader_name: str | 
         )
         return False
     return True
+
+
+async def _await_invite_outcome(leader, target) -> tuple[bool, bool]:
+    """Wait for the invite to land, returning (prompt_showing, refused).
+
+    Two things can follow an "Add to Group" click, and they are mutually exclusive: the
+    invitation prompt appears on the TARGET, or the game tells the LEADER that player is
+    already in a group. Both are polled together rather than one after the other.
+
+    The refusal used to be checked after a fixed sleep — absence being the expected outcome,
+    there is nothing to poll for on its own — which put a flat second under every successful
+    invite for the sake of a case that almost never happens (#114). Racing it against the
+    prompt removes that floor without giving up the check: whichever window appears first
+    ends the wait, and a refusal is still noticed as soon as it is drawn.
+
+    PartyInviteWindow is specific to group invitations, so unlike the shared
+    MessageBoxModalWindow there is no risk of confirming some unrelated dialog that
+    happened to be open. The prompt is server-relayed, so it lags the click.
+
+    The target is checked first each cycle: it is the common outcome, and ruling it out
+    costs one memory read.
+    """
+    refused = False
+
+    async def _settled() -> bool:
+        nonlocal refused
+        if await node_helpers.is_visible_by_path(target, GROUP_INVITE_ACCEPT_PATH):
+            return True
+        refused = await node_helpers.is_visible_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
+        return refused
+
+    settled = await node_helpers.poll_until(
+        _settled,
+        timeout=GROUP_INVITE_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
+    )
+    return settled and not refused, refused
+
+
+async def _confirm_joined(target) -> GroupState:
+    """Wait for an invited client to actually be in a group, and read its roster.
+
+    Two signals, both polled:
+
+      * the game opens the social window by itself on joining, which is the first sign the
+        accept was processed. Only a hint — but waiting for it also keeps our own HUD-button
+        click from racing the game's open and toggling the window straight back shut.
+      * the Leave Group button, which is authoritative.
+
+    They share one GROUP_VERIFY_TIMEOUT budget rather than taking one each, so an accept
+    that never went through still costs a single timeout. The hint takes a short slice of it
+    (GROUP_JOIN_HINT_TIMEOUT) and hands the remainder to the check that decides.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + GROUP_VERIFY_TIMEOUT
+    await node_helpers.poll_until(
+        lambda: node_helpers.is_visible_by_path(target, SOCIAL_WINDOW_PATH),
+        timeout=min(GROUP_JOIN_HINT_TIMEOUT, GROUP_VERIFY_TIMEOUT),
+        poll_interval=POLL_INTERVAL,
+    )
+    return await read_group_state(target, confirm_grouped_timeout=max(deadline - loop.time(), 0.0))
 
 
 def _lists(roster: tuple[str, ...], name: str) -> bool:
@@ -834,8 +912,12 @@ async def _close_invite_windows(leader, target) -> None:
     because a click swallowed by an overlapping window leaves the next one aimed at the
     wrong place too.
 
+    Order matters only WITHIN a client, so the two are cleaned up concurrently. Every input
+    here is addressed to one window handle — the same isolation that lets the membership
+    survey run concurrently, see read_group_states — and the leader's own social-then-profile
+    ordering is preserved inside _close_overlapping_windows.
+
     The friends list is deliberately not closed here — it is reused for the next invite
     and closed once at the end of form_group.
     """
-    await close_social_window(target)
-    await _close_overlapping_windows(leader)
+    await asyncio.gather(close_social_window(target), _close_overlapping_windows(leader))

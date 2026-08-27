@@ -1,5 +1,6 @@
 """Tests for node_helpers zone matching utilities."""
 
+import asyncio
 from unittest.mock import AsyncMock
 
 import pytest
@@ -550,6 +551,59 @@ async def test_click_until_gone_returns_false_when_it_never_closes():
 
     assert result is False
     assert window.clicks > 0
+
+
+async def test_click_until_gone_returns_as_soon_as_the_window_goes():
+    """poll_interval bounds the next CLICK, not the next look.
+
+    A close that took effect immediately — the common case — used to be invisible until the
+    full retry interval had elapsed, which put a floor under every window close in the app.
+    Group formation closes several per invite, so that was among the largest fixed costs in
+    a regroup (#114).
+    """
+    from contextlib import ExitStack
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    window = _Closeable(clicks_needed=1)
+    loop = asyncio.get_event_loop()
+    with ExitStack() as stack:
+        for p in _closeable_patches(window):
+            stack.enter_context(p)
+        start = loop.time()
+        result = await nh_mod.click_until_gone(None, ["Some", "Close"], timeout=5, poll_interval=2.0)
+        elapsed = loop.time() - start
+
+    assert result is True
+    assert window.clicks == 1
+    assert elapsed < 1.0, f"waited out the retry interval after the window had already closed ({elapsed:.2f}s)"
+
+
+async def test_press_key_until_gone_returns_as_soon_as_the_panel_goes():
+    """The keyboard counterpart of the same rule — see click_until_gone above."""
+    from wizwalker import Keycode
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    panel = _Closeable(clicks_needed=1)
+
+    async def send_key(_key, _seconds=0):
+        panel.clicks += 1
+
+    client = FakeClient()
+    client.send_key = AsyncMock(side_effect=send_key)
+
+    async def is_open():
+        return panel.visible
+
+    loop = asyncio.get_event_loop()
+    start = loop.time()
+    result = await nh_mod.press_key_until_gone(client, Keycode.F, is_open=is_open, timeout=5, poll_interval=2.0)
+    elapsed = loop.time() - start
+
+    assert result is True
+    assert panel.clicks == 1
+    assert elapsed < 1.0, f"waited out the retry interval after the panel had already closed ({elapsed:.2f}s)"
 
 
 async def test_click_until_gone_uses_the_supplied_predicate_not_the_button():

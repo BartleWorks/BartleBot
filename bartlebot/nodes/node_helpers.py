@@ -28,6 +28,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     MAX_RETRIES,
     POLL_INTERVAL,
     SEQUENTIAL_INTERACT_STAGGER,
+    WINDOW_CLOSE_CONFIRM_INTERVAL,
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
 )
@@ -799,6 +800,10 @@ async def click_until_gone(
     and no clicks — important because these buttons often sit on toggles, where a stray
     click would reopen what was just closed.
 
+    `poll_interval` is the floor on how fast we may click AGAIN, not on how fast we may
+    notice the click worked: the gap is spent polling the predicate, so a close that took
+    effect immediately returns immediately instead of after a full interval.
+
     Returns False if the panel is still open when the timeout expires.
     """
     if is_open is None:
@@ -806,15 +811,19 @@ async def click_until_gone(
         async def is_open():
             return await is_visible_by_path(client, path)
 
+    async def _gone():
+        return not await is_open()
+
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
     while True:
-        if not await is_open():
+        if await _gone():
             return True
         await click_by_path(client, path)
         if loop.time() >= deadline:
             break
-        await asyncio.sleep(poll_interval)
+        if await poll_until(_gone, timeout=poll_interval, poll_interval=WINDOW_CLOSE_CONFIRM_INTERVAL):
+            return True
 
     still_open = await is_open()
     if still_open:
@@ -911,16 +920,24 @@ async def press_key_until_gone(
 
     The predicate is checked before each press, because these keys are toggles: pressing
     one on an already-closed panel reopens it.
+
+    As in click_until_gone, `poll_interval` bounds how soon the next press may go out, and
+    the gap is spent polling rather than slept through.
     """
+
+    async def _gone():
+        return not await is_open()
+
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
     while True:
-        if not await is_open():
+        if await _gone():
             return True
         await client.send_key(key, 0.1)
         if loop.time() >= deadline:
             break
-        await asyncio.sleep(poll_interval)
+        if await poll_until(_gone, timeout=poll_interval, poll_interval=WINDOW_CLOSE_CONFIRM_INTERVAL):
+            return True
 
     still_open = await is_open()
     if still_open:

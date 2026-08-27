@@ -283,6 +283,19 @@ GROUP_VERIFY_TIMEOUT = 15.0
 # invitation is accepted, which is the game's own signal that the join went through. The
 # join is a server round-trip, so this covers more than a local UI update.
 
+GROUP_PROFILE_TIMEOUT = 6.0
+# Ceiling on waiting for a friend's profile popup to appear after their row is clicked in
+# the friends list. Polled rather than slept through: the popup is drawn locally with no
+# server round-trip, so it is normally up within a frame or two and the wait ends there.
+
+GROUP_JOIN_HINT_TIMEOUT = 3.0
+# Ceiling on waiting for the game to open the social window by itself on an invited client
+# after it accepts. That auto-open is only a hint that the accept was processed — the
+# authoritative check is the Leave Group button — so this is short, and it is spent from
+# the same GROUP_VERIFY_TIMEOUT budget as that check rather than added to it. Its real job
+# is to keep our own HUD-button click from racing the game's open and toggling the window
+# straight back shut.
+
 GROUP_ADD_RETRIES = 2
 # Attempts to add one client to the group before giving up on that client. A failed add
 # usually means a missed click or a dropped invite, both of which a retry fixes; anything
@@ -299,23 +312,35 @@ WINDOW_CLOSE_RETRY_INTERVAL = 0.4
 # Pause between close attempts. Long enough for the game to process the previous click
 # and repaint before the next one, short enough that a normal close still feels instant.
 
+WINDOW_CLOSE_CONFIRM_INTERVAL = 0.1
+# How often the "is it gone yet?" check runs *within* one WINDOW_CLOSE_RETRY_INTERVAL.
+# The retry interval is the floor on how fast we may click again, not on how fast we may
+# notice the click worked, and the common case is that it worked immediately. Sleeping the
+# whole interval before looking put a 0.4 s floor under every window close in the app;
+# group formation closes several windows per invite, so that was among the largest fixed
+# costs in a regroup (#114).
+
 GROUP_UI_SETTLE = 1.0
-# Pause after clicking a friends-list or profile button, so the resulting window is
-# rendered before it is read or clicked. Matches the sleep WizWalker uses between its own
-# friends-list clicks.
+# Pause after switching to the social window's Group tab, so the page is populated before
+# it is read. Matches the sleep WizWalker uses between its own friends-list clicks.
 #
-# Used where there is nothing specific to wait FOR: before checking whether the "already in
-# a group" popup appeared, where absence is the expected outcome so no amount of polling
-# can conclude early — and after switching to the social window's Group tab, where NO
-# element distinguishes that tab from the others. That second one is not an unexplored
-# shortcut: tools/probe_group_tab.py swept every tab and every window under the social
-# window and came back empty (2026-08-11, and see paths.py).
+# One remaining use, and it is the one place with nothing to wait FOR: NO element
+# distinguishes the Group tab from the others. That is not an unexplored shortcut —
+# tools/probe_group_tab.py swept every tab and every window under the social window and
+# came back empty (2026-08-11, and see paths.py). A membership *survey* therefore cannot
+# conclude early, because either answer is plausible and neither has a signal.
 #
-# So this is the largest fixed cost in a group membership survey and it cannot be polled
-# away. Nor should it be shortened — 1.0 s is what reliably covers the page populating
+# Confirming a JOIN is not that case and no longer pays this: only "grouped" is being
+# waited for there, so group_manager._confirm_joined polls the Leave Group button instead
+# and returns the moment it appears (#114). Same for the two sleeps that used to sit in
+# _invite_and_accept — the friend profile popup and the "already in a group" refusal are
+# both polled now, the latter raced against the invitation prompt so its absence costs
+# nothing.
+#
+# What is left should not be shortened: 1.0 s is what reliably covers the page populating
 # under load, and a survey that misreads membership sends spurious invites. It is
-# concurrent across clients (see group_manager.read_group_flags), so it costs one second
-# for the whole fleet rather than one per client, which is where the win came from instead.
+# concurrent across clients (see group_manager.read_group_flags), so a fleet pays it once
+# rather than once per client, which is where the win came from instead.
 
 
 HOUSING_EQUIP_TIMEOUT = 5.0
