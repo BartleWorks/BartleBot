@@ -118,12 +118,37 @@ class LeftSidebar(QTabWidget):
         if index == _COMBAT_TAB:
             self.combat_tab.refresh_duel_profiles()
 
+    @property
+    def config(self) -> BotConfig | None:
+        """The BotConfig the sections are currently editing."""
+        return self._config
+
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
         self.bot_info.set_config(config)
         self.possible_drops.set_config(config)
         self.options.set_config(config)
         self.combat_tab.set_config(config)
+
+    def sync_config(self, config: BotConfig | None, editable: bool) -> None:
+        """Rebind the sections if *config* is a different object than they hold.
+
+        Undo/redo hands the canvas a brand-new ``BotConfig`` — ``UndoManager``
+        restores from a ``model_dump`` snapshot — while the sections keep editing
+        the object they were given at load.  Everything they write from then on
+        lands somewhere nothing reads or saves; the initial state is the visible
+        one, because its warnings stop moving with it (#53).
+
+        Cheap and idempotent for the common case, where the object is unchanged.
+        ``_config`` is assigned before ``set_config`` because that call can flush a
+        pending combat save, which comes back around through ``config_changed``;
+        the early return is what stops that from recursing.
+        """
+        if config is self._config:
+            return
+        self._config = config
+        self.set_config(config)
+        self.set_editable(editable)
 
     def set_editable(self, editable: bool) -> None:
         self.bot_info.set_editable(editable)

@@ -164,6 +164,12 @@ class BotInfoSection(SidebarSection):
             self._populate_recovery_combo(config.states, config.recovery_state)
         self._suppress = False
 
+    def select_initial_state(self, state_id: str) -> None:
+        """Pick *state_id* in the Initial State combo, as a user click would."""
+        idx = self._initial_combo.findData(state_id)
+        if idx >= 0:
+            self._initial_combo.setCurrentIndex(idx)
+
     def refresh_states(self, states: list) -> None:
         if self._config is None:
             return

@@ -1014,6 +1014,11 @@ class BotCanvas(QWidget):
         return self._config
 
     @property
+    def mode(self) -> BotMode:
+        """The canvas's current mode (RUN or EDIT)."""
+        return self._mode
+
+    @property
     def scene(self) -> "EditScene":
         """The EditScene holding the node/edge graph."""
         return self._scene
@@ -1511,24 +1516,37 @@ class BotCanvas(QWidget):
             self._undo_mgr.redo_desc() or "",
         )
 
-    def _update_validation_badge(self) -> None:
-        config = self._scene._config
+    def _validation_lines(self) -> tuple[list[str], list[str]]:
+        """Return (error_lines, warning_lines) for the loaded graph, ``"<node>: <reason>"``."""
+        config = self._scene.config
         if config is None:
-            self._validation_banner.setVisible(False)
-            self._n_validation_errors = 0
-            self._apply_run_btn_state()
-            return
-
+            return [], []
         error_lines: list[str] = []
         warning_lines: list[str] = []
         reachable = _reachable_states(config)
         for state in config.states:
             name = state.label or state.id
             _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
-            for r in err_reasons:
-                error_lines.append(f"{name}: {r}")
-            for r in warn_reasons:
-                warning_lines.append(f"{name}: {r}")
+            error_lines.extend(f"{name}: {r}" for r in err_reasons)
+            warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
+        return error_lines, warning_lines
+
+    def validation_errors(self) -> list[str]:
+        """The error lines currently behind the red badge, one per problem."""
+        return self._validation_lines()[0]
+
+    def validation_warnings(self) -> list[str]:
+        """The warning lines currently behind the amber badge, one per problem."""
+        return self._validation_lines()[1]
+
+    def _update_validation_badge(self) -> None:
+        if self._scene.config is None:
+            self._validation_banner.setVisible(False)
+            self._n_validation_errors = 0
+            self._apply_run_btn_state()
+            return
+
+        error_lines, warning_lines = self._validation_lines()
 
         n_errors = len(error_lines)
         n_warnings = len(warning_lines)
