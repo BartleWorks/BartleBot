@@ -17,6 +17,20 @@ from PyQt6.QtWidgets import (
 )
 
 
+def _qty_item(qty: int) -> QTableWidgetItem:
+    """Build a Qty cell that sorts as a number.
+
+    ``QTableWidgetItem`` compares its display data as a ``QVariant``, so a cell
+    holding the *string* "10" sorts before "9". Storing the int instead makes Qt
+    compare numerically; it still renders as "10", and ``text()`` still returns
+    "10" for the CSV export.
+    """
+    item = QTableWidgetItem()
+    item.setData(Qt.ItemDataRole.DisplayRole, qty)
+    item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+    return item
+
+
 class DropSection(QWidget):
     """Per-client drop tables with search and CSV export.
 
@@ -79,6 +93,12 @@ class DropSection(QWidget):
             self._data.append({})
             self._tabs.addTab(table, f"Player {i + 1}")
 
+    def table(self, client_index: int) -> QTableWidget | None:
+        """The drop table for one client, or None if there is no such client."""
+        if 0 <= client_index < len(self._tables):
+            return self._tables[client_index]
+        return None
+
     def add_drop(self, item: str, quantity: int, client_index: int = 0) -> None:
         if client_index >= len(self._data):
             return
@@ -135,9 +155,7 @@ class DropSection(QWidget):
                 row = table.rowCount()
                 table.insertRow(row)
                 table.setItem(row, 0, QTableWidgetItem(item))
-                qty_item = QTableWidgetItem(str(qty))
-                qty_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                table.setItem(row, 1, qty_item)
+                table.setItem(row, 1, _qty_item(qty))
         finally:
             table.blockSignals(False)
             table.horizontalHeader().setSortIndicator(0, Qt.SortOrder.AscendingOrder)
