@@ -31,9 +31,12 @@ class ParamField:
 
     Attributes:
         key:          JSON key used in the params dict.
-        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" | "int_list" | "str_list" |
-                      "int_choice" | "player_list" | "drop_keep_list" | "wiki_page".
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "tri_bool" | "xyz" | "int_list" |
+                      "str_list" | "int_choice" | "player_list" | "drop_keep_list" | "wiki_page".
                       "text" renders as a multi-line QPlainTextEdit.
+                      "tri_bool" is a bool that can also be left unset, meaning "use the app setting named by
+                      app_setting_key". Stored as true / false / null, and null is what a bot carries unless
+                      its author pinned an answer. The node resolves it; see quicksell.resolve_app_defaults.
                       "drop_keep_list" is a str_list of quicksell keep-list keywords, shown alongside the bot's
                       drop table with a checkbox per drop; the value on disk is a plain list of strings.
                       "wiki_page" records the Wizard101 Central page a node's data came from. Editor-only —
@@ -49,6 +52,9 @@ class ParamField:
                       "text" fields where the format is not obvious from the label alone.
         disabled_by:  Key of a bool field in the same schema; when that field is
                       True this field's widget is disabled. Empty string = no link.
+        app_setting_key: For type="tri_bool": the SettingsManager general-settings key holding the
+                      app-level answer this field falls back to. The widget reads it to label the
+                      unset choice with the value currently in force.
         required:     When True the param must be explicitly set in state.params
                       (i.e. the user must open the properties panel and save).
                       Used by the GUI to flag unconfigured nodes as errors.
@@ -62,6 +68,7 @@ class ParamField:
     default_hint: str = ""
     placeholder: str = ""
     disabled_by: str = ""
+    app_setting_key: str = ""
     required: bool = False
     choices: list[Any] = field(default_factory=list)
     """For ``type="int_choice"``: the ordered list of integer values shown in the dropdown."""

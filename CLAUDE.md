@@ -114,6 +114,40 @@ This bug caused the client section sidebar (zone/XYZ display) to freeze for the 
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
+#### App settings vs. node params
+
+An app setting that a node param also expresses must never be applied by rewriting
+the param on load. That is what `AppController._apply_bot_defaults` used to do to
+quicksell's `sell_*` params, and it made the node param unreachable: a value stored
+in a bot file was overwritten every time the file was opened, then silently written
+back on the next save.
+
+Use a three-state param instead — `ParamField(type="tri_bool", app_setting_key=…)`,
+stored as `true` / `false` / `null`, defaulting to unset. Unset means "use the app
+setting", so a bot with no opinion follows the user, and a bot that pins an answer
+keeps it. Resolve at **run time**, in one place, and log which level answered:
+`quicksell.resolve_app_defaults()` is the model, and `resolve_combat()`'s
+`source_label` is the older precedent for saying where a value came from.
+
+Everything downstream of that one resolution should see plain bools, which is what
+keeps the keep-list logic and the picker pure and testable without settings.
+
+Two things that fall out of it:
+
+- Anything showing the user what will happen — the properties panel, the safety
+  warning dialog — has to resolve too, and say when a value came from the app
+  setting. The bot file does not show that.
+- Values the override already wrote have to be dealt with, or they start
+  outranking the app setting the moment it stops rewriting them. Every bot file
+  is in this repo, so the quicksell params were migrated in place rather than at
+  load time: a stored value equal to the shipped default said nothing the app
+  setting does not and was dropped, while one that differs was the only trace of
+  intent the file carried and stayed as a pin. `test_no_bot_pins_a_quicksell_flag_it_does_not_mean_to`
+  keeps the library that way.
+
+`Safety Delay` is the deliberate exception — it describes the machine's connection
+rather than the bot, so no stored value should outrank the app setting.
+
 ### No real player data
 
 Never commit real, identifiable player data — wizard names, character ids, account

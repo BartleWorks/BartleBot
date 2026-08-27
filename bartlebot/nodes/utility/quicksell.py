@@ -25,6 +25,21 @@ from bartlebot.nodes.paths import (
     quicksell_item_title_path,
 )
 
+logger = logging.getLogger(__name__)
+
+# The sell_* params are three-state: True (sell), False (keep), or unset — meaning
+# "use the app setting", which is how every bot behaves until someone deliberately
+# pins it. Maps each param to the SettingsManager key holding that app setting, and
+# to the value to assume when settings cannot be read at all.
+#
+# Unset is stored as null (or an absent key) in the bot file, and is the schema
+# default, so a bot only pins a value when its author had a reason to.
+APP_DEFAULT_SETTINGS: dict[str, tuple[str, bool]] = {
+    "sell_pets": ("default_quicksell_sell_pets", True),
+    "sell_socket_wrenches": ("default_quicksell_sell_socket_wrenches", False),
+    "sell_skeleton_keys": ("default_quicksell_sell_skeleton_keys", False),
+}
+
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="keep_list",
@@ -41,31 +56,44 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="sell_pets",
-        type="bool",
+        type="tri_bool",
         label="Sell Pets",
+        app_setting_key=APP_DEFAULT_SETTINGS["sell_pets"][0],
         help=(
-            "If enabled, pets are sold along with everything else. "
+            "Whether pets are sold along with everything else. Left on the app setting unless this "
+            "bot needs one answer specifically. "
             "The keep list cannot spare an individual pet: the quicksell window lists a pet by the "
             "nickname its owner gave it, never by the body type the drop table names it with, so a "
-            "keyword for a pet never matches. Turn this off to keep every pet."
+            "keyword for a pet never matches. Keep is the only thing that keeps a pet."
         ),
-        default=True,
+        default=None,
+        default_hint="the app setting in Settings → General → Bot.",
         required=False,
     ),
     ParamField(
         key="sell_socket_wrenches",
-        type="bool",
+        type="tri_bool",
         label="Sell Socket Wrenches",
-        help="If disabled, any item whose name contains 'Socket Wrench' will be kept and not sold.",
-        default=False,
+        app_setting_key=APP_DEFAULT_SETTINGS["sell_socket_wrenches"][0],
+        help=(
+            "Whether items whose name contains 'Socket Wrench' are sold. Keep adds that keyword to "
+            "the keep list. Left on the app setting unless this bot needs one answer specifically."
+        ),
+        default=None,
+        default_hint="the app setting in Settings → General → Bot.",
         required=False,
     ),
     ParamField(
         key="sell_skeleton_keys",
-        type="bool",
+        type="tri_bool",
         label="Sell Skeleton Keys",
-        help="If disabled, any item whose name contains 'Skeleton Key' will be kept and not sold.",
-        default=False,
+        app_setting_key=APP_DEFAULT_SETTINGS["sell_skeleton_keys"][0],
+        help=(
+            "Whether items whose name contains 'Skeleton Key' are sold. Keep adds that keyword to "
+            "the keep list. Left on the app setting unless this bot needs one answer specifically."
+        ),
+        default=None,
+        default_hint="the app setting in Settings → General → Bot.",
         required=False,
     ),
 ]
@@ -188,15 +216,76 @@ QUICKSELLABLE_CATEGORIES: frozenset[str] = frozenset(
 )
 
 
+def app_default_flags() -> dict[str, bool]:
+    """The current app-level answer for each sell_* param.
+
+    Read from SettingsManager rather than passed in, because the settings are a
+    property of the machine and not of the bot. Falls back to the values in
+    APP_DEFAULT_SETTINGS if the settings file cannot be read at all — a quicksell
+    run must not fail over a missing preference.
+    """
+    fallbacks = {key: fallback for key, (_, fallback) in APP_DEFAULT_SETTINGS.items()}
+    try:
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids a GUI import at node load
+
+        sm = SettingsManager.instance()
+    except Exception:
+        logger.warning("quicksell: could not read app settings — assuming %r", fallbacks)
+        return fallbacks
+    return {
+        key: bool(sm.get_general(settings_key, default=fallback))
+        for key, (settings_key, fallback) in APP_DEFAULT_SETTINGS.items()
+    }
+
+
+def inherited_flags(params: dict) -> list[str]:
+    """The sell_* params this config leaves to the app setting, in schema order."""
+    return [key for key in APP_DEFAULT_SETTINGS if not isinstance(params.get(key), bool)]
+
+
+def resolve_app_defaults(params: dict, defaults: dict[str, bool] | None = None) -> dict:
+    """Return *params* with every unset sell_* param filled in from the app settings.
+
+    This is the one place the three-state value collapses to a bool. Everything
+    downstream — the keep-list logic, the picker, run() — sees a plain True/False
+    and does not care where it came from, which is what keeps those functions pure.
+
+    *defaults* is for tests and for callers that already read the settings; when it
+    is None the settings are consulted, but only if something actually needs them.
+    A config that pins all three never touches SettingsManager.
+    """
+    if not inherited_flags(params):
+        return params
+    defaults = app_default_flags() if defaults is None else defaults
+    resolved = dict(params)
+    for key, (_, fallback) in APP_DEFAULT_SETTINGS.items():
+        if not isinstance(resolved.get(key), bool):
+            resolved[key] = bool(defaults.get(key, fallback))
+    return resolved
+
+
 def _typed_keywords(params: dict) -> list[str]:
     """The keep_list param, lowercased. Blank entries are dropped: an empty keyword
     is a substring of every name and would silently keep the entire backpack."""
     return [k for k in (kw.lower().strip() for kw in (params.get("keep_list") or [])) if k]
 
 
+def sell_flag(params: dict, param_key: str) -> bool:
+    """One resolved sell_* value.
+
+    Callers holding a bot's raw params should run them through resolve_app_defaults
+    first, so an unset param picks up the *user's* app setting. Reaching this with
+    an unset one is still well defined — it falls back to the shipped default in
+    APP_DEFAULT_SETTINGS — but that is a floor, not a substitute: nothing in a pure
+    function may go and read the settings itself.
+    """
+    value = params.get(param_key)
+    return value if isinstance(value, bool) else APP_DEFAULT_SETTINGS[param_key][1]
+
+
 def _implied_keywords(params: dict) -> list[str]:
     """The keywords contributed by the sell_* bools rather than by the keep_list."""
-    return [keyword for param_key, keyword in IMPLIED_KEEP_KEYWORDS.items() if not params.get(param_key, False)]
+    return [keyword for param_key, keyword in IMPLIED_KEEP_KEYWORDS.items() if not sell_flag(params, param_key)]
 
 
 def category_keep_reasons(params: dict) -> dict[str, str]:
@@ -209,11 +298,8 @@ def category_keep_reasons(params: dict) -> dict[str, str]:
     """
     reasons = {}
     for param_key, category in CATEGORY_SELL_FLAGS.items():
-        field = next((f for f in PARAM_SCHEMA if f.key == param_key), None)
-        # The field's own default, so this cannot drift from what run() would read
-        # for a param the bot file omits.
-        default = field.default if field is not None else True
-        if not params.get(param_key, default):
+        if not sell_flag(params, param_key):
+            field = next((f for f in PARAM_SCHEMA if f.key == param_key), None)
             label = field.label if field is not None else param_key
             reasons[category] = f"Kept because {label} is off, not by the keep list."
     return reasons
@@ -316,9 +402,11 @@ async def run(machine, clients: list, params: dict) -> str:
           node_helpers.click_by_path(), node_helpers.get_text_by_path()
 
     Flow (per client, run concurrently via asyncio.gather):
-      1. Build the effective keep_list via effective_keep_list(): the keep_list param
-         plus the keywords implied by the sell_* bools. The properties panel calls the
-         same function to show which of the bot's drops this config will keep.
+      1. Resolve the three-state sell_* params against the app settings via
+         resolve_app_defaults(), then build the effective keep_list via
+         effective_keep_list(): the keep_list param plus the keywords implied by the
+         resolved sell_* bools. The properties panel resolves the same way, so what it
+         shows is what this will do.
       2. Open the inventory page (B key); read backpack_space() to check if full.
       3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
       4. If neither is full, close the backpack and return SUCCESS.
@@ -341,13 +429,18 @@ async def run(machine, clients: list, params: dict) -> str:
     FAILURE: quicksell open button did not appear; shop UI did not appear;
     sell confirmation dialog did not appear.
     """
+    # Fill in whichever sell_* params this bot left to the app settings. Everything
+    # below reads plain bools; which level answered is only interesting to the log.
+    inherited = inherited_flags(params)
+    params = resolve_app_defaults(params)
     keep_list = effective_keep_list(params)
-    sell_pets: bool = params.get("sell_pets", True)
-    sell_socket_wrenches: bool = params.get("sell_socket_wrenches", False)
-    sell_skeleton_keys: bool = params.get("sell_skeleton_keys", False)
+    sell_pets: bool = params["sell_pets"]
+    sell_socket_wrenches: bool = params["sell_socket_wrenches"]
+    sell_skeleton_keys: bool = params["sell_skeleton_keys"]
+    source = f" ({', '.join(inherited)} from app settings)" if inherited else " (all set by the bot)"
     machine.log(
         f"quicksell: keep_list={keep_list!r} sell_pets={sell_pets} "
-        f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}"
+        f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}{source}"
     )
 
     # Only when the user typed keywords of their own: the implied ones can never

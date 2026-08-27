@@ -175,7 +175,7 @@
       "label": "Teleport to Regent's Square",
       "position": {
         "x": 0.0,
-        "y": 360.0
+        "y": 270.0
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
@@ -188,7 +188,7 @@
       "label": "Enter Barkingham Palace",
       "position": {
         "x": 440.0,
-        "y": 360.0
+        "y": 270.0
       },
       "params": {
         "from_zone": "Marleybone/MB_Hub",
@@ -211,7 +211,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Ransacked Throne Room",
       "position": {
-        "x": 1760.0,
+        "x": 2200.0,
         "y": 0.0
       },
       "params": {
@@ -235,8 +235,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 880.0,
-        "y": 90.0
+        "x": 1320.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -253,7 +253,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1320.0,
+        "x": 1760.0,
         "y": 0.0
       },
       "params": {
@@ -269,7 +269,7 @@
       "node_type": "handle_combat",
       "label": "Defeat The Monster",
       "position": {
-        "x": 5720.0,
+        "x": 6160.0,
         "y": 0.0
       },
       "params": {
@@ -285,7 +285,7 @@
       "node_type": "enter_zone",
       "label": "Exit Ransacked Throne Room",
       "position": {
-        "x": 6160.0,
+        "x": 6600.0,
         "y": 0.0
       },
       "params": {
@@ -310,14 +310,14 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 6600.0,
+        "x": 7040.0,
         "y": 0.0
       },
       "params": {
         "keep_list": [],
         "sell_pets": false,
-        "sell_socket_wrenches": false,
-        "sell_skeleton_keys": false
+        "sell_socket_wrenches": null,
+        "sell_skeleton_keys": null
       },
       "option_overrides": {}
     },
@@ -326,7 +326,7 @@
       "node_type": "apply_level_scaling",
       "label": "Apply level scaling",
       "position": {
-        "x": 5280.0,
+        "x": 5720.0,
         "y": 90.0
       },
       "params": {
@@ -349,7 +349,7 @@
       "node_type": "check_level_scaling",
       "label": "Check level scaling",
       "position": {
-        "x": 4840.0,
+        "x": 5280.0,
         "y": 90.0
       },
       "params": {},
@@ -398,7 +398,7 @@
       "node_type": "interact_menu",
       "label": "Open Collected Notes menu",
       "position": {
-        "x": 2200.0,
+        "x": 2640.0,
         "y": 180.0
       },
       "params": {
@@ -432,7 +432,7 @@
       "node_type": "click_path",
       "label": "Click Note 5",
       "position": {
-        "x": 2640.0,
+        "x": 3080.0,
         "y": 180.0
       },
       "params": {
@@ -462,7 +462,7 @@
       "node_type": "interact_menu",
       "label": "Open Collected Notes menu",
       "position": {
-        "x": 3080.0,
+        "x": 3520.0,
         "y": 180.0
       },
       "params": {
@@ -496,7 +496,7 @@
       "node_type": "interact_menu",
       "label": "Open Collected Notes menu",
       "position": {
-        "x": 3960.0,
+        "x": 4400.0,
         "y": 180.0
       },
       "params": {
@@ -530,7 +530,7 @@
       "node_type": "click_path",
       "label": "Click Note 6",
       "position": {
-        "x": 3520.0,
+        "x": 3960.0,
         "y": 180.0
       },
       "params": {
@@ -560,7 +560,7 @@
       "node_type": "click_path",
       "label": "Click Note 7",
       "position": {
-        "x": 4400.0,
+        "x": 4840.0,
         "y": 180.0
       },
       "params": {
@@ -590,8 +590,8 @@
       "node_type": "enter_zone",
       "label": "Exit Ransacked Throne Room",
       "position": {
-        "x": -440.0,
-        "y": 180.0
+        "x": 880.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
@@ -614,8 +614,8 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1320.0,
-        "y": 180.0
+        "x": 1760.0,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 0.1,
@@ -842,16 +842,6 @@
       "source": "state_18",
       "dest": "state_19",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_1",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1164,33 +1154,17 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
-    }
-  ],
-  "regions": [
-    {
-      "id": "49a9cfb4",
-      "label": "Enter Rooftop",
-      "members": [
-        "state_3",
-        "state_1",
-        "state_2",
-        "state_4",
-        "state_5"
-      ],
-      "color": 1
     },
     {
-      "id": "e08f99a4",
-      "label": "Activate Notes 5-7",
-      "members": [
-        "state_17",
-        "state_16",
-        "state_18",
-        "state_15",
-        "state_13",
-        "state_14"
-      ],
-      "color": 1
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
-  ]
+  ],
+  "regions": []
 }

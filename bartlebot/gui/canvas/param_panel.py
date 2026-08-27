@@ -304,6 +304,42 @@ class _ZoneWidget(QWidget):
             pass
 
 
+class _TriBoolComboBox(QComboBox):
+    """Yes / No / "use the app setting" dropdown, for ``tri_bool`` param fields.
+
+    The unset choice is first and is what a bot carries unless its author pinned an
+    answer, so the app setting reaches every bot that has no opinion. Its label
+    names the value currently in force, because "use the app setting" on its own
+    does not tell the reader what will happen.
+
+    ``get_params()`` returns None, True, or False from the item's data.
+    """
+
+    def __init__(self, app_setting_key: str = "", parent=None):
+        super().__init__(parent)
+        self._app_setting_key = app_setting_key
+        self.addItem(f"Use app setting ({'Yes' if self._app_value() else 'No'})", None)
+        self.addItem("Yes", True)
+        self.addItem("No", False)
+
+    def _app_value(self) -> bool:
+        # Read lazily and defensively: a missing settings file must not stop the
+        # properties panel from opening.
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle at startup
+
+        try:
+            return bool(SettingsManager.instance().get_general(self._app_setting_key, default=False))
+        except Exception:
+            return False
+
+    def set_value(self, value) -> None:
+        index = self.findData(value if isinstance(value, bool) else None)
+        self.setCurrentIndex(max(index, 0))
+
+    def get_value(self):
+        return self.currentData()
+
+
 class _IntChoiceComboBox(QComboBox):
     """QComboBox variant used for 'int_choice' param fields.
 
@@ -367,13 +403,19 @@ class _DynamicParamForm(QWidget):
                 label_w.setToolTip(field.help)
             val = params.get(field.key, field.default)
             widget = self._make_widget(
-                field.type, val, field.help, field.key, getattr(field, "choices", []), getattr(field, "placeholder", "")
+                field.type,
+                val,
+                field.help,
+                field.key,
+                getattr(field, "choices", []),
+                getattr(field, "placeholder", ""),
+                getattr(field, "app_setting_key", ""),
             )
             self._widgets[field.key] = widget
             if field.required:
                 self._required_widgets[field.key] = widget
             display_w = widget if not isinstance(widget, tuple) else widget[3]
-            if field.type == "bool":
+            if field.type in ("bool", "tri_bool"):
                 container = QWidget()
                 row = QHBoxLayout(container)
                 row.setContentsMargins(0, 0, 0, 0)
@@ -483,6 +525,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = w.value()
             elif isinstance(w, QDoubleSpinBox):
                 result[key] = w.value()
+            elif isinstance(w, _TriBoolComboBox):
+                result[key] = w.get_value()
             elif isinstance(w, _IntChoiceComboBox):
                 try:
                     result[key] = int(w.currentText())
@@ -500,6 +544,7 @@ class _DynamicParamForm(QWidget):
         key: str = "",
         choices: list | None = None,
         placeholder: str = "",
+        app_setting_key: str = "",
     ) -> Any:
         if field_type == "text":
             w = QPlainTextEdit()
@@ -599,6 +644,13 @@ class _DynamicParamForm(QWidget):
             if help_text:
                 w.setToolTip(help_text)
             w.checkStateChanged.connect(self._emit_changed)
+            return w
+        if field_type == "tri_bool":
+            w = _TriBoolComboBox(app_setting_key)
+            w.set_value(val)
+            if help_text:
+                w.setToolTip(help_text)
+            w.currentIndexChanged.connect(self._emit_changed)
             return w
         if field_type == "xyz":
             xyz = val if isinstance(val, dict) else {}

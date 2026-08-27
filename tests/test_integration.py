@@ -632,6 +632,27 @@ def test_bot_ids_are_unique():
     assert not duplicates, f"bot ids used by more than one file: {duplicates}"
 
 
+def test_no_bot_pins_a_quicksell_flag_it_does_not_mean_to():
+    """A sell_* param equal to the shipped default was written by the load-time
+    override that used to rewrite all three, not chosen — and left in a file it
+    outranks the user's own app setting. The library was migrated in place when
+    those params became three-state; this is what keeps it migrated, since a save
+    from an editor still holding stale values would put them back."""
+    from bartlebot.nodes.utility.quicksell import APP_DEFAULT_SETTINGS  # noqa: PLC0415
+
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for state in _load_raw(path).get("states") or []:
+            if state.get("node_type") != "quicksell":
+                continue
+            params = state.get("params") or {}
+            for key, (_, shipped) in APP_DEFAULT_SETTINGS.items():
+                if params.get(key) is shipped:
+                    offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {key}={shipped}")
+
+    assert not offenders, f"quicksell states pinning a shipped default: {offenders}"
+
+
 def test_no_bot_uses_legacy_combat_params():
     """`use_default_duel_profile` is honored by the Combat tab's fallback but not by
     handle_combat, so a bot still carrying it silently ignores its per-state strategy

@@ -362,7 +362,10 @@ class DropKeepListWidget(QWidget):
         # node ever sees. Zipped positionally rather than looked up by name: several
         # drops can share one in-game name, and a dict would collapse them.
         match_keys = [entry.match_key for entry in entries]
-        params = {**self._context, _VALUE_PARAM_KEY: self.get_value()}
+        # Resolved here rather than downstream: the sell_* params can each be left to
+        # the app setting, and the picker has to show what the run will actually do,
+        # not the unset state. A config that pins all three never reads the settings.
+        params = quicksell.resolve_app_defaults({**self._context, _VALUE_PARAM_KEY: self.get_value()})
         states = quicksell.drop_keep_states(match_keys, params)
         shared = Counter(key.casefold() for key in match_keys)
         # Categories a sell_* bool spares wholesale. Unlike the never-sold set these

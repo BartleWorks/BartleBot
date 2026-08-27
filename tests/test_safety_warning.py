@@ -2,6 +2,7 @@
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.safety_warning_dialog import collect_safety_warnings
+from bartlebot.settings_manager import SettingsManager
 
 
 def _config(*states: dict) -> BotConfig:
@@ -44,6 +45,22 @@ def test_quicksell_emits_warning():
     warnings = collect_safety_warnings(config)
     assert len(warnings) == 1
     assert "quicksell" in warnings[0].message.lower() or "backpack" in warnings[0].message.lower()
+
+
+def test_quicksell_unset_flags_show_the_app_setting_and_say_so():
+    """The stored value is not the answer for an unset param, and the file does not
+    show which level decided — this dialog is the last stop before the sale."""
+    SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
+    config = _config({"node_type": "quicksell", "params": {}})
+    details = dict(collect_safety_warnings(config)[0].details)
+    assert details["Sell Pets"] == "No (app setting)"
+
+
+def test_quicksell_pinned_flags_are_shown_without_the_app_setting_note():
+    SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
+    config = _config({"node_type": "quicksell", "params": {"sell_pets": True}})
+    details = dict(collect_safety_warnings(config)[0].details)
+    assert details["Sell Pets"] == "Yes"
 
 
 def test_quicksell_all_flags_false_shows_no():

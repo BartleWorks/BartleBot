@@ -1670,10 +1670,7 @@
         "keep_list": [
           "Zeus",
           "Heavenly"
-        ],
-        "sell_pets": true,
-        "sell_socket_wrenches": false,
-        "sell_skeleton_keys": false
+        ]
       },
       "option_overrides": {},
       "notes": "Helmet of Heavenly Gaze is the Fire Zeus hat, and is the only piece of of the Zeus gear set that does not have the word Zeus in the name."

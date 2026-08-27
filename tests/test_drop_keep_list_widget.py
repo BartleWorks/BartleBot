@@ -32,7 +32,9 @@ _DROPS = [
     DropModel(name="Socket Wrench"),  # uncategorized — unknown is not unsellable
     DropModel(name="Mandrake", category="Reagents"),  # never quicksold
 ]
-_SELL_ALL = {"sell_socket_wrenches": True, "sell_skeleton_keys": True}
+# All three sell_* params pinned, so the widget resolves nothing against the app
+# settings and these tests do not depend on the machine they run on.
+_SELL_ALL = {"sell_pets": True, "sell_socket_wrenches": True, "sell_skeleton_keys": True}
 
 
 @pytest.fixture
