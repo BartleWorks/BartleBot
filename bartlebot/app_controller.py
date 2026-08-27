@@ -848,6 +848,9 @@ class AppController(QObject):
         canvas_config = self._window.bot_canvas.config
         if canvas_config is not None:
             self._loaded_config = canvas_config
+            # Undo/redo replaces the canvas's config object; the sidebar has to
+            # follow it or its edits go nowhere (#53).  No-op the rest of the time.
+            self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
         if self._loaded_config is not None:
             self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)

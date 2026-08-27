@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMenu,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -39,6 +38,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel, FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -286,7 +286,7 @@ class _ZoneWidget(QWidget):
         if len(clients) == 1:
             asyncio.ensure_future(self._fill_from_player(0))
             return
-        menu = QMenu(btn)
+        menu = popup_menu(btn)
         for i in range(len(clients)):
             action = menu.addAction(f"Fill from Player {i + 1}")
             action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
@@ -767,7 +767,7 @@ class _DynamicParamForm(QWidget):
         if len(clients) == 1:
             asyncio.ensure_future(self._fill_xyz_from_player(key, 0))
             return
-        menu = QMenu(btn)
+        menu = popup_menu(btn)
         for i in range(len(clients)):
             action = menu.addAction(f"Fill from Player {i + 1}")
             action.triggered.connect(
@@ -1209,12 +1209,23 @@ class _NodeTypeDelegate(QStyledItemDelegate):
 class _ParamPanel(QWidget):
     properties_changed = pyqtSignal()
     label_committed = pyqtSignal()
-    # Emitted for discrete structural property changes (node type switch) that need
-    # an immediate undo snapshot rather than the debounced param-edit path.
+    # Emitted for discrete structural property changes (node type switch, edge
+    # rewire) that need an immediate undo snapshot rather than the debounced
+    # param-edit path.  Emit it BEFORE mutating the model — UndoManager.push()
+    # captures a before-snapshot.
     structural_property_changed = pyqtSignal(str)
+    # Emitted after such a change has been applied to the model.  Unlike
+    # properties_changed this does not start a debounced undo snapshot (the
+    # immediate one above already covers the edit) and it asks the canvas for a
+    # full structural refresh, which is what redraws node type sub-labels,
+    # output ports and rewired edges.
+    structural_property_applied = pyqtSignal()
     # Emitted when the user changes source or dest via the dropdowns.
     # Args: old_source, old_when (str|None), old_dest, new_source, new_dest
     edge_endpoints_changed = pyqtSignal(str, object, str, str, str)
+    # Emitted when the user changes the When condition via the dropdown.
+    # Args: source, old_when (str|None), dest, new_when (str|None)
+    edge_when_changed = pyqtSignal(str, object, str, object)
     # Emitted when the user completes a wiki import from the handle_combat node panel.
     # Carries the list of selected DropModel entries to be added to the bot's drops.
     wiki_import_completed = pyqtSignal(list)
@@ -1481,6 +1492,31 @@ class _ParamPanel(QWidget):
                 " border: none; padding: 0; font-size: 11px; background: transparent; }"
             )
 
+    @property
+    def node_type_combo(self) -> QComboBox:
+        """The node type dropdown on the node page."""
+        return self._node_type_combo
+
+    @property
+    def edge_src_combo(self) -> QComboBox:
+        """The Source dropdown on the edge page; item data is the state ID."""
+        return self._edge_src_combo
+
+    @property
+    def edge_dst_combo(self) -> QComboBox:
+        """The Dest dropdown on the edge page; item data is the state ID."""
+        return self._edge_dst_combo
+
+    @property
+    def when_combo(self) -> QComboBox:
+        """The When dropdown on the edge page."""
+        return self._edge_when_combo
+
+    @property
+    def when_choices(self) -> list[str]:
+        """The return values currently offered by the When dropdown, in order."""
+        return [self._edge_when_combo.itemText(i) for i in range(self._edge_when_combo.count())]
+
     def set_drops_getter(self, fn: Callable[[], list[DropModel]]) -> None:
         """Pass a callable returning the current bot's drop table (BotConfig.drops)."""
         self._param_form.set_drops_getter(fn)
@@ -1525,6 +1561,40 @@ class _ParamPanel(QWidget):
         self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
 
+    def _reload_when_combo(self, src_returns: list[str] | None = None) -> None:
+        """Repopulate the When dropdown from the source node's return values.
+
+        Called on show and again whenever the source endpoint changes — the
+        offered returns belong to the source node, so a rewire that is not
+        followed by this leaves the list describing the node the edge came from.
+        A stored ``when`` the new source cannot produce is kept as an entry
+        rather than silently rewritten; the node's uncovered-returns warning is
+        what surfaces the mismatch.
+
+        When *src_returns* is None the returns are derived from the transition's
+        current source state.
+        """
+        if self._transition is None:
+            return
+        if src_returns is None:
+            src_state = next((st for st in self._all_states if st.id == self._transition.source), None)
+            spec = NODE_SPECS.get(src_state.node_type) if src_state else None
+            src_returns = [r.name for r in spec.returns] if spec else []
+        when = self._transition.when
+        was_suppressed = self._suppress
+        self._suppress = True
+        try:
+            self._edge_when_combo.clear()
+            self._edge_when_combo.addItem("(none)")
+            for name in src_returns:
+                self._edge_when_combo.addItem(name)
+            if when and self._edge_when_combo.findText(when) < 0:
+                self._edge_when_combo.addItem(when)
+            idx = self._edge_when_combo.findText(when) if when else 0
+            self._edge_when_combo.setCurrentIndex(idx if idx >= 0 else 0)
+        finally:
+            self._suppress = was_suppressed
+
     def show_transition(
         self,
         transition: TransitionModel,
@@ -1553,18 +1623,7 @@ class _ParamPanel(QWidget):
         self._edge_dst_combo.setCurrentIndex(dst_idx if dst_idx >= 0 else 0)
 
         # When combo from source node's possible return values
-        self._edge_when_combo.clear()
-        self._edge_when_combo.addItem("(none)")
-        for name in src_returns or []:
-            self._edge_when_combo.addItem(name)
-        if transition.when and self._edge_when_combo.findText(transition.when) < 0:
-            self._edge_when_combo.addItem(transition.when)
-        if transition.when:
-            idx = self._edge_when_combo.findText(transition.when)
-            if idx >= 0:
-                self._edge_when_combo.setCurrentIndex(idx)
-        else:
-            self._edge_when_combo.setCurrentIndex(0)
+        self._reload_when_combo(src_returns)
 
         # Flag conditions widget — prefer grouped format, fall back to flat legacy format
         if transition.flag_groups:
@@ -1620,7 +1679,7 @@ class _ParamPanel(QWidget):
         self._rebuild_returns(node_type)
         self._record_row.setVisible(node_type in recording.RECORDABLE_NODES)
         self._wiki_import_row.setVisible(node_type == "handle_combat")
-        self.properties_changed.emit()
+        self.structural_property_applied.emit()
 
     def _on_param_form_changed(self) -> None:
         if self._state is None:
@@ -1638,8 +1697,32 @@ class _ParamPanel(QWidget):
     def _on_edge_when_changed(self, text: str) -> None:
         if self._suppress or self._transition is None:
             return
-        self._transition.when = None if text == "(none)" else text
-        self.properties_changed.emit()
+        new_when = None if text == "(none)" else text
+        old_when = self._transition.when
+        if new_when == old_when:
+            return
+        src = self._transition.source
+        dst = self._transition.dest
+        # Duplicate check: another transition with the same (source, dest, new_when)
+        # must not exist — the same guard the source/dest dropdowns apply.
+        if any(
+            t is not self._transition and t.source == src and t.dest == dst and t.when == new_when
+            for t in self._all_transitions
+        ):
+            QMessageBox.warning(
+                self,
+                "Duplicate Transition",
+                f"A transition from '{src}' to '{dst}' with that When condition already exists.",
+            )
+            self._suppress = True
+            idx = self._edge_when_combo.findText(old_when) if old_when else 0
+            self._edge_when_combo.setCurrentIndex(idx if idx >= 0 else 0)
+            self._suppress = False
+            return
+        self.structural_property_changed.emit("Change Edge Condition")
+        self._transition.when = new_when
+        self.edge_when_changed.emit(src, old_when, dst, new_when)
+        self.structural_property_applied.emit()
 
     def _on_edge_src_changed(self, _text: str) -> None:
         if self._suppress or self._transition is None:
@@ -1666,9 +1749,11 @@ class _ParamPanel(QWidget):
             self._edge_src_combo.setCurrentIndex(self._edge_src_combo.findData(old_src))
             self._suppress = False
             return
+        self.structural_property_changed.emit("Rewire Edge")
         self._transition.source = new_src_id
         self.edge_endpoints_changed.emit(old_src, old_when, old_dst, new_src_id, old_dst)
-        self.properties_changed.emit()
+        self._reload_when_combo()
+        self.structural_property_applied.emit()
 
     def _on_edge_dst_changed(self, _text: str) -> None:
         if self._suppress or self._transition is None:
@@ -1695,9 +1780,10 @@ class _ParamPanel(QWidget):
             self._edge_dst_combo.setCurrentIndex(self._edge_dst_combo.findData(old_dst))
             self._suppress = False
             return
+        self.structural_property_changed.emit("Rewire Edge")
         self._transition.dest = new_dst_id
         self.edge_endpoints_changed.emit(old_src, old_when, old_dst, old_src, new_dst_id)
-        self.properties_changed.emit()
+        self.structural_property_applied.emit()
 
     def _on_flag_conditions_changed(self) -> None:
         if self._suppress or self._transition is None:
