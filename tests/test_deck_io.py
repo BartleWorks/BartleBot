@@ -33,6 +33,7 @@ from bartlebot.deck_io import (
     partition_addable,
     plan_item_toggles,
     plan_normal_cards,
+    read_archmastery_school,
     read_deck,
     resolve_tier,
     resolved_at_click_time,
@@ -96,7 +97,12 @@ class FakeDeckBuilder:
     def __init__(self):
         self.calls: list[str] = []
         self.added: dict[str, int] | None = None
-        self.client = SimpleNamespace(root_window=object())
+        # No deck behavior by default, so read_archmastery_school answers None
+        # without a live client. Tests about the school replace this.
+        self.client = SimpleNamespace(
+            root_window=object(),
+            client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=None)),
+        )
         # Real DeckBuilder constructs this False and open_deck_page() never sets
         # it; whoever opens the page is responsible for saying so. Direct
         # write_deck tests stand in for a properly-opened page, so True here â€”
@@ -370,6 +376,69 @@ async def test_read_deck_never_reports_treasure_cards(monkeypatch):
     assert result["normal"] == {"Tempest": 2}
     assert result["item"] == {"Sharpened Blade - Tear": 1}
     assert result["tc"] == {}
+
+
+def _behavior(school_id: int) -> SimpleNamespace:
+    return SimpleNamespace(archmastery_school=AsyncMock(return_value=school_id))
+
+
+async def test_read_archmastery_school_names_the_school():
+    client = SimpleNamespace(
+        client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=_behavior(83375795)))
+    )
+    assert await read_archmastery_school(client) == "Storm"
+
+
+async def test_read_archmastery_school_is_none_without_a_deck_behavior():
+    """A wizard with no deck equipped has nothing to read — not an error."""
+    client = SimpleNamespace(client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=None)))
+    assert await read_archmastery_school(client) is None
+
+
+async def test_read_archmastery_school_is_none_for_an_unknown_id():
+    """An id outside wizwalker's table is not worth guessing at, and must not raise."""
+    client = SimpleNamespace(
+        client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=_behavior(1234)))
+    )
+    assert await read_archmastery_school(client) is None
+
+
+async def test_read_archmastery_school_swallows_a_failed_read():
+    client = SimpleNamespace(
+        client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(side_effect=RuntimeError("no hook")))
+    )
+    assert await read_archmastery_school(client) is None
+
+
+async def test_read_deck_carries_the_archmastery_school(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
+    db = FakeDeckBuilder()
+    db.client.client_object.try_get_deck_behavior = AsyncMock(return_value=_behavior(72777))
+
+    result = await read_deck(db)
+
+    assert result["archmastery_school"] == "Ice"
+    assert DeckData(**result).archmastery_school == "Ice"
+
+
+async def test_read_deck_survives_an_unreadable_archmastery_school(monkeypatch):
+    """A cosmetic field must never be able to fail a whole deck import."""
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
+    db = FakeDeckBuilder()
+    db.client.client_object.try_get_deck_behavior = AsyncMock(side_effect=RuntimeError("boom"))
+
+    result = await read_deck(db)
+
+    assert result["archmastery_school"] is None
+    assert result["normal"] == {"Tempest": 2}
+
+
+async def test_a_deck_holding_only_an_archmastery_school_is_still_empty():
+    assert DeckData(archmastery_school="Storm").is_empty()
 
 
 async def test_write_deck_propagates_failures(monkeypatch):

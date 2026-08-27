@@ -43,6 +43,7 @@ from typing import TYPE_CHECKING
 from wizwalker import Keycode
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.memory.memory_object import Primitive
+from wizwalker.memory.memory_objects.conditionals import school_to_str
 from wizwalker.memory.memory_objects.window import (
     DeckListControlSpellEntry,
     DynamicDeckListControl,
@@ -1101,6 +1102,39 @@ async def _click_fusion_variants(
     return substitutions, skipped, placed, short
 
 
+async def read_archmastery_school(client) -> str | None:
+    """The wizard's archmastery school by name, or None if unset or unreadable.
+
+    Read straight out of memory rather than off the deck page: the school lives
+    on the equipped deck *item*'s behavior (``m_archmasterySchool`` at +0xB8,
+    see wizwalker's ``ClientDeckBehavior``), not in the ``DeckConfiguration``
+    window, so no UI has to be open for this.
+
+    Archmastery is not tied to a world or a level bracket, so None means only
+    "no school is recorded here" — never anything about the wizard.  Every
+    failure resolves to None: a wizard with no deck equipped has no behavior to
+    read, and an id the school table does not know is not worth guessing at.
+    Neither is worth failing a whole deck import over.
+    """
+    try:
+        behavior = await client.client_object.try_get_deck_behavior()
+    except Exception:
+        logger.debug("Could not reach the deck behavior for the archmastery school", exc_info=True)
+        return None
+    if behavior is None:
+        logger.debug("No deck behavior on this client — archmastery school unknown")
+        return None
+    try:
+        school_id = await behavior.archmastery_school()
+    except Exception:
+        logger.debug("Could not read the archmastery school id", exc_info=True)
+        return None
+    school = school_to_str.get(school_id)
+    if school is None:
+        logger.debug("Archmastery school id %r is not in wizwalker's school table", school_id)
+    return school
+
+
 async def read_deck(db) -> dict:
     """Snapshot the normal deck and active item cards from an open DeckBuilder.
 
@@ -1113,17 +1147,31 @@ async def read_deck(db) -> dict:
     cards = await read_deck_cards(db.client, deck_window, classify=True)
     items = await read_item_slots(db.client, deck_window)
     kinds = {name: kind for name, kind in cards if kind}
-    logger.debug("Read deck: %d normal cards, %d item card slots, %d classified", len(cards), len(items), len(kinds))
+    school = await read_archmastery_school(db.client)
+    logger.debug(
+        "Read deck: %d normal cards, %d item card slots, %d classified, archmastery=%s",
+        len(cards),
+        len(items),
+        len(kinds),
+        school,
+    )
     return {
         "normal": count_names([name for name, _ in cards]),
         "tc": {},
         "item": active_item_counts(items),
         "card_kinds": kinds,
+        "archmastery_school": school,
     }
 
 
 async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
-    """Whether the deck currently open on ``client`` is an exact match for ``deck``."""
+    """Whether the deck currently open on ``client`` is an exact match for ``deck``.
+
+    ``archmastery_school`` is deliberately not compared.  It is saved but not yet
+    restored, so a wizard whose school differs from the saved one would differ
+    forever — folding it in here would defeat the skip-the-rewrite fast path on
+    every apply, permanently, in exchange for a difference nothing can act on.
+    """
     normal = await read_deck_card_names(client, deck_window)
     items = await read_item_slots(client, deck_window)
     return count_names(normal) == deck.normal and active_item_counts(items) == deck.item

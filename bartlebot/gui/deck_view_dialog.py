@@ -40,6 +40,15 @@ class DeckViewDialog(QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
+        # Shown above the cards because it describes the whole deck rather than
+        # anything in it.  Omitted entirely when unknown: a row reading
+        # "Archmastery: —" would imply the wizard has none, and None only ever
+        # means the value could not be read or was never set.
+        if deck.archmastery_school:
+            school = QLabel(f"Archmastery: {deck.archmastery_school}")
+            school.setStyleSheet(f"color: {THEME.text};")
+            layout.addWidget(school)
+
         # Treasure cards are omitted: they can be neither read nor restored, so
         # listing them would promise a round trip that cannot happen.
         any_section = False
