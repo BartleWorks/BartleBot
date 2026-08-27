@@ -5,6 +5,7 @@ from memory — see the module docstring in bartlebot/group_manager.py for why. 
 therefore drive everything through a fake that models that UI.
 """
 
+import asyncio
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
@@ -365,6 +366,8 @@ class FakeUI:
             patch.object(gm, "POLL_INTERVAL", 0),
             patch.object(gm, "GROUP_INVITE_TIMEOUT", 0.05),
             patch.object(gm, "GROUP_VERIFY_TIMEOUT", 0.05),
+            patch.object(gm, "GROUP_PROFILE_TIMEOUT", 0.05),
+            patch.object(gm, "GROUP_JOIN_HINT_TIMEOUT", 0.05),
             patch.object(gm, "TRIGGER_TIMEOUT", 0.05),
         )
 
@@ -1255,6 +1258,129 @@ async def test_window_closes_survive_a_swallowed_click(ui):
     assert ui.profile_open.get(leader) is False, "the friend profile was left open"
     assert ui.social_open.get(leader) is False, "the leader's social window was left open"
     assert ui.social_open.get(joiner) is False, "the joiner's social window was left open"
+
+
+# ---------------------------------------------------------------------------
+# Polling rather than waiting (#114)
+#
+# These are wall-clock assertions, which is unusual — but the thing under test IS elapsed
+# time. Each one leaves a production-sized delay in place and asserts the happy path does
+# not pay it, so a fixed sleep reintroduced anywhere in the invite exchange fails here
+# rather than quietly costing a second per client on every regroup.
+# ---------------------------------------------------------------------------
+
+
+def _patches_except(ui_obj, *attributes: str, extra=()):
+    """FakeUI's patches with some constants' overrides dropped, plus replacements.
+
+    The fixture zeroes the timings so tests run fast, which also makes a sleep and a poll
+    look identical. Restoring one of them to a visible value is what lets these tests tell
+    the two apart.
+    """
+    kept = tuple(p for p in ui_obj.patches() if getattr(p, "attribute", None) not in attributes)
+    return kept + tuple(extra)
+
+
+async def _timed(coro_factory, patches):
+    """Run coro_factory under `patches`, returning (result, seconds elapsed)."""
+    loop = asyncio.get_event_loop()
+    with ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
+        start = loop.time()
+        result = await coro_factory()
+        return result, loop.time() - start
+
+
+# The one settle a regroup still cannot poll away: nothing on the Group tab distinguishes
+# it from the other tabs, so the opening membership survey has to wait a fixed time before
+# reading. It is concurrent across clients, so a pair costs one of these, not two.
+_SETTLE = 2.0
+
+# Everything an invite exchange used to add on top of that — a sleep for the friend profile
+# to draw, a sleep to see whether the refusal popup appeared, and a second full settle to
+# confirm the join. Three settles' worth; the budget below allows for well under one.
+_BUDGET = _SETTLE * 2
+
+
+async def test_a_successful_invite_pays_only_the_settle_that_cannot_be_polled_away(ui):
+    """Every wait in the invite exchange itself has something specific to watch for.
+
+    The profile popup, the invitation prompt and the joined-a-group confirmation are all
+    observable, so all three are polled and a fast game ends each wait immediately. Only the
+    opening survey is blind, because there both answers are plausible and neither has a
+    signal — see the GROUP_UI_SETTLE note in timing.py.
+    """
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    result, elapsed = await _timed(
+        lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]),
+        _patches_except(ui, "GROUP_UI_SETTLE", extra=(patch.object(gm, "GROUP_UI_SETTLE", _SETTLE),)),
+    )
+
+    assert result.success is True
+    assert result.added == ["Bob Battlecaster"]
+    assert elapsed < _BUDGET, f"the invite exchange slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_a_refusal_is_noticed_as_soon_as_the_popup_is_drawn(ui):
+    """The refusal is raced against the invitation prompt rather than checked after a sleep.
+
+    Absence of the popup is the expected outcome, so on its own there is nothing to poll
+    for — which is why this used to be a flat sleep on every invite, successful or not.
+    Polling both windows together keeps the check while charging nothing for it, and this
+    pins that racing them did not lose the refusal: it is the one branch that must not
+    retry, since the player has to leave their other group first.
+    """
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+    ui.already_in_other_group.add(joiner)
+
+    result, elapsed = await _timed(
+        lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]),
+        _patches_except(
+            ui,
+            "GROUP_UI_SETTLE",
+            "GROUP_INVITE_TIMEOUT",
+            extra=(
+                patch.object(gm, "GROUP_UI_SETTLE", _SETTLE),
+                # Generous, so a refusal that is only noticed when the prompt wait gives up
+                # shows as a timeout rather than as a slightly slow pass.
+                patch.object(gm, "GROUP_INVITE_TIMEOUT", 30.0),
+            ),
+        ),
+    )
+
+    assert result.success is False
+    assert result.failed == ["Bob Battlecaster"]
+    assert ui.invited_names == ["Bob Battlecaster"], "a refusal must not be retried"
+    assert ui.popup_showing.get(leader) is False, "the refusal popup was left blocking the next invite"
+    assert elapsed < _BUDGET, f"the refusal was not acted on until a wait expired ({elapsed:.1f}s)"
+
+
+async def test_invite_cleanup_runs_on_both_clients_at_once(ui):
+    """Ordering matters within a client, not between them.
+
+    The leader's social-window-then-profile order is load-bearing — the social window covers
+    the profile's close button — but the target shares nothing with it, so making the target
+    wait for the leader is pure latency, once per invite.
+    """
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+
+    async def _slow(_client):
+        await asyncio.sleep(0.3)
+
+    loop = asyncio.get_event_loop()
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(gm, "close_social_window", new=AsyncMock(side_effect=_slow)))
+        stack.enter_context(patch.object(gm, "_close_overlapping_windows", new=AsyncMock(side_effect=_slow)))
+        start = loop.time()
+        await gm._close_invite_windows(leader, joiner)
+        elapsed = loop.time() - start
+
+    assert elapsed < 0.5, f"the two clients were cleaned up one after the other ({elapsed:.2f}s)"
 
 
 async def test_already_grouped_client_is_not_reinvited(ui):
