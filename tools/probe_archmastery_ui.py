@@ -20,29 +20,67 @@ WHY THIS EXISTS
         ("DeckConfiguration", "CardsInDeck", "ItemSpells") returns zero hits:
         the layout is compiled into the client binary.  Don't re-run that search.
 
+WHAT IS ALREADY KNOWN
+    Sections A-C have been run.  What they established, so nobody repeats it:
+
+      * The selector is ``['WorldView', 'DeckConfiguration',
+        'DeckConfigurationWindow', 'ControlSprite', 'DeckPage',
+        'SchoolPipPanel', 'Guage']``.  Clicking it opens a small menu with one
+        icon per school; clicking an icon sets the school and closes the menu.
+      * **The subtree diff finds nothing.**  Changing the school Death -> Life
+        moved no text, no visibility and no rect anywhere under
+        DeckConfiguration — the pip is drawn as a texture, and the pop-up menu
+        does not announce itself in the window tree either.  So section C
+        cannot name the menu's entries, and a click-driven implementation would
+        have to click blind and poll ``archmastery_school()`` to confirm.
+      * That is the fallback.  Section D exists to find out whether it is needed
+        at all.
+
 WHAT IT DOES
     A. Reports the school the behavior currently holds, so there is a known
        starting value to compare against.
 
     B. Dumps the whole DeckConfiguration subtree — name, type, visibility,
        screen rect, and text — and flags every window whose name or text looks
-       school-related.  Names alone are often enough; when they are not, C is.
+       school-related.
 
-    C. The part that actually settles it.  Change the archmastery school **in
-       the game** and press Enter: the tree is re-read and only what *changed*
-       is reported.  A control that changes when the school changes, and does
-       not change otherwise, is the control — the same "let the difference name
-       it" trick ``probe_item_cards.py`` uses for the active flag.
+    C. Change the archmastery school **in the game** and press Enter: the tree
+       is re-read and only what *changed* is reported.  Kept because it is the
+       evidence for the "nothing changes" finding above, and because a future
+       game build may start announcing the menu.
+
+    D. ``--write`` only.  Writes ``m_archmasterySchool`` directly and then asks
+       the questions that separate "the write landed in a local copy" from "the
+       school actually changed".  Those are very different results and only the
+       second one is worth building on — see WHAT D IS ACTUALLY ASKING below.
+
+WHAT D IS ACTUALLY ASKING
+    A memory write is only useful if the *game* agrees the school changed, not
+    just our read of it.  Three outcomes, in increasing order of usefulness:
+
+      1. The value reads back changed, the pip icon does not move, and it
+         reverts on relog.  The write hit a local copy; useless.
+      2. Value and pip both change, but it reverts on relog.  The client
+         believes it, the server never heard.  Also useless, and *worse* than
+         useless if we shipped it — it would demo perfectly and do nothing.
+      3. It survives a relog.  The client sent it on.  Then a write is a real
+         implementation and the click path can be dropped.
+
+    Outcome 2 is the one this section exists to catch.  Do not skip the relog.
 
 HOW TO RUN
     1. Log a wizard in.  Any wizard with an archmastery school set will do;
        archmastery is not tied to a world or a level bracket.
     2. Open the deck page (press P) and leave it open.
-    3. poetry run python tools/probe_archmastery_ui.py
+    3. poetry run python tools/probe_archmastery_ui.py            # read-only
+       poetry run python tools/probe_archmastery_ui.py --write    # adds D
     4. When section C asks, switch the school in-game, then press Enter.
 
-    Read-only from this side: the probe never clicks and never writes.  The one
+    Without ``--write`` the probe never clicks and never writes, and the one
     change to your deck configuration is the one you make yourself in step 4.
+    With ``--write`` it modifies ``m_archmasterySchool`` and writes the original
+    value back at the end; if it cannot, it says so and names the value to
+    restore by hand.
 
 OUTPUT
     A summary goes to the terminal.  The full tree, which includes window text
@@ -59,9 +97,19 @@ from dataclasses import dataclass
 
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.extensions.wizsprinter import WizSprinter
-from wizwalker.memory.memory_objects.conditionals import school_to_str
+from wizwalker.memory.memory_object import Primitive
+from wizwalker.memory.memory_objects.conditionals import school_id_to_names, school_to_str
 
 REPORT_PATH = "probe_archmastery_report.txt"
+
+#: m_archmasterySchool on DeckBehavior. Documented on wizwalker's
+#: ClientDeckBehavior, which reads it but has no writer -- hence the raw offset.
+ARCHMASTERY_SCHOOL_OFFSET = 0xB8
+
+#: The seven schools a wizard can point an archmastery pip at. The wider table
+#: also holds Sun/Moon/Star/Gardening/Fishing/Cantrips/CastleMagic, which are
+#: not schools in this sense, and writing one is not a test of anything.
+PIP_SCHOOLS = ("Fire", "Ice", "Storm", "Myth", "Life", "Death", "Balance")
 
 #: Anything whose name or text contains one of these is worth a second look.
 #: School names come from wizwalker's own table so this cannot drift from what
@@ -207,9 +255,14 @@ async def section_c(deck_window, client, before: list[Node], school_before: str 
     changed = [k for k in new.keys() & old.keys() if new[k].state() != old[k].state()]
 
     if not (appeared or vanished or changed):
-        print("   Nothing in the subtree changed.  The selector is probably outside")
-        print("   DeckConfiguration — re-run against the whole root window, or check")
-        print("   whether the school is set somewhere other than the deck page.")
+        print("   Nothing in the subtree changed.  This is the expected result on")
+        print("   the build this was written against: the school pip is drawn as a")
+        print("   texture, so nothing the window tree exposes moves with it, and the")
+        print("   selector menu does not appear in the tree either.")
+        print()
+        print("   The selector itself is known — SchoolPipPanel/Guage under DeckPage —")
+        print("   so this is not a dead end, only a dead end for *naming the menu's")
+        print("   entries*. See section D, and WHAT IS ALREADY KNOWN at the top.")
         return
 
     for label, keys in (("CHANGED", changed), ("APPEARED", appeared), ("VANISHED", vanished)):
@@ -234,6 +287,101 @@ async def section_c(deck_window, client, before: list[Node], school_before: str 
     print("   CLAUDE.md's 'Ambiguous UI paths' — resolve_path_match with match_text.")
 
 
+async def _ask(prompt: str) -> str:
+    """Blocking input() without stalling the loop wizwalker's reads run on."""
+    return (await asyncio.get_running_loop().run_in_executor(None, input, prompt)).strip().lower()
+
+
+async def _write_school(client, school_id: int) -> bool:
+    """Write m_archmasterySchool. True if the write itself did not raise.
+
+    The behavior is re-fetched rather than cached: it hangs off the equipped
+    deck item, and holding an address across a UI interaction is how a probe
+    ends up writing into freed memory.
+    """
+    behavior = await _safe(client.client_object.try_get_deck_behavior())
+    if behavior is None:
+        return False
+    try:
+        await behavior.write_value_to_offset(ARCHMASTERY_SCHOOL_OFFSET, school_id, Primitive.uint32)
+    except Exception as exc:
+        print(f"   write failed: {exc!r}")
+        return False
+    return True
+
+
+async def section_d(client) -> None:
+    print("D. CAN THE SCHOOL SIMPLY BE WRITTEN?")
+    print()
+    original = await read_school(client)
+    if original is None:
+        print("   archmastery_school() is unreadable, so there is nothing to write")
+        print("   back afterwards. Refusing to write blind. Set a school in game")
+        print("   first, then re-run.")
+        return
+
+    target = next(s for s in PIP_SCHOOLS if s != original)
+    original_id, target_id = school_id_to_names[original], school_id_to_names[target]
+    print(f"   Current: {original} ({original_id}).  Writing: {target} ({target_id}).")
+    print()
+    if await _ask("   This modifies your deck configuration. Continue? [y/N] ") != "y":
+        print("   Skipped.")
+        return
+    print()
+
+    if not await _write_school(client, target_id):
+        print("   Could not write. Nothing to restore.")
+        return
+
+    # 1. Did it land at all?
+    readback = await read_school(client)
+    print(f"   1. Read back: {readback}")
+    if readback != target:
+        print("      The write did not take. Stop here — the click path is the only")
+        print("      route, and there is nothing to restore.")
+        return
+    print()
+
+    # 2. Does the client agree, or is this a copy nothing renders from?
+    print("   2. Look at the school pip icon on the deck page (SchoolPipPanel).")
+    ui_agrees = await _ask(f"      Does it show {target}? [y/N] ") == "y"
+    print()
+
+    # 3. The one that matters.
+    print("   3. Now close the deck page, then log the character out and back in")
+    print("      (character select is enough; a full relog is safer).")
+    print("      Reopen the deck page when you are back.")
+    await _ask("      [Enter when you are logged back in] ")
+    survived = await read_school(client) == target
+    print(f"      After relog: {await read_school(client)}")
+    print()
+
+    print("   VERDICT")
+    if survived and ui_agrees:
+        print("      The write survived a relog and the client rendered it. The server")
+        print("      took it. A memory write is a real implementation — drop the click")
+        print("      path, and correct the 'server-authoritative' claim in this file,")
+        print("      in deck_io, and in #134.")
+    elif ui_agrees:
+        print("      The client believed it and the server did not. This is the trap:")
+        print("      it would demo perfectly and do nothing on a real run. Use the")
+        print("      click path.")
+    else:
+        print("      The write hit a copy the game does not render from. Use the click")
+        print("      path.")
+    print()
+
+    if not survived:
+        print(f"   Restoring {original}...")
+        if await _write_school(client, original_id) and await read_school(client) == original:
+            print("   Restored.")
+        else:
+            print(f"   !! Could not restore. Set the school back to {original} by hand.")
+    else:
+        print(f"   The write stuck, so it is yours to undo: set the school back to {original}")
+        print("   in game if you want it back.")
+
+
 def write_report(nodes: list[Node], path: str) -> None:
     with open(path, "w", encoding="utf-8") as f:
         f.write("Full DeckConfiguration subtree.\n")
@@ -242,7 +390,7 @@ def write_report(nodes: list[Node], path: str) -> None:
             f.write(_format(node) + "\n")
 
 
-async def probe(client) -> None:
+async def probe(client, *, allow_write: bool) -> None:
     try:
         deck_window = await _maybe_get_named_window(client.root_window, "DeckConfiguration", retries=0)
     except ValueError:
@@ -253,9 +401,16 @@ async def probe(client) -> None:
     nodes = await section_b(deck_window)
     write_report(nodes, REPORT_PATH)
     await section_c(deck_window, client, nodes, school_before)
+    if allow_write:
+        print()
+        await section_d(client)
+    else:
+        print()
+        print("   (Re-run with --write to test whether the school can just be written.)")
 
 
 async def main() -> int:
+    allow_write = "--write" in sys.argv[1:]
     sprinter = WizSprinter()
     clients = sprinter.get_new_clients()
     if not clients:
@@ -277,7 +432,7 @@ async def main() -> int:
 
     try:
         print()
-        await probe(client)
+        await probe(client, allow_write=allow_write)
     finally:
         for other in clients:
             try:
