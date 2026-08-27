@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QStyleOptionGraphicsItem,
 )
 
+from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.theme import THEME
 
 # ---------------------------------------------------------------------------
@@ -544,11 +545,14 @@ class NodeItem(QGraphicsItem):
         if lod < _lod_threshold:
             compact_font = QFont(THEME.font_ui_family, 14)
             painter.setFont(compact_font)
-            painter.setPen(THEME.qcolor("text"))
-            _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(
-                Qt.TextFlag.TextWordWrap
-            )
-            painter.drawText(QRectF(nr.x() + 6, 4, NODE_W - 12, NODE_H - 8), _wrap_flags, self._label)
+            # Below a couple of device pixels the label renders to nothing and
+            # Qt's glyph buffer collapses to a null QImage — see canvas.lod.
+            if text_is_legible(painter.fontMetrics().height(), lod):
+                painter.setPen(THEME.qcolor("text"))
+                _wrap_flags = int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter) | int(
+                    Qt.TextFlag.TextWordWrap
+                )
+                painter.drawText(QRectF(nr.x() + 6, 4, NODE_W - 12, NODE_H - 8), _wrap_flags, self._label)
             badges: list[tuple[QColor, QSvgRenderer | str]] = []
             if self._is_initial:
                 badges.append((_badge_initial(), _play_badge_renderer()))
@@ -569,8 +573,9 @@ class NodeItem(QGraphicsItem):
                     icon.render(painter, icon_rect)
                 else:
                     painter.setFont(QFont(THEME.font_ui_family, _BADGE_FONT_PT))
-                    painter.setPen(Qt.GlobalColor.white)
-                    painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
+                    if text_is_legible(painter.fontMetrics().height(), lod):
+                        painter.setPen(Qt.GlobalColor.white)
+                        painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
                 painter.restore()
         else:
             # --- Full LOD ---

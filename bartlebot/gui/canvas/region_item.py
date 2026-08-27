@@ -11,6 +11,7 @@ from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
+from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.theme import THEME
 
 if TYPE_CHECKING:
@@ -99,7 +100,8 @@ class RegionItem(QGraphicsItem):
         painter.drawPath(path)
 
         # Label pill — constant screen size regardless of zoom level.
-        lod = max(0.1, option.levelOfDetailFromTransform(painter.worldTransform()))
+        raw_lod = option.levelOfDetailFromTransform(painter.worldTransform())
+        lod = max(0.1, raw_lod)
         s = 1.0 / lod  # scene-unit scale: larger when zoomed out to keep screen size constant
         pill_h = _PILL_H * s
         pill_pad_x = _PILL_PAD_X * s
@@ -126,8 +128,12 @@ class RegionItem(QGraphicsItem):
         pill_path.addRoundedRect(pill_rect, pill_h / 2, pill_h / 2)
         painter.drawPath(pill_path)
 
-        painter.setPen(label_color)
-        painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, self._label)
+        # Past the LOD clamp the pill stops compensating for zoom, so the label
+        # shrinks with the real transform and eventually collapses Qt's glyph
+        # buffer — see canvas.lod.  Test against raw_lod, not the clamped one.
+        if text_is_legible(fm.height(), raw_lod):
+            painter.setPen(label_color)
+            painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, self._label)
 
     def shape(self) -> QPainterPath:
         # boundingRect() is intentionally oversized (8× pill height) so Qt never clips the
