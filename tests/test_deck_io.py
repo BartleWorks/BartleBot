@@ -23,6 +23,7 @@ from bartlebot.deck_io import (
     SLOTS_PER_PAGE,
     DeckApplyReport,
     ItemSlot,
+    _click,
     _settle_deck,
     _share_shortfall,
     active_item_counts,
@@ -2414,7 +2415,7 @@ def school_menu(monkeypatch):
         return menu.rect_for(window)
 
     monkeypatch.setattr("bartlebot.nodes.node_helpers._get_window_from_path", _get_window)
-    monkeypatch.setattr("bartlebot.nodes.node_helpers.click_window", _click)
+    monkeypatch.setattr("bartlebot.deck_io._click", _click)
     monkeypatch.setattr("bartlebot.deck_io._safe_rect", _rect)
     monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(side_effect=lambda _c: menu.school))
     # Cadences only. The dwell and the ceilings keep their shape relative to the
@@ -2466,6 +2467,33 @@ async def test_the_menu_is_left_closed_when_the_school_cannot_be_set(school_menu
     await set_archmastery_school(FakeClient(), "Storm")
 
     assert not school_menu.open
+
+
+async def test_a_greyed_looking_sprite_is_still_clicked():
+    """The gauge is a sprite, and is_control_grayed() is only a real field on the
+    button classes — reading it there lands on whatever sits at the offset and
+    can refuse a perfectly good click. Every other click in deck_io skips it too.
+    """
+    clicked = []
+
+    class FakeMouseHandler:
+        # A real class, not a SimpleNamespace: `async with` looks __aenter__ up
+        # on the type, so instance attributes named that way are never called.
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return False
+
+        async def click_window(self, window):
+            clicked.append(window)
+
+    window = SimpleNamespace(is_control_grayed=AsyncMock(return_value=True))
+    handler = FakeMouseHandler()
+
+    assert await _click(SimpleNamespace(mouse_handler=handler), window) is True
+    assert clicked == [window]
+    window.is_control_grayed.assert_not_awaited()
 
 
 async def test_a_missing_selector_is_declined_rather_than_clicked_blind(school_menu, monkeypatch):

@@ -1164,6 +1164,12 @@ async def read_archmastery_school(client) -> str | None:
 ARCHMASTERY_APP_SETTING = "default_apply_archmastery"
 ARCHMASTERY_APP_FALLBACK = False
 
+#: The seven schools an archmastery pip can be pointed at, and so the only
+#: SC_* icons the selector has.  school_to_str also holds Sun, Moon, Star,
+#: Shadow and the non-combat schools, which have no icon -- walking the window
+#: tree for each of those was nine fruitless full-tree searches per apply.
+PIP_SCHOOLS = ("Fire", "Ice", "Storm", "Myth", "Life", "Death", "Balance")
+
 
 def _app_default_apply_archmastery() -> bool:
     """The user's app-level answer, or the shipped fallback if unreadable."""
@@ -1299,18 +1305,37 @@ async def set_archmastery_school(client, school: str) -> bool:
     The menu is left closed on the way out, successfully or not.  An open menu
     overlays the deck page, and the card clicks that follow would land in it.
     """
-    from bartlebot.nodes.node_helpers import _get_window_from_path, click_window  # noqa: PLC0415
+    from bartlebot.nodes.node_helpers import _get_window_from_path  # noqa: PLC0415
 
     if await read_archmastery_school(client) == school:
         return True
 
-    gauge = await _safe(_get_window_from_path(client.root_window, ARCHMASTERY_GAUGE_PATH))
-    target = await _safe(_get_window_from_path(client.root_window, archmastery_school_path(school)))
+    gauge = await _safe(
+        _get_window_from_path(client.root_window, ARCHMASTERY_GAUGE_PATH),
+        what="resolving the gauge",
+    )
+    target = await _safe(
+        _get_window_from_path(client.root_window, archmastery_school_path(school)),
+        what=f"resolving the {school} icon",
+    )
+    icons = await _resolve_icons(client)
+    logger.debug(
+        "Archmastery selector: gauge=%s, %s icon=%s, %d icons resolved",
+        gauge is not None,
+        school,
+        target is not None,
+        len(icons),
+    )
     if gauge is None or target is None:
-        logger.warning("Archmastery selector not found on the deck page — leaving the school alone")
+        logger.warning(
+            "Archmastery selector not found on the deck page (gauge found: %s, %s icon found: %s) "
+            "— leaving the school alone",
+            gauge is not None,
+            school,
+            target is not None,
+        )
         return False
 
-    icons = await _resolve_icons(client)
     if len(icons) < 2:
         # The open/closed test is "are the icons spread apart", which one icon
         # can never satisfy — the wait would sit out its ceiling reporting
@@ -1320,12 +1345,12 @@ async def set_archmastery_school(client, school: str) -> bool:
 
     try:
         for attempt in range(1, ARCHMASTERY_ATTEMPTS + 1):
-            if not await click_window(client, gauge):
+            if not await _click(client, gauge):
                 logger.debug("Archmastery gauge click %d did not land", attempt)
                 continue
             if not await _wait_for_menu(icons, want_open=True):
                 continue
-            if not await click_window(client, target):
+            if not await _click(client, target):
                 logger.debug("Archmastery '%s' icon click %d did not land", school, attempt)
                 continue
             if await _await_school(client, school):
@@ -1338,13 +1363,38 @@ async def set_archmastery_school(client, school: str) -> bool:
         await _close_menu(client, gauge, icons)
 
 
+async def _click(client, window) -> bool:
+    """Click a resolved window. False if the click could not be issued.
+
+    Deliberately not ``node_helpers.click_window``: that refuses to click
+    anything ``is_control_grayed()`` reports as greyed, and the greyed byte is
+    only a real field on the button classes (see ui_tree_browser's
+    ``has_greyed_field``).  The gauge and the school icons are sprites, so that
+    read lands on whatever happens to sit at the offset and can refuse a
+    perfectly good click without ever saying why.
+
+    Every other click in this module goes straight through the mouse handler
+    for the same reason -- item card slots are not buttons either.
+    """
+    try:
+        async with client.mouse_handler:
+            await client.mouse_handler.click_window(window)
+        return True
+    except Exception:
+        logger.debug("Archmastery click failed", exc_info=True)
+        return False
+
+
 async def _resolve_icons(client) -> list:
     """Every school icon window, resolved once for the polling loops."""
     from bartlebot.nodes.node_helpers import _get_window_from_path  # noqa: PLC0415
 
     found = []
-    for name in school_to_str.values():
-        window = await _safe(_get_window_from_path(client.root_window, archmastery_school_path(name)))
+    for name in PIP_SCHOOLS:
+        window = await _safe(
+            _get_window_from_path(client.root_window, archmastery_school_path(name)),
+            what=f"resolving the {name} icon",
+        )
         if window is not None:
             found.append(window)
     return found
@@ -1364,11 +1414,17 @@ async def _close_menu(client, gauge, icons: list) -> None:
         logger.debug("Failed to close the archmastery menu", exc_info=True)
 
 
-async def _safe(coro):
-    """Await ``coro``, returning None instead of raising."""
+async def _safe(coro, *, what: str = ""):
+    """Await ``coro``, returning None instead of raising.
+
+    Always logs.  A silent swallow here made "the selector was not found"
+    indistinguishable from "reading the window tree raised", which are very
+    different problems with the same symptom.
+    """
     try:
         return await coro
     except Exception:
+        logger.debug("Archmastery: %s failed", what or "read", exc_info=True)
         return None
 
 

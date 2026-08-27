@@ -8,10 +8,12 @@
       "tc": {},
       "item": {
         "Death Shield - Amulet": 1,
+        "Wand-Storm-Blade-170": 1,
         "Pet - Storm Trap 1 Pip": 1
       },
       "card_kinds": {},
-      "archmastery_school": "Death"
+      "archmastery_school": "Ice",
+      "apply_archmastery": true
     }
   },
   "default_duel_config": {
