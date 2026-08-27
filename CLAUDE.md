@@ -114,6 +114,40 @@ This bug caused the client section sidebar (zone/XYZ display) to freeze for the 
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
+#### App settings vs. node params
+
+An app setting that a node param also expresses must never be applied by rewriting
+the param on load. That is what `AppController._apply_bot_defaults` used to do to
+quicksell's `sell_*` params, and it made the node param unreachable: a value stored
+in a bot file was overwritten every time the file was opened, then silently written
+back on the next save.
+
+Use a three-state param instead — `ParamField(type="tri_bool", app_setting_key=…)`,
+stored as `true` / `false` / `null`, defaulting to unset. Unset means "use the app
+setting", so a bot with no opinion follows the user, and a bot that pins an answer
+keeps it. Resolve at **run time**, in one place, and log which level answered:
+`quicksell.resolve_app_defaults()` is the model, and `resolve_combat()`'s
+`source_label` is the older precedent for saying where a value came from.
+
+Everything downstream of that one resolution should see plain bools, which is what
+keeps the keep-list logic and the picker pure and testable without settings.
+
+Two things that fall out of it:
+
+- Anything showing the user what will happen — the properties panel, the safety
+  warning dialog — has to resolve too, and say when a value came from the app
+  setting. The bot file does not show that.
+- Values the override already wrote have to be dealt with, or they start
+  outranking the app setting the moment it stops rewriting them. Every bot file
+  is in this repo, so the quicksell params were migrated in place rather than at
+  load time: a stored value equal to the shipped default said nothing the app
+  setting does not and was dropped, while one that differs was the only trace of
+  intent the file carried and stayed as a pin. `test_no_bot_pins_a_quicksell_flag_it_does_not_mean_to`
+  keeps the library that way.
+
+`Safety Delay` is the deliberate exception — it describes the machine's connection
+rather than the bot, so no stored value should outrank the app setting.
+
 ### No real player data
 
 Never commit real, identifiable player data — wizard names, character ids, account
@@ -376,6 +410,37 @@ any other locale. To add a dialog: append to `KNOWN_KEYS`, run
 `--verify` re-checks the snapshot for keys whose text no longer identifies them
 uniquely. An unrecognised caption returns `None`, and callers must fall back rather
 than treat it as "no dialog".
+
+### Ambiguous UI paths
+
+Window-tree paths match on **name only**. `_get_window_from_path` walks depth-first and
+returns the first branch that completes the path, backtracking out of dead ends — which is
+what makes Wizard101's duplicate `ButtonLayout` siblings safe to path through, as long as
+only one branch completes.
+
+When *several* branches complete it — a list menu whose rows are structurally identical —
+the first wins silently. Narrow it instead:
+
+| need | use |
+|---|---|
+| every match, to count or iterate | `find_windows_by_path(parent, path)` |
+| one match, chosen by label or position | `resolve_path_match(client, path, match_text=…, match_index=…)` |
+| click the one you chose | `click_window(client, window)`, not `click_by_path` |
+
+`click_path` exposes this as **Match Text** / **Match Text: Exact** / **Match Index**, and
+warns when a path matched more than one element and neither param narrowed it. Match Index
+applies *after* Match Text. The text is matched against the element and any element inside
+it, case-insensitively, with the game's HTML wrapping stripped (`strip_html`).
+
+Find the text in the **UI Tree Browser's Text column** — that is what distinguishes rows a
+path cannot. Select a row to read its text, or press **Load Text** to fill the column for
+the selected element and everything inside it; Copy Text puts the full string on the
+clipboard. Text is never read for the whole tree: `maybe_text()` is one synchronous
+`ReadProcessMemory` each, and doing it for several thousand windows freezes the dialog on
+load. Any new per-node read in that browser has the same problem.
+
+Resolve once and act on the window: re-walking the path for the visibility check and again
+for the click can land on two different rows.
 
 ### Bumping a pin
 

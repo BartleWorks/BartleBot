@@ -583,10 +583,7 @@
         "keep_list": [
           "Spike",
           "Crusher"
-        ],
-        "sell_pets": true,
-        "sell_socket_wrenches": false,
-        "sell_skeleton_keys": false
+        ]
       },
       "option_overrides": {},
       "notes": "Keeps all school design gear"

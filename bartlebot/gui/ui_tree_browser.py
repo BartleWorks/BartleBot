@@ -8,6 +8,17 @@ Alongside each element the tree shows its Visible / Enabled / Grayed state, so
 the question "why will this window not respond" can be answered by looking
 rather than by writing a throwaway probe script.
 
+The Text column shows what an element displays.  Paths match on name alone, so a
+menu of identically-named rows is ambiguous by path, and the displayed text is
+what tells the rows apart; Copy Text puts it on the clipboard for pasting into
+click_path's Match Text.
+
+Text is read on demand, never for the whole tree.  Selecting a row reads that one
+window's text, and "Load Text" fills the column for the selected row and its
+descendants — the menu being looked at, not the several thousand windows behind
+it.  Each read is a synchronous ReadProcessMemory on the event loop thread, so
+reading every node's text at load time freezes the dialog for seconds.
+
 Selecting an item draws a persistent red rectangle on the game window via a
 transparent Qt overlay window positioned over the element.  The overlay is
 managed by Qt's compositor and does not conflict with DirectX rendering.
@@ -35,6 +46,8 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
+from bartlebot.nodes.node_helpers import strip_html
+
 logger = logging.getLogger(__name__)
 
 # Data roles stored on each QTreeWidgetItem.
@@ -42,12 +55,25 @@ _PATH_ROLE = Qt.ItemDataRole.UserRole  # list[str] — path from root to this no
 _WINDOW_ROLE = Qt.ItemDataRole.UserRole + 1  # DynamicWindow object for scale_to_client()
 _VISIBLE_ROLE = Qt.ItemDataRole.UserRole + 2  # bool — kept on column 0 for the filter
 _STATE_ROLE = Qt.ItemDataRole.UserRole + 3  # bool | None — per-cell value for the color delegate
+# str — full untruncated window text, for Copy Text.  None means "not read yet", which is
+# every node until it is selected or covered by Load Text; "" means read and empty.
+_TEXT_ROLE = Qt.ItemDataRole.UserRole + 4
 
 # Column indices.
 _COL_ELEMENT = 0
-_COL_VISIBLE = 1
-_COL_ENABLED = 2
-_COL_GRAYED = 3
+_COL_TEXT = 1
+_COL_VISIBLE = 2
+_COL_ENABLED = 3
+_COL_GRAYED = 4
+
+# Longest window text shown in the Text column.  Some windows hold whole paragraphs of
+# dialogue; the full string is kept on _TEXT_ROLE for Copy Text.
+_TEXT_DISPLAY_LIMIT = 60
+
+# Most nodes Load Text will read in one go.  A user who selects the root row would
+# otherwise ask for the whole tree, which is the freeze this on-demand design exists to
+# avoid.  The interesting case — one menu's rows — is a few dozen nodes.
+_TEXT_LOAD_LIMIT = 400
 
 # The value in each state column that is worth noticing, and the THEME token to
 # paint it with.  Only the exceptional value is colored — painting every "true"
@@ -114,13 +140,53 @@ def format_state(value: bool | None) -> str:
     return "true" if value else "false"
 
 
-def row_matches(row_text: str, node_visible: bool | None, text: str, hide_invisible: bool) -> bool:
+def format_text(value: str | None) -> str:
+    """Render the Text cell, truncating anything long enough to wreck the column.
+
+    ``None`` — not read yet — renders blank rather than as the "no such field" dash, so
+    an unread row is never mistaken for a row that carries no text.
+    """
+    if value is None:
+        return ""
+    if not value:
+        return _NO_VALUE
+    if len(value) <= _TEXT_DISPLAY_LIMIT:
+        return value
+    return value[: _TEXT_DISPLAY_LIMIT - 1] + "…"
+
+
+def subtree_items(root_item: QTreeWidgetItem, limit: int = _TEXT_LOAD_LIMIT) -> tuple[list[QTreeWidgetItem], bool]:
+    """Return ``(items, truncated)`` for root_item and its descendants, breadth-first.
+
+    Breadth-first so a limited load covers the rows directly under the selected node —
+    the menu the user is looking at — before descending into any one row's internals.
+    """
+    items: list[QTreeWidgetItem] = []
+    pending = [root_item]
+    while pending:
+        if len(items) >= limit:
+            return items, True
+        item = pending.pop(0)
+        items.append(item)
+        pending.extend(item.child(i) for i in range(item.childCount()))
+    return items, False
+
+
+def row_matches(
+    row_text: str,
+    node_visible: bool | None,
+    text: str,
+    hide_invisible: bool,
+    window_text: str = "",
+) -> bool:
     """Whether one row satisfies the filter on its own merits.
 
-    ``text`` is matched against the element column only — matching the state
-    columns as well would make every row containing "true" a hit.
+    ``text`` is matched against the element and Text columns only — matching the
+    state columns as well would make every row containing "true" a hit.  The Text
+    column is included because a list of identically-named rows is findable by the
+    label it displays and by nothing else.
     """
-    if text and text not in row_text.lower():
+    if text and text not in row_text.lower() and text not in window_text.lower():
         return False
     return not (hide_invisible and node_visible is False)
 
@@ -132,6 +198,7 @@ def apply_filter(item: QTreeWidgetItem, text: str, hide_invisible: bool) -> bool
         item.data(_COL_ELEMENT, _VISIBLE_ROLE),
         text,
         hide_invisible,
+        item.data(_COL_ELEMENT, _TEXT_ROLE) or "",
     )
     child_matched = False
     for i in range(item.childCount()):
@@ -212,6 +279,7 @@ class UITreeBrowserDialog(QDialog):
         self._overlay = _RectOverlay()
         self._load_task: asyncio.Task | None = None
         self._overlay_task: asyncio.Task | None = None
+        self._text_task: asyncio.Task | None = None
         self._closed = False
         self._node_count = 0
         self._build_ui()
@@ -272,6 +340,27 @@ class UITreeBrowserDialog(QDialog):
         self._copy_path_btn.clicked.connect(self._copy_path)
         btn_row.addWidget(self._copy_path_btn)
 
+        self._load_text_btn = QPushButton("Load Text")
+        self._load_text_btn.setToolTip(
+            "Read the displayed text of the selected element and everything inside it.\n"
+            "Text is not loaded with the tree because reading it for every window\n"
+            "freezes the dialog — load it for the menu you are looking at instead.\n"
+            "Once loaded, the filter box searches the Text column too."
+        )
+        self._load_text_btn.setEnabled(False)
+        self._load_text_btn.clicked.connect(self._on_load_text)
+        btn_row.addWidget(self._load_text_btn)
+
+        self._copy_text_btn = QPushButton("Copy Text")
+        self._copy_text_btn.setToolTip(
+            "Copy the selected element's displayed text to clipboard.\n"
+            "Paste it into click_path's Match Text to pick this row out of\n"
+            "several that share the same path."
+        )
+        self._copy_text_btn.setEnabled(False)
+        self._copy_text_btn.clicked.connect(self._copy_text)
+        btn_row.addWidget(self._copy_text_btn)
+
         self._copy_all_btn = QPushButton("Copy All")
         self._copy_all_btn.setToolTip("Copy the entire tree as indented text to clipboard")
         self._copy_all_btn.setEnabled(False)
@@ -283,10 +372,12 @@ class UITreeBrowserDialog(QDialog):
         # Tree widget: Element | Visible | Enabled | Grayed.  Sorting stays off —
         # this is a hierarchy, not a flat table like the entity browser.
         self._tree = QTreeWidget()
-        self._tree.setColumnCount(4)
-        self._tree.setHeaderLabels(["Element", "Visible", "Enabled", "Grayed"])
+        self._tree.setColumnCount(5)
+        self._tree.setHeaderLabels(["Element", "Text", "Visible", "Enabled", "Grayed"])
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self._tree.header().setSectionResizeMode(_COL_ELEMENT, QHeaderView.ResizeMode.Stretch)
+        self._tree.header().setSectionResizeMode(_COL_TEXT, QHeaderView.ResizeMode.Interactive)
+        self._tree.setColumnWidth(_COL_TEXT, 180)
         for col in (_COL_VISIBLE, _COL_ENABLED, _COL_GRAYED):
             self._tree.header().setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         self._tree.setItemDelegate(_StateColorDelegate(self._tree))
@@ -353,14 +444,19 @@ class UITreeBrowserDialog(QDialog):
             except Exception:
                 grayed = None
 
+        # Window text is deliberately NOT read here.  maybe_text() is another synchronous
+        # ReadProcessMemory, and a tree runs to several thousand nodes — reading it for all
+        # of them froze the dialog on load.  It is filled in on selection and by Load Text.
         item = QTreeWidgetItem(
             [
                 f"[{name}]  {type_name}",
+                format_text(None),
                 format_state(visible),
                 format_state(enabled),
                 format_state(grayed),
             ]
         )
+        item.setData(_COL_ELEMENT, _TEXT_ROLE, None)
         # Root stores [] so _get_window_from_path(root_window, []) returns root_window.
         # All other nodes store the full path to themselves (excluding the root window).
         own_path = [] if parent_item is None else path + [name]
@@ -392,6 +488,8 @@ class UITreeBrowserDialog(QDialog):
     def _on_refresh(self) -> None:
         self._overlay.hide()
         self._copy_path_btn.setEnabled(False)
+        self._load_text_btn.setEnabled(False)
+        self._copy_text_btn.setEnabled(False)
         self._copy_all_btn.setEnabled(False)
         self._refresh_btn.setEnabled(False)
         self._search.clear()
@@ -439,6 +537,11 @@ class UITreeBrowserDialog(QDialog):
             path = items[0].data(_COL_ELEMENT, _PATH_ROLE) or []
             pyperclip.copy(str(path))
 
+    def _copy_text(self) -> None:
+        items = self._tree.selectedItems()
+        if items:
+            pyperclip.copy(items[0].data(_COL_ELEMENT, _TEXT_ROLE) or "")
+
     def _copy_all(self) -> None:
         lines: list[str] = []
 
@@ -446,7 +549,9 @@ class UITreeBrowserDialog(QDialog):
             state = (
                 f"visible={item.text(_COL_VISIBLE)} enabled={item.text(_COL_ENABLED)} grayed={item.text(_COL_GRAYED)}"
             )
-            lines.append("    " * depth + f"{item.text(_COL_ELEMENT)}    {state}")
+            window_text = item.data(_COL_ELEMENT, _TEXT_ROLE) or ""
+            label = item.text(_COL_ELEMENT) + (f"  text={window_text!r}" if window_text else "")
+            lines.append("    " * depth + f"{label}    {state}")
             for i in range(item.childCount()):
                 collect(item.child(i), depth + 1)
 
@@ -457,20 +562,91 @@ class UITreeBrowserDialog(QDialog):
         pyperclip.copy("\n".join(lines))
 
     # ------------------------------------------------------------------
+    # Window text, read on demand
+    # ------------------------------------------------------------------
+
+    async def _read_item_text(self, item: QTreeWidgetItem) -> bool:
+        """Read one item's window text into the Text column. Returns whether it was read.
+
+        A no-op for an item whose text is already loaded, so re-selecting a row or loading
+        an already-loaded subtree costs nothing.  maybe_text() reads a per-class offset and
+        simply fails on classes that carry no text, which is why it is caught rather than
+        treated as an error.
+        """
+        if self._closed or item.data(_COL_ELEMENT, _TEXT_ROLE) is not None:
+            return False
+        window = item.data(_COL_ELEMENT, _WINDOW_ROLE)
+        if window is None:
+            return False
+        try:
+            text = strip_html(await window.maybe_text() or "")
+        except Exception:
+            text = ""
+        item.setData(_COL_ELEMENT, _TEXT_ROLE, text)
+        item.setText(_COL_TEXT, format_text(text))
+        if text:
+            item.setToolTip(_COL_TEXT, text)
+        return True
+
+    def _on_load_text(self) -> None:
+        items = self._tree.selectedItems()
+        if not items:
+            return
+        if self._text_task is not None:
+            self._text_task.cancel()
+        self._text_task = asyncio.ensure_future(self._load_text(items[0]))
+
+    async def _load_text(self, root_item: QTreeWidgetItem) -> None:
+        """Read window text for one item and its descendants, up to _TEXT_LOAD_LIMIT."""
+        self._load_text_btn.setEnabled(False)
+        try:
+            items, truncated = subtree_items(root_item)
+            for item in items:
+                if self._closed:
+                    return
+                await self._read_item_text(item)
+            suffix = f" (stopped at the {_TEXT_LOAD_LIMIT}-element limit)" if truncated else ""
+            self._status.setText(f"Text loaded for {len(items)} elements{suffix}")
+            self._on_filter_changed()
+            if root_item in self._tree.selectedItems():
+                self._copy_text_btn.setEnabled(bool(root_item.data(_COL_ELEMENT, _TEXT_ROLE)))
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Failed to load window text")
+            if not self._closed:
+                self._status.setText("Error loading text — see logs")
+        finally:
+            if not self._closed:
+                self._load_text_btn.setEnabled(bool(self._tree.selectedItems()))
+
+    # ------------------------------------------------------------------
     # Rectangle overlay
     # ------------------------------------------------------------------
 
     def _on_selection_changed(self) -> None:
         items = self._tree.selectedItems()
         self._copy_path_btn.setEnabled(bool(items))
+        self._load_text_btn.setEnabled(bool(items))
+        self._copy_text_btn.setEnabled(bool(items) and bool(items[0].data(_COL_ELEMENT, _TEXT_ROLE)))
         if items:
             window = items[0].data(_COL_ELEMENT, _WINDOW_ROLE)
             if window is not None:
                 if self._overlay_task is not None:
                     self._overlay_task.cancel()
-                self._overlay_task = asyncio.ensure_future(self._update_overlay(window))
+                # One text read rides along with the overlay's own read, so the selected
+                # row always shows its text and Copy Text is usable without a second click.
+                self._overlay_task = asyncio.ensure_future(self._on_select_async(items[0], window))
                 return
         self._overlay.hide()
+
+    async def _on_select_async(self, item: QTreeWidgetItem, window) -> None:
+        await self._read_item_text(item)
+        if self._closed:
+            return
+        if item in self._tree.selectedItems():
+            self._copy_text_btn.setEnabled(bool(item.data(_COL_ELEMENT, _TEXT_ROLE)))
+        await self._update_overlay(window)
 
     async def _update_overlay(self, window) -> None:
         if self._closed:
@@ -506,6 +682,8 @@ class UITreeBrowserDialog(QDialog):
             self._load_task.cancel()
         if self._overlay_task is not None:
             self._overlay_task.cancel()
+        if self._text_task is not None:
+            self._text_task.cancel()
         self._overlay.hide()
         self._overlay.deleteLater()
         super().closeEvent(event)

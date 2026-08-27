@@ -3,6 +3,7 @@
 import asyncio
 import fnmatch
 import logging
+import re
 from typing import NamedTuple
 
 from wizwalker import Keycode, MemoryReadError
@@ -344,6 +345,24 @@ async def is_enabled_by_path(client, path: list[str]) -> bool:
     return not await window.is_control_grayed()
 
 
+async def iter_windows_by_path(parent, path: list[str]):
+    """Yield every window reachable from parent by this sequence of child names, in tree order.
+
+    Lazy on purpose: the single-result callers below take the first yielded window and stop,
+    so an unambiguous path costs exactly what a first-match walk always cost. Only a caller
+    that asks for every match pays to explore the remaining branches.
+
+    An empty path yields the parent itself.
+    """
+    if not path:
+        yield parent
+        return
+    for child in await parent.children():
+        if await child.name() == path[0]:
+            async for window in iter_windows_by_path(child, path[1:]):
+                yield window
+
+
 async def _get_window_from_path(parent, path: list[str]):
     """Traverse the UI window tree by a sequence of child names.
 
@@ -353,15 +372,94 @@ async def _get_window_from_path(parent, path: list[str]):
     second one leads to the rest of the path, the second is returned. This is what makes
     ambiguous names like Wizard101's duplicate `ButtonLayout` windows safe to path
     through, as long as one branch alone completes the path.
+
+    When SEVERAL branches complete the path — a list menu whose rows are structurally
+    identical — the first in tree order wins silently. Use find_windows_by_path() or
+    resolve_path_match() where that choice matters.
     """
-    if not path:
-        return parent
-    for child in await parent.children():
-        if await child.name() == path[0]:
-            result = await _get_window_from_path(child, path[1:])
-            if result is not None:
-                return result
+    async for window in iter_windows_by_path(parent, path):
+        return window
     return None
+
+
+async def find_windows_by_path(parent, path: list[str]) -> list:
+    """Return every window reachable by this name path, in tree order.
+
+    Unlike _get_window_from_path(), this does not stop at the first branch that completes
+    the path, so the caller can see that a path is ambiguous and pick among the matches.
+    """
+    return [window async for window in iter_windows_by_path(parent, path)]
+
+
+def strip_html(text: str) -> str:
+    """Remove HTML tags from a string (e.g. '<center>Unicorn' → 'Unicorn')."""
+    return re.sub(r"<[^>]+>", "", text).strip()
+
+
+async def _window_text(window) -> str:
+    """Read one window's displayed text, stripped of the game's HTML wrapping.
+
+    Returns '' for any window that has no text or whose text cannot be decoded — a routine
+    outcome, since maybe_text() reads a different offset per class and fails on many of them.
+    """
+    try:
+        return strip_html(await window.maybe_text() or "")
+    except Exception:
+        logger.debug("Could not read window text", exc_info=True)
+        return ""
+
+
+async def window_text_matches(window, needle: str, *, exact: bool = False, deep: bool = True) -> bool:
+    """Whether this window's text — or, when deep, any descendant's — matches needle.
+
+    Case-insensitive either way; `exact` switches equality for substring. Deep by default
+    because a menu row is usually a container whose label lives on a child text window.
+    """
+    target = needle.strip().casefold()
+    text = (await _window_text(window)).casefold()
+    if (text == target) if exact else (target in text):
+        return True
+    if not deep:
+        return False
+    try:
+        children = await window.children()
+    except Exception:
+        logger.debug("Could not read window children while text matching", exc_info=True)
+        return False
+    for child in children:
+        if await window_text_matches(child, needle, exact=exact, deep=True):
+            return True
+    return False
+
+
+async def resolve_path_match(
+    client,
+    path: list[str],
+    *,
+    match_text: str = "",
+    match_text_exact: bool = False,
+    match_index: int = 0,
+) -> tuple[object | None, int]:
+    """Pick one window among everything `path` matches.
+
+    Returns ``(window, candidate_count)``, where the count is how many windows the path
+    matched before `match_text` filtered them — so a caller can report "matched 6 rows" even
+    when its text filter then rejected all of them. The window is None when nothing matched,
+    when no match carried the text, or when match_index is out of range.
+
+    With the defaults this is `_get_window_from_path` plus a count: first match, no filter.
+    """
+    candidates = await find_windows_by_path(client.root_window, path)
+    count = len(candidates)
+    if match_text:
+        matched = []
+        for window in candidates:
+            if await window_text_matches(window, match_text, exact=match_text_exact):
+                matched.append(window)
+        candidates = matched
+    if not candidates or not (-len(candidates) <= match_index < len(candidates)):
+        return None, count
+    return candidates[match_index], count
 
 
 async def poll_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
@@ -724,10 +822,13 @@ async def click_until_gone(
     return not still_open
 
 
-async def click_by_path(client, path: list[str]) -> bool:
-    """Click the UI window at path if it exists and is enabled (not grayed out).
-    Returns True if found, enabled, and clicked. Returns False if not found or grayed."""
-    window = await _get_window_from_path(client.root_window, path)
+async def click_window(client, window) -> bool:
+    """Click an already-resolved UI window if it is enabled (not grayed out).
+
+    Separate from click_by_path so a caller that had to disambiguate among several
+    same-named windows can click the exact one it chose, rather than re-walking the path
+    and landing on whichever match comes first.
+    """
     if window is None:
         return False
     if await window.is_control_grayed():
@@ -735,6 +836,13 @@ async def click_by_path(client, path: list[str]) -> bool:
     async with client.mouse_handler:
         await client.mouse_handler.click_window(window)
     return True
+
+
+async def click_by_path(client, path: list[str]) -> bool:
+    """Click the UI window at path if it exists and is enabled (not grayed out).
+    Returns True if found, enabled, and clicked. Returns False if not found or grayed."""
+    window = await _get_window_from_path(client.root_window, path)
+    return await click_window(client, window)
 
 
 # ---------------------------------------------------------------------------

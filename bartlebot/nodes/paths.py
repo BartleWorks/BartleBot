@@ -95,6 +95,13 @@ TEAMUP_4_PLAYER_CHECKBOX = [
 ]
 ENTER_TEAMUP_BUTTON_PATH = ["WorldView", "TeamUpConfirmationWindow", "TeamUpConfirmationBackground", "TeamUpButton"]
 
+# Sigil entrance mode toggle. Dungeons that offer Challenge Mode show this button on the
+# entrance prompt; it cycles the sigil's mode. The prompt title is what says which mode is
+# selected — it gains the word "Challenge" — so read the title rather than the button, which
+# carries no readable state.
+SIGIL_MODE_TOGGLE_BUTTON_PATH = ["WorldView", "NPCRangeWin", "sigilModeToggleButton"]
+SIGIL_ENTRANCE_TITLE_PATH = ["WorldView", "NPCRangeWin", "wndTitleBackground", "NPCRangeTxtTitle"]
+
 # Gauntlet entrance prompt (no TeamUpButton — gauntlets use the parent window directly)
 GAUNTLET_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground"]
 

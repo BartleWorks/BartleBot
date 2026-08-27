@@ -275,8 +275,13 @@ class AppController(QObject):
     def _apply_bot_defaults(self, config: BotConfig) -> None:
         """Apply user-configured defaults to a freshly loaded BotConfig.
 
-        - Safety Delay (bot option): replace its value with the configured default.
-        - Quicksell params: overwrite sell_* params on every quicksell state.
+        Only Safety Delay: it describes the machine's connection rather than the
+        bot, so no stored value should outrank the app setting.
+
+        Nothing else belongs here. Quicksell's sell_* params are the cautionary
+        case — they were rewritten from the app settings on every load, which made
+        the node param unreachable. They are three-state now and resolve against
+        the settings at run time instead, so a bot that pins one keeps it.
         """
         sm = SettingsManager.instance()
 
@@ -284,15 +289,6 @@ class AppController(QObject):
         config.options = [
             opt.model_copy(update={"default": delay}) if opt.name == "Safety Delay" else opt for opt in config.options
         ]
-
-        sell_pets = sm.get_general("default_quicksell_sell_pets", default=True)
-        sell_socket_wrenches = sm.get_general("default_quicksell_sell_socket_wrenches", default=False)
-        sell_skeleton_keys = sm.get_general("default_quicksell_sell_skeleton_keys", default=False)
-        for state in config.states:
-            if state.node_type == "quicksell":
-                state.params["sell_pets"] = sell_pets
-                state.params["sell_socket_wrenches"] = sell_socket_wrenches
-                state.params["sell_skeleton_keys"] = sell_skeleton_keys
 
     def _close_bot(self) -> None:
         if self._loaded_config is None:

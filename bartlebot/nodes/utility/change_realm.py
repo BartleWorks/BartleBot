@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-import re
 
 from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
@@ -88,9 +87,7 @@ NODE_SPEC = NodeSpec(
 )
 
 
-def _strip_html(text: str) -> str:
-    """Remove HTML tags from a string (e.g. '<center>Unicorn' → 'Unicorn')."""
-    return re.sub(r"<[^>]+>", "", text).strip()
+_strip_html = node_helpers.strip_html
 
 
 async def _get_row0_name(client) -> str:

@@ -3,6 +3,7 @@
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
 
@@ -211,3 +212,27 @@ class FakeParamForm:
 
     def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
         self.xyz_fields[key] = (x, y, z)
+
+
+# ---------------------------------------------------------------------------
+# Settings isolation
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def isolated_settings(tmp_path, monkeypatch):
+    """Point the SettingsManager singleton at a per-test directory.
+
+    Code that resolves a value against the app settings — quicksell's three-state
+    sell_* params, most of all — must not read whatever the developer running the
+    suite happens to have configured, or the result differs between a laptop and
+    CI. APPDATA is redirected rather than the internals patched, because that is
+    the same door the real app goes through.
+
+    Tests that build their own SettingsManager against tmp_path are unaffected:
+    they get a second, private instance as before.
+    """
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — keeps node tests import-light
+
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    monkeypatch.setattr(SettingsManager, "_instance", None)

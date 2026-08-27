@@ -8,6 +8,7 @@ from wizwalker import XYZ, Keycode
 from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.paths import SIGIL_ENTRANCE_TITLE_PATH, SIGIL_MODE_TOGGLE_BUTTON_PATH
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -50,7 +51,8 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Enters a dungeon via its sigil. Handles prompt detection, "
-        "dungeon warning confirmation, and player zone desynchronization."
+        "dungeon warning confirmation, and player zone desynchronization. "
+        "Enable the Challenge Mode bot option to toggle the sigil into Challenge Mode before entering."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -58,7 +60,8 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             "Players were not in from_zone at the start, the entrance prompt "
-            "never appeared after retries, timed out waiting for zone change, "
+            "never appeared after retries, Challenge Mode was requested but the sigil "
+            "could not be toggled into it, timed out waiting for zone change, "
             "or not all players reached dungeon_zone.",
         ),
     ],
@@ -72,11 +75,56 @@ NODE_SPEC = NodeSpec(
                 "Increase on high-latency connections."
             ),
         ),
+        BotOptionSpec(
+            name="Challenge Mode",
+            type="bool",
+            default=False,
+            description=(
+                "Enter dungeons in Challenge Mode. Each player toggles the sigil's mode on the "
+                "entrance prompt before pressing X. Fails if the dungeon does not offer Challenge Mode."
+            ),
+        ),
     ],
     max_consecutive_retries=10,
 )
 
 from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+
+# Word the entrance prompt's title gains once the sigil is set to Challenge Mode. The
+# toggle button itself carries no readable state, so the title is the only confirmation.
+CHALLENGE_TITLE_KEYWORD = "challenge"
+
+# The toggle cycles modes rather than flipping a flag, so a dungeon offering more than two
+# could need several clicks to come back around. Bounded so a button that does nothing
+# fails rather than clicking forever.
+MAX_MODE_TOGGLES = 4
+
+
+async def _mode_matches(client, challenge: bool) -> bool:
+    """Whether the entrance prompt's title says this client's sigil is in the wanted mode."""
+    title = node_helpers.strip_html(await node_helpers.get_text_by_path(client, SIGIL_ENTRANCE_TITLE_PATH))
+    return (CHALLENGE_TITLE_KEYWORD in title.casefold()) is challenge
+
+
+async def _set_sigil_mode(machine, client, challenge: bool, safety_delay: float) -> bool:
+    """Click the sigil mode toggle until the prompt title reports the wanted mode.
+
+    Returns False only when the mode could not be reached — which, for challenge=False,
+    includes an unreadable title never reading as Challenge, so a dungeon without the
+    toggle costs one read and no clicks.
+    """
+    for attempt in range(MAX_MODE_TOGGLES):
+        if await _mode_matches(client, challenge):
+            return True
+        if not await node_helpers.click_by_path(client, SIGIL_MODE_TOGGLE_BUTTON_PATH):
+            machine.log(
+                "Sigil mode toggle button is missing or disabled — this dungeon may not offer Challenge Mode",
+                logging.WARNING,
+            )
+            return False
+        machine.log(f"Toggled sigil mode (click {attempt + 1}/{MAX_MODE_TOGGLES})", logging.DEBUG)
+        await node_helpers.poll_until(lambda: _mode_matches(client, challenge), safety_delay, POLL_INTERVAL)
+    return await _mode_matches(client, challenge)
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -89,6 +137,9 @@ async def run(machine, clients: list, params: dict) -> str:
       2. Clear any pre-existing dungeon entrance prompt by teleporting to reset_xyz.
       3. Retry loop (up to MAX_RETRIES): teleport to sigil_xyz, wait for the entrance
          prompt. If it does not appear, teleport to reset_xyz and retry.
+      3b. If the Challenge Mode bot option is on, click each client's sigil mode toggle
+         until the prompt title reads "Challenge". Return FAILURE if any client cannot
+         be toggled into it.
       4. Press X on all clients to interact with the sigil.
       5. Poll for a dungeon warning dialog for Safety Delay seconds; confirm it if present.
       6. Wait for all clients to leave from_zone. Return FAILURE if timeout expires.
@@ -96,14 +147,17 @@ async def run(machine, clients: list, params: dict) -> str:
       8. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
 
     FAILURE: clients not in from_zone; entrance prompt never appeared after MAX_RETRIES;
-    zone change timed out; not all clients reached dungeon_zone.
+    Challenge Mode requested but the sigil could not be toggled into it; zone change timed
+    out; not all clients reached dungeon_zone.
     """
     from_zone: str = params["from_zone"]
     dungeon_zone: str = params["dungeon_zone"]
     sigil = XYZ(**params["sigil_xyz"])
     reset = XYZ(**params["reset_xyz"])
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
-    machine.log(f"enter_dungeon: {from_zone!r} → {dungeon_zone!r}")
+    challenge_mode: bool = bool(machine.get_option("Challenge Mode", False))
+    mode_label = "Challenge Mode" if challenge_mode else "normal mode"
+    machine.log(f"enter_dungeon: {from_zone!r} → {dungeon_zone!r} ({mode_label})")
 
     # 1. Verify all clients are in from_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -156,6 +210,22 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.WARNING,
         )
         return "FAILURE"
+
+    # 3b. Set the sigil's entrance mode. Every client toggles its own prompt, and the mode
+    #     is confirmed from the prompt title rather than from the toggle button, which has
+    #     no readable state. Only done when Challenge Mode is on: a sigil without the
+    #     toggle is already in normal mode, and clicking a missing button is not a failure
+    #     there.
+    if challenge_mode:
+        machine.log("Toggling sigils into Challenge Mode…", logging.DEBUG)
+        toggled = await asyncio.gather(*[_set_sigil_mode(machine, c, True, safety_delay) for c in clients])
+        if not all(toggled):
+            failed = [i for i, ok in enumerate(toggled) if not ok]
+            machine.log(
+                f"FAILURE: could not set Challenge Mode on client(s) {failed}",
+                logging.WARNING,
+            )
+            return "FAILURE"
 
     # 4. Press X to interact with the sigil (entrance prompt is showing).
     machine.log("Pressing X to enter dungeon sigil", logging.DEBUG)

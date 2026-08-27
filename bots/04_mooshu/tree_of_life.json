@@ -1255,8 +1255,6 @@
         "keep_list": [
           "Oni"
         ],
-        "sell_pets": true,
-        "sell_socket_wrenches": false,
         "sell_skeleton_keys": true
       },
       "option_overrides": {}

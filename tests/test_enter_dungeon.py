@@ -242,3 +242,114 @@ async def test_dungeon_warning_dialog_appears_late():
     assert Keycode.X in calls
     assert polls >= 3
     click_by_path_mock.assert_awaited_with(client, MESSAGE_BOX_CENTER)
+
+
+# ---------------------------------------------------------------------------
+# Challenge Mode
+# ---------------------------------------------------------------------------
+
+
+async def test_challenge_mode_toggles_until_title_says_challenge():
+    """The sigil mode toggle is clicked until the prompt title reads Challenge, then X is pressed."""
+    client = _happy_client()
+    titles = ["Dungeon Entrance", "Dungeon Entrance", "Challenge Mode Entrance"]
+
+    async def title_text(_c, path):
+        if path != ed.SIGIL_ENTRANCE_TITLE_PATH:
+            return ""
+        return titles.pop(0) if len(titles) > 1 else titles[0]
+
+    click_by_path_mock = AsyncMock(return_value=True)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=title_text)),
+        patch.object(nh, "click_by_path", click_by_path_mock),
+    ):
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
+    assert toggles, "sigil mode toggle was never clicked"
+    from wizwalker import Keycode
+
+    assert Keycode.X in [call.args[0] for call in client.send_key.call_args_list]
+
+
+async def test_challenge_mode_already_set_does_not_toggle():
+    """A sigil already in Challenge Mode is left alone."""
+    client = _happy_client()
+    click_by_path_mock = AsyncMock(return_value=True)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="<center>Challenge Mode Entrance")),
+        patch.object(nh, "click_by_path", click_by_path_mock),
+    ):
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
+    assert toggles == []
+
+
+async def test_challenge_mode_missing_toggle_button_fails():
+    """A dungeon with no mode toggle fails rather than entering in normal mode."""
+    client = _happy_client()
+
+    async def click(_c, path):
+        return path != ed.SIGIL_MODE_TOGGLE_BUTTON_PATH
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
+        patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
+    ):
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    client.send_key.assert_not_called()
+
+
+async def test_challenge_mode_toggle_never_takes_fails():
+    """Clicking a toggle that never changes the title exhausts MAX_MODE_TOGGLES and fails."""
+    client = _happy_client()
+    click_by_path_mock = AsyncMock(return_value=True)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
+        patch.object(nh, "click_by_path", click_by_path_mock),
+    ):
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+
+    assert result == "FAILURE"
+    toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
+    assert len(toggles) == ed.MAX_MODE_TOGGLES
+
+
+async def test_challenge_mode_off_never_reads_or_toggles_the_sigil_mode():
+    """With the option off, the mode toggle is not touched at all."""
+    client = _happy_client()
+    get_text_mock = AsyncMock(return_value="")
+    click_by_path_mock = AsyncMock(return_value=False)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", get_text_mock),
+        patch.object(nh, "click_by_path", click_by_path_mock),
+    ):
+        result = await ed.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
+    assert toggles == []

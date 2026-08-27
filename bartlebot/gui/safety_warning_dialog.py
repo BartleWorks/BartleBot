@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.nodes.utility import quicksell
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -36,15 +37,34 @@ class SafetyWarning:
     """Optional (label, value) rows shown in a compact form below the message."""
 
 
+#: The quicksell sell_* params, in the order the dialog lists them.
+_QUICKSELL_FLAG_LABELS: dict[str, str] = {
+    "sell_pets": "Sell Pets",
+    "sell_socket_wrenches": "Sell Socket Wrenches",
+    "sell_skeleton_keys": "Sell Skeleton Keys",
+}
+
+
 def _quicksell_details(states) -> list[tuple[str, str]]:
+    """What each quicksell state will actually sell, and which level decided it.
+
+    The sell_* params are three-state, so the stored value is not the answer: an
+    unset one follows the app setting. This dialog is the last thing between the
+    user and an irreversible sale, so it shows the resolved value — and says when
+    it came from the app setting, because that is the one the bot file does not
+    show.
+    """
     details: list[tuple[str, str]] = []
     for state in states:
         prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
-        p = state.params
+        inherited = set(quicksell.inherited_flags(state.params))
+        resolved = quicksell.resolve_app_defaults(state.params)
         details += [
-            (f"{prefix}Sell Pets", "Yes" if p.get("sell_pets", True) else "No"),
-            (f"{prefix}Sell Socket Wrenches", "Yes" if p.get("sell_socket_wrenches", False) else "No"),
-            (f"{prefix}Sell Skeleton Keys", "Yes" if p.get("sell_skeleton_keys", False) else "No"),
+            (
+                f"{prefix}{label}",
+                ("Yes" if resolved[key] else "No") + (" (app setting)" if key in inherited else ""),
+            )
+            for key, label in _QUICKSELL_FLAG_LABELS.items()
         ]
     return details
 

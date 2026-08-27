@@ -13,6 +13,10 @@ from bartlebot.nodes.node_helpers import (
     entity_name_predicate,
     find_closest_entity_by_name,
     find_entities_by_name,
+    find_windows_by_path,
+    resolve_path_match,
+    strip_html,
+    window_text_matches,
     zone_matches,
 )
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
@@ -287,12 +291,13 @@ async def test_all_left_zone_wildcard_same_prefix_as_destination():
 # ---------------------------------------------------------------------------
 
 
-def _make_window(name: str, children: list | None = None):
+def _make_window(name: str, children: list | None = None, text: str = ""):
     from unittest.mock import MagicMock
 
     w = MagicMock()
     w.name = AsyncMock(return_value=name)
     w.children = AsyncMock(return_value=list(children or []))
+    w.maybe_text = AsyncMock(return_value=text)
     return w
 
 
@@ -331,6 +336,135 @@ async def test_get_window_returns_none_when_no_sibling_completes_the_path():
     )
 
     assert await _get_window_from_path(root, ["wndCharacter", "ButtonLayout", "btnInvite"]) is None
+
+
+# ---------------------------------------------------------------------------
+# find_windows_by_path / resolve_path_match — paths that match several elements
+#
+# A list menu whose rows are structurally identical is ambiguous by path: every row
+# completes it. The first match wins silently unless the caller narrows it by the text
+# the row displays or by its position.
+# ---------------------------------------------------------------------------
+
+
+def _row_menu():
+    """A menu of three identically-named rows, told apart only by their label text."""
+    rows = [
+        _make_window("Row", [_make_window("Label", text="<center>Krokotopia")]),
+        _make_window("Row", [_make_window("Label", text="<center>Marleybone")]),
+        _make_window("Row", [_make_window("Label", text="<center>Mooshu")]),
+    ]
+    return _make_window("root", [_make_window("wndMenu", rows)]), rows
+
+
+def _client_with(root):
+    from unittest.mock import MagicMock
+
+    client = MagicMock()
+    client.root_window = root
+    return client
+
+
+async def test_find_windows_returns_every_match_in_tree_order():
+    root, rows = _row_menu()
+    found = await find_windows_by_path(root, ["wndMenu", "Row"])
+    assert found == rows
+
+
+async def test_find_windows_returns_empty_list_when_nothing_matches():
+    root, _ = _row_menu()
+    assert await find_windows_by_path(root, ["wndMenu", "Missing"]) == []
+
+
+async def test_get_window_still_takes_the_first_of_several_matches():
+    """The single-result walker is unchanged by the multi-match resolver."""
+    root, rows = _row_menu()
+    assert await _get_window_from_path(root, ["wndMenu", "Row"]) is rows[0]
+
+
+async def test_window_text_matches_reads_a_descendants_label():
+    _, rows = _row_menu()
+    assert await window_text_matches(rows[1], "Marleybone")
+    assert not await window_text_matches(rows[1], "Krokotopia")
+
+
+async def test_window_text_matches_is_case_insensitive_and_strips_html():
+    """The game wraps labels in HTML; a user typing the visible text must still match."""
+    _, rows = _row_menu()
+    assert await window_text_matches(rows[0], "krokoTOPIA")
+    assert await window_text_matches(rows[0], "Krokotopia", exact=True)
+
+
+async def test_window_text_matches_shallow_ignores_children():
+    _, rows = _row_menu()
+    assert not await window_text_matches(rows[0], "Krokotopia", deep=False)
+
+
+async def test_window_text_exact_rejects_a_substring():
+    _, rows = _row_menu()
+    assert await window_text_matches(rows[2], "Moo")
+    assert not await window_text_matches(rows[2], "Moo", exact=True)
+
+
+async def test_resolve_path_match_defaults_to_the_first_match_with_a_count():
+    root, rows = _row_menu()
+    window, count = await resolve_path_match(_client_with(root), ["wndMenu", "Row"])
+    assert window is rows[0]
+    assert count == 3
+
+
+async def test_resolve_path_match_selects_by_text():
+    root, rows = _row_menu()
+    window, count = await resolve_path_match(_client_with(root), ["wndMenu", "Row"], match_text="Marleybone")
+    assert window is rows[1]
+    assert count == 3
+
+
+async def test_resolve_path_match_selects_by_index():
+    root, rows = _row_menu()
+    window, _ = await resolve_path_match(_client_with(root), ["wndMenu", "Row"], match_index=2)
+    assert window is rows[2]
+
+
+async def test_resolve_path_match_index_counts_from_the_end():
+    root, rows = _row_menu()
+    window, _ = await resolve_path_match(_client_with(root), ["wndMenu", "Row"], match_index=-1)
+    assert window is rows[2]
+
+
+async def test_resolve_path_match_indexes_into_the_text_filtered_matches():
+    """Match Index applies after Match Text, not to the raw match list."""
+    root, rows = _row_menu()
+    window, _ = await resolve_path_match(_client_with(root), ["wndMenu", "Row"], match_text="Moo", match_index=0)
+    assert window is rows[2]
+
+
+async def test_resolve_path_match_reports_the_count_when_text_rejects_everything():
+    """The count is what the PATH matched, so the caller can say 'none of the 3 rows'."""
+    root, _ = _row_menu()
+    window, count = await resolve_path_match(_client_with(root), ["wndMenu", "Row"], match_text="Dragonspyre")
+    assert window is None
+    assert count == 3
+
+
+async def test_resolve_path_match_returns_none_when_index_is_out_of_range():
+    root, _ = _row_menu()
+    window, count = await resolve_path_match(_client_with(root), ["wndMenu", "Row"], match_index=7)
+    assert window is None
+    assert count == 3
+
+
+async def test_resolve_path_match_returns_zero_count_when_path_matches_nothing():
+    root, _ = _row_menu()
+    window, count = await resolve_path_match(_client_with(root), ["wndMenu", "Missing"])
+    assert window is None
+    assert count == 0
+
+
+def test_strip_html_removes_the_games_wrapping():
+    assert strip_html("<center>Unicorn") == "Unicorn"
+    assert strip_html("  plain  ") == "plain"
+    assert strip_html("") == ""
 
 
 # ---------------------------------------------------------------------------

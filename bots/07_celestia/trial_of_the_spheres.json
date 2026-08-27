@@ -2312,10 +2312,7 @@
         "keep_list": [
           "Atavistic",
           "Bygone"
-        ],
-        "sell_pets": true,
-        "sell_socket_wrenches": false,
-        "sell_skeleton_keys": false
+        ]
       },
       "option_overrides": {}
     }

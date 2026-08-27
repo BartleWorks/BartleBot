@@ -731,10 +731,7 @@
         "y": -90.0
       },
       "params": {
-        "keep_list": [],
-        "sell_pets": true,
-        "sell_socket_wrenches": false,
-        "sell_skeleton_keys": false
+        "keep_list": []
       },
       "option_overrides": {}
     },

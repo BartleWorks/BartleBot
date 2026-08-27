@@ -1,0 +1,91 @@
+{
+  "id": "65465a79-c709-4ce3-81d8-facbce3847de",
+  "name": "The Monster (Challenge Mode) - Trap into Kraken C",
+  "bot_id": "8652dc06-b5af-48fc-a112-90c78a46dab3",
+  "player_decks": {
+    "1": {
+      "normal": {
+        "Elemental Weakness": 1
+      },
+      "tc": {},
+      "item": {
+        "Darkwind - Amulet": 1
+      },
+      "card_kinds": {
+        "Elemental Weakness": "charm"
+      }
+    },
+    "2": {
+      "normal": {},
+      "tc": {},
+      "item": {
+        "Death Shield - Amulet": 1,
+        "Pet - Storm Trap 1 Pip": 1
+      },
+      "card_kinds": {}
+    },
+    "3": {
+      "normal": {
+        "Storm Shield": 1,
+        "Storm Trap": 1
+      },
+      "tc": {},
+      "item": {},
+      "card_kinds": {
+        "Storm Shield": "ward",
+        "Storm Trap": "trap"
+      }
+    },
+    "4": {
+      "normal": {
+        "Kraken - T05 - C": 1
+      },
+      "tc": {},
+      "item": {},
+      "card_kinds": {}
+    }
+  },
+  "default_duel_config": {
+    "min_players": 4,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_6"
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1
+            ],
+            "dsl": "{1} pass\n{2} darkwind\n{3} weakness @ boss"
+          },
+          {
+            "players": [
+              2,
+              3
+            ],
+            "dsl": "{1} any<ward> @ ally(0)\n{2} pass\n{3} any<trap> @ boss"
+          },
+          {
+            "players": [
+              4
+            ],
+            "dsl": "{1} pass\n{2} pass\n{3} kraken @ boss"
+          }
+        ]
+      }
+    }
+  ]
+}

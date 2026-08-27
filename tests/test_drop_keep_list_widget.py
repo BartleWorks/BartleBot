@@ -32,7 +32,9 @@ _DROPS = [
     DropModel(name="Socket Wrench"),  # uncategorized — unknown is not unsellable
     DropModel(name="Mandrake", category="Reagents"),  # never quicksold
 ]
-_SELL_ALL = {"sell_socket_wrenches": True, "sell_skeleton_keys": True}
+# All three sell_* params pinned, so the widget resolves nothing against the app
+# settings and these tests do not depend on the machine they run on.
+_SELL_ALL = {"sell_pets": True, "sell_socket_wrenches": True, "sell_skeleton_keys": True}
 
 
 @pytest.fixture
@@ -562,9 +564,11 @@ _KEEP_PETS = {**_SELL_ALL, "sell_pets": False}
 
 
 def test_pets_are_unchecked_while_the_node_sells_them(qapp):
+    # And locked: the quicksell window shows a pet's nickname, so ticking the row
+    # would write a keyword that never matches anything.
     w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
     assert not _checked(w, "Fierce Hound")
-    assert _enabled(w, "Fierce Hound")
+    assert not _enabled(w, "Fierce Hound")
 
 
 def test_pets_are_checked_when_the_node_is_not_selling_them(qapp):
@@ -614,7 +618,7 @@ def test_flipping_the_pets_bool_updates_the_rows(qapp):
     assert _checked(w, "Fierce Hound")
     w.set_context({**_SELL_ALL, "sell_pets": True})
     assert not _checked(w, "Fierce Hound")
-    assert _enabled(w, "Fierce Hound")
+    assert not _enabled(w, "Fierce Hound")
 
 
 def test_the_quicksell_form_feeds_its_pets_bool_to_the_widget(qapp):
@@ -681,3 +685,50 @@ def test_a_theme_change_leaves_the_no_drops_message_alone(qapp, monkeypatch):
     w = _make(qapp, drops=[])
     w.changeEvent(QEvent(QEvent.Type.StyleChange))
     assert "no drops listed" in w._summary.text()
+
+
+# ---------------------------------------------------------------------------
+# Pets the keep list cannot reach
+#
+# The drop table names a pet by its body type; the quicksell row shows the
+# nickname its owner gave it. Nothing in the keep list can bridge that, so the
+# picker has to say so rather than let a ticked pet read as safe.
+# ---------------------------------------------------------------------------
+
+
+def test_a_sold_pet_says_why_ticking_it_would_not_help(qapp):
+    w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
+    tip = _row(w, "Fierce Hound").toolTip(_COL_ITEM)
+    assert "nickname" in tip and "Sell Pets" in tip
+
+
+def test_a_pet_named_in_the_keep_list_is_still_shown_as_sold(qapp):
+    # The trap this exists for: the keyword matches the name on screen here, and
+    # nothing at all in the game's window.
+    w = _make(qapp, drops=_PETS, keep_list=["Fierce Hound"], context={**_SELL_ALL, "sell_pets": True})
+    assert not _checked(w, "Fierce Hound")
+    assert "'Fierce Hound' is in the keep list" in _row(w, "Fierce Hound").toolTip(_COL_ITEM)
+
+
+def test_the_warning_line_counts_the_pets_it_cannot_keep(qapp):
+    w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
+    assert w._warning.isVisibleTo(w)
+    text = _plain(w._warning.text())
+    assert text.startswith("2 Pets:")
+    assert "nickname" in text
+
+
+def test_no_warning_when_the_pets_bool_already_keeps_them(qapp):
+    w = _make(qapp, drops=_PETS, context=_KEEP_PETS)
+    assert not w._warning.isVisibleTo(w)
+
+
+def test_no_warning_when_the_bot_drops_no_pets(qapp):
+    w = _make(qapp, context={**_SELL_ALL, "sell_pets": True})
+    assert not w._warning.isVisibleTo(w)
+
+
+def test_pets_the_keep_list_cannot_keep_stay_out_of_bulk_changes(qapp):
+    w = _make(qapp, drops=_PETS, context={**_SELL_ALL, "sell_pets": True})
+    w._btn_check_all.click()
+    assert w.get_value() == ["Amber Ring"]

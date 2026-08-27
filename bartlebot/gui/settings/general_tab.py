@@ -169,19 +169,34 @@ class GeneralTab(QWidget):
         )
         bot_form.addRow("Automatically select a character:", self._auto_select_cb)
 
+        # Defaults, not policy: a quicksell node whose matching param is left on
+        # "Use app setting" follows these, and one that pins Yes or No does not.
+        # Labelled that way so nobody reads the row as a guarantee.
+        _quicksell_tip = (
+            "Applies to every quicksell node left on 'Use app setting', which is how they come.\n\n"
+            "A bot that needs one answer specifically can pin it in the node's parameters, and "
+            "that pin wins over this."
+        )
+
         self._sell_pets_cb = QCheckBox()
         self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
-        bot_form.addRow("Quicksell: Sell Pets:", self._sell_pets_cb)
+        self._sell_pets_cb.setToolTip(
+            _quicksell_tip + "\n\nOff is the only way to keep a pet: the quicksell window lists pets by "
+            "nickname, so no keep-list keyword can match one."
+        )
+        bot_form.addRow("Quicksell default — Sell Pets:", self._sell_pets_cb)
 
         self._sell_socket_wrenches_cb = QCheckBox()
         self._sell_socket_wrenches_cb.setChecked(
             sm.get_general("default_quicksell_sell_socket_wrenches", default=False)
         )
-        bot_form.addRow("Quicksell: Sell Socket Wrenches:", self._sell_socket_wrenches_cb)
+        self._sell_socket_wrenches_cb.setToolTip(_quicksell_tip)
+        bot_form.addRow("Quicksell default — Sell Socket Wrenches:", self._sell_socket_wrenches_cb)
 
         self._sell_skeleton_keys_cb = QCheckBox()
         self._sell_skeleton_keys_cb.setChecked(sm.get_general("default_quicksell_sell_skeleton_keys", default=False))
-        bot_form.addRow("Quicksell: Sell Skeleton Keys:", self._sell_skeleton_keys_cb)
+        self._sell_skeleton_keys_cb.setToolTip(_quicksell_tip)
+        bot_form.addRow("Quicksell default — Sell Skeleton Keys:", self._sell_skeleton_keys_cb)
 
         layout.addLayout(bot_form)
         layout.addStretch()
