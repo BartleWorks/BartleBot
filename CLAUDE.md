@@ -171,8 +171,9 @@ rather than the bot, so no stored value should outrank the app setting.
 ### No real player data
 
 Never commit real, identifiable player data — wizard names, character ids, account
-ids, friend codes, or screenshots showing them. This repo is public, and a real
-wizard name links the account to whoever wrote the commit.
+ids, friend codes, or screenshots showing them. This repo is private today but goes
+public at 1.0.0, and history is not rewritten on the way — anything committed now
+ships then. A real wizard name links the account to whoever wrote the commit.
 
 This applies to test fixtures, sample data, docstrings, comments, log excerpts
 pasted into issues, and bot files. It applies to *any* player, not just your own.
