@@ -54,6 +54,7 @@ def _config(*, label: str = "Boss", use_default: bool = False) -> BotConfig:
     return BotConfig(
         name="Test Bot",
         initial="s0",
+        recovery_state="s0",
         states=[
             StateModel(id="s0", node_type="sleep"),
             StateModel(
@@ -485,7 +486,9 @@ def test_set_config_creates_one_panel_per_exposed_state(qapp, store):
 
 def test_set_config_with_no_exposed_states_creates_no_panels(qapp, store):
     tab = CombatTab()
-    config = BotConfig(name="Bot", initial="s0", states=[StateModel(id="s0", node_type="sleep")], transitions=[])
+    config = BotConfig(
+        name="Bot", initial="s0", recovery_state="s0", states=[StateModel(id="s0", node_type="sleep")], transitions=[]
+    )
     tab.set_config(config)
 
     assert tab._state_panels == {}
@@ -1044,7 +1047,7 @@ def _multi_config(*labels: str) -> BotConfig:
         )
         for i, label in enumerate(labels, start=1)
     ]
-    return BotConfig(name="Multi Bot", initial="s0", states=states, transitions=[])
+    return BotConfig(name="Multi Bot", initial="s0", recovery_state="s0", states=states, transitions=[])
 
 
 def _tab_with(bcs: BotCombatStrategy, config: BotConfig) -> CombatTab:

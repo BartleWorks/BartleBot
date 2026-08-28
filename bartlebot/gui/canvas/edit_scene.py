@@ -1154,6 +1154,32 @@ class EditScene(QGraphicsScene):
             self._delete_edge_item(edge, confirm=False)
         self._in_structural_edit = False
 
+    def delete_state(self, state_id: str, *, confirm: bool = True) -> bool:
+        """Delete a state and its edges. Returns False if the user cancels the prompt."""
+        return self._delete_node(state_id, confirm=confirm)
+
+    def _reassign_orphaned_roles(self) -> None:
+        """Move ``initial`` / ``recovery_state`` off a state that no longer exists.
+
+        Both are required and validated against the states list, so a dangling one
+        produces a config that saves happily and then refuses to load.  Deleting the
+        initial state has always been able to do this; #71 made the recovery state
+        as easy to delete, which is what brought it to the surface.
+
+        The first remaining state is an arbitrary choice, but it is a *valid* one, and
+        the badge moving to it is visible -- unlike the corrupted file, which is not.
+        Nothing to do when the graph is empty: a config with no states cannot satisfy
+        either field, and is already unloadable for that reason alone.
+        """
+        if self._config is None or not self._config.states:
+            return
+        ids = {s.id for s in self._config.states}
+        fallback = self._config.states[0].id
+        if self._config.initial not in ids:
+            self._config.initial = fallback
+        if self._config.recovery_state not in ids:
+            self._config.recovery_state = fallback
+
     def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state and all its edges.  Returns False if the user cancels."""
         if self._config is None:
@@ -1191,6 +1217,7 @@ class EditScene(QGraphicsScene):
         self._edge_items = remaining
         self._recompute_offsets()
         self._config.states = [s for s in self._config.states if s.id != state_id]
+        self._reassign_orphaned_roles()
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
         self.refresh_terminal()

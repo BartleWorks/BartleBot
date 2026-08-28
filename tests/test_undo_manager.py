@@ -29,6 +29,7 @@ def _config(name: str = "test") -> BotConfig:
     return BotConfig(
         name=name,
         initial="s1",
+        recovery_state="s1",
         states=[StateModel(id="s1", node_type="sleep")],
         transitions=[],
     )

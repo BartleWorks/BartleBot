@@ -5,6 +5,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
+  "recovery_state": "state_1",
   "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Mooshu",
   "drops": [

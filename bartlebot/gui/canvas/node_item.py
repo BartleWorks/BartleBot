@@ -370,6 +370,16 @@ class NodeItem(QGraphicsItem):
             self.unsetCursor()
         self.update()
 
+    @property
+    def is_initial(self) -> bool:
+        """Whether this node currently draws the FSM initial-state badge."""
+        return self._is_initial
+
+    @property
+    def is_recovery(self) -> bool:
+        """Whether this node currently draws the FSM recovery-state badge."""
+        return self._is_recovery
+
     def set_initial(self, is_initial: bool) -> None:
         """Mark this node as the FSM initial state (draws a purple border)."""
         if self._is_initial == is_initial:

@@ -810,6 +810,8 @@ class BotCanvas(QWidget):
         self._param_panel.edge_when_changed.connect(self._scene.change_edge_when)
         self._param_panel.select_edge_requested.connect(self._on_select_edge_requested)
         self._param_panel.select_state_requested.connect(self._on_select_state_requested)
+        self._param_panel.initial_state_requested.connect(self._on_initial_state_requested)
+        self._param_panel.recovery_state_requested.connect(self._on_recovery_state_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self._enter_focus_mode)
 
@@ -1401,6 +1403,33 @@ class BotCanvas(QWidget):
         self.config_changed.emit()
         self._refresh_undo_actions()
 
+    def _on_initial_state_requested(self, state_id: str) -> None:
+        """Move the initial-state role to *state_id* (#71)."""
+        self._set_fsm_role("initial", state_id, "Change initial state")
+
+    def _on_recovery_state_requested(self, state_id: str) -> None:
+        """Move the recovery-state role to *state_id* (#71)."""
+        self._set_fsm_role("recovery_state", state_id, "Change recovery state")
+
+    def _set_fsm_role(self, field: str, state_id: str, undo_desc: str) -> None:
+        """Assign a bot-wide FSM role field to *state_id*.
+
+        The panel asks and the canvas assigns, because the panel holds no BotConfig
+        and because the undo snapshot has to be pushed *before* the mutation.
+        ``_on_scene_changed`` then does the rest: it moves the badge, revalidates
+        (moving the initial state changes which nodes are reachable -- #53), and
+        emits ``config_changed``.
+        """
+        config = self._scene.config
+        if config is None or getattr(config, field) == state_id:
+            return
+        self._on_about_to_change(undo_desc)
+        setattr(config, field, state_id)
+        self._on_scene_changed()
+        # The role moved off some other node; if that node is the one on screen, its
+        # tick has to come off too.
+        self._param_panel.refresh_role_checks(config.initial, config.recovery_state)
+
     def _on_about_to_change(self, desc: str) -> None:
         if self._config is not None and self._mode == BotMode.EDIT:
             self._undo_mgr.cancel_debounce()
@@ -1455,13 +1484,21 @@ class BotCanvas(QWidget):
                 self._view.centerOn(edge)
                 break
 
-    def _on_select_state_requested(self, state_id: str) -> None:
-        """Select the node on the canvas that corresponds to *state_id* and centre it."""
+    def select_state(self, state_id: str) -> None:
+        """Select the node for *state_id* and centre the view on it.
+
+        Selecting is what loads the state into the properties panel, via
+        ``_on_selection_changed``.
+        """
         self._scene.clearSelection()
         node = self._scene._node_items.get(state_id)
         if node is not None:
             node.setSelected(True)
             self._view.centerOn(node)
+
+    def _on_select_state_requested(self, state_id: str) -> None:
+        """Select the node on the canvas that corresponds to *state_id* and centre it."""
+        self.select_state(state_id)
 
     def undo(self) -> None:
         """Undo the last edit. Wired to the Edit menu's Undo action."""
@@ -1506,6 +1543,22 @@ class BotCanvas(QWidget):
         self._param_panel.show_idle()
         _inject_required_options(config)
         self._on_scene_changed()
+
+    def closeEvent(self, event) -> None:
+        """Stop both timers before the widget goes away.
+
+        ``_validation_timer`` is single-shot and re-armed on every graph change, so a
+        canvas can always be closed with a validation pass still queued.  Letting that
+        fire into a half-torn-down widget is the usual background-task-lifetime hazard,
+        and it shows up as an interpreter crash rather than an exception.
+        """
+        self._tick_timer.stop()
+        self._validation_timer.stop()
+        super().closeEvent(event)
+
+    def can_undo(self) -> bool:
+        """Whether there is an edit to undo. Mirrors what the Edit menu is told."""
+        return self._undo_mgr.can_undo() and self._mode == BotMode.EDIT
 
     def _refresh_undo_actions(self) -> None:
         in_edit = self._mode == BotMode.EDIT
@@ -1622,7 +1675,7 @@ class BotCanvas(QWidget):
         reachable = _reachable_states(config)
         orphan_ids = [s.id for s in config.states if s.id not in reachable]
         for sid in orphan_ids:
-            self._scene._delete_node(sid, confirm=False)
+            self._scene.delete_state(sid, confirm=False)
 
     def _on_selection_changed(self) -> None:
         self._undo_mgr.cancel_debounce()
@@ -1641,6 +1694,8 @@ class BotCanvas(QWidget):
                     state,
                     all_states=list(self._scene._config.states),
                     all_transitions=self._scene._config.transitions,
+                    initial_id=self._scene._config.initial,
+                    recovery_id=self._scene._config.recovery_state,
                 )
                 self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:

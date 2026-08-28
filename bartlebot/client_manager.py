@@ -882,10 +882,10 @@ class ClientManager(QObject):
                     machine.resume()
                     logger.info("All clients recovered — FSM resuming at %r", recovery_state)
                 else:
-                    logger.warning(
-                        "Bot config has no recovery_state set — stopping. "
-                        "Set recovery_state in your bot config to enable automatic recovery."
-                    )
+                    # Unreachable via a loaded bot: BotConfig requires recovery_state and
+                    # validates it against the states list. Only a run with no config at
+                    # all lands here, which means something else has already gone wrong.
+                    logger.error("Recovery finished with no bot config loaded — stopping.")
                     machine.stop()
         finally:
             self._recovery_in_progress = False

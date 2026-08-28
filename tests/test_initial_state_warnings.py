@@ -30,6 +30,7 @@ def _config():
     return BotConfig(
         name="t",
         initial="a",
+        recovery_state="a",
         states=[StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b")],
         transitions=[TransitionModel(trigger="advance", source="a", dest="b", when="SUCCESS")],
     )
@@ -64,8 +65,34 @@ class _Harness:
             self.canvas.refresh_initial(self.loaded.initial)
             self.canvas.refresh_recovery(self.loaded.recovery_state)
 
+    def _show(self, state_id):
+        """Load a state into the properties panel, as selecting its node does.
+
+        Done directly rather than through a real scene selection: selecting a node on
+        a never-shown canvas crashes the worker during Qt teardown, and the selection
+        machinery is not what these tests are about.
+        """
+        config = self.canvas.config
+        self.canvas.param_panel.show_state(
+            next(s for s in config.states if s.id == state_id),
+            all_states=list(config.states),
+            all_transitions=config.transitions,
+            initial_id=config.initial,
+            recovery_id=config.recovery_state,
+        )
+
     def choose_initial(self, state_id):
-        self.sidebar.bot_info.select_initial_state(state_id)
+        """Set the initial state the way a user now does — from the state's own panel.
+
+        Selecting the node is what loads it into the properties panel, so this is the
+        whole path: selection → panel → request → canvas mutation (#71).
+        """
+        self._show(state_id)
+        self.canvas.param_panel.request_initial_role()
+
+    def choose_recovery(self, state_id):
+        self._show(state_id)
+        self.canvas.param_panel.request_recovery_role()
 
     def warnings(self):
         return self.canvas.validation_warnings()

@@ -14,6 +14,7 @@ from bartlebot.bot.schema import BotConfig
 VALID_DATA = {
     "name": "Test Bot",
     "initial": "state_a",
+    "recovery_state": "state_a",
     "states": [
         {
             "id": "state_a",
@@ -84,7 +85,7 @@ def test_transition_when_is_preserved():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("missing_field", ["name", "initial", "states", "transitions"])
+@pytest.mark.parametrize("missing_field", ["name", "initial", "recovery_state", "states", "transitions"])
 def test_missing_required_field_raises(missing_field):
     data = {k: v for k, v in VALID_DATA.items() if k != missing_field}
     with pytest.raises(ValidationError):
@@ -99,6 +100,12 @@ def test_missing_required_field_raises(missing_field):
 def test_initial_must_reference_existing_state():
     data = {**VALID_DATA, "initial": "nonexistent_state"}
     with pytest.raises(ValidationError, match="initial state 'nonexistent_state' is not in states list"):
+        BotConfig.model_validate(data)
+
+
+def test_recovery_state_must_reference_existing_state():
+    data = {**VALID_DATA, "recovery_state": "nonexistent_state"}
+    with pytest.raises(ValidationError, match="recovery_state 'nonexistent_state' is not in states list"):
         BotConfig.model_validate(data)
 
 

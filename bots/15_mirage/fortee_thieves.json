@@ -5,6 +5,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
+  "recovery_state": "state_1",
   "start_location": "Mirage - Thieves' Den",
   "drops": [
     {

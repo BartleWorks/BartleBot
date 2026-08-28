@@ -5,6 +5,7 @@
   "version": "4.0",
   "clients": "all",
   "initial": "state_4",
+  "recovery_state": "state_1",
   "default_combat_config": "### p1\nbunyip[epic] | tempest[epic]\n\n### p2\nfeint@boss",
   "use_bartlebot_default_combat_config": false,
   "start_location": "The Basilica",
