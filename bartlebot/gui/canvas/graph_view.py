@@ -5,7 +5,7 @@ _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
 from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, QRectF, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QWheelEvent
+from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QTransform, QWheelEvent
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
 
 from bartlebot.gui.theme import THEME
@@ -79,6 +79,40 @@ class GraphView(QGraphicsView):
 
     def _clear_fitting(self) -> None:
         self._fitting = False
+
+    def fit_rect(self, rect: QRectF) -> None:
+        """Fit an arbitrary scene rect into the viewport, like fit_scene for a subset."""
+        if self._fitting or rect.isEmpty():
+            return
+        self._fitting = True
+        self._user_zoomed = False
+        self.fitInView(rect.adjusted(-80, -60, 80, 60), Qt.AspectRatioMode.KeepAspectRatio)
+        QTimer.singleShot(0, self._clear_fitting)
+
+    def camera_state(self) -> tuple[QTransform, int, int]:
+        """Zoom and scroll offsets, enough to put the camera back exactly.
+
+        Scroll positions rather than a scene centre point: ``centerOn`` goes through
+        integer scrollbars, so round-tripping a scene coordinate loses up to half a
+        device pixel -- which at a zoomed-out fit is several scene units, and visibly
+        shifts the graph when focus mode exits.
+        """
+        return (
+            QTransform(self.transform()),
+            self.horizontalScrollBar().value(),
+            self.verticalScrollBar().value(),
+        )
+
+    def restore_camera(self, state: tuple[QTransform, int, int]) -> None:
+        """Undo a fit_rect, returning to the view saved by camera_state.
+
+        The transform goes back first: it determines the scrollbar ranges the offsets
+        are expressed in, so setting them the other way round clamps them.
+        """
+        transform, h_scroll, v_scroll = state
+        self.setTransform(transform)
+        self.horizontalScrollBar().setValue(h_scroll)
+        self.verticalScrollBar().setValue(v_scroll)
 
     def smooth_pan_if_offscreen(self, item: QGraphicsItem, duration_ms: int | None = None) -> None:
         """Animate the viewport to center on item only when item is not already fully visible.

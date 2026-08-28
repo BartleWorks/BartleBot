@@ -14,6 +14,7 @@ from pathlib import Path
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
+    QColor,
     QCursor,
     QKeySequence,
     QShortcut,
@@ -583,6 +584,11 @@ class BotCanvas(QWidget):
         self._search_matches: list[str] = []
         self._search_match_idx: int = 0
         self._focus_region_id: str | None = None
+        # Camera to put back when focus mode exits; None when not focused.
+        self._focus_camera: tuple | None = None
+        # Region colour the focus overlays are currently painted in, so a theme change
+        # can repaint them without the caller having to know which region is focused.
+        self._focus_color: QColor | None = None
 
         self._undo_mgr = UndoManager()
 
@@ -716,6 +722,17 @@ class BotCanvas(QWidget):
         self._apply_pill_stylesheets()
         self._warning_pill.clicked.connect(self._cleanup_orphans)
 
+        # ── Focus frame — a border round the whole viewport while focused ──
+        # Created before the other overlays so it stacks beneath them, and made
+        # transparent to the mouse so it never eats a click on the canvas.  A corner
+        # pill only exists where the user happens to be looking; a frame is in
+        # peripheral vision wherever they look and however far they scroll, which is
+        # what the pill on its own failed to do (#55).
+        self._focus_frame = QWidget(self._view)
+        self._focus_frame.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._focus_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._focus_frame.setVisible(False)
+
         self._validation_banner = QWidget(self._view)
         self._validation_banner.setStyleSheet("background: transparent;")
         _banner_row = QHBoxLayout(self._validation_banner)
@@ -759,14 +776,16 @@ class BotCanvas(QWidget):
             f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
             f"QPushButton:hover {{ color: {THEME.text}; }}"
         )
-        self._focus_crumb_label = QLabel("Viewing: ")
+        self._focus_crumb_label = QLabel("Focus Mode")
+        self._focus_hint_label = QLabel("Esc to exit")
         _close_focus_btn = QPushButton("×")
         _close_focus_btn.setFixedSize(22, 22)
-        _close_focus_btn.clicked.connect(self._exit_focus_mode)
+        _close_focus_btn.clicked.connect(self.exit_focus_mode)
         _crumb_row = QHBoxLayout(self._focus_crumb)
         _crumb_row.setContentsMargins(8, 4, 6, 4)
-        _crumb_row.setSpacing(4)
+        _crumb_row.setSpacing(6)
         _crumb_row.addWidget(self._focus_crumb_label)
+        _crumb_row.addWidget(self._focus_hint_label)
         _crumb_row.addWidget(_close_focus_btn)
         self._focus_crumb.adjustSize()
         self._focus_crumb.setVisible(False)
@@ -813,7 +832,7 @@ class BotCanvas(QWidget):
         self._param_panel.initial_state_requested.connect(self._on_initial_state_requested)
         self._param_panel.recovery_state_requested.connect(self._on_recovery_state_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
-        self._scene.focus_region_requested.connect(self._enter_focus_mode)
+        self._scene.focus_region_requested.connect(self.enter_focus_mode)
 
         # ── Placeholder — shown until the first bot is loaded ────────
         self._placeholder = _BotLibraryPanel(self)
@@ -836,7 +855,7 @@ class BotCanvas(QWidget):
         self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
         show_failure = sm.get("canvas", "show_failure_edges", default=True)
         self._failure_edges_btn.setChecked(show_failure)
-        self._exit_focus_mode()
+        self.exit_focus_mode()
         self._close_search()
         self._tab_idx = 0
         _inject_required_options(config)
@@ -869,7 +888,7 @@ class BotCanvas(QWidget):
         """Unload the current bot and return to the placeholder."""
         self._undo_mgr.clear()
         self._refresh_undo_actions()
-        self._exit_focus_mode()
+        self.exit_focus_mode()
         self._close_search()
         self._scene.teardown()
         self._update_validation_badge()
@@ -944,7 +963,7 @@ class BotCanvas(QWidget):
                 key = event.key()
                 mods = event.modifiers()
                 if key == Qt.Key.Key_Escape and self._focus_region_id is not None:
-                    self._exit_focus_mode()
+                    self.exit_focus_mode()
                     return True
                 if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
                     self._tab_navigate(1)
@@ -967,6 +986,8 @@ class BotCanvas(QWidget):
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.adjustSize()
             self._focus_crumb.move(vx + 8, vy + 8)
+        if hasattr(self, "_focus_frame"):
+            self._focus_frame.setGeometry(vx, vy, vw, vh)
 
     def _apply_canvas_settings(self) -> None:
         """Re-read canvas settings and update live widgets. Called after Settings dialog OK."""
@@ -1055,6 +1076,10 @@ class BotCanvas(QWidget):
             for btn, icon_name in self._btn_icons.items():
                 btn.setIcon(svg_icon(icon_name))
             self._apply_pill_stylesheets()
+            if self._focus_region_id is not None and self._config is not None:
+                region = next((r for r in self._config.regions if r.id == self._focus_region_id), None)
+                if region is not None:
+                    self._apply_focus_styles(THEME.region_color(region.color))
 
     def _set_run_icon(self, icon_name: str) -> None:
         """Set the run/pause button icon and record it for live theme updates."""
@@ -1213,14 +1238,66 @@ class BotCanvas(QWidget):
     # Focus Mode
     # ------------------------------------------------------------------
 
-    def _enter_focus_mode(self, region_id: str) -> None:
+    def _apply_focus_styles(self, color: QColor) -> None:
+        """Paint the focus overlays in *color*, the focused region's own palette slot.
+
+        Held as state and re-applied from changeEvent, because these are built from
+        THEME tokens and Qt does not refresh a stylesheet set earlier when the theme
+        changes underneath it.
+        """
+        self._focus_color = color
+        name = color.name()
+        self._focus_frame.setStyleSheet(
+            f"QWidget {{ border: 3px solid {name}; border-radius: 2px; background: transparent; }}"
+        )
+        self._focus_crumb.setStyleSheet(
+            f"QWidget {{ background-color: {name}; border: 1px solid {name}; border-radius: 6px; }}"
+            "QLabel { border: none; color: #ffffff; font-size: 12px; font-weight: 600; padding: 0; }"
+            "QPushButton { border: none; background: transparent; color: #ffffff; font-size: 14px; }"
+            "QPushButton:hover { color: #000000; }"
+        )
+        self._focus_hint_label.setStyleSheet(
+            "border: none; color: rgba(255, 255, 255, 190); font-size: 11px; font-weight: 400; padding: 0;"
+        )
+
+    @property
+    def focus_region_id(self) -> str | None:
+        """The region currently focused, or None when not in focus mode."""
+        return self._focus_region_id
+
+    @property
+    def focus_crumb_text(self) -> str:
+        """Text on the focus-mode pill."""
+        return self._focus_crumb_label.text()
+
+    @property
+    def focus_hint_text(self) -> str:
+        """The pill's how-to-leave hint."""
+        return self._focus_hint_label.text()
+
+    @property
+    def focus_color(self) -> QColor | None:
+        """Colour the focus overlays are painted in, or None if never focused."""
+        return self._focus_color
+
+    @property
+    def focus_frame(self) -> QWidget:
+        """The border overlay drawn round the viewport while focused."""
+        return self._focus_frame
+
+    @property
+    def view(self) -> QWidget:
+        """The graph view. Exposed for camera assertions and viewport geometry."""
+        return self._view
+
+    def enter_focus_mode(self, region_id: str) -> None:
         """Isolate a region's nodes in the view; hide everything else."""
         if self._config is None:
             return
         region = next((r for r in self._config.regions if r.id == region_id), None)
         if region is None:
             return
-        self._exit_focus_mode()  # clean up any existing focus first
+        self.exit_focus_mode()  # clean up any existing focus first
         self._focus_region_id = region_id
         member_set = set(region.members)
 
@@ -1231,11 +1308,22 @@ class BotCanvas(QWidget):
         for rid, ri in self._scene.region_items.items():
             ri.setVisible(rid == region_id)
 
-        self._focus_crumb_label.setText(f"Viewing: {region.label}")
+        self._focus_crumb_label.setText(f"Focus Mode — {region.label}")
+        self._apply_focus_styles(THEME.region_color(region.color))
         self._focus_crumb.setVisible(True)
+        self._focus_frame.setVisible(True)
         self._reposition_banner()
 
-    def _exit_focus_mode(self) -> None:
+        # Frame the region. Hiding everything else is what made the canvas look empty
+        # without explanation (#55): the camera never moved, so a region that was small
+        # or off to one side stayed small and off to one side while the rest vanished.
+        # Moving the camera is also the clearest signal that anything happened at all.
+        region_item = self._scene.region_items.get(region_id)
+        if region_item is not None:
+            self._focus_camera = self._view.camera_state()
+            self._view.fit_rect(region_item.scene_bounds)
+
+    def exit_focus_mode(self) -> None:
         """Restore all nodes/edges/regions to visible; hide the breadcrumb."""
         if self._focus_region_id is None:
             return
@@ -1248,6 +1336,11 @@ class BotCanvas(QWidget):
             ri.setVisible(True)
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.setVisible(False)
+        if hasattr(self, "_focus_frame"):
+            self._focus_frame.setVisible(False)
+        if self._focus_camera is not None:
+            self._view.restore_camera(self._focus_camera)
+            self._focus_camera = None
 
     # ------------------------------------------------------------------
     # Tab navigation
@@ -1353,7 +1446,7 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
 
     def _apply_mode(self, mode: BotMode) -> None:
-        self._exit_focus_mode()
+        self.exit_focus_mode()
         self._mode = mode
         if mode == BotMode.RUN:
             self._center_stack.setCurrentIndex(_TB_RUN)
