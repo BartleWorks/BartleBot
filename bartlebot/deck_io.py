@@ -43,13 +43,21 @@ from typing import TYPE_CHECKING
 from wizwalker import Keycode
 from wizwalker.extensions.scripting.utils import _maybe_get_named_window
 from wizwalker.memory.memory_object import Primitive
+from wizwalker.memory.memory_objects.conditionals import school_to_str
 from wizwalker.memory.memory_objects.window import (
     DeckListControlSpellEntry,
     DynamicDeckListControl,
 )
 
 from bartlebot.card_kinds import classify_effects
+from bartlebot.nodes.paths import ARCHMASTERY_GAUGE_PATH, archmastery_school_path
 from bartlebot.nodes.timing import (
+    ARCHMASTERY_ATTEMPTS,
+    ARCHMASTERY_CONFIRM_POLL,
+    ARCHMASTERY_CONFIRM_TIMEOUT,
+    ARCHMASTERY_MENU_POLL,
+    ARCHMASTERY_MENU_SETTLE,
+    ARCHMASTERY_MENU_TIMEOUT,
     DECK_APPLY_TIMEOUT,
     DECK_CARD_CONFIRM_POLL,
     DECK_CARD_CONFIRM_TIMEOUT,
@@ -189,11 +197,26 @@ class DeckApplyReport:
     short: dict[str, tuple[int, int]] = field(default_factory=dict)
     applied: bool = True  # False when nothing was placeable and the deck was left alone
     unchanged: bool = False  # already matched, so no clear/rewrite was needed
+    # The archmastery school this apply actually set, or None if it was left
+    # alone -- because the deck did not opt in, recorded no school, or already
+    # matched.  Reported so a run's log says a persistent character setting
+    # changed; a *successful* change is not worth a dialog, since opting in is
+    # what asked for it.
+    archmastery_set: str | None = None
+    # The school an opted-in apply asked for and could not set.  This one does
+    # warrant telling the user: they turned it on, and it silently did nothing.
+    archmastery_failed: str | None = None
 
     @property
     def is_clean(self) -> bool:
-        """True when every card the deck asked for went in under its own name."""
-        return not self.substitutions and not self.skipped and not self.short
+        """True when there is nothing about this apply worth telling the user.
+
+        Cards that went in under their own name, and an archmastery school that
+        either was not asked for or was set successfully.  A failed school set
+        counts as unclean for the same reason a skipped card does: it was asked
+        for and did not happen.
+        """
+        return not self.substitutions and not self.skipped and not self.short and not self.archmastery_failed
 
     def merge(self, substitutions: dict[str, str], skipped: list[str]) -> None:
         self.substitutions.update(substitutions)
@@ -1101,6 +1124,330 @@ async def _click_fusion_variants(
     return substitutions, skipped, placed, short
 
 
+async def read_archmastery_school(client) -> str | None:
+    """The wizard's archmastery school by name, or None if unset or unreadable.
+
+    Read straight out of memory rather than off the deck page: the school lives
+    on the equipped deck *item*'s behavior (``m_archmasterySchool`` at +0xB8,
+    see wizwalker's ``ClientDeckBehavior``), not in the ``DeckConfiguration``
+    window, so no UI has to be open for this.
+
+    Archmastery is not tied to a world or a level bracket, so None means only
+    "no school is recorded here" — never anything about the wizard.  Every
+    failure resolves to None: a wizard with no deck equipped has no behavior to
+    read, and an id the school table does not know is not worth guessing at.
+    Neither is worth failing a whole deck import over.
+    """
+    try:
+        behavior = await client.client_object.try_get_deck_behavior()
+    except Exception:
+        logger.debug("Could not reach the deck behavior for the archmastery school", exc_info=True)
+        return None
+    if behavior is None:
+        logger.debug("No deck behavior on this client — archmastery school unknown")
+        return None
+    try:
+        school_id = await behavior.archmastery_school()
+    except Exception:
+        logger.debug("Could not read the archmastery school id", exc_info=True)
+        return None
+    school = school_to_str.get(school_id)
+    if school is None:
+        logger.debug("Archmastery school id %r is not in wizwalker's school table", school_id)
+    return school
+
+
+#: App setting backing ``DeckData.apply_archmastery`` when the deck does not pin
+#: an answer, and the value to assume if settings cannot be read at all.  Off:
+#: the school is a persistent character setting, and changing one the user did
+#: not ask about is worse than leaving a deck slightly wrong.
+ARCHMASTERY_APP_SETTING = "default_apply_archmastery"
+ARCHMASTERY_APP_FALLBACK = False
+
+#: The seven schools an archmastery pip can be pointed at, and so the only
+#: SC_* icons the selector has.  school_to_str also holds Sun, Moon, Star,
+#: Shadow and the non-combat schools, which have no icon -- walking the window
+#: tree for each of those was nine fruitless full-tree searches per apply.
+PIP_SCHOOLS = ("Fire", "Ice", "Storm", "Myth", "Life", "Death", "Balance")
+
+
+def _app_default_apply_archmastery() -> bool:
+    """The user's app-level answer, or the shipped fallback if unreadable."""
+    try:
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+        return bool(SettingsManager.instance().get("general", ARCHMASTERY_APP_SETTING))
+    except Exception:
+        logger.debug("Could not read the archmastery app setting", exc_info=True)
+        return ARCHMASTERY_APP_FALLBACK
+
+
+def resolve_apply_archmastery(deck: DeckData, app_default: bool | None = None) -> tuple[bool, str]:
+    """Whether this apply should set the school, and which level decided.
+
+    The one place the three-state value collapses to a bool -- everything
+    downstream sees a plain True/False, which is what keeps the rest of this
+    module testable without touching SettingsManager.  ``app_default`` is for
+    tests and for callers that have already read the settings; when it is None
+    the settings are consulted, but only if the deck has no opinion.
+
+    A deck with no recorded school never opts in whatever the setting says:
+    there is nothing to set, and "apply the school" cannot mean "clear it".
+    """
+    if not deck.archmastery_school:
+        return False, "no school saved with this deck"
+    if isinstance(deck.apply_archmastery, bool):
+        return deck.apply_archmastery, "this deck"
+    if app_default is None:
+        app_default = _app_default_apply_archmastery()
+    return bool(app_default), "the app setting"
+
+
+def archmastery_menu_is_open(rects: list) -> bool:
+    """Whether the school menu is open, judged from the icons' geometry.
+
+    The menu announces itself nowhere in the window tree -- no window appears,
+    changes text, or changes visibility when it opens.  The seven school icons
+    are always present and always report visible and enabled; what moves is
+    where they are.  Closed, they are parked stacked behind the gauge; open,
+    they fan out to positions that can be clicked.
+
+    So "are they spread out" is the question, and the icons' own width is the
+    threshold: stacked icons share a corner, and fanned ones are at least their
+    own width apart.  Deriving it from the icons means there is no pixel
+    constant here to recalibrate when the UI scale or the layout changes.
+
+    Fewer than two icons cannot be spread apart at all; callers must not ask.
+    """
+    if len(rects) < 2:
+        return False
+    # Rectangle.__iter__ yields (x1, x2, y1, y2) -- not the (x1, y1, x2, y2)
+    # order the name suggests -- so read the attributes rather than unpacking.
+    spread = max(
+        max(r.x1 for r in rects) - min(r.x1 for r in rects),
+        max(r.y1 for r in rects) - min(r.y1 for r in rects),
+    )
+    width = max(max(r.x2 - r.x1 for r in rects), 1)
+    return spread > width
+
+
+async def _icon_rects(icons: list) -> list:
+    """Current rectangles for already-resolved icon windows.
+
+    The windows are resolved once by the caller and re-read here: re-walking the
+    path every tick would be seven path walks per poll, and CLAUDE.md's "resolve
+    once and act on the window" exists for exactly this shape of loop.
+    """
+    return [rect for icon in icons if (rect := await _safe_rect(icon)) is not None]
+
+
+async def _safe_rect(window):
+    try:
+        return await window.window_rectangle()
+    except Exception:
+        return None
+
+
+async def _settled_menu_state(icons: list, *, want: bool | None = None) -> bool | None:
+    """Wait until the icons stop moving; return whether the menu ended up open.
+
+    Stability is the point.  The move is animated, so geometry *changing* only
+    means it has started -- anything decided from a single read can be a
+    decision about a position the icon is still leaving.  The dwell is measured
+    as elapsed time rather than two equal samples, because two polls can land
+    inside one animation frame.
+
+    ``want`` waits for a particular state: settling into the other one is not an
+    answer, because the animation may not have started yet.  ``None`` returns
+    whichever state the icons settle into, which is what a caller asking "what
+    is it doing now" wants.
+
+    Returns None if the ceiling passes without the icons holding still.
+    """
+    deadline = time.perf_counter() + ARCHMASTERY_MENU_TIMEOUT
+    last_state = None
+    settled_at = 0.0
+    while True:
+        now = time.perf_counter()
+        rects = await _icon_rects(icons)
+        state = tuple((r.x1, r.y1, r.x2, r.y2) for r in rects)
+        if state != last_state:
+            last_state, settled_at = state, now
+        elif now - settled_at >= ARCHMASTERY_MENU_SETTLE:
+            is_open = archmastery_menu_is_open(rects)
+            if want is None or is_open == want:
+                return is_open
+        if now >= deadline:
+            logger.debug("Archmastery icons never settled (waiting for %s)", want)
+            return None
+        await asyncio.sleep(ARCHMASTERY_MENU_POLL)
+
+
+async def _wait_for_menu(icons: list, *, want_open: bool) -> bool:
+    """Wait for the menu to settle into a particular state."""
+    return await _settled_menu_state(icons, want=want_open) == want_open
+
+
+async def _await_school(client, school: str) -> bool:
+    """Poll until the client reports ``school``, or the ceiling passes.
+
+    Reading the value is trustworthy even though writing it is not: a school
+    changed through the UI reads back correctly, which is what makes this a
+    usable confirmation.  A *memory write* to the same field is cosmetic --
+    the client renders it and the server never hears, so it does not survive a
+    relog and does not reach combat.  That route was measured and rejected;
+    see tools/probe_archmastery_ui.py.
+    """
+    deadline = time.perf_counter() + ARCHMASTERY_CONFIRM_TIMEOUT
+    while True:
+        if await read_archmastery_school(client) == school:
+            return True
+        if time.perf_counter() >= deadline:
+            return False
+        await asyncio.sleep(ARCHMASTERY_CONFIRM_POLL)
+
+
+async def set_archmastery_school(client, school: str) -> bool:
+    """Set the wizard's archmastery school by driving the deck page's selector.
+
+    Assumes the deck page is open.  Returns True if the school ends up as
+    ``school`` -- including when it already was, in which case nothing is
+    clicked at all.
+
+    Never raises: a cosmetic setting must not be able to fail a deck apply, so
+    every failure is a False plus a log line and the caller decides.
+
+    The menu is left closed on the way out, successfully or not.  An open menu
+    overlays the deck page, and the card clicks that follow would land in it.
+    """
+    from bartlebot.nodes.node_helpers import _get_window_from_path  # noqa: PLC0415
+
+    if await read_archmastery_school(client) == school:
+        return True
+
+    gauge = await _safe(
+        _get_window_from_path(client.root_window, ARCHMASTERY_GAUGE_PATH),
+        what="resolving the gauge",
+    )
+    target = await _safe(
+        _get_window_from_path(client.root_window, archmastery_school_path(school)),
+        what=f"resolving the {school} icon",
+    )
+    icons = await _resolve_icons(client)
+    logger.debug(
+        "Archmastery selector: gauge=%s, %s icon=%s, %d icons resolved",
+        gauge is not None,
+        school,
+        target is not None,
+        len(icons),
+    )
+    if gauge is None or target is None:
+        logger.warning(
+            "Archmastery selector not found on the deck page (gauge found: %s, %s icon found: %s) "
+            "— leaving the school alone",
+            gauge is not None,
+            school,
+            target is not None,
+        )
+        return False
+
+    if len(icons) < 2:
+        # The open/closed test is "are the icons spread apart", which one icon
+        # can never satisfy — the wait would sit out its ceiling reporting
+        # "closed" forever. Better to do nothing than to click blind.
+        logger.warning("Found %d archmastery school icons, need at least 2 to tell the menu apart", len(icons))
+        return False
+
+    try:
+        for attempt in range(1, ARCHMASTERY_ATTEMPTS + 1):
+            if not await _click(client, gauge):
+                logger.debug("Archmastery gauge click %d did not land", attempt)
+                continue
+            if not await _wait_for_menu(icons, want_open=True):
+                continue
+            if not await _click(client, target):
+                logger.debug("Archmastery '%s' icon click %d did not land", school, attempt)
+                continue
+            if await _await_school(client, school):
+                logger.info("Archmastery school set to %s", school)
+                return True
+            logger.debug("Archmastery still not %s after attempt %d", school, attempt)
+        logger.warning("Could not set the archmastery school to %s after %d attempts", school, ARCHMASTERY_ATTEMPTS)
+        return False
+    finally:
+        await _close_menu(client, gauge, icons)
+
+
+async def _click(client, window) -> bool:
+    """Click a resolved window. False if the click could not be issued.
+
+    Deliberately not ``node_helpers.click_window``: that refuses to click
+    anything ``is_control_grayed()`` reports as greyed, and the greyed byte is
+    only a real field on the button classes (see ui_tree_browser's
+    ``has_greyed_field``).  The gauge and the school icons are sprites, so that
+    read lands on whatever happens to sit at the offset and can refuse a
+    perfectly good click without ever saying why.
+
+    Every other click in this module goes straight through the mouse handler
+    for the same reason -- item card slots are not buttons either.
+    """
+    try:
+        async with client.mouse_handler:
+            await client.mouse_handler.click_window(window)
+        return True
+    except Exception:
+        logger.debug("Archmastery click failed", exc_info=True)
+        return False
+
+
+async def _resolve_icons(client) -> list:
+    """Every school icon window, resolved once for the polling loops."""
+    from bartlebot.nodes.node_helpers import _get_window_from_path  # noqa: PLC0415
+
+    found = []
+    for name in PIP_SCHOOLS:
+        window = await _safe(
+            _get_window_from_path(client.root_window, archmastery_school_path(name)),
+            what=f"resolving the {name} icon",
+        )
+        if window is not None:
+            found.append(window)
+    return found
+
+
+async def _close_menu(client, gauge, icons: list) -> None:
+    """Put the menu away if it is still open. Best effort — never raises.
+
+    Waits for the icons to stop moving *before* deciding, which a single read
+    cannot do: picking a school closes the menu by itself, and during the
+    restack animation the icons are still spread apart.  Reading once caught
+    them mid-close, called it open, and clicked the gauge -- which reopened the
+    menu the click had just dismissed.
+    """
+    try:
+        if await _settled_menu_state(icons) is not True:
+            return  # already closed, or never settled — either way, do not click
+        await _click(client, gauge)
+        if not await _wait_for_menu(icons, want_open=False):
+            logger.warning("The archmastery menu would not close; deck clicks after this may land in it")
+    except Exception:
+        logger.debug("Failed to close the archmastery menu", exc_info=True)
+
+
+async def _safe(coro, *, what: str = ""):
+    """Await ``coro``, returning None instead of raising.
+
+    Always logs.  A silent swallow here made "the selector was not found"
+    indistinguishable from "reading the window tree raised", which are very
+    different problems with the same symptom.
+    """
+    try:
+        return await coro
+    except Exception:
+        logger.debug("Archmastery: %s failed", what or "read", exc_info=True)
+        return None
+
+
 async def read_deck(db) -> dict:
     """Snapshot the normal deck and active item cards from an open DeckBuilder.
 
@@ -1113,17 +1460,33 @@ async def read_deck(db) -> dict:
     cards = await read_deck_cards(db.client, deck_window, classify=True)
     items = await read_item_slots(db.client, deck_window)
     kinds = {name: kind for name, kind in cards if kind}
-    logger.debug("Read deck: %d normal cards, %d item card slots, %d classified", len(cards), len(items), len(kinds))
+    school = await read_archmastery_school(db.client)
+    logger.debug(
+        "Read deck: %d normal cards, %d item card slots, %d classified, archmastery=%s",
+        len(cards),
+        len(items),
+        len(kinds),
+        school,
+    )
     return {
         "normal": count_names([name for name, _ in cards]),
         "tc": {},
         "item": active_item_counts(items),
         "card_kinds": kinds,
+        "archmastery_school": school,
     }
 
 
 async def _deck_already_matches(client, deck_window, deck: DeckData) -> bool:
-    """Whether the deck currently open on ``client`` is an exact match for ``deck``."""
+    """Whether the deck currently open on ``client`` is an exact match for ``deck``.
+
+    ``archmastery_school`` is deliberately not compared here.  Whether the school
+    is acted on at all depends on the opt-in, so the comparison belongs where
+    that answer is known: ``deck_matches`` takes ``check_archmastery``, and
+    ``write_deck`` sets the school before ever reaching this function.  Folding
+    it in unconditionally would send an apply down the full clear-and-rewrite
+    path over a difference it has decided not to touch.
+    """
     normal = await read_deck_card_names(client, deck_window)
     items = await read_item_slots(client, deck_window)
     return count_names(normal) == deck.normal and active_item_counts(items) == deck.item
@@ -1213,12 +1576,21 @@ async def deck_page_open(client):
             await client.send_key(Keycode.P)
 
 
-async def deck_matches(client, deck: DeckData) -> bool:
+async def deck_matches(client, deck: DeckData, *, check_archmastery: bool = False) -> bool:
     """Whether ``client``'s deck already matches ``deck``, without opening the UI properly.
 
     Never raises.  A failed read means "cannot confirm a match", which sends the
     caller down the full path — slower, but correct.
+
+    ``check_archmastery`` folds the school into the comparison, and is passed
+    only when this apply has actually opted in to setting it.  Comparing it
+    unconditionally would send every apply down the full path over a difference
+    the apply has decided not to act on.  It is checked first because it is a
+    memory read: a school that already differs means the fast path cannot
+    succeed, and there is no point opening the deck page to find that out.
     """
+    if check_archmastery and await read_archmastery_school(client) != deck.archmastery_school:
+        return False
     try:
         async with deck_page_open(client) as deck_window:
             if deck_window is None:
@@ -1230,7 +1602,38 @@ async def deck_matches(client, deck: DeckData) -> bool:
         return False
 
 
-async def write_deck(db, deck: DeckData) -> DeckApplyReport:
+async def _maybe_set_archmastery(
+    client,
+    deck: DeckData,
+    report: DeckApplyReport,
+    set_archmastery: bool | None,
+) -> None:
+    """Set the archmastery school if this apply opted in, recording what happened.
+
+    ``set_archmastery`` is the already-resolved decision; None means "resolve it
+    here", which is what a caller holding only a deck gets.  ``apply_deck``
+    resolves once and passes it down so the settings are read once per apply and
+    the reason is logged once.
+
+    ``archmastery_set`` records a *change*, so the current school is read first:
+    ``set_archmastery_school`` reports success when the school already matched,
+    and calling that "set" would tell the user a persistent setting moved when
+    it did not.
+    """
+    if set_archmastery is None:
+        set_archmastery, source = resolve_apply_archmastery(deck)
+        logger.debug("Archmastery apply: %s (%s)", set_archmastery, source)
+    if not set_archmastery or not deck.archmastery_school:
+        return
+    if await read_archmastery_school(client) == deck.archmastery_school:
+        return
+    if await set_archmastery_school(client, deck.archmastery_school):
+        report.archmastery_set = deck.archmastery_school
+    else:
+        report.archmastery_failed = deck.archmastery_school
+
+
+async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None) -> DeckApplyReport:
     """Restore a saved deck to the client — normal cards and item card toggles.
 
     Returns a :class:`DeckApplyReport` describing what was substituted and what
@@ -1263,6 +1666,11 @@ async def write_deck(db, deck: DeckData) -> DeckApplyReport:
     """
     report = DeckApplyReport()
     deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
+
+    # Before the cards, and before the already-matches check: a deck whose cards
+    # are right and whose school is wrong still has work to do, and doing the
+    # school first means the early-out below stays a pure statement about cards.
+    await _maybe_set_archmastery(db.client, deck, report, set_archmastery)
 
     if await _deck_already_matches(db.client, deck_window, deck):
         logger.info("Deck already matches saved configuration, skipping clear/rewrite")
@@ -1382,7 +1790,11 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
     async def _open_and_write() -> DeckApplyReport:
         from wizwalker.extensions.scripting.deck_builder import DeckBuilder  # noqa: PLC0415
 
-        if not deck.is_empty() and await deck_matches(client, deck):
+        set_archmastery, source = resolve_apply_archmastery(deck)
+        if set_archmastery:
+            logger.info("Archmastery school will be set to %s (%s)", deck.archmastery_school, source)
+
+        if not deck.is_empty() and await deck_matches(client, deck, check_archmastery=set_archmastery):
             logger.info("Deck already matches saved configuration, skipping the deck UI entirely")
             report = DeckApplyReport()
             report.unchanged = True
@@ -1404,7 +1816,7 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
             # means saying it outright.  The real fix belongs in open_deck_page();
             # until the fork is bumped, assert it here.
             db._on_deck_page = True  # noqa: SLF001
-            return await write_deck(db, deck)
+            return await write_deck(db, deck, set_archmastery=set_archmastery)
 
     return await asyncio.wait_for(_open_and_write(), timeout=timeout)
 

@@ -15,7 +15,7 @@ import pytest
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
 from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor
+from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor, move_item
 
 
 @pytest.fixture(scope="session")
@@ -371,3 +371,143 @@ def test_add_button_tooltip_describes_the_action_when_enabled(qapp):
 
     assert editor._add_btn.isEnabled()
     assert "Add a player assignment" in editor._add_btn.toolTip()
+
+
+# ---------------------------------------------------------------------------
+# Reordering assignment rows (#95)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("src", "dst", "expected"),
+    [
+        (2, 0, ["c", "a", "b"]),  # drag the last row to the top
+        (0, 3, ["b", "c", "a"]),  # drag the first row past the end
+        (0, 2, ["b", "a", "c"]),  # downward: dst counts positions before the move
+        (2, 1, ["a", "c", "b"]),  # upward: no compensation needed
+        (0, 0, ["a", "b", "c"]),  # dropped on its own top edge
+        (0, 1, ["a", "b", "c"]),  # dropped on its own bottom edge
+        (9, 0, ["a", "b", "c"]),  # out of range is a no-op, not a raise
+    ],
+)
+def test_move_item(src, dst, expected):
+    items = ["a", "b", "c"]
+    assert move_item(items, src, dst) == expected
+
+
+def test_move_item_does_not_mutate_its_input():
+    items = ["a", "b", "c"]
+    move_item(items, 0, 3)
+    assert items == ["a", "b", "c"]
+
+
+def _three_row_editor():
+    config = DuelConfig(
+        max_players=3,
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="one"),
+            PlayerAssignment(players=[2], dsl="two"),
+            PlayerAssignment(players=[3], dsl="three"),
+        ],
+    )
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+    return config, editor
+
+
+def test_move_assignment_reorders_the_config_live_with_no_flush(qapp):
+    config, editor = _three_row_editor()
+
+    editor.move_assignment(2, 0)
+
+    assert [a.dsl for a in config.player_assignments] == ["three", "one", "two"]
+
+
+def test_move_assignment_keeps_the_rows_in_step_with_the_config(qapp):
+    """The widget list and the model list must not be able to drift apart."""
+    config, editor = _three_row_editor()
+
+    editor.move_assignment(0, 3)
+
+    assert [row.assignment() for row in editor._rows] == config.player_assignments
+
+
+def test_move_assignment_emits_changed(qapp):
+    """``changed`` is what both embedders debounce a save off."""
+    _config, editor = _three_row_editor()
+    fired = []
+    editor.changed.connect(lambda: fired.append(1))
+
+    editor.move_assignment(2, 0)
+
+    assert fired
+
+
+def test_move_assignment_that_changes_nothing_stays_quiet(qapp):
+    """Dropping a row back on its own edge is not an edit worth saving."""
+    _config, editor = _three_row_editor()
+    fired = []
+    editor.changed.connect(lambda: fired.append(1))
+
+    editor.move_assignment(1, 1)
+
+    assert not fired
+
+
+def test_move_assignment_puts_the_widget_where_the_model_says(qapp):
+    config, editor = _three_row_editor()
+
+    editor.move_assignment(2, 0)
+
+    layout = editor._assignments_layout
+    order = [layout.itemAt(i).widget() for i in range(len(config.player_assignments))]
+    assert order == editor._rows
+    # The stretch that _add_row inserts before must still be last.
+    assert layout.itemAt(layout.count() - 1).widget() is None
+
+
+def test_dropping_below_a_row_lands_after_it(qapp):
+    """A drop on the lower half of row 0 puts the dragged row second, not first."""
+    config, editor = _three_row_editor()
+    rows = list(editor._rows)
+
+    editor._on_reorder_row(rows[2], rows[0], False)
+
+    assert [a.dsl for a in config.player_assignments] == ["one", "three", "two"]
+
+
+def test_dropping_above_a_row_lands_before_it(qapp):
+    config, editor = _three_row_editor()
+    rows = list(editor._rows)
+
+    editor._on_reorder_row(rows[2], rows[0], True)
+
+    assert [a.dsl for a in config.player_assignments] == ["three", "one", "two"]
+
+
+def test_a_row_refuses_a_drop_from_itself(qapp):
+    _config, editor = _three_row_editor()
+    row = editor._rows[0]
+
+    assert not row.accepts_drop_from(row)
+
+
+def test_a_row_refuses_drops_while_the_bot_is_running(qapp):
+    """Reordering is an edit, and edits are locked mid-run like every other one."""
+    _config, editor = _three_row_editor()
+    editor.set_editable(False)
+
+    assert not editor._rows[1].accepts_drop_from(editor._rows[0])
+
+
+def test_a_row_accepts_a_drop_from_a_sibling(qapp):
+    _config, editor = _three_row_editor()
+
+    assert editor._rows[1].accepts_drop_from(editor._rows[0])
+
+
+def test_the_dsl_box_does_not_swallow_row_drops(qapp):
+    """The DSL editor accepts drops by default, which would shrink the target."""
+    _config, editor = _three_row_editor()
+
+    assert not editor._rows[0]._dsl_edit.acceptDrops()

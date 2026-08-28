@@ -859,6 +859,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_2",
       "dest": "state_4",
       "when": "SUCCESS",
@@ -1149,16 +1159,6 @@
       "trigger": "advance",
       "source": "state_9",
       "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",

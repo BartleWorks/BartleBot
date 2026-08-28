@@ -148,6 +148,37 @@ def realm_button_path(row: int) -> list[str]:
     ]
 
 
+# Archmastery school selector, on the deck page.
+#
+# "Guage" is the game's own misspelling of "Gauge". Paths match on name, so it
+# has to be spelled the game's way -- do not "fix" it.
+#
+# Clicking the gauge opens a small menu with one icon per school. The menu is
+# invisible to the window tree: nothing appears, vanishes, or changes text or
+# visibility when it opens, because the pip is drawn as a texture. What *does*
+# change is the icons' geometry -- they are parked stacked behind the gauge
+# while closed and animate out to clickable positions when open, so their
+# spread is the only signal available. See deck_io.archmastery_menu_is_open.
+ARCHMASTERY_PANEL_PATH = [
+    "WorldView",
+    "DeckConfiguration",
+    "DeckConfigurationWindow",
+    "ControlSprite",
+    "DeckPage",
+    "SchoolPipPanel",
+]
+ARCHMASTERY_GAUGE_PATH = [*ARCHMASTERY_PANEL_PATH, "Guage"]
+
+
+def archmastery_school_path(school: str) -> list[str]:
+    """Path to the menu icon for one school, e.g. "Storm" -> .../SC_Storm.
+
+    ``school`` is capitalised the way wizwalker's school table spells it, which
+    is also how the game names these windows.
+    """
+    return [*ARCHMASTERY_PANEL_PATH, f"SC_{school}"]
+
+
 # Crowns shop modal (sometimes opens automatically on login)
 CROWNS_SHOP_PATH = ["WorldView", "PermanentShopModalWindow", "permanentShop"]
 

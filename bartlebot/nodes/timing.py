@@ -273,6 +273,36 @@ DECK_APPLY_TIMEOUT = 180.0
 # raising. See _read_deck / _write_deck in app_controller.py.
 
 
+ARCHMASTERY_MENU_TIMEOUT = 5.0
+# Ceiling on the archmastery school menu opening or closing after its gauge is
+# clicked. Nothing in the window tree announces the menu, so this is bounded by
+# the icons finishing their move; generous because elapsing it in full means the
+# click did not register, which is retried rather than reported.
+
+ARCHMASTERY_MENU_POLL = 0.05
+# How often to re-read the school icons' rectangles while waiting. One memory
+# read per icon per tick, seven icons, entirely local.
+
+ARCHMASTERY_MENU_SETTLE = 0.15
+# How long the icons must hold still before the menu counts as open (or closed).
+# The move is animated, so "the rectangles changed" only means it has started;
+# clicking then would aim at a position the icon is still leaving.
+#
+# This is a ceiling, not a cadence: shortening it does not make a test faster,
+# it makes the test click mid-animation. Compress ARCHMASTERY_MENU_POLL instead.
+
+ARCHMASTERY_CONFIRM_TIMEOUT = 3.0
+# Ceiling on the school reading back as the one that was clicked. The write is
+# the game's own, so this covers a UI round trip rather than a server one.
+
+ARCHMASTERY_CONFIRM_POLL = 0.05
+# How often to re-read archmastery_school() while confirming. Two memory reads.
+
+ARCHMASTERY_ATTEMPTS = 3
+# How many times the open-click-confirm sequence is repeated before giving up.
+# Bounded for the same reason CARD_CLICK_ATTEMPTS is: a click the game declined
+# and a click that was swallowed look identical from here.
+
 GROUP_INVITE_TIMEOUT = 15.0
 # Seconds to wait for the group invitation modal to appear on the invited client after
 # the inviter clicks "Add to Group". The invite is relayed by the server, so this covers

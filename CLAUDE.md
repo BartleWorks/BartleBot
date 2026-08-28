@@ -171,8 +171,9 @@ rather than the bot, so no stored value should outrank the app setting.
 ### No real player data
 
 Never commit real, identifiable player data — wizard names, character ids, account
-ids, friend codes, or screenshots showing them. This repo is public, and a real
-wizard name links the account to whoever wrote the commit.
+ids, friend codes, or screenshots showing them. This repo is private today but goes
+public at 1.0.0, and history is not rewritten on the way — anything committed now
+ships then. A real wizard name links the account to whoever wrote the commit.
 
 This applies to test fixtures, sample data, docstrings, comments, log excerpts
 pasted into issues, and bot files. It applies to *any* player, not just your own.
@@ -423,6 +424,20 @@ Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
 dependency on the game being installed at a guessable path. Extract what you need
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 `bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
+
+### What neither source answers: window layout
+
+**UI window names are not in the type dump and not in any WAD.** The dump covers
+reflected `PropertyClass` properties, and the archives hold game data; the window
+layout is compiled into the client binary. Searching every UI-ish XML across
+`Root.wad`, `GUI-WorldData.wad` and `_Shared-WorldData.wad` for names the app
+already relies on — `DeckConfiguration`, `CardsInDeck`, `ItemSpells` — returns
+zero content hits, and `GUI/` in `Root.wad` is textures.
+
+So the rule above inverts for anything shaped like "what is this control called":
+go straight to a live client. Either the in-app **UI Tree Browser**, or a probe
+that dumps the subtree and diffs it across a change the user makes by hand —
+`tools/probe_archmastery_ui.py` is the worked example of the second.
 
 ### Telling modal dialogs apart
 

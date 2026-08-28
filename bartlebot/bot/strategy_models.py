@@ -58,8 +58,22 @@ class DeckData(BaseModel):
     # for decks saved before this existed, and for cards in none of the
     # categories — a missing entry costs a label, nothing more.
     card_kinds: dict[str, str] = Field(default_factory=dict)
+    # The wizard's archmastery school ("Storm", "Ice", ...) at import time, or
+    # None when it could not be read or was never set.  Saved and displayed, but
+    # restored on apply only when ``apply_archmastery`` below resolves true —
+    # see read_archmastery_school / set_archmastery_school in deck_io.
+    archmastery_school: str | None = None
+    # Whether applying this deck should also set the wizard's archmastery school
+    # to the one above.  Three-state: True/False pin an answer for this deck,
+    # None (the default) defers to the app setting.  Off by default because the
+    # school is a persistent character setting that outlives the run, and most
+    # decks do not care what it is -- see deck_io.resolve_apply_archmastery.
+    apply_archmastery: bool | None = None
 
     def is_empty(self) -> bool:
+        # Deliberately card-only: a DeckData carrying nothing but an archmastery
+        # school is not a deck, and counting it would make an empty deck look
+        # applicable — the same trap ``tc`` is excluded for.
         return not self.normal and not self.item
 
     def total_cards(self) -> int:

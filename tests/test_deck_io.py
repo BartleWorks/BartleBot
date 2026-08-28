@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -17,13 +18,17 @@ import pytest
 
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import (
+    ARCHMASTERY_ATTEMPTS,
     CARD_CLICK_ATTEMPTS,
     SLOTS_PER_PAGE,
+    DeckApplyReport,
     ItemSlot,
+    _click,
     _settle_deck,
     _share_shortfall,
     active_item_counts,
     apply_deck,
+    archmastery_menu_is_open,
     count_names,
     deck_matches,
     deck_page_open,
@@ -33,9 +38,12 @@ from bartlebot.deck_io import (
     partition_addable,
     plan_item_toggles,
     plan_normal_cards,
+    read_archmastery_school,
     read_deck,
+    resolve_apply_archmastery,
     resolve_tier,
     resolved_at_click_time,
+    set_archmastery_school,
     suggest_alternatives,
     write_deck,
 )
@@ -96,7 +104,12 @@ class FakeDeckBuilder:
     def __init__(self):
         self.calls: list[str] = []
         self.added: dict[str, int] | None = None
-        self.client = SimpleNamespace(root_window=object())
+        # No deck behavior by default, so read_archmastery_school answers None
+        # without a live client. Tests about the school replace this.
+        self.client = SimpleNamespace(
+            root_window=object(),
+            client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=None)),
+        )
         # Real DeckBuilder constructs this False and open_deck_page() never sets
         # it; whoever opens the page is responsible for saying so. Direct
         # write_deck tests stand in for a properly-opened page, so True here â€”
@@ -370,6 +383,69 @@ async def test_read_deck_never_reports_treasure_cards(monkeypatch):
     assert result["normal"] == {"Tempest": 2}
     assert result["item"] == {"Sharpened Blade - Tear": 1}
     assert result["tc"] == {}
+
+
+def _behavior(school_id: int) -> SimpleNamespace:
+    return SimpleNamespace(archmastery_school=AsyncMock(return_value=school_id))
+
+
+async def test_read_archmastery_school_names_the_school():
+    client = SimpleNamespace(
+        client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=_behavior(83375795)))
+    )
+    assert await read_archmastery_school(client) == "Storm"
+
+
+async def test_read_archmastery_school_is_none_without_a_deck_behavior():
+    """A wizard with no deck equipped has nothing to read — not an error."""
+    client = SimpleNamespace(client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=None)))
+    assert await read_archmastery_school(client) is None
+
+
+async def test_read_archmastery_school_is_none_for_an_unknown_id():
+    """An id outside wizwalker's table is not worth guessing at, and must not raise."""
+    client = SimpleNamespace(
+        client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=_behavior(1234)))
+    )
+    assert await read_archmastery_school(client) is None
+
+
+async def test_read_archmastery_school_swallows_a_failed_read():
+    client = SimpleNamespace(
+        client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(side_effect=RuntimeError("no hook")))
+    )
+    assert await read_archmastery_school(client) is None
+
+
+async def test_read_deck_carries_the_archmastery_school(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
+    db = FakeDeckBuilder()
+    db.client.client_object.try_get_deck_behavior = AsyncMock(return_value=_behavior(72777))
+
+    result = await read_deck(db)
+
+    assert result["archmastery_school"] == "Ice"
+    assert DeckData(**result).archmastery_school == "Ice"
+
+
+async def test_read_deck_survives_an_unreadable_archmastery_school(monkeypatch):
+    """A cosmetic field must never be able to fail a whole deck import."""
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
+    db = FakeDeckBuilder()
+    db.client.client_object.try_get_deck_behavior = AsyncMock(side_effect=RuntimeError("boom"))
+
+    result = await read_deck(db)
+
+    assert result["archmastery_school"] is None
+    assert result["normal"] == {"Tempest": 2}
+
+
+async def test_a_deck_holding_only_an_archmastery_school_is_still_empty():
+    assert DeckData(archmastery_school="Storm").is_empty()
 
 
 async def test_write_deck_propagates_failures(monkeypatch):
@@ -2062,3 +2138,433 @@ def test_shortfall_reports_a_partly_filled_request():
     short = _share_shortfall({"X - T05 - A": 3}, landed=1)
 
     assert short == {"X - T05 - A": 1}
+
+
+# ---------------------------------------------------------------------------
+# Archmastery school (#134)
+#
+# The menu is invisible to the window tree, so the open/closed test is geometry:
+# the icons are parked stacked behind the gauge and fan out when it opens.
+# ---------------------------------------------------------------------------
+
+
+class FakeRect:
+    """Stands in for wizwalker's Rectangle.
+
+    Deliberately does *not* implement __iter__: the real one yields
+    (x1, x2, y1, y2), not the (x1, y1, x2, y2) the name suggests, and code that
+    unpacks it is wrong. Leaving it out here keeps that mistake a test failure.
+    """
+
+    def __init__(self, x1, y1, x2, y2):
+        self.x1, self.y1, self.x2, self.y2 = x1, y1, x2, y2
+
+
+def _stacked(count: int = 7, size: int = 40) -> list[FakeRect]:
+    """Every icon at the same place — the menu closed."""
+    return [FakeRect(100, 200, 100 + size, 200 + size) for _ in range(count)]
+
+
+def _fanned(count: int = 7, size: int = 40) -> list[FakeRect]:
+    """Icons laid out in a row, each a full width apart — the menu open."""
+    return [FakeRect(100 + i * size * 2, 200, 100 + i * size * 2 + size, 200 + size) for i in range(count)]
+
+
+def test_stacked_icons_read_as_a_closed_menu():
+    assert not archmastery_menu_is_open(_stacked())
+
+
+def test_fanned_icons_read_as_an_open_menu():
+    assert archmastery_menu_is_open(_fanned())
+
+
+def test_icons_that_are_merely_close_still_read_as_closed():
+    """Parked does not have to mean pixel-identical — the threshold is the icon's own width."""
+    rects = _stacked()
+    rects[3] = FakeRect(103, 202, 143, 242)
+    assert not archmastery_menu_is_open(rects)
+
+
+def test_a_vertical_fan_reads_as_open_too():
+    """Nothing says the menu lays out horizontally; the spread is the larger axis."""
+    rects = [FakeRect(100, 200 + i * 80, 140, 240 + i * 80) for i in range(7)]
+    assert archmastery_menu_is_open(rects)
+
+
+def test_one_icon_can_never_look_open():
+    """Spread needs two points. Callers must not ask, and the answer is not 'open'."""
+    assert not archmastery_menu_is_open(_stacked(count=1))
+    assert not archmastery_menu_is_open([])
+
+
+# -- the three-state opt-in -------------------------------------------------
+
+
+def test_a_deck_with_no_saved_school_never_opts_in():
+    """There is nothing to set, and "apply the school" cannot mean "clear it"."""
+    deck = DeckData(normal={"Tempest": 1}, apply_archmastery=True)
+    assert resolve_apply_archmastery(deck, app_default=True) == (False, "no school saved with this deck")
+
+
+def test_a_deck_pin_of_true_wins_over_the_app_setting():
+    deck = DeckData(archmastery_school="Storm", apply_archmastery=True)
+    assert resolve_apply_archmastery(deck, app_default=False) == (True, "this deck")
+
+
+def test_a_deck_pin_of_false_wins_over_the_app_setting():
+    """The pin has to survive in both directions, or it is not a pin."""
+    deck = DeckData(archmastery_school="Storm", apply_archmastery=False)
+    assert resolve_apply_archmastery(deck, app_default=True) == (False, "this deck")
+
+
+def test_an_unpinned_deck_follows_the_app_setting():
+    deck = DeckData(archmastery_school="Storm")
+    assert resolve_apply_archmastery(deck, app_default=True) == (True, "the app setting")
+    assert resolve_apply_archmastery(deck, app_default=False) == (False, "the app setting")
+
+
+def test_an_unpinned_deck_is_the_default():
+    """A deck saved before this existed must not start setting anyone's school."""
+    assert DeckData().apply_archmastery is None
+
+
+# -- write_deck wiring ------------------------------------------------------
+
+
+async def test_write_deck_leaves_the_school_alone_when_not_opted_in(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    called = []
+    monkeypatch.setattr("bartlebot.deck_io.set_archmastery_school", lambda *a: called.append(a))
+
+    deck = DeckData(normal={"Tempest": 2}, archmastery_school="Storm", apply_archmastery=False)
+    report = await write_deck(FakeDeckBuilder(), deck, set_archmastery=False)
+
+    assert not called
+    assert report.archmastery_set is None
+
+
+async def test_write_deck_sets_the_school_before_the_already_matches_check(monkeypatch):
+    """Cards right, school wrong: the school still has to be set.
+
+    This is the case that would silently do nothing if the school were handled
+    after the early-out, which is the whole reason it goes first.
+    """
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(return_value="Death"))
+    set_calls = []
+
+    async def _fake_set(client, school):
+        set_calls.append(school)
+        return True
+
+    monkeypatch.setattr("bartlebot.deck_io.set_archmastery_school", _fake_set)
+
+    db = FakeDeckBuilder()
+    # Exactly what _fake_deck_names reports, with no item cards, so the cards match.
+    deck = DeckData(normal={"Tempest": 2}, archmastery_school="Storm", apply_archmastery=True)
+    report = await write_deck(db, deck, set_archmastery=True)
+
+    assert set_calls == ["Storm"]
+    assert report.archmastery_set == "Storm"
+    assert report.unchanged is True  # the cards genuinely needed no rewrite
+    assert "clear_deck" not in db.calls
+
+
+async def test_write_deck_does_not_report_a_school_that_already_matched(monkeypatch):
+    """archmastery_set means "a persistent setting moved", not "we checked"."""
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(return_value="Storm"))
+    monkeypatch.setattr("bartlebot.deck_io.set_archmastery_school", AsyncMock(return_value=True))
+
+    deck = DeckData(normal={"Tempest": 2}, archmastery_school="Storm", apply_archmastery=True)
+    report = await write_deck(FakeDeckBuilder(), deck, set_archmastery=True)
+
+    assert report.archmastery_set is None
+    assert report.archmastery_failed is None
+
+
+async def test_write_deck_reports_a_school_it_could_not_set(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(return_value="Death"))
+    monkeypatch.setattr("bartlebot.deck_io.set_archmastery_school", AsyncMock(return_value=False))
+
+    deck = DeckData(normal={"Tempest": 2}, archmastery_school="Storm", apply_archmastery=True)
+    report = await write_deck(FakeDeckBuilder(), deck, set_archmastery=True)
+
+    assert report.archmastery_failed == "Storm"
+    assert not report.is_clean  # the user asked for it and it did not happen
+
+
+async def test_a_failed_school_is_the_only_archmastery_state_that_is_not_clean():
+    """A successful set is not worth a dialog — opting in is what asked for it."""
+    assert DeckApplyReport(archmastery_set="Storm").is_clean
+
+
+# -- deck_matches wiring ----------------------------------------------------
+
+
+def _fake_deck_door(opened: list):
+    """Stand-in for deck_page_open — records that the page was opened at all."""
+
+    @asynccontextmanager
+    async def _door(client):
+        opened.append(client)
+        yield object()
+
+    return _door
+
+
+async def test_deck_matches_ignores_the_school_when_not_opted_in(monkeypatch):
+    """Otherwise every apply takes the slow path over a difference we won't act on."""
+    monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(return_value="Death"))
+    monkeypatch.setattr("bartlebot.deck_io._deck_already_matches", AsyncMock(return_value=True))
+    monkeypatch.setattr("bartlebot.deck_io.deck_page_open", _fake_deck_door([]))
+
+    deck = DeckData(normal={"Tempest": 2}, archmastery_school="Storm")
+    assert await deck_matches(FakeClient(), deck) is True
+
+
+async def test_deck_matches_fails_fast_on_a_school_mismatch_when_opted_in(monkeypatch):
+    """Checked before the page is opened: it is a memory read, and a mismatch
+    means the fast path cannot succeed however the cards look."""
+    monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(return_value="Death"))
+    monkeypatch.setattr("bartlebot.deck_io._deck_already_matches", AsyncMock(return_value=True))
+    opened: list = []
+    monkeypatch.setattr("bartlebot.deck_io.deck_page_open", _fake_deck_door(opened))
+
+    deck = DeckData(normal={"Tempest": 2}, archmastery_school="Storm")
+    assert await deck_matches(FakeClient(), deck, check_archmastery=True) is False
+    assert not opened
+
+
+# -- driving the selector ---------------------------------------------------
+
+
+class FakeSchoolMenu:
+    """The deck page's archmastery selector, as far as deck_io can see it.
+
+    Models the one thing that actually distinguishes open from closed: the seven
+    icons are parked stacked behind the gauge, and clicking it fans them out.
+    Clicking an icon sets the school and puts them back.
+
+    ``gauge_clicks_needed`` makes the first N gauge clicks land without opening
+    anything, which is how a swallowed click looks from outside.
+
+    ``anim_sweeps`` is how many reads of the icon rectangles it takes for them
+    to finish moving after a state change.  Non-zero by default: the real move
+    is animated, and a fake that snaps instantly cannot catch the class of bug
+    where something decides from a rectangle read mid-animation.
+    """
+
+    SCHOOLS = ("Fire", "Ice", "Storm", "Myth", "Life", "Death", "Balance")
+
+    def __init__(self, school="Death", *, gauge_clicks_needed=1, icon_sets=True, icon_count=7, anim_sweeps=3):
+        self.school = school
+        self.open = False
+        self.clicks: list[str] = []
+        self._gauge_clicks_needed = gauge_clicks_needed
+        self._icon_sets = icon_sets
+        self._icon_count = icon_count
+        self._anim_sweeps = anim_sweeps
+        # What the icons are *showing*, which lags self.open while animating.
+        self._shown_open = False
+        self._remaining = 0
+
+    # -- the windows deck_io resolves --------------------------------
+
+    def window_for(self, name: str):
+        if name == "Guage":
+            return SimpleNamespace(_menu_name="Guage")
+        school = name.removeprefix("SC_")
+        if school not in self.SCHOOLS[: self._icon_count]:
+            return None
+        return SimpleNamespace(_menu_name=name, _school=school)
+
+    def sweep(self, windows) -> list:
+        """One read of every icon rectangle, advancing the animation by a frame.
+
+        Mid-animation the icons are at intermediate positions, so consecutive
+        sweeps differ — which is exactly what stops anything from calling the
+        state settled while they are still moving.
+        """
+        if self._remaining:
+            self._remaining -= 1
+            if self._remaining == 0:
+                self._shown_open = self.open
+        spread = 80 if self._shown_open else 0
+        # A frame of travel, so a sweep taken mid-move never repeats the last.
+        drift = self._remaining * 3
+        return [
+            FakeRect(
+                100 + self.SCHOOLS.index(w._school) * spread + drift,
+                200,
+                100 + self.SCHOOLS.index(w._school) * spread + drift + 40,
+                240,
+            )
+            for w in windows
+        ]
+
+    def _begin_animation(self) -> None:
+        self._remaining = self._anim_sweeps
+        if self._anim_sweeps == 0:
+            self._shown_open = self.open
+
+    # -- what a click does -------------------------------------------
+
+    def click(self, window) -> bool:
+        name = window._menu_name
+        self.clicks.append(name)
+        if name == "Guage":
+            if self.clicks.count("Guage") >= self._gauge_clicks_needed or self.open:
+                self.open = not self.open
+                self._begin_animation()
+        elif self.open:
+            # Picking a school closes the menu by itself — no second click.
+            if self._icon_sets:
+                self.school = window._school
+            self.open = False
+            self._begin_animation()
+        return True
+
+
+@pytest.fixture
+def school_menu(monkeypatch):
+    """Wire a FakeSchoolMenu into every seam set_archmastery_school uses."""
+    menu = FakeSchoolMenu()
+
+    async def _get_window(_parent, path):
+        return menu.window_for(path[-1])
+
+    async def _click(_client, window):
+        return menu.click(window)
+
+    async def _rects(windows):
+        return menu.sweep(windows)
+
+    monkeypatch.setattr("bartlebot.nodes.node_helpers._get_window_from_path", _get_window)
+    monkeypatch.setattr("bartlebot.deck_io._click", _click)
+    monkeypatch.setattr("bartlebot.deck_io._icon_rects", _rects)
+    monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(side_effect=lambda _c: menu.school))
+    # Cadences only. The dwell and the ceilings keep their shape relative to the
+    # polls, so the tests still take the branches they are named for.
+    monkeypatch.setattr("bartlebot.deck_io.ARCHMASTERY_MENU_POLL", 0.001)
+    monkeypatch.setattr("bartlebot.deck_io.ARCHMASTERY_CONFIRM_POLL", 0.001)
+    monkeypatch.setattr("bartlebot.deck_io.ARCHMASTERY_MENU_SETTLE", 0.005)
+    monkeypatch.setattr("bartlebot.deck_io.ARCHMASTERY_MENU_TIMEOUT", 0.5)
+    monkeypatch.setattr("bartlebot.deck_io.ARCHMASTERY_CONFIRM_TIMEOUT", 0.2)
+    return menu
+
+
+async def test_setting_the_school_opens_the_menu_picks_and_closes(school_menu):
+    assert await set_archmastery_school(FakeClient(), "Storm") is True
+    assert school_menu.school == "Storm"
+    assert school_menu.clicks == ["Guage", "SC_Storm"]
+    assert not school_menu.open
+
+
+async def test_a_school_that_already_matches_clicks_nothing(school_menu):
+    """The common case, and the one where clicking would be pure risk."""
+    school_menu.school = "Storm"
+
+    assert await set_archmastery_school(FakeClient(), "Storm") is True
+    assert school_menu.clicks == []
+
+
+async def test_a_swallowed_gauge_click_is_retried(school_menu):
+    """A click the game drops looks exactly like one it declined, so bound and retry."""
+    school_menu._gauge_clicks_needed = 2
+
+    assert await set_archmastery_school(FakeClient(), "Storm") is True
+    assert school_menu.school == "Storm"
+    assert school_menu.clicks.count("Guage") == 2
+
+
+async def test_giving_up_after_the_attempt_limit(school_menu):
+    """The icon click lands every time and the school never moves."""
+    school_menu._icon_sets = False
+
+    assert await set_archmastery_school(FakeClient(), "Storm") is False
+    assert school_menu.clicks.count("SC_Storm") == ARCHMASTERY_ATTEMPTS
+
+
+async def test_the_menu_is_left_closed_when_the_school_cannot_be_set(school_menu):
+    """An open menu overlays the deck page and swallows the card clicks that follow."""
+    school_menu._icon_sets = False
+
+    await set_archmastery_school(FakeClient(), "Storm")
+
+    assert not school_menu.open
+
+
+async def test_a_greyed_looking_sprite_is_still_clicked():
+    """The gauge is a sprite, and is_control_grayed() is only a real field on the
+    button classes — reading it there lands on whatever sits at the offset and
+    can refuse a perfectly good click. Every other click in deck_io skips it too.
+    """
+    clicked = []
+
+    class FakeMouseHandler:
+        # A real class, not a SimpleNamespace: `async with` looks __aenter__ up
+        # on the type, so instance attributes named that way are never called.
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_exc):
+            return False
+
+        async def click_window(self, window):
+            clicked.append(window)
+
+    window = SimpleNamespace(is_control_grayed=AsyncMock(return_value=True))
+    handler = FakeMouseHandler()
+
+    assert await _click(SimpleNamespace(mouse_handler=handler), window) is True
+    assert clicked == [window]
+    window.is_control_grayed.assert_not_awaited()
+
+
+async def test_the_gauge_is_not_clicked_again_while_the_menu_is_closing(school_menu):
+    """Picking a school closes the menu itself, and the icons restack over
+    several frames. A close check that read the rectangles once caught them
+    still spread, called that "open", and clicked the gauge — reopening the
+    menu the pick had just dismissed.
+    """
+    assert await set_archmastery_school(FakeClient(), "Storm") is True
+
+    assert school_menu.clicks == ["Guage", "SC_Storm"]
+    assert not school_menu.open
+
+
+async def test_a_menu_left_open_is_still_closed_on_the_way_out(school_menu):
+    """The other side of it: a genuinely open menu does get the extra click."""
+    school_menu._icon_sets = False
+
+    await set_archmastery_school(FakeClient(), "Storm")
+
+    assert not school_menu.open
+
+
+async def test_a_missing_selector_is_declined_rather_than_clicked_blind(school_menu, monkeypatch):
+    async def _no_windows(_parent, _path):
+        return None
+
+    monkeypatch.setattr("bartlebot.nodes.node_helpers._get_window_from_path", _no_windows)
+
+    assert await set_archmastery_school(FakeClient(), "Storm") is False
+    assert school_menu.clicks == []
+
+
+async def test_too_few_icons_to_read_the_menu_state_is_declined(school_menu):
+    """Spread needs two icons; with one the wait could only ever time out."""
+    school_menu._icon_count = 1
+
+    assert await set_archmastery_school(FakeClient(), "Storm") is False
+    assert school_menu.clicks == []

@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QFontMetrics, QPainter
+from PyQt6.QtGui import QActionGroup, QColor, QFontMetrics, QPainter
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -182,6 +182,8 @@ class _PlayerDecksSection(SidebarSection):
     save_to_library_requested = pyqtSignal(int)  # 1-based slot number
     load_from_library_requested = pyqtSignal(int)  # 1-based slot number
     clear_requested = pyqtSignal(int)  # 1-based slot number
+    # (slot, True/False/None) — the deck's three-state archmastery override.
+    archmastery_mode_changed = pyqtSignal(int, object)
 
     def __init__(self, parent=None):
         super().__init__("Player Decks", parent)
@@ -226,12 +228,10 @@ class _PlayerDecksSection(SidebarSection):
             menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
             menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
             slot_menu = anchor_menu_to_window(QMenu(menu_btn))
-            slot_menu.addAction("Save to Library", lambda _=False, slot=i: self.save_to_library_requested.emit(slot))
-            slot_menu.addAction(
-                "Load from Library", lambda _=False, slot=i: self.load_from_library_requested.emit(slot)
-            )
-            slot_menu.addSeparator()
-            slot_menu.addAction("Clear Deck", lambda _=False, slot=i: self.clear_requested.emit(slot))
+            # Rebuilt on every show: the archmastery submenu's check marks have
+            # to reflect the deck as it stands, and the deck changes underneath
+            # this menu on every import, load and clear.
+            slot_menu.aboutToShow.connect(lambda slot=i, m=slot_menu: self._rebuild_slot_menu(m, slot))
             menu_btn.setMenu(slot_menu)
 
             row_layout.addWidget(lbl)
@@ -247,6 +247,35 @@ class _PlayerDecksSection(SidebarSection):
             self._deck_summary_labels.append(deck_summary)
 
         self.set_content_layout(layout)
+
+    #: Label, and the stored value it means, for the three-state override.
+    _ARCHMASTERY_MODES = (
+        ("Use the app setting", None),
+        ("Always set it", True),
+        ("Never set it", False),
+    )
+
+    def _rebuild_slot_menu(self, menu: QMenu, slot: int) -> None:
+        menu.clear()
+        menu.addAction("Save to Library", lambda _=False: self.save_to_library_requested.emit(slot))
+        menu.addAction("Load from Library", lambda _=False: self.load_from_library_requested.emit(slot))
+
+        deck = self._decks.get(slot)
+        # A deck with no saved school has nothing to set, so the override would
+        # be a choice with no effect either way.
+        if deck is not None and deck.archmastery_school:
+            sub = menu.addMenu(f"Archmastery ({deck.archmastery_school})")
+            group = QActionGroup(sub)
+            group.setExclusive(True)
+            for label, value in self._ARCHMASTERY_MODES:
+                action = sub.addAction(label)
+                action.setCheckable(True)
+                action.setChecked(deck.apply_archmastery is value)
+                action.triggered.connect(lambda _checked=False, v=value: self.archmastery_mode_changed.emit(slot, v))
+                group.addAction(action)
+
+        menu.addSeparator()
+        menu.addAction("Clear Deck", lambda _=False: self.clear_requested.emit(slot))
 
     def _on_summary_clicked(self, slot: int) -> None:
         deck = self._decks.get(slot)
@@ -1030,6 +1059,7 @@ class CombatTab(QWidget):
         self._decks_section.save_to_library_requested.connect(self._on_save_deck_to_library)
         self._decks_section.load_from_library_requested.connect(self._on_load_deck_from_library)
         self._decks_section.clear_requested.connect(self._on_clear_deck)
+        self._decks_section.archmastery_mode_changed.connect(self._on_archmastery_mode_changed)
         self._content_layout.addWidget(self._decks_section)
 
         self._content_layout.addStretch()
@@ -1309,6 +1339,22 @@ class CombatTab(QWidget):
         if ans != QMessageBox.StandardButton.Yes:
             return
         self._bcs.player_decks.pop(slot, None)
+        save_bot_strategy(self._bcs)
+        self._refresh_deck_summaries()
+
+    def _on_archmastery_mode_changed(self, slot: int, mode: object) -> None:
+        """Pin (or unpin) this deck's answer to "set the archmastery school".
+
+        ``mode`` is True, False, or None for "follow the app setting". Saved
+        immediately rather than debounced: it is a single discrete choice made
+        from a menu, not a field someone is still typing into.
+        """
+        if self._bcs is None:
+            return
+        deck = self._bcs.player_decks.get(slot)
+        if deck is None or deck.apply_archmastery is mode:
+            return
+        deck.apply_archmastery = mode
         save_bot_strategy(self._bcs)
         self._refresh_deck_summaries()
 
