@@ -554,6 +554,82 @@ I have downloaded reference files to assist in planning:
 | WizSprinter | `C:\GitHub\wizsprinter`      | https://github.com/The-World-Tree/wizsprinter          | Extension for WizWalker that adds slightly more advanced functionality. Our fork, kept as a fast-forward of `Deimos-Wizard101/wizsprinter` — that upstream is responsive and merges PRs, so our changes go there rather than diverging.
 | Deimos      | `C:\GitHub\Deimos-Wizard101` | https://github.com/Deimos-Wizard101/Deimos-Wizard101 | An existing Wizard101 botting tool. Includes examples of how to interface with WizWalker and WizSprinter, as well as some custom utilities 
 
+## Issue and project tracking
+
+Issues live in the GitHub repo; the backlog board is the user-level project
+**BartleBot Backlog** (`gh project … --owner BartleBot`, number 3), linked to the repo.
+
+Three mechanisms, three questions. Do not make one do another's job:
+
+| | answers | cardinality |
+|---|---|---|
+| **Labels** | what is this about | many per issue, permanent |
+| **Milestone** | when does it ship | one per issue, closes |
+| **Project board** | what am I doing next | one board, ongoing |
+
+Most of the board is automated by the project's built-in workflows: an issue is
+auto-added at `Backlog`, moves to `In progress` when a pull request links to it,
+and moves to `Done` when it closes or its PR merges. Do not hand-set a Status a
+workflow owns. `Ready` and `Blocked` are the only ones set by hand, and both are
+judgment calls.
+
+Closing an issue by dragging its card to `Done` is deliberately *not* enabled —
+the **Auto-close issue** workflow is off, so a mis-drag cannot close an issue with
+no PR trail behind it.
+
+### Filing
+
+- **Two labels, always, at creation**: one type (`bug` / `enhancement`) and exactly
+  one `area/*`. If two areas fit equally well, it is probably two issues.
+- **A milestone is a commitment.** Add `1.0.0` only if it blocks going public. No
+  milestone is the default and carries no stigma.
+- **Priority and Size are set at triage, not at creation.** Filing is cheap;
+  estimating is not. Leave them empty and sweep them periodically.
+- **Never put work items in a markdown checklist.** A checklist line cannot be
+  labeled, scheduled, assigned, or closed. More than about three sub-tasks means
+  the issue is an `epic`: decompose it into real sub-issues and link them
+  (`POST /repos/:owner/:repo/issues/:n/sub_issues`). #110 is the worked example.
+
+### Bodies
+
+- **Bug**: what happened, what you expected, how to reproduce, and the relevant log
+  excerpt — redacted per *No real player data*, which applies to issue bodies and
+  pasted logs just as much as to committed files.
+- **Enhancement**: the problem first, then a sketch of the approach. #129 and #102
+  are the models — they explain *why* before *what*.
+
+### Closing
+
+- **Issues close via PR, not by hand.** Every PR body carries one `Closes #N` line
+  per issue it resolves. Multi-issue PRs are normal here; each issue still needs
+  its own line.
+- Closing keywords fire only on merges into the **default branch** (`master`).
+- **Close by hand only for won't-do or duplicate**, and set the reason to
+  `not planned` so the issue does not read as completed.
+
+### Board
+
+- `Ready` is a pull queue, not a wish list — it means scoped enough to start
+  without further thinking. Keep it short.
+- `In progress` is set for you the moment a PR links to the issue. Set it by hand
+  only when work genuinely starts before a PR exists — otherwise leave it alone.
+- `Blocked` needs a comment naming the blocker, or it is just a stale `Ready`.
+
+### Areas
+
+One `area/*` label per issue, from this set:
+
+| label | scope |
+|---|---|
+| `area/editor` | bot canvas and node editing UX |
+| `area/app-ui` | app shell, sidebar, settings, windowing |
+| `area/engine` | FSM, run semantics, control flow |
+| `area/nodes` | node library |
+| `area/bot-library` | shipped bot files under `bots/` |
+| `area/clients` | client launching, accounts, characters |
+| `area/combat` | combat DSL, decks, fight tables |
+| `area/meta` | project, process, release |
+
 ## Ruff
 
 Line length 120, target py313. Rules: E, W, F, I, UP, B.
