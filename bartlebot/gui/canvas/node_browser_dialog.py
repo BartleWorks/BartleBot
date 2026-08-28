@@ -418,6 +418,10 @@ class NodeBrowserDialog(QDialog):
         initial_node_type: If provided, the dialog pre-selects this node and
               scrolls to it. Otherwise the first item in the current tab is
               selected.
+        allowed_node_types: If provided, only these node types are offered, in
+              every tab and in search results. Used by insert-at-output-port,
+              where a node that cannot produce the port's return value would
+              silently turn every rerouted edge unconditional.
     """
 
     def __init__(
@@ -425,10 +429,12 @@ class NodeBrowserDialog(QDialog):
         parent: QWidget | None = None,
         mode: Literal["add", "view"] = "add",
         initial_node_type: str | None = None,
+        allowed_node_types: set[str] | None = None,
     ) -> None:
         super().__init__(parent)
         self._mode = mode
         self._selected_node_type: str | None = None
+        self._allowed_node_types = allowed_node_types
 
         self.setWindowTitle("Node Browser" if mode == "view" else "Add Node")
         self.setMinimumSize(860, 520)
@@ -583,11 +589,24 @@ class NodeBrowserDialog(QDialog):
     # ------------------------------------------------------------------
 
     def _populate_list(self, node_types: list[str]) -> None:
-        """Fill the list widget with items for the given node_type keys."""
+        """Fill the list widget with items for the given node_type keys.
+
+        Every tab and the search results funnel through here, so the
+        ``allowed_node_types`` filter only has to be applied once.
+        """
         self._list.clear()
         for nt in node_types:
-            if nt in NODE_SPECS:
-                self._list.addItem(_NodeListItem(nt))
+            if nt not in NODE_SPECS:
+                continue
+            if self._allowed_node_types is not None and nt not in self._allowed_node_types:
+                continue
+            self._list.addItem(_NodeListItem(nt))
+
+    @property
+    def offered_node_types(self) -> list[str]:
+        """Node types currently listed, after any ``allowed_node_types`` filtering."""
+        items = (self._list.item(i) for i in range(self._list.count()))
+        return [it.node_type for it in items if isinstance(it, _NodeListItem)]
 
     def _select_node_type(self, node_type: str) -> None:
         """Select the list item for node_type, scrolling to it."""
