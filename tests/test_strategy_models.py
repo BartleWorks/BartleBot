@@ -7,6 +7,7 @@ from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
     DuelCombatStrategy,
+    DuelConfig,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -234,3 +235,37 @@ def test_bcs_auto_uuid_distinct():
     b1 = BotCombatStrategy(name="A", bot_id="x")
     b2 = BotCombatStrategy(name="B", bot_id="x")
     assert b1.id != b2.id
+
+
+# ---------------------------------------------------------------------------
+# DuelConfig player range
+# ---------------------------------------------------------------------------
+
+
+def test_duel_config_repairs_an_inverted_player_range():
+    """A hand-written inline config is the door the editor's spin-box coupling misses.
+
+    An inverted range is unsatisfiable rather than merely odd: combat_warnings wants
+    min_players clients connected, while only max_players of them can be assigned a
+    strategy at all.
+    """
+    config = DuelConfig(min_players=4, max_players=1)
+    assert (config.min_players, config.max_players) == (4, 4)
+
+
+def test_duel_config_leaves_a_valid_range_alone():
+    config = DuelConfig(min_players=2, max_players=3)
+    assert (config.min_players, config.max_players) == (2, 3)
+
+
+def test_duel_config_defaults_span_every_player():
+    config = DuelConfig()
+    assert (config.min_players, config.max_players) == (1, 4)
+
+
+def test_an_inverted_range_is_repaired_on_load_not_rejected():
+    """Repair, not ValidationError — a strategy file must still open."""
+    dcs = DuelCombatStrategy.model_validate(
+        {"name": "Legacy", "min_players": 3, "max_players": 1},
+    )
+    assert (dcs.min_players, dcs.max_players) == (3, 3)

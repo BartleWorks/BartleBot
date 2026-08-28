@@ -19,7 +19,7 @@ import tempfile
 from pathlib import Path
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class PlayerCombatStrategy(BaseModel):
@@ -131,6 +131,27 @@ class DuelConfig(BaseModel):
     # None = all players enter combat simultaneously; list = sequential entry order (1-based)
     combat_order: list[int] | None = None
     player_assignments: list[PlayerAssignment] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def clamp_player_range(self) -> DuelConfig:
+        """Keep max_players at or above min_players.
+
+        An inverted range is not merely odd-looking in the "4-1 players" summary --
+        it describes a duel that cannot be satisfied: combat_warnings demands four
+        connected clients while the editor only lets P1 be assigned a strategy or
+        placed in the combat order.  The editor now couples its two spin boxes, so
+        this catches the other door in: an inline DuelConfig hand-written into a bot
+        file.
+
+        Repairs rather than rejects, because raising a ValidationError here would
+        make such a file refuse to open at all.  max is the field that moves:
+        min_players is the one with runtime meaning (it gates the connected-client
+        warning), while max_players only bounds the editor, so lifting max preserves
+        whatever the author was asking for.
+        """
+        if self.max_players < self.min_players:
+            self.max_players = self.min_players
+        return self
 
     def resolve_dsl_for_player(self, player_num: int, pcs_map: dict[str, str]) -> str | None:
         """Return DSL for a 1-based player number, or None if unassigned/empty.
