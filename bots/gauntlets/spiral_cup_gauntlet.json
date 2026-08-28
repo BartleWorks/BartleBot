@@ -6,280 +6,377 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "any<aoe>[any<mod_damage>]\n",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "The Commons",
   "drops": [
     {
-      "name": "Angora Bunny Ears"
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Ape Grapes"
+      "name": "Ape Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Avalon Abbey Road Theme"
+      "name": "Avalon Abbey Road Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Combat Theme"
+      "name": "Avalon Combat Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Glorious Theme"
+      "name": "Avalon Glorious Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Haunting Theme"
+      "name": "Avalon Haunting Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Main Theme"
+      "name": "Avalon Main Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Tense Theme"
+      "name": "Avalon Tense Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Wyrd Theme"
+      "name": "Avalon Wyrd Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Black Lotus"
+      "name": "Black Lotus",
+      "category": "Reagents"
     },
     {
-      "name": "Blizzard Lizard Sapphire"
+      "name": "Blizzard Lizard Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Blue Huckleberries"
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Blue Vine Wallpaper"
+      "name": "Blue Vine Wallpaper",
+      "category": "Housing Items"
     },
     {
-      "name": "Bowl of Tomatoes"
+      "name": "Bowl of Tomatoes",
+      "category": "Housing Items"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Broken Palm Tree"
+      "name": "Broken Palm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Broken Stump"
+      "name": "Broken Stump",
+      "category": "Housing Items"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Bronze Gear"
+      "name": "Bronze Gear",
+      "category": "Reagents"
     },
     {
-      "name": "Caramel Popcorn"
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Cauliflowers",
+      "category": "Snacks"
     },
     {
-      "name": "Celestian Tree Sprig"
+      "name": "Celestian Tree Sprig",
+      "category": "Housing Items"
     },
     {
-      "name": "Clear Accurate Sapphire +9%"
+      "name": "Clear Accurate Sapphire +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Ruby +9"
+      "name": "Clear Blocking Ruby +9",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Citrine +10"
+      "name": "Clear Critical Citrine +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Damage Onyx +19"
+      "name": "Clear Damage Onyx +19",
+      "category": "Jewels"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cross Section Floor Tile"
+      "name": "Cross Section Floor Tile",
+      "category": "Housing Items"
     },
     {
-      "name": "Crunch Apple"
+      "name": "Crunch Apple",
+      "category": "Snacks"
     },
     {
-      "name": "Deadly Helephant Ears"
+      "name": "Deadly Helephant Ears",
+      "category": "Seeds"
     },
     {
-      "name": "Death-Away Onyx"
+      "name": "Death-Away Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Delicious Cookie"
+      "name": "Delicious Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Elm Tree"
+      "name": "Elm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Fire Bush"
+      "name": "Fire Bush",
+      "category": "Housing Items"
     },
     {
-      "name": "Fire Cracker"
+      "name": "Fire Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Flapjacks"
+      "name": "Flapjacks",
+      "category": "Snacks"
     },
     {
-      "name": "Flowering Celestian Tree"
+      "name": "Flowering Celestian Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Frost Flower"
+      "name": "Frost Flower",
+      "category": "Reagents"
     },
     {
-      "name": "Glowing Rock Candy"
+      "name": "Glowing Rock Candy",
+      "category": "Snacks"
     },
     {
-      "name": "Green Foodcart"
+      "name": "Green Foodcart",
+      "category": "Housing Items"
     },
     {
-      "name": "Greenwarden's Energetic Boots"
+      "name": "Greenwarden's Energetic Boots (Level 100+)",
+      "category": "Boots",
+      "match_name": "Greenwarden's Energetic Boots"
     },
     {
-      "name": "Greenwarden's Energetic Mask"
+      "name": "Greenwarden's Energetic Mask (Level 100+)",
+      "category": "Hats",
+      "match_name": "Greenwarden's Energetic Mask"
     },
     {
-      "name": "Greenwarden's Energetic Shroud"
+      "name": "Greenwarden's Energetic Shroud (Level 100+)",
+      "category": "Robes",
+      "match_name": "Greenwarden's Energetic Shroud"
     },
     {
-      "name": "Greenwarden's Energetic Staff"
+      "name": "Greenwarden's Energetic Staff (Level 100+)",
+      "category": "Wands",
+      "match_name": "Greenwarden's Energetic Staff"
     },
     {
-      "name": "Gummy Bloodbat"
+      "name": "Greenwarden's Energetic Staff (Level 90+)",
+      "category": "Wands",
+      "match_name": "Greenwarden's Energetic Staff"
+    },
+    {
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
     },
     {
       "name": "Ice Trap Sapphire (Triangle)",
+      "category": "Jewels",
       "match_name": "Ice Trap Sapphire"
     },
     {
-      "name": "Large Cypress Tree"
+      "name": "Large Cypress Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Large Evergreen Tree"
+      "name": "Large Evergreen Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Large Fir Tree"
+      "name": "Large Fir Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Large Fish"
+      "name": "Large Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Large Willow Tree"
+      "name": "Large Willow Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Leaning Palm Tree"
+      "name": "Leaning Palm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Maple Tree"
+      "name": "Maple Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Mass Infection Onyx"
+      "name": "Mass Infection Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Meat Soup"
+      "name": "Meat Soup",
+      "category": "Snacks"
     },
     {
-      "name": "Medium Evergreen Tree"
+      "name": "Medium Evergreen Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Medium Fir Tree"
+      "name": "Medium Fir Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Medium Pine Tree"
+      "name": "Medium Pine Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Ninja Fig"
+      "name": "Ninja Fig",
+      "category": "Seeds"
     },
     {
-      "name": "Ninja Pig Opal"
+      "name": "Ninja Pig Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Red Huckleberries"
+      "name": "Red Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Red Leaf Tree"
+      "name": "Red Leaf Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Red Mandrake"
+      "name": "Red Mandrake",
+      "category": "Reagents"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Rude Goblin"
+      "name": "Rude Goblin",
+      "category": "Pets"
     },
     {
-      "name": "Shh! Opal"
+      "name": "Shh! Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Small Bush"
+      "name": "Small Bush",
+      "category": "Housing Items"
     },
     {
-      "name": "Small Cypress Tree"
+      "name": "Small Cypress Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Small Maple Tree"
+      "name": "Small Maple Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Spicy Drumstick"
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Square Root"
+      "name": "Square Root",
+      "category": "Snacks"
     },
     {
-      "name": "Stone Block Wallpaper"
+      "name": "Stone Block Wallpaper",
+      "category": "Housing Items"
     },
     {
-      "name": "Strawberry Cupcake"
+      "name": "Strawberry Cupcake",
+      "category": "Snacks"
     },
     {
-      "name": "Stucco Wallpaper"
+      "name": "Stucco Wallpaper",
+      "category": "Housing Items"
     },
     {
-      "name": "Submarine Sandwich"
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
     },
     {
-      "name": "Sunflower"
+      "name": "Sunflower",
+      "category": "Housing Items"
     },
     {
-      "name": "Tall Palm Tree"
+      "name": "Tall Palm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Tall Pumpkin"
+      "name": "Tall Pumpkin",
+      "category": "Housing Items"
     },
     {
-      "name": "Tasty Biscuit"
+      "name": "Tasty Biscuit",
+      "category": "Snacks"
     },
     {
-      "name": "Tree Fountain"
+      "name": "Tree Fountain",
+      "category": "Housing Items"
     },
     {
-      "name": "Unstoppable Talent Opal"
+      "name": "Unstoppable Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Vestment of Chaos"
+      "name": "Vestment of Chaos",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Earth"
+      "name": "Vestment of Earth",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Ember"
+      "name": "Vestment of Ember",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Equilibrium"
+      "name": "Vestment of Equilibrium",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Frost"
+      "name": "Vestment of Frost",
+      "category": "Robes"
     },
     {
-      "name": "Wheat Cracker"
+      "name": "Wheat Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Wooden Well"
+      "name": "Wooden Well",
+      "category": "Housing Items"
     },
     {
-      "name": "Yellow Flowers Wallpaper"
+      "name": "Yellow Flowers Wallpaper",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",
@@ -371,7 +468,8 @@
           "x": -990.95,
           "y": -15.13,
           "z": 1.23
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -461,7 +559,8 @@
           "x": -656.17,
           "y": -678.95,
           "z": 1.08
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -568,7 +667,8 @@
           "x": 692.82,
           "y": -684.4,
           "z": 1.15
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -692,7 +792,8 @@
           "x": 1048.74,
           "y": 12.46,
           "z": 1.15
-        }
+        },
+        "stagger": true
       },
       "option_overrides": {}
     },
@@ -773,7 +874,8 @@
           "x": -4.7,
           "y": -660.85,
           "z": 1.41
-        }
+        },
+        "sequential": true
       },
       "option_overrides": {}
     },
@@ -820,7 +922,7 @@
         "y": 0.0
       },
       "params": {
-        "duration": 1.0
+        "duration": 5.0
       },
       "option_overrides": {}
     },
@@ -834,11 +936,12 @@
       },
       "params": {
         "enemy": "",
-        "use_bot_default": false,
-        "combat_config": "bunyip[epic] | tempest[epic]",
+        "wiki_page": "Creature:Barbarous Van Der Borst (Tier 5)",
+        "use_default_strategy": true,
         "max_duration": 600.0
       },
-      "option_overrides": {}
+      "option_overrides": {},
+      "notes": "Drops vary by tier"
     },
     {
       "id": "state_10",
@@ -851,6 +954,26 @@
       "params": {
         "threshold": 0.8,
         "timeout": 120.0
+      },
+      "option_overrides": {}
+    },
+    {
+      "id": "state_30",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "keep_list": [
+          "Greenwarden's Energetic Boots",
+          "Greenwarden's Energetic Mask",
+          "Greenwarden's Energetic Shroud"
+        ],
+        "sell_pets": null,
+        "sell_socket_wrenches": null,
+        "sell_skeleton_keys": null
       },
       "option_overrides": {}
     }
@@ -1270,16 +1393,6 @@
       "trigger": "advance",
       "source": "state_29",
       "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1425,6 +1538,36 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -1494,7 +1637,8 @@
         "state_29",
         "state_25",
         "state_28",
-        "state_26"
+        "state_26",
+        "state_30"
       ],
       "color": 6
     }
