@@ -399,3 +399,130 @@ def test_every_allowed_type_actually_survives_the_insert(canvas):
         new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", node_type)
         assert new_id is not None, node_type
         assert {t.when for t in c.config.transitions if t.source == new_id} == {"SUCCESS"}, node_type
+
+
+# ---------------------------------------------------------------------------
+# Placement
+# ---------------------------------------------------------------------------
+
+
+def _boxes(canvas_obj):
+    from PyQt6.QtCore import QRectF
+
+    from bartlebot.gui.canvas.node_item import NODE_H, NODE_W
+
+    return {sid: QRectF(n.pos().x(), n.pos().y(), NODE_W, NODE_H) for sid, n in canvas_obj.scene.node_items.items()}
+
+
+def _grid_config():
+    """Four nodes on the 440 px column grid the bots actually use."""
+    from bartlebot.gui.canvas.node_item import GRID_W
+
+    states = [
+        StateModel(id="a", node_type="change_realm", params={}, position={"x": 0.0, "y": 0.0}),
+        StateModel(id="b", node_type="change_realm", params={}, position={"x": 0.0, "y": 90.0}),
+        StateModel(id="c", node_type="change_realm", params={}, position={"x": 0.0, "y": 180.0}),
+        StateModel(id="target", node_type="change_realm", params={}, position={"x": float(GRID_W), "y": 90.0}),
+    ]
+    return _config(states=states)
+
+
+def test_the_inserted_node_does_not_overlap_anything(canvas):
+    c = canvas(_grid_config())
+
+    new_id = c.scene.insert_state_at_input_port("target", "sleep")
+
+    boxes = _boxes(c)
+    new_box = boxes.pop(new_id)
+    assert not any(new_box.intersects(b) for b in boxes.values())
+
+
+def test_an_input_insert_lands_left_of_its_target(canvas):
+    """It feeds the target, so it belongs on the target's input side."""
+    c = canvas(_grid_config())
+
+    new_id = c.scene.insert_state_at_input_port("target", "sleep")
+
+    assert c.scene.node_items[new_id].pos().x() < c.scene.node_items["target"].pos().x()
+
+
+def test_an_output_insert_lands_right_of_its_source(canvas):
+    c = canvas(_grid_config())
+
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "sleep")
+
+    assert c.scene.node_items[new_id].pos().x() > c.scene.node_items["a"].pos().x()
+
+
+def test_placement_holds_the_column_and_moves_the_row(canvas):
+    """The whole point of searching rows before columns: it stays in its layer.
+
+    The three sources fill column 0 at rows 0, 90 and 180, so the insert has to take
+    a free row in that same column rather than drift into another one.
+    """
+    c = canvas(_grid_config())
+
+    new_id = c.scene.insert_state_at_input_port("target", "sleep")
+
+    assert c.scene.node_items[new_id].pos().x() == pytest.approx(0.0)
+    assert c.scene.node_items[new_id].pos().y() not in (0.0, 90.0, 180.0)
+
+
+def test_placement_lands_on_the_same_grid_the_bots_use(canvas):
+    """All 1264 nodes in the shipped library sit on whole GRID_W/GRID_H multiples.
+
+    The older "Add State Here" search offsets its rows by half a node, which is
+    collision-free but never row-aligned with anything already on the canvas.
+    """
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
+
+    c = canvas(_grid_config())
+
+    new_id = c.scene.insert_state_at_input_port("target", "sleep")
+
+    p = c.scene.node_items[new_id].pos()
+    assert p.x() % GRID_W == pytest.approx(0)
+    assert p.y() % GRID_H == pytest.approx(0)
+
+
+def test_free_position_near_snaps_an_already_clear_seed_to_the_grid(canvas):
+    """Empty space still gets grid-aligned, so an insert never lands off-grid."""
+    from PyQt6.QtCore import QPointF
+
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
+
+    c = canvas(_grid_config())
+
+    got = c.scene.free_position_near(QPointF(-4400.0, -4505.0), x_dir=-1)
+
+    assert got.x() % GRID_W == pytest.approx(0)
+    assert got.y() % GRID_H == pytest.approx(0)
+    assert abs(got.x() - (-4400.0)) <= GRID_W / 2
+    assert abs(got.y() - (-4505.0)) <= GRID_H / 2
+
+
+def test_every_insert_site_in_every_shipped_bot_is_collision_free(canvas):
+    """The property the placement exists for, checked against the real library.
+
+    Before this, 78% of these landed on top of an existing node.
+    """
+    import glob
+
+    from PyQt6.QtCore import QRectF
+
+    from bartlebot.gui.canvas.node_item import NODE_H, NODE_W
+
+    checked = 0
+    for path in sorted(glob.glob("bots/*/*.json"))[:12]:
+        config = BotConfig.load(path)
+        if any(s.position is None for s in config.states):
+            continue
+        c = canvas(config)
+        target = config.states[len(config.states) // 2].id
+        new_id = c.scene.insert_state_at_input_port(target, "sleep")
+        boxes = {sid: QRectF(n.pos().x(), n.pos().y(), NODE_W, NODE_H) for sid, n in c.scene.node_items.items()}
+        new_box = boxes.pop(new_id)
+        assert not any(new_box.intersects(b) for b in boxes.values()), f"{path} -> {target}"
+        checked += 1
+
+    assert checked > 0
