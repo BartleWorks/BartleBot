@@ -517,6 +517,7 @@ class DuelConfigEditor(QWidget):
         mm_row.addWidget(QLabel("Min players:"))
         self._min_spin = QSpinBox()
         self._min_spin.setRange(1, 4)
+        self._min_spin.valueChanged.connect(self._on_min_players_changed)
         self._min_spin.valueChanged.connect(self._on_changed)
         mm_row.addWidget(self._min_spin)
         mm_row.addWidget(QLabel("Max players:"))
@@ -696,9 +697,23 @@ class DuelConfigEditor(QWidget):
             self._assignments_layout.insertWidget(index, row)
         self.changed.emit()
 
+    def _on_min_players_changed(self, value: int) -> None:
+        """Drag Max up when Min passes it, so the range can never invert.
+
+        Pushing the other spin box rather than narrowing its range: a range narrowed
+        here would still be narrow at the next load(), which silently clamps the
+        stored value of whichever config is opened next.
+        """
+        if self._suppress:
+            return
+        if value > self._max_spin.value():
+            self._max_spin.setValue(value)
+
     def _on_max_players_changed(self, value: int) -> None:
         if self._suppress:
             return
+        if value < self._min_spin.value():
+            self._min_spin.setValue(value)  # the mirror of _on_min_players_changed
         self._apply_max_players_constraints(value)
         self._update_add_btn()
 

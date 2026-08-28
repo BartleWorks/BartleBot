@@ -511,3 +511,54 @@ def test_the_dsl_box_does_not_swallow_row_drops(qapp):
     _config, editor = _three_row_editor()
 
     assert not editor._rows[0]._dsl_edit.acceptDrops()
+
+
+class TestPlayerRangeCannotInvert:
+    """Min players used to be settable above Max players, and vice versa.
+
+    An inverted range describes a duel nobody can run: combat_warnings insists on
+    ``min_players`` connected clients, while the editor only offers assignments and
+    combat-order slots up to ``max_players``.  The summary line rendered it as
+    "4-1 players", which is the visible half of the problem.
+    """
+
+    def test_raising_min_past_max_drags_max_up(self, qapp):
+        config = DuelConfig(min_players=1, max_players=2)
+        editor = DuelConfigEditor()
+        editor.load(config, [])
+
+        editor._min_spin.setValue(4)
+
+        assert editor._max_spin.value() == 4
+        assert (config.min_players, config.max_players) == (4, 4)
+
+    def test_lowering_max_below_min_drags_min_down(self, qapp):
+        config = DuelConfig(min_players=3, max_players=4)
+        editor = DuelConfigEditor()
+        editor.load(config, [])
+
+        editor._max_spin.setValue(1)
+
+        assert editor._min_spin.value() == 1
+        assert (config.min_players, config.max_players) == (1, 1)
+
+    def test_a_valid_range_is_left_alone(self, qapp):
+        config = DuelConfig(min_players=1, max_players=4)
+        editor = DuelConfigEditor()
+        editor.load(config, [])
+
+        editor._min_spin.setValue(2)
+
+        assert (config.min_players, config.max_players) == (2, 4)
+
+    def test_loading_a_narrow_config_after_a_wide_one_keeps_its_values(self, qapp):
+        """The reason the coupling pushes values instead of narrowing ranges.
+
+        Narrowing the other spin box's range would leave it narrow, and the next
+        load() would silently clamp whatever config was opened into it.
+        """
+        editor = DuelConfigEditor()
+        editor.load(DuelConfig(min_players=1, max_players=1), [])
+        editor.load(DuelConfig(min_players=3, max_players=4), [])
+
+        assert (editor._min_spin.value(), editor._max_spin.value()) == (3, 4)

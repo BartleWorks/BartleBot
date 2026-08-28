@@ -14,7 +14,7 @@ class BotOptionSpec:
 
     Attributes:
         name:        Option name as used in machine.get_option().
-        type:        One of "bool", "int", "float", "str", "int_list".
+        type:        One of "bool", "int", "float", "str", "player_list".
         default:     Default value shown in the sidebar.
         description: Tooltip shown next to the option widget.
     """
@@ -31,7 +31,7 @@ class ParamField:
 
     Attributes:
         key:          JSON key used in the params dict.
-        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "tri_bool" | "xyz" | "int_list" |
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "tri_bool" | "xyz" |
                       "str_list" | "int_choice" | "player_list" | "drop_keep_list" | "wiki_page".
                       "text" renders as a multi-line QPlainTextEdit.
                       "tri_bool" is a bool that can also be left unset, meaning "use the app setting named by

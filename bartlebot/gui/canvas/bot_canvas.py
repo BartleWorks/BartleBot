@@ -1053,8 +1053,11 @@ class BotCanvas(QWidget):
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable that returns the current list of hooked clients."""
-        self._param_panel._get_clients = fn
-        self._param_panel._param_form._get_clients = fn
+        self._param_panel.set_clients_getter(fn)
+
+    def refresh_player_availability(self) -> None:
+        """Re-grey player checkboxes for the current client count."""
+        self._param_panel.refresh_player_availability()
 
     def set_zone_getter(self, fn: Callable[[], list[str]]) -> None:
         """Pass a callable that returns zone suggestions (current player zones + history)."""

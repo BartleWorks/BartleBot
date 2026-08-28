@@ -181,13 +181,26 @@ class ClientSection(QWidget):
             self._refresh_task.cancel()
         self._refresh_task = None
 
+    @staticmethod
+    async def _refresh_one(widget: ClientWidget) -> None:
+        """Refresh one widget under a timeout, creating its coroutine only once running.
+
+        The coroutine has to be built *inside* this wrapper.  ``gather`` turns each
+        argument into a Task synchronously but those Tasks have not stepped yet, so a
+        cancel landing in that window (a tab switch, an unhook, shutdown) kills them
+        before they await anything.  Passing ``w.refresh()`` in directly meant the
+        coroutine was already constructed by then and got garbage collected unawaited —
+        the ``coroutine 'ClientWidget.refresh' was never awaited`` warning in #128.
+        """
+        await asyncio.wait_for(widget.refresh(), timeout=CLIENT_REFRESH_TIMEOUT)
+
     async def _refresh_loop(self) -> None:
         try:
             while True:
                 active_widgets = [w for w in self._widgets if not w.is_unhooked]
                 if active_widgets:
                     results = await asyncio.gather(
-                        *[asyncio.wait_for(w.refresh(), timeout=CLIENT_REFRESH_TIMEOUT) for w in active_widgets],
+                        *[self._refresh_one(w) for w in active_widgets],
                         return_exceptions=True,
                     )
                     for r in results:

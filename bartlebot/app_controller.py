@@ -146,6 +146,7 @@ class AppController(QObject):
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
         w.bot_canvas.save_done.connect(self._save_bot)
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
+        w.left_sidebar.options.set_clients_getter(lambda: self._client_manager.clients)
 
         def _zone_getter() -> list[str]:
             settings = SettingsManager.instance()
@@ -886,6 +887,10 @@ class AppController(QObject):
     def _on_clients_changed(self, clients: list) -> None:
         self._window.set_start_enabled(self._start_enabled())
         self._window.left_sidebar.combat_tab.set_client_count(len(clients))
+        # Player checkboxes grey out the players nobody is behind; both panels build
+        # them once and would otherwise stay stale until the next node selection.
+        self._window.bot_canvas.refresh_player_availability()
+        self._window.left_sidebar.options.refresh_player_availability()
 
     # ------------------------------------------------------------------
     # Auto-save / crash recovery

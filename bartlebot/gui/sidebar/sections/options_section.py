@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -22,9 +23,9 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.gui.canvas.param_panel import _PlayerListWidget
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.nodes.registry import NODE_SPECS
 
 if TYPE_CHECKING:
@@ -160,6 +161,7 @@ class OptionsSection(SidebarSection):
         self._option_widgets: dict[str, QWidget] = {}
         self._edit_btns: list[QPushButton] = []
         self._delete_btns: list[QPushButton] = []
+        self._get_clients: Callable[[], list] = lambda: []
 
         outer = QVBoxLayout()
         outer.setSpacing(4)
@@ -187,6 +189,17 @@ class OptionsSection(SidebarSection):
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
         self._rebuild_options(config.options if config else [])
+
+    def set_clients_getter(self, fn: Callable[[], list]) -> None:
+        """Pass a callable returning the currently hooked clients."""
+        self._get_clients = fn
+        self.refresh_player_availability()
+
+    def refresh_player_availability(self) -> None:
+        """Re-grey the player checkboxes — call when clients connect or disconnect."""
+        connected = len(self._get_clients())
+        for w in self.findChildren(PlayerListWidget):
+            w.set_available_players(connected)
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
@@ -224,7 +237,7 @@ class OptionsSection(SidebarSection):
 
         self._no_options_lbl.hide()
         for opt in options:
-            inner, widget, desc_lbl = _build_option_parts(opt)
+            inner, widget, desc_lbl = _build_option_parts(opt, len(self._get_clients()))
             self._connect_option_widget(widget, opt)
 
             is_system = opt.name in required_names
@@ -311,17 +324,10 @@ class OptionsSection(SidebarSection):
             widget.valueChanged.connect(_update)
         elif isinstance(widget, QDoubleSpinBox):
             widget.valueChanged.connect(_update)
-        elif isinstance(widget, _PlayerListWidget):
+        elif isinstance(widget, PlayerListWidget):
             widget.changed.connect(lambda: _update(widget.get_value()))
         elif isinstance(widget, QLineEdit):
-            if opt.type == "int_list":
-                widget.editingFinished.connect(
-                    lambda: _update(
-                        [int(x.strip()) for x in widget.text().split(",") if x.strip().lstrip("-").isdigit()]
-                    )
-                )
-            else:
-                widget.editingFinished.connect(lambda: _update(widget.text()))
+            widget.editingFinished.connect(lambda: _update(widget.text()))
 
 
 # ---------------------------------------------------------------------------
@@ -329,14 +335,17 @@ class OptionsSection(SidebarSection):
 # ---------------------------------------------------------------------------
 
 
-def _build_option_row(opt) -> tuple[QWidget, QWidget]:
+def _build_option_row(opt, connected: int = 4) -> tuple[QWidget, QWidget]:
     """Return (container_widget, input_widget) for a single BotOptionModel."""
-    row, widget, _desc = _build_option_parts(opt)
+    row, widget, _desc = _build_option_parts(opt, connected)
     return row, widget
 
 
-def _build_option_parts(opt) -> tuple[QWidget, QWidget, QLabel | None]:
+def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLabel | None]:
     """Return (container_widget, input_widget, description_label) for a BotOptionModel.
+
+    *connected* is how many clients are hooked right now; it only greys the player
+    checkboxes that have nobody behind them.
 
     The container holds the label and value widget only (no description). The
     description label is returned separately so callers can place it after
@@ -369,13 +378,9 @@ def _build_option_parts(opt) -> tuple[QWidget, QWidget, QLabel | None]:
             widget.setDecimals(4)
             widget.setRange(-1e12, 1e12)
             widget.setValue(float(opt.default))
-        elif opt.type == "int_list":
-            val_str = (
-                ", ".join(str(v) for v in opt.default) if isinstance(opt.default, list) else str(opt.default or "")
-            )
-            widget = QLineEdit(val_str)
         elif opt.type == "player_list":
-            widget = _PlayerListWidget()
+            widget = PlayerListWidget()
+            widget.set_available_players(connected)
             widget.set_value(opt.default if isinstance(opt.default, list) else [])
         else:  # str
             widget = QLineEdit(str(opt.default))

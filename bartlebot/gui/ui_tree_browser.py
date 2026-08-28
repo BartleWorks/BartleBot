@@ -84,6 +84,16 @@ _NOTABLE_STATE = {
     _COL_GRAYED: (True, "warning"),
 }
 
+# Width each column opens at, in pixels.  Element is widest because it carries the tree
+# indentation on top of the window name.
+_DEFAULT_COLUMN_WIDTHS = {
+    _COL_ELEMENT: 320,
+    _COL_TEXT: 180,
+    _COL_VISIBLE: 70,
+    _COL_ENABLED: 70,
+    _COL_GRAYED: 70,
+}
+
 # Shown where a class has no such field at all, as opposed to having it set false.
 _NO_VALUE = "—"
 
@@ -375,11 +385,15 @@ class UITreeBrowserDialog(QDialog):
         self._tree.setColumnCount(5)
         self._tree.setHeaderLabels(["Element", "Text", "Visible", "Enabled", "Grayed"])
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
-        self._tree.header().setSectionResizeMode(_COL_ELEMENT, QHeaderView.ResizeMode.Stretch)
-        self._tree.header().setSectionResizeMode(_COL_TEXT, QHeaderView.ResizeMode.Interactive)
-        self._tree.setColumnWidth(_COL_TEXT, 180)
-        for col in (_COL_VISIBLE, _COL_ENABLED, _COL_GRAYED):
-            self._tree.header().setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
+        # Every column is Interactive so the header dividers can be dragged.  Stretch and
+        # ResizeToContents both lock a section against user resizing, which is what kept
+        # Element and the state columns fixed (#137).  Nothing stretches, so the widths
+        # below are what the dialog opens at and the user owns them from there.
+        header = self._tree.header()
+        header.setStretchLastSection(False)
+        for col, width in _DEFAULT_COLUMN_WIDTHS.items():
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.Interactive)
+            self._tree.setColumnWidth(col, width)
         self._tree.setItemDelegate(_StateColorDelegate(self._tree))
         self._tree.itemSelectionChanged.connect(self._on_selection_changed)
         root_layout.addWidget(self._tree, 1)
