@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -14,16 +15,20 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QStyle,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import quicksell
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -35,6 +40,13 @@ class SafetyWarning:
 
     details: list[tuple[str, str]] = field(default_factory=list)
     """Optional (label, value) rows shown in a compact form below the message."""
+
+    editable_setting: tuple[str, str] | None = None
+    """Optional (label, general-settings key) rendered as an editable field.
+
+    For values the user owns rather than the bot — a wrong one is worth fixing here rather
+    than cancelling the run, going to Settings, and starting over. Saved on accept only.
+    """
 
 
 #: The quicksell sell_* params, in the order the dialog lists them.
@@ -69,17 +81,30 @@ def _quicksell_details(states) -> list[tuple[str, str]]:
     return details
 
 
-def _teleport_to_friend_details(states) -> list[tuple[str, str]]:
+def _teleport_to_friend_details(states, clients) -> tuple[list[tuple[str, str]], tuple[str, str] | None]:
+    """What each teleport state will port to, resolved the same way the run will resolve it.
+
+    The bot file does not show the answer in either mode: a hooked-player target is a slot
+    whose name is read from the game, and a friend name lives in app settings. So this
+    resolves both, and offers the name for editing only when some state actually uses it —
+    in hooked-player mode the name is not the user's to change, and is shown read-only.
+    """
     details: list[tuple[str, str]] = []
+    editable: tuple[str, str] | None = None
     for state in states:
         prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
-        p = state.params
-        details += [
-            (f"{prefix}Friend Name", p.get("friend_name", "")),
-            (f"{prefix}Destination Zone", p.get("to_zone", "")),
-        ]
+        target = teleport_to_friend.resolve_target(list(clients or []), state.params)
+        if state.params.get("target_hooked_player", False):
+            slot = int(state.params.get("target_player") or 0)
+            label = f"{prefix}Target Player"
+            details.append((label, f"P{slot} — {target.name}" if target.name else f"P{slot} — {target.error}"))
+        else:
+            details.append((f"{prefix}Friend Name", target.name or f"({target.error})"))
+            if target.source != "the bot file (deprecated)":
+                editable = ("Friend Name", teleport_to_friend.APP_SETTING_KEY)
+        details.append((f"{prefix}Destination Zone", state.params.get("to_zone", "")))
     details.append(("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"))
-    return details
+    return details, editable
 
 
 _DETAIL_BUILDERS = {
@@ -87,14 +112,21 @@ _DETAIL_BUILDERS = {
     "teleport_to_friend": _teleport_to_friend_details,
 }
 
+#: Builders that need the live clients as a second argument.
+_CLIENT_AWARE_BUILDERS = {"teleport_to_friend"}
 
-def collect_safety_warnings(config: BotConfig) -> list[SafetyWarning]:
+
+def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> list[SafetyWarning]:
     """Return a list of SafetyWarning for every risky node type present in *config*.
 
     Returns at most one SafetyWarning per risky node type, even when multiple
     states with the same node_type exist. Coverage is driven by the safety_warning
     field on each NodeSpec — adding a warning for a new node type requires only
     setting that field in the node's NODE_SPEC.
+
+    *clients* is passed to detail builders that resolve something against the live
+    clients, such as the wizard name behind a teleport target's player slot. It is
+    optional so the collection stays callable from tests without any.
     """
     states_by_type: dict[str, list] = {}
     for state in config.states:
@@ -108,8 +140,12 @@ def collect_safety_warnings(config: BotConfig) -> list[SafetyWarning]:
         if not states:
             continue
         detail_builder = _DETAIL_BUILDERS.get(node_type)
-        details = detail_builder(states) if detail_builder else []
-        warnings.append(SafetyWarning(message=spec.safety_warning, details=details))
+        details: list[tuple[str, str]] = []
+        editable: tuple[str, str] | None = None
+        if detail_builder:
+            built = detail_builder(states, clients) if node_type in _CLIENT_AWARE_BUILDERS else detail_builder(states)
+            details, editable = built if isinstance(built, tuple) else (built, None)
+        warnings.append(SafetyWarning(message=spec.safety_warning, details=details, editable_setting=editable))
 
     return warnings
 
@@ -121,7 +157,40 @@ class SafetyWarningDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("Safety Check")
         self.setMinimumWidth(440)
+        self._edits: list[tuple[str, QLineEdit]] = []
         self._build(warnings)
+
+    @staticmethod
+    def _stored_setting(key: str) -> str:
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
+
+        try:
+            return str(SettingsManager.instance().get_general(key, default="") or "")
+        except Exception:
+            return ""
+
+    def accept(self) -> None:
+        """Save any edited settings, then accept.
+
+        On accept only: cancelling a run must not leave a half-typed name behind. The
+        write happens here rather than on every keystroke for the same reason.
+        """
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
+
+        try:
+            settings = SettingsManager.instance()
+            changed = False
+            for key, edit in self._edits:
+                value = edit.text().strip()
+                if value != self._stored_setting(key):
+                    settings.set_general(key, value)
+                    settings.add_recent_friend_name(value)
+                    changed = True
+            if changed:
+                settings.save()
+        except Exception:
+            logger.exception("Could not save an edited safety-dialog setting")
+        super().accept()
 
     def _build(self, warnings: list[SafetyWarning]) -> None:
         layout = QVBoxLayout(self)
@@ -174,6 +243,20 @@ class SafetyWarningDialog(QDialog):
                     value_label = QLabel(value_text)
                     form.addRow(label_text + ":", value_label)
                 layout.addWidget(form_container)
+
+            if warning.editable_setting:
+                label_text, setting_key = warning.editable_setting
+                edit_container = QWidget()
+                edit_form = QFormLayout(edit_container)
+                edit_form.setContentsMargins(icon_size + 8, 0, 0, 0)
+                edit_form.setSpacing(4)
+                edit_form.setHorizontalSpacing(16)
+                edit = QLineEdit(self._stored_setting(setting_key))
+                edit.setPlaceholderText("Wizard name")
+                edit.setToolTip("Applies to every bot on this machine. Saved when you run.")
+                edit_form.addRow(f"Change {label_text}:", edit)
+                layout.addWidget(edit_container)
+                self._edits.append((setting_key, edit))
 
         buttons = QDialogButtonBox()
         run_btn = buttons.addButton("Run Bot", QDialogButtonBox.ButtonRole.AcceptRole)

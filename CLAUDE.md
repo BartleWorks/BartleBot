@@ -168,6 +168,24 @@ Two things that fall out of it:
 `Safety Delay` is the deliberate exception — it describes the machine's connection
 rather than the bot, so no stored value should outrank the app setting.
 
+#### When no bot should ever store a value
+
+`tri_bool` says "no bot *needs* to pin this". Some values are stronger than that:
+storing one in a bot file is always wrong, because the value describes the user and
+the file is shared. `teleport_to_friend`'s friend name is the case — a character name
+in a committed bot is both a privacy leak and a bot that only its author can run.
+
+Those use `ParamField(type="app_setting_str", app_setting_key=…)`. The widget edits
+the app setting directly, and `get_params()` **skips the key entirely**, so the
+properties panel cannot write it back to the bot no matter what the user types. The
+guard is `test_no_bot_stores_a_friend_name`; the run-time resolution, with its
+`source` label, is `teleport_to_friend.resolve_target`.
+
+A literal left in an older file still wins at run time, logged as deprecated, so
+upgrading does not break a bot — but the editor drops it on the next save, and the
+safety dialog stops offering the app-setting field while it is there, because
+editing a value the run will ignore is worse than not offering it.
+
 ### No real player data
 
 Never commit real, identifiable player data — wizard names, character ids, account
@@ -202,9 +220,11 @@ present, so recordings are still useful locally — they just cannot leave the
 machine. Follow that pattern for any new tool that records live account data:
 write to `*.local.json`, never append to a tracked file.
 
-Bot files under `bots/` are the easy one to miss: `friend_name` and similar
-parameters hold real character names and are functional, so redact them
-deliberately rather than by find-and-replace.
+Bot files under `bots/` are the easy one to miss: a parameter holding a real
+character name is *functional*, so redacting it by find-and-replace breaks the bot.
+Move it out of the file instead — see "When no bot should ever store a value" above,
+which is how `friend_name` was dealt with (#102). `test_no_bot_stores_a_friend_name`
+keeps it out.
 
 ### Testing
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`

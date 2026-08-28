@@ -560,7 +560,7 @@ class AppController(QObject):
             return
         from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
 
-        safety_warnings = collect_safety_warnings(self._loaded_config)
+        safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients)
         if safety_warnings:
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
             if not dlg.exec():

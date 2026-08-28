@@ -952,3 +952,71 @@ async def test_answer_instance_prompts_reports_one_clients_refusal_for_the_group
         refusal = await nh_mod.answer_instance_prompts([ok, blocked], delay=0.01, poll_interval=0)
 
     assert refusal == dialog_captions.GAUNTLET_NO_ZONE_CHANGE
+
+
+# ---------------------------------------------------------------------------
+# list_online_friends / resolve_friend_name
+# ---------------------------------------------------------------------------
+
+
+def _friends_list_patches(list_text, monkeypatch):
+    """Stand in for the WizWalker internals list_online_friends imports lazily."""
+    import sys
+    import types
+
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    async def _named_window(_parent, _name):
+        window = types.SimpleNamespace()
+        window.maybe_text = AsyncMock(return_value=list_text)
+        return window
+
+    utils = types.ModuleType("wizwalker.extensions.scripting.utils")
+    utils._cycle_to_online_friends = AsyncMock()
+    utils._maybe_get_named_window = _named_window
+    # The real entry regex, which is what makes this exercise the actual parse.
+    import re
+
+    utils._friend_list_entry = re.compile(r"<icon>.*?</icon>(?P<name>[^<]+)")
+    monkeypatch.setitem(sys.modules, "wizwalker.extensions.scripting.utils", utils)
+    monkeypatch.setattr(nh_mod, "open_friends_list", AsyncMock(return_value=object()))
+
+
+async def test_list_online_friends_returns_every_entry(monkeypatch):
+    """The picker needs the whole list, not one match — this is the read resolve_friend_name
+    was doing all along with the filter baked in."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    _friends_list_patches("<icon>x</icon>Alice StormBlade<icon>x</icon>Bob FrostGem", monkeypatch)
+
+    assert await nh_mod.list_online_friends(object()) == ["Alice StormBlade", "Bob FrostGem"]
+
+
+async def test_list_online_friends_raises_when_nobody_is_online(monkeypatch):
+    """An empty read and an empty list are indistinguishable from the window text, so the
+    caller is told rather than handed a plausible-looking empty list."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    _friends_list_patches("", monkeypatch)
+
+    with pytest.raises(ValueError, match="No friends online"):
+        await nh_mod.list_online_friends(object())
+
+
+async def test_resolve_friend_name_matches_case_insensitively(monkeypatch):
+    """WizWalker compares names case-sensitively, so this is where the exact casing has
+    to be recovered."""
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    _friends_list_patches("<icon>x</icon>Alice StormBlade<icon>x</icon>Bob FrostGem", monkeypatch)
+
+    assert await nh_mod.resolve_friend_name(object(), "bob frostgem") == "Bob FrostGem"
+
+
+async def test_resolve_friend_name_raises_when_the_name_is_absent(monkeypatch):
+    import bartlebot.nodes.node_helpers as nh_mod
+
+    _friends_list_patches("<icon>x</icon>Alice StormBlade", monkeypatch)
+
+    with pytest.raises(ValueError, match="Could not find friend"):
+        await nh_mod.resolve_friend_name(object(), "bob frostgem")

@@ -982,17 +982,15 @@ async def close_friends_list(client) -> bool:
         return False
 
 
-async def resolve_friend_name(client, friend_name_lower: str) -> str:
-    """Return the exact-case friend name matching the lowercased search term.
+async def list_online_friends(client) -> list[str]:
+    """Return the exact-case name of every friend currently online, in list order.
 
-    Opens the online friends list (if not already open) and scans the full list text with a
-    case-insensitive comparison. The list window's text contains every online friend
-    regardless of the current scroll position, so pagination is not a concern here.
+    Opens the online friends list (if not already open) and reads the whole list window
+    in one text read. That text contains every online friend regardless of the current
+    scroll position, so pagination is not a concern here.
 
-    WizWalker's friend lookups compare names case-sensitively, so callers must resolve the
-    exact casing through this function before handing a name to them.
-
-    Raises ValueError if no friends are online or no entry matches the search term.
+    Raises ValueError if no friends are online, which is what callers have to act on —
+    an empty list and a failed read are not distinguishable from the window text alone.
     """
     from wizwalker.extensions.scripting.utils import (  # noqa: PLC0415
         _cycle_to_online_friends,
@@ -1009,9 +1007,20 @@ async def resolve_friend_name(client, friend_name_lower: str) -> str:
     if not list_text:
         raise ValueError("No friends online")
 
-    for entry in _friend_list_entry.finditer(list_text):
-        if entry.group("name").lower() == friend_name_lower:
-            return entry.group("name")
+    return [entry.group("name") for entry in _friend_list_entry.finditer(list_text)]
+
+
+async def resolve_friend_name(client, friend_name_lower: str) -> str:
+    """Return the exact-case friend name matching the lowercased search term.
+
+    WizWalker's friend lookups compare names case-sensitively, so callers must resolve the
+    exact casing through this function before handing a name to them.
+
+    Raises ValueError if no friends are online or no entry matches the search term.
+    """
+    for name in await list_online_friends(client):
+        if name.lower() == friend_name_lower:
+            return name
 
     raise ValueError(f"Could not find friend matching {friend_name_lower!r} in online friends list")
 

@@ -1101,7 +1101,8 @@
         "y": 0.0
       },
       "params": {
-        "friend_name": "Luke SkullHunter",
+        "target_hooked_player": true,
+        "target_player": 1,
         "to_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
       },
       "option_overrides": {}

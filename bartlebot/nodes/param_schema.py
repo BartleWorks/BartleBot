@@ -32,11 +32,19 @@ class ParamField:
     Attributes:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "tri_bool" | "xyz" |
-                      "str_list" | "int_choice" | "player_list" | "drop_keep_list" | "wiki_page".
+                      "str_list" | "int_choice" | "player_list" | "player_slot" | "drop_keep_list" |
+                      "wiki_page" | "app_setting_str".
                       "text" renders as a multi-line QPlainTextEdit.
                       "tri_bool" is a bool that can also be left unset, meaning "use the app setting named by
                       app_setting_key". Stored as true / false / null, and null is what a bot carries unless
                       its author pinned an answer. The node resolves it; see quicksell.resolve_app_defaults.
+                      "player_slot" is the single-select sibling of "player_list": one 1-based client
+                      index, or 0 for none.
+                      "app_setting_str" is a string the *user* owns rather than the bot — the widget edits
+                      the SettingsManager general-settings key named by app_setting_key, and get_params()
+                      never writes the key to the bot file. Use it when no bot should ever ship a value,
+                      which is a stronger claim than "tri_bool"'s "no bot needs to"; teleport_to_friend's
+                      friend_name is the case it was built for.
                       "drop_keep_list" is a str_list of quicksell keep-list keywords, shown alongside the bot's
                       drop table with a checkbox per drop; the value on disk is a plain list of strings.
                       "wiki_page" records the Wizard101 Central page a node's data came from. Editor-only —
@@ -52,6 +60,10 @@ class ParamField:
                       "text" fields where the format is not obvious from the label alone.
         disabled_by:  Key of a bool field in the same schema; when that field is
                       True this field's widget is disabled. Empty string = no link.
+        enabled_by:   The mirror of disabled_by: this field's widget is disabled while the
+                      named bool field is False. Pairing the two on opposite fields is how
+                      mutually exclusive alternatives are expressed — see teleport_to_friend,
+                      where the target is either a hooked player or a name, never both.
         app_setting_key: For type="tri_bool": the SettingsManager general-settings key holding the
                       app-level answer this field falls back to. The widget reads it to label the
                       unset choice with the value currently in force.
@@ -68,6 +80,7 @@ class ParamField:
     default_hint: str = ""
     placeholder: str = ""
     disabled_by: str = ""
+    enabled_by: str = ""
     app_setting_key: str = ""
     required: bool = False
     choices: list[Any] = field(default_factory=list)

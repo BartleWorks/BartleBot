@@ -663,6 +663,27 @@ def test_no_bot_pins_a_quicksell_flag_it_does_not_mean_to():
     assert not offenders, f"quicksell states pinning a shipped default: {offenders}"
 
 
+def test_no_bot_stores_a_friend_name():
+    """A character name in a bot file is both a privacy leak and a portability bug.
+
+    This repo goes public at 1.0.0 without rewriting history, so a name committed now
+    ships then and links the account to whoever wrote the commit (CLAUDE.md, "No real
+    player data"). It also breaks the bot for everyone else, who has no such friend.
+
+    The teleport target is app settings or a hooked player slot instead. The properties
+    panel cannot write this key back — _AppSettingStrWidget is skipped by get_params —
+    so a file carrying one was either hand-edited or predates the change.
+    """
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for state in _load_raw(path).get("states") or []:
+            params = state.get("params")
+            if isinstance(params, dict) and params.get("friend_name"):
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}")
+
+    assert not offenders, f"bot states storing a character name: {offenders}"
+
+
 def test_no_bot_uses_legacy_combat_params():
     """`use_default_duel_profile` is honored by the Combat tab's fallback but not by
     handle_combat, so a bot still carrying it silently ignores its per-state strategy

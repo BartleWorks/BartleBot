@@ -307,7 +307,7 @@
         "y": 0.0
       },
       "params": {
-        "friend_name": "Alice StormBlade",
+        "target_hooked_player": false,
         "to_zone": "Housing_AR_Dormroom/Interior"
       },
       "option_overrides": {}

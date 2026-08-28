@@ -7,6 +7,7 @@ _ParamPanel        — stacked panel showing node, edge, or idle views; owns the
 
 import asyncio
 import json
+import logging
 import re
 from collections.abc import Callable
 from typing import Any
@@ -41,9 +42,11 @@ from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
-from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
+from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Sentinel QLineEdit subclasses  (identified by get_params())
@@ -249,6 +252,148 @@ class _ZoneWidget(QWidget):
             pass
 
 
+class _AppSettingStrWidget(QWidget):
+    """A string field the *user* owns rather than the bot, for ``app_setting_str`` fields.
+
+    Edits go straight to the SettingsManager general key named by the field's
+    app_setting_key, and ``get_params()`` never writes the key to the bot file — that is
+    the whole point. teleport_to_friend's Friend Name is the case it exists for: a bot must
+    never ship a character name, but every user needs to name their own idler once.
+
+    Suggestions come from the same two-tier arrangement as zones: live first (the online
+    friends list, read from a running client on demand), remembered after
+    (``recent_friend_names``). The history is autocomplete and nothing more — no run-time
+    code consults it, so a suggestion can never decide where a bot teleports.
+    """
+
+    def __init__(self, app_setting_key: str, get_clients: Callable[[], list], legacy_value: str = "", parent=None):
+        super().__init__(parent)
+        self._key = app_setting_key
+        self._get_clients = get_clients
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(2)
+
+        self._edit = QLineEdit()
+        self._model = QStringListModel(self)
+        completer = QCompleter(self._model, self)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self._edit.setCompleter(completer)
+        self._edit.setText(self._stored())
+        self._edit.setPlaceholderText("Wizard name")
+        self._edit.editingFinished.connect(self._commit)
+        outer.addWidget(self._edit)
+
+        pick = QPushButton("Pick from Friends List")
+        pick.setFixedHeight(22)
+        pick.setToolTip("Read the online friends list from a connected player")
+        pick.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
+        pick.clicked.connect(lambda _: self._show_pick_menu(pick))
+        outer.addWidget(pick)
+
+        hint = QLabel("Stored on this machine and shared by every bot — not saved into the bot file.")
+        hint.setStyleSheet("font-size: 10px; color: gray;")
+        hint.setWordWrap(True)
+        outer.addWidget(hint)
+
+        if legacy_value.strip():
+            warn = QLabel(
+                f"This bot still stores a name of its own ({legacy_value.strip()}). It wins at run time "
+                "for now, and is dropped the next time this bot is saved."
+            )
+            warn.setStyleSheet(f"font-size: 10px; color: {THEME.warning};")
+            warn.setWordWrap(True)
+            outer.addWidget(warn)
+
+        self._refresh_suggestions()
+
+    # ------------------------------------------------------------------
+    # Settings access — lazy and defensive, as _TriBoolComboBox is.
+    # ------------------------------------------------------------------
+
+    def _settings(self):
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
+
+        return SettingsManager.instance()
+
+    def _stored(self) -> str:
+        try:
+            return str(self._settings().get_general(self._key, default="") or "")
+        except Exception:
+            return ""
+
+    def _commit(self) -> None:
+        name = self._edit.text().strip()
+        if name == self._stored():
+            return
+        try:
+            settings = self._settings()
+            settings.set_general(self._key, name)
+            settings.save()
+            settings.add_recent_friend_name(name)
+        except Exception:
+            logger.exception("Could not save %s", self._key)
+        self._refresh_suggestions()
+
+    def _refresh_suggestions(self) -> None:
+        try:
+            self._model.setStringList(self._settings().recent_friend_names)
+        except Exception:
+            self._model.setStringList([])
+
+    # ------------------------------------------------------------------
+    # Live friends list
+    # ------------------------------------------------------------------
+
+    def _show_pick_menu(self, btn: QPushButton) -> None:
+        clients = self._get_clients()
+        if not clients:
+            QMessageBox.information(self, "No players", "Connect a player to read its friends list.")
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._pick_from(0, btn))
+            return
+        menu = popup_menu(btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Read Player {i + 1}'s friends list")
+            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._pick_from(idx, btn)))
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    async def _pick_from(self, idx: int, btn: QPushButton) -> None:
+        """Read one client's online friends and offer them as a menu.
+
+        Opening the list moves the game's own UI, so this only ever runs from an explicit
+        button press, never when the panel is merely shown.
+        """
+        from bartlebot.nodes import node_helpers  # noqa: PLC0415 — heavy import, only needed on demand
+
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        client = clients[idx]
+        try:
+            async with client.mouse_handler:
+                names = await node_helpers.list_online_friends(client)
+            await node_helpers.close_friends_list(client)
+        except Exception as exc:
+            logger.debug("Could not read the friends list", exc_info=True)
+            QMessageBox.information(self, "Friends list", f"Could not read the friends list: {exc}")
+            return
+        if not names:
+            QMessageBox.information(self, "Friends list", "No friends are online.")
+            return
+        menu = popup_menu(btn)
+        for name in names:
+            menu.addAction(name).triggered.connect(lambda _checked, n=name: self._choose(n))
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    def _choose(self, name: str) -> None:
+        self._edit.setText(name)
+        self._commit()
+
+
 class _TriBoolComboBox(QComboBox):
     """Yes / No / "use the app setting" dropdown, for ``tri_bool`` param fields.
 
@@ -404,6 +549,17 @@ class _DynamicParamForm(QWidget):
                 elif isinstance(controller, QLineEdit):
                     display_w.setEnabled(not controller.text().strip())
                     controller.textChanged.connect(lambda text, w=display_w: w.setEnabled(not text.strip()))
+        # Wire enabled_by: the mirror image, so a pair of fields can be mutually exclusive.
+        for field in schema:
+            if field.enabled_by and field.enabled_by in self._widgets:
+                controller = self._widgets[field.enabled_by]
+                controlled = self._widgets[field.key]
+                display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                if isinstance(controller, QCheckBox):
+                    display_w.setEnabled(controller.isChecked())
+                    controller.checkStateChanged.connect(
+                        lambda state, w=display_w: w.setEnabled(state == Qt.CheckState.Checked)
+                    )
         self._suppress = False
         self._push_context()
         self._validate_required_fields()
@@ -444,11 +600,22 @@ class _DynamicParamForm(QWidget):
             elif isinstance(widget, PlayerListWidget):
                 display_w = widget
                 empty = len(widget.get_value()) == 0
+            elif isinstance(widget, PlayerSlotWidget):
+                display_w = widget
+                empty = widget.get_value() == 0
             else:
                 # QSpinBox, QDoubleSpinBox, QCheckBox — always have a value
                 display_w = widget
                 empty = False
             display_w.setStyleSheet(f"border: 1px solid {THEME.error};" if empty else "")
+
+    def widget(self, key: str):
+        """The input widget for one param key, or None.
+
+        For callers that need to inspect or drive a single field — the xyz fields hand
+        back their (x, y, z, container) tuple, everything else a plain widget.
+        """
+        return self._widgets.get(key)
 
     def get_params(self) -> dict:
         result: dict[str, Any] = {}
@@ -458,7 +625,10 @@ class _DynamicParamForm(QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
-            elif isinstance(w, PlayerListWidget | DropKeepListWidget):
+            elif isinstance(w, _AppSettingStrWidget):
+                # Deliberately not written: the value belongs to the user, not the bot.
+                continue
+            elif isinstance(w, PlayerListWidget | PlayerSlotWidget | DropKeepListWidget):
                 result[key] = w.get_value()
             elif isinstance(w, _StrListLineEdit):
                 result[key] = parse_list_text(w.text())
@@ -516,6 +686,19 @@ class _DynamicParamForm(QWidget):
                 plain.setToolTip(help_text)
             plain.textChanged.connect(self._emit_changed)
             return plain
+        if field_type == "app_setting_str":
+            w = _AppSettingStrWidget(app_setting_key, self._get_clients, legacy_value=str(val or ""))
+            if help_text:
+                w.setToolTip(help_text)
+            return w
+        if field_type == "player_slot":
+            w = PlayerSlotWidget()
+            w.set_available_players(len(self._get_clients()))
+            w.set_value(val if isinstance(val, int) else 0)
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
         if field_type == "player_list":
             w = PlayerListWidget()
             w.set_available_players(len(self._get_clients()))
@@ -1505,7 +1688,7 @@ class _ParamPanel(QWidget):
         bookkeeping in either.
         """
         connected = len(self._get_clients())
-        for w in self.findChildren(PlayerListWidget):
+        for w in self.findChildren(PlayerListWidget) + self.findChildren(PlayerSlotWidget):
             w.set_available_players(connected)
 
     def show_idle(self) -> None:

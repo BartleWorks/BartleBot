@@ -3,6 +3,7 @@
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.safety_warning_dialog import collect_safety_warnings
 from bartlebot.settings_manager import SettingsManager
+from tests.conftest import FakeClient
 
 
 def _config(*states: dict) -> BotConfig:
@@ -212,3 +213,76 @@ def test_warning_order_matches_node_specs_order():
                 emitted_types.append(nt)
                 break
     assert emitted_types == [nt for nt in risky_types_in_spec_order if nt in ("quicksell", "teleport_to_friend")]
+
+
+# ---------------------------------------------------------------------------
+# teleport_to_friend target resolution in the dialog (#102)
+# ---------------------------------------------------------------------------
+
+
+def test_teleport_to_friend_offers_the_name_for_editing(monkeypatch):
+    """A wrong name is worth fixing here rather than cancelling, walking to Settings, and
+    starting the run over — and it is the user's value, so it is theirs to change."""
+    from bartlebot.settings_manager import SettingsManager
+
+    monkeypatch.setattr(SettingsManager.instance(), "default_friend_name", "Alice StormBlade")
+    config = _config({"node_type": "teleport_to_friend", "params": {"to_zone": "ZoneX"}})
+
+    warning = collect_safety_warnings(config)[0]
+
+    assert warning.editable_setting == ("Friend Name", "default_friend_name")
+    assert any(v == "Alice StormBlade" for _, v in warning.details)
+
+
+def test_teleport_to_friend_shows_an_unconfigured_name_as_the_problem_it_is(monkeypatch):
+    from bartlebot.settings_manager import SettingsManager
+
+    monkeypatch.setattr(SettingsManager.instance(), "default_friend_name", "")
+    config = _config({"node_type": "teleport_to_friend", "params": {"to_zone": "ZoneX"}})
+
+    details = collect_safety_warnings(config)[0].details
+
+    assert any("no friend name configured" in v for _, v in details)
+
+
+def test_hooked_player_target_is_shown_read_only():
+    """In slot mode the name is not the user's to change — it is whoever is logged into
+    that window — so the dialog reports it and offers no field."""
+    from bartlebot import wizard_names
+
+    clients = [FakeClient(), FakeClient()]
+    wizard_names.remember(clients[1], "Luke SkullHunter")
+    config = _config(
+        {
+            "node_type": "teleport_to_friend",
+            "params": {"target_hooked_player": True, "target_player": 2, "to_zone": "Z"},
+        }
+    )
+    try:
+        warning = collect_safety_warnings(config, clients)
+    finally:
+        wizard_names.clear_cache()
+
+    assert warning[0].editable_setting is None
+    assert any(v == "P2 — Luke SkullHunter" for _, v in warning[0].details)
+
+
+def test_hooked_player_target_says_so_when_the_name_is_not_known_yet():
+    config = _config(
+        {
+            "node_type": "teleport_to_friend",
+            "params": {"target_hooked_player": True, "target_player": 1, "to_zone": "Z"},
+        }
+    )
+
+    details = collect_safety_warnings(config, [FakeClient()])[0].details
+
+    assert any("has not been detected" in v for _, v in details)
+
+
+def test_a_bot_that_still_pins_a_name_is_not_offered_the_app_setting_field():
+    """Editing the app setting would change nothing while the bot's own value outranks it,
+    so offering the field would be a lie about what the run will do."""
+    config = _config({"node_type": "teleport_to_friend", "params": {"friend_name": "Alice", "to_zone": "Z"}})
+
+    assert collect_safety_warnings(config)[0].editable_setting is None
