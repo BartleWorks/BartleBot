@@ -8,6 +8,7 @@ Module-level helpers (_node_returns, _validate_node, _dist, _unique_id, etc.) ar
 also exported here so BotCanvas can use them without circular imports.
 """
 
+import logging
 import math
 from collections import defaultdict
 
@@ -35,6 +36,8 @@ from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Constants used only by the editor
@@ -95,6 +98,64 @@ def _auto_scroll_view(view, scene_pos: QPointF) -> None:
 def _node_returns(node_type: str) -> list[str]:
     spec = NODE_SPECS.get(node_type)
     return [r.name for r in spec.returns] if spec else []
+
+
+# The return an inserted node should carry onward. An edge with no ``when`` fires
+# whatever the node did, so a failure flows straight down the success path -- almost
+# never what an author means. Every shipped node type returns SUCCESS/FAILURE or
+# TRUE/FALSE, so there is always a sensible answer.
+_HAPPY_PATH_RETURNS = ("SUCCESS", "TRUE")
+
+
+def _happy_path_return(returns: list[str]) -> str | None:
+    """The return value an inserted node should be wired onward from.
+
+    Falls back to the first declared return for a node type that names neither of the
+    conventional pair, and to None only for one with no returns at all.
+    """
+    for name in _HAPPY_PATH_RETURNS:
+        if name in returns:
+            return name
+    return returns[0] if returns else None
+
+
+# How far the insertion search will look before giving up and using the raw seed.
+_PLACEMENT_SEARCH_RADIUS = 31
+
+
+def _placement_candidates(x_dir: int):
+    """Grid offsets to try for an inserted node, its own column exhausted first.
+
+    An inserted node belongs to the layer it was inserted into, so the column is held
+    and only the row moves; widening in x is the fallback for a column with no free
+    row at all, and it widens *away* from the node the insert hangs off so the new
+    node never lands on the far side of it.
+
+    Ordering by plain proximity instead -- the spiral behind "Add State Here" -- drifts
+    sideways: across the shipped bots it put 82% of input-port inserts level with or to
+    the right of the node they feed into, which reads backwards. Holding the column
+    costs almost nothing in practice, because the free row is nearly always adjacent:
+    over all 1264 insert sites in the library, 281 need no move, 982 move one row, and
+    a single one moves two.
+    """
+    for dx_mag in range(_PLACEMENT_SEARCH_RADIUS):
+        for dy_mag in range(_PLACEMENT_SEARCH_RADIUS):
+            if dy_mag == 0:
+                yield (x_dir * dx_mag, 0)
+            else:
+                yield (x_dir * dx_mag, -dy_mag)
+                yield (x_dir * dx_mag, dy_mag)
+
+
+def node_types_producing(return_name: str) -> set[str]:
+    """Node types that can return *return_name*.
+
+    The set an insert-at-output-port picker may offer. Membership, not an identical
+    return list: a rerouted edge only needs its ``when`` to still be producible, and
+    requiring the whole signature to match would rule out ``sleep`` -- which returns
+    SUCCESS and nothing else -- on exactly the SUCCESS ports it is most wanted on.
+    """
+    return {nt for nt in NODE_SPECS if return_name in _node_returns(nt)}
 
 
 def _required_field_empty(field, params: dict) -> bool:
@@ -783,6 +844,26 @@ class EditScene(QGraphicsScene):
         menu = QMenu()
         if isinstance(item, NodeItem):
             sid = item.state_id
+            # Ports are painted on the node, so itemAt() has already resolved to the
+            # NodeItem -- the port under the cursor has to be hit-tested separately,
+            # with the same helpers and radius the drag-to-connect path uses so the
+            # target areas agree.  Output first, matching mousePressEvent.
+            port_out_hit = self._node_near_port_out(event.scenePos())
+            port_in_hit = self._node_near_port_in(event.scenePos())
+            if port_out_hit is not None:
+                port_node, port_return = port_out_hit
+                label = f"Insert State at {port_return} Port" if port_return else "Insert State at Output Port"
+                act_port = QAction(label, menu)
+                act_port.triggered.connect(
+                    lambda _=None, s=port_node.state_id, r=port_return: self._prompt_insert_at_output_port(s, r)
+                )
+                menu.addAction(act_port)
+                menu.addSeparator()
+            elif port_in_hit is not None:
+                act_port = QAction("Insert State at Input Port", menu)
+                act_port.triggered.connect(lambda _=None, s=port_in_hit.state_id: self._prompt_insert_at_input_port(s))
+                menu.addAction(act_port)
+                menu.addSeparator()
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
@@ -1154,6 +1235,32 @@ class EditScene(QGraphicsScene):
             self._delete_edge_item(edge, confirm=False)
         self._in_structural_edit = False
 
+    def delete_state(self, state_id: str, *, confirm: bool = True) -> bool:
+        """Delete a state and its edges. Returns False if the user cancels the prompt."""
+        return self._delete_node(state_id, confirm=confirm)
+
+    def _reassign_orphaned_roles(self) -> None:
+        """Move ``initial`` / ``recovery_state`` off a state that no longer exists.
+
+        Both are required and validated against the states list, so a dangling one
+        produces a config that saves happily and then refuses to load.  Deleting the
+        initial state has always been able to do this; #71 made the recovery state
+        as easy to delete, which is what brought it to the surface.
+
+        The first remaining state is an arbitrary choice, but it is a *valid* one, and
+        the badge moving to it is visible -- unlike the corrupted file, which is not.
+        Nothing to do when the graph is empty: a config with no states cannot satisfy
+        either field, and is already unloadable for that reason alone.
+        """
+        if self._config is None or not self._config.states:
+            return
+        ids = {s.id for s in self._config.states}
+        fallback = self._config.states[0].id
+        if self._config.initial not in ids:
+            self._config.initial = fallback
+        if self._config.recovery_state not in ids:
+            self._config.recovery_state = fallback
+
     def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state and all its edges.  Returns False if the user cancels."""
         if self._config is None:
@@ -1191,6 +1298,7 @@ class EditScene(QGraphicsScene):
         self._edge_items = remaining
         self._recompute_offsets()
         self._config.states = [s for s in self._config.states if s.id != state_id]
+        self._reassign_orphaned_roles()
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
         self.refresh_terminal()
@@ -1347,6 +1455,184 @@ class EditScene(QGraphicsScene):
         self.refresh_errors()
         self.graph_changed.emit()
 
+    def _prompt_insert_at_input_port(self, state_id: str) -> None:
+        """Ask which node type to insert, then insert it at *state_id*'s input port."""
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        view = self.views()[0] if self.views() else None
+        dlg = NodeBrowserDialog(view, mode="add")
+        if dlg.exec() and dlg.selected_node_type:
+            self.insert_state_at_input_port(state_id, dlg.selected_node_type)
+
+    def _prompt_insert_at_output_port(self, state_id: str, return_name: str | None) -> None:
+        """Ask which node type to insert, then insert it at an output port.
+
+        The picker is restricted to node types that can produce *return_name*.  A
+        rerouted edge's ``when`` describes its source node's outcome, so a node that
+        cannot produce that value would leave the edge unconditional -- firing on
+        failure exactly as readily as on success.  Requiring the return rather than an
+        identical return list keeps the restriction honest: ``sleep`` returns only
+        SUCCESS, and is one of the more useful things to drop onto a SUCCESS port.
+        """
+        from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+
+        allowed = node_types_producing(return_name) if return_name is not None else None
+        view = self.views()[0] if self.views() else None
+        dlg = NodeBrowserDialog(view, mode="add", allowed_node_types=allowed)
+        if dlg.exec() and dlg.selected_node_type:
+            self.insert_state_at_output_port(state_id, return_name, dlg.selected_node_type)
+
+    def free_position_near(self, seed: QPointF, x_dir: int = 1) -> QPointF:
+        """The nearest free on-grid position to *seed*, preferring *seed*'s own column.
+
+        Every insert path needs this: the space an inserted node logically wants is
+        the space its neighbours are already in. One column to the left of a node is
+        exactly where that node's sources sit, and the midpoint of an edge between
+        adjacent columns is 220 px from each -- less than the 300 px a node is wide.
+        Left alone, 78% of port inserts and 90% of edge inserts landed on top of an
+        existing node across the shipped bots. Seeding here takes all three to 0%.
+
+        Overlap is tested against the nodes' actual rectangles rather than which grid
+        cell they round to; cell-occupancy alone still left 7% overlapping.
+
+        Rows are snapped to whole multiples of GRID_H, which is where the shipped bots
+        put every one of their 1264 nodes. ``find_empty_grid_cell`` -- the older search
+        behind "Add State Here" -- offsets its rows by half a node instead, so what it
+        returns is collision-free but never row-aligned with anything already there.
+        """
+        boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, NODE_H) for n in self._node_items.values()]
+        cell_x = round(seed.x() / GRID_W)
+        cell_y = round(seed.y() / GRID_H)
+        for dx, dy in _placement_candidates(x_dir):
+            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H)
+            if not any(QRectF(pos.x(), pos.y(), NODE_W, NODE_H).intersects(b) for b in boxes):
+                return pos
+        return seed
+
+    def _spawn_state(self, node_type: str, pos: QPointF) -> tuple[str, NodeItem]:
+        """Create a state of *node_type* at *pos*, in both the model and the scene.
+
+        Shared by every insert path. The caller owns the undo snapshot and all the
+        transition wiring; this only brings the state into existence.
+
+        The stored position is the one the item is actually placed at. That was not
+        true of the edge-insert path, which wrote a y one NODE_H below where the node
+        appeared -- self-correcting, because the next mouse release flushes real item
+        positions into the model, but wrong until then.
+        """
+        new_id = _unique_id([st.id for st in self._config.states])
+        default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
+        self._config.states.append(
+            StateModel(
+                id=new_id,
+                node_type=node_type,
+                position={"x": pos.x(), "y": pos.y()},
+                params=default_params,
+            )
+        )
+        node = NodeItem(
+            new_id,
+            None,
+            interactive=True,
+            returns=_node_returns(node_type),
+            is_terminal=True,
+            node_type=node_type,
+        )
+        node.set_snap_enabled(self._snap_enabled)
+        node.setPos(pos)
+        self.addItem(node)
+        self._node_items[new_id] = node
+
+        from bartlebot.settings_manager import SettingsManager
+
+        SettingsManager.instance().add_recently_used_node(node_type)
+        return new_id, node
+
+    def insert_state_at_input_port(self, state_id: str, node_type: str) -> str | None:
+        """Insert a state of *node_type* in front of everything entering *state_id* (#66).
+
+        Every transition that ended at *state_id* now ends at the new state instead,
+        keeping its own ``when``, flags and label untouched -- those describe the
+        *source* node's outcome, and are unaffected by what the edge now points at.
+        The new state is then wired onward to *state_id*.
+
+        Returns the new state's id, or None if *state_id* is not on the canvas.
+        """
+        if self._config is None:
+            return None
+        target = self._node_items.get(state_id)
+        if target is None:
+            return None
+        incoming = [t for t in self._config.transitions if t.dest == state_id]
+        pos = self.free_position_near(QPointF(target.pos().x() - GRID_W, target.pos().y()), x_dir=-1)
+
+        self._pre_edit("Insert State at Port")
+        prev_in_structural = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            new_id, new_node = self._spawn_state(node_type, pos)
+            for t in incoming:
+                old_src, old_when = t.source, t.when
+                t.dest = new_id
+                self.change_edge_endpoints(old_src, old_when, state_id, old_src, new_id)
+            self._create_transition(new_node, target, _happy_path_return(new_node.returns))
+        finally:
+            self._in_structural_edit = prev_in_structural
+        self._update_scene_rect()
+        self.graph_changed.emit()
+        return new_id
+
+    def insert_state_at_output_port(self, state_id: str, return_name: str | None, node_type: str) -> str | None:
+        """Insert a state of *node_type* after *state_id*'s *return_name* port (#66).
+
+        Every transition leaving that port now leaves the new state instead, keeping
+        its ``when``, flags and label; *state_id* is then wired to the new state on the
+        port that was clicked.
+
+        ``when`` survives the move only because *node_type* is required to produce
+        *return_name* -- the value describes the *source* node's outcome, so a node
+        that cannot produce it would leave every rerouted edge unconditional, firing
+        on failure as readily as on success. The picker enforces this, and so does
+        this method: it refuses rather than quietly rewriting the guards.
+
+        Returns the new state's id, or None if the insert was refused.
+        """
+        if self._config is None:
+            return None
+        source = self._node_items.get(state_id)
+        if source is None:
+            return None
+        if return_name is not None and return_name not in _node_returns(node_type):
+            logger.warning(
+                "Refusing to insert %r at the %s port of %s: it cannot return %s, "
+                "which would leave the rerouted edges unconditional",
+                node_type,
+                return_name,
+                state_id,
+                return_name,
+            )
+            return None
+
+        outgoing = [t for t in self._config.transitions if t.source == state_id and t.when == return_name]
+        port = source.port_out_for(return_name)
+        pos = self.free_position_near(QPointF(source.pos().x() + GRID_W, port.y() - NODE_H / 2), x_dir=1)
+
+        self._pre_edit("Insert State at Port")
+        prev_in_structural = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            new_id, new_node = self._spawn_state(node_type, pos)
+            for t in outgoing:
+                old_dst = t.dest
+                t.source = new_id
+                self.change_edge_endpoints(state_id, return_name, old_dst, new_id, old_dst)
+            self._create_transition(source, new_node, return_name)
+        finally:
+            self._in_structural_edit = prev_in_structural
+        self._update_scene_rect()
+        self.graph_changed.emit()
+        return new_id
+
     def _insert_state_on_edge(self, edge_item: EdgeItem) -> None:
         """Split an existing edge by inserting a new state at its midpoint."""
         if self._config is None:
@@ -1364,7 +1650,7 @@ class EditScene(QGraphicsScene):
 
         # Midpoint of the edge path in scene coordinates
         mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
-        insert_pos = QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2)
+        insert_pos = self.free_position_near(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2), x_dir=1)
 
         # Ask the user which node type to insert
         from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
@@ -1378,38 +1664,14 @@ class EditScene(QGraphicsScene):
         self._pre_edit("Insert State on Edge")
         self._in_structural_edit = True
 
-        # Create a new state at the midpoint with the chosen type
-        new_id = _unique_id([st.id for st in self._config.states])
-        default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
-        state = StateModel(
-            id=new_id,
-            node_type=node_type,
-            position={"x": insert_pos.x(), "y": mid.y() + NODE_H / 2},
-            params=default_params,
-        )
-        self._config.states.append(state)
-        returns = _node_returns(node_type)
-        new_node = NodeItem(
-            new_id,
-            None,
-            interactive=True,
-            returns=returns,
-            is_terminal=True,
-            node_type=node_type,
-        )
-        new_node.set_snap_enabled(self._snap_enabled)
-        new_node.setPos(insert_pos)
-        self.addItem(new_node)
-        self._node_items[new_id] = new_node
-
-        from bartlebot.settings_manager import SettingsManager
-
-        SettingsManager.instance().add_recently_used_node(node_type)
+        new_id, new_node = self._spawn_state(node_type, insert_pos)
 
         # Remove original edge (src --w--> dst), then wire src --w--> new --w'--> dst.
         # Carry the original when value to the outgoing edge only if the new node actually
-        # returns that value; otherwise fall back to unconditional so the edge is never dead.
-        outgoing_when = w if (w is not None and w in new_node._returns) else None
+        # returns it; otherwise fall back to the new node's happy path rather than to an
+        # unconditional edge, which would run the rest of the bot on a failure too.
+        returns = new_node.returns
+        outgoing_when = w if (w is not None and w in returns) else _happy_path_return(returns)
         self._delete_edge_item(edge_item, confirm=False)
         self._create_transition(src_node, new_node, w)
         self._create_transition(new_node, dst_node, outgoing_when)

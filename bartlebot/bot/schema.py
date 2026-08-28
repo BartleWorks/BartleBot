@@ -149,8 +149,10 @@ class BotConfig(BaseModel):
     version: str = "1.0"
     clients: str | list[int] = "all"
     initial: str
-    # Optional state to jump to after a client reconnects. If None, the bot stops on disconnect.
-    recovery_state: str | None = None
+    # State to jump to after a client reconnects. Required: a bot with nowhere to resume
+    # only discovers that mid-run, in a log line, at the moment a crash has already
+    # happened -- the same "ask before the run, not after" reasoning as recovery_readiness.
+    recovery_state: str
     start_location: str | None = None
     drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
@@ -177,7 +179,7 @@ class BotConfig(BaseModel):
         ids = {s.id for s in self.states}
         if self.initial not in ids:
             raise ValueError(f"initial state '{self.initial}' is not in states list")
-        if self.recovery_state is not None and self.recovery_state not in ids:
+        if self.recovery_state not in ids:
             raise ValueError(f"recovery_state '{self.recovery_state}' is not in states list")
         return self
 

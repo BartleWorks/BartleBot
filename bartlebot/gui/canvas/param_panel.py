@@ -1232,6 +1232,13 @@ class _ParamPanel(QWidget):
     # Emitted when the user clicks a connection row to navigate to an edge or state.
     select_edge_requested = pyqtSignal(object)  # TransitionModel
     select_state_requested = pyqtSignal(str)  # state ID
+    # Emitted when the user gives the shown state one of the two bot-wide FSM roles.
+    # The panel holds no BotConfig, so it asks rather than assigns -- the canvas owns
+    # the mutation, which is also what gets it an undo entry and a badge refresh.
+    # Both roles are exactly-one, so there is no "clear" counterpart: the request
+    # always names the state taking the role.
+    initial_state_requested = pyqtSignal(str)  # state ID
+    recovery_state_requested = pyqtSignal(str)  # state ID
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1305,9 +1312,32 @@ class _ParamPanel(QWidget):
         _nt_row_layout.addWidget(self._node_type_combo, 1)
         _nt_row_layout.addWidget(self._node_help_btn)
 
+        # FSM role checkboxes. Both roles are exactly-one and bot-wide, so these read
+        # as checkboxes but behave as radios across nodes: checking one moves the role
+        # here, and the box for the state that already holds it is disabled, because
+        # unchecking would leave the bot with no answer and BotConfig requires one.
+        self._initial_check = QCheckBox("Initial state")
+        self._initial_check.setToolTip(
+            "Start the bot in this state.\n\nExactly one state is the initial state; "
+            "checking this moves the role here from whichever state holds it now."
+        )
+        self._recovery_check = QCheckBox("Recovery state")
+        self._recovery_check.setToolTip(
+            "Resume here after a crashed client reconnects.\n\nExactly one state is the "
+            "recovery state; checking this moves the role here from whichever state holds it now."
+        )
+        _roles_row = QWidget()
+        _roles_layout = QHBoxLayout(_roles_row)
+        _roles_layout.setContentsMargins(0, 0, 0, 0)
+        _roles_layout.setSpacing(12)
+        _roles_layout.addWidget(self._initial_check)
+        _roles_layout.addWidget(self._recovery_check)
+        _roles_layout.addStretch()
+
         nf.addRow("ID", self._node_id_lbl)
         nf.addRow("Label", self._node_label_edit)
         nf.addRow("Node type", _node_type_row)
+        nf.addRow("Roles", _roles_row)
 
         self._param_form = _DynamicParamForm()
         scroll = QScrollArea()
@@ -1472,6 +1502,8 @@ class _ParamPanel(QWidget):
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_label_edit.editingFinished.connect(self._on_label_editing_finished)
         self._node_type_combo.currentIndexChanged.connect(self._on_node_type_changed)
+        self._initial_check.clicked.connect(self._on_initial_clicked)
+        self._recovery_check.clicked.connect(self._on_recovery_clicked)
         self._param_form.changed.connect(self._on_param_form_changed)
         self._notes_edit.textChanged.connect(self._on_notes_changed)
         self._edge_when_combo.currentTextChanged.connect(self._on_edge_when_changed)
@@ -1536,6 +1568,8 @@ class _ParamPanel(QWidget):
         state: StateModel,
         all_states: list | None = None,
         all_transitions: list[TransitionModel] | None = None,
+        initial_id: str | None = None,
+        recovery_id: str | None = None,
     ) -> None:
         self._cancel_record()
         self._state = state
@@ -1557,9 +1591,84 @@ class _ParamPanel(QWidget):
         self._notes_edit.setPlainText(state.notes or "")
         self._notes_edit.blockSignals(False)
         self._suppress = False
+        self._set_role_checks(state.id, initial_id, recovery_id)
         self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES)
         self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
+
+    @property
+    def initial_check(self) -> QCheckBox:
+        """The Initial state checkbox on the node page."""
+        return self._initial_check
+
+    @property
+    def recovery_check(self) -> QCheckBox:
+        """The Recovery state checkbox on the node page."""
+        return self._recovery_check
+
+    def request_initial_role(self) -> None:
+        """Ask for the shown state to become the initial state, as ticking the box does."""
+        if self._state is not None:
+            self.initial_state_requested.emit(self._state.id)
+
+    def request_recovery_role(self) -> None:
+        """Ask for the shown state to become the recovery state, as ticking the box does."""
+        if self._state is not None:
+            self.recovery_state_requested.emit(self._state.id)
+
+    def refresh_role_checks(self, initial_id: str | None, recovery_id: str | None) -> None:
+        """Re-sync the role checkboxes for the state already on screen.
+
+        Needed because moving a role changes *two* nodes: the one gaining it and the
+        one losing it.  The canvas calls this after applying the move so the panel
+        does not keep showing a stale tick if the shown node was the loser.
+        """
+        if self._state is None:
+            return
+        self._set_role_checks(self._state.id, initial_id, recovery_id)
+
+    def _set_role_checks(self, state_id: str, initial_id: str | None, recovery_id: str | None) -> None:
+        """Tick and enable the role boxes for *state_id*.
+
+        The box is disabled exactly when this state already holds the role: there is
+        nothing a click could mean there, since the role cannot be vacated.
+        """
+        was_suppressed = self._suppress
+        self._suppress = True
+        try:
+            is_initial = state_id == initial_id
+            is_recovery = state_id == recovery_id
+            self._initial_check.setChecked(is_initial)
+            self._initial_check.setEnabled(not is_initial)
+            self._recovery_check.setChecked(is_recovery)
+            self._recovery_check.setEnabled(not is_recovery)
+        finally:
+            self._suppress = was_suppressed
+
+    def _on_initial_clicked(self, checked: bool) -> None:
+        """Ask the canvas to move the initial-state role to the shown state.
+
+        ``clicked`` rather than ``toggled`` so programmatic setChecked() in
+        ``show_state`` never reaches here.  An unchecking click cannot happen --
+        the box is disabled once this state holds the role -- but it is refused
+        rather than ignored, so a future change that enables it cannot silently
+        leave the bot with no initial state.
+        """
+        if self._suppress or self._state is None:
+            return
+        if not checked:
+            self._initial_check.setChecked(True)
+            return
+        self.request_initial_role()
+
+    def _on_recovery_clicked(self, checked: bool) -> None:
+        """Ask the canvas to move the recovery-state role to the shown state."""
+        if self._suppress or self._state is None:
+            return
+        if not checked:
+            self._recovery_check.setChecked(True)
+            return
+        self.request_recovery_role()
 
     def _reload_when_combo(self, src_returns: list[str] | None = None) -> None:
         """Repopulate the When dropdown from the source node's return values.

@@ -5,6 +5,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
+  "recovery_state": "state_1",
   "default_combat_config": "### p1\ntempest[epic]\n\n### p2\ntempest[epic]",
   "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Celestia",

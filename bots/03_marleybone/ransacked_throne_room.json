@@ -1166,5 +1166,47 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "8aa7ab92",
+      "label": "Activate Notes 5-7",
+      "members": [
+        "state_18",
+        "state_16",
+        "state_13",
+        "state_14",
+        "state_15",
+        "state_17"
+      ],
+      "color": 2
+    },
+    {
+      "id": "37d38411",
+      "label": "Navigation",
+      "members": [
+        "state_19",
+        "state_11",
+        "state_4",
+        "state_20",
+        "state_2",
+        "state_5",
+        "state_3",
+        "state_1",
+        "state_12"
+      ],
+      "color": 1
+    },
+    {
+      "id": "115df061",
+      "label": "Defeat The Monster",
+      "members": [
+        "state_10",
+        "state_6",
+        "state_7",
+        "state_8",
+        "state_9"
+      ],
+      "color": 3
+    }
+  ]
 }

@@ -67,6 +67,7 @@ async def test_to_machine_config_condition_string_format():
     config = BotConfig(
         name="test",
         initial="a",
+        recovery_state="a",
         states=[
             StateModel(id="a", node_type="mock"),
             StateModel(id="b", node_type="mock"),
@@ -94,6 +95,7 @@ async def test_to_machine_config_simple_flag_condition():
     config = BotConfig(
         name="test",
         initial="a",
+        recovery_state="a",
         states=[StateModel(id="a", node_type="mock"), StateModel(id="b", node_type="mock")],
         transitions=[
             TransitionModel(
@@ -125,6 +127,7 @@ async def test_to_machine_config_compound_flag_conditions_registered():
     config = BotConfig(
         name="test",
         initial="a",
+        recovery_state="a",
         states=[StateModel(id="a", node_type="mock"), StateModel(id="b", node_type="mock")],
         transitions=[
             TransitionModel(
@@ -179,6 +182,7 @@ async def test_option_override_per_state_visible_via_get_option():
     config = BotConfig(
         name="test",
         initial="state_a",
+        recovery_state="state_a",
         # Bot-wide default: Safety Delay = 5.0
         options=[BotOptionModel(name="Safety Delay", type="float", default=5.0)],
         states=[
@@ -234,6 +238,7 @@ def _make_machine_for_flag_test(options: list[BotOptionModel], flags: list[FlagC
     config = BotConfig(
         name="flag-test",
         initial="state_a",
+        recovery_state="state_a",
         options=options,
         states=[
             StateModel(id="state_a", node_type="mock"),
@@ -358,6 +363,7 @@ async def test_enter_zone_success_advances_state():
     config = BotConfig(
         name="gz-success-test",
         initial="state_a",
+        recovery_state="state_a",
         options=[_SAFETY_DELAY_ZERO],
         states=[
             StateModel(id="state_a", node_type="enter_zone", params=_GZ_PARAMS),
@@ -399,6 +405,7 @@ async def test_enter_zone_failure_self_loops():
     config = BotConfig(
         name="gz-failure-test",
         initial="state_a",
+        recovery_state="state_a",
         options=[_SAFETY_DELAY_ZERO],
         states=[
             StateModel(id="state_a", node_type="enter_zone", params=_GZ_PARAMS),
@@ -453,6 +460,7 @@ async def test_stop_during_node_execution_cooperative():
     config = BotConfig(
         name="stop-cooperative-test",
         initial="state_a",
+        recovery_state="state_a",
         states=[
             StateModel(id="state_a", node_type="coop"),
             StateModel(id="state_b", node_type="coop"),
@@ -500,6 +508,7 @@ async def test_stop_forces_cancellation_after_grace_period():
     config = BotConfig(
         name="stop-forced-cancel-test",
         initial="state_a",
+        recovery_state="state_a",
         states=[
             StateModel(id="state_a", node_type="blocker"),
             StateModel(id="state_b", node_type="blocker"),
@@ -569,6 +578,7 @@ async def test_stop_after_client_error_induced_pause():
     config = BotConfig(
         name="client-error-pause-test",
         initial="state_a",
+        recovery_state="state_a",
         states=[
             StateModel(id="state_a", node_type="error_node"),
             StateModel(id="state_b", node_type="error_node"),

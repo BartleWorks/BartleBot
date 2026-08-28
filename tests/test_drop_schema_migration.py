@@ -8,6 +8,7 @@ from scripts.migrate_drop_entries import migrate_drops
 _MINIMAL = {
     "name": "Test Bot",
     "initial": "start",
+    "recovery_state": "start",
     "states": [{"id": "start", "node_type": "wait", "params": {}}],
     "transitions": [],
 }

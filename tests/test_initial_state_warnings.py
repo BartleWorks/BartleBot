@@ -30,9 +30,23 @@ def _config():
     return BotConfig(
         name="t",
         initial="a",
+        recovery_state="a",
         states=[StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b")],
         transitions=[TransitionModel(trigger="advance", source="a", dest="b", when="SUCCESS")],
     )
+
+
+# Canvases built by _Harness, drained after each test.  A QGraphicsScene destroyed
+# with items still selected corrupts the heap on the way out, and these tests select
+# nodes; prepare_for_shutdown is what makes the teardown safe.
+_BUILT: list = []
+
+
+@pytest.fixture(autouse=True)
+def _shut_down_harness_canvases():
+    yield
+    while _BUILT:
+        _BUILT.pop().prepare_for_shutdown()
 
 
 class _Harness:
@@ -43,6 +57,7 @@ class _Harness:
         from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 
         self.canvas = BotCanvas()
+        _BUILT.append(self.canvas)
         self.canvas.setup(config)
         self.canvas.enter_edit_mode()
         self.sidebar = LeftSidebar(self.canvas.param_panel)
@@ -64,8 +79,22 @@ class _Harness:
             self.canvas.refresh_initial(self.loaded.initial)
             self.canvas.refresh_recovery(self.loaded.recovery_state)
 
+    def _show(self, state_id):
+        """Select a node, which is what loads its state into the properties panel."""
+        self.canvas.select_state(state_id)
+
     def choose_initial(self, state_id):
-        self.sidebar.bot_info.select_initial_state(state_id)
+        """Set the initial state the way a user now does — from the state's own panel.
+
+        Selecting the node is what loads it into the properties panel, so this is the
+        whole path: selection → panel → request → canvas mutation (#71).
+        """
+        self._show(state_id)
+        self.canvas.param_panel.request_initial_role()
+
+    def choose_recovery(self, state_id):
+        self._show(state_id)
+        self.canvas.param_panel.request_recovery_role()
 
     def warnings(self):
         return self.canvas.validation_warnings()

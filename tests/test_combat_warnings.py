@@ -397,6 +397,7 @@ def _config(*states: tuple[str, str | None, bool]) -> BotConfig:
     return BotConfig(
         name="Test Bot",
         initial="s0",
+        recovery_state="s0",
         states=[StateModel(id="s0", node_type="sleep")]
         + [
             StateModel(
@@ -495,6 +496,7 @@ def test_legacy_use_default_duel_profile_is_still_honored(tmp_path):
     config = BotConfig(
         name="Legacy Bot",
         initial="s1",
+        recovery_state="s1",
         states=[
             StateModel(
                 id="s1",
@@ -552,6 +554,7 @@ def test_exposed_combat_states_defaults_missing_param_to_using_the_default():
     config = BotConfig(
         name="B",
         initial="s1",
+        recovery_state="s1",
         states=[StateModel(id="s1", node_type="handle_combat")],
         transitions=[],
     )
@@ -687,6 +690,7 @@ def test_inline_state_assignment_label_uses_the_state_label_when_config_is_given
     config = BotConfig(
         name="Bot",
         initial="s0",
+        recovery_state="s0",
         states=[
             StateModel(id="s0", node_type="sleep"),
             StateModel(id="state_9", node_type="handle_combat", label="Defeat Howling Chaney"),
@@ -721,6 +725,7 @@ def test_state_assignment_with_empty_inline_config_is_reported_as_unassigned(tmp
     config = BotConfig(
         name="Bot",
         initial="s0",
+        recovery_state="s0",
         states=[
             StateModel(id="s0", node_type="sleep"),
             StateModel(
@@ -752,6 +757,7 @@ def test_state_with_nonempty_inline_config_is_not_reported_as_unassigned(tmp_pat
     config = BotConfig(
         name="Bot",
         initial="s0",
+        recovery_state="s0",
         states=[
             StateModel(id="s0", node_type="sleep"),
             StateModel(
@@ -777,6 +783,7 @@ def test_unassigned_fallback_message_reflects_inline_default(tmp_path: Path):
     config = BotConfig(
         name="Bot",
         initial="s0",
+        recovery_state="s0",
         states=[
             StateModel(id="s0", node_type="sleep"),
             StateModel(

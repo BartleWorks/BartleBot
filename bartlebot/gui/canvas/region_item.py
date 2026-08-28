@@ -231,6 +231,11 @@ class RegionItem(QGraphicsItem):
         self._label = label
         self.update()
 
+    @property
+    def scene_bounds(self) -> QRectF:
+        """The region's box in scene coordinates, as drawn (padding included)."""
+        return QRectF(self._rect)
+
     def set_color(self, key: int) -> None:
         self._color_key = key
         self.update()

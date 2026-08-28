@@ -14,6 +14,7 @@ def _config(*states: dict) -> BotConfig:
         {
             "name": "Test Bot",
             "initial": state_list[0]["id"],
+            "recovery_state": state_list[0]["id"],
             "states": state_list,
             "transitions": [],
         }

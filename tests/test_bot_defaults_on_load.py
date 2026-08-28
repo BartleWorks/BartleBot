@@ -23,6 +23,7 @@ def _config(params: dict, *, safety_delay: float = 3.0) -> BotConfig:
         {
             "name": "Test Bot",
             "initial": "qs",
+            "recovery_state": "qs",
             "options": [{"name": "Safety Delay", "type": "float", "default": safety_delay}],
             "states": [{"id": "qs", "node_type": "quicksell", "params": params}],
             "transitions": [],
@@ -70,6 +71,7 @@ def test_a_non_quicksell_state_is_untouched():
         {
             "name": "Test Bot",
             "initial": "s0",
+            "recovery_state": "s0",
             "states": [{"id": "s0", "node_type": "sleep", "params": {"sell_pets": True}}],
             "transitions": [],
         }

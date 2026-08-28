@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QComboBox,
     QVBoxLayout,
     QWidget,
 )
@@ -77,11 +76,12 @@ class BotInfoSection(SidebarSection):
         self._authors_edit = value_edit()
         self._authors_edit.setReadOnly(False)
 
+        # Initial and Recovery are read-only here.  Both are set from the state's own
+        # properties panel, where the badge that shows the role already lives (#71);
+        # these labels stay because they are the only summary of the two roles, and
+        # the only view of them at all in Run mode, where nothing is selectable.
         self._initial_lbl = value_label()
-        self._initial_combo = QComboBox()
-
         self._recovery_lbl = value_label()
-        self._recovery_combo = QComboBox()
 
         # Ordered list of (label, edit) pairs for bulk visibility switching.
         self._switchable_pairs: list[tuple[QWidget, QWidget]] = [
@@ -90,8 +90,6 @@ class BotInfoSection(SidebarSection):
             (self._desc_lbl, self._desc_edit),
             (self._start_lbl, self._start_edit),
             (self._authors_lbl, self._authors_edit),
-            (self._initial_lbl, self._initial_combo),
-            (self._recovery_lbl, self._recovery_combo),
         ]
 
         vbox = QVBoxLayout()
@@ -102,8 +100,8 @@ class BotInfoSection(SidebarSection):
         vbox.addWidget(SidebarField("Description", _swappable(self._desc_lbl, self._desc_edit)))
         vbox.addWidget(SidebarField("Start", _swappable(self._start_lbl, self._start_edit)))
         vbox.addWidget(SidebarField("Author(s)", _swappable(self._authors_lbl, self._authors_edit)))
-        vbox.addWidget(SidebarField("Initial State", _swappable(self._initial_lbl, self._initial_combo)))
-        vbox.addWidget(SidebarField("Recovery State", _swappable(self._recovery_lbl, self._recovery_combo)))
+        vbox.addWidget(SidebarField("Initial State", self._initial_lbl))
+        vbox.addWidget(SidebarField("Recovery State", self._recovery_lbl))
 
         self.set_content_layout(vbox)
 
@@ -112,8 +110,6 @@ class BotInfoSection(SidebarSection):
         self._desc_edit.textChanged.connect(self._on_desc_changed)
         self._start_edit.textChanged.connect(self._on_start_changed)
         self._authors_edit.textChanged.connect(self._on_authors_changed)
-        self._initial_combo.currentTextChanged.connect(self._on_initial_changed)
-        self._recovery_combo.currentTextChanged.connect(self._on_recovery_changed)
 
         self.set_config(None)
 
@@ -135,6 +131,7 @@ class BotInfoSection(SidebarSection):
                 self._start_lbl,
                 self._authors_lbl,
                 self._initial_lbl,
+                self._recovery_lbl,
             ):
                 lbl.setText(_PLACEHOLDER)
             for w in (
@@ -145,9 +142,6 @@ class BotInfoSection(SidebarSection):
             ):
                 w.setText("")
             self._desc_edit.setPlainText("")
-            self._initial_combo.clear()
-            self._recovery_combo.clear()
-            self._recovery_lbl.setText(_PLACEHOLDER)
             self._set_label_mode(True)
         else:
             self._name_lbl.setText(config.name or _PLACEHOLDER)
@@ -160,21 +154,23 @@ class BotInfoSection(SidebarSection):
             self._desc_edit.setPlainText(config.description or "")
             self._start_edit.setText(config.start_location or "")
             self._authors_edit.setText(config.authors or "")
-            self._populate_initial_combo(config.states, config.initial)
-            self._populate_recovery_combo(config.states, config.recovery_state)
+            self._set_role_labels(config.states, config.initial, config.recovery_state)
         self._suppress = False
 
-    def select_initial_state(self, state_id: str) -> None:
-        """Pick *state_id* in the Initial State combo, as a user click would."""
-        idx = self._initial_combo.findData(state_id)
-        if idx >= 0:
-            self._initial_combo.setCurrentIndex(idx)
+    @property
+    def initial_text(self) -> str:
+        """Text shown in the read-only Initial State row."""
+        return self._initial_lbl.text()
+
+    @property
+    def recovery_text(self) -> str:
+        """Text shown in the read-only Recovery State row."""
+        return self._recovery_lbl.text()
 
     def refresh_states(self, states: list) -> None:
         if self._config is None:
             return
-        self._populate_initial_combo(states, self._config.initial)
-        self._populate_recovery_combo(states, self._config.recovery_state)
+        self._set_role_labels(states, self._config.initial, self._config.recovery_state)
 
     def set_editable(self, editable: bool) -> None:
         if self._config is None:
@@ -221,23 +217,6 @@ class BotInfoSection(SidebarSection):
         self._authors_lbl.setText(text or _PLACEHOLDER)
         self.metadata_changed.emit()
 
-    def _on_initial_changed(self, _text: str) -> None:
-        if self._suppress or self._config is None:
-            return
-        state_id = self._initial_combo.currentData()
-        if not state_id:
-            return
-        self._config.initial = state_id
-        self.metadata_changed.emit()
-
-    def _on_recovery_changed(self, _text: str) -> None:
-        if self._suppress or self._config is None:
-            return
-        state_id = self._recovery_combo.currentData()
-        self._config.recovery_state = state_id or None
-        self._recovery_lbl.setText(_text or _PLACEHOLDER)
-        self.metadata_changed.emit()
-
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -248,36 +227,12 @@ class BotInfoSection(SidebarSection):
             lbl.setVisible(label_mode)
             edit.setVisible(not label_mode)
 
-    def _populate_initial_combo(self, states: list, current_initial: str) -> None:
-        self._suppress = True
-        self._initial_combo.clear()
-        current_label = _PLACEHOLDER
-        for state in states:
-            display = state.label or state.id
-            self._initial_combo.addItem(display, state.id)
-            if state.id == current_initial:
-                current_label = display
-        idx = self._initial_combo.findData(current_initial)
-        if idx >= 0:
-            self._initial_combo.setCurrentIndex(idx)
-        self._initial_lbl.setText(current_label)
-        self._suppress = False
+    def _set_role_labels(self, states: list, initial_id: str, recovery_id: str) -> None:
+        """Show the label (or id) of whichever state currently holds each role.
 
-    def _populate_recovery_combo(self, states: list, current_recovery: str | None) -> None:
-        self._suppress = True
-        self._recovery_combo.clear()
-        self._recovery_combo.addItem(_PLACEHOLDER)  # "(none)" option, no user data
-        current_label = _PLACEHOLDER
-        for state in states:
-            display = state.label or state.id
-            self._recovery_combo.addItem(display, state.id)
-            if state.id == current_recovery:
-                current_label = display
-        if current_recovery is None:
-            self._recovery_combo.setCurrentIndex(0)
-        else:
-            idx = self._recovery_combo.findData(current_recovery)
-            if idx >= 0:
-                self._recovery_combo.setCurrentIndex(idx)
-        self._recovery_lbl.setText(current_label)
-        self._suppress = False
+        Re-derived from *states* rather than cached, because renaming a state has to
+        move its name here too.
+        """
+        display = {state.id: (state.label or state.id) for state in states}
+        self._initial_lbl.setText(display.get(initial_id, _PLACEHOLDER))
+        self._recovery_lbl.setText(display.get(recovery_id, _PLACEHOLDER))
