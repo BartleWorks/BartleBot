@@ -41,20 +41,13 @@ from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 # ---------------------------------------------------------------------------
 # Sentinel QLineEdit subclasses  (identified by get_params())
 # ---------------------------------------------------------------------------
-
-
-class _IntListLineEdit(QLineEdit):
-    """QLineEdit variant used for 'int_list' param fields.
-
-    Stores values as a comma-separated string (e.g. "1, 2, 3") and is
-    identified by get_params() to deserialise back to list[int].
-    """
 
 
 class _WikiPageLineEdit(QLineEdit):
@@ -131,54 +124,6 @@ def parse_xyz_text(text: str) -> dict[str, float]:
         except (KeyError, TypeError, ValueError):
             continue
     return out
-
-
-class _PlayerListWidget(QWidget):
-    """P1–P4 checkboxes with Select All / None for 'player_list' param fields.
-
-    Returns list[int] of checked 1-based player numbers via get_value().
-    """
-
-    changed = pyqtSignal()
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
-        self._checks: list[QCheckBox] = []
-        for i in range(1, 5):
-            chk = QCheckBox(f"P{i}")
-            chk.checkStateChanged.connect(self.changed)
-            layout.addWidget(chk)
-            self._checks.append(chk)
-        layout.addStretch()
-        _BTN_STYLE = "QPushButton { font-size: 10px; padding: 1px 4px; }"
-        all_btn = QPushButton("All")
-        all_btn.setFixedHeight(20)
-        all_btn.setStyleSheet(_BTN_STYLE)
-        all_btn.clicked.connect(self._select_all)
-        none_btn = QPushButton("None")
-        none_btn.setFixedHeight(20)
-        none_btn.setStyleSheet(_BTN_STYLE)
-        none_btn.clicked.connect(self._deselect_all)
-        layout.addWidget(all_btn)
-        layout.addWidget(none_btn)
-
-    def get_value(self) -> list[int]:
-        return [i + 1 for i, chk in enumerate(self._checks) if chk.isChecked()]
-
-    def set_value(self, value: list[int]) -> None:
-        for i, chk in enumerate(self._checks):
-            chk.setChecked((i + 1) in value)
-
-    def _select_all(self) -> None:
-        for chk in self._checks:
-            chk.setChecked(True)
-
-    def _deselect_all(self) -> None:
-        for chk in self._checks:
-            chk.setChecked(False)
 
 
 class _FillButton(QPushButton):
@@ -374,6 +319,10 @@ class _DynamicParamForm(QWidget):
         self._get_drops = fn
         self.refresh_drops()
 
+    def set_clients_getter(self, fn: Callable[[], list]) -> None:
+        """Pass a callable returning the currently hooked clients."""
+        self._get_clients = fn
+
     def refresh_drops(self) -> None:
         """Re-read the drop table into any drop-aware widget on the form."""
         for w in self._widgets.values():
@@ -492,7 +441,7 @@ class _DynamicParamForm(QWidget):
             elif isinstance(widget, QLineEdit):
                 display_w = widget
                 empty = not widget.text().strip()
-            elif isinstance(widget, _PlayerListWidget):
+            elif isinstance(widget, PlayerListWidget):
                 display_w = widget
                 empty = len(widget.get_value()) == 0
             else:
@@ -509,10 +458,8 @@ class _DynamicParamForm(QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
-            elif isinstance(w, _PlayerListWidget | DropKeepListWidget):
+            elif isinstance(w, PlayerListWidget | DropKeepListWidget):
                 result[key] = w.get_value()
-            elif isinstance(w, _IntListLineEdit):
-                result[key] = [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
             elif isinstance(w, _StrListLineEdit):
                 result[key] = parse_list_text(w.text())
             elif isinstance(w, _WikiPageLineEdit):
@@ -569,19 +516,9 @@ class _DynamicParamForm(QWidget):
                 plain.setToolTip(help_text)
             plain.textChanged.connect(self._emit_changed)
             return plain
-        if field_type == "int_list":
-            w = _IntListLineEdit()
-            if isinstance(val, list):
-                w.setText(", ".join(str(v) for v in val))
-            else:
-                w.setText(str(val) if val else "")
-            w.setPlaceholderText("e.g. 1, 2, 3")
-            if help_text:
-                w.setToolTip(help_text)
-            w.textChanged.connect(self._emit_changed)
-            return w
         if field_type == "player_list":
-            w = _PlayerListWidget()
+            w = PlayerListWidget()
+            w.set_available_players(len(self._get_clients()))
             w.set_value(val if isinstance(val, list) else [])
             if help_text:
                 w.setToolTip(help_text)
@@ -832,8 +769,12 @@ class _DynamicParamForm(QWidget):
 # ---------------------------------------------------------------------------
 
 
-def _make_override_widget(type_str: str, val: Any, help_text: str = "") -> QWidget:
-    """Create a value input widget for a bot-option override row."""
+def _make_override_widget(type_str: str, val: Any, help_text: str = "", connected: int = 4) -> QWidget:
+    """Create a value input widget for a bot-option override row.
+
+    *connected* is how many clients are hooked right now; it only greys the
+    player checkboxes that have nobody behind them.
+    """
     w: QWidget
     if type_str == "bool":
         wb = QCheckBox()
@@ -857,14 +798,9 @@ def _make_override_widget(type_str: str, val: Any, help_text: str = "") -> QWidg
         except (TypeError, ValueError):
             wf.setValue(0.0)
         w = wf
-    elif type_str == "int_list":
-        w = _IntListLineEdit()
-        if isinstance(val, list):
-            w.setText(", ".join(str(v) for v in val))
-        else:
-            w.setText(str(val) if val else "")
     elif type_str == "player_list":
-        w = _PlayerListWidget()
+        w = PlayerListWidget()
+        w.set_available_players(connected)
         w.set_value(val if isinstance(val, list) else [])
     else:  # str
         ws = QLineEdit()
@@ -882,10 +818,8 @@ def _read_override_widget(w: QWidget) -> Any:
         return w.value()
     if isinstance(w, QDoubleSpinBox):
         return w.value()
-    if isinstance(w, _PlayerListWidget):
+    if isinstance(w, PlayerListWidget):
         return w.get_value()
-    if isinstance(w, _IntListLineEdit):
-        return [int(x.strip()) for x in w.text().split(",") if x.strip().lstrip("-").isdigit()]
     if isinstance(w, QLineEdit):
         return w.text()
     return None
@@ -896,7 +830,7 @@ def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
         w.checkStateChanged.connect(lambda _: callback())
     elif isinstance(w, (QSpinBox, QDoubleSpinBox)):
         w.valueChanged.connect(lambda _: callback())
-    elif isinstance(w, _PlayerListWidget):
+    elif isinstance(w, PlayerListWidget):
         w.changed.connect(callback)
     elif isinstance(w, QLineEdit):
         w.textChanged.connect(lambda _: callback())
@@ -1557,6 +1491,23 @@ class _ParamPanel(QWidget):
         """Re-read the drop table — call when the bot's drops are edited elsewhere."""
         self._param_form.refresh_drops()
 
+    def set_clients_getter(self, fn: Callable[[], list]) -> None:
+        """Pass a callable returning the currently hooked clients."""
+        self._get_clients = fn
+        self._param_form.set_clients_getter(fn)
+        self.refresh_player_availability()
+
+    def refresh_player_availability(self) -> None:
+        """Re-grey the player checkboxes — call when clients connect or disconnect.
+
+        findChildren rather than a widget registry: player checkboxes appear both in
+        the param form and in the per-node option-override rows, and this needs no
+        bookkeeping in either.
+        """
+        connected = len(self._get_clients())
+        for w in self.findChildren(PlayerListWidget):
+            w.set_available_players(connected)
+
     def show_idle(self) -> None:
         self._cancel_record()
         self._state = None
@@ -1989,7 +1940,9 @@ class _ParamPanel(QWidget):
             is_overriding = name in overrides
             current_val = overrides.get(name, bot_opt.default)
 
-            val_widget = _make_override_widget(bot_opt.type, current_val, bot_opt.description or "")
+            val_widget = _make_override_widget(
+                bot_opt.type, current_val, bot_opt.description or "", len(self._get_clients())
+            )
             val_widget.setEnabled(is_overriding)
 
             cb = QCheckBox(f"Override {name}:")

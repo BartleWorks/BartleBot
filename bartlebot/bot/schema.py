@@ -102,15 +102,9 @@ class StateModel(BaseModel):
 
 class BotOptionModel(BaseModel):
     name: str
-    type: Literal["bool", "int", "float", "str", "int_list", "player_list"]
+    type: Literal["bool", "int", "float", "str", "player_list"]
     default: bool | int | float | str | list[int] = False
     description: str | None = None
-
-    @model_validator(mode="after")
-    def coerce_int_list_default(self) -> "BotOptionModel":
-        if self.type == "int_list" and isinstance(self.default, str):
-            self.default = [int(x.strip()) for x in self.default.split(",") if x.strip().lstrip("-").isdigit()]
-        return self
 
 
 # Maps old named region color keys to numbered slots for backward compatibility.

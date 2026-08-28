@@ -165,8 +165,8 @@ def _required_field_empty(field, params: dict) -> bool:
     val = params[field.key]
     if field.type in ("str", "text"):
         return not str(val).strip()
-    if field.type in ("int_list", "str_list", "drop_keep_list"):
-        return not val  # empty list
+    if field.type in ("str_list", "drop_keep_list", "player_list"):
+        return not val  # empty list — for player_list, no player selected is a no-op
     return False  # int, float, bool, xyz always have a value
 
 
