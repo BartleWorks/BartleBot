@@ -1,0 +1,82 @@
+{
+  "_comment": [
+    "Zones BartleBot refuses to run in. See bartlebot/restricted_zones.py.",
+    "Scope is PvP only: the Beastmoon world and the PvP match arenas. PvE content",
+    "is deliberately not listed, raids included -- automating PvE monotony is what",
+    "this tool is for.",
+    "",
+    "'world' matches the first path segment exactly. 'exact' matches the whole zone",
+    "path. Substring matching is never used: 'Arena' appears in Darkmoor, DragonSpire,",
+    "Krokosphinx, Wysteria and housing zone names, all of which are PvE.",
+    "",
+    "Zone paths were enumerated from the game's own GameData WAD filenames, where",
+    "'-' separates the path segments that zone_name() returns joined by '/'."
+  ],
+  "rules": [
+    {
+      "pattern": "Battlegrounds",
+      "kind": "world",
+      "reason": "Beastmoon"
+    },
+    {
+      "pattern": "WizardCity/WC_Duel_Arena_New",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/KT_Duel_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/AV_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/AZ_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/CL_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/DS_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/GH_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/LM_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/MB_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/MS_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/PA_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    },
+    {
+      "pattern": "WizardCity/ZF_Arena",
+      "kind": "exact",
+      "reason": "PvP match arena"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
+from bartlebot import restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ class BotMachine:
         on_drop: Callable[[str, int, int], None] | None = None,
         max_consecutive_same_state: int | None = None,
         on_client_disconnected: Callable[[int], None] | None = None,
+        on_restricted_zone: Callable[[str], None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -50,6 +52,7 @@ class BotMachine:
         self._on_transition = on_transition
         self._on_drop = on_drop
         self._on_client_disconnected = on_client_disconnected
+        self._on_restricted_zone = on_restricted_zone
         self._stop_flag = asyncio.Event()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
@@ -252,6 +255,7 @@ class BotMachine:
             stop_flag=self._stop_flag,
             on_pause=self.pause,
             on_client_disconnected=self._on_client_disconnected,
+            on_restricted_zone=self._handle_restricted_zone,
         )
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
@@ -514,6 +518,22 @@ class BotMachine:
                     self._combat_auto_paused = False
                     self.resume()
                     self.log("Ambient combat: FSM resumed", logging.INFO)
+
+    def _handle_restricted_zone(self, hit: "restricted_zones.Restriction") -> None:
+        """Stop the run because a client is somewhere it must not be automated.
+
+        Stopping is done here rather than left to the GUI so the FSM halts even when
+        no GUI is attached, and so it happens before the notification: the callback
+        below tears the hooks out, and the bot must not still be issuing node actions
+        while that runs.
+        """
+        self.log(f"Bot stopped: {hit.describe()} is a restricted zone.", logging.CRITICAL)
+        self.stop()
+        if self._on_restricted_zone:
+            try:
+                self._on_restricted_zone(hit.describe())
+            except Exception:
+                logger.exception("on_restricted_zone callback raised")
 
     def stop(self) -> None:
         """Signal the FSM to stop.

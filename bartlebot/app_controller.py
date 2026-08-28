@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, recovery_readiness, wizard_names
+from bartlebot import group_manager, recovery_readiness, restricted_zones, wizard_names
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -558,6 +558,8 @@ class AppController(QObject):
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
             return
+        if not self._check_restricted_zones():
+            return
         from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
 
         safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients)
@@ -584,6 +586,36 @@ class AppController(QObject):
             return
 
         self._bot_task = asyncio.create_task(self._start_bot())
+
+    def _check_restricted_zones(self) -> bool:
+        """Refuse to start a bot that names a restricted zone. Returns whether to proceed.
+
+        First check in the run sequence, and the only one with no way past it. The
+        other pre-run dialogs ask; this one tells. Running the safety and combat
+        warnings first would make the user answer questions about a run that was
+        never going to start.
+
+        Catching it here rather than letting the in-run watcher handle it means the
+        client never travels: there is no arena to be seen standing in and no hooks
+        to tear out.
+        """
+        if self._loaded_config is None:
+            return True
+        found = restricted_zones.check_bot_config(self._loaded_config)
+        if not found:
+            return True
+        lines = "\n".join(f"• {label}: {zone} — {hit.reason}" for label, zone, hit in found)
+        logger.critical("Refusing to run: bot names %d restricted zone(s)", len(found))
+        QMessageBox.critical(
+            self._window,
+            "Restricted Zone",
+            "This bot cannot be run. It sends a client to a zone BartleBot does not "
+            "automate:\n\n"
+            f"{lines}\n\n"
+            "BartleBot is for PvE. PvP zones and Beastmoon are off limits, and this "
+            "is not something that can be turned off.",
+        )
+        return False
 
     def _confirm_recovery_gaps(self) -> bool:
         """Warn about clients that could not be recovered, and return whether to proceed.
@@ -646,6 +678,7 @@ class AppController(QObject):
             on_transition=self._on_machine_transition,
             on_drop=self._on_machine_drop,
             on_client_disconnected=self._on_machine_client_disconnected,
+            on_restricted_zone=self._on_machine_restricted_zone,
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -833,6 +866,43 @@ class AppController(QObject):
         task = asyncio.create_task(self._close_dead_client(hwnd))
         self._close_tasks.add(task)
         task.add_done_callback(self._close_tasks.discard)
+
+    def _on_machine_restricted_zone(self, description: str) -> None:
+        """Called by the health monitor when a client reaches a restricted zone.
+
+        The machine has already stopped itself by the time this runs. What is left
+        is to detach from every client, so nothing of this tool remains hooked into
+        a process sitting in a PvP zone -- a stopped FSM on its own leaves the memory
+        hooks in place, which is the state the guard exists to avoid.
+        """
+        logger.critical("Restricted zone reached (%s) — unhooking all clients", description)
+        task = asyncio.create_task(self._detach_from_restricted_zone(description))
+        self._close_tasks.add(task)
+        task.add_done_callback(self._close_tasks.discard)
+
+    async def _detach_from_restricted_zone(self, description: str) -> None:
+        """Unhook every client, then tell the user why the run ended.
+
+        The dialog is deferred past this task for the Python 3.13 re-entrancy trap in
+        CLAUDE.md, and is scheduled in a finally: an unhook that throws still has to
+        produce the explanation, or the bot simply stops with no reason given.
+        """
+        try:
+            await self._client_manager.unhook_all()
+        except Exception:
+            logger.exception("Failed to unhook clients after restricted-zone stop")
+        finally:
+            QTimer.singleShot(
+                0,
+                lambda: QMessageBox.critical(
+                    self._window,
+                    "Restricted Zone",
+                    f"The bot was stopped: a client entered {description}.\n\n"
+                    "BartleBot is for PvE. PvP zones and Beastmoon are off limits.\n\n"
+                    "All clients have been unhooked. Move them out of the zone and "
+                    "reconnect to continue.",
+                ),
+            )
 
     async def _close_dead_client(self, hwnd: int) -> None:
         """Run the close sequence for a flagged client and report a failure to the user."""

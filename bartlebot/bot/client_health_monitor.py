@@ -7,6 +7,8 @@ Three polling loops run concurrently:
   clients that have crashed or are unresponsive.
 - _loading_screen_watcher: calls is_loading() every poll interval to detect
   clients stuck in an infinite loading screen.
+- _restricted_zone_watcher: polls zone_name() -- and the duel's own PvP flags
+  once a client is in combat -- to stop the bot outright in PvP zones.
 
 All loops write to a shared _flagged set so a client is never double-reported.
 """
@@ -16,7 +18,7 @@ import logging
 import time
 from collections.abc import Callable
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, restricted_zones
 from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
 from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
 from bartlebot.utils.window_kill import terminate_process
@@ -44,6 +46,11 @@ _CLIENT_STATUS_CHECK_INTERVAL: float = 5.0
 _CLIENT_STATUS_CHECK_FAIL_THRESHOLD: int = 3
 # Consecutive failed zone_name() calls before a client is treated as unresponsive.
 
+_RESTRICTED_ZONE_CHECK_INTERVAL: float = 0.25
+# Seconds between restricted-zone checks. Deliberately far faster than the 5 s status
+# poll: the window between arriving in a PvP zone and the bot acting there is the whole
+# thing being closed, so this is the one loop where latency is the point.
+
 _DISCONNECT_KEYWORDS: frozenset[str] = frozenset({"disconnect", "connection", "network", "inactivity", "kicked"})
 # Fallback only. These are English substrings, so on a client running in any of the game's
 # other six locales they match nothing — and "nothing" reads as "no disconnect", which
@@ -70,6 +77,10 @@ class ClientHealthMonitor:
         on_pause:    Called when a problem is detected; should pause the FSM.
         on_client_disconnected: Optional callback receiving the dead client's
                      HWND; used by AppController to trigger game relaunch.
+        on_restricted_zone: Optional callback receiving the Restriction that fired;
+                     used by BotMachine to stop the run. Unlike the disconnect
+                     callback this is not a recovery hook -- there is no recovering
+                     from it, the run is over.
     """
 
     def __init__(
@@ -78,11 +89,13 @@ class ClientHealthMonitor:
         stop_flag: asyncio.Event,
         on_pause: Callable[[], None],
         on_client_disconnected: Callable[[int], None] | None = None,
+        on_restricted_zone: Callable[[restricted_zones.Restriction], None] | None = None,
     ) -> None:
         self._clients_ref = clients_ref
         self._stop_flag = stop_flag
         self._on_pause = on_pause
         self._on_client_disconnected = on_client_disconnected
+        self._on_restricted_zone = on_restricted_zone
         self._flagged: set[int] = set()  # HWNDs already flagged as unresponsive
 
     def clear_flagged(self) -> None:
@@ -94,10 +107,11 @@ class ClientHealthMonitor:
         dialog_task = asyncio.create_task(self._disconnect_dialog_watcher())
         status_task = asyncio.create_task(self._client_status_watcher())
         loading_task = asyncio.create_task(self._loading_screen_watcher())
+        restricted_task = asyncio.create_task(self._restricted_zone_watcher())
         try:
             await self._stop_flag.wait()
         finally:
-            for t in (dialog_task, status_task, loading_task):
+            for t in (dialog_task, status_task, loading_task, restricted_task):
                 t.cancel()
                 try:
                     await t
@@ -219,6 +233,58 @@ class ClientHealthMonitor:
                         )
                         self._flagged.add(hwnd)
                         self._fire_disconnected(hwnd)
+
+    async def _restriction_for(self, client) -> restricted_zones.Restriction | None:
+        """Return the restriction in force for *client*, or None.
+
+        Checks the zone first because it is one read and always available. The duel
+        flags are only consulted while the client is actually in battle: outside
+        combat the duel struct still holds whatever the last fight left in it, and a
+        stale PvP flag would stop a bot standing in a questing zone.
+        """
+        hit = restricted_zones.check_zone(await client.zone_name())
+        if hit is not None:
+            return hit
+        if not await client.in_battle():
+            return None
+        return restricted_zones.check_duel(
+            pvp=await client.duel.pvp(),
+            battleground=await client.duel.battleground(),
+        )
+
+    async def _restricted_zone_watcher(self) -> None:
+        """Stop the bot outright when any client is somewhere it must not be automated.
+
+        Unlike the other loops here this one does not pause for recovery -- it fires
+        once and returns. There is nothing to recover: the correct response to a
+        client sitting in a PvP arena is for the run to be over.
+
+        Read failures are ignored rather than counted. A client mid-zone-transition
+        raises from all three of these reads, which the status watcher already treats
+        as its own signal; failing open here costs at most one 250 ms tick, and the
+        alternative is stopping every run on a transient memory read.
+        """
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(_RESTRICTED_ZONE_CHECK_INTERVAL)
+            for client in list(self._clients_ref()):
+                try:
+                    hit = await self._restriction_for(client)
+                except Exception:
+                    logger.debug("Restricted-zone check failed for hwnd=%s", getattr(client, "window_handle", "?"))
+                    continue
+                if hit is None:
+                    continue
+                logger.critical("Restricted zone detected: %s — stopping the bot", hit.describe())
+                self._fire_restricted_zone(hit)
+                return
+
+    def _fire_restricted_zone(self, hit: restricted_zones.Restriction) -> None:
+        """Invoke the restricted-zone callback, guarded like every other callback here."""
+        if self._on_restricted_zone:
+            try:
+                self._on_restricted_zone(hit)
+            except Exception:
+                logger.exception("on_restricted_zone callback raised for %s", hit.describe())
 
     async def _loading_screen_watcher(self) -> None:
         """Detect clients stuck in an infinite loading screen.
