@@ -55,6 +55,12 @@ class BotMachine:
         self._current_node_task: asyncio.Task | None = None
         self.drops: deque[tuple[str, int, int]] = deque(maxlen=10_000)  # (item, quantity, client_index)
         self._drops_seen: set[tuple[int, str]] = set()  # (client_index, item_lower) — never evicted, used by has_drop()
+        # Per-client chat-log baseline that drop detection diffs against. Keyed by the
+        # client object rather than its slot: ClientManager.swap_clients reorders slots
+        # mid-run, and a baseline describes what a particular game window has already
+        # said. Shared by handle_combat and the ambient combat watcher so the two do not
+        # absorb each other's announcements.
+        self._chat_baselines: dict[object, str] = {}
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
         self._ambient_combat_lock = asyncio.Lock()
@@ -182,6 +188,26 @@ class BotMachine:
         """
         return (client_index, item.strip().lower()) in self._drops_seen
 
+    def chat_baseline(self, client) -> str | None:
+        """The chat-log text *client*'s drops were last read from, or None if unseeded.
+
+        None and "" mean different things. None is "never looked", and the caller must
+        seed a baseline before diffing — treating it as "" would report every drop line
+        already in the log. "" is a real baseline, from a client whose chat log was
+        empty or unreadable at seeding time.
+        """
+        return self._chat_baselines.get(client)
+
+    def set_chat_baseline(self, client, text: str) -> None:
+        """Record the chat-log text *client*'s drops have been read up to.
+
+        Callers pass back whatever ``poll_new_drops`` returned: the snapshot the drops
+        came from on a hit, or their own baseline unchanged on a miss. Storing the
+        unchanged one is what turns a missed announcement into a late record instead of
+        a lost one — the next fight's poll still has the old baseline to diff against.
+        """
+        self._chat_baselines[client] = text
+
     # --- Public API ---
 
     @property
@@ -199,6 +225,10 @@ class BotMachine:
     def set_clients(self, clients: list) -> None:
         """Replace the active client list."""
         self.clients = clients
+        # Drop baselines for clients that are gone would otherwise accumulate for the
+        # life of the run. Surviving clients keep theirs, which is the point — a
+        # reconnect elsewhere in the group must not cost the others their history.
+        self._chat_baselines = {c: b for c, b in self._chat_baselines.items() if c in clients}
 
     @property
     def stop_event(self) -> asyncio.Event:
@@ -389,8 +419,13 @@ class BotMachine:
         re-entry and against conflicting with intentional combat nodes.
         """
         from bartlebot.nodes import node_helpers
-        from bartlebot.nodes.combat_runner import _run_combat, resolve_combat, slots_in_battle
-        from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat
+        from bartlebot.nodes.combat_runner import (
+            _run_combat,
+            poll_combat_drops,
+            resolve_combat,
+            seed_chat_baselines,
+            slots_in_battle,
+        )
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
@@ -455,11 +490,9 @@ class BotMachine:
                     self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
 
                     battling = [clients[i] for i in battling_slots]
-                    chat_before_raw = await asyncio.gather(
-                        *[snapshot_chat(c) for c in battling],
-                        return_exceptions=True,
-                    )
-                    chat_before = [s if isinstance(s, str) else "" for s in chat_before_raw]
+                    # Seed only clients with no baseline yet; one carried from an earlier
+                    # fight is what recovers an announcement that arrived too late for it.
+                    await seed_chat_baselines(self, battling)
                     results = await asyncio.gather(
                         *[_run_combat(clients[i], per_client_dsl[i]) for i in battling_slots],
                         return_exceptions=True,
@@ -473,18 +506,9 @@ class BotMachine:
 
                     self.log("Ambient combat: SprintyCombat finished", logging.DEBUG)
 
-                    for pos, (client, before) in enumerate(zip(battling, chat_before)):
-                        slot = battling_slots[pos]
-                        try:
-                            after = await snapshot_chat(client)
-                            for item_name in extract_new_drops(before, after):
-                                self.on_drop(item_name, 1, slot)
-                                self.log(f"Ambient combat drop: {item_name}")
-                        except Exception as exc:
-                            self.log(
-                                f"Ambient combat: drop detection error on client {slot}: {exc}",
-                                logging.DEBUG,
-                            )
+                    drops_found = await poll_combat_drops(self, battling, battling_slots)
+                    for item_name in drops_found:
+                        self.log(f"Ambient combat drop: {item_name}")
             finally:
                 if self._combat_auto_paused:
                     self._combat_auto_paused = False

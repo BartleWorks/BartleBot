@@ -140,6 +140,7 @@ class FakeMachine:
         self._options = options or {}
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
+        self.chat_baselines: dict[object, str] = {}
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))
@@ -150,6 +151,13 @@ class FakeMachine:
     def has_drop(self, item: str, client_index: int) -> bool:
         key = item.strip().lower()
         return any(client_index == ci and name.strip().lower() == key for name, _qty, ci in self.drops)
+
+    def chat_baseline(self, client) -> str | None:
+        """Mirror BotMachine: None means never seeded, "" is a real empty baseline."""
+        return self.chat_baselines.get(client)
+
+    def set_chat_baseline(self, client, text: str) -> None:
+        self.chat_baselines[client] = text
 
     def get_option(self, name: str, default=None):
         """Return configured option value, or a sensible test default.
