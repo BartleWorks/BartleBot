@@ -2,12 +2,15 @@
 
 import ctypes
 import logging
+import os
 import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
+
+from bartlebot.paths import project_root
 
 # ---------------------------------------------------------------------------
 # API drift guard
@@ -271,3 +274,92 @@ def _fine_grained_timers():
         yield
     finally:
         winmm.timeEndPeriod(1)
+
+
+# ---------------------------------------------------------------------------
+# Strategy-store write guard
+# ---------------------------------------------------------------------------
+
+_STRATEGY_DIRS = (
+    "bot_strategies",
+    "strategies/player",
+    "strategies/duel",
+    "strategies/decks",
+)
+
+
+def _strategy_mtimes() -> tuple:
+    """Modification time of each strategy directory.
+
+    Adding a file bumps its directory's mtime, so this is enough to answer "did
+    anything appear?" in four stat calls -- cheap enough to run either side of all
+    2000-odd tests.  The more expensive listing only happens when this says yes.
+    """
+    root = project_root()
+    out = []
+    for sub in _STRATEGY_DIRS:
+        try:
+            out.append(os.stat(root / sub).st_mtime_ns)
+        except OSError:
+            out.append(None)
+    return tuple(out)
+
+
+def _strategy_snapshot() -> set:
+    """Every strategy file currently in the repo, as (dir, name) pairs."""
+    root = project_root()
+    found = set()
+    for sub in _STRATEGY_DIRS:
+        d = root / sub
+        if not d.is_dir():
+            continue
+        with os.scandir(d) as entries:
+            found.update((sub, e.name) for e in entries if e.name.endswith(".json"))
+    return found
+
+
+# Listed once at import, before any test runs: the baseline of what legitimately
+# lives in the repo.  A per-test listing would cost more than the guard is worth.
+_SESSION_STRATEGY_FILES: set = set()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _record_baseline_strategy_files():
+    global _SESSION_STRATEGY_FILES
+    _SESSION_STRATEGY_FILES = _strategy_snapshot()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _no_strategy_writes_into_the_repo(_record_baseline_strategy_files):
+    """Fail any test that saves a strategy into the real repo instead of tmp_path.
+
+    ``save_bot_strategy`` and friends default their root to ``project_root()``, so a
+    test that calls one without redirecting the store writes a ``{uuid}.json`` file
+    straight into the tracked ``bot_strategies/`` directory.  There are 51 real files
+    in there under exactly that naming scheme, so the junk is indistinguishable from
+    the genuine article by name -- ``.gitignore`` cannot separate them, and one has
+    already been committed by accident once (0c12612).
+
+    Catching it here instead: the offending file is removed and the test that wrote it
+    is named, rather than the mess being left for `git status` to find later.  The fix
+    in the test is to request the ``store`` fixture, or pass ``root=tmp_path``.
+    """
+    before_mtimes = _strategy_mtimes()
+    yield
+    if _strategy_mtimes() == before_mtimes:
+        return
+    # A directory changed, so now it is worth listing.  The comparison is against the
+    # session baseline rather than a per-test listing, which is the whole point: the
+    # cost per test stays four stat calls no matter how large the library grows.
+    new = _strategy_snapshot() - _SESSION_STRATEGY_FILES
+    if not new:
+        return
+    root = project_root()
+    for sub, name in new:
+        (root / sub / name).unlink(missing_ok=True)
+    listed = ", ".join(f"{sub}/{name}" for sub, name in sorted(new))
+    pytest.fail(
+        f"This test wrote {len(new)} strategy file(s) into the repo: {listed}\n"
+        "Redirect the store first: request the `store` fixture, or pass root=tmp_path."
+    )
