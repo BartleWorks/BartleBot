@@ -31,7 +31,7 @@
         "y": 0.0
       },
       "params": {
-        "friend_name": "Bob FrostGem",
+        "target_hooked_player": false,
         "to_zone": "*Housing*"
       },
       "option_overrides": {}

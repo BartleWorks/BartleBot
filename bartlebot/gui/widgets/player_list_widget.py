@@ -1,7 +1,7 @@
-"""Shared P1–P4 checkbox widget used in param forms and strategy editors."""
+"""Shared P1–P4 player pickers used in param forms and strategy editors."""
 
 from PyQt6.QtCore import QEvent, pyqtSignal
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QPushButton, QWidget
+from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QPushButton, QRadioButton, QWidget
 
 from bartlebot.gui.theme import THEME
 
@@ -100,3 +100,72 @@ class PlayerListWidget(QWidget):
         for i, chk in enumerate(self._checks):
             if i < self._max_players:
                 chk.setChecked(False)
+
+
+class PlayerSlotWidget(QWidget):
+    """P1–P4 radio buttons — the single-select sibling of PlayerListWidget.
+
+    Returns one 1-based player number via get_value(), or 0 when nothing is selected.
+    Availability is advisory here for the same reason it is there: a bot authored for four
+    clients must stay editable with two running.
+    """
+
+    changed = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._available = 4
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        # Buttons are exclusive within their parent widget by default, which is what we
+        # want, but it also means there is no way back to "nothing selected" by clicking.
+        # That is fine: a target is required once this mode is on, and 0 only survives
+        # until the user picks one.
+        self._radios: list[QRadioButton] = []
+        for i in range(1, 5):
+            btn = QRadioButton(f"P{i}")
+            btn.toggled.connect(self._on_toggled)
+            layout.addWidget(btn)
+            self._radios.append(btn)
+        layout.addStretch()
+
+    def _on_toggled(self, checked: bool) -> None:
+        # toggled fires twice per change (off, then on); only report the on edge.
+        if checked:
+            self.changed.emit()
+
+    def get_value(self) -> int:
+        for i, btn in enumerate(self._radios):
+            if btn.isChecked():
+                return i + 1
+        return 0
+
+    def set_value(self, value: int) -> None:
+        try:
+            slot = int(value)
+        except (TypeError, ValueError):
+            slot = 0
+        for i, btn in enumerate(self._radios):
+            btn.blockSignals(True)
+            btn.setChecked(i + 1 == slot)
+            btn.blockSignals(False)
+
+    def set_available_players(self, n: int) -> None:
+        """Grey the label of every player past *n*. Advisory only; see PlayerListWidget."""
+        self._available = n
+        self._apply_availability()
+
+    def _apply_availability(self) -> None:
+        for i, btn in enumerate(self._radios):
+            if i < self._available:
+                btn.setStyleSheet("")
+                btn.setToolTip("")
+            else:
+                btn.setStyleSheet(f"QRadioButton {{ color: {THEME.text_muted}; }}")
+                btn.setToolTip(f"Player {i + 1} is not connected. It can still be selected.")
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._apply_availability()

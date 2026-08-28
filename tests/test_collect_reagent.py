@@ -286,7 +286,7 @@ async def test_drop_tracking():
 
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "DROP_MESSAGE_TIMEOUT", 0.3),
+        patch.object(cr, "REAGENT_DROP_MESSAGE_TIMEOUT", 0.3),
         patch(_AVAIL, new=AsyncMock(return_value=True)),
         patch(_SNAP, new=AsyncMock(return_value="")),
         patch(_EXTRACT, new=extract),
@@ -310,7 +310,7 @@ async def test_drop_arriving_after_its_own_poll_window_is_still_logged():
     # First pickup's poll times out empty; the message shows up during the second.
     with (
         patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "DROP_MESSAGE_TIMEOUT", 0),
+        patch.object(cr, "REAGENT_DROP_MESSAGE_TIMEOUT", 0),
         patch(_AVAIL, new=AsyncMock(return_value=True)),
         patch(_SNAP, new=AsyncMock(return_value="")),
         patch(_EXTRACT, side_effect=[[], ["Mandrake"], []]),

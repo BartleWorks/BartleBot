@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -183,6 +184,18 @@ class GeneralTab(QWidget):
         )
         bot_form.addRow("Disable quick friend teleport:", self._quick_tp_cb)
 
+        self._friend_name_edit = QLineEdit(sm.default_friend_name)
+        self._friend_name_edit.setPlaceholderText("Wizard name")
+        self._friend_name_edit.setToolTip(
+            "The wizard teleport_to_friend ports to when a bot does not name one of its own "
+            "players as the target.\n\n"
+            "This is yours, not the bot's. Bots are shared, and a character name in a bot file "
+            "would send everyone else to a wizard who is not on their friends list — so bot files "
+            "do not store one, and every bot on this machine uses the name here.\n\n"
+            "That wizard must be online and on every player's friends list."
+        )
+        bot_form.addRow("Friend teleport target:", self._friend_name_edit)
+
         # Defaults, not policy: a quicksell node whose matching param is left on
         # "Use app setting" follows these, and one that pins Yes or No does not.
         # Labelled that way so nobody reads the row as a guarantee.
@@ -258,6 +271,10 @@ class GeneralTab(QWidget):
         sm.auto_group_players = self._auto_group_cb.isChecked()
         sm.auto_select_character = self._auto_select_cb.isChecked()
         sm.disable_quick_friend_teleport = self._quick_tp_cb.isChecked()
+        friend_name = self._friend_name_edit.text().strip()
+        if friend_name != sm.default_friend_name:
+            sm.default_friend_name = friend_name
+            sm.add_recent_friend_name(friend_name)
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())

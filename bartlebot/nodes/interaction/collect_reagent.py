@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import DROP_MESSAGE_POLL, DROP_MESSAGE_TIMEOUT, POLL_INTERVAL
+from bartlebot.nodes.timing import POLL_INTERVAL, REAGENT_DROP_MESSAGE_POLL, REAGENT_DROP_MESSAGE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -119,7 +119,9 @@ async def _collect_for_client(machine, client, client_idx: int, entity_names: li
 
     async def _report_drops() -> None:
         nonlocal drop_baseline
-        drops, drop_baseline = await poll_new_drops(client, drop_baseline, DROP_MESSAGE_TIMEOUT, DROP_MESSAGE_POLL)
+        drops, drop_baseline = await poll_new_drops(
+            client, drop_baseline, REAGENT_DROP_MESSAGE_TIMEOUT, REAGENT_DROP_MESSAGE_POLL
+        )
         for item_name in drops:
             machine.on_drop(item_name, 1, client_idx)
 

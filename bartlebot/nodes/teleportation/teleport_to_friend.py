@@ -1,23 +1,59 @@
-"""teleport_to_friend node — teleport follower clients to a named friend."""
+"""teleport_to_friend node — teleport follower clients to a hooked player or a named friend."""
 
 import asyncio
 import logging
+from dataclasses import dataclass
 
 from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
 
+logger = logging.getLogger(__name__)
+
+APP_SETTING_KEY = "default_friend_name"
+
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
+        key="target_hooked_player",
+        type="bool",
+        label="Teleport to a Hooked Player",
+        help=(
+            "On: port to one of this bot's own players, whose wizard name is read from the game at run "
+            "time. Off: port to the friend name configured in app settings. The two are mutually "
+            "exclusive — whichever is not in use is greyed out."
+        ),
+        default=True,
+        required=False,
+    ),
+    ParamField(
+        key="target_player",
+        type="player_slot",
+        label="Target Player",
+        help=(
+            "Which of this bot's players the others port to. That player must already be at the "
+            "destination, and is never asked to port to itself. Both accounts still have to be in-game "
+            "friends — this reads the friends list, it does not port through the party."
+        ),
+        default=0,
+        enabled_by="target_hooked_player",
+        required=False,
+    ),
+    ParamField(
         key="friend_name",
-        type="str",
+        type="app_setting_str",
         label="Friend Name",
-        help="Wizard name to search for in the friends list (case-insensitive). Must be online and on each player's friends list.",
+        app_setting_key=APP_SETTING_KEY,
+        help=(
+            "Wizard name to search for in the friends list (case-insensitive). Must be online and on "
+            "each player's friends list. This is your setting, not the bot's: it is stored on this "
+            "machine and shared by every bot, and is never written to a bot file."
+        ),
         default="",
-        required=True,
+        disabled_by="target_hooked_player",
+        required=False,
     ),
     ParamField(
         key="to_zone",
@@ -31,27 +67,99 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Teleports one or more players to a named friend using the in-game friends list. "
-        "Players already in the destination zone are skipped. "
-        "Handles the friend-busy error dialog and verifies arrival zone."
+        "Teleports one or more players to a target using the in-game friends list. The target is "
+        "either one of this bot's own players — its wizard name is read from the game, so nothing "
+        "is stored — or a friend name configured in app settings. Players already in the "
+        "destination zone are skipped. Handles the friend-busy error dialog and verifies arrival zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec("SUCCESS", "All players are now in to_zone."),
         ReturnSpec(
             "FAILURE",
-            "Friend not found or not online; the friend-busy dialog appeared "
-            "(friend has teleports off, or is somewhere you cannot follow them into); "
-            "players did not enter a loading screen within the trigger timeout; "
-            "or not all players arrived in to_zone after loading.",
+            "No teleport target could be resolved (no friend name configured, or the target "
+            "player's wizard name has not been detected yet); friend not found or not online; "
+            "the friend-busy dialog appeared (friend has teleports off, or is somewhere you "
+            "cannot follow them into); players did not enter a loading screen within the trigger "
+            "timeout; or not all players arrived in to_zone after loading.",
         ),
     ],
     max_consecutive_retries=5,
+    usage_notes=(
+        "Both accounts must be in-game friends even in hooked-player mode: this drives the friends "
+        "list, it does not port through the party. The target player is expected to already be at "
+        "the destination and is never asked to port to itself. "
+        "In friend-name mode the name lives in app settings, not in the bot file, so a bot can be "
+        "shared without carrying anyone's character name and each user points it at their own idler."
+    ),
     safety_warning=(
-        "This bot teleports you to a friend. You must have the following player on your "
-        "friends list or change the friend name in the teleport_to_friend node settings."
+        "This bot teleports you to another wizard. In friend-name mode that wizard must be on "
+        "every player's friends list and online — set the name here or in Settings if it is wrong."
     ),
 )
+
+
+@dataclass(frozen=True)
+class TargetResolution:
+    """Where this run's teleport target came from, or why there isn't one.
+
+    Resolution happens in one place and says which level answered, the way
+    quicksell.resolve_app_defaults and resolve_combat's source_label do. The name itself is
+    deliberately absent from *source*: it is logged at DEBUG only, because an INFO line ends
+    up in log excerpts pasted into issues and a character name must not (CLAUDE.md, "No real
+    player data").
+    """
+
+    name: str = ""
+    source: str = ""
+    target_index: int | None = None
+    error: str = ""
+
+
+def resolve_target(clients: list, params: dict, settings=None) -> TargetResolution:
+    """Resolve the teleport target from the bot's params and this machine's settings.
+
+    Hooked-player mode reads the target's wizard name from the cache ClientManager fills, so
+    nothing name-shaped is stored anywhere. Friend-name mode reads the app setting, and falls
+    back to a literal in the bot file only for files written before that was disallowed.
+
+    ``target_hooked_player`` defaults to *False* here while the editor's ParamField defaults to
+    True: a file with neither key predates this node's two modes, and its friend_name is the
+    only target it has.
+    """
+    if params.get("target_hooked_player", False):
+        slot = int(params.get("target_player") or 0)
+        if not 1 <= slot <= len(clients):
+            return TargetResolution(
+                error=f"target player P{slot} is not connected ({len(clients)} client(s) running)"
+                if slot
+                else "no target player selected"
+            )
+        name = wizard_names.cached_name(clients[slot - 1])
+        if not name:
+            return TargetResolution(error=f"P{slot}'s wizard name has not been detected yet")
+        return TargetResolution(name=name, source=f"hooked player P{slot}", target_index=slot - 1)
+
+    legacy = str(params.get("friend_name") or "").strip()
+    if legacy:
+        logger.warning(
+            "teleport_to_friend: this bot stores a friend name in its params, which is deprecated. "
+            "Clear it and set Friend Name in app settings instead — bot files must not carry "
+            "character names."
+        )
+        return TargetResolution(name=legacy, source="the bot file (deprecated)")
+
+    if settings is None:
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
+
+        settings = SettingsManager.instance()
+    configured = str(settings.default_friend_name or "").strip()
+    if not configured:
+        return TargetResolution(
+            error="no friend name configured — set Friend Name on the node, in the pre-run warning, "
+            "or in Settings → General"
+        )
+    return TargetResolution(name=configured, source="the app setting")
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -60,8 +168,11 @@ async def run(machine, clients: list, params: dict) -> str:
           wizwalker.extensions.scripting.teleport_to_friend_from_list()
 
     Flow:
+      0. Resolve the teleport target: a hooked player's wizard name, or the configured
+         friend name. No target -> FAILURE.
       1. Check if all clients are already in to_zone. Return SUCCESS immediately if so.
-      2. Filter to only clients not yet in to_zone.
+      2. Filter to only clients not yet in to_zone, and drop the target itself — it is
+         already where everyone is going, and cannot port to itself.
       3. Call teleport_to_friend_from_list (wrapped in mouse_handler context) for all
          clients_to_move simultaneously. ValueError (friend not found/offline) → FAILURE.
       4. "Ever seen" loading loop: on each tick, answer whatever modal each not-yet-loading
@@ -73,14 +184,22 @@ async def run(machine, clients: list, params: dict) -> str:
       6. Wait for all clients (including those already in to_zone) to arrive in to_zone.
          Return FAILURE if any are not.
 
-    FAILURE: friend not found or not online; friend-busy dialog appeared (friend has teleports
-    off, or is somewhere unreachable); loading not detected within
-    ZONE_CHANGE_TIMEOUT; not all clients arrived in to_zone.
+    FAILURE: no target could be resolved; only the target itself is outside to_zone; friend
+    not found or not online; friend-busy dialog appeared (friend has teleports off, or is
+    somewhere unreachable); loading not detected within ZONE_CHANGE_TIMEOUT; not all clients
+    arrived in to_zone.
     """
-    friend_name: str = params["friend_name"].lower()
     to_zone: str = params["to_zone"]
 
-    machine.log(f"teleport_to_friend: friend={friend_name!r} to_zone={to_zone!r}")
+    # 0. Resolve the target once, and say which level answered — never the name itself at
+    #    INFO, which is what a user pastes into an issue.
+    target = resolve_target(clients, params)
+    if target.error:
+        machine.log(f"FAILURE: {target.error}", logging.WARNING)
+        return "FAILURE"
+    friend_name: str = target.name.lower()
+    machine.log(f"teleport_to_friend: target from {target.source}, to_zone={to_zone!r}")
+    machine.log(f"Resolved target name: {target.name!r}", logging.DEBUG)
 
     # 1. Early exit if all clients already in to_zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -89,7 +208,14 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(f"SUCCESS: all clients already in {to_zone!r}")
         return "SUCCESS"
 
-    clients_to_move = [c for c, z in zip(clients, zones) if not node_helpers.zone_matches(z, to_zone)]
+    clients_to_move = [
+        c
+        for i, (c, z) in enumerate(zip(clients, zones))
+        if not node_helpers.zone_matches(z, to_zone) and i != target.target_index
+    ]
+    if not clients_to_move:
+        machine.log(f"FAILURE: only the target ({target.source}) is outside {to_zone!r}", logging.WARNING)
+        return "FAILURE"
     machine.log(f"{len(clients_to_move)} of {len(clients)} client(s) will teleport", logging.DEBUG)
 
     # 2. Initiate teleport on all clients_to_move simultaneously.
@@ -126,7 +252,8 @@ async def run(machine, clients: list, params: dict) -> str:
             outcome = await node_helpers.resolve_modal(c)
             if outcome.refusal:
                 machine.log(
-                    f"FAILURE: client {i} cannot reach {friend_name!r} — {dialog_captions.describe(outcome.refusal)}",
+                    f"FAILURE: client {i} cannot reach the target ({target.source}) — "
+                    f"{dialog_captions.describe(outcome.refusal)}",
                     logging.WARNING,
                 )
                 return "FAILURE"

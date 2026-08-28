@@ -78,17 +78,40 @@ DIALOG_FAST_POLL_INTERVAL = 0.05
 # Safety Delay window has elapsed with no further dialogue.
 
 
-DROP_MESSAGE_TIMEOUT = 3.0
-# Seconds to keep watching the chat log for a drop announcement after an action
-# that should have produced one. The message is a server round-trip, so it lands
-# after the local UI has already finished reacting — diffing the chat the instant
-# a reagent prompt disappears reads it as it was before the drop. Only paid in
-# full when nothing arrives at all; the poll returns as soon as a line shows up.
+REAGENT_DROP_MESSAGE_TIMEOUT = 3.0
+# Seconds to keep watching the chat log for a drop announcement after a reagent
+# pickup. The message is a server round-trip, so it lands after the local UI has
+# already finished reacting — diffing the chat the instant a reagent prompt
+# disappears reads it as it was before the drop. Only paid in full when nothing
+# arrives at all; the poll returns as soon as a line shows up.
+#
+# Kept short because collect_reagent pays this window once per *pickup*, and a
+# pickup that dismissed its prompt has almost certainly earned an announcement.
+# The combat constants below are deliberately separate and much longer.
 
-DROP_MESSAGE_POLL = 0.1
-# How often to re-read the chat log while waiting for a drop announcement. Finer
-# than POLL_INTERVAL because this wait sits between two game actions, so every
+REAGENT_DROP_MESSAGE_POLL = 0.1
+# How often to re-read the chat log while waiting for a reagent drop announcement.
+# Finer than POLL_INTERVAL because this wait sits between two game actions, so every
 # poll cycle spent past the message's arrival is added latency per pickup.
+
+COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
+# Seconds to keep watching the chat log for a drop announcement after a duel ends.
+# Far longer than the reagent window: end-of-fight is when the server grants loot,
+# and that is exactly when a long-running session lags hardest, so the round-trip
+# that is normally instant can stretch to many seconds (#127).
+#
+# Paid in full only by a fight that drops nothing at all — poll_new_drops returns
+# as soon as a line appears. It is also not the last line of defence: the caller
+# carries its chat baseline between fights, so a message that beats even this
+# window is recorded late by the next fight's poll rather than lost. That makes
+# this value an attribution-latency knob, not a correctness one.
+
+COMBAT_DROP_MESSAGE_POLL = 0.5
+# How often to re-read the chat log while waiting for a combat drop announcement.
+# Coarser than the reagent poll on purpose: each read is a synchronous
+# ReadProcessMemory of the whole chat log on the event loop thread, and these
+# reads land during the end-of-fight lag spike they are waiting out. Since the
+# poll returns on the first hit, a coarser interval costs latency, never a drop.
 
 CLIENT_REFRESH_INTERVAL_IDLE = 0.1
 # Seconds between client sidebar refreshes when no bot is running.

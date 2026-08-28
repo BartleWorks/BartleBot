@@ -2,8 +2,25 @@
 
 from unittest.mock import AsyncMock, call, patch
 
+import pytest
+
 import bartlebot.nodes.combat.handle_combat as hc
+from bartlebot.nodes import combat_runner
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
+
+
+@pytest.fixture(autouse=True)
+def _no_drop_wait(monkeypatch):
+    """Collapse the post-fight wait for a late drop announcement.
+
+    Every test in this file either has its drop line present on the very first read or
+    has none at all, so there is nothing here to wait for; a zero ceiling makes
+    poll_new_drops take exactly one look. Without this the file pays
+    COMBAT_DROP_MESSAGE_TIMEOUT (15 s) per test. The late-arrival behaviour that ceiling
+    exists for is what tests/test_combat_drop_recording.py covers, with a real window.
+    """
+    monkeypatch.setattr(combat_runner, "COMBAT_DROP_MESSAGE_TIMEOUT", 0)
+
 
 # A chat line that drop_detection.extract_new_drops recognises as a Reagent drop.
 _DROP_LINE = "Art_Chat_System.dds> <>IronBloom<;Reagent>"
@@ -205,7 +222,8 @@ async def test_success_with_drops():
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
 
-    # First snapshot (before combat) is empty; second (after) contains a drop line.
+    # First read seeds the baseline before combat and is empty; the second, after
+    # combat, finds a drop line.
     mock_snap = AsyncMock(side_effect=["", _DROP_LINE])
 
     with (

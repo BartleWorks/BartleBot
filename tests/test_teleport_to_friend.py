@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_friend as ttf
+from bartlebot import wizard_names
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeMachine, message_box_patches
 
@@ -447,3 +448,122 @@ async def test_busy_dialog_behind_the_dungeon_warning_still_fails():
 
     assert result == "FAILURE"
     assert clicked == [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]
+
+
+# ---------------------------------------------------------------------------
+# Target resolution (#102)
+# ---------------------------------------------------------------------------
+
+
+class _FakeSettings:
+    """Just the one attribute resolve_target reads, so these stay off the real settings file."""
+
+    def __init__(self, name: str = ""):
+        self.default_friend_name = name
+
+
+def test_resolve_target_reads_the_app_setting_when_the_bot_names_nobody():
+    target = ttf.resolve_target([], {"to_zone": _TO_ZONE}, settings=_FakeSettings("Configured Wizard"))
+
+    assert target.name == "Configured Wizard"
+    assert target.source == "the app setting"
+    assert not target.error
+
+
+def test_resolve_target_fails_with_a_pointer_when_nothing_is_configured():
+    """The failure has to say where to fix it — a silent teleport to nowhere is the bug
+    this replaced."""
+    target = ttf.resolve_target([], {"to_zone": _TO_ZONE}, settings=_FakeSettings(""))
+
+    assert not target.name
+    assert "Settings" in target.error
+
+
+def test_a_literal_friend_name_still_wins_but_is_marked_deprecated():
+    """Bot files written before #102 keep working; the source label is what says they
+    should not stay that way."""
+    target = ttf.resolve_target([], _PARAMS, settings=_FakeSettings("Configured Wizard"))
+
+    assert target.name == _FRIEND
+    assert target.source == "the bot file (deprecated)"
+
+
+def test_resolve_target_reads_the_hooked_players_name_from_memory():
+    """Slot mode stores nothing: the name comes from the cache ClientManager fills."""
+    clients = [FakeClient(), FakeClient()]
+    wizard_names.remember(clients[1], "Luke SkullHunter")
+    try:
+        target = ttf.resolve_target(clients, {"target_hooked_player": True, "target_player": 2})
+    finally:
+        wizard_names.clear_cache()
+
+    assert target.name == "Luke SkullHunter"
+    assert target.target_index == 1
+    assert target.source == "hooked player P2"
+
+
+def test_resolve_target_fails_when_the_slots_name_is_not_known_yet():
+    clients = [FakeClient()]
+    target = ttf.resolve_target(clients, {"target_hooked_player": True, "target_player": 1})
+
+    assert not target.name
+    assert "has not been detected" in target.error
+
+
+def test_resolve_target_fails_when_the_slot_is_not_connected():
+    target = ttf.resolve_target([FakeClient()], {"target_hooked_player": True, "target_player": 3})
+
+    assert "P3 is not connected" in target.error
+
+
+async def test_no_target_is_a_failure_before_any_client_is_touched():
+    client = _client_needs_tp()
+
+    with _TELEPORT_OK as mock_tp, patch.object(ttf, "resolve_target", return_value=ttf.TargetResolution(error="nope")):
+        result = await ttf.run(FakeMachine(), [client], {"to_zone": _TO_ZONE})
+
+    assert result == "FAILURE"
+    mock_tp.assert_not_called()
+
+
+async def test_the_target_player_is_never_asked_to_teleport_to_itself():
+    """The old node only skipped the target because it happened to already be in to_zone.
+    In slot mode the exclusion is explicit, so a target that reads as elsewhere on the
+    first poll — still on a loading screen, say — cannot be sent chasing itself."""
+    zones = iter([_FROM_ZONE])
+    target_client = FakeClient()
+    target_client.zone_name = AsyncMock(side_effect=lambda: next(zones, _TO_ZONE))
+    target_client.is_loading = AsyncMock(return_value=False)
+    mover = _client_needs_tp()
+    wizard_names.remember(target_client, "Luke SkullHunter")
+    params = {"target_hooked_player": True, "target_player": 1, "to_zone": _TO_ZONE}
+
+    try:
+        with _TELEPORT_OK as mock_tp, _NO_DIALOG, patch.object(ttf, "POLL_INTERVAL", 0):
+            resolve = patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value="Luke SkullHunter"))
+            with resolve:
+                await ttf.run(FakeMachine(), [target_client, mover], params)
+    finally:
+        wizard_names.clear_cache()
+
+    assert mock_tp.call_count == 1
+    assert mock_tp.call_args[0][0] is mover
+
+
+async def test_failure_when_only_the_target_is_outside_the_destination():
+    """Everyone else has arrived and the target has not — there is nobody to port, and
+    reporting SUCCESS would hide a target that wandered off."""
+    target_client = FakeClient()
+    target_client.zone_name = AsyncMock(return_value=_FROM_ZONE)
+    arrived = _client_already_there()
+    wizard_names.remember(target_client, "Luke SkullHunter")
+    params = {"target_hooked_player": True, "target_player": 1, "to_zone": _TO_ZONE}
+
+    try:
+        with _TELEPORT_OK as mock_tp:
+            result = await ttf.run(FakeMachine(), [target_client, arrived], params)
+    finally:
+        wizard_names.clear_cache()
+
+    assert result == "FAILURE"
+    mock_tp.assert_not_called()

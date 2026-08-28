@@ -3,10 +3,13 @@
 Extracted so that machine.py does not need to import from a specific node module.
 """
 
+import asyncio
 import logging
 from functools import lru_cache
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
+from bartlebot.nodes.timing import COMBAT_DROP_MESSAGE_POLL, COMBAT_DROP_MESSAGE_TIMEOUT
+from bartlebot.utils import drop_detection
 
 logger = logging.getLogger(__name__)
 
@@ -224,3 +227,67 @@ async def _run_combat(client, combat_dsl: str) -> None:
 
     provider = _str_provider_class()(combat_dsl)
     await SprintyCombat(client, provider).wait_for_combat()
+
+
+async def seed_chat_baselines(machine, clients: list) -> None:
+    """Give every client in *clients* a chat-log baseline if it does not have one.
+
+    Called before a fight starts. A client that already has a baseline keeps it: that
+    is what lets an announcement which missed the previous fight's poll window still be
+    detected by this fight's. Re-snapshotting here would absorb it instead, which is
+    the bug this whole path exists to fix (#127).
+    """
+    unseeded = [c for c in clients if machine.chat_baseline(c) is None]
+    if not unseeded:
+        return
+    snapshots = await asyncio.gather(*[drop_detection.snapshot_chat(c) for c in unseeded], return_exceptions=True)
+    for client, snap in zip(unseeded, snapshots):
+        # An unreadable chat log seeds "" rather than staying unseeded: leaving it None
+        # would make the next fight seed from a log that already holds this fight's
+        # drops, silently losing them. "" over-reports at worst, and only once.
+        machine.set_chat_baseline(client, snap if isinstance(snap, str) else "")
+
+
+async def poll_combat_drops(machine, clients: list, slots: list[int]) -> list[str]:
+    """Watch each client's chat log for drops from the fight that just ended.
+
+    ``clients`` and ``slots`` are parallel: ``slots[i]`` is the player slot of
+    ``clients[i]``, which is what the drop is attributed to. They differ whenever the
+    caller is handling a subset of the client list, as the ambient watcher does.
+
+    Polls rather than reading once, because the announcement is a server round-trip
+    that lands after the duel has locally ended — and end-of-fight is exactly when a
+    long session lags hardest. Every client is polled concurrently: serially, a group
+    of four would pay four full timeouts on a fight that dropped nothing.
+
+    Returns the item names found, for logging. Each is already reported via
+    ``machine.on_drop``.
+    """
+
+    async def _one(client, slot: int) -> list[str]:
+        before = machine.chat_baseline(client)
+        if before is None:
+            # Never seeded — there is nothing to diff against, and treating this as ""
+            # would report the entire existing chat log as drops. Seed and report none.
+            machine.set_chat_baseline(client, await drop_detection.snapshot_chat(client))
+            return []
+        drops, baseline = await drop_detection.poll_new_drops(
+            client, before, COMBAT_DROP_MESSAGE_TIMEOUT, COMBAT_DROP_MESSAGE_POLL
+        )
+        # Stored on a miss too: poll_new_drops hands back the caller's own baseline
+        # unchanged, so a late announcement is still ahead of it next fight.
+        machine.set_chat_baseline(client, baseline)
+        for name in drops:
+            machine.on_drop(name, 1, slot)
+        return drops
+
+    results = await asyncio.gather(*[_one(c, s) for c, s in zip(clients, slots)], return_exceptions=True)
+
+    found: list[str] = []
+    for slot, result in zip(slots, results):
+        if isinstance(result, Exception):
+            # A failed read must not fail the fight that already succeeded.
+            machine.log(f"Drop detection error on client {slot}: {result}", logging.DEBUG)
+            continue
+        found.extend(result)
+    return found

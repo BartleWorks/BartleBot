@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -36,6 +37,7 @@ class _GeneralSettings(BaseModel):
     auto_group_players: bool = True
     auto_select_character: bool = True
     disable_quick_friend_teleport: bool = True
+    default_friend_name: str = ""
 
 
 class _GameEmbedSettings(BaseModel):
@@ -84,6 +86,7 @@ _DEFAULTS: dict[str, Any] = {
         "auto_group_players": True,
         "auto_select_character": True,
         "disable_quick_friend_teleport": True,
+        "default_friend_name": "",
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -109,6 +112,7 @@ _DEFAULTS: dict[str, Any] = {
     "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
     "recent_zones": [],
+    "recent_friend_names": [],
     "active_bot_strategies": {},  # {bot_uuid: bcs_uuid}
 }
 
@@ -139,8 +143,13 @@ def _appdata_dir() -> Path:
 
 
 def _deep_merge(base: dict, overrides: dict) -> dict:
-    """Recursively merge *overrides* into a copy of *base*."""
-    result = dict(base)
+    """Recursively merge *overrides* into a deep copy of *base*.
+
+    Deep, because *base* is ``_DEFAULTS``: a shallow copy would leave every section the
+    overrides do not mention — and every default list — aliased to the module's own,
+    where the first mutation edits the defaults themselves.
+    """
+    result = copy.deepcopy(base)
     for key, value in overrides.items():
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = _deep_merge(result[key], value)
@@ -184,7 +193,11 @@ class SettingsManager:
     # ------------------------------------------------------------------
 
     def _load(self) -> None:
-        self._data = dict(_DEFAULTS)
+        # deepcopy, not dict(): a shallow copy shares every nested section with _DEFAULTS,
+        # so the first set_general() rewrites the module's own defaults for the life of
+        # the process — and the next SettingsManager built with no file on disk starts
+        # from the mutated ones.
+        self._data = copy.deepcopy(_DEFAULTS)
         if self._path.exists():
             try:
                 with open(self._path, encoding="utf-8") as fh:
@@ -203,7 +216,7 @@ class SettingsManager:
                     section_key,
                     exc,
                 )
-                self._data[section_key] = dict(_DEFAULTS[section_key])
+                self._data[section_key] = copy.deepcopy(_DEFAULTS[section_key])
 
     def save(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
@@ -290,6 +303,44 @@ class SettingsManager:
     @disable_quick_friend_teleport.setter
     def disable_quick_friend_teleport(self, value: bool) -> None:
         self.set_general("disable_quick_friend_teleport", bool(value))
+
+    @property
+    def default_friend_name(self) -> str:
+        """Wizard name teleport_to_friend ports to when a bot names no hooked player.
+
+        Machine configuration rather than bot content: the target is normally an idler
+        account of the user's own, so it describes this machine's situation the way
+        Safety Delay does. No bot file stores it, and none may — see the "No real player
+        data" section of CLAUDE.md, and the guard in tests/test_bot_library.py.
+        """
+        return str(self.get_general("default_friend_name", default="") or "")
+
+    @default_friend_name.setter
+    def default_friend_name(self, value: str) -> None:
+        self.set_general("default_friend_name", str(value or "").strip())
+
+    @property
+    def recent_friend_names(self) -> list[str]:
+        """Previously used teleport targets, newest first. Capped at 20.
+
+        Autocomplete only. Nothing reads this at run time — a suggestion list must never
+        be able to decide where a bot teleports.
+        """
+        return list(self.get("recent_friend_names", default=[]))
+
+    def add_recent_friend_name(self, name: str) -> None:
+        """Prepend name to recent_friend_names, deduplicating and capping at 20.
+
+        Matching is case-insensitive so a differently-cased retype does not add a second
+        entry, and the newest spelling wins.
+        """
+        name = (name or "").strip()
+        if not name:
+            return
+        recent = [n for n in self.recent_friend_names if n.lower() != name.lower()]
+        recent.insert(0, name)
+        self.set("recent_friend_names", value=recent[:20])
+        self.save()
 
     @property
     def accounts(self) -> list[dict]:

@@ -7,7 +7,9 @@ import time
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
     _run_combat,
+    poll_combat_drops,
     resolve_combat,
+    seed_chat_baselines,
 )
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
@@ -112,14 +114,12 @@ async def run(machine, clients: list, params: dict) -> str:
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
       6. If max_duration is set and has elapsed, return FAILURE.
       7. Run SprintyCombat for all clients in parallel until combat ends.
-      8. Diff chat to detect drops; report each via machine.on_drop().
+      8. Poll chat for drop announcements; report each via machine.on_drop().
 
     FAILURE: target not found after retries; max_duration exceeded; clients did not enter
     combat within ENTER_COMBAT_TIMEOUT.  DSL resolution itself cannot fail — resolve_combat
     falls back to the built-in default at every level.
     """
-    from bartlebot.utils.drop_detection import extract_new_drops, snapshot_chat  # noqa: PLC0415
-
     max_duration: float = float(params.get("max_duration", 0.0))
     _node_start = time.monotonic()
 
@@ -175,8 +175,10 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log(f"Targets resolved for {len(clients)} client(s)", logging.DEBUG)
 
-    # 2. Snapshot chat before combat so we can diff for drops afterward
-    chat_before = await asyncio.gather(*[snapshot_chat(c) for c in clients])
+    # 2. Make sure every client has a chat baseline to diff against. Clients that
+    # already carry one from an earlier fight keep it, so an announcement that missed
+    # that fight's poll window is still ahead of the baseline and gets caught below.
+    await seed_chat_baselines(machine, clients)
 
     # 3. Teleport clients to their target (sequential or simultaneous).
     if combat_order:
@@ -222,13 +224,10 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log("SprintyCombat finished for all clients", logging.DEBUG)
 
-    # 6. Detect drops by comparing chat before and after combat
-    drops_found: list[str] = []
-    for i, (client, before) in enumerate(zip(clients, chat_before)):
-        after = await snapshot_chat(client)
-        for item_name in extract_new_drops(before, after):
-            machine.on_drop(item_name, 1, i)
-            drops_found.append(item_name)
+    # 6. Watch the chat log for this fight's drop announcements. They are a server
+    # round-trip that lands after the duel has locally ended, so this polls rather
+    # than reading once (#127).
+    drops_found = await poll_combat_drops(machine, clients, list(range(len(clients))))
 
     if drops_found:
         machine.log(f"Detected {len(drops_found)} drop(s): {', '.join(drops_found)}")
