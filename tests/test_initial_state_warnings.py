@@ -36,6 +36,19 @@ def _config():
     )
 
 
+# Canvases built by _Harness, drained after each test.  A QGraphicsScene destroyed
+# with items still selected corrupts the heap on the way out, and these tests select
+# nodes; prepare_for_shutdown is what makes the teardown safe.
+_BUILT: list = []
+
+
+@pytest.fixture(autouse=True)
+def _shut_down_harness_canvases():
+    yield
+    while _BUILT:
+        _BUILT.pop().prepare_for_shutdown()
+
+
 class _Harness:
     """Canvas + sidebar wired the way AppController._on_config_changed wires them."""
 
@@ -44,6 +57,7 @@ class _Harness:
         from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 
         self.canvas = BotCanvas()
+        _BUILT.append(self.canvas)
         self.canvas.setup(config)
         self.canvas.enter_edit_mode()
         self.sidebar = LeftSidebar(self.canvas.param_panel)
@@ -66,20 +80,8 @@ class _Harness:
             self.canvas.refresh_recovery(self.loaded.recovery_state)
 
     def _show(self, state_id):
-        """Load a state into the properties panel, as selecting its node does.
-
-        Done directly rather than through a real scene selection: selecting a node on
-        a never-shown canvas crashes the worker during Qt teardown, and the selection
-        machinery is not what these tests are about.
-        """
-        config = self.canvas.config
-        self.canvas.param_panel.show_state(
-            next(s for s in config.states if s.id == state_id),
-            all_states=list(config.states),
-            all_transitions=config.transitions,
-            initial_id=config.initial,
-            recovery_id=config.recovery_state,
-        )
+        """Select a node, which is what loads its state into the properties panel."""
+        self.canvas.select_state(state_id)
 
     def choose_initial(self, state_id):
         """Set the initial state the way a user now does — from the state's own panel.

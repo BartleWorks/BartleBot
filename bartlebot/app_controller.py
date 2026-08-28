@@ -213,6 +213,9 @@ class AppController(QObject):
         # are still alive.
         self._app.aboutToQuit.connect(self._flush_pending_edits)
         self._app.aboutToQuit.connect(self._client_manager.stop)
+        # The canvas is never closed: Qt delivers QCloseEvent to the window being
+        # closed, not to its children, so its own closeEvent never fires in the app.
+        self._app.aboutToQuit.connect(self._window.bot_canvas.prepare_for_shutdown)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 

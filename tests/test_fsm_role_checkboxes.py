@@ -41,26 +41,16 @@ def canvas(qapp):
     c = BotCanvas()
     c.setup(_config())
     c.enter_edit_mode()
-    return c
+    yield c
+    c.prepare_for_shutdown()
 
 
 def _show(canvas, state_id):
-    """Load a state into the properties panel and return the panel.
+    """Select a node on the canvas and return the properties panel showing it.
 
-    This is what selecting the node on the canvas does, done directly.  Going through
-    a real QGraphicsScene selection instead makes the worker process crash during Qt
-    teardown often enough to be useless -- an existing fragility that has simply never
-    been reached, because no test before this one selected a node.  Nothing here is
-    about the selection machinery: the subject is what the panel does once a state is
-    in front of it, and what the canvas does with what the panel asks for.
+    The real path: selecting is what loads a state into the panel.
     """
-    canvas.param_panel.show_state(
-        next(s for s in canvas.config.states if s.id == state_id),
-        all_states=list(canvas.config.states),
-        all_transitions=canvas.config.transitions,
-        initial_id=canvas.config.initial,
-        recovery_id=canvas.config.recovery_state,
-    )
+    canvas.select_state(state_id)
     return canvas.param_panel
 
 
@@ -275,6 +265,42 @@ def test_a_config_survives_deleting_its_role_holder(canvas):
 # ---------------------------------------------------------------------------
 # Widget lifetime
 # ---------------------------------------------------------------------------
+
+
+def test_closing_the_canvas_clears_the_selection(canvas):
+    """A scene destroyed with items still selected corrupts the heap on the way out.
+
+    It surfaces as a 0xC0000409 fail-fast during interpreter finalization, with no
+    Python traceback -- measured at 8 crashes in 40 runs of a script that selects a
+    few nodes and exits, and 0 in 40 once the selection is cleared first.
+    """
+    canvas.scene.node_items["b"].setSelected(True)
+    assert canvas.scene.selectedItems()
+
+    canvas.close()
+
+    assert not canvas.scene.selectedItems()
+
+
+def test_preparing_for_shutdown_twice_is_harmless(canvas):
+    """It runs from closeEvent and from the app's aboutToQuit, so both can fire."""
+    canvas.prepare_for_shutdown()
+    canvas.prepare_for_shutdown()
+
+    assert not canvas.scene.selectedItems()
+
+
+def test_shutdown_does_not_notify_the_panel(canvas):
+    """selectionChanged reaches into the properties panel; nothing should repaint a
+    panel on the way to being deleted."""
+    seen = []
+    canvas.scene.selectionChanged.connect(lambda: seen.append(1))
+    canvas.scene.node_items["b"].setSelected(True)
+    seen.clear()
+
+    canvas.prepare_for_shutdown()
+
+    assert seen == []
 
 
 def test_closing_the_canvas_stops_its_timers(canvas):
