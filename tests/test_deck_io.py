@@ -2357,17 +2357,26 @@ class FakeSchoolMenu:
 
     ``gauge_clicks_needed`` makes the first N gauge clicks land without opening
     anything, which is how a swallowed click looks from outside.
+
+    ``anim_sweeps`` is how many reads of the icon rectangles it takes for them
+    to finish moving after a state change.  Non-zero by default: the real move
+    is animated, and a fake that snaps instantly cannot catch the class of bug
+    where something decides from a rectangle read mid-animation.
     """
 
     SCHOOLS = ("Fire", "Ice", "Storm", "Myth", "Life", "Death", "Balance")
 
-    def __init__(self, school="Death", *, gauge_clicks_needed=1, icon_sets=True, icon_count=7):
+    def __init__(self, school="Death", *, gauge_clicks_needed=1, icon_sets=True, icon_count=7, anim_sweeps=3):
         self.school = school
         self.open = False
         self.clicks: list[str] = []
         self._gauge_clicks_needed = gauge_clicks_needed
         self._icon_sets = icon_sets
         self._icon_count = icon_count
+        self._anim_sweeps = anim_sweeps
+        # What the icons are *showing*, which lags self.open while animating.
+        self._shown_open = False
+        self._remaining = 0
 
     # -- the windows deck_io resolves --------------------------------
 
@@ -2379,11 +2388,34 @@ class FakeSchoolMenu:
             return None
         return SimpleNamespace(_menu_name=name, _school=school)
 
-    def rect_for(self, window):
-        # Stacked at one corner while closed; a full width apart once open.
-        index = self.SCHOOLS.index(window._school)
-        x = 100 + (index * 80 if self.open else 0)
-        return FakeRect(x, 200, x + 40, 240)
+    def sweep(self, windows) -> list:
+        """One read of every icon rectangle, advancing the animation by a frame.
+
+        Mid-animation the icons are at intermediate positions, so consecutive
+        sweeps differ — which is exactly what stops anything from calling the
+        state settled while they are still moving.
+        """
+        if self._remaining:
+            self._remaining -= 1
+            if self._remaining == 0:
+                self._shown_open = self.open
+        spread = 80 if self._shown_open else 0
+        # A frame of travel, so a sweep taken mid-move never repeats the last.
+        drift = self._remaining * 3
+        return [
+            FakeRect(
+                100 + self.SCHOOLS.index(w._school) * spread + drift,
+                200,
+                100 + self.SCHOOLS.index(w._school) * spread + drift + 40,
+                240,
+            )
+            for w in windows
+        ]
+
+    def _begin_animation(self) -> None:
+        self._remaining = self._anim_sweeps
+        if self._anim_sweeps == 0:
+            self._shown_open = self.open
 
     # -- what a click does -------------------------------------------
 
@@ -2393,10 +2425,13 @@ class FakeSchoolMenu:
         if name == "Guage":
             if self.clicks.count("Guage") >= self._gauge_clicks_needed or self.open:
                 self.open = not self.open
+                self._begin_animation()
         elif self.open:
+            # Picking a school closes the menu by itself — no second click.
             if self._icon_sets:
                 self.school = window._school
             self.open = False
+            self._begin_animation()
         return True
 
 
@@ -2411,12 +2446,12 @@ def school_menu(monkeypatch):
     async def _click(_client, window):
         return menu.click(window)
 
-    async def _rect(window):
-        return menu.rect_for(window)
+    async def _rects(windows):
+        return menu.sweep(windows)
 
     monkeypatch.setattr("bartlebot.nodes.node_helpers._get_window_from_path", _get_window)
     monkeypatch.setattr("bartlebot.deck_io._click", _click)
-    monkeypatch.setattr("bartlebot.deck_io._safe_rect", _rect)
+    monkeypatch.setattr("bartlebot.deck_io._icon_rects", _rects)
     monkeypatch.setattr("bartlebot.deck_io.read_archmastery_school", AsyncMock(side_effect=lambda _c: menu.school))
     # Cadences only. The dwell and the ceilings keep their shape relative to the
     # polls, so the tests still take the branches they are named for.
@@ -2494,6 +2529,27 @@ async def test_a_greyed_looking_sprite_is_still_clicked():
     assert await _click(SimpleNamespace(mouse_handler=handler), window) is True
     assert clicked == [window]
     window.is_control_grayed.assert_not_awaited()
+
+
+async def test_the_gauge_is_not_clicked_again_while_the_menu_is_closing(school_menu):
+    """Picking a school closes the menu itself, and the icons restack over
+    several frames. A close check that read the rectangles once caught them
+    still spread, called that "open", and clicked the gauge — reopening the
+    menu the pick had just dismissed.
+    """
+    assert await set_archmastery_school(FakeClient(), "Storm") is True
+
+    assert school_menu.clicks == ["Guage", "SC_Storm"]
+    assert not school_menu.open
+
+
+async def test_a_menu_left_open_is_still_closed_on_the_way_out(school_menu):
+    """The other side of it: a genuinely open menu does get the extra click."""
+    school_menu._icon_sets = False
+
+    await set_archmastery_school(FakeClient(), "Storm")
+
+    assert not school_menu.open
 
 
 async def test_a_missing_selector_is_declined_rather_than_clicked_blind(school_menu, monkeypatch):

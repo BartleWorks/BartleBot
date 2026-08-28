@@ -1248,13 +1248,21 @@ async def _safe_rect(window):
         return None
 
 
-async def _wait_for_menu(icons: list, *, want_open: bool) -> bool:
-    """Wait until the menu is open (or closed) *and* has stopped moving.
+async def _settled_menu_state(icons: list, *, want: bool | None = None) -> bool | None:
+    """Wait until the icons stop moving; return whether the menu ended up open.
 
-    Both halves matter.  The move is animated, so geometry changing only means
-    it has started -- a click issued then aims at a position the icon is still
-    leaving.  Stability is measured as a dwell rather than two equal samples,
-    because two polls can land inside one animation frame.
+    Stability is the point.  The move is animated, so geometry *changing* only
+    means it has started -- anything decided from a single read can be a
+    decision about a position the icon is still leaving.  The dwell is measured
+    as elapsed time rather than two equal samples, because two polls can land
+    inside one animation frame.
+
+    ``want`` waits for a particular state: settling into the other one is not an
+    answer, because the animation may not have started yet.  ``None`` returns
+    whichever state the icons settle into, which is what a caller asking "what
+    is it doing now" wants.
+
+    Returns None if the ceiling passes without the icons holding still.
     """
     deadline = time.perf_counter() + ARCHMASTERY_MENU_TIMEOUT
     last_state = None
@@ -1265,12 +1273,19 @@ async def _wait_for_menu(icons: list, *, want_open: bool) -> bool:
         state = tuple((r.x1, r.y1, r.x2, r.y2) for r in rects)
         if state != last_state:
             last_state, settled_at = state, now
-        elif now - settled_at >= ARCHMASTERY_MENU_SETTLE and archmastery_menu_is_open(rects) == want_open:
-            return True
+        elif now - settled_at >= ARCHMASTERY_MENU_SETTLE:
+            is_open = archmastery_menu_is_open(rects)
+            if want is None or is_open == want:
+                return is_open
         if now >= deadline:
-            logger.debug("Archmastery menu never settled %s", "open" if want_open else "closed")
-            return False
+            logger.debug("Archmastery icons never settled (waiting for %s)", want)
+            return None
         await asyncio.sleep(ARCHMASTERY_MENU_POLL)
+
+
+async def _wait_for_menu(icons: list, *, want_open: bool) -> bool:
+    """Wait for the menu to settle into a particular state."""
+    return await _settled_menu_state(icons, want=want_open) == want_open
 
 
 async def _await_school(client, school: str) -> bool:
@@ -1401,13 +1416,18 @@ async def _resolve_icons(client) -> list:
 
 
 async def _close_menu(client, gauge, icons: list) -> None:
-    """Put the menu away if it is open. Best effort — never raises."""
-    from bartlebot.nodes.node_helpers import click_window  # noqa: PLC0415
+    """Put the menu away if it is still open. Best effort — never raises.
 
+    Waits for the icons to stop moving *before* deciding, which a single read
+    cannot do: picking a school closes the menu by itself, and during the
+    restack animation the icons are still spread apart.  Reading once caught
+    them mid-close, called it open, and clicked the gauge -- which reopened the
+    menu the click had just dismissed.
+    """
     try:
-        if not archmastery_menu_is_open(await _icon_rects(icons)):
-            return
-        await click_window(client, gauge)
+        if await _settled_menu_state(icons) is not True:
+            return  # already closed, or never settled — either way, do not click
+        await _click(client, gauge)
         if not await _wait_for_menu(icons, want_open=False):
             logger.warning("The archmastery menu would not close; deck clicks after this may land in it")
     except Exception:
