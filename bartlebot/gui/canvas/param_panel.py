@@ -438,6 +438,30 @@ class _IntChoiceComboBox(QComboBox):
     """
 
 
+class _StrChoiceComboBox(QComboBox):
+    """QComboBox variant used for 'str_choice' param fields.
+
+    Displays a fixed dropdown of string options defined by ``ParamField.choices``. Each
+    choice may be a bare string, or a ``(value, label)`` pair when the value stored in the
+    bot file is not what the user should read -- go_to_world stores the world's zone
+    prefix ("DragonSpire") and shows its display name ("Dragonspyre").
+
+    ``get_params()`` returns the stored value, never the label.
+    """
+
+    def add_choices(self, choices: list) -> None:
+        for choice in choices or []:
+            value, label = choice if isinstance(choice, (tuple, list)) else (choice, choice)
+            self.addItem(str(label), str(value))
+
+    def set_value(self, value) -> None:
+        index = self.findData(str(value) if value is not None else "")
+        self.setCurrentIndex(max(index, 0))
+
+    def get_value(self) -> str:
+        return self.currentData() or ""
+
+
 # ---------------------------------------------------------------------------
 # _DynamicParamForm
 # ---------------------------------------------------------------------------
@@ -649,6 +673,8 @@ class _DynamicParamForm(QWidget):
                     result[key] = int(w.currentText())
                 except (TypeError, ValueError):
                     result[key] = 0
+            elif isinstance(w, _StrChoiceComboBox):
+                result[key] = w.get_value()
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
         return result
@@ -833,6 +859,14 @@ class _DynamicParamForm(QWidget):
             btns_row.addWidget(tp_btn, 1)
             outer_layout.addLayout(btns_row)
             return (spins[0], spins[1], spins[2], outer)
+        if field_type == "str_choice":
+            w = _StrChoiceComboBox()
+            w.add_choices(choices or [])
+            w.set_value(val)
+            if help_text:
+                w.setToolTip(help_text)
+            w.currentTextChanged.connect(self._emit_changed)
+            return w
         if field_type == "int_choice":
             w = _IntChoiceComboBox()
             for c in choices or []:

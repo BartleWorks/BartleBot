@@ -32,8 +32,8 @@ class ParamField:
     Attributes:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "tri_bool" | "xyz" |
-                      "str_list" | "int_choice" | "player_list" | "player_slot" | "drop_keep_list" |
-                      "wiki_page" | "app_setting_str".
+                      "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
+                      "drop_keep_list" | "wiki_page" | "app_setting_str".
                       "text" renders as a multi-line QPlainTextEdit.
                       "tri_bool" is a bool that can also be left unset, meaning "use the app setting named by
                       app_setting_key". Stored as true / false / null, and null is what a bot carries unless
@@ -84,7 +84,14 @@ class ParamField:
     app_setting_key: str = ""
     required: bool = False
     choices: list[Any] = field(default_factory=list)
-    """For ``type="int_choice"``: the ordered list of integer values shown in the dropdown."""
+    """The ordered dropdown options.
+
+    For ``type="int_choice"``: a list of integers.
+
+    For ``type="str_choice"``: a list of strings, or of ``(value, label)`` pairs when what
+    the bot file stores differs from what the user should read — go_to_world stores the
+    world's zone prefix ("DragonSpire") and shows its display name ("Dragonspyre").
+    """
 
 
 @dataclass

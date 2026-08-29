@@ -42,6 +42,7 @@ import time
 
 from wizwalker.extensions.wizsprinter import WizSprinter
 
+from bartlebot.nodes import wizard_city
 from bartlebot.nodes.combat import handle_potions
 from bartlebot.nodes.teleportation import mark_location, teleport_to_marked_location
 
@@ -94,7 +95,7 @@ async def _run(clients: list, machine: ConsoleMachine, recall: bool, shop: bool)
         # Stop after the dorm hop so the castle unequip can be checked on its own — that is
         # the newest part of the route and the one most likely to misbehave.
         _step("Teleporting home (stopping before Hilda, per --no-shop)")
-        reached = await handle_potions.teleport_home_and_verify_dorm(machine, clients)
+        reached = await wizard_city.teleport_home_and_verify_dorm(machine, clients)
         print(f"\n{'Reached the dorm.' if reached else 'FAILED: did not reach the dorm.'}")
         return reached
 

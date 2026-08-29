@@ -402,3 +402,64 @@ async def test_sequential_prompt_never_appears_fails():
 
     assert result == "FAILURE"
     assert any("interact prompt never appeared for client(s) [1]" in msg for msg, _ in machine.logs)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Zone List Aliases — the same entry under another locale's spelling
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+def test_queries_dedupes_and_puts_the_primary_entry_first():
+    assert evl._queries("Wizard City", ["Sorcelleville", "  wizard city  ", ""]) == [
+        "wizard city",
+        "sorcelleville",
+    ]
+
+
+def test_queries_survives_a_missing_alias_list():
+    assert evl._queries("Krokotopia", None) == ["krokotopia"]
+
+
+def test_fuzzy_match_hits_on_an_alias_not_just_the_primary():
+    queries = evl._queries("Dragonspyre", ["Drachenfels", "Roc du dragon"])
+
+    assert evl._fuzzy_match("Drachenfels", queries) is True
+    assert evl._fuzzy_match("Roc du dragon", queries) is True
+    assert evl._fuzzy_match("Krokotopia", queries) is False
+
+
+async def test_alias_is_selected_when_the_list_is_in_another_locale():
+    """A German client lists 'Drachenfels'; the English entry alone would never match."""
+    client = _ready_client()
+    client.zone_name.side_effect = ["TestZone", "DestZone"]
+    params = {**_PARAMS, "zone_list_entry": "Dragonspyre", "zone_list_aliases": ["Drachenfels"]}
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Drachenfels", "", "", ""] * 10)),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+    ):
+        result = await evl.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+
+
+async def test_no_aliases_behaves_exactly_as_before():
+    """The param is additive: a bot that never sets it must be unaffected."""
+    client = _ready_client()
+    client.zone_name.side_effect = ["TestZone", "DestZone"]
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(return_value="Drachenfels")),
+        patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
+    ):
+        # _PARAMS asks for "Krokotopia" and carries no aliases, so the German row must miss.
+        # Every page reads the same, so the visited-signature check wraps and gives up.
+        result = await evl.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
