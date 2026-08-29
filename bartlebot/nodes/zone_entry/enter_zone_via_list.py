@@ -65,6 +65,20 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
+        key="zone_list_aliases",
+        type="str_list",
+        label="Zone List Aliases",
+        help=(
+            "Additional display texts that mean the same entry, matched the same way as "
+            "Zone List Entry. The game resolves list text into the client's own language "
+            "before it reaches memory, so an entry named in English is not found on a "
+            "client running in any of the other six locales. Add the other spellings here."
+        ),
+        default=[],
+        default_hint="Only Zone List Entry is matched.",
+        required=False,
+    ),
+    ParamField(
         key="sequential",
         type="bool",
         label="Sequential Interaction",
@@ -122,22 +136,37 @@ _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone l
 _FUZZY_THRESHOLD = 0.75  # Minimum SequenceMatcher ratio for a fuzzy match
 
 
-def _fuzzy_match(text: str, query_lower: str) -> bool:
-    """Return True if text is a close enough match for query_lower (already lowercased).
+def _fuzzy_match(text: str, queries_lower: list[str]) -> bool:
+    """Return True if text is a close enough match for any of queries_lower (already lowercased).
 
     Checks substring containment first (fast path), then falls back to
     SequenceMatcher ratio. This handles display names that may differ slightly
     from the underlying zone name used to derive the query.
+
+    Several queries rather than one because the same entry has a different display text
+    per game locale, and the node cannot tell which locale a client is running — so every
+    known spelling is tried and any hit wins.
     """
     t = text.strip().lower()
-    if not t or not query_lower:
+    if not t:
         return False
-    if query_lower in t:
-        return True
-    return difflib.SequenceMatcher(None, t, query_lower).ratio() >= _FUZZY_THRESHOLD
+    for query_lower in queries_lower:
+        if not query_lower:
+            continue
+        if query_lower in t:
+            return True
+        if difflib.SequenceMatcher(None, t, query_lower).ratio() >= _FUZZY_THRESHOLD:
+            return True
+    return False
 
 
-async def _select_zone(client, entry: str, safety_delay: float) -> bool:
+def _queries(entry: str, aliases: list[str] | None) -> list[str]:
+    """The lowercased texts to match a list row against, deduped, primary entry first."""
+    candidates = [entry, *(aliases or [])]
+    return list(dict.fromkeys(q for c in candidates if (q := (c or "").strip().lower())))
+
+
+async def _select_zone(client, entry: str, safety_delay: float, aliases: list[str] | None = None) -> bool:
     """Navigate the zone list UI on a single client to find and click the matching entry.
 
     Returns True if the entry was found and clicked, False if all pages were exhausted.
@@ -147,7 +176,7 @@ async def _select_zone(client, entry: str, safety_delay: float) -> bool:
     around (all pages seen), since the prev/next buttons never become disabled — they
     always cycle through the list circularly.
     """
-    entry_lower = entry.strip().lower()
+    queries = _queries(entry, aliases)
     visited: set[tuple[str, ...]] = set()
 
     async def read_texts() -> list[str]:
@@ -166,8 +195,8 @@ async def _select_zone(client, entry: str, safety_delay: float) -> bool:
         visited.add(sig)
 
         for i, text in enumerate(texts):
-            logging.debug(f"Searching for {entry_lower!r} in {text!r} (client={client}, option={i})")
-            if _fuzzy_match(text, entry_lower):
+            logging.debug(f"Searching for any of {queries!r} in {text!r} (client={client}, option={i})")
+            if _fuzzy_match(text, queries):
                 await node_helpers.click_by_path(client, universe_zone_option_path(i))
                 return True
 
@@ -193,7 +222,7 @@ async def _confirm_arrival(machine, clients: list, to_zone: str) -> str:
 
 
 async def _use_list_sequentially(
-    machine, clients: list, interact, reset, zone_list_entry: str, safety_delay: float
+    machine, clients: list, interact, reset, zone_list_entry: str, safety_delay: float, aliases: list[str]
 ) -> str | None:
     """Let each client use the list object alone. Returns "FAILURE", or None to carry on.
 
@@ -214,7 +243,7 @@ async def _use_list_sequentially(
         ):
             return False
 
-        if not await _select_zone(client, zone_list_entry, safety_delay):
+        if not await _select_zone(client, zone_list_entry, safety_delay, aliases):
             # Leave the object as we found it, or the next client's turn starts with
             # somebody else's list still on screen.
             await node_helpers.click_by_path(client, UNIVERSE_CANCEL_BUTTON)
@@ -300,9 +329,13 @@ async def run(machine, clients: list, params: dict) -> str:
     interact = XYZ(**params["interact_xyz"])
     reset = XYZ(**params["reset_xyz"])
     zone_list_entry: str = params["zone_list_entry"]
+    aliases: list[str] = params.get("zone_list_aliases") or []
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
 
-    machine.log(f"enter_zone_via_list: {zone!r} → {to_zone!r}, entry={zone_list_entry!r}")
+    machine.log(
+        f"enter_zone_via_list: {zone!r} → {to_zone!r}, entry={zone_list_entry!r}"
+        + (f" (or any of {aliases!r})" if aliases else "")
+    )
 
     # 1. Zone check.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
@@ -317,7 +350,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 2s. Sequential mode replaces steps 2–7b; step 8 runs either way.
     if params.get("sequential", False):
-        failure = await _use_list_sequentially(machine, clients, interact, reset, zone_list_entry, safety_delay)
+        failure = await _use_list_sequentially(
+            machine, clients, interact, reset, zone_list_entry, safety_delay, aliases
+        )
         if failure is not None:
             return failure
         return await _confirm_arrival(machine, clients, to_zone)
@@ -363,7 +398,7 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"Zone list open; searching for {zone_list_entry!r}", logging.DEBUG)
 
     # 6. Each client navigates to and selects the matching entry.
-    found = await asyncio.gather(*[_select_zone(c, zone_list_entry, safety_delay) for c in clients])
+    found = await asyncio.gather(*[_select_zone(c, zone_list_entry, safety_delay, aliases) for c in clients])
     if not all(found):
         machine.log(
             f"FAILURE: zone list entry {zone_list_entry!r} not found on any page",

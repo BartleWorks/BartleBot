@@ -482,6 +482,27 @@ dependency on the game being installed at a guessable path. Extract what you nee
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 `bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
 
+The three snapshots and their tools:
+
+| snapshot | tool | regenerate when |
+|---|---|---|
+| `data/name_tables.json` | `dump_name_tables.py` | the game adds name entries |
+| `data/dialog_captions.json` | `dump_dialog_captions.py` | a modal is reworded, or a key is added to `KNOWN_KEYS` |
+| `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
+
+`WorldNames.lang` is worth knowing about on its own, because its key **is** the world
+segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
+the localized text the spiral door lists. That correspondence is what lets `go_to_world`
+verify arrival with the glob `"<key>/*"` rather than a per-world table of spiral chamber
+zone names.
+
+What it does *not* tell you is which worlds the door actually offers. `Darkmoor` (a world,
+on the door) and `G14_DM` (Castle Darkmoor, a dungeon entered from Nightside) both have
+WorldNames entries and both have GameData wads; nothing separates them. So
+`worlds.SPIRAL_DOOR_WORLDS` is curated by hand, every exclusion is named with its reason,
+and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
+Darkmoor wrong once already.
+
 ### What neither source answers: window layout
 
 **UI window names are not in the type dump and not in any WAD.** The dump covers
@@ -598,10 +619,15 @@ fails for everyone including CI. Tag it *before* bumping the pin:
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags
 ```
 
-Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are both tagged
-`bartlebot-pin-20260802` — wizwalker `1d1db0f`, wizsprinter `2118aa7`. Never
-delete a tag that an older commit of this repo still pins, or you break the
+Tags follow `bartlebot-pin-YYYYMMDD`. Current pins are wizwalker `ba5c32c`
+(`bartlebot-pin-20260828`) and wizsprinter `2118aa7` (`bartlebot-pin-20260802`).
+Never delete a tag that an older commit of this repo still pins, or you break the
 build at that revision.
+
+**Commit in the fork with the fork's identity.** `../wizwalker` has a repo-local
+`user.name` / `user.email` set in the checkout. Check `git config --local user.email`
+before committing there — fixing an author afterwards means rewriting, and rewriting
+is what orphans a pinned SHA.
 
 I have downloaded reference files to assist in planning:
 

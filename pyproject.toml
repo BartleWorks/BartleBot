@@ -20,7 +20,7 @@ beautifulsoup4 = "^4.0"
 # memory offsets bartlebot/deck_io.py depends on. Pinned by exact commit --
 # see "Changing wizwalker or wizsprinter" in CLAUDE.md for the bump workflow.
 # HTTPS URLs so CI can fetch them without SSH credentials.
-wizwalker = {git = "https://github.com/The-World-Tree/wizwalker.git", rev = "1d1db0fefb5c6e33436ac3d96ee544913e43a66b"}
+wizwalker = {git = "https://github.com/The-World-Tree/wizwalker.git", rev = "ba5c32c44488d4ede56c85dd68980ab7012596f2"}
 WizSprinter = {git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "2118aa77ef530db202d51338988e0fed8c022003"}
 
 [tool.poetry.group.dev.dependencies]
