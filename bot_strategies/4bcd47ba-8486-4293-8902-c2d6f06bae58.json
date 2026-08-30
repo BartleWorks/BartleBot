@@ -1,0 +1,33 @@
+{
+  "id": "4bcd47ba-8486-4293-8902-c2d6f06bae58",
+  "name": "Oyotomi the Defiler - Max booster",
+  "bot_id": "3bff397a-6ee0-4710-a9fb-d059c152d66b",
+  "player_decks": {},
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_16"
+      ],
+      "duel_config": {
+        "min_players": 1,
+        "max_players": 4,
+        "player_assignments": [
+          {
+            "players": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "dsl": "any<damage>[epic] @ boss"
+          }
+        ]
+      }
+    }
+  ]
+}

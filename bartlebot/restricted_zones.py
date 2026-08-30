@@ -30,10 +30,25 @@ MATCHING
 
 TWO SIGNALS
     ``check_zone`` is the list, and a list only knows the zones that existed when
-    it was written. ``check_duel`` reads the game's own PvP and battleground
-    flags off the current duel, so a PvP zone added by a future patch is caught
-    even though no rule names it. It can only speak once a fight has started,
-    which is why it backstops the zone watch rather than replacing it.
+    it was written. ``check_duel`` reads the game's own flags off the current
+    duel, so a PvP zone added by a future patch is caught even though no rule
+    names it. It can only speak once a fight has started, which is why it
+    backstops the zone watch rather than replacing it.
+
+    Neither ``m_bPVP`` nor ``m_bBattleground`` is by itself a PvP fight. Both
+    select a *ruleset* -- match timers, the pass penalty, ``m_bIsPlayerTimedDuel``
+    -- and Challenge Mode borrows that ruleset wholesale for ordinary PvE
+    dungeons, setting both flags on a dungeon boss with no other player anywhere
+    in the fight. Taking either at face value stopped the same Marleybone farm
+    mid-fight, first as a "PvP duel" and then as a "Beastmoon duel".
+
+    What separates the two is who is in the duel: a real PvP match has players
+    on *both* teams, while a PvE fight -- Challenge Mode, minions,
+    mind-controlled enemies -- only ever has players on one. So a flag is the
+    precondition and the team make-up is the confirmation, and neither half is
+    ever used alone. The team make-up cannot stand alone either: it is also what
+    a PvE Team Up would look like the moment any future mode splits players
+    across teams.
 """
 
 from __future__ import annotations
@@ -78,10 +93,16 @@ class Restriction:
 
 
 DUEL_PVP = Restriction("duel.pvp", "duel_flag", "PvP duel")
-"""The current fight is flagged PvP by the game itself, whatever zone it is in."""
+"""A duel under the PvP ruleset *with players on both teams*, whatever zone it is in.
+
+The flag alone is not enough -- see TWO SIGNALS above.
+"""
 
 DUEL_BATTLEGROUND = Restriction("duel.battleground", "duel_flag", "Beastmoon duel")
-"""The current fight is flagged as a battleground -- Beastmoon, by any route in."""
+"""A battleground-ruleset duel *with players on both teams* -- Beastmoon, by any route in.
+
+The flag alone is not enough; Challenge Mode sets it too. See TWO SIGNALS above.
+"""
 
 
 @cache
@@ -129,13 +150,20 @@ def check_zone(zone_name: str | None) -> Restriction | None:
     return None
 
 
-def check_duel(*, pvp: bool, battleground: bool) -> Restriction | None:
-    """Return the restriction implied by the current duel's own flags, if any.
+def check_duel(*, pvp: bool, battleground: bool, players_on_both_teams: bool) -> Restriction | None:
+    """Return the restriction implied by the current duel, if any.
 
-    Callers must only pass flags read from a client actually in combat -- the duel
+    Callers must only pass values read from a client actually in combat -- the duel
     struct holds whatever the last fight left behind otherwise, and a stale True
     would hard-stop a bot standing in a questing zone.
+
+    *pvp* and *battleground* are the game's ``m_bPVP`` / ``m_bBattleground`` ruleset
+    flags, both of which Challenge Mode sets on PvE dungeons. *players_on_both_teams*
+    is what tells a match from a dungeon, so every restriction here needs a flag
+    **and** the team make-up. Which flag is set only decides how the stop is named.
     """
+    if not players_on_both_teams:
+        return None
     if pvp:
         return DUEL_PVP
     if battleground:

@@ -26,6 +26,32 @@ from bartlebot.utils.window_kill import terminate_process
 logger = logging.getLogger(__name__)
 
 
+async def _players_on_both_teams(client) -> bool:
+    """True when at least two teams in the current duel each hold a real player.
+
+    This is what separates a PvP match from a PvE fight running the PvP ruleset --
+    Challenge Mode sets both ``m_bPVP`` and ``m_bBattleground`` on ordinary dungeon
+    bosses, so either flag alone stopped a Marleybone run mid-fight.
+
+    ``is_player`` is read per participant, and ``team_id`` rather than
+    ``original_team`` on purpose: a mind-controlled *enemy* is an NPC either way,
+    and reading the team it is fighting for now is the honest answer to "who is on
+    each side". A participant that cannot be read is skipped rather than counted,
+    so a partly-readable duel fails open, matching the watcher's own behaviour.
+    """
+    teams: set[int] = set()
+    for participant in await client.duel.participant_list():
+        try:
+            if not await participant.is_player():
+                continue
+            teams.add(await participant.team_id())
+        except Exception:
+            continue
+        if len(teams) >= 2:
+            return True
+    return len(teams) >= 2
+
+
 async def _traverse_path(parent, path: list[str]):
     """Walk a UI window tree by child name segments; return the final node or None."""
     for segment in path:
@@ -241,15 +267,25 @@ class ClientHealthMonitor:
         flags are only consulted while the client is actually in battle: outside
         combat the duel struct still holds whatever the last fight left in it, and a
         stale PvP flag would stop a bot standing in a questing zone.
+
+        The participant list is read only once a flag is already set, because it is
+        one memory read per combatant and this runs every 250 ms. In an ordinary PvE
+        fight neither flag is set and the extra reads never happen; in a Challenge
+        Mode fight both are set and the list is what proves the fight is still PvE.
         """
         hit = restricted_zones.check_zone(await client.zone_name())
         if hit is not None:
             return hit
         if not await client.in_battle():
             return None
+        pvp = await client.duel.pvp()
+        battleground = await client.duel.battleground()
+        if not (pvp or battleground):
+            return None
         return restricted_zones.check_duel(
-            pvp=await client.duel.pvp(),
-            battleground=await client.duel.battleground(),
+            pvp=pvp,
+            battleground=battleground,
+            players_on_both_teams=await _players_on_both_teams(client),
         )
 
     async def _restricted_zone_watcher(self) -> None:

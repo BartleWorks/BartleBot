@@ -200,7 +200,7 @@ Three enforcement points, and none of them is optional:
 |---|---|
 | `check_bot_config` → `AppController._check_restricted_zones` | refuses to *start* a bot naming a restricted zone; runs first in `_on_run_requested`, and unlike the other pre-run dialogs it has no "continue" |
 | `ClientHealthMonitor._restricted_zone_watcher` | polls every 0.25 s during a run; stops the FSM and unhooks every client |
-| `check_duel` | reads the game's own `duel.pvp` / `duel.battleground` flags, catching a PvP zone no rule names |
+| `check_duel` | reads the current duel's own flags and team make-up, catching a PvP zone no rule names |
 
 Things to preserve when touching this:
 
@@ -211,6 +211,13 @@ Things to preserve when touching this:
 - **The duel flags are only read while `in_battle()`.** Out of combat the duel struct
   holds whatever the last fight left in it, and a stale `pvp` would stop a bot standing
   in a questing zone.
+- **Neither duel flag is a stop signal on its own.** `m_bPVP` and `m_bBattleground`
+  select a *ruleset* — match timers, pass penalty — and Challenge Mode borrows it
+  wholesale for ordinary PvE dungeons, setting *both* on a dungeon boss with no other
+  player in the fight. Each must be corroborated by players on two different teams
+  (`_players_on_both_teams`), which no PvE fight has; the flag then only decides how
+  the stop is named. Do not re-promote either to a standalone signal — that bug shipped
+  twice, once per flag, and both times it stopped a Marleybone farm mid-fight.
 - **An unknown zone is allowed.** A client on a loading screen has no zone; failing
   closed there would fire on every transition in every bot.
 - **Stopping the FSM is not enough — the clients get unhooked.** A stopped machine

@@ -451,7 +451,7 @@ async def run(machine, clients: list, params: dict) -> str:
             "quicksell: Sell Pets is on — the quicksell window lists pets by their nickname, not the "
             "body type a keep list names them by, so no keyword can spare a pet. Turn Sell Pets off "
             "to keep pets.",
-            logging.WARNING,
+            logging.INFO,
         )
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)

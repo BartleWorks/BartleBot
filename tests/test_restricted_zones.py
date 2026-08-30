@@ -125,9 +125,36 @@ def test_unknown_zone_is_allowed():
 
 
 def test_duel_flags_are_restricted_and_named():
-    assert restricted_zones.check_duel(pvp=True, battleground=False) is restricted_zones.DUEL_PVP
-    assert restricted_zones.check_duel(pvp=False, battleground=True) is restricted_zones.DUEL_BATTLEGROUND
-    assert restricted_zones.check_duel(pvp=False, battleground=False) is None
+    assert restricted_zones.check_duel(pvp=True, battleground=False, players_on_both_teams=True) is (
+        restricted_zones.DUEL_PVP
+    )
+    assert restricted_zones.check_duel(pvp=False, battleground=True, players_on_both_teams=True) is (
+        restricted_zones.DUEL_BATTLEGROUND
+    )
+    assert restricted_zones.check_duel(pvp=False, battleground=False, players_on_both_teams=False) is None
+
+
+@pytest.mark.parametrize(
+    ("pvp", "battleground"),
+    [(True, False), (False, True), (True, True)],
+)
+def test_a_duel_flag_alone_is_not_a_pvp_duel(pvp, battleground):
+    """Challenge Mode sets *both* ruleset flags on PvE dungeon fights.
+
+    Without the team make-up as a second signal, every Challenge Mode run stops the
+    moment its boss fight starts -- which it did twice, once per flag.
+    """
+    assert restricted_zones.check_duel(pvp=pvp, battleground=battleground, players_on_both_teams=False) is None
+
+
+def test_players_on_both_teams_alone_is_not_a_pvp_duel():
+    """Team-up and Beastmoon aside, players share a team in PvE -- but the flag still rules.
+
+    Reading the team make-up as sufficient on its own would stop a bot the moment a
+    stranger's mind-controlled wizard, or any future PvE mode that splits players
+    across teams, showed up in an ordinary fight.
+    """
+    assert restricted_zones.check_duel(pvp=False, battleground=False, players_on_both_teams=True) is None
 
 
 # ---------------------------------------------------------------------------
@@ -209,7 +236,28 @@ def test_no_shipped_bot_enters_a_restricted_zone():
 # ---------------------------------------------------------------------------
 
 
-def _client(zone="WizardCity/Unicorn_Way", *, in_battle=False, pvp=False, battleground=False):
+def _participant(*, is_player, team_id):
+    p = MagicMock()
+    p.is_player = AsyncMock(return_value=is_player)
+    p.team_id = AsyncMock(return_value=team_id)
+    return p
+
+
+#: The shape of every PvE fight: our wizards on one team, monsters on the other.
+PVE_TEAMS = [(True, 0), (True, 0), (False, 1), (False, 1)]
+
+#: The shape of a PvP match, and the only thing that separates it from the above.
+PVP_TEAMS = [(True, 0), (True, 1)]
+
+
+def _client(
+    zone="WizardCity/Unicorn_Way",
+    *,
+    in_battle=False,
+    pvp=False,
+    battleground=False,
+    teams=PVE_TEAMS,
+):
     client = MagicMock()
     client.window_handle = 1
     client.zone_name = AsyncMock(return_value=zone)
@@ -217,6 +265,9 @@ def _client(zone="WizardCity/Unicorn_Way", *, in_battle=False, pvp=False, battle
     client.duel = MagicMock()
     client.duel.pvp = AsyncMock(return_value=pvp)
     client.duel.battleground = AsyncMock(return_value=battleground)
+    client.duel.participant_list = AsyncMock(
+        return_value=[_participant(is_player=is_player, team_id=team) for is_player, team in teams]
+    )
     return client
 
 
@@ -262,9 +313,61 @@ async def test_watcher_fires_on_a_pvp_duel_in_an_unlisted_zone(fast):
     patch. The zone here is deliberately one the rules allow.
     """
     fired = MagicMock()
-    monitor = _monitor([_client("WizardCity/Some_New_Arena", in_battle=True, pvp=True)], fired)
+    monitor = _monitor([_client("WizardCity/Some_New_Arena", in_battle=True, pvp=True, teams=PVP_TEAMS)], fired)
     await _run_watcher(monitor)
     assert fired.call_args[0][0] is restricted_zones.DUEL_PVP
+
+
+@pytest.mark.asyncio
+async def test_watcher_does_not_fire_on_a_challenge_mode_pve_fight(fast):
+    """Challenge Mode runs the PvP ruleset, so ``m_bPVP`` is set on a PvE boss.
+
+    Taking the flag alone stopped a Marleybone farm the moment the boss fight began.
+    The fight is PvE and every player in it is on one team, which is what says so.
+    """
+    fired = MagicMock()
+    zone = "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB"
+    client = _client(zone, in_battle=True, pvp=True, battleground=True, teams=PVE_TEAMS)
+    monitor = _monitor([client], fired)
+    with pytest.raises(asyncio.TimeoutError):
+        await _run_watcher(monitor, timeout=0.2)
+    fired.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_watcher_fires_on_a_battleground_duel_in_an_unlisted_zone(fast):
+    """Beastmoon's own world is listed; this is the flag backstopping a zone that is not."""
+    fired = MagicMock()
+    client = _client("WizardCity/Some_New_Arena", in_battle=True, battleground=True, teams=PVP_TEAMS)
+    monitor = _monitor([client], fired)
+    await _run_watcher(monitor)
+    assert fired.call_args[0][0] is restricted_zones.DUEL_BATTLEGROUND
+
+
+@pytest.mark.asyncio
+async def test_watcher_does_not_read_participants_in_an_ordinary_fight(fast):
+    """The list is one read per combatant, on a 250 ms loop -- it stays off the hot path."""
+    fired = MagicMock()
+    client = _client("Raids/Raid_AZ", in_battle=True)
+    monitor = _monitor([client], fired)
+    with pytest.raises(asyncio.TimeoutError):
+        await _run_watcher(monitor, timeout=0.2)
+    fired.assert_not_called()
+    client.duel.participant_list.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_watcher_skips_a_participant_it_cannot_read(fast):
+    """A partly-readable duel fails open, like every other read in this watcher."""
+    fired = MagicMock()
+    client = _client("WizardCity/Some_New_Arena", in_battle=True, pvp=True, teams=PVP_TEAMS)
+    unreadable = _participant(is_player=True, team_id=9)
+    unreadable.is_player = AsyncMock(side_effect=RuntimeError("dead"))
+    client.duel.participant_list = AsyncMock(return_value=[_participant(is_player=True, team_id=0), unreadable])
+    monitor = _monitor([client], fired)
+    with pytest.raises(asyncio.TimeoutError):
+        await _run_watcher(monitor, timeout=0.2)
+    fired.assert_not_called()
 
 
 @pytest.mark.asyncio
