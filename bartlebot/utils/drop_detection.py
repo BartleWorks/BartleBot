@@ -37,8 +37,21 @@ _DROP_TYPES = {
 }
 
 
+# How much of the chat log a snapshot keeps. Snapshots are carried between fights as
+# diff baselines, and the game's log holds thousands of lines after a long session, so
+# an uncapped snapshot makes every later diff and every stored baseline grow with
+# session length (#143). Keeping the *tail* is what the diff needs: new announcements
+# arrive at the end, and a trim only ever removes lines from the front, so a capped
+# baseline survives a trim strictly longer than a full one does. The cap only has to
+# exceed what can arrive between two consecutive snapshots — a poll interval or a
+# single fight, on the order of tens of lines.
+_SNAPSHOT_MAX_LINES = 500
+
+
 async def snapshot_chat(client) -> str:
-    """Return the current chat log text for a client.
+    """Return the tail of the current chat log text for a client.
+
+    At most ``_SNAPSHOT_MAX_LINES`` lines are kept; see that constant for why.
 
     Returns an empty string if the chat window is not visible or not found.
     """
@@ -48,7 +61,15 @@ async def snapshot_chat(client) -> str:
         return ""
     if not await window.is_visible():
         return ""
-    return await window.maybe_text() or ""
+    return _tail(await window.maybe_text() or "")
+
+
+def _tail(text: str) -> str:
+    """Return the last ``_SNAPSHOT_MAX_LINES`` lines of `text`."""
+    lines = text.split("\n")
+    if len(lines) <= _SNAPSHOT_MAX_LINES:
+        return text
+    return "\n".join(lines[-_SNAPSHOT_MAX_LINES:])
 
 
 async def chat_available(client) -> bool:
@@ -122,16 +143,55 @@ async def _get_window_from_path(window, path: list[str]):
 def _find_new_stuff(old: str, new: str) -> str:
     """Return the portion of `new` that does not appear in `old`.
 
-    Slides the old string backward until it finds itself as a substring of new,
-    then returns everything that comes after it. If old is not found at all,
-    the entire `new` string is considered new.
+    The common case is append-only: `old` is still a substring of `new`, and everything
+    after it is new. That is one ``str.find``.
+
+    The hard case is a *trim*. The game's chat log has a finite scrollback, so once it
+    fills, new announcements push the oldest lines off the front and `old` stops being a
+    substring of anything. What survives is an overlap — some suffix of `old` is a prefix
+    of `new` — and the longest such overlap is the split point. It is found on line
+    boundaries in O(n) via a KMP failure function (#143). The previous implementation slid
+    `old` forward one character at a time, re-scanning `new` on every step: O(len(old) x
+    len(new)), measured at 127 ms on a 250 KB log and 856 ms when it missed entirely, paid
+    on the event loop thread at end of fight — and it misfired, reporting the whole visible
+    log as new drops (163 in one batch) whenever it ran out of `old` before matching.
+
+    With no overlap at all the entire `new` string is considered new, as before.
     """
-    while old:
-        idx = new.find(old)
-        if idx >= 0:
-            return new[idx + len(old) :]
-        old = old[1:]
-    return new
+    if not old:
+        return new
+
+    idx = new.find(old)
+    if idx >= 0:
+        return new[idx + len(old) :]
+
+    new_lines = new.split("\n")
+    overlap = _suffix_prefix_overlap(old.split("\n"), new_lines)
+    if overlap == 0:
+        return new
+    return "\n".join(new_lines[overlap:])
+
+
+def _suffix_prefix_overlap(left: list[str], right: list[str]) -> int:
+    """Return the length of the longest suffix of `left` that is also a prefix of `right`.
+
+    The standard KMP failure-function trick: build ``right + <sentinel> + left`` and take
+    the final failure value, which is by construction the longest prefix of `right` that is
+    also a suffix of `left`. The sentinel is a fresh object, so it compares equal to nothing
+    and the match cannot run across the join.
+    """
+    sentinel = object()
+    combined: list[object] = [*right, sentinel, *left]
+
+    failure = [0] * len(combined)
+    k = 0
+    for i in range(1, len(combined)):
+        while k and combined[i] != combined[k]:
+            k = failure[k - 1]
+        if combined[i] == combined[k]:
+            k += 1
+        failure[i] = k
+    return failure[-1]
 
 
 def _filter_drops(lines: list[str]) -> list[str]:
