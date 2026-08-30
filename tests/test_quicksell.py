@@ -301,8 +301,10 @@ async def test_warns_that_a_keep_list_cannot_spare_a_pet():
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
         await qs.run(machine, [client], {**_HAT_KEEPS, "sell_pets": True})
 
-    warnings = [msg for msg, level in machine.logs if level == logging.WARNING]
-    assert any("nickname" in msg for msg in warnings)
+    # INFO, not WARNING: the notice is advisory — Sell Pets with a keep list is a legitimate
+    # configuration, just one whose keywords cannot match a pet. Keyed on the message rather
+    # than on "any INFO log" because quicksell narrates its progress at INFO too.
+    assert any("nickname" in msg for msg, level in machine.logs if level == logging.INFO)
 
 
 async def test_no_pet_warning_without_a_keep_list():
@@ -315,7 +317,7 @@ async def test_no_pet_warning_without_a_keep_list():
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
         await qs.run(machine, [client], _NO_KEEPS)
 
-    assert not [msg for msg, level in machine.logs if level == logging.WARNING]
+    assert not [msg for msg, level in machine.logs if level == logging.INFO and "nickname" in msg]
 
 
 async def test_no_pet_warning_when_pets_are_not_being_sold():
@@ -327,7 +329,7 @@ async def test_no_pet_warning_when_pets_are_not_being_sold():
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
         await qs.run(machine, [client], {**_HAT_KEEPS, "sell_pets": False})
 
-    assert not [msg for msg, level in machine.logs if level == logging.WARNING]
+    assert not [msg for msg, level in machine.logs if level == logging.INFO and "nickname" in msg]
 
 
 # ---------------------------------------------------------------------------
