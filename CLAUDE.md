@@ -338,6 +338,7 @@ is not possible by mistake:
 |---|---|---|
 | `probe_name_behavior.py --record` | `tools/name_key_samples.local.json` | no (`*.local.json`) |
 | `probe_wizard_name.py` | `probe_*_report.txt` | no |
+| `probe_chat_log_size.py --csv` | `*.local.csv` (refuses any other suffix) | no |
 
 `name_keys.py --verify` reads both the tracked fixture and the local file when
 present, so recordings are still useful locally — they just cannot leave the
