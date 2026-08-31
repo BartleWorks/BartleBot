@@ -367,6 +367,7 @@
   ],
   "authors": "BartleBot",
   "tags": [
+    "Gear",
     "Spellements",
     "Boss"
   ],
@@ -556,36 +557,11 @@
       "option_overrides": {}
     },
     {
-      "id": "state_10",
-      "node_type": "enter_zone",
-      "label": "Exit Emperor's Throne Room",
-      "position": {
-        "x": 3520.0,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "MooShu/Interiors/MS_Emperor_Palace",
-        "to_zone": "MooShu/MS_Hub",
-        "xyz": {
-          "x": 484.94,
-          "y": -9.22,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 41.58,
-          "y": -14.73,
-          "z": 0.0
-        },
-        "stagger": false
-      },
-      "option_overrides": {}
-    },
-    {
       "id": "state_11",
       "node_type": "check_zone",
       "label": "Check if in Village of Sorrow",
       "position": {
-        "x": 3960.0,
+        "x": 3520.0,
         "y": -180.0
       },
       "params": {
@@ -604,7 +580,7 @@
       "node_type": "enter_zone",
       "label": "Enter Rock Dojo",
       "position": {
-        "x": 4840.0,
+        "x": 4400.0,
         "y": -90.0
       },
       "params": {
@@ -629,7 +605,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Jade Palace",
       "position": {
-        "x": 4400.0,
+        "x": 3960.0,
         "y": -90.0
       },
       "params": {
@@ -642,7 +618,7 @@
       "node_type": "enter_zone",
       "label": "Enter Village of Sorrow",
       "position": {
-        "x": 5720.0,
+        "x": 5280.0,
         "y": -90.0
       },
       "params": {
@@ -667,7 +643,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Oyotomi the Defiler",
       "position": {
-        "x": 6160.0,
+        "x": 5720.0,
         "y": -180.0
       },
       "params": {
@@ -685,7 +661,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Oyotomi the Defiler",
       "position": {
-        "x": 6600.0,
+        "x": 6160.0,
         "y": -180.0
       },
       "params": {
@@ -701,7 +677,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7040.0,
+        "x": 6600.0,
         "y": -180.0
       },
       "params": {
@@ -719,7 +695,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Respawn Oyotomi the Defiler",
       "position": {
-        "x": 7480.0,
+        "x": 7040.0,
         "y": -180.0
       },
       "params": {
@@ -737,7 +713,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 7920.0,
+        "x": 7480.0,
         "y": -180.0
       },
       "params": {
@@ -753,7 +729,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 8360.0,
+        "x": 7920.0,
         "y": -180.0
       },
       "params": {
@@ -766,7 +742,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 8800.0,
+        "x": 8360.0,
         "y": -180.0
       },
       "params": {
@@ -786,7 +762,7 @@
       "node_type": "enter_zone",
       "label": "Enter Shirataki Temple",
       "position": {
-        "x": 5280.0,
+        "x": 4840.0,
         "y": -90.0
       },
       "params": {
@@ -822,26 +798,6 @@
       "trigger": "advance",
       "source": "state_1",
       "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1211,16 +1167,6 @@
     {
       "trigger": "advance",
       "source": "state_9",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
       "dest": "state_7",
       "when": "FAILURE",
       "flags": [],
@@ -1232,6 +1178,16 @@
       "trigger": "advance",
       "source": "state_21",
       "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1271,7 +1227,6 @@
       "members": [
         "state_8",
         "state_6",
-        "state_10",
         "state_7",
         "state_9"
       ],
