@@ -19,6 +19,7 @@ from bartlebot.gui.widgets.picker_popup import (
     _RowWidget,
     filter_sections,
     selection_caption,
+    should_open,
     summarize,
 )
 
@@ -377,3 +378,60 @@ def test_a_dim_row_still_renders_and_still_toggles(qapp):
     row.toggle()
 
     assert popup.selection() == ["x"]
+
+
+# ---------------------------------------------------------------------------
+# Clicking the button while the popup is open
+# ---------------------------------------------------------------------------
+
+
+def test_a_click_right_after_a_close_does_not_reopen():
+    """Qt dismisses the popup on the press, then delivers that press to the button
+    underneath — which would open a second popup on top of the first."""
+    assert not should_open(now=100.0, closed_at=99.95)
+
+
+def test_a_later_click_opens_again():
+    assert should_open(now=100.0, closed_at=99.0)
+
+
+def test_the_first_ever_click_opens():
+    assert should_open(now=100.0, closed_at=None)
+
+
+def test_clicking_the_button_twice_leaves_no_popup_open(qapp):
+    btn = PickerButton("T")
+    btn.set_sections(SECTIONS)
+
+    btn._open()
+    first = btn._popup
+    first.close()  # what Qt does on the press
+    btn._open()  # ...and then the press reaches the button
+
+    assert btn._popup is first
+    assert not first.isVisible()
+
+
+def test_a_programmatic_close_does_not_swallow_the_next_click(qapp):
+    """set_selection closes the popup; that is not the click-dismiss case."""
+    btn = PickerButton("T")
+    btn.set_sections(SECTIONS)
+    btn._open()
+
+    btn.set_selection(["apple"])
+    btn._open()
+
+    assert btn._popup is not None
+    assert btn._popup.isVisible()
+    btn._popup.close()
+
+
+def test_closing_the_popup_emits_closed(qapp):
+    popup = PickerPopup("T", SECTIONS)
+    seen = []
+    popup.closed.connect(lambda: seen.append(1))
+    popup.show()
+
+    popup.close()
+
+    assert seen

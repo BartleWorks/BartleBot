@@ -24,6 +24,7 @@ one line unless a caller has something to say that the name does not.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
@@ -107,6 +108,22 @@ def summarize(labels: list[str], placeholder: str, *, limit: int = 2) -> str:
 def selection_caption(count: int) -> str:
     """The popup header's right-hand status text."""
     return "" if count == 0 else f"{count} selected"
+
+
+#: How long after a popup closes a click on its own button is treated as the click
+#: that dismissed it, rather than as a request to open it again.
+REOPEN_GUARD_SECONDS = 0.20
+
+
+def should_open(now: float, closed_at: float | None, *, guard: float = REOPEN_GUARD_SECONDS) -> bool:
+    """Whether a click on the anchor button should open the popup.
+
+    Clicking the button while the popup is open dismisses it — Qt closes a
+    ``Qt.Popup`` on any press outside it — and then delivers the press to the button
+    underneath, which promptly opens a second one. Qt's own combo boxes solve this
+    the same way: ignore a click that lands within a moment of the close.
+    """
+    return closed_at is None or (now - closed_at) > guard
 
 
 class _RowWidget(QWidget):
@@ -224,6 +241,7 @@ class PickerPopup(QWidget):
     """The popup itself. Selection is reported live, as each row is toggled."""
 
     selection_changed = pyqtSignal(list)  # list[str] of keys, in section order
+    closed = pyqtSignal()
 
     def __init__(
         self,
@@ -247,7 +265,9 @@ class PickerPopup(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(0, 0, 0, 0)
+        # Inset by the border width. At margin 0 the children paint over the
+        # stylesheet border and the popup loses its edge against the window behind it.
+        root.setContentsMargins(1, 1, 1, 1)
         root.setSpacing(0)
 
         # ── Header: title, live selection count, and a way back to empty ──
@@ -450,6 +470,13 @@ class PickerPopup(QWidget):
                 # caller might not have set.
                 f"#PickerBody {{ background: {THEME.bg}; }}"
                 f"QScrollArea {{ background: transparent; border: none; }}"
+                # A QCheckBox left to the palette paints a Button/Base block behind
+                # both its indicator and its empty text area, which shows up as a grey
+                # slab beside every row under some themes and platform styles. Only the
+                # background is wrong, so only the background is overridden — the
+                # indicator keeps the platform's own checkmark. spacing: 0 removes the
+                # gap the box reserves for text it does not have.
+                f"QCheckBox {{ background: transparent; spacing: 0; }}"
                 f"QLabel {{ color: {THEME.text}; background: transparent; }}"
                 f'QFrame[frameShape="4"] {{ color: {THEME.border}; }}'
                 f"QLineEdit {{ background: {THEME.surface}; color: {THEME.text};"
@@ -458,6 +485,10 @@ class PickerPopup(QWidget):
             )
         finally:
             self._applying_style = False
+
+    def hideEvent(self, event) -> None:
+        super().hideEvent(event)
+        self.closed.emit()
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -491,6 +522,7 @@ class PickerButton(QToolButton):
         self._selected: list[str] = []
         self._applying_style = False
         self._popup: PickerPopup | None = None
+        self._popup_closed_at: float | None = None
         self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.clicked.connect(self._open)
         self._apply_style()
@@ -507,6 +539,9 @@ class PickerButton(QToolButton):
         self._selected = list(keys)
         if self._popup is not None:
             self._popup.close()
+            # A programmatic close is not the click-dismiss case the guard exists
+            # for, so it must not swallow the user's next click on the button.
+            self._popup_closed_at = None
         self._refresh_text()
 
     def selection(self) -> list[str]:
@@ -522,6 +557,10 @@ class PickerButton(QToolButton):
         self.setText(summarize(self._labels(), self._placeholder))
 
     def _open(self) -> None:
+        # Clicking the button while the popup is up dismisses it and then delivers
+        # the same press here, which would open a second one on top of the first.
+        if not should_open(time.monotonic(), self._popup_closed_at):
+            return
         popup = PickerPopup(
             self._title,
             self._sections,
@@ -530,8 +569,12 @@ class PickerButton(QToolButton):
             parent=self,
         )
         popup.selection_changed.connect(self._on_selection_changed)
+        popup.closed.connect(self._on_popup_closed)
         self._popup = popup
         popup.popup_at(self)
+
+    def _on_popup_closed(self) -> None:
+        self._popup_closed_at = time.monotonic()
 
     def _on_selection_changed(self, keys: list) -> None:
         self._selected = list(keys)
