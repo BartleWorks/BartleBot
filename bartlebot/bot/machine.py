@@ -2,7 +2,7 @@ import asyncio
 import logging
 import re
 import time
-from collections import deque
+from collections import Counter, deque
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -13,6 +13,19 @@ from bartlebot import restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 
 logger = logging.getLogger(__name__)
+
+
+def _format_duration(seconds: float) -> str:
+    """Seconds as "4h 23m 06s" — a five-hour run is unreadable as a float."""
+    total = int(seconds)
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours}h {minutes:02d}m {secs:02d}s"
+    if minutes:
+        return f"{minutes}m {secs:02d}s"
+    return f"{secs}s"
+
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -74,6 +87,12 @@ class BotMachine:
         self._max_consecutive_same_state = max_consecutive_same_state
         self._consecutive_same_state_count: int = 0
         self._health_monitor: ClientHealthMonitor | None = None
+        # Which node's log() calls are currently being attributed. See log().
+        self._current_node_type: str | None = None
+        # Run bookkeeping, for the summary logged when run() returns (#156).
+        self._pass_count: int = 0
+        self._states_executed: int = 0
+        self._results_seen: Counter[str] = Counter()
 
         self._state_map = {s["id"]: s for s in config["states"]}
         # Compiled compound flag expressions from to_machine_config().
@@ -165,7 +184,33 @@ class BotMachine:
     # --- Logging ---
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
-        """Emit a log message from a node."""
+        """Emit a log message from a node, attributed to that node.
+
+        Every node logs through here, so before #156 every one of these records was
+        named "bartlebot.bot.machine" — four fifths of a session log under a single
+        logger, with no way to ask what one node did except by matching message text.
+        The record is named for the node that is running instead, which is what makes
+        "everything quicksell did" a grep and lets the log widget filter by node.
+
+        Outside a node's execution — the run loop's own bookkeeping — there is no node
+        to name, and the machine's logger is the honest answer.
+        """
+        logging.getLogger(self._node_logger_name()).log(level, msg)
+
+    def _node_logger_name(self) -> str:
+        node_type = self._current_node_type
+        return f"bartlebot.node.{node_type}" if node_type else logger.name
+
+    def _log_machine(self, msg: str, level: int = logging.INFO) -> None:
+        """Emit a message about the machine itself, never attributed to a node.
+
+        Same signature as log() so the two read alike at the call site, but this one
+        always lands on bartlebot.bot.machine. The run loop's own bookkeeping belongs
+        there, and for the ambient watchers it is the only correct answer: they run
+        concurrently with whatever node is executing, so attributing them to
+        _current_node_type would file a watcher's message under a node that had
+        nothing to do with it.
+        """
         logger.log(level, msg)
 
     # --- Drop reporting ---
@@ -248,6 +293,40 @@ class BotMachine:
         label = self._state_map.get(state_id, {}).get("label")
         return f"{state_id!r} ({label})" if label else f"{state_id!r}"
 
+    # --- Run landmarks ---
+
+    def _note_pass(self, state_id: str) -> None:
+        """Log a landmark each time the FSM comes back round to its first state.
+
+        A farming bot runs the same handful of states for hours, and without a
+        landmark a log of it is thousands of interchangeable lines: "when did this
+        start failing?" can only be answered by binary-searching timestamps. The
+        pass number gives every question about a long run something to anchor to.
+
+        This reads the bot's own shape rather than imposing one. A bot whose loop
+        returns to its first state — which is most of them — gets numbered passes;
+        one that loops back to somewhere in the middle gets a single pass 1, which
+        is honest, since nothing in the graph says where its cycle begins.
+        """
+        if state_id != self._config["initial"]:
+            return
+        self._pass_count += 1
+        logger.info("=== pass %d ===", self._pass_count)
+
+    def _log_run_summary(self, elapsed: float) -> None:
+        """One block at the end saying what the whole run did.
+
+        Answering "how did that go?" otherwise means reading the entire file, since
+        every fact about a run is spread across the ticks that produced it.
+        """
+        results = ", ".join(f"{result}={count}" for result, count in sorted(self._results_seen.items()))
+        logger.info("=== run finished in %s ===", _format_duration(elapsed))
+        logger.info("Passes: %d   States executed: %d", self._pass_count, self._states_executed)
+        logger.info("Results: %s", results or "none")
+        if self.drops:
+            total = sum(quantity for _item, quantity, _client in self.drops)
+            logger.info("Drops: %d item(s) over %d entries", total, len(self.drops))
+
     async def run(self) -> None:
         """Drive the FSM until stop() is called."""
         self._health_monitor = ClientHealthMonitor(
@@ -257,6 +336,7 @@ class BotMachine:
             on_client_disconnected=self._on_client_disconnected,
             on_restricted_zone=self._handle_restricted_zone,
         )
+        _run_start = time.monotonic()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         health_task = asyncio.create_task(self._health_monitor.run())
@@ -275,7 +355,10 @@ class BotMachine:
                         logger.exception("on_state_change callback raised in state %s", self._fmt_state(state_id))
 
                 node_type = state_def["node_type"]
-                self.log(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
+                self._note_pass(state_id)
+                self._current_node_type = node_type
+                self._states_executed += 1
+                self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
                 _tick_start = time.monotonic()
                 node_fn = self._registry[node_type]
                 self._current_node_task = asyncio.create_task(node_fn(self, self.clients, state_def.get("params", {})))
@@ -284,7 +367,7 @@ class BotMachine:
                 except asyncio.CancelledError:
                     if self._stop_flag.is_set():
                         # Our deferred_cancel fired after the grace period elapsed.
-                        self.log("Node forcibly cancelled after grace period.", logging.WARNING)
+                        self._log_machine("Node forcibly cancelled after grace period.", logging.WARNING)
                         break
                     # run() was cancelled from outside — propagate.
                     raise
@@ -312,8 +395,10 @@ class BotMachine:
                     self.last_result = "FAILURE"
                 finally:
                     self._current_node_task = None
+                    self._current_node_type = None
+                self._results_seen[self.last_result or "NONE"] += 1
                 _duration = time.monotonic() - _tick_start
-                self.log(
+                self._log_machine(
                     f"State {self._fmt_state(state_id)} returned {self.last_result!r} in {_duration:.1f}s",
                     logging.DEBUG,
                 )
@@ -323,19 +408,21 @@ class BotMachine:
                     # A state with no outgoing transitions is a terminal state — stop cleanly.
                     has_exit = any(t["source"] == state_id for t in self._config["transitions"])
                     if not has_exit:
-                        self.log(f"Reached terminal state {self._fmt_state(state_id)}; stopping.", logging.INFO)
+                        self._log_machine(
+                            f"Reached terminal state {self._fmt_state(state_id)}; stopping.", logging.INFO
+                        )
                         self.stop()
                     else:
                         fired = await self.advance()
                         if not fired:
                             self._no_match_count += 1
-                            self.log(
+                            self._log_machine(
                                 f"No transition matched for result {self.last_result!r} in state"
                                 f" {self._fmt_state(state_id)} (consecutive: {self._no_match_count})",
                                 logging.WARNING,
                             )
                             if self._no_match_count >= 10:
-                                self.log(
+                                self._log_machine(
                                     f"State {self._fmt_state(state_id)} stuck after {self._no_match_count}"
                                     " consecutive no-match advances; stopping.",
                                     logging.ERROR,
@@ -343,7 +430,7 @@ class BotMachine:
                                 self.stop()
                         else:
                             self._no_match_count = 0
-                            self.log(
+                            self._log_machine(
                                 f"Transition: {self._fmt_state(prev_state)} --{self.last_result}--> {self._fmt_state(self.state)}",
                                 logging.INFO,
                             )
@@ -367,7 +454,7 @@ class BotMachine:
                     if self.state == state_id:
                         self._consecutive_same_state_count += 1
                         if effective_limit is not None and self._consecutive_same_state_count >= effective_limit:
-                            self.log(
+                            self._log_machine(
                                 f"State {self._fmt_state(state_id)} active for"
                                 f" {self._consecutive_same_state_count} consecutive ticks"
                                 " without advancing; stopping.",
@@ -377,6 +464,8 @@ class BotMachine:
                     else:
                         self._consecutive_same_state_count = 0
         finally:
+            self._current_node_type = None
+            self._log_run_summary(time.monotonic() - _run_start)
             watcher.cancel()
             combat_watcher.cancel()
             health_task.cancel()
@@ -411,9 +500,9 @@ class BotMachine:
             for i, r in enumerate(results):
                 if r is True:
                     self._ambient_dialog_last_seen = time.monotonic()
-                    self.log(f"Ambient dialog dismissed on client {i}", logging.DEBUG)
+                    self._log_machine(f"Ambient dialog dismissed on client {i}", logging.DEBUG)
                 elif isinstance(r, Exception):
-                    self.log(f"Ambient dialog watcher error on client {i}: {r}", logging.DEBUG)
+                    self._log_machine(f"Ambient dialog watcher error on client {i}: {r}", logging.DEBUG)
 
     async def _ambient_combat_watcher(self) -> None:
         """Background task: detect and handle unexpected combat on any client.
@@ -477,9 +566,9 @@ class BotMachine:
                     if self._resume_event.is_set():
                         self._combat_auto_paused = True
                         self.pause()
-                        self.log("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
+                        self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
 
-                    self.log(
+                    self._log_machine(
                         f"Ambient combat detected on client(s) {battling_slots} — handling",
                         logging.WARNING,
                     )
@@ -491,7 +580,7 @@ class BotMachine:
                         self, use_default_strategy=True, num_clients=len(clients)
                     )
 
-                    self.log(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
+                    self._log_machine(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
 
                     battling = [clients[i] for i in battling_slots]
                     # Seed only clients with no baseline yet; one carried from an earlier
@@ -503,21 +592,21 @@ class BotMachine:
                     )
                     for pos, r in enumerate(results):
                         if isinstance(r, Exception):
-                            self.log(
+                            self._log_machine(
                                 f"Ambient combat: error on client {battling_slots[pos]}: {r}",
                                 logging.DEBUG,
                             )
 
-                    self.log("Ambient combat: SprintyCombat finished", logging.DEBUG)
+                    self._log_machine("Ambient combat: SprintyCombat finished", logging.DEBUG)
 
                     drops_found = await poll_combat_drops(self, battling, battling_slots)
                     for item_name in drops_found:
-                        self.log(f"Ambient combat drop: {item_name}")
+                        self._log_machine(f"Ambient combat drop: {item_name}")
             finally:
                 if self._combat_auto_paused:
                     self._combat_auto_paused = False
                     self.resume()
-                    self.log("Ambient combat: FSM resumed", logging.INFO)
+                    self._log_machine("Ambient combat: FSM resumed", logging.INFO)
 
     def _handle_restricted_zone(self, hit: "restricted_zones.Restriction") -> None:
         """Stop the run because a client is somewhere it must not be automated.
@@ -527,7 +616,7 @@ class BotMachine:
         below tears the hooks out, and the bot must not still be issuing node actions
         while that runs.
         """
-        self.log(f"Bot stopped: {hit.describe()} is a restricted zone.", logging.CRITICAL)
+        self._log_machine(f"Bot stopped: {hit.describe()} is a restricted zone.", logging.CRITICAL)
         self.stop()
         if self._on_restricted_zone:
             try:
@@ -543,7 +632,7 @@ class BotMachine:
         so the bot always halts promptly regardless of what the node is doing.
         """
         if not self._stop_flag.is_set():
-            self.log("Bot stopped.", logging.INFO)
+            self._log_machine("Bot stopped.", logging.INFO)
         self._stop_flag.set()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
         # Schedule hard cancellation as a fallback if the node doesn't exit cooperatively.

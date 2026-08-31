@@ -74,6 +74,34 @@ Never use `print()` for diagnostics. Logging is configured in `bartlebot/logging
 
 Pass `logging.WARNING` (int constant), not `"WARNING"` (string), to `machine.log()` and any other logging call. The logging module expects integer level values; a string may coerce silently today but is semantically wrong.
 
+#### Keeping a session log readable
+
+A five-hour four-client run writes tens of thousands of lines, and the difference
+between a log you can debug from and one you scroll past is entirely in what does
+*not* get written twice. Three rules keep it that way (#156):
+
+- **`machine.log()` is the node-facing API, and files the record under the running
+  node** — `bartlebot.node.quicksell`, not `bartlebot.bot.machine`. That is what makes
+  "everything quicksell did" a grep. The machine's own bookkeeping uses
+  `self._log_machine()` instead, which always lands on `bartlebot.bot.machine`. The
+  split is not cosmetic: the ambient dialog and combat watchers run *concurrently*
+  with whatever node is executing, so a watcher using `log()` would file its message
+  under a node that had nothing to do with it.
+- **Never log the same event twice.** A GUI widget that restates something another
+  logger already wrote passes `extra=GUI_ONLY`, which keeps it in the in-app log
+  widget and out of the session file. `bot_canvas`'s `Entered:` / `Result:` lines are
+  the case this exists for — they were a fifth of the file.
+- **Never log a wizard name, or its `m_nameKeys`.** Logs get pasted into bug reports,
+  and `tools/name_keys.py --decode` turns the key straight back into the name, so it
+  is not a safer stand-in. See *No real player data*.
+
+`RepeatCollapsingFilter` keeps the first of a run of identical messages and reports a
+count when the streak ends. It only collapses *consecutive* repeats, deliberately: two
+failures alternating are the case where a count would hide something. That also limits
+what it can do — a warning that fires once per loop pass is separated by everything else
+that pass logged, so it does not collapse. `=== pass N ===` is what makes that shape
+legible instead.
+
 ### GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
 
