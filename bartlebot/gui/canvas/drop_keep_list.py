@@ -35,6 +35,7 @@ from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds
@@ -222,8 +223,7 @@ class DropKeepListWidget(QWidget):
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(4)
 
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Search drops…")
+        self._search = SearchLineEdit("Search drops…")
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self._apply_filter)
         row.addWidget(self._search, 1)

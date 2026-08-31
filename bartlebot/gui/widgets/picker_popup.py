@@ -33,7 +33,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -42,8 +41,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 POPUP_WIDTH = 400
 POPUP_MAX_HEIGHT = 560
@@ -357,13 +356,8 @@ class PickerPopup(QWidget):
         header.addWidget(self._clear_btn, 0)
         top_col.addLayout(header)
 
-        self._search = QLineEdit()
-        self._search.setPlaceholderText(search_placeholder)
+        self._search = SearchLineEdit(search_placeholder)
         self._search.setClearButtonEnabled(True)
-        self._search.addAction(
-            svg_icon("search", 14, tint=THEME.text_muted),
-            QLineEdit.ActionPosition.LeadingPosition,
-        )
         self._search.textChanged.connect(self._rebuild)
         self._search.installEventFilter(self)
         sw = QHBoxLayout()

@@ -9,7 +9,6 @@ from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QLabel,
-    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QVBoxLayout,
@@ -17,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 # Fixed card heights (contentsMargins 7+7 top/bottom, name ~16px, subtitle ~14px + 2px spacing)
 _CARD_H_WITH_SUB = 52
@@ -157,8 +157,7 @@ class StrategyPickerDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
 
-        self._filter = QLineEdit()
-        self._filter.setPlaceholderText("Filter…")
+        self._filter = SearchLineEdit("Filter…")
         self._filter.textChanged.connect(self._rebuild_list)
         layout.addWidget(self._filter)
 

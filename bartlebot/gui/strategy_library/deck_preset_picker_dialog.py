@@ -6,7 +6,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QVBoxLayout,
@@ -14,6 +13,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.strategy_models import DeckPreset
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 
 class DeckPresetPickerDialog(QDialog):
@@ -30,8 +30,7 @@ class DeckPresetPickerDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
 
-        self._filter = QLineEdit()
-        self._filter.setPlaceholderText("Filter…")
+        self._filter = SearchLineEdit("Filter…")
         self._filter.textChanged.connect(self._rebuild_list)
         layout.addWidget(self._filter)
 

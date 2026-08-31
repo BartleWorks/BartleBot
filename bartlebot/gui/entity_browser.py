@@ -17,12 +17,13 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QLineEdit,
     QPushButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
 )
+
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,7 @@ class EntityBrowserDialog(QDialog):
         # Top row: search bar + refresh button
         top_row = QHBoxLayout()
 
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Filter name…")
+        self._search = SearchLineEdit("Filter name…")
         self._search.textChanged.connect(self._on_search_changed)
         top_row.addWidget(self._search, 1)
 

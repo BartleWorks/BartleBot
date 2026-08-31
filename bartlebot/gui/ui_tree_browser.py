@@ -36,7 +36,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
-    QLineEdit,
     QPushButton,
     QStyledItemDelegate,
     QTreeWidget,
@@ -46,6 +45,7 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.node_helpers import strip_html
 
 logger = logging.getLogger(__name__)
@@ -309,8 +309,7 @@ class UITreeBrowserDialog(QDialog):
 
         # Top row: search + tree-control buttons
         top_row = QHBoxLayout()
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Filter…")
+        self._search = SearchLineEdit("Filter…")
         self._search.textChanged.connect(self._on_filter_changed)
         top_row.addWidget(self._search, 1)
 

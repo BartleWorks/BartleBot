@@ -25,6 +25,7 @@ from bartlebot.bot.strategy_models import DeckPreset, DuelCombatStrategy, Player
 from bartlebot.gui.strategy_library.duel_strategy_editor import DuelStrategyEditor
 from bartlebot.gui.strategy_library.player_strategy_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.strategy_store import (
     delete_deck_preset,
     delete_duel_strategy,
@@ -557,10 +558,8 @@ class StrategyLibraryWindow(QDialog):
         return None
 
     def _make_filter(self):
-        from PyQt6.QtWidgets import QLineEdit  # noqa: PLC0415
 
-        w = QLineEdit()
-        w.setPlaceholderText("Filter…")
+        w = SearchLineEdit("Filter…")
         return w
 
     def focus_duel_strategy(self, dcs_id: str) -> None:

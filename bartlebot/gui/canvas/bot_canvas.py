@@ -55,6 +55,7 @@ from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
@@ -356,8 +357,7 @@ class _BotLibraryPanel(QWidget):
         top_layout.setContentsMargins(8, 6, 8, 6)
         top_layout.setSpacing(6)
 
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Search bots by name, author, or drop…")
+        self._search = SearchLineEdit("Search bots by name, author, or drop…")
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
@@ -630,8 +630,7 @@ class _SearchBar(QWidget):
             f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
         )
 
-        self._input = QLineEdit()
-        self._input.setPlaceholderText("Search states…")
+        self._input = SearchLineEdit("Search states…")
         self._input.setFixedWidth(200)
         self._input.installEventFilter(self)
         self._input.textChanged.connect(self.text_changed)
