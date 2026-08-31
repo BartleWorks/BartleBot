@@ -56,7 +56,8 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.search_field import SearchLineEdit
-from bartlebot.gui.widgets.tag_picker import TagPickerButton, group_accent
+from bartlebot.gui.widgets.tag_picker import TagPickerButton
+from bartlebot.gui.widgets.tag_pill import TagChip, TagPill, pill_style
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
@@ -221,12 +222,10 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
 
 
 def _pill(text: str, bg: str, fg: str) -> QLabel:
-    """Small rounded caption used for a bot card's version and tags."""
+    """Small rounded caption for a bot card's version — the tags use ``TagPill``."""
     lbl = QLabel(text)
     lbl.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    lbl.setStyleSheet(
-        f"background: {bg}; color: {fg};font-size: 9px; font-weight: bold; border-radius: 7px; padding: 1px 6px;"
-    )
+    lbl.setStyleSheet(pill_style(bg, fg))
     lbl.setFixedHeight(14)
     return lbl
 
@@ -264,20 +263,17 @@ class _BotCard(QWidget):
 
         # Neutral grey, not the accent it used to be. Colour on this card now means
         # "tag group", and a version is not one — spending the accent on it made the
-        # loudest pill the one carrying the least information.
+        # loudest pill the one carrying the least information. pill_neutral_bg is a
+        # true grey: the blue-grey chip_neutral_bg read as a third tag colour beside
+        # the blue Rewards pill.
         if self._meta.version:
-            pill = _pill(f"v{self._meta.version}", THEME.chip_neutral_bg, THEME.pill_text)
+            pill = _pill(f"v{self._meta.version}", THEME.pill_neutral_bg, THEME.pill_text)
             header.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
 
         # One palette for a tag everywhere it appears: the dot in the picker, the chip
-        # in the filter bar, and this pill. Someone who filters by Rewards and scans
-        # the results should be matching a colour, not re-reading every pill.
+        # in the filter bar, this pill, and the ones in Bot Info. TagPill owns it.
         for tag in self._meta.tags:
-            header.addWidget(
-                _pill(tag, group_accent(tag_group(tag)), THEME.pill_text),
-                0,
-                Qt.AlignmentFlag.AlignVCenter,
-            )
+            header.addWidget(TagPill(tag), 0, Qt.AlignmentFlag.AlignVCenter)
 
         header.addStretch()
         layout.addLayout(header)
@@ -349,8 +345,8 @@ class _BotLibraryPanel(QWidget):
     open_bot_requested = pyqtSignal()
     open_recent_requested = pyqtSignal(str)  # path
 
-    _ALL = "All"
     _RECENT = "Recent"
+    _ALL = "All"
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -514,12 +510,17 @@ class _BotLibraryPanel(QWidget):
         # Rebuild category list
         self._cat_list.blockSignals(True)
         self._cat_list.clear()
-        # "All" first and always present. Without it there was no way to ask the
-        # library a question that crossed worlds, which is exactly what a tag filter
-        # is for — and no way back to the whole list once a world was clicked.
-        self._cat_list.addItem(self._ALL)
+        # "Recent" first, because opening the library is usually the first step of
+        # going back to a bot you ran yesterday; "All" is the fallback the row below
+        # it, and is always present. Without "All" there was no way to ask the library
+        # a question that crossed worlds — which is exactly what a tag filter is for —
+        # and no way back to the whole list once a world was clicked.
+        #
+        # Selection is row 0 either way (see refresh), so this ordering *is* the
+        # default: Recent when there is one, All on a first run.
         if self._recent_metas:
             self._cat_list.addItem(self._RECENT)
+        self._cat_list.addItem(self._ALL)
         for cat in self._category_map:
             self._cat_list.addItem(cat)
         self._cat_list.blockSignals(False)
@@ -557,18 +558,10 @@ class _BotLibraryPanel(QWidget):
 
         selected = self._selected_tag_list()
         for tag in selected:
-            chip = QPushButton(f"{tag}  ✕")
-            chip.setCursor(Qt.CursorShape.PointingHandCursor)
-            chip.setToolTip(f"Remove the {tag} filter")
             # Coloured by group, matching the dot in the popup and the button it came
             # from — with two pickers feeding one chip bar, a chip has to say which.
-            chip.setStyleSheet(
-                f"QPushButton {{ background: {group_accent(tag_group(tag))}; color: {THEME.pill_text};"
-                f"  border: none; border-radius: 9px;"
-                f"  padding: 2px 9px; font-size: 10px; font-weight: bold; }}"
-                f"QPushButton:hover {{ background: {THEME.edge_selected}; }}"
-            )
-            chip.clicked.connect(lambda _checked=False, t=tag: self._remove_tag(t))
+            chip = TagChip(tag, tooltip=f"Remove the {tag} filter")
+            chip.removed.connect(self._remove_tag)
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
 
         if selected:

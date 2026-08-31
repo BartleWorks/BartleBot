@@ -79,11 +79,17 @@ class TagPickerButton(PickerButton):
     """A :class:`PickerButton` preloaded with the bot-tag vocabulary.
 
     Pass *group* to offer only that group's tags; the default offers all of them.
+
+    *caption* pins the button's text. A filter button says what is selected, because
+    the selection *is* the filter and there is nowhere else to read it. An editor
+    button sits above chips that already show the selection, so its text is free to
+    say what pressing it does instead — "Add Rewards…" rather than "Rewards (2)".
     """
 
     #: Class-level default so ``PickerButton.__init__`` can call ``format_text``
     #: before the instance attribute is assigned.
     _group: str | None = None
+    _caption: str | None = None
 
     def __init__(
         self,
@@ -92,6 +98,7 @@ class TagPickerButton(PickerButton):
         placeholder: str = "—",
         counts: dict[str, int] | None = None,
         group: str | None = None,
+        caption: str | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(
@@ -101,6 +108,9 @@ class TagPickerButton(PickerButton):
             parent=parent,
         )
         self._group = group
+        self._caption = caption
+        if caption is not None:
+            self.setText(caption)
         self.set_counts(counts)
 
     @property
@@ -116,6 +126,8 @@ class TagPickerButton(PickerButton):
         the vocabulary to someone who has not opened it. The count is what says a
         filter is on without making the user read the chip bar.
         """
+        if self._caption is not None:
+            return self._caption
         if self._group is None:
             return super().format_text(labels)
         return self._group if not labels else f"{self._group} ({len(labels)})"

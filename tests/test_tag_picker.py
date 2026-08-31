@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
-from bartlebot.gui.sidebar.sections.bot_info_section import _PLACEHOLDER, BotInfoSection, tags_summary
+from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
 from bartlebot.gui.widgets.picker_popup import _RowWidget
 from bartlebot.gui.widgets.tag_picker import (
     TagPickerButton,
@@ -17,6 +17,7 @@ from bartlebot.gui.widgets.tag_picker import (
     tag_group,
     tag_sections,
 )
+from bartlebot.gui.widgets.tag_pill import TagChip, TagPill
 
 
 @pytest.fixture(scope="session")
@@ -129,14 +130,6 @@ def test_a_theme_change_reapplies_the_stylesheet_without_recursing(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_summary_of_no_tags_is_the_placeholder():
-    assert tags_summary([]) == _PLACEHOLDER
-
-
-def test_summary_joins_tags():
-    assert tags_summary(["Gear", "Boss"]) == "Gear, Boss"
-
-
 def _bot(**extra) -> BotConfig:
     return BotConfig.model_validate(
         {
@@ -157,7 +150,7 @@ def test_loading_a_bot_shows_its_tags_without_marking_it_dirty(qapp):
 
     section.set_config(_bot(tags=["Boss", "Gear"]))
 
-    assert section._tags_lbl.text() == "Gear, Boss"
+    assert section._tags_field.tags() == ["Gear", "Boss"]
     assert not dirty
 
 
@@ -167,21 +160,23 @@ def test_toggling_a_tag_writes_it_back_in_vocabulary_order(qapp):
     section.set_config(config)
     section.set_editable(True)
 
-    section._tags_btn._open()
-    section._tags_btn._popup._on_row_toggled("Gear", True)
+    picker = section._tags_field._pickers["Rewards"]
+    picker._open()
+    picker._popup._on_row_toggled("Gear", True)
 
     assert config.tags == ["Gear", "Boss"]
-    section._tags_btn._popup.close()
+    picker._popup.close()
 
 
 def test_the_editor_offers_no_counts(qapp):
     """Counts describe the library, which the editor knows nothing about."""
     section = BotInfoSection()
     section.set_config(_bot())
-    section._tags_btn._open()
+    picker = section._tags_field._pickers["Activity"]
+    picker._open()
 
-    assert all(w._row.meta == "" for w in section._tags_btn._popup.findChildren(_RowWidget))
-    section._tags_btn._popup.close()
+    assert all(w._row.meta == "" for w in picker._popup.findChildren(_RowWidget))
+    picker._popup.close()
 
 
 # ---------------------------------------------------------------------------
@@ -229,3 +224,102 @@ def test_tag_sections_for_a_group_drops_the_others():
     sections = tag_sections(group="Activity")
 
     assert [name for name, _ in sections] == ["Activity"]
+
+
+# ---------------------------------------------------------------------------
+# The Tags field
+# ---------------------------------------------------------------------------
+
+
+def _field(tags: list[str], *, editable: bool):
+    """The Tags field, and the section that owns it.
+
+    Both are returned because the test has to hold the section: dropping it collects
+    the C++ side and every child widget with it, mid-assertion.
+    """
+    section = BotInfoSection()
+    section.set_config(_bot(tags=tags))
+    section.set_editable(editable)
+    return section._tags_field, section
+
+
+def test_the_tags_field_shows_pills_in_run_mode_and_chips_in_edit_mode(qapp):
+    """The pills are the value in both modes; only the ✕ and the buttons change.
+
+    A second, differently shaped read-only view of the same list is how the two
+    drift apart.
+    """
+    run, _run_section = _field(["Gear", "Boss"], editable=False)
+    assert len(run.findChildren(TagPill)) == 2
+    assert not run.findChildren(TagChip)
+
+    edit, _edit_section = _field(["Gear", "Boss"], editable=True)
+    assert len(edit.findChildren(TagChip)) == 2
+    assert not edit.findChildren(TagPill)
+
+
+def test_the_add_buttons_are_hidden_until_the_bot_is_editable(qapp):
+    field, _section = _field(["Gear"], editable=False)
+    assert not field._buttons.isVisibleTo(field)
+
+    field.set_editable(True)
+    assert field._buttons.isVisibleTo(field)
+
+
+def test_the_add_buttons_name_the_group_they_add(qapp):
+    """Unlike the library's, these say what pressing them does — the chips below
+    already report the selection, so the caption is free to be a call to action."""
+    field, _section = _field([], editable=True)
+
+    assert [b.text() for b in field._pickers.values()] == ["Add Rewards…", "Add Activity…"]
+
+
+def test_an_add_button_keeps_its_caption_once_something_is_selected(qapp):
+    field, _section = _field(["Gear", "Jewels"], editable=True)
+
+    assert field._pickers["Rewards"].text() == "Add Rewards…"
+
+
+def test_removing_a_chip_writes_the_shorter_list_back(qapp):
+    section = BotInfoSection()
+    config = _bot(tags=["Gear", "Jewels", "Boss"])
+    section.set_config(config)
+    section.set_editable(True)
+
+    section._tags_field._remove("Jewels")
+
+    assert config.tags == ["Gear", "Boss"]
+
+
+def test_the_placeholder_stands_in_for_the_pills_only_while_read_only(qapp):
+    """With the Add buttons showing, an untagged bot already reads as untagged."""
+    read_only, _ro_section = _field([], editable=False)
+    assert read_only._empty_lbl.isVisibleTo(read_only)
+
+    field, _section = _field([], editable=True)
+    assert not field._empty_lbl.isVisibleTo(field)
+
+
+def test_tags_from_both_pickers_come_back_in_vocabulary_order(qapp):
+    """Two buttons feed one list, and BOT_TAGS order is what gets saved."""
+    section = BotInfoSection()
+    config = _bot()
+    section.set_config(config)
+    section.set_editable(True)
+
+    for group, tag in (("Activity", "Boss"), ("Rewards", "Jewels"), ("Rewards", "Gear")):
+        picker = section._tags_field._pickers[group]
+        picker._open()
+        picker._popup._on_row_toggled(tag, True)
+        picker._popup.close()
+
+    assert config.tags == ["Gear", "Jewels", "Boss"]
+
+
+def test_a_chip_is_coloured_by_its_group(qapp):
+    """Same palette as the picker dot and the library card — one module owns it."""
+    field, _section = _field(["Gear", "Boss"], editable=True)
+    styles = " ".join(c.styleSheet() for c in field.findChildren(TagChip))
+
+    assert group_accent("Rewards") in styles
+    assert group_accent("Activity") in styles

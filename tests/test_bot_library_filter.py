@@ -142,12 +142,26 @@ def qapp():
 # ---------------------------------------------------------------------------
 
 
-def test_the_category_list_starts_with_all(qapp):
-    """Without it there is no way back to the whole library once a world is clicked,
+def test_the_category_list_offers_all_after_recent(qapp):
+    """Recent is the default because opening the library is usually the first step
+    of going back to a bot you ran yesterday. All sits under it as the fallback —
+    without it there is no way back to the whole library once a world is clicked,
     and nothing for a cross-world tag filter to be scoped to."""
     panel = _BotLibraryPanel()
+    rows = [panel._cat_list.item(i).text() for i in range(panel._cat_list.count())]
 
-    assert panel._cat_list.item(0).text() == panel._ALL
+    assert panel._ALL in rows
+    if panel._RECENT in rows:
+        assert rows[:2] == [panel._RECENT, panel._ALL]
+    else:
+        assert rows[0] == panel._ALL
+
+
+def test_the_selected_category_is_the_first_row(qapp):
+    """The ordering above *is* the default, so the two cannot drift apart."""
+    panel = _BotLibraryPanel()
+
+    assert panel._cat_list.currentRow() == 0
 
 
 def test_switching_category_keeps_the_tag_filter(qapp):
@@ -210,5 +224,5 @@ def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):
     """
     styles = _pill_styles(_BotCard(_meta("Untagged")))
 
-    assert THEME.chip_neutral_bg in styles
+    assert THEME.pill_neutral_bg in styles
     assert f"background: {THEME.accent}" not in styles
