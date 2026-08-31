@@ -110,9 +110,9 @@ def test_constructing_the_button_does_not_recurse(qapp):
     """This widget styles itself, and setStyleSheet feeds StyleChange back in.
     Without the re-entrancy guard the app died at startup with no traceback at
     all — a 0xC0000409 stack overflow inside window construction."""
-    btn = TagPickerButton(placeholder="Tags")
+    btn = TagPickerButton(placeholder="Filter by tag")
 
-    assert btn.text() == "Tags"
+    assert btn.text() == "Filter by tag"
 
 
 def test_a_theme_change_reapplies_the_stylesheet_without_recursing(qapp):

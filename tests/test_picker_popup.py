@@ -197,10 +197,10 @@ def test_a_theme_change_does_not_recurse(qapp):
 
 
 def test_button_shows_the_placeholder_when_nothing_is_selected(qapp):
-    btn = PickerButton("T", placeholder="Tags")
+    btn = PickerButton("T", placeholder="Filter by tag")
     btn.set_sections(SECTIONS)
 
-    assert btn.text() == "Tags"
+    assert btn.text() == "Filter by tag"
 
 
 def test_button_shows_labels_not_keys(qapp):

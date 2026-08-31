@@ -361,7 +361,7 @@ class _BotLibraryPanel(QWidget):
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
-        self._tag_picker = TagPickerButton(title="Filter by tag", placeholder="Tags")
+        self._tag_picker = TagPickerButton(title="Filter by tag", placeholder="Filter by tag")
         self._tag_picker.selection_changed.connect(self._on_tag_selection_changed)
         top_layout.addWidget(self._tag_picker, 0)
 
