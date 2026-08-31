@@ -10,7 +10,13 @@ from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
 from bartlebot.gui.sidebar.sections.bot_info_section import _PLACEHOLDER, BotInfoSection, tags_summary
 from bartlebot.gui.widgets.picker_popup import _RowWidget
-from bartlebot.gui.widgets.tag_picker import TagPickerButton, group_accent, tag_group, tag_sections
+from bartlebot.gui.widgets.tag_picker import (
+    TagPickerButton,
+    count_label,
+    group_accent,
+    tag_group,
+    tag_sections,
+)
 
 
 @pytest.fixture(scope="session")
@@ -30,11 +36,9 @@ def test_sections_mirror_the_vocabulary():
     assert [r.key for _, rows in sections for r in rows] == list(BOT_TAGS)
 
 
-def test_every_row_carries_a_description():
-    """The description is the tagging rule, shown where someone tagging will read it."""
-    blank = [r.key for _, rows in tag_sections() for r in rows if not r.description]
-
-    assert not blank, f"tags with no description: {blank}"
+def test_rows_carry_no_description():
+    """Names say enough; a second line doubled the row height and read as an underline."""
+    assert all(not r.description for _, rows in tag_sections() for r in rows)
 
 
 def test_counts_are_omitted_when_not_supplied():
@@ -42,17 +46,30 @@ def test_counts_are_omitted_when_not_supplied():
     assert all(r.meta == "" for _, rows in tag_sections() for r in rows)
 
 
-def test_counts_appear_when_supplied():
+def test_counts_carry_their_unit():
+    """A bare "49" beside a name reads as ambiguous until you work out what it counts."""
     rows = {r.key: r.meta for _, rows in tag_sections({"Gear": 49}) for r in rows}
 
-    assert rows["Gear"] == "49"
+    assert rows["Gear"] == "49 bots"
 
 
-def test_a_tag_with_no_bots_still_shows_a_zero():
-    """A missing row reads as a bug; an explicit 0 is an answer."""
-    rows = {r.key: r.meta for _, rows in tag_sections({"Gear": 49}) for r in rows}
+def test_a_count_of_one_is_singular():
+    assert count_label(1) == "1 bot"
+    assert count_label(0) == "0 bots"
 
-    assert rows["Mounts"] == "0"
+
+def test_a_tag_with_no_bots_is_listed_but_dimmed():
+    """A missing row reads as a bug; a dimmed "0 bots" is an answer."""
+    rows = {r.key: r for _, rows in tag_sections({"Gear": 49}) for r in rows}
+
+    assert rows["Mounts"].meta == "0 bots"
+    assert rows["Mounts"].dim
+    assert not rows["Gear"].dim
+
+
+def test_nothing_is_dimmed_when_counts_are_unknown():
+    """The editor has no counts, so nothing there is "empty"."""
+    assert not any(r.dim for _, rows in tag_sections() for r in rows)
 
 
 def test_the_two_groups_get_different_dots():

@@ -18,6 +18,7 @@ from bartlebot.gui.widgets.picker_popup import (
     PickerRow,
     _RowWidget,
     filter_sections,
+    selection_caption,
     summarize,
 )
 
@@ -224,3 +225,155 @@ def test_button_survives_a_theme_change(qapp):
     qapp.sendEvent(btn, QEvent(QEvent.Type.StyleChange))
 
     assert "QToolButton" in btn.styleSheet()
+
+
+# ---------------------------------------------------------------------------
+# Header: count and Clear
+# ---------------------------------------------------------------------------
+
+
+def test_selection_caption_is_empty_when_nothing_is_selected():
+    assert selection_caption(0) == ""
+
+
+def test_selection_caption_counts():
+    assert selection_caption(3) == "3 selected"
+
+
+def test_clear_is_hidden_until_something_is_selected(qapp):
+    popup = PickerPopup("T", SECTIONS)
+
+    assert not popup._clear_btn.isVisibleTo(popup)
+
+    popup._on_row_toggled("apple", True)
+
+    assert popup._clear_btn.isVisibleTo(popup)
+
+
+def test_clear_empties_the_selection_and_the_checkboxes(qapp):
+    popup = PickerPopup("T", SECTIONS, ["apple", "kale"])
+    seen = []
+    popup.selection_changed.connect(seen.append)
+
+    popup._clear()
+
+    assert popup.selection() == []
+    assert seen[-1] == []
+    assert all(not w._selected for w in popup.findChildren(_RowWidget))
+
+
+# ---------------------------------------------------------------------------
+# Selected rows read as selected
+# ---------------------------------------------------------------------------
+
+
+def test_a_selected_row_is_tinted(qapp):
+    """Only the checkbox said so before, which made scanning slow."""
+    popup = PickerPopup("T", SECTIONS)
+    row = popup.findChildren(_RowWidget)[0]
+    unselected = row.styleSheet()
+
+    row.toggle()
+
+    assert row.styleSheet() != unselected
+
+
+def test_a_preselected_row_starts_tinted(qapp):
+    popup = PickerPopup("T", SECTIONS, ["apple"])
+    apple, pear = popup.findChildren(_RowWidget)[:2]
+
+    assert apple.styleSheet() != pear.styleSheet()
+
+
+# ---------------------------------------------------------------------------
+# Keyboard
+# ---------------------------------------------------------------------------
+
+
+def _key(popup, key):
+    QTest.keyClick(popup._search, key)
+
+
+def test_down_moves_the_cursor_to_the_first_row(qapp):
+    popup = PickerPopup("T", SECTIONS)
+
+    _key(popup, Qt.Key.Key_Down)
+
+    assert popup._cursor_key == "apple"
+
+
+def test_down_then_up_returns(qapp):
+    popup = PickerPopup("T", SECTIONS)
+
+    _key(popup, Qt.Key.Key_Down)
+    _key(popup, Qt.Key.Key_Down)
+    _key(popup, Qt.Key.Key_Up)
+
+    assert popup._cursor_key == "apple"
+
+
+def test_the_cursor_stops_at_the_ends(qapp):
+    popup = PickerPopup("T", SECTIONS)
+
+    for _ in range(10):
+        _key(popup, Qt.Key.Key_Down)
+
+    assert popup._cursor_key == "kale"
+
+
+def test_enter_toggles_the_row_under_the_cursor(qapp):
+    popup = PickerPopup("T", SECTIONS)
+
+    _key(popup, Qt.Key.Key_Down)
+    _key(popup, Qt.Key.Key_Return)
+
+    assert popup.selection() == ["apple"]
+
+
+def test_enter_with_no_cursor_does_nothing(qapp):
+    popup = PickerPopup("T", SECTIONS)
+
+    _key(popup, Qt.Key.Key_Return)
+
+    assert popup.selection() == []
+
+
+def test_space_still_types_into_the_filter(qapp):
+    """Space cannot toggle: the filter box has focus and needs it for text."""
+    popup = PickerPopup("T", SECTIONS)
+    _key(popup, Qt.Key.Key_Down)
+
+    QTest.keyClicks(popup._search, "a b")
+
+    assert popup._search.text() == "a b"
+    assert popup.selection() == []
+
+
+def test_the_cursor_drops_when_filtering_hides_its_row(qapp):
+    """Down after typing should start at the first surviving row, not resume
+    from something no longer on screen."""
+    popup = PickerPopup("T", SECTIONS)
+    _key(popup, Qt.Key.Key_Down)
+
+    popup._search.setText("kale")
+    _drain(qapp)
+
+    assert popup._cursor_key is None
+    _key(popup, Qt.Key.Key_Down)
+    assert popup._cursor_key == "kale"
+
+
+# ---------------------------------------------------------------------------
+# Dimming
+# ---------------------------------------------------------------------------
+
+
+def test_a_dim_row_still_renders_and_still_toggles(qapp):
+    """Dim means "no results behind this", not "disabled"."""
+    sections = [("S", [PickerRow("x", "X", meta="0 bots", dim=True)])]
+    popup = PickerPopup("T", sections)
+    row = popup.findChildren(_RowWidget)[0]
+
+    row.toggle()
+
+    assert popup.selection() == ["x"]

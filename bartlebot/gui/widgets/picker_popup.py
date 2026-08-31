@@ -3,7 +3,7 @@
 Qt's native ``QMenu`` is drawn by the platform theme, so it ignores the app
 stylesheet almost entirely: ``THEME`` never reaches it, and ``addSection()``
 degrades to a hairline with small text. That is fine for a short list of commands
-and wrong for a picker with sections, descriptions and a filter box, which is why
+and wrong for a picker with sections, a filter box and per-row state, which is why
 this is a plain widget rather than a menu.
 
 It is a ``Qt.WindowType.Popup``, which buys three things a ``QDialog`` would not:
@@ -15,6 +15,11 @@ It is a ``Qt.WindowType.Popup``, which buys three things a ``QDialog`` would not
 Being a popup *window* also puts it outside the sidebar's widget tree, so the
 native-window transient-parent bug that ``menu_utils`` exists to work around
 (#119) does not apply here.
+
+``PickerRow.description`` is supported but optional, and the tag picker does not
+use it: a second line of muted text under every name doubled the row height, made
+the heights ragged, and read as an underline once the list was scrolling. Rows are
+one line unless a caller has something to say that the name does not.
 """
 
 from __future__ import annotations
@@ -28,6 +33,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
     QScrollArea,
     QToolButton,
     QVBoxLayout,
@@ -36,8 +42,8 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.theme import THEME
 
-POPUP_WIDTH = 330
-POPUP_MAX_HEIGHT = 420
+POPUP_WIDTH = 400
+POPUP_MAX_HEIGHT = 560
 
 
 @dataclass(frozen=True)
@@ -47,9 +53,12 @@ class PickerRow:
     ``key`` is the stable identity the popup reports; ``label`` is what is shown.
     They differ for callers whose display text is localized or decorated.
 
-    ``meta`` is the right-aligned slot — a usage count, say. It is the caller's job
-    to leave it empty where the number would be meaningless, which is why it is per
-    row rather than a flag on the popup.
+    ``meta`` is the right-aligned slot. Give it a unit — "49 bots", not "49" — since
+    a bare number beside a name reads as ambiguous until you work out what it counts.
+
+    ``dim`` renders the row as present-but-empty. The library uses it for a tag no
+    bot carries: dropping the row entirely reads as a bug, while a dimmed row with
+    "0 bots" is an answer.
     """
 
     key: str
@@ -57,6 +66,7 @@ class PickerRow:
     description: str = ""
     meta: str = ""
     accent: str | None = None  # colored dot; None draws no dot
+    dim: bool = False
 
 
 Section = tuple[str, list[PickerRow]]
@@ -65,9 +75,8 @@ Section = tuple[str, list[PickerRow]]
 def filter_sections(sections: list[Section], query: str) -> list[Section]:
     """Narrow *sections* to rows matching *query*, dropping sections left empty.
 
-    Matches label *and* description, so "no combat" finds Gathering — the
-    description is the part a newcomer can search by, since they do not yet know
-    the vocabulary's names.
+    Matches the description too, for callers that set one — free when they do not,
+    since an empty description matches no non-empty query.
 
     Pure and module level, so the matching can be tested without a QApplication.
     """
@@ -95,72 +104,114 @@ def summarize(labels: list[str], placeholder: str, *, limit: int = 2) -> str:
     return f"{len(labels)} selected"
 
 
+def selection_caption(count: int) -> str:
+    """The popup header's right-hand status text."""
+    return "" if count == 0 else f"{count} selected"
+
+
 class _RowWidget(QWidget):
-    """One row: checkbox, optional dot, name over description, right-aligned meta."""
+    """One row: checkbox, optional dot, name, right-aligned meta.
+
+    Carries three independent visual states — selected, hovered, and the keyboard
+    cursor — because all three can be true at once and each has to stay readable.
+    """
 
     toggled = pyqtSignal(str, bool)
 
     def __init__(self, row: PickerRow, checked: bool, parent=None) -> None:
         super().__init__(parent)
         self._row = row
+        self._selected = checked
+        self._hover = False
+        self._cursor = False
         self.setObjectName("PickerRow")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self._check = QCheckBox()
         self._check.setChecked(checked)
-        self._check.toggled.connect(lambda on: self.toggled.emit(self._row.key, on))
+        self._check.toggled.connect(self._on_check)
 
-        name = QLabel(row.label)
-        f = name.font()
+        name_color = THEME.text_disabled if row.dim else THEME.text
+        self._name = QLabel(row.label)
+        f = self._name.font()
         f.setBold(True)
-        name.setFont(f)
-        name.setStyleSheet(f"color: {THEME.text}; background: transparent;")
+        self._name.setFont(f)
+        self._name.setStyleSheet(f"color: {name_color}; background: transparent;")
 
-        text_col = QVBoxLayout()
-        text_col.setContentsMargins(0, 0, 0, 0)
-        text_col.setSpacing(1)
-
-        name_row = QHBoxLayout()
-        name_row.setContentsMargins(0, 0, 0, 0)
-        name_row.setSpacing(5)
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(10, 4, 10, 4)
+        outer.setSpacing(7)
+        outer.addWidget(self._check, 0, Qt.AlignmentFlag.AlignVCenter)
         if row.accent:
             dot = QLabel()
             dot.setFixedSize(9, 9)
             dot.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
             dot.setStyleSheet(f"background: {row.accent}; border-radius: 4px;")
-            name_row.addWidget(dot, 0, Qt.AlignmentFlag.AlignVCenter)
-        name_row.addWidget(name, 1)
-        text_col.addLayout(name_row)
+            outer.addWidget(dot, 0, Qt.AlignmentFlag.AlignVCenter)
+        outer.addWidget(self._name, 1, Qt.AlignmentFlag.AlignVCenter)
 
         if row.description:
-            desc = QLabel(row.description)
-            desc.setWordWrap(True)
-            desc.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
-            text_col.addWidget(desc)
-
-        outer = QHBoxLayout(self)
-        outer.setContentsMargins(10, 5, 10, 5)
-        outer.setSpacing(7)
-        outer.addWidget(self._check, 0, Qt.AlignmentFlag.AlignTop)
-        outer.addLayout(text_col, 1)
+            self._name.setToolTip(row.description)
         if row.meta:
             meta = QLabel(row.meta)
-            meta.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px; background: transparent;")
-            outer.addWidget(meta, 0, Qt.AlignmentFlag.AlignTop)
+            meta.setStyleSheet(
+                f"color: {THEME.text_disabled if row.dim else THEME.text_subtle};"
+                f"font-size: 10px; background: transparent;"
+            )
+            outer.addWidget(meta, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        self._set_style(hover=False)
+        self._restyle()
 
-    def _set_style(self, *, hover: bool) -> None:
-        bg = THEME.node_fill_hover if hover else "transparent"
-        self.setStyleSheet(f"#PickerRow {{ background: {bg}; }}")
+    # -- state ---------------------------------------------------------
+
+    @property
+    def key(self) -> str:
+        return self._row.key
+
+    def set_selected(self, on: bool) -> None:
+        if self._selected == on:
+            return
+        self._selected = on
+        self._check.blockSignals(True)
+        self._check.setChecked(on)
+        self._check.blockSignals(False)
+        self._restyle()
+
+    def set_cursor_row(self, on: bool) -> None:
+        self._cursor = on
+        self._restyle()
+
+    def toggle(self) -> None:
+        self._check.toggle()
+
+    # -- internals -----------------------------------------------------
+
+    def _on_check(self, on: bool) -> None:
+        self._selected = on
+        self._restyle()
+        self.toggled.emit(self._row.key, on)
+
+    def _restyle(self) -> None:
+        if self._hover or self._cursor:
+            bg = THEME.node_fill_hover
+        elif self._selected:
+            bg = THEME.node_fill_selected
+        else:
+            bg = "transparent"
+        # The keyboard cursor needs to be distinguishable from a plain hover, so it
+        # adds a rule down the leading edge rather than another background shade.
+        edge = THEME.accent if self._cursor else "transparent"
+        self.setStyleSheet(f"#PickerRow {{ background: {bg}; border-left: 2px solid {edge}; }}")
 
     def enterEvent(self, event) -> None:
-        self._set_style(hover=True)
+        self._hover = True
+        self._restyle()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
-        self._set_style(hover=False)
+        self._hover = False
+        self._restyle()
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
@@ -188,6 +239,8 @@ class PickerPopup(QWidget):
         self._selected: set[str] = set(selected or [])
         self._applying_style = False
         self._order = [r.key for _, rows in sections for r in rows]
+        self._rows: list[_RowWidget] = []
+        self._cursor_key: str | None = None
 
         self.setFixedWidth(POPUP_WIDTH)
         self.setObjectName("PickerPopup")
@@ -197,12 +250,30 @@ class PickerPopup(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
+        # ── Header: title, live selection count, and a way back to empty ──
+        header = QHBoxLayout()
+        header.setContentsMargins(10, 7, 8, 7)
+        header.setSpacing(6)
         self._title = QLabel(title)
         tf = self._title.font()
         tf.setBold(True)
         self._title.setFont(tf)
-        self._title.setContentsMargins(10, 7, 10, 7)
-        root.addWidget(self._title)
+        header.addWidget(self._title, 1)
+
+        self._count_lbl = QLabel()
+        self._count_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
+        header.addWidget(self._count_lbl, 0)
+
+        self._clear_btn = QPushButton("Clear")
+        self._clear_btn.setFlat(True)
+        self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._clear_btn.setStyleSheet(
+            f"QPushButton {{ color: {THEME.accent}; border: none; padding: 0 2px; font-size: 10px; }}"
+            f"QPushButton:hover {{ text-decoration: underline; }}"
+        )
+        self._clear_btn.clicked.connect(self._clear)
+        header.addWidget(self._clear_btn, 0)
+        root.addLayout(header)
 
         head_line = QFrame()
         head_line.setFrameShape(QFrame.Shape.HLine)
@@ -212,6 +283,7 @@ class PickerPopup(QWidget):
         self._search.setPlaceholderText(search_placeholder)
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self._rebuild)
+        self._search.installEventFilter(self)
         search_wrap = QWidget()
         sw = QVBoxLayout(search_wrap)
         sw.setContentsMargins(8, 7, 8, 7)
@@ -223,6 +295,8 @@ class PickerPopup(QWidget):
         self._scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._body = QWidget()
+        self._body.setObjectName("PickerBody")
+        self._body.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._body_layout = QVBoxLayout(self._body)
         self._body_layout.setContentsMargins(0, 0, 0, 6)
         self._body_layout.setSpacing(0)
@@ -240,7 +314,7 @@ class PickerPopup(QWidget):
         return [k for k in self._order if k in self._selected]
 
     def popup_at(self, anchor: QWidget) -> None:
-        """Show below *anchor*, nudged left if that would run off the screen."""
+        """Show below *anchor*, nudged to stay on screen."""
         self.adjustSize()
         self.setFixedHeight(min(self.sizeHint().height(), POPUP_MAX_HEIGHT))
         pos = anchor.mapToGlobal(anchor.rect().bottomLeft())
@@ -253,7 +327,62 @@ class PickerPopup(QWidget):
         self.show()
         self._search.setFocus()
 
+    # -- keyboard ------------------------------------------------------
+
+    def eventFilter(self, obj, event) -> bool:
+        """Drive the list from the search box, which is where focus lives.
+
+        Up/Down move a cursor and Enter toggles it, rather than Space — Space has to
+        keep typing a space while the filter box has focus.
+        """
+        if obj is self._search and event.type() == QEvent.Type.KeyPress:
+            key = event.key()
+            if key == Qt.Key.Key_Down:
+                self._move_cursor(1)
+                return True
+            if key == Qt.Key.Key_Up:
+                self._move_cursor(-1)
+                return True
+            if key in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                self._toggle_cursor_row()
+                return True
+        return super().eventFilter(obj, event)
+
+    def _move_cursor(self, delta: int) -> None:
+        if not self._rows:
+            return
+        keys = [r.key for r in self._rows]
+        if self._cursor_key in keys:
+            idx = min(max(keys.index(self._cursor_key) + delta, 0), len(keys) - 1)
+        else:
+            idx = 0 if delta > 0 else len(keys) - 1
+        self._set_cursor(keys[idx])
+
+    def _set_cursor(self, key: str | None) -> None:
+        self._cursor_key = key
+        for row in self._rows:
+            row.set_cursor_row(row.key == key)
+            if row.key == key:
+                self._scroll.ensureWidgetVisible(row)
+
+    def _toggle_cursor_row(self) -> None:
+        for row in self._rows:
+            if row.key == self._cursor_key:
+                row.toggle()
+                return
+
     # -- internals -----------------------------------------------------
+
+    def _clear(self) -> None:
+        self._selected.clear()
+        for row in self._rows:
+            row.set_selected(False)
+        self._refresh_header()
+        self.selection_changed.emit([])
+
+    def _refresh_header(self) -> None:
+        self._count_lbl.setText(selection_caption(len(self._selected)))
+        self._clear_btn.setVisible(bool(self._selected))
 
     def _rebuild(self) -> None:
         while self._body_layout.count() > 1:
@@ -261,6 +390,7 @@ class PickerPopup(QWidget):
             if w := item.widget():
                 w.hide()
                 w.deleteLater()
+        self._rows = []
 
         visible = filter_sections(self._sections, self._search.text())
         if not visible:
@@ -269,6 +399,7 @@ class PickerPopup(QWidget):
             empty.setContentsMargins(0, 14, 0, 14)
             empty.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
             self._body_layout.insertWidget(0, empty)
+            self._refresh_header()
             return
 
         at = 0
@@ -279,8 +410,7 @@ class PickerPopup(QWidget):
             header.setContentsMargins(10, 3, 10, 3)
             header.setStyleSheet(
                 f"#PickerSection {{ background: {THEME.surface}; color: {THEME.text_subtle};"
-                f"  font-size: 10px; font-weight: bold;"
-                f"  border-top: 1px solid {THEME.border}; border-bottom: 1px solid {THEME.border}; }}"
+                f"  font-size: 10px; font-weight: bold; }}"
             )
             self._body_layout.insertWidget(at, header)
             at += 1
@@ -288,13 +418,22 @@ class PickerPopup(QWidget):
                 w = _RowWidget(row, row.key in self._selected)
                 w.toggled.connect(self._on_row_toggled)
                 self._body_layout.insertWidget(at, w)
+                self._rows.append(w)
                 at += 1
+
+        # The cursor follows the filtered list: after typing, Down should start at
+        # the first surviving row rather than resume from something now hidden.
+        if self._cursor_key not in [r.key for r in self._rows]:
+            self._cursor_key = None
+        self._set_cursor(self._cursor_key)
+        self._refresh_header()
 
     def _on_row_toggled(self, key: str, checked: bool) -> None:
         if checked:
             self._selected.add(key)
         else:
             self._selected.discard(key)
+        self._refresh_header()
         self.selection_changed.emit(self.selection())
 
     def _apply_style(self) -> None:
@@ -305,6 +444,12 @@ class PickerPopup(QWidget):
             self.setStyleSheet(
                 f"#PickerPopup {{ background: {THEME.bg}; border: 1px solid {THEME.border};"
                 f"  border-radius: 6px; }}"
+                # Painted explicitly rather than inherited from the app palette: the
+                # row list sitting on a default-light viewport turns the dim/normal
+                # contrast inside out, and a widget should not depend on a palette a
+                # caller might not have set.
+                f"#PickerBody {{ background: {THEME.bg}; }}"
+                f"QScrollArea {{ background: transparent; border: none; }}"
                 f"QLabel {{ color: {THEME.text}; background: transparent; }}"
                 f'QFrame[frameShape="4"] {{ color: {THEME.border}; }}'
                 f"QLineEdit {{ background: {THEME.surface}; color: {THEME.text};"
@@ -323,9 +468,9 @@ class PickerPopup(QWidget):
 class PickerButton(QToolButton):
     """Anchor button that owns a :class:`PickerPopup` and shows its selection.
 
-    The popup is rebuilt on each click rather than kept: its rows carry counts and
-    descriptions that go stale, and a picker is opened far too rarely for building
-    twenty widgets to be worth caching.
+    The popup is rebuilt on each click rather than kept: its rows carry counts that
+    go stale, and a picker is opened far too rarely for building twenty widgets to
+    be worth caching.
     """
 
     selection_changed = pyqtSignal(list)

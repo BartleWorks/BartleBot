@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, describe
+from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
@@ -39,12 +39,26 @@ def tag_group(tag: str) -> str:
     return ""
 
 
+def count_label(n: int) -> str:
+    """The right-hand meta text for a tag used by *n* bots.
+
+    Carries the unit: "49" beside a name reads as ambiguous until you work out what
+    it counts, and the row has room for the word.
+    """
+    return f"{n} bot" if n == 1 else f"{n} bots"
+
+
 def tag_sections(counts: dict[str, int] | None = None) -> list[Section]:
     """Build the popup's sections from the vocabulary.
 
-    A tag with a zero count is still listed. In the editor every tag must be
+    A tag with a zero count is still listed, dimmed. In the editor every tag must be
     offerable regardless of what the library happens to hold today, and in the
-    library a visible "0 bots" is a clearer answer than a row that is missing.
+    library a dimmed "0 bots" is a clearer answer than a row that is missing.
+
+    No descriptions: the names already say what the tags mean, and a second line
+    under each one doubled the row height for nothing. What a description would have
+    had to explain is a comment in bartlebot/bot_tags.py, where someone tagging a bot
+    will actually read it.
     """
     sections: list[Section] = []
     for group, tags in TAG_GROUPS.items():
@@ -52,9 +66,9 @@ def tag_sections(counts: dict[str, int] | None = None) -> list[Section]:
             PickerRow(
                 key=tag,
                 label=tag,
-                description=describe(tag),
-                meta=("" if counts is None else f"{counts.get(tag, 0)}"),
+                meta=("" if counts is None else count_label(counts.get(tag, 0))),
                 accent=group_accent(group),
+                dim=(counts is not None and counts.get(tag, 0) == 0),
             )
             for tag in tags
         ]
