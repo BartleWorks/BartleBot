@@ -27,7 +27,7 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
-from PyQt6.QtCore import QEvent, QPointF, QRect, QRectF, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPolygonF
 from PyQt6.QtWidgets import (
     QFrame,
@@ -124,6 +124,53 @@ def should_open(now: float, closed_at: float | None, *, guard: float = REOPEN_GU
     the same way: ignore a click that lands within a moment of the close.
     """
     return closed_at is None or (now - closed_at) > guard
+
+
+def popup_position(anchor: QRect, size: QSize, avail: QRect) -> QPoint:
+    """Where to put a popup of *size* opened from *anchor*, both in screen coordinates.
+
+    Pure and module level so the geometry can be tested without a screen — which is
+    the only way to check the 4K case from a 1080p machine and vice versa.
+
+    Two rules, in this order:
+
+    * **Right edges line up** with the anchor's, whether or not a left-aligned popup
+      would have fit. Aligning left and flipping right only on overflow means the
+      popup jumps sides as the window is resized, or between two machines, for no
+      reason the user can see; GitHub's own pickers right-align unconditionally, and a
+      placement that never moves is easier to aim at than one that is locally optimal.
+      The popup is wider than any button that opens it, so left alignment would in
+      practice overflow anyway.
+
+      Where right alignment would run off the left of *avail*, the popup flips to
+      **left** edges flush instead. That is not the flip-flop above: it fires only
+      where the alternative is a popup with no edge in common with its button at all.
+      One edge always meets the anchor, which is the property a second call site needs
+      — the sidebars are 300px minimum against a 400px popup, so a picker anchored in
+      the *left* one right-aligns to a negative x, and a screen clamp would slide it
+      until it pointed at nothing. That is the bug this function was written to fix,
+      one edge over.
+    * **Prefer opening downward**, flipping above the anchor only when the popup
+      does not fit below. A 1080p screen flips where a 4K one does not; both are
+      correct, and neither should also drift sideways.
+
+    Clamping to *avail* is the last resort, for a popup wider or taller than either
+    alignment can satisfy — a screen edge is the one thing allowed to win.
+    """
+    max_x = avail.left() + max(0, avail.width() - size.width())
+    x = anchor.left() + anchor.width() - size.width()  # right edges flush
+    if x < avail.left() and anchor.left() <= max_x:
+        x = anchor.left()  # left edges flush
+    x = max(avail.left(), min(x, max_x))
+
+    max_y = avail.top() + max(0, avail.height() - size.height())
+    y = anchor.top() + anchor.height()
+    if y > max_y:
+        above = anchor.top() - size.height()
+        y = above if above >= avail.top() else max_y
+    y = max(avail.top(), min(y, max_y))
+
+    return QPoint(x, y)
 
 
 ROW_HEIGHT = 26
@@ -476,16 +523,15 @@ class PickerPopup(QWidget):
         return [k for k in self._order if k in self._selected]
 
     def popup_at(self, anchor: QWidget) -> None:
-        """Show below *anchor*, nudged to stay on screen."""
+        """Show under *anchor*, edges flush, flipping above or across it if it will not fit."""
         self.adjustSize()
         self.setFixedHeight(min(self.sizeHint().height(), POPUP_MAX_HEIGHT))
-        pos = anchor.mapToGlobal(anchor.rect().bottomLeft())
+        top_left = anchor.mapToGlobal(anchor.rect().topLeft())
+        rect = QRect(top_left, anchor.size())
         if screen := anchor.screen():
-            avail = screen.availableGeometry()
-            pos.setX(max(avail.left(), min(pos.x(), avail.right() - self.width())))
-            if pos.y() + self.height() > avail.bottom():
-                pos.setY(max(avail.top(), anchor.mapToGlobal(anchor.rect().topLeft()).y() - self.height()))
-        self.move(pos)
+            self.move(popup_position(rect, self.size(), screen.availableGeometry()))
+        else:
+            self.move(QPoint(rect.left(), rect.top() + rect.height()))
         self.show()
         self._search.setFocus()
 

@@ -8,17 +8,21 @@ selection, the self-styling recursion trap) are not extractable.
 import sys
 
 import pytest
-from PyQt6.QtCore import QEvent, Qt
+from PyQt6.QtCore import QEvent, QRect, QSize, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication
 
+import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import (
+    _BOX,
+    _PAD_X,
     PickerButton,
     PickerPopup,
     PickerRow,
     _RowWidget,
     filter_sections,
+    popup_position,
     selection_caption,
     should_open,
     summarize,
@@ -28,6 +32,21 @@ from bartlebot.gui.widgets.picker_popup import (
 @pytest.fixture(scope="session")
 def qapp():
     return QApplication.instance() or QApplication(sys.argv)
+
+
+@pytest.fixture
+def theme():
+    """Pin the active theme for a test, and put it back afterwards.
+
+    Settings ship ``"theme": "system"``, so THEME follows the Windows light/dark
+    setting at read time. A paint test that does not say which theme it means is
+    really testing whichever one the machine is in, and changes result when the OS
+    does — which is how the checkbox test came to pass in the morning and fail later
+    the same day.
+    """
+    before = theme_mod.active_theme()
+    yield theme_mod.set_theme
+    theme_mod.set_theme_instance(before)
 
 
 def _drain(app) -> None:
@@ -294,6 +313,41 @@ def _colors(row) -> set[str]:
     return {img.pixelColor(x, y).name() for y in range(img.height()) for x in range(img.width())}
 
 
+def _luminance(c) -> float:
+    """WCAG relative luminance, for asking whether two colours are told apart."""
+
+    def channel(v: float) -> float:
+        v /= 255
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * channel(c.red()) + 0.7152 * channel(c.green()) + 0.0722 * channel(c.blue())
+
+
+def _contrast(a, b) -> float:
+    """Contrast ratio between two colours, 1.0 (identical) to 21.0 (black on white)."""
+    lo, hi = sorted((_luminance(a), _luminance(b)))
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def _indicator_contrast(row) -> float:
+    """How far the checkbox's most distinct pixel sits from the row behind it.
+
+    Asserting an exact ``THEME.border`` hex appears in the grab is the obvious test
+    and the wrong one twice over. The outline is a 1px antialiased stroke, so in the
+    light theme it blends and *no* pixel carries the token exactly — the test passed
+    only because the machine happened to be in dark mode, and it is a screenshot
+    assertion for a claim about visibility rather than about a colour.
+    """
+    img = row.grab().toImage()
+    bg = img.pixelColor(img.width() - 1, img.height() // 2)  # past the text, plain row
+    box = QRect(_PAD_X, (row.height() - _BOX) // 2, _BOX, _BOX)
+    return max(
+        _contrast(img.pixelColor(x, y), bg)
+        for y in range(box.top(), box.bottom() + 1)
+        for x in range(box.left(), box.right() + 1)
+    )
+
+
 def test_a_selected_row_is_tinted(qapp):
     """Only the checkbox said so before, which made scanning slow."""
     popup = PickerPopup("T", SECTIONS)
@@ -313,14 +367,20 @@ def test_an_unselected_row_is_not_tinted(qapp):
     assert THEME.node_fill_selected not in _colors(row)
 
 
-def test_the_checkbox_is_visible_against_the_row(qapp):
+@pytest.mark.parametrize("mode", ["light", "dark"])
+def test_the_checkbox_is_visible_against_the_row(qapp, theme, mode):
     """It went the colour of the background once, when a stylesheet on the QCheckBox
-    cost it the platform's own indicator and the palette drew the replacement."""
+    cost it the platform's own indicator and the palette drew the replacement.
+
+    Both themes, because the failure being guarded against is one theme's border
+    disappearing into one theme's background.
+    """
+    theme(mode)
     popup = PickerPopup("T", SECTIONS)
     row = popup.findChildren(_RowWidget)[0]
     row.resize(300, 26)
 
-    assert THEME.border in _colors(row), "unchecked indicator has no visible outline"
+    assert _indicator_contrast(row) > 1.5, "unchecked indicator has no visible outline"
 
 
 def test_a_checked_box_shows_a_checkmark(qapp):
@@ -493,3 +553,103 @@ def test_closing_the_popup_emits_closed(qapp):
     popup.close()
 
     assert seen
+
+
+# -- popup placement -------------------------------------------------------
+#
+# Pure geometry, so the 4K case can be checked from a 1080p machine and the other
+# way round. A screen is 1920x1080 at the origin unless a test says otherwise.
+
+_SCREEN = QRect(0, 0, 1920, 1080)
+_SIZE = QSize(400, 560)
+
+
+def test_the_popup_hangs_below_the_anchor_right_edges_flush():
+    anchor = QRect(600, 200, 90, 24)
+
+    pos = popup_position(anchor, _SIZE, _SCREEN)
+
+    assert pos.x() + _SIZE.width() == anchor.right() + 1
+    assert pos.y() == 224
+
+
+def test_right_alignment_does_not_depend_on_running_out_of_room():
+    # There is ample space to the right of this anchor; the popup right-aligns
+    # anyway. Aligning left until it overflows makes the popup change sides as the
+    # window is resized, which is the flip-flop this replaced.
+    near = popup_position(QRect(600, 200, 90, 24), _SIZE, _SCREEN)
+    far = popup_position(QRect(1800, 200, 90, 24), _SIZE, _SCREEN)
+
+    assert near.x() == 600 + 90 - _SIZE.width()
+    assert far.x() == 1800 + 90 - _SIZE.width()
+
+
+def test_right_alignment_still_fits_on_screen():
+    pos = popup_position(QRect(1800, 200, 90, 24), _SIZE, _SCREEN)
+
+    assert pos.x() >= _SCREEN.left()
+    assert pos.x() + _SIZE.width() <= _SCREEN.left() + _SCREEN.width()
+
+
+def test_a_popup_that_cannot_right_align_flips_to_left_edges_flush():
+    # A picker anchored in the 300px-minimum left sidebar: right-aligning a 400px
+    # popup to a button at x=120 would put it at -190. Sliding it to the screen edge
+    # instead would leave it with no edge in common with the button it belongs to.
+    anchor = QRect(120, 200, 90, 24)
+
+    pos = popup_position(anchor, _SIZE, _SCREEN)
+
+    assert pos.x() == anchor.left()
+
+
+def test_the_flip_is_not_taken_when_right_alignment_fits():
+    # Guard against the flip becoming the flip-flop it replaced: it fires only where
+    # right alignment leaves the screen, never merely because left would also fit.
+    anchor = QRect(600, 200, 90, 24)
+
+    assert popup_position(anchor, _SIZE, _SCREEN).x() != anchor.left()
+
+
+def test_a_popup_wider_than_the_screen_is_clamped_rather_than_pushed_off_screen():
+    # Neither alignment can be honoured, so the screen edge wins.
+    pos = popup_position(QRect(120, 200, 90, 24), QSize(2400, 560), _SCREEN)
+
+    assert pos.x() == _SCREEN.left()
+
+
+def test_a_popup_with_no_room_below_flips_above_the_anchor():
+    anchor = QRect(300, 900, 90, 24)
+
+    pos = popup_position(anchor, _SIZE, _SCREEN)
+
+    assert pos.y() + _SIZE.height() == anchor.top()
+
+
+def test_flipping_up_does_not_move_it_sideways():
+    # The 1080p report: opens upward there and downward on 4K, and on both it had
+    # drifted to the right edge. Vertical flip must not touch x.
+    low = popup_position(QRect(1800, 900, 90, 24), _SIZE, _SCREEN)
+    high = popup_position(QRect(1800, 200, 90, 24), _SIZE, _SCREEN)
+
+    assert low.x() == high.x()
+
+
+def test_a_4k_screen_leaves_room_to_open_downward():
+    uhd = QRect(0, 0, 3840, 2160)
+    anchor = QRect(300, 900, 90, 24)
+
+    assert popup_position(anchor, _SIZE, uhd).y() == 924
+
+
+def test_a_screen_that_does_not_start_at_the_origin_is_respected():
+    second = QRect(1920, 0, 1920, 1080)
+
+    pos = popup_position(QRect(1920, 200, 90, 24), _SIZE, second)
+
+    assert pos.x() == second.left()  # clamped to this screen, not the primary's
+
+
+def test_a_popup_taller_than_the_screen_is_clamped_rather_than_pushed_off_the_top():
+    pos = popup_position(QRect(300, 900, 90, 24), QSize(400, 2000), _SCREEN)
+
+    assert pos.y() == _SCREEN.top()

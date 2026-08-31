@@ -482,6 +482,16 @@ _current_theme: _Theme = LIGHT
 THEME: _Theme = _ThemeProxy()  # type: ignore[assignment]
 
 
+def active_theme() -> _Theme:
+    """The ``_Theme`` instance currently in force.
+
+    ``THEME`` is a proxy that forwards attribute reads, so it cannot be stashed and
+    restored; anything that needs to put the theme back the way it found it — a test
+    pinning a theme, a preview that swaps one in — needs the instance itself.
+    """
+    return _current_theme
+
+
 def _detect_system_dark_mode() -> bool:
     """Return True if Windows is set to dark mode (AppsUseLightTheme=0)."""
     try:
