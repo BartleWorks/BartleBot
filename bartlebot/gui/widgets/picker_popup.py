@@ -27,20 +27,22 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QPointF, QRect, QRectF, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPolygonF
 from PyQt6.QtWidgets import (
-    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
+from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 
 POPUP_WIDTH = 400
@@ -126,11 +128,26 @@ def should_open(now: float, closed_at: float | None, *, guard: float = REOPEN_GU
     return closed_at is None or (now - closed_at) > guard
 
 
-class _RowWidget(QWidget):
-    """One row: checkbox, optional dot, name, right-aligned meta.
+ROW_HEIGHT = 26
+_BOX = 13  # checkbox indicator, px
+_PAD_X = 10
+_GAP = 7
+_DOT = 9
 
-    Carries three independent visual states — selected, hovered, and the keyboard
-    cursor — because all three can be true at once and each has to stay readable.
+
+class _RowWidget(QWidget):
+    """One row, painted in a single ``paintEvent`` rather than assembled from
+    child widgets.
+
+    Everything here was child widgets once — a QCheckBox, two QLabels, a dot — and
+    every one of them was a way for the platform style, the app palette or fractional
+    display scaling to put something on screen this module did not ask for: a grey
+    slab behind the checkbox, an indicator the same colour as the background, hairlines
+    under each child's bottom edge. Painting it directly is both smaller and
+    deterministic, and since it reads ``THEME`` at paint time it follows a theme change
+    with no ``changeEvent`` plumbing (see CLAUDE.md, GUI theming).
+
+    Three visual states stack: selected, hovered, and the keyboard cursor.
     """
 
     toggled = pyqtSignal(str, bool)
@@ -141,44 +158,12 @@ class _RowWidget(QWidget):
         self._selected = checked
         self._hover = False
         self._cursor = False
-        self.setObjectName("PickerRow")
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setMouseTracking(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-        self._check = QCheckBox()
-        self._check.setChecked(checked)
-        self._check.toggled.connect(self._on_check)
-
-        name_color = THEME.text_disabled if row.dim else THEME.text
-        self._name = QLabel(row.label)
-        f = self._name.font()
-        f.setBold(True)
-        self._name.setFont(f)
-        self._name.setStyleSheet(f"color: {name_color}; background: transparent;")
-
-        outer = QHBoxLayout(self)
-        outer.setContentsMargins(10, 4, 10, 4)
-        outer.setSpacing(7)
-        outer.addWidget(self._check, 0, Qt.AlignmentFlag.AlignVCenter)
-        if row.accent:
-            dot = QLabel()
-            dot.setFixedSize(9, 9)
-            dot.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-            dot.setStyleSheet(f"background: {row.accent}; border-radius: 4px;")
-            outer.addWidget(dot, 0, Qt.AlignmentFlag.AlignVCenter)
-        outer.addWidget(self._name, 1, Qt.AlignmentFlag.AlignVCenter)
-
+        self.setFixedHeight(ROW_HEIGHT)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         if row.description:
-            self._name.setToolTip(row.description)
-        if row.meta:
-            meta = QLabel(row.meta)
-            meta.setStyleSheet(
-                f"color: {THEME.text_disabled if row.dim else THEME.text_subtle};"
-                f"font-size: 10px; background: transparent;"
-            )
-            outer.addWidget(meta, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        self._restyle()
+            self.setToolTip(row.description)
 
     # -- state ---------------------------------------------------------
 
@@ -186,54 +171,124 @@ class _RowWidget(QWidget):
     def key(self) -> str:
         return self._row.key
 
+    @property
+    def selected(self) -> bool:
+        return self._selected
+
     def set_selected(self, on: bool) -> None:
         if self._selected == on:
             return
         self._selected = on
-        self._check.blockSignals(True)
-        self._check.setChecked(on)
-        self._check.blockSignals(False)
-        self._restyle()
+        self.update()
 
     def set_cursor_row(self, on: bool) -> None:
+        if self._cursor == on:
+            return
         self._cursor = on
-        self._restyle()
+        self.update()
 
     def toggle(self) -> None:
-        self._check.toggle()
+        self._selected = not self._selected
+        self.update()
+        self.toggled.emit(self._row.key, self._selected)
 
-    # -- internals -----------------------------------------------------
+    # -- painting ------------------------------------------------------
 
-    def _on_check(self, on: bool) -> None:
-        self._selected = on
-        self._restyle()
-        self.toggled.emit(self._row.key, on)
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
 
-    def _restyle(self) -> None:
         if self._hover or self._cursor:
-            bg = THEME.node_fill_hover
+            painter.fillRect(rect, QColor(THEME.node_fill_hover))
         elif self._selected:
-            bg = THEME.node_fill_selected
-        else:
-            bg = "transparent"
-        # The keyboard cursor needs to be distinguishable from a plain hover, so it
-        # adds a rule down the leading edge rather than another background shade.
-        edge = THEME.accent if self._cursor else "transparent"
-        self.setStyleSheet(f"#PickerRow {{ background: {bg}; border-left: 2px solid {edge}; }}")
+            painter.fillRect(rect, QColor(THEME.node_fill_selected))
+
+        # The keyboard cursor has to stay distinct from a plain hover, so it adds a
+        # rule down the leading edge rather than another background shade.
+        if self._cursor:
+            painter.fillRect(0, 0, 2, rect.height(), QColor(THEME.accent))
+
+        dim = self._row.dim
+        x = _PAD_X
+        box = QRect(x, (rect.height() - _BOX) // 2, _BOX, _BOX)
+        self._paint_indicator(painter, box)
+        x = box.right() + 1 + _GAP
+
+        if self._row.accent:
+            dot = QRect(x, (rect.height() - _DOT) // 2, _DOT, _DOT)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(self._row.accent))
+            painter.drawEllipse(dot)
+            x = dot.right() + 1 + _GAP
+
+        meta_w = 0
+        if self._row.meta:
+            meta_font = QFont(self.font())
+            meta_font.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+            painter.setFont(meta_font)
+            meta_w = painter.fontMetrics().horizontalAdvance(self._row.meta) + _PAD_X
+            painter.setPen(QColor(THEME.text_disabled if dim else THEME.text_subtle))
+            painter.drawText(
+                QRect(rect.width() - meta_w, 0, meta_w - _PAD_X, rect.height()),
+                int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter),
+                self._row.meta,
+            )
+
+        name_font = QFont(self.font())
+        name_font.setBold(True)
+        painter.setFont(name_font)
+        painter.setPen(QColor(THEME.text_disabled if dim else THEME.text))
+        name_rect = QRect(x, 0, max(rect.width() - x - meta_w - _GAP, 0), rect.height())
+        elided = painter.fontMetrics().elidedText(self._row.label, Qt.TextElideMode.ElideRight, name_rect.width())
+        painter.drawText(name_rect, int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter), elided)
+        painter.end()
+
+    def _paint_indicator(self, painter: QPainter, box: QRect) -> None:
+        """A checkbox, drawn rather than delegated.
+
+        Deliberately not a QCheckBox: touching one with a stylesheet at all forfeits
+        the platform's own indicator, and what replaces it is drawn from the palette —
+        which is how it ended up the same colour as the background.
+        """
+        fill = QColor(THEME.accent) if self._selected else QColor(THEME.bg)
+        edge = QColor(THEME.accent if self._selected else THEME.border)
+        painter.setPen(QPen(edge, 1))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(QRectF(box).adjusted(0.5, 0.5, -0.5, -0.5), 3, 3)
+        if not self._selected:
+            return
+        pen = QPen(QColor(THEME.pill_text), 2)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        w, h = box.width(), box.height()
+        painter.drawPolyline(
+            QPolygonF(
+                [
+                    QPointF(box.x() + w * 0.24, box.y() + h * 0.52),
+                    QPointF(box.x() + w * 0.43, box.y() + h * 0.72),
+                    QPointF(box.x() + w * 0.78, box.y() + h * 0.28),
+                ]
+            )
+        )
+
+    # -- interaction ---------------------------------------------------
 
     def enterEvent(self, event) -> None:
         self._hover = True
-        self._restyle()
+        self.update()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self._hover = False
-        self._restyle()
+        self.update()
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        # The whole row is the hit target — a 13px checkbox is not.
-        self._check.toggle()
+        # The whole row is the hit target — a 13px indicator is not.
+        self.toggle()
         super().mousePressEvent(event)
 
 
@@ -271,8 +326,15 @@ class PickerPopup(QWidget):
         root.setSpacing(0)
 
         # ── Header: title, live selection count, and a way back to empty ──
+        self._top = QWidget()
+        self._top.setObjectName("PickerTop")
+        self._top.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        top_col = QVBoxLayout(self._top)
+        top_col.setContentsMargins(0, 0, 0, 0)
+        top_col.setSpacing(0)
+
         header = QHBoxLayout()
-        header.setContentsMargins(10, 7, 8, 7)
+        header.setContentsMargins(10, 7, 8, 5)
         header.setSpacing(6)
         self._title = QLabel(title)
         tf = self._title.font()
@@ -293,22 +355,26 @@ class PickerPopup(QWidget):
         )
         self._clear_btn.clicked.connect(self._clear)
         header.addWidget(self._clear_btn, 0)
-        root.addLayout(header)
-
-        head_line = QFrame()
-        head_line.setFrameShape(QFrame.Shape.HLine)
-        root.addWidget(head_line)
+        top_col.addLayout(header)
 
         self._search = QLineEdit()
         self._search.setPlaceholderText(search_placeholder)
         self._search.setClearButtonEnabled(True)
+        self._search.addAction(
+            svg_icon("search", 14, tint=THEME.text_muted),
+            QLineEdit.ActionPosition.LeadingPosition,
+        )
         self._search.textChanged.connect(self._rebuild)
         self._search.installEventFilter(self)
-        search_wrap = QWidget()
-        sw = QVBoxLayout(search_wrap)
-        sw.setContentsMargins(8, 7, 8, 7)
+        sw = QHBoxLayout()
+        sw.setContentsMargins(8, 0, 8, 8)
         sw.addWidget(self._search)
-        root.addWidget(search_wrap)
+        top_col.addLayout(sw)
+        root.addWidget(self._top)
+
+        head_line = QFrame()
+        head_line.setFrameShape(QFrame.Shape.HLine)
+        root.addWidget(head_line)
 
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
@@ -468,6 +534,7 @@ class PickerPopup(QWidget):
                 # row list sitting on a default-light viewport turns the dim/normal
                 # contrast inside out, and a widget should not depend on a palette a
                 # caller might not have set.
+                f"#PickerTop {{ background: {THEME.surface}; }}"
                 f"#PickerBody {{ background: {THEME.bg}; }}"
                 f"QScrollArea {{ background: transparent; border: none; }}"
                 # A QCheckBox left to the palette paints a Button/Base block behind
@@ -479,7 +546,7 @@ class PickerPopup(QWidget):
                 f"QCheckBox {{ background: transparent; spacing: 0; }}"
                 f"QLabel {{ color: {THEME.text}; background: transparent; }}"
                 f'QFrame[frameShape="4"] {{ color: {THEME.border}; }}'
-                f"QLineEdit {{ background: {THEME.surface}; color: {THEME.text};"
+                f"QLineEdit {{ background: {THEME.bg}; color: {THEME.text};"
                 f"  border: 1px solid {THEME.border}; border-radius: 4px; padding: 3px 6px; }}"
                 f"QLineEdit:focus {{ border-color: {THEME.accent}; }}"
             )

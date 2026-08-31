@@ -12,6 +12,7 @@ from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication
 
+from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import (
     PickerButton,
     PickerPopup,
@@ -268,22 +269,60 @@ def test_clear_empties_the_selection_and_the_checkboxes(qapp):
 # ---------------------------------------------------------------------------
 
 
+def _colors(row) -> set[str]:
+    """Every colour the row actually paints, as hex."""
+    img = row.grab().toImage()
+    return {img.pixelColor(x, y).name() for y in range(img.height()) for x in range(img.width())}
+
+
 def test_a_selected_row_is_tinted(qapp):
     """Only the checkbox said so before, which made scanning slow."""
     popup = PickerPopup("T", SECTIONS)
     row = popup.findChildren(_RowWidget)[0]
-    unselected = row.styleSheet()
+    row.resize(300, 26)
 
     row.toggle()
 
-    assert row.styleSheet() != unselected
+    assert THEME.node_fill_selected in _colors(row)
 
 
-def test_a_preselected_row_starts_tinted(qapp):
+def test_an_unselected_row_is_not_tinted(qapp):
+    popup = PickerPopup("T", SECTIONS)
+    row = popup.findChildren(_RowWidget)[0]
+    row.resize(300, 26)
+
+    assert THEME.node_fill_selected not in _colors(row)
+
+
+def test_the_checkbox_is_visible_against_the_row(qapp):
+    """It went the colour of the background once, when a stylesheet on the QCheckBox
+    cost it the platform's own indicator and the palette drew the replacement."""
+    popup = PickerPopup("T", SECTIONS)
+    row = popup.findChildren(_RowWidget)[0]
+    row.resize(300, 26)
+
+    assert THEME.border in _colors(row), "unchecked indicator has no visible outline"
+
+
+def test_a_checked_box_shows_a_checkmark(qapp):
     popup = PickerPopup("T", SECTIONS, ["apple"])
-    apple, pear = popup.findChildren(_RowWidget)[:2]
+    row = popup.findChildren(_RowWidget)[0]
+    row.resize(300, 26)
+    painted = _colors(row)
 
-    assert apple.styleSheet() != pear.styleSheet()
+    assert THEME.accent in painted, "checked indicator is not filled"
+    assert THEME.pill_text in painted, "checked indicator has no checkmark"
+
+
+def test_the_keyboard_cursor_paints_its_edge_rule(qapp):
+    popup = PickerPopup("T", SECTIONS)
+    row = popup.findChildren(_RowWidget)[0]
+    row.resize(300, 26)
+
+    row.set_cursor_row(True)
+
+    img = row.grab().toImage()
+    assert img.pixelColor(0, 13).name() == THEME.accent
 
 
 # ---------------------------------------------------------------------------
