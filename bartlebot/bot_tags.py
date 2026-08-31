@@ -21,8 +21,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Ordered groups, used to lay out the chip row and the editor's menu. Validation is
-# against the flat BOT_TAGS below — the grouping carries no meaning beyond ordering.
+# Ordered groups. "Rewards" is what a run yields, "Activity" is what it does, and a
+# bot normally carries at least one of each. Validation is against the flat BOT_TAGS
+# below — the grouping decides presentation order and nothing else.
 TAG_GROUPS: dict[str, tuple[str, ...]] = {
     "Rewards": (
         "Gear",
@@ -52,6 +53,36 @@ TAG_GROUPS: dict[str, tuple[str, ...]] = {
 BOT_TAGS: tuple[str, ...] = tuple(tag for group in TAG_GROUPS.values() for tag in group)
 
 _TAG_ORDER: dict[str, int] = {tag: i for i, tag in enumerate(BOT_TAGS)}
+
+# One line per tag, shown beneath the name in the tag picker. These are the rule the
+# library was tagged by, written down where someone tagging a new bot will actually
+# read it — the distinctions that matter (a reagent *route* vs a boss that drops
+# reagents; a spellement farm needing level scaling) are invisible from the name alone.
+TAG_DESCRIPTIONS: dict[str, str] = {
+    "Gear": "Hats, robes, boots, wands, athames, amulets, rings and decks",
+    "Jewels": "Jewels and pins for socketed gear",
+    "Reagents": "Crafting reagents",
+    "Spellements": "Spell upgrades — the bot usually needs level scaling to get them",
+    "Animus": "Monstrology animus, for levelling the Monstrology skill",
+    "Treasure Cards": "Treasure cards",
+    "Snacks": "Pet snacks",
+    "Seeds": "Garden seeds",
+    "Mounts": "Permanent and timed mounts",
+    "Pets": "Pets and pet eggs",
+    "Housing": "Housing items and furniture",
+    "Gold": "Gold worth the run on its own",
+    "Boss": "Repeats one named boss fight",
+    "Mobs": "Repeats a non-boss mob fight",
+    "Dungeon": "Runs a dungeon through to its end",
+    "Gauntlet": "Runs a gauntlet from its entrance sigil",
+    "Team-Up": "Joins the fight through Team-Up rather than entering alone",
+    "Gathering": "Walks a reagent-node route — no combat",
+}
+
+
+def describe(tag: str) -> str:
+    """The one-line description for *tag*, or an empty string if it is unknown."""
+    return TAG_DESCRIPTIONS.get(tag, "")
 
 
 def normalize_tags(raw: object) -> list[str]:

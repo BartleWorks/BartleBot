@@ -74,3 +74,21 @@ def test_tags_survive_a_round_trip(tmp_path):
     config.save(path)
 
     assert BotConfig.load(path).tags == ["Reagents", "Gathering"]
+
+
+def test_every_tag_has_a_description():
+    """The picker shows one per row; a blank line there looks like a rendering bug."""
+    from bartlebot.bot_tags import TAG_DESCRIPTIONS  # noqa: PLC0415
+
+    missing = [t for t in BOT_TAGS if not TAG_DESCRIPTIONS.get(t)]
+
+    assert not missing, f"tags with no description: {missing}"
+
+
+def test_no_description_is_orphaned():
+    """A description for a tag that no longer exists is a rename someone half-did."""
+    from bartlebot.bot_tags import TAG_DESCRIPTIONS  # noqa: PLC0415
+
+    orphans = sorted(set(TAG_DESCRIPTIONS) - set(BOT_TAGS))
+
+    assert not orphans, f"descriptions with no tag: {orphans}"

@@ -8,6 +8,7 @@ import json
 import logging
 import re
 import time
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +55,7 @@ from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
@@ -334,7 +336,6 @@ class _BotLibraryPanel(QWidget):
         self._all_metas: list[_BotMeta] = []
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
-        self._chips: dict[str, QPushButton] = {}
         self._build_ui()
         self.refresh()
 
@@ -360,6 +361,10 @@ class _BotLibraryPanel(QWidget):
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
+        self._tag_picker = TagPickerButton(title="Filter by tag", placeholder="Tags")
+        self._tag_picker.selection_changed.connect(self._on_tag_selection_changed)
+        top_layout.addWidget(self._tag_picker, 0)
+
         for label, signal_name in (("New Bot", "new_bot_requested"), ("Open…", "open_bot_requested")):
             btn = QPushButton(label)
             btn.setFlat(True)
@@ -373,7 +378,10 @@ class _BotLibraryPanel(QWidget):
 
         root.addWidget(top)
 
-        # ── Tag chips: filter by purpose, across every category ──────────
+        # ── Active tag filters, shown as chips you can click to remove ───
+        # Only the *selected* tags live here; the vocabulary itself is behind the
+        # picker. Eighteen chips laid out at once needed 1648px and pinned the
+        # panel's minimum width above what a 1366px laptop can give it.
         self._chip_bar = QWidget()
         self._chip_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._chip_bar.setStyleSheet(f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};")
@@ -453,6 +461,7 @@ class _BotLibraryPanel(QWidget):
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
 
+        self._refresh_tag_counts()
         self._rebuild_chips()
 
         # Rebuild category list
@@ -475,52 +484,75 @@ class _BotLibraryPanel(QWidget):
     # Internal
     # ------------------------------------------------------------------
 
-    def _rebuild_chips(self) -> None:
-        """Rebuild the chip row, one chip per tag the library actually uses.
+    def _refresh_tag_counts(self) -> None:
+        """Feed the picker how many bots carry each tag.
 
-        Offering a chip for a tag no bot carries is offering an empty result, so the
-        row is derived from the scanned metas rather than from BOT_TAGS directly —
-        BOT_TAGS only decides the order.
+        A tag with no bots still appears, showing 0 — the picker is the only place
+        the vocabulary is visible, and a silently absent row reads as a bug rather
+        than as an answer.
         """
+        counts = Counter(t for m in self._all_metas for t in m.tags)
+        self._tag_picker.set_counts({tag: counts.get(tag, 0) for tag in BOT_TAGS})
+
+    def _rebuild_chips(self) -> None:
+        """Show one removable chip per *selected* tag; hide the bar when none are."""
         while self._chip_layout.count() > 1:
             item = self._chip_layout.takeAt(0)
             if w := item.widget():
                 w.hide()
                 w.deleteLater()
-        self._chips = {}
 
-        in_use = {t for m in self._all_metas for t in m.tags}
-        for tag in BOT_TAGS:
-            if tag not in in_use:
-                continue
-            chip = QPushButton(tag)
-            chip.setCheckable(True)
+        selected = self._tag_picker.tags()
+        for tag in selected:
+            chip = QPushButton(f"{tag}  ✕")
             chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            chip.setToolTip(f"Remove the {tag} filter")
             chip.setStyleSheet(
-                f"QPushButton {{ background: {THEME.bg}; color: {THEME.text_muted};"
-                f"  border: 1px solid {THEME.border}; border-radius: 9px;"
-                f"  padding: 2px 9px; font-size: 10px; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
-                f"QPushButton:checked {{ background: {THEME.accent}; color: {THEME.pill_text};"
-                f"  border-color: {THEME.accent}; font-weight: bold; }}"
+                f"QPushButton {{ background: {THEME.accent}; color: {THEME.pill_text};"
+                f"  border: none; border-radius: 9px;"
+                f"  padding: 2px 9px; font-size: 10px; font-weight: bold; }}"
+                f"QPushButton:hover {{ background: {THEME.edge_selected}; }}"
             )
-            chip.toggled.connect(lambda _checked: self._apply_filter())
+            chip.clicked.connect(lambda _checked=False, t=tag: self._remove_tag(t))
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
-            self._chips[tag] = chip
-        self._chip_bar.setVisible(bool(self._chips))
+
+        if selected:
+            clear = QPushButton("Clear")
+            clear.setCursor(Qt.CursorShape.PointingHandCursor)
+            clear.setFlat(True)
+            clear.setStyleSheet(
+                f"QPushButton {{ color: {THEME.text_muted}; border: none;"
+                f"  padding: 2px 6px; font-size: 10px; }}"
+                f"QPushButton:hover {{ color: {THEME.text}; }}"
+            )
+            clear.clicked.connect(lambda: self._set_tag_selection([]))
+            self._chip_layout.insertWidget(self._chip_layout.count() - 1, clear)
+
+        self._chip_bar.setVisible(bool(selected))
+
+    def _remove_tag(self, tag: str) -> None:
+        self._set_tag_selection([t for t in self._tag_picker.tags() if t != tag])
+
+    def _set_tag_selection(self, tags: list[str]) -> None:
+        """Change the selection and re-filter — set_selection does not emit."""
+        self._tag_picker.set_selection(tags)
+        self._rebuild_chips()
+        self._apply_filter()
+
+    def _on_tag_selection_changed(self, _keys: list) -> None:
+        self._rebuild_chips()
+        self._apply_filter()
 
     def _selected_tags(self) -> set[str]:
-        return {tag for tag, chip in self._chips.items() if chip.isChecked()}
+        return set(self._tag_picker.tags())
 
     def _clear_filters(self) -> None:
-        """Reset search text and chips without triggering a filter pass for each."""
+        """Reset search text and tags without triggering a filter pass for each."""
         self._search.blockSignals(True)
         self._search.clear()
         self._search.blockSignals(False)
-        for chip in self._chips.values():
-            chip.blockSignals(True)
-            chip.setChecked(False)
-            chip.blockSignals(False)
+        self._tag_picker.set_selection([])
+        self._rebuild_chips()
 
     def _on_category_row_changed(self, row: int) -> None:
         if row < 0:

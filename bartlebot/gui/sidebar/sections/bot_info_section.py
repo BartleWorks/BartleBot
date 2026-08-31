@@ -4,16 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QEvent, pyqtSignal
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
-    QMenu,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
-from bartlebot.gui.menu_utils import anchor_menu_to_window
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarField,
     SidebarSection,
@@ -21,7 +17,7 @@ from bartlebot.gui.sidebar.sidebar_section import (
     value_edit_multi,
     value_label,
 )
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.tag_picker import TagPickerButton
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -48,91 +44,6 @@ def _swappable(label_w: QWidget, edit_w: QWidget) -> QWidget:
 def tags_summary(tags: list[str]) -> str:
     """The one-line rendering of a tag list, shared by the label and the button."""
     return ", ".join(tags) if tags else _PLACEHOLDER
-
-
-class _TagButton(QToolButton):
-    """Edit-mode picker for a bot's type tags — a checkable menu of the vocabulary.
-
-    The vocabulary is fixed (``bartlebot/bot_tags.py``), so a menu of checkboxes says
-    everything a free-text field would and cannot produce an invalid value. Selection
-    is stored in ``BOT_TAGS`` order, which is the order it is written to the file.
-    """
-
-    tags_changed = pyqtSignal(list)
-
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        self._tags: set[str] = set()
-        self._actions: dict[str, object] = {}
-        self._applying_style = False
-        self.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._apply_style()
-
-        # Built once and kept on the button, so it must be anchored to the window it
-        # pops up over rather than to the sidebar widget it is parented to (#119).
-        menu = anchor_menu_to_window(QMenu(self))
-        for group, tags in TAG_GROUPS.items():
-            menu.addSection(group)
-            for tag in tags:
-                act = menu.addAction(tag)
-                act.setCheckable(True)
-                act.toggled.connect(lambda checked, t=tag: self._on_toggled(t, checked))
-                self._actions[tag] = act
-        self.setMenu(menu)
-        self._refresh_text()
-
-    # -- public API ----------------------------------------------------
-
-    def set_tags(self, tags: list[str]) -> None:
-        """Set the selection without emitting ``tags_changed``."""
-        self._tags = set(tags)
-        for tag, act in self._actions.items():
-            act.blockSignals(True)
-            act.setChecked(tag in self._tags)
-            act.blockSignals(False)
-        self._refresh_text()
-
-    def tags(self) -> list[str]:
-        return [t for t in BOT_TAGS if t in self._tags]
-
-    # -- internals -----------------------------------------------------
-
-    def _on_toggled(self, tag: str, checked: bool) -> None:
-        if checked:
-            self._tags.add(tag)
-        else:
-            self._tags.discard(tag)
-        self._refresh_text()
-        self.tags_changed.emit(self.tags())
-
-    def _refresh_text(self) -> None:
-        self.setText(tags_summary(self.tags()))
-
-    def _apply_style(self) -> None:
-        # The re-entrancy guard is load-bearing, not defensive: this widget styles
-        # *itself*, and setStyleSheet delivers a StyleChange back to the same widget.
-        # Without the flag, changeEvent -> _apply_style -> changeEvent recurses until
-        # the stack overflows and the process dies with no traceback (0xC0000409).
-        # Same shape as _SearchButton in sidebar/combat_tab.py.
-        if self._applying_style:
-            return
-        self._applying_style = True
-        try:
-            self.setStyleSheet(
-                f"QToolButton {{ background: {THEME.surface}; color: {THEME.text};"
-                f"  border: 1px solid {THEME.border}; border-radius: 3px;"
-                f"  padding: 3px 6px; text-align: left; }}"
-                f"QToolButton:hover {{ border-color: {THEME.accent}; }}"
-            )
-        finally:
-            self._applying_style = False
-
-    def changeEvent(self, event: QEvent) -> None:
-        # Stylesheets set at __init__ are not re-applied when the app stylesheet
-        # changes, so a theme switch would leave stale colors behind.
-        super().changeEvent(event)
-        if event.type() == QEvent.Type.StyleChange:
-            self._apply_style()
 
 
 class BotInfoSection(SidebarSection):
@@ -172,7 +83,7 @@ class BotInfoSection(SidebarSection):
         self._authors_edit.setReadOnly(False)
 
         self._tags_lbl = value_label(wrap=True)
-        self._tags_btn = _TagButton()
+        self._tags_btn = TagPickerButton(title="Bot tags", placeholder=_PLACEHOLDER)
 
         # Initial and Recovery are read-only here.  Both are set from the state's own
         # properties panel, where the badge that shows the role already lives (#71);
@@ -210,7 +121,7 @@ class BotInfoSection(SidebarSection):
         self._desc_edit.textChanged.connect(self._on_desc_changed)
         self._start_edit.textChanged.connect(self._on_start_changed)
         self._authors_edit.textChanged.connect(self._on_authors_changed)
-        self._tags_btn.tags_changed.connect(self._on_tags_changed)
+        self._tags_btn.selection_changed.connect(self._on_tags_changed)
 
         self.set_config(None)
 
@@ -236,7 +147,7 @@ class BotInfoSection(SidebarSection):
                 self._recovery_lbl,
             ):
                 lbl.setText(_PLACEHOLDER)
-            self._tags_btn.set_tags([])
+            self._tags_btn.set_selection([])
             for w in (
                 self._name_edit,
                 self._version_edit,
@@ -258,7 +169,7 @@ class BotInfoSection(SidebarSection):
             self._start_edit.setText(config.start_location or "")
             self._authors_edit.setText(config.authors or "")
             self._tags_lbl.setText(tags_summary(config.tags))
-            self._tags_btn.set_tags(config.tags)
+            self._tags_btn.set_selection(config.tags)
             self._set_role_labels(config.states, config.initial, config.recovery_state)
         self._suppress = False
 
@@ -322,10 +233,11 @@ class BotInfoSection(SidebarSection):
         self._authors_lbl.setText(text or _PLACEHOLDER)
         self.metadata_changed.emit()
 
-    def _on_tags_changed(self, tags: list) -> None:
+    def _on_tags_changed(self, _keys: list) -> None:
         if self._suppress or self._config is None:
             return
-        self._config.tags = list(tags)
+        # tags() re-orders the selection into BOT_TAGS order, which is what gets saved.
+        self._config.tags = self._tags_btn.tags()
         self._tags_lbl.setText(tags_summary(self._config.tags))
         self.metadata_changed.emit()
 
