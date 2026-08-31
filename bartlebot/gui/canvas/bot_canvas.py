@@ -262,14 +262,22 @@ class _BotCard(QWidget):
         name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
         header.addWidget(name_lbl, 0)
 
+        # Neutral grey, not the accent it used to be. Colour on this card now means
+        # "tag group", and a version is not one — spending the accent on it made the
+        # loudest pill the one carrying the least information.
         if self._meta.version:
-            pill = _pill(f"v{self._meta.version}", THEME.accent, THEME.pill_text)
+            pill = _pill(f"v{self._meta.version}", THEME.chip_neutral_bg, THEME.pill_text)
             header.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
 
-        # Tag pills are deliberately quieter than the accent-coloured version pill —
-        # a card with five tags should still read as a name first.
+        # One palette for a tag everywhere it appears: the dot in the picker, the chip
+        # in the filter bar, and this pill. Someone who filters by Rewards and scans
+        # the results should be matching a colour, not re-reading every pill.
         for tag in self._meta.tags:
-            header.addWidget(_pill(tag, THEME.bg, THEME.text_muted), 0, Qt.AlignmentFlag.AlignVCenter)
+            header.addWidget(
+                _pill(tag, group_accent(tag_group(tag)), THEME.pill_text),
+                0,
+                Qt.AlignmentFlag.AlignVCenter,
+            )
 
         header.addStretch()
         layout.addLayout(header)

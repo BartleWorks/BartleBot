@@ -8,9 +8,11 @@ import sys
 from pathlib import Path
 
 import pytest
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QLabel
 
-from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel, _BotMeta, filter_bot_metas
+from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, filter_bot_metas
+from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.tag_picker import group_accent
 
 
 def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None = None, **kw) -> _BotMeta:
@@ -177,3 +179,36 @@ def test_a_category_narrows_what_the_tags_search(qapp):
 
     panel._cat_list.setCurrentRow(1)
     assert _names(filter_bot_metas(panel._category_metas(), "", {"Gear"})[0]) == ["Mt Olympus"]
+
+
+# ---------------------------------------------------------------------------
+# Card pills
+# ---------------------------------------------------------------------------
+
+
+def _pill_styles(card: _BotCard) -> str:
+    return " ".join(lbl.styleSheet() for lbl in card.findChildren(QLabel))
+
+
+def test_a_tag_pill_is_coloured_by_its_group(qapp):
+    """One palette for a tag everywhere: picker dot, filter chip, card pill.
+
+    JADE carries Gear (Rewards) and Boss (Activity), so both hues appear.
+    """
+    styles = _pill_styles(_BotCard(JADE))
+
+    assert group_accent("Rewards") in styles
+    assert group_accent("Activity") in styles
+
+
+def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):
+    """Colour on the card means "tag group" now, and a version is not one — the
+    accent was being spent on the pill carrying the least information.
+
+    Tagless, because the accent doubles as the Rewards group's colour: on a bot
+    carrying one, finding it in the stylesheets proves nothing about the version.
+    """
+    styles = _pill_styles(_BotCard(_meta("Untagged")))
+
+    assert THEME.chip_neutral_bg in styles
+    assert f"background: {THEME.accent}" not in styles
