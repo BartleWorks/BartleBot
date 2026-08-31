@@ -120,8 +120,8 @@ async def test_wizard_city_stops_at_ravenwood_without_using_the_door():
     door.assert_not_awaited()
 
 
-async def test_wizard_city_does_not_stop_in_the_dorm():
-    """The dorm matches WizardCity/* but is not a place a bot can carry on from."""
+async def test_wizard_city_passing_through_the_dorm_does_not_stop_there():
+    """The route runs to completion: Ravenwood, not the dorm it goes through on the way."""
     client = _client("Krokotopia/KT_Z00_Hub")
     seen: list[str] = []
 
@@ -134,6 +134,48 @@ async def test_wizard_city_does_not_stop_in_the_dorm():
 
     assert result == "SUCCESS"
     assert seen == ["ravenwood"]
+
+
+async def test_starting_in_the_dorm_is_not_already_in_wizard_city():
+    """#157: the dorm matches WizardCity/* but is not a place a bot can carry on from.
+
+    HOME lands every client here, so this is the ordinary starting position — counting it
+    as arrival returned SUCCESS with everyone still shut inside the dorm.
+    """
+    client = _client(gtw.wizard_city.DORM_ZONE)
+
+    with _route_ok() as route, _enter_ok() as enter, _list_ok() as door:
+        result = await gtw.run(FakeMachine(), [client], {"world": "WizardCity"})
+
+    assert result == "SUCCESS"
+    route.assert_awaited_once()
+    # Wizard City still needs neither the World Tree chamber nor the door.
+    enter.assert_not_awaited()
+    door.assert_not_awaited()
+
+
+async def test_one_client_in_the_dorm_makes_everyone_travel():
+    """The short circuit is all-or-nothing, and the dorm never satisfies it."""
+    clients = [_client(_RAVENWOOD), _client(gtw.wizard_city.DORM_ZONE)]
+
+    with _route_ok() as route, _enter_ok(), _list_ok():
+        result = await gtw.run(FakeMachine(), clients, {"world": "WizardCity"})
+
+    assert result == "SUCCESS"
+    route.assert_awaited_once()
+
+
+async def test_the_dorm_only_disqualifies_the_world_it_is_in():
+    """A Darkmoor house interior is still Darkmoor — only the dorm is carved out."""
+    client = _client("Darkmoor/Interiors/DM_Z01I17_SandersonHouse")
+
+    with _route_ok() as route, _enter_ok() as enter, _list_ok() as door:
+        result = await gtw.run(FakeMachine(), [client], {"world": "Darkmoor"})
+
+    assert result == "SUCCESS"
+    route.assert_not_awaited()
+    enter.assert_not_awaited()
+    door.assert_not_awaited()
 
 
 # ══════════════════════════════════════════════════════════════════════════════
