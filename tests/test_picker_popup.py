@@ -242,14 +242,33 @@ def test_selection_caption_counts():
     assert selection_caption(3) == "3 selected"
 
 
-def test_clear_is_hidden_until_something_is_selected(qapp):
+def test_clear_is_not_offered_until_something_is_selected(qapp):
     popup = PickerPopup("T", SECTIONS)
+    popup._header.resize(300, 28)
 
-    assert not popup._clear_btn.isVisibleTo(popup)
+    assert THEME.accent not in _colors(popup._header)
 
     popup._on_row_toggled("apple", True)
 
-    assert popup._clear_btn.isVisibleTo(popup)
+    assert THEME.accent in _colors(popup._header)
+
+
+def test_clicking_clear_in_the_header_empties_the_selection(qapp):
+    """Clear is hit-tested against the rectangle the paint pass measured, since it
+    is drawn rather than being a child widget."""
+    popup = PickerPopup("T", SECTIONS, ["apple"])
+    popup._header.resize(300, 28)
+    popup._header.grab()  # lays out _clear_rect
+
+    QTest.mouseClick(popup._header, Qt.MouseButton.LeftButton, pos=popup._header._clear_rect.center())
+
+    assert popup.selection() == []
+
+
+def test_the_header_shows_the_count(qapp):
+    popup = PickerPopup("T", SECTIONS, ["apple", "kale"])
+
+    assert popup._header._caption == "2 selected"
 
 
 def test_clear_empties_the_selection_and_the_checkboxes(qapp):

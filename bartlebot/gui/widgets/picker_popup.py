@@ -33,7 +33,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QToolButton,
@@ -291,6 +290,109 @@ class _RowWidget(QWidget):
         super().mousePressEvent(event)
 
 
+HEADER_HEIGHT = 28
+
+
+class _HeaderBar(QWidget):
+    """The popup's title row: name on the left, selection count and Clear on the right.
+
+    Painted rather than assembled, for the reason the rows are: a QLabel's frame is
+    the style's to draw, and between that and fractional display scaling the labels
+    were leaving hairlines along their bottom edges — one the width of the title, one
+    the width of an empty count label parked on the right. Text that is only ever
+    drawn cannot grow an edge.
+
+    Clear is hit-tested against the rectangle the paint pass measured, so there is no
+    child widget for it either.
+    """
+
+    clear_clicked = pyqtSignal()
+
+    def __init__(self, title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._title = title
+        self._caption = ""
+        self._clear_rect = QRect()
+        self._clear_hover = False
+        self.setMouseTracking(True)
+        self.setFixedHeight(HEADER_HEIGHT)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+    def set_state(self, caption: str, show_clear: bool) -> None:
+        self._caption = caption
+        self._show_clear = show_clear
+        self.update()
+
+    _show_clear = False
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect()
+        painter.fillRect(rect, QColor(THEME.surface))
+
+        right = rect.width() - _PAD_X
+        self._clear_rect = QRect()
+        small = QFont(self.font())
+        small.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+
+        if self._show_clear:
+            painter.setFont(small)
+            w = painter.fontMetrics().horizontalAdvance("Clear")
+            self._clear_rect = QRect(right - w, 0, w, rect.height())
+            painter.setPen(QColor(THEME.accent))
+            painter.drawText(
+                self._clear_rect,
+                int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter),
+                "Clear",
+            )
+            if self._clear_hover:
+                baseline = rect.height() // 2 + painter.fontMetrics().ascent() // 2 + 1
+                painter.fillRect(self._clear_rect.x(), baseline, w, 1, QColor(THEME.accent))
+            right -= w + _GAP
+
+        if self._caption:
+            painter.setFont(small)
+            w = painter.fontMetrics().horizontalAdvance(self._caption)
+            painter.setPen(QColor(THEME.text_muted))
+            painter.drawText(
+                QRect(right - w, 0, w, rect.height()),
+                int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter),
+                self._caption,
+            )
+            right -= w + _GAP
+
+        title_font = QFont(self.font())
+        title_font.setBold(True)
+        painter.setFont(title_font)
+        painter.setPen(QColor(THEME.text))
+        title_rect = QRect(_PAD_X, 0, max(right - _PAD_X, 0), rect.height())
+        painter.drawText(
+            title_rect,
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            painter.fontMetrics().elidedText(self._title, Qt.TextElideMode.ElideRight, title_rect.width()),
+        )
+        painter.end()
+
+    def mouseMoveEvent(self, event) -> None:
+        over = self._clear_rect.contains(event.pos())
+        if over != self._clear_hover:
+            self._clear_hover = over
+            self.setCursor(Qt.CursorShape.PointingHandCursor if over else Qt.CursorShape.ArrowCursor)
+            self.update()
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._clear_hover = False
+        self.update()
+        super().leaveEvent(event)
+
+    def mousePressEvent(self, event) -> None:
+        if self._clear_rect.contains(event.pos()):
+            self.clear_clicked.emit()
+        super().mousePressEvent(event)
+
+
 class PickerPopup(QWidget):
     """The popup itself. Selection is reported live, as each row is toggled."""
 
@@ -332,29 +434,9 @@ class PickerPopup(QWidget):
         top_col.setContentsMargins(0, 0, 0, 0)
         top_col.setSpacing(0)
 
-        header = QHBoxLayout()
-        header.setContentsMargins(10, 7, 8, 5)
-        header.setSpacing(6)
-        self._title = QLabel(title)
-        tf = self._title.font()
-        tf.setBold(True)
-        self._title.setFont(tf)
-        header.addWidget(self._title, 1)
-
-        self._count_lbl = QLabel()
-        self._count_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
-        header.addWidget(self._count_lbl, 0)
-
-        self._clear_btn = QPushButton("Clear")
-        self._clear_btn.setFlat(True)
-        self._clear_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._clear_btn.setStyleSheet(
-            f"QPushButton {{ color: {THEME.accent}; border: none; padding: 0 2px; font-size: 10px; }}"
-            f"QPushButton:hover {{ text-decoration: underline; }}"
-        )
-        self._clear_btn.clicked.connect(self._clear)
-        header.addWidget(self._clear_btn, 0)
-        top_col.addLayout(header)
+        self._header = _HeaderBar(title)
+        self._header.clear_clicked.connect(self._clear)
+        top_col.addWidget(self._header)
 
         self._search = SearchLineEdit(search_placeholder)
         self._search.setClearButtonEnabled(True)
@@ -461,8 +543,7 @@ class PickerPopup(QWidget):
         self.selection_changed.emit([])
 
     def _refresh_header(self) -> None:
-        self._count_lbl.setText(selection_caption(len(self._selected)))
-        self._clear_btn.setVisible(bool(self._selected))
+        self._header.set_state(selection_caption(len(self._selected)), bool(self._selected))
 
     def _rebuild(self) -> None:
         while self._body_layout.count() > 1:
@@ -490,7 +571,7 @@ class PickerPopup(QWidget):
             header.setContentsMargins(10, 3, 10, 3)
             header.setStyleSheet(
                 f"#PickerSection {{ background: {THEME.surface}; color: {THEME.text_subtle};"
-                f"  font-size: 10px; font-weight: bold; }}"
+                f"  font-size: 10px; font-weight: bold; border: none; }}"
             )
             self._body_layout.insertWidget(at, header)
             at += 1
@@ -538,7 +619,11 @@ class PickerPopup(QWidget):
                 # indicator keeps the platform's own checkmark. spacing: 0 removes the
                 # gap the box reserves for text it does not have.
                 f"QCheckBox {{ background: transparent; spacing: 0; }}"
-                f"QLabel {{ color: {THEME.text}; background: transparent; }}"
+                # border: none is not redundant. Left unsaid, a QLabel's frame is the
+                # style's to draw, and under some styles and at fractional display
+                # scaling it lands as a hairline along the label's bottom edge — which
+                # is what put an underline beneath the title and the count.
+                f"QLabel {{ color: {THEME.text}; background: transparent; border: none; }}"
                 f'QFrame[frameShape="4"] {{ color: {THEME.border}; }}'
                 f"QLineEdit {{ background: {THEME.bg}; color: {THEME.text};"
                 f"  border: 1px solid {THEME.border}; border-radius: 4px; padding: 3px 6px; }}"
