@@ -17,11 +17,13 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import (
     _BOX,
     _PAD_X,
+    POPUP_MIN_HEIGHT,
     PickerButton,
     PickerPopup,
     PickerRow,
     _RowWidget,
     filter_sections,
+    popup_height,
     popup_position,
     selection_caption,
     should_open,
@@ -653,3 +655,45 @@ def test_a_popup_taller_than_the_screen_is_clamped_rather_than_pushed_off_the_to
     pos = popup_position(QRect(300, 900, 90, 24), QSize(400, 2000), _SCREEN)
 
     assert pos.y() == _SCREEN.top()
+
+
+# -- popup height ----------------------------------------------------------
+#
+# The bot library's top bar is the top of main_window's *bottom* splitter pane, so
+# on a 1080p screen a full-height popup fits in neither direction and the placement
+# used to clamp — sliding the popup until it no longer met its button.
+
+
+def test_a_popup_with_room_below_keeps_its_ideal_height():
+    assert popup_height(QRect(600, 200, 90, 24), 420, _SCREEN) == 420
+
+
+def test_a_popup_low_on_the_screen_shrinks_rather_than_clamping():
+    # 700px above this anchor, 356 below: the popup opens upward at full height.
+    assert popup_height(QRect(600, 700, 90, 24), 420, _SCREEN) == 420
+
+    # A taller ideal that neither side can hold is cut to the roomier side (676
+    # below) rather than clamped to the screen and slid off its button.
+    assert popup_height(QRect(600, 380, 90, 24), 700, _SCREEN) == 676
+
+
+def test_the_larger_side_decides_the_height():
+    """Height is chosen for whichever direction popup_position will pick."""
+    low = QRect(600, 900, 90, 24)  # 156 below, 900 above
+
+    assert popup_height(low, 420, _SCREEN) == 420
+
+
+def test_a_popup_is_never_shrunk_past_its_minimum():
+    """Below this the header and search box stop fitting, which is worse than
+    overhanging a screen edge — a screen edge at least still shows rows."""
+    tiny = QRect(0, 0, 90, 24)
+    cramped = QRect(0, 0, 1920, 120)
+
+    assert popup_height(tiny, 420, cramped) == POPUP_MIN_HEIGHT
+
+
+def test_shrinking_does_not_depend_on_the_screen_being_1080p():
+    uhd = QRect(0, 0, 3840, 2160)
+
+    assert popup_height(QRect(600, 700, 90, 24), 420, uhd) == 420

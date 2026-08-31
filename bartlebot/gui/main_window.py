@@ -55,7 +55,7 @@ class MainWindow(QMainWindow):
         self.action_new.setShortcut(QKeySequence("Ctrl+N"))
         file_menu.addAction(self.action_new)
 
-        self.action_open = QAction("Open Bot", self)
+        self.action_open = QAction("Open Bot File…", self)
         self.action_open.setShortcut(QKeySequence("Ctrl+O"))
         file_menu.addAction(self.action_open)
 

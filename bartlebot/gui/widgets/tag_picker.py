@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
+from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
@@ -31,14 +31,6 @@ def group_accent(group: str) -> str:
     return getattr(THEME, GROUP_ACCENT.get(group, "text_muted"))
 
 
-def tag_group(tag: str) -> str:
-    """The group *tag* belongs to, or an empty string if it is not in the vocabulary."""
-    for group, tags in TAG_GROUPS.items():
-        if tag in tags:
-            return group
-    return ""
-
-
 def count_label(n: int) -> str:
     """The right-hand meta text for a tag used by *n* bots.
 
@@ -48,8 +40,8 @@ def count_label(n: int) -> str:
     return f"{n} bot" if n == 1 else f"{n} bots"
 
 
-def tag_sections(counts: dict[str, int] | None = None) -> list[Section]:
-    """Build the popup's sections from the vocabulary.
+def tag_sections(counts: dict[str, int] | None = None, group: str | None = None) -> list[Section]:
+    """Build the popup's sections from the vocabulary, or from one *group* of it.
 
     A tag with a zero count is still listed, dimmed. In the editor every tag must be
     offerable regardless of what the library happens to hold today, and in the
@@ -59,25 +51,39 @@ def tag_sections(counts: dict[str, int] | None = None) -> list[Section]:
     under each one doubled the row height for nothing. What a description would have
     had to explain is a comment in bartlebot/bot_tags.py, where someone tagging a bot
     will actually read it.
+
+    *group* narrows the popup to one group's tags. The library opens one button per
+    group, so that each is labelled with the facet it filters — "Rewards", "Activity"
+    — and the vocabulary is legible without opening anything. Bot Info passes None
+    and gets the whole thing, because tagging a bot is one decision across both.
     """
     sections: list[Section] = []
-    for group, tags in TAG_GROUPS.items():
+    for name, tags in TAG_GROUPS.items():
+        if group is not None and name != group:
+            continue
         rows = [
             PickerRow(
                 key=tag,
                 label=tag,
                 meta=("" if counts is None else count_label(counts.get(tag, 0))),
-                accent=group_accent(group),
+                accent=group_accent(name),
                 dim=(counts is not None and counts.get(tag, 0) == 0),
             )
             for tag in tags
         ]
-        sections.append((group, rows))
+        sections.append((name, rows))
     return sections
 
 
 class TagPickerButton(PickerButton):
-    """A :class:`PickerButton` preloaded with the bot-tag vocabulary."""
+    """A :class:`PickerButton` preloaded with the bot-tag vocabulary.
+
+    Pass *group* to offer only that group's tags; the default offers all of them.
+    """
+
+    #: Class-level default so ``PickerButton.__init__`` can call ``format_text``
+    #: before the instance attribute is assigned.
+    _group: str | None = None
 
     def __init__(
         self,
@@ -85,6 +91,7 @@ class TagPickerButton(PickerButton):
         title: str = "Bot tags",
         placeholder: str = "—",
         counts: dict[str, int] | None = None,
+        group: str | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(
@@ -93,11 +100,29 @@ class TagPickerButton(PickerButton):
             search_placeholder="Filter tags…",
             parent=parent,
         )
+        self._group = group
         self.set_counts(counts)
+
+    @property
+    def group(self) -> str | None:
+        """The tag group this button offers, or None for the whole vocabulary."""
+        return self._group
+
+    def format_text(self, labels: list[str]) -> str:
+        """Keep a grouped button labelled with its group, plus a count when active.
+
+        A grouped picker is one of a row of facets, so its name has to stay legible
+        whether or not anything is selected — that name is the only thing advertising
+        the vocabulary to someone who has not opened it. The count is what says a
+        filter is on without making the user read the chip bar.
+        """
+        if self._group is None:
+            return super().format_text(labels)
+        return self._group if not labels else f"{self._group} ({len(labels)})"
 
     def set_counts(self, counts: dict[str, int] | None) -> None:
         """Rebuild the rows against fresh per-tag bot counts."""
-        self.set_sections(tag_sections(counts))
+        self.set_sections(tag_sections(counts, self._group))
 
     def tags(self) -> list[str]:
         """Selected tags, in ``BOT_TAGS`` order."""

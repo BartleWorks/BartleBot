@@ -4,9 +4,13 @@ The panel itself is a QWidget, so the filtering is a pure module-level function 
 only that is tested here — same convention as tests/test_bot_canvas_paths.py.
 """
 
+import sys
 from pathlib import Path
 
-from bartlebot.gui.canvas.bot_canvas import _BotMeta, filter_bot_metas
+import pytest
+from PyQt6.QtWidgets import QApplication
+
+from bartlebot.gui.canvas.bot_canvas import _BotLibraryPanel, _BotMeta, filter_bot_metas
 
 
 def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None = None, **kw) -> _BotMeta:
@@ -78,10 +82,30 @@ def test_a_single_tag_filters_with_no_query():
     assert _names(results) == ["Jade Oni", "Mt Olympus"]
 
 
-def test_two_tags_and_together_rather_than_or():
+def test_tags_from_different_groups_and_together():
+    """Rewards and Activity answer different questions, so combining them narrows."""
     results, _ = filter_bot_metas(ALL, "", {"Spellements", "Dungeon"})
 
     assert _names(results) == ["Mt Olympus"]
+
+
+def test_tags_within_one_group_or_together():
+    """Two buttons make this a faceted filter, and a facet ORs inside itself.
+
+    ANDing here would ask for a bot dropping both Gear and Reagents, which is a
+    question almost nothing answers — the old behaviour, and why one combined
+    picker could produce an empty list from two reasonable-looking clicks.
+    """
+    results, _ = filter_bot_metas(ALL, "", {"Gear", "Reagents"})
+
+    assert _names(results) == ["Jade Oni", "Nightside Flax", "Waterworks", "Mt Olympus"]
+
+
+def test_or_within_a_group_still_intersects_the_other_group():
+    """ "Gear or Reagents" AND "Gathering" — Jade Oni has Gear but is a Boss."""
+    results, _ = filter_bot_metas(ALL, "", {"Gear", "Reagents", "Gathering"})
+
+    assert _names(results) == ["Nightside Flax"]
 
 
 def test_tags_and_query_intersect():
@@ -101,3 +125,55 @@ def test_whitespace_only_query_is_treated_as_no_query():
 
 def test_a_tag_no_bot_carries_yields_nothing():
     assert filter_bot_metas(ALL, "", {"Mounts"})[0] == []
+
+
+@pytest.fixture(scope="session")
+def qapp():
+    return QApplication.instance() or QApplication(sys.argv)
+
+
+# ---------------------------------------------------------------------------
+# The panel, where category and filters compose
+#
+# A QWidget, so only the composition is checked here — the same latitude
+# tests/test_tag_picker.py takes for the picker button.
+# ---------------------------------------------------------------------------
+
+
+def test_the_category_list_starts_with_all(qapp):
+    """Without it there is no way back to the whole library once a world is clicked,
+    and nothing for a cross-world tag filter to be scoped to."""
+    panel = _BotLibraryPanel()
+
+    assert panel._cat_list.item(0).text() == panel._ALL
+
+
+def test_switching_category_keeps_the_tag_filter(qapp):
+    """It used to clear it, because a filter replaced the listing rather than
+    narrowing it. Now that they compose, clearing is just discarding the user's work."""
+    panel = _BotLibraryPanel()
+    panel._set_tag_selection(["Gear"])
+
+    panel._cat_list.setCurrentRow(panel._cat_list.count() - 1)
+
+    assert panel._selected_tag_list() == ["Gear"]
+
+
+def test_a_category_narrows_what_the_tags_search(qapp):
+    """The world is one more facet, so it intersects rather than being overridden."""
+    panel = _BotLibraryPanel()
+    panel._all_metas = list(ALL)
+    panel._category_map = {"Aquila": [OLYMPUS]}
+    panel._cat_list.clear()
+    panel._cat_list.addItem(panel._ALL)
+    panel._cat_list.addItem("Aquila")
+
+    panel._cat_list.setCurrentRow(0)
+    assert _names(filter_bot_metas(panel._category_metas(), "", {"Gear"})[0]) == [
+        "Jade Oni",
+        "Waterworks",
+        "Mt Olympus",
+    ]
+
+    panel._cat_list.setCurrentRow(1)
+    assert _names(filter_bot_metas(panel._category_metas(), "", {"Gear"})[0]) == ["Mt Olympus"]

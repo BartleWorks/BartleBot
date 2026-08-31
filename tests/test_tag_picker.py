@@ -182,3 +182,50 @@ def test_the_editor_offers_no_counts(qapp):
 
     assert all(w._row.meta == "" for w in section._tags_btn._popup.findChildren(_RowWidget))
     section._tags_btn._popup.close()
+
+
+# ---------------------------------------------------------------------------
+# One button per group
+# ---------------------------------------------------------------------------
+
+
+def test_a_grouped_button_offers_only_its_own_group(qapp):
+    btn = TagPickerButton(group="Activity")
+    btn._open()
+
+    assert len(btn._popup.findChildren(_RowWidget)) == len(TAG_GROUPS["Activity"])
+    btn._popup.close()
+
+
+def test_a_grouped_button_keeps_its_group_name_when_nothing_is_selected(qapp):
+    """The name is the only thing advertising the vocabulary to someone who has
+    not opened the popup, so it must not be replaced by a placeholder dash."""
+    assert TagPickerButton(group="Rewards", placeholder="Rewards").text() == "Rewards"
+
+
+def test_a_grouped_button_counts_its_selection_rather_than_listing_it(qapp):
+    btn = TagPickerButton(group="Rewards", placeholder="Rewards")
+    btn._open()
+
+    btn._popup._on_row_toggled("Gear", True)
+    btn._popup._on_row_toggled("Jewels", True)
+
+    assert btn.text() == "Rewards (2)"
+    btn._popup.close()
+
+
+def test_an_ungrouped_button_still_lists_its_selection(qapp):
+    """Bot Info has one picker, where naming what is selected beats counting it."""
+    btn = TagPickerButton()
+    btn._open()
+
+    btn._popup._on_row_toggled("Gear", True)
+
+    assert btn.text() == "Gear"
+    btn._popup.close()
+
+
+def test_tag_sections_for_a_group_drops_the_others():
+    sections = tag_sections(group="Activity")
+
+    assert [name for name, _ in sections] == ["Activity"]

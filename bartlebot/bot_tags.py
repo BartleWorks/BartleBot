@@ -55,6 +55,20 @@ BOT_TAGS: tuple[str, ...] = tuple(tag for group in TAG_GROUPS.values() for tag i
 _TAG_ORDER: dict[str, int] = {tag: i for i, tag in enumerate(BOT_TAGS)}
 
 
+def tag_group(tag: str) -> str:
+    """The group *tag* belongs to, or an empty string if it is not in the vocabulary.
+
+    Lives here rather than beside the picker because the grouping is vocabulary
+    knowledge, and the library's filtering needs it as much as the widget does: a
+    selection is ORed within a group and ANDed across groups, which cannot be
+    decided without knowing which group each tag came from.
+    """
+    for group, tags in TAG_GROUPS.items():
+        if tag in tags:
+            return group
+    return ""
+
+
 def normalize_tags(raw: object) -> list[str]:
     """Coerce a bot file's raw ``tags`` value into a valid, ordered, de-duplicated list.
 

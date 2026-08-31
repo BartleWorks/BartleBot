@@ -44,7 +44,20 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 POPUP_WIDTH = 400
-POPUP_MAX_HEIGHT = 560
+
+#: Tallest a popup may be even with room to spare. The bot-tag vocabulary is split
+#: across two buttons, so nothing offered today needs the 560 this was before.
+POPUP_MAX_HEIGHT = 420
+
+#: Shortest a popup may be shrunk to when neither direction can hold it whole. Below
+#: about this the search box and a couple of rows stop fitting and the scroll area is
+#: all that is left, which is worse than overhanging a screen edge.
+POPUP_MIN_HEIGHT = 160
+
+#: The dropdown caret drawn on every :class:`PickerButton`, in px.
+CARET_W = 7
+CARET_H = 4
+CARET_PAD = 6  # gap between the label and the caret
 
 
 @dataclass(frozen=True)
@@ -171,6 +184,30 @@ def popup_position(anchor: QRect, size: QSize, avail: QRect) -> QPoint:
     y = max(avail.top(), min(y, max_y))
 
     return QPoint(x, y)
+
+
+def popup_height(anchor: QRect, ideal: int, avail: QRect, *, minimum: int = POPUP_MIN_HEIGHT) -> int:
+    """How tall a popup opened from *anchor* may actually be.
+
+    ``popup_position`` picks a *direction* at a fixed size and clamps to the screen
+    when neither direction fits. Clamping slides the popup until it no longer meets
+    the button, which is the failure this shortens the popup to avoid: a list that
+    is already scrolling loses nothing by scrolling two rows sooner, and Qt's own
+    ``QMenu`` shortens itself for the same reason.
+
+    The bot library is the case that needs it. Its top bar is the top of the *bottom*
+    splitter pane (``main_window``'s ``_outer_splitter``), so on a 1080p screen the
+    button sits low enough that a full-height popup fits in neither direction, and
+    where it opens is a function of where the user last dragged the splitter.
+
+    Never shrinks below *minimum* — past that the header and search box stop fitting
+    and overhanging a screen edge is the lesser evil. Pure, and module level, for the
+    same reason as :func:`popup_position`.
+    """
+    # top + height, not QRect.bottom(), which is inclusive and one px short.
+    below = (avail.top() + avail.height()) - (anchor.top() + anchor.height())
+    above = anchor.top() - avail.top()
+    return max(minimum, min(ideal, max(below, above)))
 
 
 ROW_HEIGHT = 26
@@ -525,12 +562,15 @@ class PickerPopup(QWidget):
     def popup_at(self, anchor: QWidget) -> None:
         """Show under *anchor*, edges flush, flipping above or across it if it will not fit."""
         self.adjustSize()
-        self.setFixedHeight(min(self.sizeHint().height(), POPUP_MAX_HEIGHT))
+        ideal = min(self.sizeHint().height(), POPUP_MAX_HEIGHT)
         top_left = anchor.mapToGlobal(anchor.rect().topLeft())
         rect = QRect(top_left, anchor.size())
         if screen := anchor.screen():
-            self.move(popup_position(rect, self.size(), screen.availableGeometry()))
+            avail = screen.availableGeometry()
+            self.setFixedHeight(popup_height(rect, ideal, avail))
+            self.move(popup_position(rect, self.size(), avail))
         else:
+            self.setFixedHeight(ideal)
             self.move(QPoint(rect.left(), rect.top() + rect.height()))
         self.show()
         self._search.setFocus()
@@ -745,8 +785,17 @@ class PickerButton(QToolButton):
         by_key = {r.key: r.label for _, rows in self._sections for r in rows}
         return [by_key.get(k, k) for k in self._selected]
 
+    def format_text(self, labels: list[str]) -> str:
+        """The button's caption for *labels*. Overridable — see ``TagPickerButton``.
+
+        The default lists what is selected, which is the most useful thing a lone
+        picker can say. A button that is one of several facets wants its facet's
+        *name* to stay put instead, so the bar reads as a row of filters.
+        """
+        return summarize(labels, self._placeholder)
+
     def _refresh_text(self) -> None:
-        self.setText(summarize(self._labels(), self._placeholder))
+        self.setText(self.format_text(self._labels()))
 
     def _open(self) -> None:
         # Clicking the button while the popup is up dismisses it and then delivers
@@ -783,11 +832,44 @@ class PickerButton(QToolButton):
             self.setStyleSheet(
                 f"QToolButton {{ background: {THEME.surface}; color: {THEME.text};"
                 f"  border: 1px solid {THEME.border}; border-radius: 3px;"
-                f"  padding: 3px 6px; text-align: left; }}"
+                f"  padding: 3px {6 + CARET_W + CARET_PAD}px 3px 6px; text-align: left; }}"
                 f"QToolButton:hover {{ border-color: {THEME.accent}; }}"
             )
         finally:
             self._applying_style = False
+
+    def paintEvent(self, event) -> None:
+        """Draw the label normally, then a caret in the padding reserved for it.
+
+        Always points **down**, whichever way the popup opens. The caret says "this
+        opens something", the way a ``QComboBox`` arrow does — it is not a report of
+        which direction ``popup_height`` and ``popup_position`` settled on, which is
+        a function of screen size and splitter position and changes under the user
+        for no reason they can see. Two of these sit side by side in the bot library
+        and open to different heights; opposite carets on adjacent identical controls
+        would read as a glitch.
+
+        Drawn rather than appended to the text: ``setText`` is ``summarize``'s output,
+        which grows to "Gear, Jewels +2", and a glyph inside that string is a glyph
+        that gets elided away exactly when the button is widest.
+        """
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        cx = self.width() - 6 - CARET_W / 2
+        cy = self.height() / 2
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(THEME.text_muted))
+        painter.drawPolygon(
+            QPolygonF(
+                [
+                    QPointF(cx - CARET_W / 2, cy - CARET_H / 2),
+                    QPointF(cx + CARET_W / 2, cy - CARET_H / 2),
+                    QPointF(cx, cy + CARET_H / 2),
+                ]
+            )
+        )
+        painter.end()
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
