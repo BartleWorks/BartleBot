@@ -9,6 +9,10 @@
   "start_location": "Anywhere in Mirage",
   "drops": [],
   "authors": "BartleBot",
+  "tags": [
+    "Spellements",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

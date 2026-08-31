@@ -1,7 +1,7 @@
 {
   "id": "8f921f91-cc6e-4449-8c7d-218c6e388ac0",
-  "name": "Advisor Fancy Fries (Epic Opal)",
-  "description": "Endlessly farms Advisor Fancy Fries in Rubal Wastes, Mirage.",
+  "name": "Advisor Fancy Fries",
+  "description": "Endlessly farms Advisor Fancy Fries in Rubal Wastes, Mirage. Good for farming the Epic Opal jewel.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
@@ -463,6 +463,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Jewels",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

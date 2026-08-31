@@ -37,6 +37,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.bot_tags import BOT_TAGS, normalize_tags
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
@@ -110,6 +111,7 @@ class _BotMeta:
     description: str
     authors: str
     drops: list[str]
+    tags: list[str]
     start_location: str
     version: str
     path: Path
@@ -142,6 +144,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             description=data.get("description") or "",
             authors=data.get("authors") or "",
             drops=_drop_names(data.get("drops")),
+            tags=normalize_tags(data.get("tags")),
             start_location=data.get("start_location") or "",
             version=data.get("version") or "",
             path=path,
@@ -166,6 +169,52 @@ def _format_category(dir_name: str) -> str:
     """'01_wizard_city' → 'Wizard City'."""
     name = re.sub(r"^\d+_", "", dir_name)
     return name.replace("_", " ").title()
+
+
+def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
+    """Narrow *metas* by free text and by selected tag chips.
+
+    Returns the surviving metas and, for each one the text matched by drop name, the
+    drops that matched — the library card shows those so a hit on a 300-entry drop
+    list explains itself.
+
+    Selected tags **AND** together: a bot must carry every one of them. That is the
+    narrowing model chips imply, and it is what makes "Dungeon + Spellements" useful.
+    The text query is an OR across the fields it searches, tags included.
+
+    Pure, and at module level, so the filtering can be tested without a QApplication
+    — same reasoning as ``_resolve_bots_dir``.
+    """
+    q = query.strip().casefold()
+    results: list[_BotMeta] = []
+    matched_drops: dict[Path, list[str]] = {}
+    for m in metas:
+        if tags and not tags.issubset(m.tags):
+            continue
+        drop_matches = [d for d in m.drops if q in d.casefold()]
+        if q and not (
+            q in m.name.casefold()
+            or q in m.description.casefold()
+            or q in m.authors.casefold()
+            or any(q in t.casefold() for t in m.tags)
+            or drop_matches
+        ):
+            continue
+        results.append(m)
+        if q and drop_matches:
+            matched_drops[m.path] = drop_matches
+    return results, matched_drops
+
+
+def _pill(text: str, bg: str, fg: str) -> QLabel:
+    """Small rounded caption used for a bot card's version and tags."""
+    lbl = QLabel(text)
+    lbl.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    lbl.setStyleSheet(
+        f"background: {bg}; color: {fg};font-size: 9px; font-weight: bold; border-radius: 7px; padding: 1px 6px;"
+    )
+    lbl.setFixedHeight(14)
+    return lbl
 
 
 class _BotCard(QWidget):
@@ -200,14 +249,13 @@ class _BotCard(QWidget):
         header.addWidget(name_lbl, 0)
 
         if self._meta.version:
-            version_pill = QLabel(f"v{self._meta.version}")
-            version_pill.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-            version_pill.setStyleSheet(
-                f"background: {THEME.accent}; color: {THEME.pill_text};"
-                f"font-size: 9px; font-weight: bold; border-radius: 7px; padding: 1px 6px;"
-            )
-            version_pill.setFixedHeight(14)
-            header.addWidget(version_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+            pill = _pill(f"v{self._meta.version}", THEME.accent, THEME.pill_text)
+            header.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        # Tag pills are deliberately quieter than the accent-coloured version pill —
+        # a card with five tags should still read as a name first.
+        for tag in self._meta.tags:
+            header.addWidget(_pill(tag, THEME.bg, THEME.text_muted), 0, Qt.AlignmentFlag.AlignVCenter)
 
         header.addStretch()
         layout.addLayout(header)
@@ -286,6 +334,7 @@ class _BotLibraryPanel(QWidget):
         self._all_metas: list[_BotMeta] = []
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
+        self._chips: dict[str, QPushButton] = {}
         self._build_ui()
         self.refresh()
 
@@ -324,6 +373,16 @@ class _BotLibraryPanel(QWidget):
 
         root.addWidget(top)
 
+        # ── Tag chips: filter by purpose, across every category ──────────
+        self._chip_bar = QWidget()
+        self._chip_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._chip_bar.setStyleSheet(f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};")
+        self._chip_layout = QHBoxLayout(self._chip_bar)
+        self._chip_layout.setContentsMargins(8, 5, 8, 5)
+        self._chip_layout.setSpacing(4)
+        self._chip_layout.addStretch()
+        root.addWidget(self._chip_bar)
+
         # ── Body: left category list + right card area ───────────────────
         body = QHBoxLayout()
         body.setContentsMargins(0, 0, 0, 0)
@@ -360,7 +419,7 @@ class _BotLibraryPanel(QWidget):
         body_w.setLayout(body)
         root.addWidget(body_w, 1)
 
-        self._search.textChanged.connect(self._on_search_changed)
+        self._search.textChanged.connect(lambda _text: self._apply_filter())
         self._cat_list.currentRowChanged.connect(self._on_category_row_changed)
 
     # ------------------------------------------------------------------
@@ -394,6 +453,8 @@ class _BotLibraryPanel(QWidget):
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
 
+        self._rebuild_chips()
+
         # Rebuild category list
         self._cat_list.blockSignals(True)
         self._cat_list.clear()
@@ -414,30 +475,79 @@ class _BotLibraryPanel(QWidget):
     # Internal
     # ------------------------------------------------------------------
 
-    def _on_category_row_changed(self, row: int) -> None:
-        if row < 0:
-            return
+    def _rebuild_chips(self) -> None:
+        """Rebuild the chip row, one chip per tag the library actually uses.
+
+        Offering a chip for a tag no bot carries is offering an empty result, so the
+        row is derived from the scanned metas rather than from BOT_TAGS directly —
+        BOT_TAGS only decides the order.
+        """
+        while self._chip_layout.count() > 1:
+            item = self._chip_layout.takeAt(0)
+            if w := item.widget():
+                w.hide()
+                w.deleteLater()
+        self._chips = {}
+
+        in_use = {t for m in self._all_metas for t in m.tags}
+        for tag in BOT_TAGS:
+            if tag not in in_use:
+                continue
+            chip = QPushButton(tag)
+            chip.setCheckable(True)
+            chip.setCursor(Qt.CursorShape.PointingHandCursor)
+            chip.setStyleSheet(
+                f"QPushButton {{ background: {THEME.bg}; color: {THEME.text_muted};"
+                f"  border: 1px solid {THEME.border}; border-radius: 9px;"
+                f"  padding: 2px 9px; font-size: 10px; }}"
+                f"QPushButton:hover {{ color: {THEME.text}; }}"
+                f"QPushButton:checked {{ background: {THEME.accent}; color: {THEME.pill_text};"
+                f"  border-color: {THEME.accent}; font-weight: bold; }}"
+            )
+            chip.toggled.connect(lambda _checked: self._apply_filter())
+            self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
+            self._chips[tag] = chip
+        self._chip_bar.setVisible(bool(self._chips))
+
+    def _selected_tags(self) -> set[str]:
+        return {tag for tag, chip in self._chips.items() if chip.isChecked()}
+
+    def _clear_filters(self) -> None:
+        """Reset search text and chips without triggering a filter pass for each."""
         self._search.blockSignals(True)
         self._search.clear()
         self._search.blockSignals(False)
-        cat = self._cat_list.item(row).text()
-        metas = self._recent_metas if cat == self._RECENT else self._category_map.get(cat, [])
-        self._show_cards(metas)
+        for chip in self._chips.values():
+            chip.blockSignals(True)
+            chip.setChecked(False)
+            chip.blockSignals(False)
 
-    def _on_search_changed(self, text: str) -> None:
-        if not text.strip():
-            self._on_category_row_changed(self._cat_list.currentRow())
+    def _on_category_row_changed(self, row: int) -> None:
+        if row < 0:
             return
-        q = text.casefold()
-        results: list[_BotMeta] = []
-        matched_drops: dict[Path, list[str]] = {}
-        for m in self._all_metas:
-            drop_matches = [d for d in m.drops if q in d.casefold()]
-            if q in m.name.casefold() or q in m.description.casefold() or q in m.authors.casefold() or drop_matches:
-                results.append(m)
-                if drop_matches:
-                    matched_drops[m.path] = drop_matches
-        self._show_cards(results, matched_drops)
+        self._clear_filters()
+        self._apply_filter()
+
+    def _apply_filter(self) -> None:
+        """The single place cards are chosen.
+
+        Search text and chips both cut across every category, so either one being
+        active replaces the category listing rather than narrowing it — otherwise
+        clicking a tag while a world is selected would search only that world, which
+        is the opposite of what a cross-cutting filter is for.
+        """
+        query = self._search.text()
+        tags = self._selected_tags()
+        if query.strip() or tags:
+            results, matched_drops = filter_bot_metas(self._all_metas, query, tags)
+            self._show_cards(results, matched_drops)
+            return
+        row = self._cat_list.currentRow()
+        if row < 0:
+            self._show_cards([])
+            return
+        cat = self._cat_list.item(row).text()
+        self._show_cards(self._recent_metas if cat == self._RECENT else self._category_map.get(cat, []))
 
     def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
         layout = self._cards_layout

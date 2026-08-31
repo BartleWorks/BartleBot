@@ -699,3 +699,35 @@ def test_no_bot_uses_legacy_combat_params():
                     offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {legacy}")
 
     assert not offenders, f"bot states with legacy combat params: {offenders}"
+
+
+def _shipped_bot_files() -> list[Path]:
+    """Every bot in the library proper — test_*.json are scratch files."""
+    return [p for p in _all_bot_files() if not p.name.startswith("test_")]
+
+
+def test_every_shipped_bot_has_at_least_one_tag():
+    """An untagged bot is invisible to the library panel's chip filter.
+
+    Tags say what a bot is *for*, and they cannot be derived — every boss drops
+    jewels, so a rule keyed on drops[].category would tag everything with everything.
+    The table lives in scripts/migrate_bot_tags.py; this is what keeps it applied
+    when a bot is added.
+    """
+    untagged = [p.relative_to(_BOTS_DIR).as_posix() for p in _shipped_bot_files() if not _load_raw(p).get("tags")]
+
+    assert not untagged, f"bot files with no tags: {untagged}"
+
+
+def test_no_bot_carries_a_tag_outside_the_vocabulary():
+    """BotConfig silently drops unknown tags on load, so a typo would only ever show
+    up as a bot missing from a filter. Caught here instead, against the raw JSON."""
+    from bartlebot.bot_tags import BOT_TAGS  # noqa: PLC0415
+
+    offenders: list[str] = []
+    for path in _shipped_bot_files():
+        for tag in _load_raw(path).get("tags") or []:
+            if tag not in BOT_TAGS:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {tag!r}")
+
+    assert not offenders, f"bots carrying unknown tags: {offenders}"

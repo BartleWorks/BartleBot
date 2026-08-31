@@ -7,6 +7,8 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+from bartlebot.bot_tags import normalize_tags
+
 
 class XYZModel(BaseModel):
     x: float
@@ -150,6 +152,8 @@ class BotConfig(BaseModel):
     start_location: str | None = None
     drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
+    # What the bot is *for* — see bartlebot/bot_tags.py. Filters the library panel.
+    tags: list[str] = Field(default_factory=list)
     options: list[BotOptionModel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel]
@@ -167,6 +171,17 @@ class BotConfig(BaseModel):
         if isinstance(value, list):
             return [{"name": v} if isinstance(v, str) else v for v in value]
         return value
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def normalize_tag_list(cls, value):
+        """Drop unknown tags, de-duplicate, and order by the vocabulary.
+
+        Tolerant rather than strict — see :func:`bartlebot.bot_tags.normalize_tags`.
+        Runs on every load *and* on UndoManager's model_dump/model_validate round-trip,
+        so the stored order stays stable no matter how the editor wrote it.
+        """
+        return normalize_tags(value)
 
     @model_validator(mode="after")
     def initial_state_exists(self) -> "BotConfig":

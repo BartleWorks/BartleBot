@@ -9,6 +9,13 @@
   "start_location": "Anywhere in Wallaru",
   "drops": [],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Reagents",
+    "Spellements",
+    "Housing",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

@@ -466,6 +466,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Housing",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

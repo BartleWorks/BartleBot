@@ -120,6 +120,7 @@ def main() -> None:
     auto_formatted: list[tuple[Path, int]] = []
     missing_when: list[tuple[Path, list[str]]] = []
     thin_drops: list[tuple[Path, int]] = []
+    untagged: list[Path] = []
     structural: list[tuple[Path, list[str]]] = []
     clean: list[Path] = []
     errors: list[tuple[Path, str]] = []
@@ -159,6 +160,12 @@ def main() -> None:
         if drop_count < MIN_DROPS:
             thin_drops.append((rel, drop_count))
 
+        # Untagged — a bot with no tags is invisible to the library's chip filter.
+        # test_*.json are scratch files and are deliberately exempt.
+        is_tagged = bool(config.tags) or bot_path.name.startswith("test_")
+        if not is_tagged:
+            untagged.append(rel)
+
         # Structural
         for d in _duplicate_ids(config):
             file_issues.append(f'  [DUPLICATE ID] "{d}"')
@@ -171,7 +178,7 @@ def main() -> None:
         if file_issues:
             structural.append((rel, file_issues))
 
-        if not reformatted and not when_issues and drop_count >= MIN_DROPS and not file_issues:
+        if not reformatted and not when_issues and drop_count >= MIN_DROPS and is_tagged and not file_issues:
             clean.append(rel)
 
     # -----------------------------------------------------------------------
@@ -205,6 +212,13 @@ def main() -> None:
         for rel, count in thin_drops:
             noun = "drop" if count == 1 else "drops"
             print(f"  {rel}  ({count} {noun})")
+    else:
+        print("  (none)")
+
+    section(f"UNTAGGED - no bot_tags entry ({len(untagged)} files)")
+    if untagged:
+        for rel in untagged:
+            print(f"  {rel}")
     else:
         print("  (none)")
 

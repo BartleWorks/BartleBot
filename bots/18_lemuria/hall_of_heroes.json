@@ -1078,6 +1078,12 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Gold",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Safety Delay",

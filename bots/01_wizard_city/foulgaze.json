@@ -426,6 +426,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Animus",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

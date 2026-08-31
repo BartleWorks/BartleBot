@@ -292,6 +292,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Safety Delay",

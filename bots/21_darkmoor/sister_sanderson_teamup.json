@@ -468,6 +468,12 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
   "options": [
     {
       "name": "Safety Delay",

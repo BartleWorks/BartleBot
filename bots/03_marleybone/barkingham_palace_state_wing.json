@@ -286,6 +286,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Pets",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Safety Delay",
