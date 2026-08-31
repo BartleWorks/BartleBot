@@ -81,6 +81,21 @@ NODE_SPEC = NodeSpec(
 )
 
 
+def _counts_as_arrived(zone: str | None, zone_pattern: str) -> bool:
+    """True when `zone` is in the target world *and* is somewhere a bot can carry on from.
+
+    The dorm is the exception, and it is not an obscure one: it matches "WizardCity/*"
+    because fnmatch's "*" crosses "/", and HOME puts every client in it, so it is the
+    ordinary starting position for a bot rather than a rare one. Counting it as arrival
+    returned SUCCESS with everyone still inside the dorm, which is the same thing step 3
+    below refuses to do when it stops at Ravenwood instead of the dorm it just came
+    through (#157).
+
+    Only Wizard City is affected: no other world's pattern matches the dorm at all.
+    """
+    return node_helpers.zone_matches(zone, zone_pattern) and zone != wizard_city.DORM_ZONE
+
+
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), wizard_city.go_to_ravenwood(), enter_zone.run(),
@@ -88,7 +103,8 @@ async def run(machine, clients: list, params: dict) -> str:
 
     Flow:
       1. If every client's zone is already in the chosen world, return SUCCESS without
-         moving anyone.
+         moving anyone. The dorm does not count, even though it matches "WizardCity/*" —
+         see _counts_as_arrived.
       2. wizard_city.go_to_ravenwood(): unequip castles, HOME to the dorm, Dorm → Ravenwood.
          Return FAILURE if it fails.
       3. If the chosen world is Wizard City, return SUCCESS here. Deliberately not at the
@@ -121,7 +137,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 1. Skip the whole trip if everyone is already there.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
-    if all(node_helpers.zone_matches(z, zone_pattern) for z in zones):
+    if all(_counts_as_arrived(z, zone_pattern) for z in zones):
         machine.log(f"SUCCESS: all clients already in {worlds.label(world)}")
         return "SUCCESS"
 

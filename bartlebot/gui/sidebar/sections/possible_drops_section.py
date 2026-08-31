@@ -20,7 +20,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
+from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CategoryThenNameTreeItem
 from bartlebot.wiki_drops import match_name_for
 
 if TYPE_CHECKING:
@@ -137,8 +137,9 @@ class _DropsListWidget(QWidget):
     changed = pyqtSignal(list)
     import_requested = pyqtSignal()
 
-    _COL_NAME = 0
-    _COL_CATEGORY = 1
+    # Public: the sort tests and any caller of sort_by_column() name these columns.
+    COL_NAME = 0
+    COL_CATEGORY = 1
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -154,16 +155,18 @@ class _DropsListWidget(QWidget):
         self._list.setRootIsDecorated(False)
         self._list.setUniformRowHeights(True)
         self._list.setSortingEnabled(True)
-        self._list.sortByColumn(self._COL_NAME, Qt.SortOrder.AscendingOrder)
+        # Category first: the table opens as the grouping the second column exists for,
+        # with names ordered inside each group (#144). Clicking Item still sorts by name.
+        self._list.sortByColumn(self.COL_CATEGORY, Qt.SortOrder.AscendingOrder)
         self._list.setTextElideMode(Qt.TextElideMode.ElideRight)
         self._list.setMinimumHeight(120)
         self._list.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._list.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self._list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         header = self._list.header()
-        header.setSectionResizeMode(self._COL_NAME, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(self._COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
-        self._list.setColumnWidth(self._COL_CATEGORY, 92)
+        header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(self.COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
+        self._list.setColumnWidth(self.COL_CATEGORY, 92)
         layout.addWidget(self._list, 1)
 
         # Button row — shown only in edit mode
@@ -209,8 +212,8 @@ class _DropsListWidget(QWidget):
         """Replace table contents. The view keeps whichever column the user sorted by."""
         self._list.clear()
         for entry in entries:
-            item = CaseInsensitiveTreeItem([entry.name, entry.category or UNCATEGORIZED_DISPLAY])
-            item.setData(self._COL_NAME, Qt.ItemDataRole.UserRole, entry)
+            item = CategoryThenNameTreeItem([entry.name, entry.category or UNCATEGORIZED_DISPLAY])
+            item.setData(self.COL_NAME, Qt.ItemDataRole.UserRole, entry)
             self._list.addTopLevelItem(item)
         self._update_button_state()
 
@@ -227,10 +230,29 @@ class _DropsListWidget(QWidget):
         file's drop order every time someone clicked a column header.
         """
         entries = [
-            self._list.topLevelItem(i).data(self._COL_NAME, Qt.ItemDataRole.UserRole)
+            self._list.topLevelItem(i).data(self.COL_NAME, Qt.ItemDataRole.UserRole)
             for i in range(self._list.topLevelItemCount())
         ]
         return sorted(entries, key=lambda e: e.name.casefold())
+
+    def displayed_items(self) -> list[DropModel]:
+        """Entries in the order the table currently shows them.
+
+        The counterpart to get_items(): that one is storage order and is what the
+        bot file gets, this one is the view order the user actually reads.
+        """
+        return [
+            self._list.topLevelItem(i).data(self.COL_NAME, Qt.ItemDataRole.UserRole)
+            for i in range(self._list.topLevelItemCount())
+        ]
+
+    def sort_column(self) -> int:
+        """Which column the table is sorted by. COL_CATEGORY until the user clicks a header."""
+        return self._list.sortColumn()
+
+    def sort_by_column(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder) -> None:
+        """Re-sort as a header click would."""
+        self._list.sortByColumn(column, order)
 
     def add_items(self, entries: list[DropModel]) -> None:
         """Append drops not already listed, then re-sort. Emits changed."""
@@ -259,7 +281,7 @@ class _DropsListWidget(QWidget):
 
     def _edit_item(self, item: QTreeWidgetItem) -> None:
         entries = self.get_items()
-        name = item.text(self._COL_NAME)
+        name = item.text(self.COL_NAME)
         # Index into get_items(), not the view: the two differ whenever the user
         # has sorted by category. Names are unique, so this is well defined.
         row = next((i for i, entry in enumerate(entries) if entry.name == name), -1)

@@ -53,6 +53,7 @@ from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
@@ -1131,13 +1132,17 @@ class BotCanvas(QWidget):
             node.set_active(True)
             self._view.smooth_center_on(node)
         self._emit_bot_status()
-        logger.info("Entered: %s", state_id)
+        # GUI_ONLY: BotMachine logs the same transition, in more detail, a moment
+        # either side of these two. Sending them to the session file as well made a
+        # state change cost four lines to say two things, and one representative run
+        # carried 9,589 of these — a fifth of the file (#156).
+        logger.info("Entered: %s", state_id, extra=GUI_ONLY)
 
     def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
         if prev_state == next_state:
-            logger.info("Result: %s → (retry %s)", result, next_state)
+            logger.info("Result: %s → (retry %s)", result, next_state, extra=GUI_ONLY)
         else:
-            logger.info("Result: %s → %s", result, next_state)
+            logger.info("Result: %s → %s", result, next_state, extra=GUI_ONLY)
 
     # ------------------------------------------------------------------
     # Toolbar button handlers
