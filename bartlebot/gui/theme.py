@@ -115,6 +115,11 @@ class _Theme:
     # ------------------------------------------------------------------
     pill_warning_hover: str = "#9a6c00"  # matches warning — gold hues can't lighten and still pass WCAG AA
     pill_text: str = "#ffffff"
+    # A true neutral: R=G=B, so it cannot be mistaken for a hue that means something.
+    # A bot card's version pill uses it, sitting inches from the blue Rewards pill —
+    # the blue-grey it borrowed from ``chip_neutral_bg`` read as a third tag colour.
+    # 5.3:1 against ``pill_text``.
+    pill_neutral_bg: str = "#6b6b6b"
     # error bg → ``error``, warning bg → ``warning``
 
     # ------------------------------------------------------------------
@@ -425,6 +430,7 @@ DARK = _Theme(
     # Pills
     pill_warning_hover="#9a6c00",  # matches warning — gold hues can't lighten and still pass WCAG AA
     pill_text="#ffffff",
+    pill_neutral_bg="#757575",  # a step lighter on a dark ground, still 4.6:1 on white
     # Node-browser chips (slightly lighter on dark bg for contrast)
     chip_success_bg="#388e3c",
     chip_failure_bg="#c62828",
@@ -480,6 +486,16 @@ class _ThemeProxy:
 
 _current_theme: _Theme = LIGHT
 THEME: _Theme = _ThemeProxy()  # type: ignore[assignment]
+
+
+def active_theme() -> _Theme:
+    """The ``_Theme`` instance currently in force.
+
+    ``THEME`` is a proxy that forwards attribute reads, so it cannot be stashed and
+    restored; anything that needs to put the theme back the way it found it — a test
+    pinning a theme, a preview that swaps one in — needs the instance itself.
+    """
+    return _current_theme
 
 
 def _detect_system_dark_mode() -> bool:

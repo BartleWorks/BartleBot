@@ -6,7 +6,6 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QFileDialog,
     QHeaderView,
-    QLineEdit,
     QPushButton,
     QSizePolicy,
     QTableWidget,
@@ -15,6 +14,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 
 def _qty_item(qty: int) -> QTableWidgetItem:
@@ -53,8 +54,7 @@ class DropSection(QWidget):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(4)
 
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Search items…")
+        self._search = SearchLineEdit("Search items…")
         self._search.setClearButtonEnabled(True)
         self._search.textChanged.connect(self._on_search_changed)
         layout.addWidget(self._search)

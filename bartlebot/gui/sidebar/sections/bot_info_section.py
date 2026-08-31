@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarField,
     SidebarSection,
@@ -17,6 +18,9 @@ from bartlebot.gui.sidebar.sidebar_section import (
     value_edit_multi,
     value_label,
 )
+from bartlebot.gui.widgets.flow_layout import flow_container
+from bartlebot.gui.widgets.tag_picker import TagPickerButton
+from bartlebot.gui.widgets.tag_pill import TagChip, TagPill
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -38,6 +42,104 @@ def _swappable(label_w: QWidget, edit_w: QWidget) -> QWidget:
     lay.addWidget(edit_w)
     edit_w.setVisible(False)
     return w
+
+
+class _TagsField(QWidget):
+    """The Tags row: the bot's tags as pills, and two buttons that add more.
+
+    Unlike the other rows this is not a label swapped for an editor. The pills are
+    the value in both modes — what changes is whether they carry a ✕ and whether the
+    Add buttons are shown — because a tag list reads the same either way and building
+    a second, differently-shaped view of it just to be read-only is how the two drift.
+
+    The buttons are captioned "Add Rewards…" / "Add Activity…" rather than the
+    library's "Rewards" / "Activity": there, the button *is* the filter and its text
+    has to report the selection; here the chips below already do that, so the text is
+    free to say what pressing it does. Naming the group in the caption is what makes
+    the vocabulary visible without opening anything — the same reason the library
+    splits the picker in two.
+    """
+
+    tags_changed = pyqtSignal(list)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._tags: list[str] = []
+        self._editable = False
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(4)
+
+        self._pill_host, self._pill_layout = flow_container()
+        root.addWidget(self._pill_host)
+
+        self._empty_lbl = value_label()
+        self._empty_lbl.setText(_PLACEHOLDER)
+        root.addWidget(self._empty_lbl)
+
+        # Wrapped too: "Add Rewards…" and "Add Activity…" side by side need more than
+        # a 300px sidebar has once the field's own indent is taken off.
+        self._buttons, button_layout = flow_container()
+        self._pickers: dict[str, TagPickerButton] = {}
+        for group in TAG_GROUPS:
+            btn = TagPickerButton(title=group, group=group, caption=f"Add {group}…")
+            btn.setToolTip(f"Choose which {group.lower()} tags this bot carries")
+            btn.selection_changed.connect(self._on_picker_changed)
+            self._pickers[group] = btn
+            button_layout.addWidget(btn)
+        root.addWidget(self._buttons)
+
+        self._rebuild()
+
+    # -- public API ----------------------------------------------------
+
+    def tags(self) -> list[str]:
+        """The selected tags, in ``BOT_TAGS`` order."""
+        return list(self._tags)
+
+    def set_tags(self, tags: list[str]) -> None:
+        """Show *tags* without emitting ``tags_changed``."""
+        self._tags = [t for t in BOT_TAGS if t in set(tags)]
+        for group, picker in self._pickers.items():
+            picker.set_selection([t for t in self._tags if tag_group(t) == group])
+        self._rebuild()
+
+    def set_editable(self, editable: bool) -> None:
+        self._editable = editable
+        self._rebuild()
+
+    # -- internals -----------------------------------------------------
+
+    def _on_picker_changed(self, _keys: list) -> None:
+        self._tags = [t for t in BOT_TAGS if any(t in p.tags() for p in self._pickers.values())]
+        self._rebuild()
+        self.tags_changed.emit(list(self._tags))
+
+    def _remove(self, tag: str) -> None:
+        self.set_tags([t for t in self._tags if t != tag])
+        self.tags_changed.emit(list(self._tags))
+
+    def _rebuild(self) -> None:
+        while (item := self._pill_layout.takeAt(0)) is not None:
+            if w := item.widget():
+                w.hide()
+                w.deleteLater()
+
+        for tag in self._tags:
+            if self._editable:
+                chip = TagChip(tag)
+                chip.removed.connect(self._remove)
+                self._pill_layout.addWidget(chip)
+            else:
+                self._pill_layout.addWidget(TagPill(tag))
+
+        # The placeholder stands in for the pills, not for the whole row: with the Add
+        # buttons showing, an untagged bot already reads as untagged.
+        self._empty_lbl.setVisible(not self._tags and not self._editable)
+        self._pill_host.setVisible(bool(self._tags))
+        self._buttons.setVisible(self._editable)
+        self._pill_host.updateGeometry()
 
 
 class BotInfoSection(SidebarSection):
@@ -76,6 +178,10 @@ class BotInfoSection(SidebarSection):
         self._authors_edit = value_edit()
         self._authors_edit.setReadOnly(False)
 
+        # Not a label/editor pair: the pills are the value in both modes, and
+        # _TagsField switches its own chrome. See _set_label_mode.
+        self._tags_field = _TagsField()
+
         # Initial and Recovery are read-only here.  Both are set from the state's own
         # properties panel, where the badge that shows the role already lives (#71);
         # these labels stay because they are the only summary of the two roles, and
@@ -100,6 +206,7 @@ class BotInfoSection(SidebarSection):
         vbox.addWidget(SidebarField("Description", _swappable(self._desc_lbl, self._desc_edit)))
         vbox.addWidget(SidebarField("Start", _swappable(self._start_lbl, self._start_edit)))
         vbox.addWidget(SidebarField("Author(s)", _swappable(self._authors_lbl, self._authors_edit)))
+        vbox.addWidget(SidebarField("Tags", self._tags_field))
         vbox.addWidget(SidebarField("Initial State", self._initial_lbl))
         vbox.addWidget(SidebarField("Recovery State", self._recovery_lbl))
 
@@ -110,6 +217,7 @@ class BotInfoSection(SidebarSection):
         self._desc_edit.textChanged.connect(self._on_desc_changed)
         self._start_edit.textChanged.connect(self._on_start_changed)
         self._authors_edit.textChanged.connect(self._on_authors_changed)
+        self._tags_field.tags_changed.connect(self._on_tags_changed)
 
         self.set_config(None)
 
@@ -134,6 +242,7 @@ class BotInfoSection(SidebarSection):
                 self._recovery_lbl,
             ):
                 lbl.setText(_PLACEHOLDER)
+            self._tags_field.set_tags([])
             for w in (
                 self._name_edit,
                 self._version_edit,
@@ -154,6 +263,7 @@ class BotInfoSection(SidebarSection):
             self._desc_edit.setPlainText(config.description or "")
             self._start_edit.setText(config.start_location or "")
             self._authors_edit.setText(config.authors or "")
+            self._tags_field.set_tags(config.tags)
             self._set_role_labels(config.states, config.initial, config.recovery_state)
         self._suppress = False
 
@@ -217,6 +327,13 @@ class BotInfoSection(SidebarSection):
         self._authors_lbl.setText(text or _PLACEHOLDER)
         self.metadata_changed.emit()
 
+    def _on_tags_changed(self, tags: list) -> None:
+        if self._suppress or self._config is None:
+            return
+        # _TagsField hands them back in BOT_TAGS order, which is what gets saved.
+        self._config.tags = list(tags)
+        self.metadata_changed.emit()
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -226,6 +343,7 @@ class BotInfoSection(SidebarSection):
         for lbl, edit in self._switchable_pairs:
             lbl.setVisible(label_mode)
             edit.setVisible(not label_mode)
+        self._tags_field.set_editable(not label_mode)
 
     def _set_role_labels(self, states: list, initial_id: str, recovery_id: str) -> None:
         """Show the label (or id) of whichever state currently holds each role.

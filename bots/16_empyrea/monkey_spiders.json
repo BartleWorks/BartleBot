@@ -889,6 +889,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Jewels",
+    "Seeds",
+    "Mobs"
+  ],
   "options": [
     {
       "name": "Safety Delay",

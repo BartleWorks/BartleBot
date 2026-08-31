@@ -253,7 +253,7 @@ class AppController(QObject):
 
     def _open_bot(self, path: str | None = None) -> None:
         if path is None:
-            path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot", "", "Bot Files (*.json)")
+            path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot File", "", "Bot Files (*.json)")
         if not path:
             return
         try:

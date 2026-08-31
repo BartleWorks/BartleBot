@@ -474,6 +474,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Safety Delay",

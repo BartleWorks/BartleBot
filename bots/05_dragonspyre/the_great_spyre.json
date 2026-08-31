@@ -21,6 +21,12 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Reagents",
+    "Spellements",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Safety Delay",

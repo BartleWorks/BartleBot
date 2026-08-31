@@ -4,9 +4,8 @@
   "description": "A basic example script for testing purposes.",
   "version": "2.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
+  "initial": "state_2",
+  "recovery_state": "state_2",
   "start_location": "The Commons",
   "drops": [
     {
@@ -73,6 +72,19 @@
         "zone": "WizardCity/WC_Hub"
       },
       "option_overrides": {}
+    },
+    {
+      "id": "state_2",
+      "node_type": "go_to_world",
+      "label": "Go to Wizard City",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "world": "WizardCity"
+      },
+      "option_overrides": {}
     }
   ],
   "transitions": [
@@ -130,6 +142,26 @@
       "trigger": "advance",
       "source": "go_to_zone_a",
       "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_2",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

@@ -750,6 +750,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Jewels",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

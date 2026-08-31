@@ -631,6 +631,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Jewels",
+    "Reagents",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

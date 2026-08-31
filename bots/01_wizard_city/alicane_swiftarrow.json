@@ -490,6 +490,9 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

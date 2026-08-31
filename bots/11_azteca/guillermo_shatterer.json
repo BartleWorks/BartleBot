@@ -276,6 +276,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Treasure Cards",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

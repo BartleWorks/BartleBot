@@ -990,6 +990,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Level Scaling Players",

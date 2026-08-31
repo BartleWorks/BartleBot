@@ -662,6 +662,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Spellements",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Level Scaling Players",

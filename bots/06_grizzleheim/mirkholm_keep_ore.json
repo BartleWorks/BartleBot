@@ -32,6 +32,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Reagents",
+    "Gathering"
+  ],
   "options": [
     {
       "name": "Safety Delay",

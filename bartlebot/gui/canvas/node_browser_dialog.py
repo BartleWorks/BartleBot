@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QPushButton,
@@ -40,6 +39,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
 from bartlebot.settings_manager import SettingsManager
@@ -451,8 +451,7 @@ class NodeBrowserDialog(QDialog):
         ]
 
         # ── Search bar ────────────────────────────────────────────
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Search nodes…")
+        self._search = SearchLineEdit("Search nodes…")
         self._search.setClearButtonEnabled(True)
         self._search.setStyleSheet(
             f"padding: 4px 8px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"

@@ -274,6 +274,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Spellements",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

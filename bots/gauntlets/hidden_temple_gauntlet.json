@@ -13,6 +13,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Gauntlet"
+  ],
   "options": [
     {
       "name": "Safety Delay",

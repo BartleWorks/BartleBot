@@ -8,6 +8,7 @@ import json
 import logging
 import re
 import time
+from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +38,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
@@ -53,6 +55,9 @@ from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.gui.widgets.tag_picker import TagPickerButton
+from bartlebot.gui.widgets.tag_pill import TagChip, TagPill, pill_style
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
@@ -110,6 +115,7 @@ class _BotMeta:
     description: str
     authors: str
     drops: list[str]
+    tags: list[str]
     start_location: str
     version: str
     path: Path
@@ -142,6 +148,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             description=data.get("description") or "",
             authors=data.get("authors") or "",
             drops=_drop_names(data.get("drops")),
+            tags=normalize_tags(data.get("tags")),
             start_location=data.get("start_location") or "",
             version=data.get("version") or "",
             path=path,
@@ -166,6 +173,61 @@ def _format_category(dir_name: str) -> str:
     """'01_wizard_city' → 'Wizard City'."""
     name = re.sub(r"^\d+_", "", dir_name)
     return name.replace("_", " ").title()
+
+
+def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
+    """Narrow *metas* by free text and by selected tag chips.
+
+    Returns the surviving metas and, for each one the text matched by drop name, the
+    drops that matched — the library card shows those so a hit on a 300-entry drop
+    list explains itself.
+
+    Tags **OR within a group and AND across groups**: "Gear or Jewels, *and* Dungeon".
+    That is the faceted model two labelled buttons imply, and it is the only one that
+    stays useful — the groups answer different questions (:mod:`bartlebot.bot_tags`:
+    Rewards is what a run yields, Activity is what it does), so ANDing across them
+    narrows, while ANDing *within* one asks for a bot that drops both Gear and Jewels
+    and usually returns nothing. Cross-group pairs like "Dungeon + Spellements" behave
+    exactly as they did when every tag ANDed.
+
+    The text query is an OR across the fields it searches, tags included, and
+    intersects whatever the tags left.
+
+    Pure, and at module level, so the filtering can be tested without a QApplication
+    — same reasoning as ``_resolve_bots_dir``.
+    """
+    q = query.strip().casefold()
+    wanted: dict[str, set[str]] = {}
+    for t in tags:
+        wanted.setdefault(tag_group(t), set()).add(t)
+
+    results: list[_BotMeta] = []
+    matched_drops: dict[Path, list[str]] = {}
+    for m in metas:
+        if any(group_tags.isdisjoint(m.tags) for group_tags in wanted.values()):
+            continue
+        drop_matches = [d for d in m.drops if q in d.casefold()]
+        if q and not (
+            q in m.name.casefold()
+            or q in m.description.casefold()
+            or q in m.authors.casefold()
+            or any(q in t.casefold() for t in m.tags)
+            or drop_matches
+        ):
+            continue
+        results.append(m)
+        if q and drop_matches:
+            matched_drops[m.path] = drop_matches
+    return results, matched_drops
+
+
+def _pill(text: str, bg: str, fg: str) -> QLabel:
+    """Small rounded caption for a bot card's version — the tags use ``TagPill``."""
+    lbl = QLabel(text)
+    lbl.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    lbl.setStyleSheet(pill_style(bg, fg))
+    lbl.setFixedHeight(14)
+    return lbl
 
 
 class _BotCard(QWidget):
@@ -199,15 +261,19 @@ class _BotCard(QWidget):
         name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
         header.addWidget(name_lbl, 0)
 
+        # Neutral grey, not the accent it used to be. Colour on this card now means
+        # "tag group", and a version is not one — spending the accent on it made the
+        # loudest pill the one carrying the least information. pill_neutral_bg is a
+        # true grey: the blue-grey chip_neutral_bg read as a third tag colour beside
+        # the blue Rewards pill.
         if self._meta.version:
-            version_pill = QLabel(f"v{self._meta.version}")
-            version_pill.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-            version_pill.setStyleSheet(
-                f"background: {THEME.accent}; color: {THEME.pill_text};"
-                f"font-size: 9px; font-weight: bold; border-radius: 7px; padding: 1px 6px;"
-            )
-            version_pill.setFixedHeight(14)
-            header.addWidget(version_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+            pill = _pill(f"v{self._meta.version}", THEME.pill_neutral_bg, THEME.pill_text)
+            header.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        # One palette for a tag everywhere it appears: the dot in the picker, the chip
+        # in the filter bar, this pill, and the ones in Bot Info. TagPill owns it.
+        for tag in self._meta.tags:
+            header.addWidget(TagPill(tag), 0, Qt.AlignmentFlag.AlignVCenter)
 
         header.addStretch()
         layout.addLayout(header)
@@ -280,6 +346,7 @@ class _BotLibraryPanel(QWidget):
     open_recent_requested = pyqtSignal(str)  # path
 
     _RECENT = "Recent"
+    _ALL = "All"
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -306,23 +373,66 @@ class _BotLibraryPanel(QWidget):
         top_layout.setContentsMargins(8, 6, 8, 6)
         top_layout.setSpacing(6)
 
-        self._search = QLineEdit()
-        self._search.setPlaceholderText("Search bots by name, author, or drop…")
+        # Filters first, then search, then actions — the bar reads left to right as
+        # "narrow the list … then act on it". The tag picker used to sit between the
+        # search box and these buttons, where it was read as a third action and was
+        # the last place anyone looked for a filter.
+        self._pickers: dict[str, TagPickerButton] = {}
+        for group in TAG_GROUPS:
+            picker = TagPickerButton(title=group, placeholder=group, group=group)
+            picker.setToolTip(f"Filter by {group.lower()} tag")
+            picker.selection_changed.connect(self._on_tag_selection_changed)
+            self._pickers[group] = picker
+            top_layout.addWidget(picker, 0)
+
+        # Stretch 1, not a fixed width flanked by two stretches: the search field then
+        # fills whatever the two clusters leave, so it *sits* centred without being
+        # anchored there, and narrowing the window shortens it instead of colliding.
+        self._search = SearchLineEdit("Search bots by name, author, or drop…")
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
-        for label, signal_name in (("New Bot", "new_bot_requested"), ("Open…", "open_bot_requested")):
+        sep = QFrame()
+        sep.setFrameShape(QFrame.Shape.VLine)
+        sep.setStyleSheet(f"color: {THEME.border};")
+        top_layout.addWidget(sep)
+
+        # Same shape and height as the pickers, so the bar looks like one set of
+        # controls — but New Bot keeps the accent, because a bar with four identical
+        # buttons has undone the grouping the separator just drew.
+        for label, signal_name, primary in (
+            ("New Bot", "new_bot_requested", True),
+            # Not "Open…": in this panel every card already opens a bot, so the name
+            # has to say what is different about this one, which is that it takes a
+            # file from anywhere rather than an entry in the library.
+            ("Open Bot File…", "open_bot_requested", False),
+        ):
             btn = QPushButton(label)
-            btn.setFlat(True)
+            border = THEME.accent if primary else THEME.border
+            color = THEME.accent if primary else THEME.text
             btn.setStyleSheet(
-                f"QPushButton {{ color: {THEME.text_muted}; border: none; padding: 4px 8px; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
+                f"QPushButton {{ background: {THEME.surface}; color: {color};"
+                f"  border: 1px solid {border}; border-radius: 3px; padding: 3px 8px; }}"
+                f"QPushButton:hover {{ border-color: {THEME.accent}; color: {THEME.accent}; }}"
             )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(getattr(self, signal_name))
             top_layout.addWidget(btn)
 
         root.addWidget(top)
+
+        # ── Active tag filters, shown as chips you can click to remove ───
+        # Only the *selected* tags live here; the vocabulary itself is behind the
+        # picker. Eighteen chips laid out at once needed 1648px and pinned the
+        # panel's minimum width above what a 1366px laptop can give it.
+        self._chip_bar = QWidget()
+        self._chip_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._chip_bar.setStyleSheet(f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};")
+        self._chip_layout = QHBoxLayout(self._chip_bar)
+        self._chip_layout.setContentsMargins(8, 5, 8, 5)
+        self._chip_layout.setSpacing(4)
+        self._chip_layout.addStretch()
+        root.addWidget(self._chip_bar)
 
         # ── Body: left category list + right card area ───────────────────
         body = QHBoxLayout()
@@ -360,7 +470,7 @@ class _BotLibraryPanel(QWidget):
         body_w.setLayout(body)
         root.addWidget(body_w, 1)
 
-        self._search.textChanged.connect(self._on_search_changed)
+        self._search.textChanged.connect(lambda _text: self._apply_filter())
         self._cat_list.currentRowChanged.connect(self._on_category_row_changed)
 
     # ------------------------------------------------------------------
@@ -394,11 +504,23 @@ class _BotLibraryPanel(QWidget):
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
 
+        self._refresh_tag_counts()
+        self._rebuild_chips()
+
         # Rebuild category list
         self._cat_list.blockSignals(True)
         self._cat_list.clear()
+        # "Recent" first, because opening the library is usually the first step of
+        # going back to a bot you ran yesterday; "All" is the fallback the row below
+        # it, and is always present. Without "All" there was no way to ask the library
+        # a question that crossed worlds — which is exactly what a tag filter is for —
+        # and no way back to the whole list once a world was clicked.
+        #
+        # Selection is row 0 either way (see refresh), so this ordering *is* the
+        # default: Recent when there is one, All on a first run.
         if self._recent_metas:
             self._cat_list.addItem(self._RECENT)
+        self._cat_list.addItem(self._ALL)
         for cat in self._category_map:
             self._cat_list.addItem(cat)
         self._cat_list.blockSignals(False)
@@ -414,29 +536,109 @@ class _BotLibraryPanel(QWidget):
     # Internal
     # ------------------------------------------------------------------
 
+    def _refresh_tag_counts(self) -> None:
+        """Feed the picker how many bots carry each tag.
+
+        A tag with no bots still appears, showing 0 — the picker is the only place
+        the vocabulary is visible, and a silently absent row reads as a bug rather
+        than as an answer.
+        """
+        counts = Counter(t for m in self._all_metas for t in m.tags)
+        per_tag = {tag: counts.get(tag, 0) for tag in BOT_TAGS}
+        for picker in self._pickers.values():
+            picker.set_counts(per_tag)
+
+    def _rebuild_chips(self) -> None:
+        """Show one removable chip per *selected* tag; hide the bar when none are."""
+        while self._chip_layout.count() > 1:
+            item = self._chip_layout.takeAt(0)
+            if w := item.widget():
+                w.hide()
+                w.deleteLater()
+
+        selected = self._selected_tag_list()
+        for tag in selected:
+            # Coloured by group, matching the dot in the popup and the button it came
+            # from — with two pickers feeding one chip bar, a chip has to say which.
+            chip = TagChip(tag, tooltip=f"Remove the {tag} filter")
+            chip.removed.connect(self._remove_tag)
+            self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
+
+        if selected:
+            clear = QPushButton("Clear")
+            clear.setCursor(Qt.CursorShape.PointingHandCursor)
+            clear.setFlat(True)
+            clear.setStyleSheet(
+                f"QPushButton {{ color: {THEME.text_muted}; border: none;"
+                f"  padding: 2px 6px; font-size: 10px; }}"
+                f"QPushButton:hover {{ color: {THEME.text}; }}"
+            )
+            clear.clicked.connect(lambda: self._set_tag_selection([]))
+            self._chip_layout.insertWidget(self._chip_layout.count() - 1, clear)
+
+        self._chip_bar.setVisible(bool(selected))
+
+    def _remove_tag(self, tag: str) -> None:
+        self._set_tag_selection([t for t in self._selected_tag_list() if t != tag])
+
+    def _set_tag_selection(self, tags: list[str]) -> None:
+        """Change the selection and re-filter — set_selection does not emit.
+
+        Takes the whole selection across both pickers and routes each tag back to the
+        group it belongs to, so a chip's ✕ and the Clear button do not have to know
+        which button produced which chip.
+        """
+        for group, picker in self._pickers.items():
+            picker.set_selection([t for t in tags if tag_group(t) == group])
+        self._rebuild_chips()
+        self._apply_filter()
+
+    def _on_tag_selection_changed(self, _keys: list) -> None:
+        self._rebuild_chips()
+        self._apply_filter()
+
+    def _selected_tag_list(self) -> list[str]:
+        """Every selected tag across the pickers, in ``BOT_TAGS`` order."""
+        chosen = self._selected_tags()
+        return [t for t in BOT_TAGS if t in chosen]
+
+    def _selected_tags(self) -> set[str]:
+        return {t for picker in self._pickers.values() for t in picker.tags()}
+
     def _on_category_row_changed(self, row: int) -> None:
+        """Switch category, keeping the filters.
+
+        This used to clear them, because a filter *replaced* the listing rather than
+        narrowing it, so a category click with a tag still selected would have looked
+        like it did nothing. Now that the two compose, throwing away a selection the
+        user built is just losing their work — and with ``All`` present there is an
+        obvious way to ask the same question across every world.
+        """
         if row < 0:
             return
-        self._search.blockSignals(True)
-        self._search.clear()
-        self._search.blockSignals(False)
-        cat = self._cat_list.item(row).text()
-        metas = self._recent_metas if cat == self._RECENT else self._category_map.get(cat, [])
-        self._show_cards(metas)
+        self._apply_filter()
 
-    def _on_search_changed(self, text: str) -> None:
-        if not text.strip():
-            self._on_category_row_changed(self._cat_list.currentRow())
-            return
-        q = text.casefold()
-        results: list[_BotMeta] = []
-        matched_drops: dict[Path, list[str]] = {}
-        for m in self._all_metas:
-            drop_matches = [d for d in m.drops if q in d.casefold()]
-            if q in m.name.casefold() or q in m.description.casefold() or q in m.authors.casefold() or drop_matches:
-                results.append(m)
-                if drop_matches:
-                    matched_drops[m.path] = drop_matches
+    def _category_metas(self) -> "list[_BotMeta]":
+        """The bots the selected category offers, before search and tags narrow them."""
+        row = self._cat_list.currentRow()
+        if row < 0:
+            return []
+        cat = self._cat_list.item(row).text()
+        if cat == self._ALL:
+            return self._all_metas
+        if cat == self._RECENT:
+            return self._recent_metas
+        return self._category_map.get(cat, [])
+
+    def _apply_filter(self) -> None:
+        """The single place cards are chosen.
+
+        Category, search and tags all **narrow**, in that order: the category picks
+        the set, and the other two cut it down. That is the faceted model the left
+        list already implies — a world is one more facet — and it is what makes
+        ``All`` meaningful rather than decorative.
+        """
+        results, matched_drops = filter_bot_metas(self._category_metas(), self._search.text(), self._selected_tags())
         self._show_cards(results, matched_drops)
 
     def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
@@ -451,7 +653,9 @@ class _BotLibraryPanel(QWidget):
                 w.deleteLater()
 
         if not metas:
-            hint = QLabel("No bots found." if self._cat_list.count() else "No bots found in bots/ directory.")
+            # "All" is always in the list now, so its presence no longer distinguishes
+            # "nothing matched" from "the library is empty". The metas do.
+            hint = QLabel("No bots match these filters." if self._all_metas else "No bots found in bots/ directory.")
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
             layout.insertWidget(0, hint)
@@ -488,8 +692,7 @@ class _SearchBar(QWidget):
             f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
         )
 
-        self._input = QLineEdit()
-        self._input.setPlaceholderText("Search states…")
+        self._input = SearchLineEdit("Search states…")
         self._input.setFixedWidth(200)
         self._input.installEventFilter(self)
         self._input.textChanged.connect(self.text_changed)

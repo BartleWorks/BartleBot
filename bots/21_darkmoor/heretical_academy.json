@@ -9,6 +9,11 @@
   "start_location": "Anywhere in Darkmoor",
   "drops": [],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Dungeon"
+  ],
   "options": [
     {
       "name": "Safety Delay",

@@ -1166,6 +1166,11 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Mounts",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

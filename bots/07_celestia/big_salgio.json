@@ -950,6 +950,12 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Reagents",
+    "Spellements",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",

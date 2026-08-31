@@ -161,6 +161,10 @@
     }
   ],
   "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Boss"
+  ],
   "options": [
     {
       "name": "Safety Delay",
