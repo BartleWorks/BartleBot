@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
 
@@ -33,7 +34,7 @@ def _humanize(node_type: str) -> str:
     return node_type.replace("_", " ").title()
 
 
-class _SlotButton(QPushButton):
+class _SlotButton(ThemedMixin, QPushButton):
     def __init__(self, slot: int, bar: FavoritesBar) -> None:
         super().__init__()
         self._slot = slot
@@ -64,9 +65,9 @@ class _SlotButton(QPushButton):
             label = f"{key}  —"
             self.setToolTip(f"[{key}] No node assigned — right-click to assign")
         self.setText(label)
-        self._refresh_style()
+        self.refresh_theme_styles()
 
-    def _refresh_style(self) -> None:
+    def apply_theme_styles(self) -> None:
         filled = bool(self._node_type)
         bg = THEME.surface if filled else THEME.bg
         text_color = THEME.text if filled else THEME.text_muted
@@ -128,18 +129,18 @@ class _SlotButton(QPushButton):
             src_slot = int(bytes(event.mimeData().data(_SLOT_MIME)).decode())
             if src_slot != self._slot:
                 self._drop_highlight = True
-                self._refresh_style()
+                self.refresh_theme_styles()
                 event.acceptProposedAction()
                 return
         event.ignore()
 
     def dragLeaveEvent(self, event) -> None:  # noqa: ANN001
         self._drop_highlight = False
-        self._refresh_style()
+        self.refresh_theme_styles()
 
     def dropEvent(self, event) -> None:  # noqa: ANN001
         self._drop_highlight = False
-        self._refresh_style()
+        self.refresh_theme_styles()
         if event.mimeData().hasFormat(_SLOT_MIME):
             src_slot = int(bytes(event.mimeData().data(_SLOT_MIME)).decode())
             dst_slot = self._slot
@@ -217,4 +218,4 @@ class FavoritesBar(QWidget):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             for btn in self._slots:
-                btn._refresh_style()
+                btn.refresh_theme_styles()

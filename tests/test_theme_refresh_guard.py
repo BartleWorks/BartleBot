@@ -162,6 +162,67 @@ def test_every_themed_widget_refreshes_on_theme_change():
     raise AssertionError("\n".join(lines))
 
 
+def _mixin_users() -> list[tuple[str, ast.ClassDef]]:
+    """Every class inheriting ThemedMixin, as ("module:Name", node)."""
+    out = []
+    for path in _iter_gui_files():
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        module = path.relative_to(GUI_ROOT).as_posix()
+        for cls in (n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)):
+            names = [getattr(b, "id", getattr(b, "attr", None)) for b in cls.bases]
+            if THEMED_MIXIN in names:
+                out.append((f"{module}:{cls.name}", cls))
+    return out
+
+
+def test_the_mixin_is_listed_before_any_qt_base():
+    """``class P(ThemedMixin, QWidget)``, never the reverse.
+
+    Python resolves ``changeEvent`` left to right, so the reverse order does not
+    merely skip the mixin — sending a StyleChange to such a widget aborts the
+    process inside ``sendEvent``, with no exception and no traceback. It cannot be
+    caught at runtime, which is why it is checked here.
+    """
+    wrong = []
+    for name, cls in _mixin_users():
+        names = [getattr(b, "id", getattr(b, "attr", None)) for b in cls.bases]
+        if names.index(THEMED_MIXIN) != 0:
+            wrong.append(f"{name}  ({', '.join(n or '?' for n in names)})")
+    joined = chr(10).join("  " + w for w in wrong)
+    assert not wrong, f"ThemedMixin must come first in the base list:{chr(10)}{joined}"
+
+
+def test_every_mixin_user_implements_apply_theme_styles():
+    """The mixin's own error is raised at runtime, and swallowed by changeEvent."""
+    missing = [
+        name
+        for name, cls in _mixin_users()
+        if not any(isinstance(s, ast.FunctionDef) and s.name == "apply_theme_styles" for s in ast.walk(cls))
+    ]
+    assert not missing, f"inherit ThemedMixin but never implement apply_theme_styles: {missing}"
+
+
+def test_every_mixin_user_applies_its_styles_at_construction():
+    """A widget styled only on the *next* theme switch is unstyled until then.
+
+    The mixin cannot do this itself: when any ``__init__`` it could hook into runs,
+    the children ``apply_theme_styles`` is about to style do not exist yet.
+    """
+    missing = []
+    for name, cls in _mixin_users():
+        outside = [
+            s
+            for s in cls.body
+            if not (isinstance(s, ast.FunctionDef) and s.name in ("changeEvent", "apply_theme_styles"))
+        ]
+        if not any("refresh_theme_styles" in _called_names(s) for s in outside):
+            missing.append(name)
+    assert not missing, (
+        "inherit ThemedMixin but never call self.refresh_theme_styles() outside "
+        f"changeEvent, so they are unstyled until the first theme switch: {missing}"
+    )
+
+
 def test_never_fix_allowlist_has_no_stale_entries():
     """An allowlist that outlives its reason is how a guard test rots into a no-op."""
     live = _violations()
