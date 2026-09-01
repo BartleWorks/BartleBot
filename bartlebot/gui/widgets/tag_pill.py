@@ -13,6 +13,9 @@ Two shapes, because they do different jobs:
   removing the filter or the tag it stands for is the whole point of it being there.
 
 Both take their colour from the same call, so the sizes differ and the hues never do.
+
+:class:`NeutralPill` is the odd one out and lives here for the shape rather than the
+palette: a caption that wants to look like a pill without claiming a tag colour.
 """
 
 from __future__ import annotations
@@ -95,6 +98,44 @@ class TagChip(QPushButton):
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
             )
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
+class NeutralPill(QLabel):
+    """A small, inert, grey pill for a caption that is not a tag.
+
+    A bot card's version, a launch profile's resolution — descriptive text that wants
+    the pill *shape* without claiming a tag colour. Colour on these cards means "tag
+    group", and spending an accent on a version number made the loudest pill the one
+    carrying the least information.
+
+    ``pill_neutral_bg`` is a true grey on purpose: the blue-grey ``chip_neutral_bg``
+    read as a third tag colour beside the blue Rewards pill.
+
+    Owns its own colour, like :class:`TagPill`. The predecessor was a factory returning
+    a bare ``QLabel`` for the caller to restyle from ``apply_theme_styles``, which put
+    the staleness on every caller — see the themed-helper note in CLAUDE.md.
+    """
+
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._applying_style = False
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFixedHeight(14)
+        self._restyle()
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            self.setStyleSheet(pill_style(THEME.pill_neutral_bg, THEME.pill_text))
         finally:
             self._applying_style = False
 
