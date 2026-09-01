@@ -60,6 +60,8 @@ class RecoveryHarness:
         self._vacated_slots: dict[str, int] = {}
         self._recovery_in_progress: bool = False
         self._recovery_task = None
+        self._relogging_hwnds: set[int] = set()
+        self._relog_in_progress: bool = False
         self._clients: list = []
         # The driver borrows the handler's client to read the character-select screen.
         self._handler = MagicMock(clients=[])

@@ -6,15 +6,19 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from wizwalker.errors import MemoryReadError
 from wizwalker.utils import get_window_title
 
-from bartlebot import account_identity, recovery_readiness
+from bartlebot import account_identity, recovery_readiness, relog
 from bartlebot.credentials import CredentialStore
 from bartlebot.launcher import auto_select
 from bartlebot.nodes.timing import (
     CLIENT_DETECT_ERROR_BACKOFF,
     CLIENT_DETECT_INTERVAL,
     CLIENT_DETECT_INTERVAL_IDLE,
+    RELOG_PARK_TIMEOUT,
+    RELOG_WATCH_INTERVAL,
 )
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.utils.process_resources import gdi_object_count
+from bartlebot.utils.window_kill import force_close_client
 
 logger = logging.getLogger(__name__)
 
@@ -96,6 +100,11 @@ class ClientManager(QObject):
         self._activation_tasks: set[asyncio.Task] = set()
         self._client_loop_task: asyncio.Task | None = None
         self._recovery_task: asyncio.Task | None = None
+        # Windows being closed on purpose for a relog. Consumed by _on_clients_removed so
+        # scheduled maintenance is not filed in the log as a fault -- see #156.
+        self._relogging_hwnds: set[int] = set()
+        self._relog_watch_task: asyncio.Task | None = None
+        self._relog_in_progress: bool = False
         self._machine = None
 
     # ------------------------------------------------------------------
@@ -113,6 +122,11 @@ class ClientManager(QObject):
             # Fresh run — clear any leftover recovery state from the previous run.
             self._pending_recovery.clear()
             self._recovery_in_progress = False
+            self._relogging_hwnds.clear()
+            self._relog_in_progress = False
+            self._start_relog_watch()
+        else:
+            self._stop_relog_watch()
 
     def start(self) -> None:
         """Create the client detection loop task. Call once after the event loop is running."""
@@ -664,6 +678,10 @@ class ClientManager(QObject):
             # Dropped first: unlike the title, nothing below reports the user id, and the
             # unmapped path returns early.
             self._hwnd_user_ids.pop(hwnd, None)
+            # Was this window closed by relog_clients rather than lost? Consumed here, so a
+            # client that comes back and later dies for real is reported as a disconnect.
+            relogging = hwnd in self._relogging_hwnds
+            self._relogging_hwnds.discard(hwnd)
             username = self._hwnd_account_map.get(hwnd)
             if not username:
                 self._log_unrecoverable_removal(hwnd, bot_running)
@@ -678,11 +696,22 @@ class ClientManager(QObject):
                 self._vacated_slots[username] = orig_pos
                 if bot_running:
                     self._pending_recovery[orig_pos] = username
-                    logger.warning(
-                        "Client at slot %d (account: %s) disconnected — queuing recovery",
-                        orig_pos,
-                        username,
-                    )
+                    # A relog is routed through this same path on purpose, and filing
+                    # scheduled maintenance as a fault is the kind of double-meaning that
+                    # makes a ten-hour log unreadable (#156). The wording is the only thing
+                    # that differs — everything downstream of here is identical.
+                    if relogging:
+                        logger.info(
+                            "Client at slot %d (account: %s) closed for a relog — bringing it back",
+                            orig_pos,
+                            username,
+                        )
+                    else:
+                        logger.warning(
+                            "Client at slot %d (account: %s) disconnected — queuing recovery",
+                            orig_pos,
+                            username,
+                        )
             elif bot_running:
                 # Mapped to an account, but holding no slot — the other way a removal can
                 # skip recovery in silence.
@@ -1000,3 +1029,157 @@ class ClientManager(QObject):
         # Restore the slot so the next _client_loop rebuild puts the client back in order.
         # machine.clients is kept in sync by _client_loop automatically.
         self._client_order[orig_pos] = username
+
+    # ------------------------------------------------------------------
+    # Relogging
+    # ------------------------------------------------------------------
+
+    def _start_relog_watch(self) -> None:
+        """Begin watching for a due relog. Called at the start of every run."""
+        self._stop_relog_watch()
+        self._relog_watch_task = asyncio.create_task(self._relog_watch_loop())
+
+    def _stop_relog_watch(self) -> None:
+        """Cancel the relog watch. Called when the run ends, and before starting a new one."""
+        if self._relog_watch_task is not None:
+            self._relog_watch_task.cancel()
+            self._relog_watch_task = None
+
+    async def _relog_watch_loop(self) -> None:
+        """Relog the fleet on a timer, and any one client running out of GDI objects.
+
+        Both triggers live here rather than in loops of their own because they ask the same
+        question — is now a safe moment to take clients away from the FSM — and because
+        either kind of relog resets the timer. The policy itself is in ``bartlebot.relog``;
+        this supplies only the clock and the readings.
+
+        Never raises: it outlives every node, and an exception escaping here would take the
+        timer with it for the rest of the run.
+        """
+        loop = asyncio.get_event_loop()
+        last_relog_at = loop.time()
+        while True:
+            try:
+                await asyncio.sleep(RELOG_WATCH_INTERVAL)
+                machine = self._machine
+                if machine is None or machine.is_stopped or self._relog_in_progress:
+                    continue
+
+                now = loop.time()
+                interval = SettingsManager.instance().relog_interval_hours
+                if relog.relog_due(now, last_relog_at, interval):
+                    logger.info(
+                        "Scheduled relog due — %.1f hours since the last one",
+                        (now - last_relog_at) / relog.SECONDS_PER_HOUR,
+                    )
+                    if await self.relog_clients(list(self._clients), reason="scheduled"):
+                        last_relog_at = loop.time()
+                    continue
+
+                starved = self._clients_near_gdi_quota()
+                if starved and await self.relog_clients(starved, reason="GDI quota"):
+                    last_relog_at = loop.time()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                logger.exception("Relog watch loop error")
+
+    def _clients_near_gdi_quota(self) -> list:
+        """Live clients close enough to the 10,000 GDI object cap to need a relog (#164).
+
+        One client has been seen reaching the cap exactly, after which every GDI allocation
+        in that process fails. A failed read answers 0, which is never a trigger — a live
+        client always holds thousands.
+        """
+        starved = []
+        for client in list(self._clients):
+            count = gdi_object_count(client.process_id)
+            if relog.gdi_relog_due(count):
+                logger.warning(
+                    "Client hwnd=%d holds %d GDI objects of a %d quota — relogging it before allocations start failing",
+                    client.window_handle,
+                    count,
+                    relog.GDI_QUOTA,
+                )
+                starved.append(client)
+        return starved
+
+    async def relog_clients(self, targets: list, *, reason: str) -> bool:
+        """Close these clients on purpose so recovery brings them back fresh.
+
+        The cycle *is* the crash-recovery path, deliberately: close the process and let
+        ``remove_dead_clients()`` -> ``_on_clients_removed`` -> ``_run_recovery_queue`` do
+        everything after that. Nothing here relaunches anything.
+
+        Returns whether the clients were actually closed. False means the cycle was refused
+        or abandoned, and the caller should leave its timer alone and try again later.
+
+        The ordering is not negotiable:
+
+        1. **Refuse unless every client could be recovered.** A crash happens whether or not
+           recovery can cope with it; a scheduled relog is a healthy run being broken on
+           purpose, so it must not start unless it is known to be reversible.
+           ``_reconnect_client`` stops the bot on a login failure — right for a crash, and
+           unacceptable as a failure mode this feature introduces.
+        2. **Wait for a real node boundary**, not merely for ``is_paused``. See
+           ``BotMachine.wait_until_parked``.
+        3. **Close, never unhook.** Killing the process sidesteps the fixed sleep in
+           ``HookHandler._rewrite_autobot``, which is a hazard on exactly the lagging
+           clients this exists for.
+        """
+        machine = self._machine
+        if machine is None or machine.is_stopped or not targets:
+            return False
+        if self._relog_in_progress or self._recovery_in_progress or self._pending_recovery:
+            logger.debug("Skipping %s relog — a recovery or relog is already in flight", reason)
+            return False
+
+        gaps = self.recovery_gaps()
+        if gaps:
+            for position, gap in gaps:
+                logger.warning(
+                    "Skipping %s relog — Player %d could not be brought back: %s",
+                    reason,
+                    position,
+                    gap,
+                )
+            return False
+
+        self._relog_in_progress = True
+        try:
+            machine.pause()
+            if not await machine.wait_until_parked(RELOG_PARK_TIMEOUT):
+                logger.warning(
+                    "Skipping %s relog — the bot did not reach a node boundary within %.0fs",
+                    reason,
+                    RELOG_PARK_TIMEOUT,
+                )
+                machine.resume()
+                return False
+            if machine.is_ambient_combat_active:
+                # Parked is not idle: the ambient watcher runs alongside the run loop and
+                # can be mid-fight on every client. Try again next tick rather than closing
+                # a client out of a duel.
+                logger.info("Deferring %s relog — ambient combat is still being handled", reason)
+                machine.resume()
+                return False
+
+            hwnds = [c.window_handle for c in targets]
+            machine.suspend_health_checks_for(hwnds)
+            self._relogging_hwnds.update(hwnds)
+            logger.info("Relogging %d player(s) — reason: %s", len(targets), reason)
+
+            for client in targets:
+                if not await force_close_client(client.window_handle, pid=client.process_id):
+                    # Some of the fleet is already gone and this one will not die. Recovery
+                    # brings back what it can; saying so is what stops the log reading as
+                    # though the cycle completed.
+                    logger.error(
+                        "Relog aborted — client hwnd=%d would not close, so the fleet is part-way "
+                        "through a relog. Recovery will restore the players that did close.",
+                        client.window_handle,
+                    )
+                    return False
+            return True
+        finally:
+            self._relog_in_progress = False

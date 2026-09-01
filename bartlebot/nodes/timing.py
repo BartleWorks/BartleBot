@@ -160,6 +160,17 @@ CLIENT_TERMINATE_TIMEOUT = 2.0
 # asynchronous — it returns before the kernel has torn the process down — and
 # remove_dead_clients() only reaps the client once the handle reports exited.
 
+RELOG_WATCH_INTERVAL = 60.0
+# How often a running bot checks whether a relog is due (#163) and samples each client's
+# GDI count (#164). Deliberately coarse: the timer it serves is measured in hours, and GDI
+# climbs over a whole session, so anything faster is memory reads bought for nothing.
+
+RELOG_PARK_TIMEOUT = 300.0
+# How long a scheduled relog waits for the FSM to reach a node boundary before giving up
+# and trying again on the next tick. Generous on purpose — the longest node in a farming
+# bot is a fight, and a slow one on a degraded client is exactly what this feature exists
+# to fix, so timing out mid-fight and retrying is cheaper than killing a client in one.
+
 CLIENT_REFRESH_TIMEOUT = 1.0
 # Per-widget timeout for a single refresh cycle. If any one client's
 # zone/xyz reads take longer than this (e.g. during a zone transition),

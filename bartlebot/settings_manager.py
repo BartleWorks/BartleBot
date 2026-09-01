@@ -36,6 +36,7 @@ class _GeneralSettings(BaseModel):
     default_apply_archmastery: bool = False
     auto_group_players: bool = True
     auto_select_character: bool = True
+    relog_interval_hours: float = 4.0
     disable_quick_friend_teleport: bool = True
     default_friend_name: str = ""
 
@@ -85,6 +86,7 @@ _DEFAULTS: dict[str, Any] = {
         "default_apply_archmastery": False,
         "auto_group_players": True,
         "auto_select_character": True,
+        "relog_interval_hours": 4.0,
         "disable_quick_friend_teleport": True,
         "default_friend_name": "",
     },
@@ -281,6 +283,20 @@ class SettingsManager:
     @auto_group_players.setter
     def auto_group_players(self, value: bool) -> None:
         self.set_general("auto_group_players", bool(value))
+
+    @property
+    def relog_interval_hours(self) -> float:
+        """How often a run relogs every client, in hours. 0 turns it off.
+
+        A game client degrades the longer it stays logged in (#143) and a relog is the only
+        thing that clears it, so this is a maintenance interval rather than a preference
+        about behaviour.
+        """
+        return float(self.get_general("relog_interval_hours", default=4.0))
+
+    @relog_interval_hours.setter
+    def relog_interval_hours(self, value: float) -> None:
+        self.set_general("relog_interval_hours", max(0.0, float(value)))
 
     @property
     def auto_select_character(self) -> bool:
