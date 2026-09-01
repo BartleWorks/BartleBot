@@ -14,7 +14,7 @@ from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, ProfileCard
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"], "resolution": [1280, 720]}
@@ -130,3 +130,54 @@ def test_an_account_with_no_known_characters_still_builds(qapp):
     """The state every account is in until one of its characters has been played."""
     card = AccountCard(ACCOUNT, [])
     assert card is not None
+
+
+def test_the_edit_button_keeps_its_space_while_hidden(qapp):
+    """Revealing it on hover must not resize the card: a card that grows under the
+    pointer can move out from under it, hiding the button and shrinking back — the
+    jitter that made the cards unusable to mouse over."""
+    card = ProfileCard(PROFILE, [ACCOUNT])
+    card.resize(300, card.sizeHint().height())
+    hidden = card.sizeHint()
+
+    point = QPoint(5, 5).toPointF()
+    card.enterEvent(QEnterEvent(point, point, point))
+
+    assert card.sizeHint() == hidden
+
+
+def test_a_narrow_account_card_drops_names_a_wide_one_shows(qapp):
+    """The count of names shown is a property of the card's width, not a constant."""
+    roster = [{"gid": 1000 + i, "name": f"Wizard Nameyname{i}"} for i in range(6)]
+    card = AccountCard(ACCOUNT, roster)
+    # Shown, because Qt does not deliver a resize event to a hidden widget — and the
+    # fit hangs off that event, which is the thing being tested.
+    card.show()
+
+    card.resize(2000, 60)
+    qapp.processEvents()
+    wide = card._detail_lbl.text()
+    card.resize(160, 60)
+    qapp.processEvents()
+    narrow = card._detail_lbl.text()
+    card.close()
+
+    assert "more" not in wide
+    assert narrow.endswith("more")
+    assert len(narrow) < len(wide)
+
+
+def test_an_account_card_uses_more_rows_before_dropping_a_name(qapp):
+    """Five accounts do not fill the column, so a card that has run out of width grows
+    downwards rather than hiding characters."""
+    roster = [{"gid": 1000 + i, "name": f"Wizard Nameyname{i}"} for i in range(6)]
+    card = AccountCard(ACCOUNT, roster)
+    card.show()
+
+    card.resize(420, 120)
+    qapp.processEvents()
+    text = card._detail_lbl.text()
+    card.close()
+
+    assert "more" not in text
+    assert 1 < len(text.split("\n")) <= MAX_CHARACTER_ROWS

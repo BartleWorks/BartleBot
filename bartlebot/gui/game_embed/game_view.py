@@ -208,6 +208,17 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             profile_cards.append(card)
         self._rebuild_list(self._profiles_area, profile_cards, empty_hint="(No profiles)")
 
+    def showEvent(self, event) -> None:
+        """Rebuild on the way back in.
+
+        The launch screen is hidden for the whole life of an embedded client, which is
+        exactly when the things it describes change: characters are learned as they are
+        played, and the roster is what the account cards are for. Closing the last game
+        window used to reveal cards built before the session that taught them anything.
+        """
+        super().showEvent(event)
+        self.refresh()
+
     def _characters_for(self, username: str) -> list[dict]:
         """The known characters for *username*, or none if no source has been supplied."""
         if self._roster_source is None or not username:

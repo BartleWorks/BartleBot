@@ -38,6 +38,85 @@ def test_character_summary_does_not_truncate_at_exactly_the_limit():
     assert "more" not in launch_cards.character_summary(roster)
 
 
+def _measure(text: str) -> int:
+    """A stand-in font: every character is one unit wide."""
+    return len(text)
+
+
+def test_fitting_shows_every_name_that_fits():
+    names = ["Aa", "Bb", "Cc"]
+    assert launch_cards.fit_character_summary(names, 100, _measure) == "Aa · Bb · Cc"
+
+
+def test_fitting_beats_the_fixed_count_when_there_is_room():
+    """The complaint this exists for: a card with room for six names showed four."""
+    names = [f"W{i}" for i in range(6)]
+    fitted = launch_cards.fit_character_summary(names, 100, _measure)
+    assert fitted == " · ".join(names)
+    assert "more" not in fitted
+
+
+def test_fitting_wraps_onto_further_rows_before_dropping_a_name():
+    """The account column is short of width, not height, so a name that will not fit
+    beside the others goes below them rather than into "+N more"."""
+    names = ["Aaaa", "Bbbb", "Cccc", "Dddd"]
+    assert launch_cards.fit_character_summary(names, 11, _measure) == "Aaaa · Bbbb\nCccc · Dddd"
+
+
+def test_fitting_breaks_between_names_only():
+    """Never inside one: a wizard name is two words, and Qt's own word wrap would split
+    it across rows — which is why the rows are built here rather than left to QLabel."""
+    rows = launch_cards.fit_character_summary(["Aaaa Bbbb", "Cccc Dddd"], 9, _measure).split("\n")
+    assert rows == ["Aaaa Bbbb", "Cccc Dddd"]
+
+
+def test_fitting_stops_at_the_row_limit():
+    """Three rows is where a card stops being a card; the pill beside the name already
+    says how many characters there are."""
+    names = [f"Name{i}" for i in range(8)]
+    fitted = launch_cards.fit_character_summary(names, 5, _measure)
+    assert len(fitted.split("\n")) == launch_cards.MAX_CHARACTER_ROWS
+    assert fitted.endswith("more")
+
+
+def test_fitting_folds_the_overflow_into_a_count():
+    names = ["Aaaa", "Bbbb", "Cccc", "Dddd"]
+    # One row of 13: room for one name and the tail ("Aaaa  +3 more"), not two.
+    fitted = launch_cards.fit_character_summary(names, 13, _measure, max_rows=1)
+    assert fitted == "Aaaa  +3 more"
+
+
+def test_fitting_lays_out_the_tail_it_adds():
+    """A line that just fits without "+N more" does not fit with it, and the tail is
+    what makes the difference — so candidates are laid out whole."""
+    names = ["Aaaa", "Bbbb", "Cccc"]
+    # "Aaaa · Bbbb" is 11 and would fit in 12, but "Aaaa · Bbbb  +1 more" is 20.
+    assert launch_cards.fit_character_summary(names, 12, _measure, max_rows=1) == "Aaaa  +2 more"
+
+
+def test_fitting_always_shows_one_name():
+    """A card too narrow for a single name lets the label elide it — "+3 more" alone
+    says nothing about who is on the account."""
+    names = ["Aaaaaaaaaa", "Bb", "Cc", "Dd"]
+    assert launch_cards.fit_character_summary(names, 4, _measure, max_rows=1).startswith("Aaaaaaaaaa")
+
+
+def test_fitting_a_lone_name_never_appends_a_count():
+    assert launch_cards.fit_character_summary(["Aaaaaaaaaa"], 4, _measure) == "Aaaaaaaaaa"
+
+
+def test_fitting_falls_back_to_the_count_with_no_width():
+    """The card's state before it has been laid out."""
+    names = [f"W{i}" for i in range(6)]
+    assert launch_cards.fit_character_summary(names, 0, _measure) == " · ".join(names)
+
+
+def test_fitting_honours_streamer_mode_through_character_names():
+    SettingsManager.instance().streamer_mode = True
+    names = launch_cards.character_names([LUKE, MISHA])
+    assert launch_cards.fit_character_summary(names, 100, _measure) == "Character 1 · Character 2"
+
+
 def test_character_summary_honours_streamer_mode():
     SettingsManager.instance().streamer_mode = True
     summary = launch_cards.character_summary([LUKE, MISHA])
