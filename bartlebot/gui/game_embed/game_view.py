@@ -11,7 +11,6 @@ from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
-    QLabel,
     QLayout,
     QPushButton,
     QScrollArea,
@@ -25,6 +24,8 @@ from bartlebot.credentials import CredentialStore
 from bartlebot.gui.game_embed.client_tile import FOCUS_BORDER, LABEL_RESERVE, ClientTile, DetachedTile
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
 _user32 = ctypes.windll.user32
@@ -44,7 +45,7 @@ _OVERLAY_BTN_MARGIN = 4
 _LOGO_SIZE = 160  # diameter of the circular logo widget
 
 
-class _GamePlaceholder(QWidget):
+class _GamePlaceholder(ThemedMixin, QWidget):
     """Placeholder shown in GameView when no clients are embedded.
 
     Three-column layout:
@@ -58,6 +59,7 @@ class _GamePlaceholder(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._build_ui()
+        self.refresh_theme_styles()
         self.refresh()
 
     # ------------------------------------------------------------------
@@ -71,13 +73,12 @@ class _GamePlaceholder(QWidget):
         outer.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
 
         # Title
-        title = QLabel("Quick Launch")
+        title = ThemedTextLabel("Quick Launch")
         title_font = title.font()
         title_font.setBold(True)
         title_font.setPointSize(title_font.pointSize() + 2)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet(f"color: {THEME.text_muted};")
         outer.addWidget(title)
 
         # Three-column body
@@ -88,12 +89,11 @@ class _GamePlaceholder(QWidget):
         # ── Left: Accounts ────────────────────────────────────────────
         left = QVBoxLayout()
         left.setSpacing(6)
-        accounts_hdr = QLabel("Accounts")
+        accounts_hdr = ThemedTextLabel("Accounts")
         accounts_hdr_font = accounts_hdr.font()
         accounts_hdr_font.setBold(True)
         accounts_hdr.setFont(accounts_hdr_font)
         accounts_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        accounts_hdr.setStyleSheet(f"color: {THEME.text_muted};")
         left.addWidget(accounts_hdr)
         sep_l = QFrame()
         sep_l.setFrameShape(QFrame.Shape.HLine)
@@ -110,9 +110,8 @@ class _GamePlaceholder(QWidget):
 
         center.addStretch(1)
 
-        logo = QFrame()
+        self._logo = logo = QFrame()
         logo.setFixedSize(_LOGO_SIZE, _LOGO_SIZE)
-        logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
         logo_wrapper = QHBoxLayout()
         logo_wrapper.setContentsMargins(0, 0, 0, 0)
         logo_wrapper.addStretch()
@@ -124,9 +123,6 @@ class _GamePlaceholder(QWidget):
 
         self._manage_btn = QPushButton("Game settings")
         self._manage_btn.setFlat(True)
-        self._manage_btn.setStyleSheet(
-            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
-        )
         self._manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self._manage_btn.clicked.connect(self.manage_accounts_requested)
         center.addWidget(self._manage_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -136,12 +132,11 @@ class _GamePlaceholder(QWidget):
         # ── Right: Launch Profiles ────────────────────────────────────
         right = QVBoxLayout()
         right.setSpacing(6)
-        profiles_hdr = QLabel("Launch Profiles")
+        profiles_hdr = ThemedTextLabel("Launch Profiles")
         profiles_hdr_font = profiles_hdr.font()
         profiles_hdr_font.setBold(True)
         profiles_hdr.setFont(profiles_hdr_font)
         profiles_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        profiles_hdr.setStyleSheet(f"color: {THEME.text_muted};")
         right.addWidget(profiles_hdr)
         sep_r = QFrame()
         sep_r.setFrameShape(QFrame.Shape.HLine)
@@ -168,6 +163,13 @@ class _GamePlaceholder(QWidget):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def apply_theme_styles(self) -> None:
+        """The two pieces that are not labels — the rest own their own colour."""
+        self._logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
+        self._manage_btn.setStyleSheet(
+            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
+        )
 
     def refresh(self) -> None:
         """Rebuild account and profile lists from current settings."""
@@ -215,10 +217,11 @@ class _GamePlaceholder(QWidget):
                 item.widget().deleteLater()
 
         if not items:
-            hint = QLabel(empty_hint)
+            # ThemedTextLabel because _rebuild_list is static and the hints it makes
+            # are replaced on every refresh — there is nothing to hold a reference on.
+            hint = ThemedTextLabel(empty_hint, css="font-size: 11px;")
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
             layout.addWidget(hint)
         else:
             for label, callback in items:
@@ -230,7 +233,7 @@ class _GamePlaceholder(QWidget):
         layout.addStretch()
 
 
-class GameView(QWidget):
+class GameView(ThemedMixin, QWidget):
     """Container that shows N ClientTile widgets in a grid layout.
 
     Tiles are positioned manually (not via a QLayout) so that we can recompute
@@ -263,8 +266,6 @@ class GameView(QWidget):
 
         # Overlay button: detach-all (when embedded) / re-attach-all (when detached)
         self._overlay_btn = QToolButton(self)
-        self._overlay_btn.setIcon(svg_icon("detach", 22))
-        self._overlay_btn.setToolTip("Detach all windows")
         self._overlay_btn.setAutoRaise(True)
         self._overlay_btn.setFixedSize(_OVERLAY_BTN_SIZE, _OVERLAY_BTN_SIZE)
         self._overlay_btn.clicked.connect(self._on_overlay_clicked)
@@ -278,6 +279,18 @@ class GameView(QWidget):
         self._focus_timer.start()
 
         QApplication.instance().installEventFilter(self)
+
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        """Re-tint the overlay button.
+
+        svg_icon bakes THEME.icon_tint in at render time, and which of the two icons
+        belongs there depends on whether the tiles are embedded or detached —
+        _update_overlay already answers that, so the restyle defers to it rather than
+        duplicating the rule.
+        """
+        self._update_overlay()
 
     # ------------------------------------------------------------------
     # Public API

@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.credentials import CredentialStore
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
 
@@ -316,8 +316,10 @@ class AccountsTab(QWidget):
         res_form.addRow("Default game resolution:", self._res_combo)
         layout.addLayout(res_form)
 
-        hint = QLabel("Set Wizard101 to Windowed mode in Options → Graphics, with this resolution.")
-        hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        hint = ThemedTextLabel(
+            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution.",
+            css="font-size: 11px;",
+        )
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
