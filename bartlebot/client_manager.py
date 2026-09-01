@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from PyQt6.QtCore import QObject, pyqtSignal
 from wizwalker.errors import MemoryReadError
@@ -13,6 +14,7 @@ from bartlebot.nodes.timing import (
     CLIENT_DETECT_ERROR_BACKOFF,
     CLIENT_DETECT_INTERVAL,
     CLIENT_DETECT_INTERVAL_IDLE,
+    RECOVERY_BATCH_SETTLE,
     RELOG_PARK_TIMEOUT,
     RELOG_WATCH_INTERVAL,
 )
@@ -21,6 +23,34 @@ from bartlebot.utils.process_resources import gdi_object_count
 from bartlebot.utils.window_kill import force_close_client
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _RecoveryTarget:
+    """One slot being relaunched, with everything the launcher needs to bring it back."""
+
+    orig_pos: int
+    username: str
+    password: str
+    display_name: str
+    title: str
+    resolution: tuple[int, int] | None
+
+
+def _group_by_resolution(
+    targets: list[_RecoveryTarget],
+) -> list[tuple[tuple[int, int] | None, list[_RecoveryTarget]]]:
+    """Split targets into batches that can share one config.xml patch.
+
+    The game reads its window resolution from a single file at startup, so a batch can
+    only hold clients that want the same one. Order within a group is preserved, and so is
+    the order the groups themselves are launched in, so a fleet with one resolution — the
+    normal case — comes back as one batch in slot order.
+    """
+    groups: dict[tuple[int, int] | None, list[_RecoveryTarget]] = {}
+    for target in targets:
+        groups.setdefault(target.resolution, []).append(target)
+    return list(groups.items())
 
 
 def _titled(clients, title: str):
@@ -878,24 +908,34 @@ class ClientManager(QObject):
     # ------------------------------------------------------------------
 
     async def _run_recovery_queue(self) -> None:
-        """Process _pending_recovery sequentially — one client at a time.
+        """Bring every pending slot back, then resume the FSM once.
 
-        The FSM is kept paused for the entire duration (across all clients). Once all
-        pending recoveries complete successfully, the FSM is jumped to recovery_state
-        and resumed exactly once.
+        Slots are drained in batches rather than one at a time: a scheduled relog closes
+        the whole fleet, and relaunching four clients in turn costs four full launches --
+        spawn, two loading screens, character select, load-in -- where one batch costs
+        roughly one. See ``launch_accounts``.
+
+        The FSM stays paused for the entire duration. Once every pending recovery has
+        completed successfully, the FSM is jumped to recovery_state and resumed exactly
+        once.
         """
         try:
+            await self._settle_recovery_batch()
             while self._pending_recovery:
-                orig_pos, username = next(iter(self._pending_recovery.items()))
+                batch = dict(self._pending_recovery)
                 try:
-                    await self._reconnect_client(orig_pos, username)
+                    await self._reconnect_clients(batch)
                 except Exception:
-                    logger.exception("Unhandled error in recovery for slot %d — stopping bot", orig_pos)
+                    logger.exception(
+                        "Unhandled error recovering slot(s) %s — stopping bot",
+                        ", ".join(str(pos) for pos in sorted(batch)),
+                    )
                     self._pending_recovery.clear()
                     if self._machine:
                         self._machine.stop()
                     return
-                self._pending_recovery.pop(orig_pos, None)
+                for orig_pos in batch:
+                    self._pending_recovery.pop(orig_pos, None)
 
             # All pending clients are back in-game — regroup, then jump to recovery state
             # and resume. Grouping happens while the FSM is still paused so no node is
@@ -918,6 +958,28 @@ class ClientManager(QObject):
                     machine.stop()
         finally:
             self._recovery_in_progress = False
+
+    async def _settle_recovery_batch(self) -> None:
+        """Wait for a relog in flight to finish closing, so its clients recover together.
+
+        Only a relog closes several clients on purpose, and it is the one case where the
+        batch is worth waiting for: the closes are issued together but each window is only
+        noticed missing on the next ``_client_loop`` poll, so starting on the first arrival
+        would relaunch the fleet one client at a time. A crash queues whatever it queues
+        and is not waited on — there is nothing more coming.
+
+        Bounded, and never the difference between recovering and not: if the relog is still
+        closing when the budget runs out, the queue proceeds with what it has and picks up
+        the stragglers on its next pass.
+        """
+        if not self._relog_in_progress:
+            return
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + RECOVERY_BATCH_SETTLE
+        while self._relog_in_progress and loop.time() < deadline:
+            await asyncio.sleep(CLIENT_DETECT_INTERVAL)
+        # The last process to die is still one poll away from being noticed missing.
+        await asyncio.sleep(CLIENT_DETECT_INTERVAL * 2)
 
     async def _regroup_after_recovery(self) -> None:
         """Rebuild the in-game group after a recovery, if the user has that enabled.
@@ -959,20 +1021,14 @@ class ClientManager(QObject):
         except Exception:
             logger.warning("Post-recovery grouping failed — the bot will resume ungrouped", exc_info=True)
 
-    async def _reconnect_client(self, orig_pos: int, username: str) -> None:
-        """Relaunch a disconnected client, navigate to in-game, then resume the FSM.
+    def _recovery_target(self, orig_pos: int, username: str) -> "_RecoveryTarget | None":
+        """Everything needed to relaunch one slot, or None if it cannot be relaunched.
 
-        The screens between auto-login and in-game are driven by drive_client_in, the same
-        path a normal launch takes — see launcher/auto_select.py for why that has to be
-        done blind. Recovery differs only in what failure means: a bot mid-run cannot
-        continue a player short, so a drive that gives up stops the machine.
+        None means the machine has already been stopped and the user told why: a bot
+        mid-run cannot continue a player short, and no stored password is not something
+        this can drive its way out of.
         """
-        from bartlebot.launcher.launch_profile import launch_account  # noqa: PLC0415
-
         machine = self._machine
-        if machine is None:
-            return
-
         password = CredentialStore.retrieve(username)
         if not password:
             logger.error("No stored password for '%s' — stopping bot", username)
@@ -980,55 +1036,133 @@ class ClientManager(QObject):
                 f"No stored password for account '{username}'.\n\n"
                 "Open Settings → Accounts and save the password, then restart the bot."
             )
-            machine.stop()
+            if machine:
+                machine.stop()
+            return None
+
+        display_name = CredentialStore.display_name(username, self._alias_for(username))
+        return _RecoveryTarget(
+            orig_pos=orig_pos,
+            username=username,
+            password=password,
+            display_name=display_name,
+            title=f"[{display_name}] Wizard101",
+            # The last known resolution for this client, captured while the window was
+            # alive. None falls back to the global setting, for a client never seen before.
+            resolution=self._client_resolutions.get(username),
+        )
+
+    async def _reconnect_clients(self, slots: dict[int, str]) -> None:
+        """Relaunch these slots together and put each client back where it was.
+
+        The screens between auto-login and in-game are driven by drive_client_in, the same
+        path a normal launch takes — see launcher/auto_select.py for why that has to be
+        done blind. Recovery differs only in what failure means: a bot mid-run cannot
+        continue a player short, so a drive that gives up stops the machine.
+
+        The clients go out as one batch, and their drives run concurrently. That is the
+        launcher's ordinary shape rather than a liberty taken here — a launch profile has
+        always advanced its whole team at once, and auto-select posts its keystrokes with
+        ``PostMessageW``, so no drive needs focus or competes with another for it.
+
+        One exception: the game reads its resolution from a single config.xml at startup,
+        so clients that want different resolutions cannot share a batch. They are grouped
+        by resolution and each group is launched in turn. A fleet normally shares one.
+        """
+        from bartlebot.launcher.launch_profile import launch_accounts  # noqa: PLC0415
+
+        machine = self._machine
+        if machine is None:
             return
 
-        settings = SettingsManager.instance()
-        accounts_meta = {a["username"]: a for a in settings.accounts}
-        alias = accounts_meta.get(username, {}).get("alias") or None
-        display_name = CredentialStore.display_name(username, alias)
-        expected_title = f"[{display_name}] Wizard101"
-
-        # Use the last known resolution for this client, captured while the window was alive.
-        # Falls back to None (global setting) if the client was never seen before recovery.
-        crashed_resolution = self._client_resolutions.get(username)
-
-        logger.info("Relaunching '%s' for recovery at slot %d", display_name, orig_pos)
-        try:
-            await launch_account(username, password, display_name, resolution=crashed_resolution)
-        except Exception:
-            logger.exception("Failed to launch account '%s' — stopping bot", display_name)
-            machine.stop()
+        targets: list[_RecoveryTarget] = []
+        for orig_pos, username in sorted(slots.items()):
+            target = self._recovery_target(orig_pos, username)
+            if target is None:
+                # Nothing is launched when any slot is unrecoverable: the run is over
+                # either way, and half a fleet relaunched is worse than none.
+                return
+            targets.append(target)
+        if not targets:
             return
 
-        if SettingsManager.instance().auto_select_character:
-            reached = await self.drive_client_in(expected_title)
-        else:
+        auto_select_on = SettingsManager.instance().auto_select_character
+        if not auto_select_on:
             # The user has opted out of automatic character selection, so recovery waits
             # for them rather than pressing anything — but it still has to wait, since the
             # run cannot resume a player short.
-            logger.warning(
-                "Auto-select is off — '%s' has been relaunched and is waiting at character "
-                "select. Log it in to resume the run.",
-                display_name,
-            )
-            self.recovery_error.emit(
-                f"'{display_name}' has been relaunched and is waiting at character select.\n\n"
-                "Log it in to resume the run, or turn on Settings → General → "
-                "Automatically select a character to have this done for you."
-            )
-            reached = await self.await_client_in(expected_title)
+            self._warn_awaiting_manual_login(targets)
 
-        if not reached:
-            logger.error("Timed out waiting for reconnected client '%s' — stopping bot", display_name)
+        reached: dict[str, bool] = {}
+
+        async def _drive(title: str) -> bool:
+            ok = await self.drive_client_in(title)
+            reached[title] = ok
+            return ok
+
+        for resolution, group in _group_by_resolution(targets):
+            logger.info(
+                "Relaunching %d player(s) for recovery: %s",
+                len(group),
+                ", ".join(f"'{t.display_name}' at slot {t.orig_pos}" for t in group),
+            )
+            try:
+                await launch_accounts(
+                    [(t.username, t.password, t.display_name) for t in group],
+                    resolution=resolution,
+                    drive=_drive if auto_select_on else None,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to launch account(s) %s — stopping bot",
+                    ", ".join(f"'{t.display_name}'" for t in group),
+                )
+                machine.stop()
+                return
+
+        if not auto_select_on:
+            # Nothing to drive, so every window is waited on at once rather than in turn.
+            results = await asyncio.gather(*[self.await_client_in(t.title) for t in targets])
+            reached = {t.title: ok for t, ok in zip(targets, results)}
+
+        missing = [t for t in targets if not reached.get(t.title)]
+        if missing:
+            logger.error(
+                "Timed out waiting for reconnected client(s) %s — stopping bot",
+                ", ".join(f"'{t.display_name}'" for t in missing),
+            )
             machine.stop()
             return
 
-        logger.info("Client '%s' recovered and in-game, slot %d restored", display_name, orig_pos)
+        for target in targets:
+            logger.info(
+                "Client '%s' recovered and in-game, slot %d restored",
+                target.display_name,
+                target.orig_pos,
+            )
+            # Restore the slot so the next _client_loop rebuild puts the client back in
+            # order. machine.clients is kept in sync by _client_loop automatically.
+            self._client_order[target.orig_pos] = target.username
 
-        # Restore the slot so the next _client_loop rebuild puts the client back in order.
-        # machine.clients is kept in sync by _client_loop automatically.
-        self._client_order[orig_pos] = username
+    def _warn_awaiting_manual_login(self, targets: list["_RecoveryTarget"]) -> None:
+        """Say once, for the whole batch, that these windows are waiting to be logged in.
+
+        One message rather than one per client: with auto-select off a fleet relog would
+        otherwise raise a dialog per player, each saying the same thing.
+        """
+        names = ", ".join(f"'{t.display_name}'" for t in targets)
+        logger.warning(
+            "Auto-select is off — %s %s been relaunched and %s waiting at character select. Log in to resume the run.",
+            names,
+            "have" if len(targets) > 1 else "has",
+            "are" if len(targets) > 1 else "is",
+        )
+        self.recovery_error.emit(
+            f"{names} {'have' if len(targets) > 1 else 'has'} been relaunched and "
+            f"{'are' if len(targets) > 1 else 'is'} waiting at character select.\n\n"
+            "Log in to resume the run, or turn on Settings → General → "
+            "Automatically select a character to have this done for you."
+        )
 
     # ------------------------------------------------------------------
     # Relogging
@@ -1119,7 +1253,7 @@ class ClientManager(QObject):
         1. **Refuse unless every client could be recovered.** A crash happens whether or not
            recovery can cope with it; a scheduled relog is a healthy run being broken on
            purpose, so it must not start unless it is known to be reversible.
-           ``_reconnect_client`` stops the bot on a login failure — right for a crash, and
+           ``_reconnect_clients`` stops the bot on a login failure — right for a crash, and
            unacceptable as a failure mode this feature introduces.
         2. **Wait for a real node boundary**, not merely for ``is_paused``. See
            ``BotMachine.wait_until_parked``.
@@ -1169,17 +1303,28 @@ class ClientManager(QObject):
             self._relogging_hwnds.update(hwnds)
             logger.info("Relogging %d player(s) — reason: %s", len(targets), reason)
 
-            for client in targets:
-                if not await force_close_client(client.window_handle, pid=client.process_id):
-                    # Some of the fleet is already gone and this one will not die. Recovery
-                    # brings back what it can; saying so is what stops the log reading as
-                    # though the cycle completed.
-                    logger.error(
-                        "Relog aborted — client hwnd=%d would not close, so the fleet is part-way "
-                        "through a relog. Recovery will restore the players that did close.",
-                        client.window_handle,
-                    )
-                    return False
+            # Closed together rather than in turn: force_close_client waits out the
+            # process, so a fleet closed one at a time spends that wait per client and
+            # spreads the removals across several _client_loop polls -- which is what
+            # decides whether they come back as one batch or one at a time.
+            results = await asyncio.gather(
+                *[force_close_client(c.window_handle, pid=c.process_id) for c in targets],
+                return_exceptions=True,
+            )
+            survivors = [c for c, ok in zip(targets, results) if ok is not True]
+            for client, result in zip(targets, results):
+                if isinstance(result, BaseException):
+                    logger.error("Closing client hwnd=%d for a relog raised", client.window_handle, exc_info=result)
+            if survivors:
+                # Some of the fleet is already gone and these will not die. Recovery brings
+                # back what it can; saying so is what stops the log reading as though the
+                # cycle completed.
+                logger.error(
+                    "Relog incomplete — client(s) %s would not close, so the fleet is part-way "
+                    "through a relog. Recovery will restore the players that did close.",
+                    ", ".join(f"hwnd={c.window_handle}" for c in survivors),
+                )
+                return False
             return True
         finally:
             self._relog_in_progress = False

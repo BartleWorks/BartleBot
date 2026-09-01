@@ -182,6 +182,12 @@ RELOG_PARK_TIMEOUT = 300.0
 # bot is a fight, and a slow one on a degraded client is exactly what this feature exists
 # to fix, so timing out mid-fight and retrying is cheaper than killing a client in one.
 
+RECOVERY_BATCH_SETTLE = 5.0
+# How long the recovery queue waits for the rest of a relog batch before relaunching what
+# it has. A relog closes several clients at once, but each window is only noticed missing
+# on the next _client_loop poll, so the queue would otherwise start on the first one alone
+# and relaunch the fleet a client at a time -- which is the whole cost the batch avoids.
+
 CLIENT_REFRESH_TIMEOUT = 1.0
 # Per-widget timeout for a single refresh cycle. If any one client's
 # zone/xyz reads take longer than this (e.g. during a zone transition),

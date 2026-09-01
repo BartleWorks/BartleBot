@@ -235,7 +235,7 @@ What must not be broken:
 
 - **`recovery_gaps()` gates every scheduled relog.** A crash happens whether or not
   recovery can cope; a scheduled relog is a healthy run being broken on purpose, and
-  `_reconnect_client` stops the bot when it cannot log a client back in. Without the
+  `_reconnect_clients` stops the bot when it cannot log a client back in. Without the
   pre-check the feature is a net loss.
 - **Wait for `wait_until_parked()`, not `is_paused`.** `pause()` clears an event and
   returns, so `is_paused` goes true while the current node is still running -- for the
@@ -249,6 +249,16 @@ What must not be broken:
   because nothing calls `resume()` for it.
 - **Close, never unhook.** Killing the process sidesteps `HookHandler._rewrite_autobot`'s
   fixed 0.5 s sleep, which is a hazard on exactly the lagging clients this exists for.
+- **Recover the fleet as one batch, not a client at a time.** A relog closes every
+  client, and the relaunch goes through `_run_recovery_queue`, which drains
+  `_pending_recovery` in batches through `launch_accounts` -- one config.xml patch, the
+  instances spawned back-to-back, the login screens waited for once, and every drive
+  overlapped. Sequentially it is a full launch per client. Two things this rests on:
+  `force_close_client` is gathered so the windows die together rather than a
+  process-exit wait apart, and `_settle_recovery_batch` waits out a relog still closing,
+  because a window is only noticed missing on the next `_client_loop` poll. Clients
+  wanting *different* resolutions still cannot share a batch -- the game reads one
+  config.xml at startup -- so those are grouped and launched in turn.
 - **A relog is not a disconnect in the log.** It travels the same removal path, and filing
   scheduled maintenance as a fault is the double-meaning #156 exists to prevent --
   `_relogging_hwnds` is what keeps the wording honest.

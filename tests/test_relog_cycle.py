@@ -141,8 +141,27 @@ class TestTheCycle:
     async def test_closes_every_target_with_its_own_pid(self, harness):
         with _closes_cleanly() as close:
             assert await harness.relog_clients(harness._clients, reason="scheduled") is True
-        assert [c.args[0] for c in close.await_args_list] == [101, 102]
-        assert [c.kwargs["pid"] for c in close.await_args_list] == [1001, 1002]
+        assert sorted(c.args[0] for c in close.await_args_list) == [101, 102]
+        assert sorted(c.kwargs["pid"] for c in close.await_args_list) == [1001, 1002]
+
+    async def test_the_targets_are_closed_together(self, harness):
+        """Closing in turn spends the process-exit wait per client, and spreads the
+        removals across several _client_loop polls -- which is what decides whether they
+        come back as one batch or one at a time."""
+        in_flight = 0
+        peak = 0
+
+        async def _close(hwnd, **_kwargs):
+            nonlocal in_flight, peak
+            in_flight += 1
+            peak = max(peak, in_flight)
+            await asyncio.sleep(0)
+            in_flight -= 1
+            return True
+
+        with patch("bartlebot.client_manager.force_close_client", _close):
+            assert await harness.relog_clients(harness._clients, reason="scheduled") is True
+        assert peak == 2
 
     async def test_suspends_health_checks_for_the_targets(self, harness):
         with _closes_cleanly():
@@ -163,18 +182,29 @@ class TestTheCycle:
         # _client_loop the moment it dies.
         assert seen[0] == {101, 102}
 
-    async def test_aborts_when_a_client_will_not_close(self, harness, caplog):
+    async def test_reports_failure_when_a_client_will_not_close(self, harness, caplog):
+        closed: list[int] = []
+
         async def _close(hwnd, **_kwargs):
+            closed.append(hwnd)
             return hwnd == 101  # the second one survives everything
 
         with patch("bartlebot.client_manager.force_close_client", _close), caplog.at_level(logging.ERROR):
             assert await harness.relog_clients(harness._clients, reason="scheduled") is False
         assert "would not close" in caplog.text
+        # The healthy client is still closed: recovery brings back whatever died, and the
+        # cycle only has to be honest about the one that did not.
+        assert sorted(closed) == [101, 102]
 
-    async def test_the_in_progress_flag_is_cleared_even_on_failure(self, harness):
-        with patch("bartlebot.client_manager.force_close_client", AsyncMock(side_effect=OSError("boom"))):
-            with pytest.raises(OSError):
-                await harness.relog_clients(harness._clients, reason="scheduled")
+    async def test_a_raising_close_is_a_failure_rather_than_an_escape(self, harness, caplog):
+        """One client that cannot be closed must not take the other close with it, nor the
+        relog watch loop that called this."""
+        with (
+            patch("bartlebot.client_manager.force_close_client", AsyncMock(side_effect=OSError("boom"))),
+            caplog.at_level(logging.ERROR),
+        ):
+            assert await harness.relog_clients(harness._clients, reason="scheduled") is False
+        assert "raised" in caplog.text
         assert harness._relog_in_progress is False
 
     async def test_one_cycle_at_a_time(self, harness):
