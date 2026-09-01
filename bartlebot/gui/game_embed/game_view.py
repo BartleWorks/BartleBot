@@ -383,6 +383,25 @@ class GameView(ThemedMixin, QWidget):
             if tile is not None:
                 tile.set_wizard_name(name)
 
+    def refresh_launch_lists(self) -> None:
+        """Rebuild the Quick Launch account and profile lists from settings.
+
+        Public because the placeholder is GameView's own widget: a caller that has just
+        added an account or recorded a launch needs the lists rebuilt without reaching
+        through to it.
+        """
+        self._placeholder.refresh()
+
+    def repaint_tile_labels(self) -> None:
+        """Repaint every tile's caption without changing what it is showing.
+
+        Toggling Streamer Mode changes how ``pill_text`` renders a name it already has,
+        and nothing else would prompt a repaint: a tile only updates when its name or
+        label *changes*, and neither did. Called from the settings-applied signal.
+        """
+        for tile in (*self._tiles.values(), *self._detached_tiles.values()):
+            tile.update()
+
     def _wizard_name_for(self, client_idx: int) -> str | None:
         """The last known wizard name for a slot, or None if there is not one yet."""
         if 0 <= client_idx < len(self._wizard_names):

@@ -29,6 +29,16 @@ def test_label_and_name_stay_independent():
     assert pill_text("Player 3", "Misha SkullSeer") == "Player 3 · Misha SkullSeer"
 
 
+def test_streamer_mode_drops_the_name_and_keeps_the_label():
+    """The slot label is already a position, so the caption does not gain a second one —
+    see pill_text's docstring."""
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().streamer_mode = True
+    assert pill_text("Player 1", "Luke SkullHunter") == "Player 1"
+    assert pill_text("Player 3", "Misha SkullSeer") == "Player 3"
+
+
 # ---------------------------------------------------------------------------
 # GameView name bookkeeping
 #

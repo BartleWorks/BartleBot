@@ -41,6 +41,14 @@ class GameViewPanel(QWidget):
     # Construction
     # ------------------------------------------------------------------
 
+    def refresh_launch_lists(self) -> None:
+        """Rebuild the Quick Launch lists — see GameView.refresh_launch_lists."""
+        self.game_view.refresh_launch_lists()
+
+    def repaint_tile_labels(self) -> None:
+        """Repaint the tile captions — see GameView.repaint_tile_labels."""
+        self.game_view.repaint_tile_labels()
+
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)

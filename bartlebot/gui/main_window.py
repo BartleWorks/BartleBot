@@ -424,7 +424,10 @@ class MainWindow(QMainWindow):
             self.refresh_minimum_size()
             self.bot_canvas._apply_canvas_settings()
             self.settings_applied.emit()
-        self._game_view_panel.game_view._placeholder.refresh()
+            # Streamer Mode changes how a tile renders a name it already has, and a tile
+            # only repaints when its name or label changes — neither did.
+            self._game_view_panel.repaint_tile_labels()
+        self._game_view_panel.refresh_launch_lists()
 
     def _open_launcher(self) -> None:
         from bartlebot.gui.launcher_popup import LauncherPopup
@@ -493,7 +496,7 @@ class MainWindow(QMainWindow):
 
     def _record_recent_launch(self, entry_type: str, identifier: str) -> None:
         SettingsManager.instance().add_recent_launch(entry_type, identifier)
-        self._game_view_panel.game_view._placeholder.refresh()
+        self._game_view_panel.refresh_launch_lists()
 
     def _update_recent_placeholder(self) -> None:
         action = QAction("(No recent files)", self)

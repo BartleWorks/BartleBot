@@ -89,6 +89,7 @@ _DEFAULTS: dict[str, Any] = {
         "relog_interval_hours": 4.0,
         "disable_quick_friend_teleport": True,
         "default_friend_name": "",
+        "streamer_mode": False,
     },
     "game_embed": {
         "resolution": [800, 600],
@@ -319,6 +320,21 @@ class SettingsManager:
     @disable_quick_friend_teleport.setter
     def disable_quick_friend_teleport(self, value: bool) -> None:
         self.set_general("disable_quick_friend_teleport", bool(value))
+
+    @property
+    def streamer_mode(self) -> bool:
+        """Whether wizard names are replaced with positional placeholders in the UI.
+
+        Off by default: a name is genuinely useful for telling characters apart, and
+        someone who is not sharing their screen has nothing to gain from hiding it.
+        See bartlebot/streamer_mode.py for what it applies to and why the placeholder
+        is positional rather than a mask.
+        """
+        return bool(self.get_general("streamer_mode", default=False))
+
+    @streamer_mode.setter
+    def streamer_mode(self, value: bool) -> None:
+        self.set_general("streamer_mode", bool(value))
 
     @property
     def default_friend_name(self) -> str:
