@@ -43,14 +43,25 @@ def _switch_app(qapp, theme, mode: str) -> None:
 
 @pytest.fixture
 def game_view(qapp):
+    """A GameView with its two app-wide hooks disarmed.
+
+    Both fire on real user input and read ``tile.hwnd`` / ``tile.is_game_focused()``
+    off whatever is in ``_tiles``, so the stand-in objects these tests put there make
+    them raise — inside a QTimer slot and an event filter, which PyQt6 turns into
+    qFatal() and a dead worker rather than a test failure. That needs a real mouse
+    click to happen, which is why it surfaced as an occasional crash in a long run and
+    never when this file ran alone.
+
+    The event filter is installed on the *QApplication* and the app never removes it,
+    which is harmless in production — one GameView lives for the process — but leaves
+    a deleted view receiving events here.
+    """
     view = GameView()
-    # Stopped up front, not just in teardown. _poll_focus runs every 50 ms and reads
-    # tile.hwnd off whatever is in _tiles, so the stand-in objects these tests put
-    # there make it raise — inside a QTimer slot, which PyQt6 turns into qFatal() and
-    # a dead worker. It only fires after a real mouse click, which is why it surfaced
-    # as an occasional crash in a long run rather than a failure here.
     view._focus_timer.stop()
+    qapp.removeEventFilter(view)
     yield view
+    view._tiles.clear()
+    view._detached_tiles.clear()
     view.deleteLater()
 
 
