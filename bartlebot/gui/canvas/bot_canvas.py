@@ -55,6 +55,7 @@ from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import TagChip, TagPill, pill_style
@@ -221,16 +222,20 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     return results, matched_drops
 
 
-def _pill(text: str, bg: str, fg: str) -> QLabel:
-    """Small rounded caption for a bot card's version — the tags use ``TagPill``."""
+def _pill(text: str) -> QLabel:
+    """Small rounded caption for a bot card's version — the tags use ``TagPill``.
+
+    Builds the shape only. Colour is the caller's, applied from its
+    ``apply_theme_styles``: a label styled once in here would keep whichever theme
+    was active when the card was built.
+    """
     lbl = QLabel(text)
     lbl.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    lbl.setStyleSheet(pill_style(bg, fg))
     lbl.setFixedHeight(14)
     return lbl
 
 
-class _BotCard(QWidget):
+class _BotCard(ThemedMixin, QWidget):
     """Single clickable bot entry shown in the library's right panel."""
 
     open_requested = pyqtSignal(str)  # emits path string
@@ -241,9 +246,17 @@ class _BotCard(QWidget):
         self._matched_drops = matched_drops
         self.setObjectName("BotCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._set_normal_style()
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Every label the card builds is held, because each carries a THEME colour
+        # that apply_theme_styles has to re-derive. Several are conditional, so the
+        # attributes are declared up front rather than only where they are built.
+        self._hovered = False
+        self._version_pill: QLabel | None = None
+        self._desc_lbl: QLabel | None = None
+        self._meta_lbl: QLabel | None = None
+        self._match_lbl: QLabel | None = None
         self._build()
+        self.refresh_theme_styles()
 
     def _build(self) -> None:
         layout = QVBoxLayout(self)
@@ -254,12 +267,11 @@ class _BotCard(QWidget):
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
 
-        name_lbl = QLabel(self._meta.name or "(untitled)")
-        f = name_lbl.font()
+        self._name_lbl = QLabel(self._meta.name or "(untitled)")
+        f = self._name_lbl.font()
         f.setBold(True)
-        name_lbl.setFont(f)
-        name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
-        header.addWidget(name_lbl, 0)
+        self._name_lbl.setFont(f)
+        header.addWidget(self._name_lbl, 0)
 
         # Neutral grey, not the accent it used to be. Colour on this card now means
         # "tag group", and a version is not one — spending the accent on it made the
@@ -267,8 +279,8 @@ class _BotCard(QWidget):
         # true grey: the blue-grey chip_neutral_bg read as a third tag colour beside
         # the blue Rewards pill.
         if self._meta.version:
-            pill = _pill(f"v{self._meta.version}", THEME.pill_neutral_bg, THEME.pill_text)
-            header.addWidget(pill, 0, Qt.AlignmentFlag.AlignVCenter)
+            self._version_pill = _pill(f"v{self._meta.version}")
+            header.addWidget(self._version_pill, 0, Qt.AlignmentFlag.AlignVCenter)
 
         # One palette for a tag everywhere it appears: the dot in the picker, the chip
         # in the filter bar, this pill, and the ones in Bot Info. TagPill owns it.
@@ -279,10 +291,9 @@ class _BotCard(QWidget):
         layout.addLayout(header)
 
         if self._meta.description:
-            desc_lbl = QLabel(self._meta.description)
-            desc_lbl.setWordWrap(True)
-            desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
-            layout.addWidget(desc_lbl)
+            self._desc_lbl = QLabel(self._meta.description)
+            self._desc_lbl.setWordWrap(True)
+            layout.addWidget(self._desc_lbl)
 
         parts: list[str] = []
         if self._meta.authors:
@@ -291,37 +302,56 @@ class _BotCard(QWidget):
         if n:
             parts.append(f"{n} drop{'s' if n != 1 else ''}")
         if parts:
-            meta_lbl = QLabel("  ·  ".join(parts))
-            meta_lbl.setStyleSheet(f"color: {THEME.text_subtle}; font-size: 10px; background: transparent;")
-            layout.addWidget(meta_lbl)
+            self._meta_lbl = QLabel("  ·  ".join(parts))
+            layout.addWidget(self._meta_lbl)
 
         if self._matched_drops:
             shown = self._matched_drops[:3]
             text = ", ".join(shown)
             if len(self._matched_drops) > 3:
                 text += f" +{len(self._matched_drops) - 3} more"
-            match_lbl = QLabel(f"Drops: {text}")
-            match_lbl.setWordWrap(True)
-            match_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 10px; background: transparent;")
-            layout.addWidget(match_lbl)
+            self._match_lbl = QLabel(f"Drops: {text}")
+            self._match_lbl.setWordWrap(True)
+            layout.addWidget(self._match_lbl)
 
-    def _set_normal_style(self) -> None:
+    def apply_theme_styles(self) -> None:
+        """Restyle the frame and every label on it.
+
+        Hover is state rather than a QSS pseudo-class because the frame and the
+        labels are restyled by the same pass; ``_hovered`` picks which frame colours
+        that pass uses. Before this was one method, hover was the *only* thing that
+        re-read THEME, so a theme switch left a card's text in the old palette until
+        the mouse crossed it — and even then only the frame followed.
+        """
         # Use #BotCard selector so border/background don't bleed into child labels
-        self.setStyleSheet(
-            f"#BotCard {{ background: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 4px; }}"
-        )
+        bg = THEME.node_fill if self._hovered else THEME.surface
+        border = THEME.accent if self._hovered else THEME.border
+        self.setStyleSheet(f"#BotCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
 
-    def _set_hover_style(self) -> None:
-        self.setStyleSheet(
-            f"#BotCard {{ background: {THEME.node_fill}; border: 1px solid {THEME.accent}; border-radius: 4px; }}"
-        )
+        self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
+        if self._version_pill is not None:
+            # Neutral grey, not the accent it used to be. Colour on this card now
+            # means "tag group", and a version is not one — spending the accent on it
+            # made the loudest pill the one carrying the least information.
+            # pill_neutral_bg is a true grey: the blue-grey chip_neutral_bg read as a
+            # third tag colour beside the blue Rewards pill.
+            self._version_pill.setStyleSheet(pill_style(THEME.pill_neutral_bg, THEME.pill_text))
+        for lbl, color in (
+            (self._desc_lbl, THEME.text_muted),
+            (self._meta_lbl, THEME.text_subtle),
+            (self._match_lbl, THEME.accent),
+        ):
+            if lbl is not None:
+                lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
 
     def enterEvent(self, event) -> None:
-        self._set_hover_style()
+        self._hovered = True
+        self.refresh_theme_styles()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
-        self._set_normal_style()
+        self._hovered = False
+        self.refresh_theme_styles()
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
@@ -334,7 +364,7 @@ class _BotCard(QWidget):
 # ---------------------------------------------------------------------------
 
 
-class _BotLibraryPanel(QWidget):
+class _BotLibraryPanel(ThemedMixin, QWidget):
     """Bot library panel shown in BotCanvas when no bot file is open.
 
     Two-panel layout: left category list (Recent + world subdirs from bots/),
@@ -366,9 +396,8 @@ class _BotLibraryPanel(QWidget):
         root.setSpacing(0)
 
         # ── Top bar: search + action buttons ────────────────────────────
-        top = QWidget()
+        self._top_bar = top = QWidget()
         top.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        top.setStyleSheet(f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};")
         top_layout = QHBoxLayout(top)
         top_layout.setContentsMargins(8, 6, 8, 6)
         top_layout.setSpacing(6)
@@ -392,14 +421,16 @@ class _BotLibraryPanel(QWidget):
         self._search.setClearButtonEnabled(True)
         top_layout.addWidget(self._search, 1)
 
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.VLine)
-        sep.setStyleSheet(f"color: {THEME.border};")
-        top_layout.addWidget(sep)
+        self._sep = QFrame()
+        self._sep.setFrameShape(QFrame.Shape.VLine)
+        top_layout.addWidget(self._sep)
 
         # Same shape and height as the pickers, so the bar looks like one set of
         # controls — but New Bot keeps the accent, because a bar with four identical
         # buttons has undone the grouping the separator just drew.
+        # (button, is_primary) — apply_theme_styles needs to know which is which on
+        # every restyle, not only on the first.
+        self._action_btns: list[tuple[QPushButton, bool]] = []
         for label, signal_name, primary in (
             ("New Bot", "new_bot_requested", True),
             # Not "Open…": in this panel every card already opens a bot, so the name
@@ -408,16 +439,10 @@ class _BotLibraryPanel(QWidget):
             ("Open Bot File…", "open_bot_requested", False),
         ):
             btn = QPushButton(label)
-            border = THEME.accent if primary else THEME.border
-            color = THEME.accent if primary else THEME.text
-            btn.setStyleSheet(
-                f"QPushButton {{ background: {THEME.surface}; color: {color};"
-                f"  border: 1px solid {border}; border-radius: 3px; padding: 3px 8px; }}"
-                f"QPushButton:hover {{ border-color: {THEME.accent}; color: {THEME.accent}; }}"
-            )
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
             btn.clicked.connect(getattr(self, signal_name))
             top_layout.addWidget(btn)
+            self._action_btns.append((btn, primary))
 
         root.addWidget(top)
 
@@ -427,7 +452,6 @@ class _BotLibraryPanel(QWidget):
         # panel's minimum width above what a 1366px laptop can give it.
         self._chip_bar = QWidget()
         self._chip_bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._chip_bar.setStyleSheet(f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};")
         self._chip_layout = QHBoxLayout(self._chip_bar)
         self._chip_layout.setContentsMargins(8, 5, 8, 5)
         self._chip_layout.setSpacing(4)
@@ -442,12 +466,6 @@ class _BotLibraryPanel(QWidget):
         # Left: category list
         self._cat_list = QListWidget()
         self._cat_list.setFixedWidth(155)
-        self._cat_list.setStyleSheet(
-            f"QListWidget {{ background: {THEME.surface}; border: none;"
-            f"  border-right: 1px solid {THEME.border}; font-size: 11px; }}"
-            f"QListWidget::item {{ padding: 5px 10px; color: {THEME.text_muted}; }}"
-            f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
-        )
         body.addWidget(self._cat_list)
 
         # Right: scrollable bot cards
@@ -455,10 +473,8 @@ class _BotLibraryPanel(QWidget):
         self._cards_area.setWidgetResizable(True)
         self._cards_area.setFrameShape(QFrame.Shape.NoFrame)
         self._cards_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._cards_area.setStyleSheet(f"background: {THEME.bg};")
         self._cards_container = QWidget()
         self._cards_container.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._cards_container.setStyleSheet(f"background: {THEME.bg};")
         self._cards_layout = QVBoxLayout(self._cards_container)
         self._cards_layout.setContentsMargins(10, 10, 10, 10)
         self._cards_layout.setSpacing(6)
@@ -472,6 +488,53 @@ class _BotLibraryPanel(QWidget):
 
         self._search.textChanged.connect(lambda _text: self._apply_filter())
         self._cat_list.currentRowChanged.connect(self._on_category_row_changed)
+
+        # Both are rebuilt on filter changes and absent much of the time, but have to
+        # follow a theme switch whenever they exist.
+        self._clear_btn: QPushButton | None = None
+        self._empty_hint: QLabel | None = None
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        """Restyle the panel chrome, all of which outlives a theme switch.
+
+        Qt does not recompute a stylesheet set on a widget earlier, and nothing here
+        is rebuilt on its own, which is why the search bar and the category list used
+        to keep the old palette until the app was restarted.
+        """
+        panel = f"background: {THEME.surface}; border-bottom: 1px solid {THEME.border};"
+        self._top_bar.setStyleSheet(panel)
+        self._chip_bar.setStyleSheet(panel)
+        self._sep.setStyleSheet(f"color: {THEME.border};")
+
+        for btn, primary in self._action_btns:
+            # New Bot keeps the accent: a bar of identical buttons would undo the
+            # grouping the separator just drew.
+            border = THEME.accent if primary else THEME.border
+            color = THEME.accent if primary else THEME.text
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {THEME.surface}; color: {color};"
+                f"  border: 1px solid {border}; border-radius: 3px; padding: 3px 8px; }}"
+                f"QPushButton:hover {{ border-color: {THEME.accent}; color: {THEME.accent}; }}"
+            )
+
+        self._cat_list.setStyleSheet(
+            f"QListWidget {{ background: {THEME.surface}; border: none;"
+            f"  border-right: 1px solid {THEME.border}; font-size: 11px; }}"
+            f"QListWidget::item {{ padding: 5px 10px; color: {THEME.text_muted}; }}"
+            f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
+        )
+        self._cards_area.setStyleSheet(f"background: {THEME.bg};")
+        self._cards_container.setStyleSheet(f"background: {THEME.bg};")
+
+        if self._clear_btn is not None:
+            self._clear_btn.setStyleSheet(
+                f"QPushButton {{ color: {THEME.text_muted}; border: none;"
+                f"  padding: 2px 6px; font-size: 10px; }}"
+                f"QPushButton:hover {{ color: {THEME.text}; }}"
+            )
+        if self._empty_hint is not None:
+            self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
 
     # ------------------------------------------------------------------
     # Public API
@@ -564,17 +627,14 @@ class _BotLibraryPanel(QWidget):
             chip.removed.connect(self._remove_tag)
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, chip)
 
+        self._clear_btn = None
         if selected:
-            clear = QPushButton("Clear")
+            self._clear_btn = clear = QPushButton("Clear")
             clear.setCursor(Qt.CursorShape.PointingHandCursor)
             clear.setFlat(True)
-            clear.setStyleSheet(
-                f"QPushButton {{ color: {THEME.text_muted}; border: none;"
-                f"  padding: 2px 6px; font-size: 10px; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
-            )
             clear.clicked.connect(lambda: self._set_tag_selection([]))
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, clear)
+        self.refresh_theme_styles()
 
         self._chip_bar.setVisible(bool(selected))
 
@@ -651,14 +711,17 @@ class _BotLibraryPanel(QWidget):
             if w := item.widget():
                 w.hide()
                 w.deleteLater()
+        self._empty_hint = None
 
         if not metas:
             # "All" is always in the list now, so its presence no longer distinguishes
             # "nothing matched" from "the library is empty". The metas do.
-            hint = QLabel("No bots match these filters." if self._all_metas else "No bots found in bots/ directory.")
+            self._empty_hint = hint = QLabel(
+                "No bots match these filters." if self._all_metas else "No bots found in bots/ directory."
+            )
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
             layout.insertWidget(0, hint)
+            self.refresh_theme_styles()
             return
 
         for i, meta in enumerate(metas):
@@ -673,7 +736,7 @@ class _BotLibraryPanel(QWidget):
 # ---------------------------------------------------------------------------
 
 
-class _SearchBar(QWidget):
+class _SearchBar(ThemedMixin, QWidget):
     """Floating search bar overlaid on the graph view (Ctrl+F to open)."""
 
     text_changed = pyqtSignal(str)
@@ -684,13 +747,6 @@ class _SearchBar(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setStyleSheet(
-            f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
-            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: 13px; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
-            f"QPushButton:hover {{ color: {THEME.text}; }}"
-            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
-        )
 
         self._input = SearchLineEdit("Search states…")
         self._input.setFixedWidth(200)
@@ -711,6 +767,21 @@ class _SearchBar(QWidget):
         row.addWidget(close_btn)
         self.adjustSize()
         self.setVisible(False)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        """One sheet on self, reaching the children by type selector.
+
+        Styling self is exactly the case the mixin's re-entrancy guard exists for:
+        setStyleSheet here delivers StyleChange straight back to changeEvent.
+        """
+        self.setStyleSheet(
+            f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
+            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: 13px; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QPushButton:hover {{ color: {THEME.text}; }}"
+            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
+        )
 
     def set_count(self, current: int, total: int) -> None:
         self._count_lbl.setText(
