@@ -20,6 +20,8 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.wiki_drops import match_name_for
 from bartlebot.wiki_pages import WIKI_HOST as _WIKI_HOST
 from bartlebot.wiki_pages import page_title, wiki_page_path
@@ -176,7 +178,7 @@ def _parse_drops(html: str) -> dict[str, list[str]]:
 # ---------------------------------------------------------------------------
 
 
-class WikiImportDialog(QDialog):
+class WikiImportDialog(ThemedMixin, QDialog):
     """Modal dialog: paste a wiki URL, fetch the drop list, choose items to add."""
 
     def __init__(self, parent=None):
@@ -218,8 +220,8 @@ class WikiImportDialog(QDialog):
 
         # URL row
         url_row = QHBoxLayout()
-        url_lbl = QLabel("Wiki URL:")
-        url_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;")
+        url_lbl = ThemedTextLabel("Wiki URL:", css="font-size: 11px; font-weight: 600;")
+
         self._url_edit = QLineEdit()
         self._url_edit.setPlaceholderText(f"{_WIKI_PREFIX}Creature:YourCreature")
         self._btn_fetch = QPushButton("Fetch")
@@ -230,8 +232,10 @@ class WikiImportDialog(QDialog):
         layout.addLayout(url_row)
 
         # Status
+        # The colour says whether the last message was an error, so the flag is what
+        # apply_theme_styles re-derives from — not the stylesheet already on the label.
+        self._status_error = False
         self._status_lbl = QLabel(f"Enter a {_WIKI_PREFIX}Creature:… URL and click Fetch.")
-        self._status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
         self._status_lbl.setWordWrap(True)
         layout.addWidget(self._status_lbl)
 
@@ -244,15 +248,10 @@ class WikiImportDialog(QDialog):
 
         # Select all / none
         sel_row = QHBoxLayout()
-        btn_style = (
-            f"QPushButton {{ color: {THEME.accent}; font-size: 10px; padding: 0; border: none; }}"
-            f"QPushButton:hover {{ color: {THEME.text}; }}"
-        )
         self._btn_all = QPushButton("Select All")
         self._btn_none = QPushButton("Select None")
         for b in (self._btn_all, self._btn_none):
             b.setFlat(True)
-            b.setStyleSheet(btn_style)
         sel_row.addWidget(self._btn_all)
         sel_row.addWidget(self._btn_none)
         sel_row.addStretch()
@@ -273,6 +272,8 @@ class WikiImportDialog(QDialog):
         self._tree.itemChanged.connect(self._on_item_changed)
         self._btn_box.accepted.connect(self._on_accept)
         self._btn_box.rejected.connect(self.reject)
+
+        self.refresh_theme_styles()
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -440,6 +441,15 @@ class WikiImportDialog(QDialog):
         return None
 
     def _set_status(self, msg: str, *, error: bool = False) -> None:
-        color = THEME.error if error else THEME.text_muted
-        self._status_lbl.setStyleSheet(f"color: {color}; font-size: 10px;")
+        self._status_error = error
         self._status_lbl.setText(msg)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        color = THEME.error if self._status_error else THEME.text_muted
+        self._status_lbl.setStyleSheet(f"color: {color}; font-size: 10px;")
+        for b in (self._btn_all, self._btn_none):
+            b.setStyleSheet(
+                f"QPushButton {{ color: {THEME.accent}; font-size: 10px; padding: 0; border: none; }}"
+                f"QPushButton:hover {{ color: {THEME.text}; }}"
+            )

@@ -13,10 +13,11 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.strategy_models import DeckPreset
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 
-class DeckPresetPickerDialog(QDialog):
+class DeckPresetPickerDialog(ThemedMixin, QDialog):
     """Shows a filterable list of DeckPresets for the user to pick from."""
 
     def __init__(self, presets: list[DeckPreset], parent=None):
@@ -35,12 +36,6 @@ class DeckPresetPickerDialog(QDialog):
         layout.addWidget(self._filter)
 
         self._list = QListWidget()
-        self._list.setStyleSheet(
-            f"QListWidget {{ border: 1px solid {THEME.border}; background: {THEME.bg}; }}"
-            f"QListWidget::item {{ padding: 4px 6px; color: {THEME.text}; }}"
-            f"QListWidget::item:selected {{ background: {THEME.node_fill};"
-            f" border-left: 2px solid {THEME.accent}; color: {THEME.text}; padding-left: 4px; }}"
-        )
         self._list.currentItemChanged.connect(self._on_item_changed)
         self._list.itemDoubleClicked.connect(self._on_accept)
         layout.addWidget(self._list, 1)
@@ -53,6 +48,16 @@ class DeckPresetPickerDialog(QDialog):
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self._list.setStyleSheet(
+            f"QListWidget {{ border: 1px solid {THEME.border}; background: {THEME.bg}; }}"
+            f"QListWidget::item {{ padding: 4px 6px; color: {THEME.text}; }}"
+            f"QListWidget::item:selected {{ background: {THEME.node_fill};"
+            f" border-left: 2px solid {THEME.accent}; color: {THEME.text}; padding-left: 4px; }}"
+        )
 
     def selected_id(self) -> str | None:
         return self._selected_id

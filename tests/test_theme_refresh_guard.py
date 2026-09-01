@@ -207,6 +207,14 @@ def test_every_mixin_user_applies_its_styles_at_construction():
 
     The mixin cannot do this itself: when any ``__init__`` it could hook into runs,
     the children ``apply_theme_styles`` is about to style do not exist yet.
+
+    Known gap: this checks that the call *exists*, not that construction reaches it.
+    ``WikiImportDialog`` passed while its only caller was ``_set_status``, which
+    ``__init__`` never runs, so the dialog opened unstyled. Tightening it to "called
+    from ``__init__``, or from something ``__init__`` calls" would fail
+    ``_DynamicParamForm``, which legitimately styles from ``load_schema`` and has
+    nothing to style before one is loaded. The behavioural tests per widget are what
+    close this; do not trust a green here to mean a widget is styled on open.
     """
     missing = []
     for name, cls in _mixin_users():

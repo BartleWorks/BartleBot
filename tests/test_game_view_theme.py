@@ -44,8 +44,13 @@ def _switch_app(qapp, theme, mode: str) -> None:
 @pytest.fixture
 def game_view(qapp):
     view = GameView()
+    # Stopped up front, not just in teardown. _poll_focus runs every 50 ms and reads
+    # tile.hwnd off whatever is in _tiles, so the stand-in objects these tests put
+    # there make it raise — inside a QTimer slot, which PyQt6 turns into qFatal() and
+    # a dead worker. It only fires after a real mouse click, which is why it surfaced
+    # as an occasional crash in a long run rather than a failure here.
+    view._focus_timer.stop()
     yield view
-    view._focus_timer.stop()  # a 50 ms poll left running outlives the test
     view.deleteLater()
 
 

@@ -105,20 +105,58 @@ legible instead.
 ### GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
 
-Any widget that sets a stylesheet using `THEME` tokens must also override `changeEvent` to re-apply that stylesheet when the theme changes. Qt delivers `QEvent.Type.StyleChange` to all widgets when `QApplication.setStyleSheet()` is called (which happens on every theme switch via `AppController._apply_theme()`). Stylesheets applied at `__init__` time are NOT automatically refreshed — without a `changeEvent` override the widget will show stale colors after a theme change.
+Anything a widget builds from `THEME` is a snapshot of whichever theme was active at
+the time, and Qt never recomputes it: `QApplication.setStyleSheet()` delivers
+`StyleChange` to every widget, but a stylesheet the widget set on *itself* always
+wins and is left exactly as it was. The widget has to re-derive it.
 
-Pattern:
+**Inherit `ThemedMixin` (`bartlebot/gui/themed.py`) and put the work in
+`apply_theme_styles`.** It is enforced: `tests/test_theme_refresh_guard.py` fails any
+class that builds a `THEME`-derived value without either the mixin or a
+`changeEvent` that handles `StyleChange`.
+
 ```python
-from PyQt6.QtCore import QEvent
-from bartlebot.gui.theme import THEME
+class MyPanel(ThemedMixin, QWidget):          # mixin FIRST — see below
+    def __init__(self) -> None:
+        super().__init__()
+        self._label = QLabel("hello")
+        self.refresh_theme_styles()           # call this; implement the other
 
-def changeEvent(self, event: QEvent) -> None:
-    super().changeEvent(event)
-    if event.type() == QEvent.Type.StyleChange:
-        self._my_widget.setStyleSheet(f"color: {THEME.text}; ...")
+    def apply_theme_styles(self) -> None:
+        self._label.setStyleSheet(f"color: {THEME.text};")
 ```
 
-Widgets that read THEME at paint time (e.g. `QGraphicsItem.paint()`) update automatically and don't need this.
+Four things that are not obvious:
+
+- **`refresh_theme_styles()` is what you call; `apply_theme_styles()` is what you
+  write.** The first carries a re-entrancy guard, and `setStyleSheet` on `self`
+  delivers `StyleChange` synchronously back into `changeEvent`. Calling the hook
+  directly applies twice, or recurses until the app dies in its own constructor.
+- **The mixin goes first in the base list.** `class P(QWidget, ThemedMixin)` does not
+  merely skip the mixin — sending `StyleChange` to such a widget aborts the process
+  inside `sendEvent`, with no exception. The guard test checks base order statically
+  because nothing can catch it at runtime.
+- **A bare `svg_icon(name)` is themed.** Its `tint` defaults to `THEME.icon_tint`, so
+  an icon set once and kept goes stale with no stylesheet anywhere to grep for. Pass
+  `tint=""` for an icon that should keep its own colours.
+- **A factory cannot restyle what it returns.** `field_label(text)` hands a label to a
+  caller that has nothing to re-apply, so the staleness lands on the *caller* — which
+  is why the guard blames a themed helper's callers. Return a
+  `ThemedTextLabel` (`bartlebot/gui/widgets/themed_label.py`) instead; it owns its own
+  colour, named by token so it is re-read rather than snapshotted.
+
+Widgets that read `THEME` at paint time (e.g. `QGraphicsItem.paint()`, `_RowWidget`)
+hold no baked value and need none of this.
+
+Two failure modes the guard cannot see, so check them by hand:
+
+- **A colour inside rich text.** The required-field marker in `param_panel` is a
+  `<span>` carrying `THEME.error` in the label's own *text*, so restyling means
+  rewriting the text. The guard looks for `setStyleSheet`.
+- **A widget styled only on the next switch.** The guard checks that
+  `refresh_theme_styles()` is called *somewhere* outside `changeEvent`, not that
+  construction reaches it. `WikiImportDialog` passed while its only caller was
+  `_set_status`, and opened unstyled.
 
 ### Popup menus
 
