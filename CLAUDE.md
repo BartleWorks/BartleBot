@@ -148,6 +148,14 @@ Four things that are not obvious:
 Widgets that read `THEME` at paint time (e.g. `QGraphicsItem.paint()`, `_RowWidget`)
 hold no baked value and need none of this.
 
+**Never destroy a widget from inside `apply_theme_styles`.** A theme switch arrives as
+`QApplication.setStyleSheet()`, which is iterating over every widget when it does, and
+freeing a subtree mid-iteration aborts the process with no traceback. `_DetailPanel`
+(`node_browser_dialog.py`) is the one place that rebuilds rather than restyles — its
+`QScrollArea.setWidget()` deletes the old container outright — so it defers the rebuild
+to the next event-loop turn via a `QTimer` parented to itself, which dies with the panel
+instead of firing into a destroyed widget.
+
 Two failure modes the guard cannot see, so check them by hand:
 
 - **A colour inside rich text.** The required-field marker in `param_panel` is a

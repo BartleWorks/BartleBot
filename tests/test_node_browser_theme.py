@@ -34,6 +34,10 @@ def theme():
 def _switch(qapp, widget, theme, mode: str) -> None:
     theme(mode)
     qapp.sendEvent(widget, QEvent(QEvent.Type.StyleChange))
+    # _DetailPanel rebuilds a turn later — it deletes widgets, which a StyleChange
+    # handler must not do while the app is iterating over them.
+    for _ in range(5):
+        qapp.processEvents()
 
 
 def _a_node() -> tuple[str, object]:
@@ -52,6 +56,25 @@ def test_the_detail_panel_rebuilds_on_a_theme_switch(qapp, theme):
 
     assert panel.widget() is not before, "the container should have been replaced"
     assert panel._node_type == node_type
+
+
+def test_the_rebuild_does_not_happen_inside_the_style_change_handler(qapp, theme):
+    """setWidget destroys the old container outright, and the switch arrives while
+    QApplication.setStyleSheet is iterating over every widget — freeing a subtree
+    there aborts the process with no traceback. So the rebuild waits a turn."""
+    theme("light")
+    panel = _DetailPanel()
+    node_type, spec = _a_node()
+    panel.show_node(node_type, spec)
+    before = panel.widget()
+
+    theme("dark")
+    qapp.sendEvent(panel, QEvent(QEvent.Type.StyleChange))
+
+    assert panel.widget() is before, "the container was replaced synchronously"
+    for _ in range(5):
+        qapp.processEvents()
+    assert panel.widget() is not before
 
 
 def test_the_placeholder_recolours_before_any_node_is_shown(qapp, theme):

@@ -11,7 +11,7 @@ import sys
 
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QSizePolicy
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.bot.schema import BotOptionModel
@@ -104,6 +104,22 @@ def test_field_label_returns_something_that_follows_the_theme(qapp, theme):
 
     assert light not in lbl.styleSheet()
     assert "font-weight: 600" in lbl.styleSheet()
+
+
+def test_field_label_still_reads_as_a_caption(qapp, theme):
+    """The colon and the fixed width are the caption, not decoration.
+
+    Every caller passes a bare word, so the colon has to come from here; and the
+    fixed horizontal policy is what holds the label column steady in ClientWidget's
+    rows, whose value labels are added with stretch. Both were dropped when this
+    factory stopped styling a bare QLabel, and nothing asserted either.
+    """
+    theme("light")
+    lbl = field_label("Zone")
+
+    assert lbl.text() == "Zone:"
+    assert lbl.sizePolicy().horizontalPolicy() == QSizePolicy.Policy.Fixed
+    assert lbl.sizePolicy().verticalPolicy() == QSizePolicy.Policy.Preferred
 
 
 def test_a_sidebar_field_recolours_its_caption(qapp, theme):

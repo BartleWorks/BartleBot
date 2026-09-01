@@ -119,6 +119,9 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         # apply_theme_styles.
         self._shown: tuple[str, NodeSpec, object, object] | None = None
         self._pending_scroll = None
+        self._theme_timer = QTimer(self)
+        self._theme_timer.setSingleShot(True)
+        self._theme_timer.timeout.connect(self._rebuild_for_theme)
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
@@ -133,7 +136,26 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         The rebuild keeps the scroll position, which ``show_node`` deliberately does
         not: switching *node* should start at the top, switching *theme* should leave
         the reader where they were.
+
+        It is also the one place in the app where a theme switch *deletes* widgets
+        rather than restyling them, so it must not happen inside the ``StyleChange``
+        handler: ``QScrollArea.setWidget`` destroys the old container immediately, and
+        the switch arrives via ``QApplication.setStyleSheet``, which is mid-iteration
+        over every widget when it does. Freeing a subtree there aborts the process with
+        no traceback, so the rebuild is deferred to the next event-loop turn. The timer
+        is a child of the panel rather than a bare ``singleShot``, so it dies with the
+        panel instead of firing into a destroyed widget.
+
+        A panel with no content yet destroys nothing, so it builds immediately — that
+        is construction, where deferring would leave the dialog blank for a turn.
         """
+        if self.widget() is None:
+            self._rebuild_for_theme()
+        else:
+            self._theme_timer.start(0)
+
+    def _rebuild_for_theme(self) -> None:
+        """Replay the last ``show_node`` (or the placeholder) under the new theme."""
         if self._shown is None:
             placeholder = QLabel("Select a node to view its documentation.")
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
