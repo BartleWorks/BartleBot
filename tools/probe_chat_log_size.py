@@ -309,6 +309,28 @@ def _last_faults_per_pid(path: Path) -> dict[int, int]:
     return baseline
 
 
+_DWORD_MAX = 0xFFFFFFFF
+# PageFaultCount is a DWORD, so the counter wraps at ~4.29 billion. A client taking
+# millions of faults per fight reaches that inside a long overnight run -- one did, and
+# reported 5.46M after 9h47m when the truth was ~4.30 billion.
+
+
+def fault_delta(before: int, after: int) -> tuple[int, bool]:
+    """Faults between two samples, reconstructing a single DWORD wrap.
+
+    Returns ``(delta, wrapped)``. A counter that went backwards can only have wrapped, so
+    the span is what remained to the cap plus whatever it has counted since.
+
+    Two wraps inside one interval are indistinguishable from one and are silently
+    undercounted by 4.29 billion each. Sampling more often than every ~35 minutes is what
+    rules that out on the worst client measured; the flag is there so a row that had to be
+    reconstructed at all is never read as a plain measurement.
+    """
+    if after >= before:
+        return after - before, False
+    return (_DWORD_MAX - before) + after + 1, True
+
+
 def is_pinned(pid: int) -> bool:
     """Whether `pid` currently has a hard minimum working set.
 
@@ -624,7 +646,14 @@ def _print_sample(rows: list[dict], elapsed: float, world: bool, prev_faults: di
         # having to watch anything.
         faults = row.get("faults")
         before = prev_faults.get(row["pid"])
-        delta = f"{faults - before:>13,}" if before is not None and faults is not None else f"{'—':>13}"
+        if before is not None and faults is not None:
+            span, wrapped = fault_delta(before, faults)
+            # "~" rather than a footnote: the number is a reconstruction across a counter
+            # wrap, and a reader scanning a column of deltas has to be able to see that
+            # without reading anything else.
+            delta = f"{'~' if wrapped else ''}{span:,}".rjust(13)
+        else:
+            delta = f"{'—':>13}"
 
         pin = "HARD" if row.get("pinned") else "—"
         line += (
