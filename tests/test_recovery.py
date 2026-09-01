@@ -45,7 +45,12 @@ class RecoveryHarness:
     _alias_for = ClientManager._alias_for
     _build_ordered_clients = ClientManager._build_ordered_clients
     _assign_slot = ClientManager._assign_slot
-    _sync_embedded_clients = ClientManager._sync_embedded_clients
+    _place_account = ClientManager._place_account
+    _place_pending_accounts = ClientManager._place_pending_accounts
+    _embeddable_hwnds = ClientManager._embeddable_hwnds
+    _account_label = ClientManager._account_label
+    tile_slots = ClientManager.tile_slots
+    _sync_tiles = ClientManager._sync_tiles
     _regroup_after_recovery = ClientManager._regroup_after_recovery
     # _reconnect_clients drives each relaunched window in through these, the same path
     # a normal launch takes.
@@ -67,6 +72,9 @@ class RecoveryHarness:
         self._relogging_hwnds: set[int] = set()
         self._relog_in_progress: bool = False
         self._clients: list = []
+        self._unhooked_hwnds: set[int] = set()
+        self._failed_hook_hwnds: set[int] = set()
+        self._game_view = MagicMock()
         # The driver borrows the handler's client to read the character-select screen.
         self._handler = MagicMock(clients=[])
         self._client_resolutions: dict[str, tuple[int, int]] = {}

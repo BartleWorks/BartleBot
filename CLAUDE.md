@@ -201,6 +201,48 @@ Python 3.13 enforces that only one asyncio task may be executing at a time. `QDi
 
 This bug caused the client section sidebar (zone/XYZ display) to freeze for the entire duration of any bot run that included a node with `safety_warning` set in its `NodeSpec`. The `SafetyWarningDialog.exec()` call inside the async `_start_bot()` task was killing the `_refresh_loop` and `_client_loop` tasks on every run.
 
+### Game view slots vs. player indices
+
+A tile's position and a tile's caption come from **two different numbers**, and conflating
+them is the bug class this split exists to prevent. The full reasoning is in
+`bartlebot/tile_slots.py`; the short form:
+
+| | is a position in | pinned by | decides |
+|---|---|---|---|
+| **slot** | `ClientManager._client_order` | `reserve_slots`, before any window exists | *where* a tile sits |
+| **player** | `ClientManager.clients` (hooked only, compacted) | whichever clients are in game right now | what the tile is *called* |
+
+They agree only while every account in the ordering is in game. Any window at character
+select, crashed, or unhooked by hand pulls them apart.
+
+**Which one to look at when something is wrong:** a tile in the wrong grid cell, or one
+that moved when it should not have, is a *slot* problem — `_client_order` and
+`build_tile_slots`. A wrong caption, or a wizard name on the wrong tile, is a *player*
+problem — `ClientManager.clients` and whatever compacted it. A game window that flashes or
+pops out of the grid is `plan_tile_changes`, which exists so a slot change is a re-key and
+never a re-embed.
+
+Things to preserve:
+
+- **A window is embedded as soon as it is identified, not when it is in game.** Embedding
+  is `SetParent` and `ClientTile` takes an hwnd; the account comes from the *window title*,
+  which the launcher sets right after login. That is what makes `auto_select_character`
+  off usable: every window arrives in the game view at character select and the user picks
+  characters in one place. It is also why `_refresh_account_map` runs over
+  `self._handler.clients` rather than the hooked list.
+- **A window that is not in game has `player is None`, and is captioned by its account.**
+  Not a fallback — a bot cannot route to it, so it is not Player anything yet. Do not
+  invent a number for it; the sidebar and the FSM would disagree with it immediately.
+- **`ClientManager.clients` stays hooked-only and contiguous.** Bot nodes address players
+  by position in that list. A hole in it is not expressible, which is why the slot index
+  could not simply replace it.
+- **`_sync_tiles()` runs every detection tick, not only when the client list changes.** A
+  window reaching character select changes no client list — it is not a client — and it is
+  precisely the window that needs to appear. `sync_tiles` is a no-op when nothing moved.
+- **Vacate every moving slot before filling any.** A player swap moves two tiles at once;
+  clearing them one at a time throws away the tile the previous move just wrote. That bug
+  was live in the first draft of `_apply_moves` and the swap test is what caught it.
+
 ### Client section refresh architecture
 
 `ClientSection` (`bartlebot/gui/sidebar/sections/client_section.py`) is a plain `QWidget` filling `RightSidebar`'s Players tab, and runs a long-lived asyncio task (`_refresh_loop`) that polls zone/XYZ data for each connected client. Key design points:

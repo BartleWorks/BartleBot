@@ -3,9 +3,11 @@
 After ``instance_login`` types the credentials, a Wizard101 instance still has three gates
 between it and a usable client: a loading screen that ignores input for ~3 s and then
 skips on any key, a second loading screen that skips immediately, and the character-select
-screen, where Enter plays the most recently played character. Until those are cleared the
-window is useless to BartleBot — hooks cannot activate, so the client never reaches
-``ClientManager.clients`` and is never embedded into the game view.
+screen, where Enter plays the most recently played character. Until those are cleared
+hooks cannot activate, so the client never reaches ``ClientManager.clients`` and no bot can
+route to it. It *is* on screen throughout — a window is embedded as soon as its title
+identifies it, which is why keystrokes here cannot be aimed by ``FindWindowW`` alone; see
+``_press_target``.
 
 WHY THIS DOES NOT HAVE TO BE BLIND
 
@@ -104,10 +106,28 @@ def _find_window(title: str) -> int:
     return ctypes.windll.user32.FindWindowW(None, title)
 
 
-async def _try_press(title: str, vk: int) -> None:
+def _press_target(title: str, get_client: Callable[[], object | None]) -> int:
+    """The window to send keystrokes to, or 0 if it cannot be found.
+
+    ``FindWindowW`` searches **top-level** windows only, and a window embedded into the
+    game view is a child of a Qt widget — so from the moment it gets a tile, which is now
+    as soon as its title identifies it, the title lookup returns nothing. The borrowed
+    client's handle is that same window and is unaffected by embedding.
+
+    The title lookup stays first because it is what re-resolves across a crash and
+    relaunch mid-drive; the client is the fallback, not the other way round.
+    """
+    hwnd = _find_window(title)
+    if hwnd:
+        return hwnd
+    client = get_client()
+    return getattr(client, "window_handle", 0) or 0
+
+
+async def _try_press(title: str, vk: int, get_client: Callable[[], object | None] = lambda: None) -> None:
     """Press a key on the named window, tolerating a window that is not there yet."""
     try:
-        hwnd = _find_window(title)
+        hwnd = _press_target(title, get_client)
         if hwnd:
             await _press(hwnd, vk)
     except Exception:
@@ -217,7 +237,7 @@ async def auto_select_character(
             "Auto-select: could not read the UI tree for '%s' — falling back to blind input",
             expected_title,
         )
-        return await _drive_blind(expected_title, is_hooked, deadline)
+        return await _drive_blind(expected_title, is_hooked, deadline, get_client)
     return await _drive_by_sight(expected_title, is_hooked, client, deadline)
 
 
@@ -240,7 +260,7 @@ async def _drive_by_sight(
         if await at_character_select(client):
             seen_character_select = True
             if enters < AUTO_SELECT_MAX_ENTER:
-                await _try_press(expected_title, _VK_RETURN)
+                await _try_press(expected_title, _VK_RETURN, lambda: client)
                 enters += 1
             elif enters == AUTO_SELECT_MAX_ENTER:
                 logger.warning(
@@ -253,7 +273,7 @@ async def _drive_by_sight(
             # A loading screen, or something we do not recognise. Space rather than Enter:
             # both dismiss a loading screen, but Space is far less likely to confirm a
             # dialog we have not identified.
-            await _try_press(expected_title, _VK_SPACE)
+            await _try_press(expected_title, _VK_SPACE, lambda: client)
         # Once character select has been taken, press nothing — the client is loading in
         # and every further keystroke would land in the game world.
 
@@ -265,7 +285,12 @@ async def _drive_by_sight(
     return False
 
 
-async def _drive_blind(expected_title: str, is_hooked: Callable[[], bool], deadline: float) -> bool:
+async def _drive_blind(
+    expected_title: str,
+    is_hooked: Callable[[], bool],
+    deadline: float,
+    get_client: Callable[[], object | None] = lambda: None,
+) -> bool:
     """Fallback for when the UI tree never reads: press Enter on a timer and hope.
 
     This is what the whole drive used to be. It can open the chat box on arrival and can
@@ -276,7 +301,7 @@ async def _drive_blind(expected_title: str, is_hooked: Callable[[], bool], deadl
         if is_hooked():
             logger.info("Auto-select: '%s' is in-game", expected_title)
             return True
-        await _try_press(expected_title, _VK_RETURN)
+        await _try_press(expected_title, _VK_RETURN, get_client)
         await asyncio.sleep(AUTO_SELECT_KEY_INTERVAL)
 
     if is_hooked():

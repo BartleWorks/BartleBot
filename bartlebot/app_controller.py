@@ -164,8 +164,10 @@ class AppController(QObject):
         w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
         w.left_sidebar.combat_tab.apply_deck_requested.connect(self._on_apply_deck_requested)
 
-        # Client list changes → game view renumber + start button state
-        self._client_manager.clients_changed.connect(w.game_view.renumber_tiles)
+        # Client list changes → start button state. The game view is not connected here:
+        # a tile's position follows its slot rather than its player index, so ClientManager
+        # syncs the view itself, on every detection tick, including ticks where the client
+        # list did not change at all. See bartlebot.tile_slots.
         self._client_manager.clients_changed.connect(self._on_clients_changed)
 
         # Wizard names → game tile pills. The sidebar reads the cache directly in its own

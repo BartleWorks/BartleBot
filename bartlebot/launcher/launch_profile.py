@@ -288,3 +288,46 @@ async def launch_profile(
     resolution = tuple(profile_res) if profile_res else None
 
     await launch_accounts(accounts, resolution=resolution, drive=drive)
+
+
+# ---------------------------------------------------------------------------
+# Last played character (#112, experimental)
+# ---------------------------------------------------------------------------
+
+# The tag the game writes the most recently played character's gid to. Character select
+# preselects whoever it names, which is the character Enter then plays -- so this is the
+# only known lever on *which* character a launch brings up.
+#
+# It is one file for the whole install, so a per-account choice has to be patched and the
+# instance started before the next account's patch lands. That serializes the spawn step
+# and is why this is not simply wired into launch_accounts: see tools/probe_last_player.py.
+_LAST_PLAYER_TAG = "LastPlayer"
+
+
+def _config_path():
+    return get_wiz_install() / "Bin" / "config.xml"
+
+
+def read_last_player() -> int | None:
+    """The gid in ``<LastPlayer>``, or None if the tag is missing or unreadable.
+
+    None rather than 0: "the game did not write one" and "it wrote zero" are different
+    states, and only the first means there is nothing to restore.
+    """
+    try:
+        text = _config_path().read_text(encoding="utf-8")
+    except OSError:
+        logger.warning("Could not read config.xml to find the last played character", exc_info=True)
+        return None
+    match = re.search(rf"<{_LAST_PLAYER_TAG}\b[^>]*>([^<]*)</\s*{_LAST_PLAYER_TAG}\s*>", text)
+    if match is None:
+        return None
+    try:
+        return int(match.group(1).strip())
+    except ValueError:
+        return None
+
+
+def patch_last_player(gid: int) -> None:
+    """Point ``<LastPlayer>`` at *gid* so the next instance preselects that character."""
+    _patch_xml_fields(_config_path(), {_LAST_PLAYER_TAG: str(gid)})

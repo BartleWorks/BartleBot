@@ -483,3 +483,37 @@ async def test_profile_drives_every_account_concurrently():
         await launch_profile("Team", drive=_drive)
 
     assert active["peak"] == 3
+
+
+# ---------------------------------------------------------------------------
+# Aiming a keypress at an embedded window
+#
+# A launched window gets a game-view tile as soon as its title identifies it, which is
+# well before the drive is finished with it — so from that moment it is a *child* window
+# and FindWindowW, which searches top-level windows only, no longer finds it.
+# ---------------------------------------------------------------------------
+
+
+def test_press_target_prefers_the_title_lookup(keys):
+    """It re-resolves across a crash and relaunch mid-drive; a captured handle would not."""
+    assert auto_select._press_target(TITLE, lambda: MagicMock(window_handle=999)) == 4242
+
+
+def test_press_target_falls_back_to_the_borrowed_client(keys):
+    """The regression this exists for: an embedded window is not top level."""
+    keys.window_missing()
+    assert auto_select._press_target(TITLE, lambda: MagicMock(window_handle=999)) == 999
+
+
+def test_press_target_is_zero_when_there_is_nothing_to_aim_at(keys):
+    keys.window_missing()
+    assert auto_select._press_target(TITLE, lambda: None) == 0
+
+
+async def test_the_drive_still_reaches_an_embedded_window(keys, fast, game):
+    """End to end: the window is embedded before character select and Enter still lands."""
+    keys.window_missing()  # FindWindowW finds nothing once the window is a child
+    reached = await auto_select_character(TITLE, HookedWhenInWorld(game), lambda: game)
+    assert reached is True
+    assert keys.keys_down.count(_VK_RETURN) == 1
+    assert {hwnd for hwnd, _msg, _vk in keys.posted} == {game.window_handle}
