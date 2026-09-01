@@ -166,6 +166,73 @@ async def launch_account(
     return title
 
 
+async def launch_accounts(
+    accounts: list[tuple[str, str, str]],
+    *,
+    resolution: tuple[int, int] | None = None,
+    drive: DriveFn | None = None,
+) -> list[str]:
+    """Start one instance per account, log each in, and advance them all together.
+
+    *accounts* is ``(username, password, display_name)`` in the order the windows should
+    be logged in. Returns each account's window title, in the same order — that title is
+    how every later stage identifies the window.
+
+    The batch shape is the whole point: instances are spawned back-to-back with a short
+    stagger, the login screens are waited for once for all of them, and each drive starts
+    as soon as its own login is typed. Doing this one client at a time costs the full
+    launch — spawn, two loading screens, character select, load-in — per client, which is
+    minutes rather than seconds once more than one window is involved.
+
+    *resolution* is patched into config.xml once for the whole batch, so every account
+    here must want the same one — the game reads that file at its own startup and there
+    is only one of it. Callers with mixed resolutions launch a batch per resolution.
+    """
+    if not accounts:
+        return []
+
+    patch_open_browser()
+    w, h = resolution if resolution is not None else SettingsManager.instance().game_resolution
+    _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
+
+    # Fire off every instance with a short stagger between spawns, then claim the whole
+    # batch of new handles at once — much faster than waiting for each instance to fully
+    # reach the login screen before starting the next, while the stagger still avoids
+    # hitting the process spawn / login server in one tight burst.
+    known = set(get_all_wizard_handles())
+    for i, _ in enumerate(accounts):
+        start_instance()
+        if i < len(accounts) - 1:
+            await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
+    handles = await _wait_for_n_new_handles(known, len(accounts))
+
+    # Single shared wait for all instances to reach the login screen
+    await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
+
+    # Stagger login attempts too — the login server intermittently rejects logins that
+    # arrive in too-tight succession.
+    #
+    # Each instance's drive starts as soon as its own login is typed, rather than after
+    # the whole batch: the drives are independent, cost nothing while they wait, and
+    # overlapping them with the remaining stagger delays is most of the reason a team
+    # launch is faster than doing this by hand.
+    titles: list[str] = []
+    drives: list[asyncio.Task] = []
+    for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
+        instance_login(handle, username, password)
+        title = f"[{display_name}] Wizard101"
+        set_window_title(handle, title)
+        titles.append(title)
+        if drive is not None:
+            drives.append(asyncio.create_task(drive(title)))
+        if i < len(accounts) - 1:
+            await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
+
+    if drives:
+        await asyncio.gather(*drives)
+    return titles
+
+
 async def launch_profile(
     profile_name: str,
     drive: DriveFn | None = None,
@@ -176,9 +243,8 @@ async def launch_profile(
     Looks up the profile in SettingsManager and retrieves passwords from
     CredentialStore (Windows Credential Manager).
 
-    Starts all instances back-to-back rather than waiting for each one to
-    reach the login screen before starting the next, then logs in all
-    accounts after a single shared wait for the login screen.
+    The accounts go out as one batch — see ``launch_accounts`` for the shape and why it
+    is faster than launching them one at a time.
 
     *reserve* is handed the profile's accounts, in profile order, before any window
     exists — that call is the only thing that makes the players come up in the order the
@@ -187,7 +253,6 @@ async def launch_profile(
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
     """
-    patch_open_browser()
     settings = SettingsManager.instance()
     profiles = settings.launch_profiles
     profile = next((p for p in profiles if p.get("name") == profile_name), None)
@@ -217,45 +282,9 @@ async def launch_profile(
     if reserve is not None:
         reserve([username for username, _password, _display in accounts])
 
-    # Patch config.xml once for the whole batch (all instances read the same
-    # file at their own startup, so one shared resolution/position is enough —
-    # see the _LAUNCH_ANCHOR_X comment above for why per-instance positions
-    # aren't needed). A per-profile resolution overrides the global setting.
+    # A per-profile resolution overrides the global setting; the whole profile shares it,
+    # which is what lets the accounts go out as one batch.
     profile_res = profile.get("resolution")
-    w, h = tuple(profile_res) if profile_res else SettingsManager.instance().game_resolution
-    _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
+    resolution = tuple(profile_res) if profile_res else None
 
-    # Fire off every instance with a short stagger between spawns, then claim
-    # the whole batch of new handles at once — much faster than waiting for
-    # each instance to fully reach the login screen before starting the next,
-    # while the stagger still avoids hitting the process spawn / login server
-    # in one tight burst.
-    known = set(get_all_wizard_handles())
-    for i, _ in enumerate(accounts):
-        start_instance()
-        if i < len(accounts) - 1:
-            await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
-    handles = await _wait_for_n_new_handles(known, len(accounts))
-
-    # Single shared wait for all instances to reach the login screen
-    await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
-
-    # Stagger login attempts too — the login server intermittently rejects
-    # logins that arrive in too-tight succession.
-    #
-    # Each instance's drive starts as soon as its own login is typed, rather than after
-    # the whole batch: the drives are independent, cost nothing while they wait, and
-    # overlapping them with the remaining stagger delays is most of the reason a team
-    # launch is faster than doing this by hand.
-    drives: list[asyncio.Task] = []
-    for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
-        instance_login(handle, username, password)
-        title = f"[{display_name}] Wizard101"
-        set_window_title(handle, title)
-        if drive is not None:
-            drives.append(asyncio.create_task(drive(title)))
-        if i < len(accounts) - 1:
-            await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
-
-    if drives:
-        await asyncio.gather(*drives)
+    await launch_accounts(accounts, resolution=resolution, drive=drive)

@@ -166,6 +166,7 @@ async def test_recovery_queue_regroups_before_jumping_to_recovery_state(settings
     harness._machine.force_state = MagicMock(side_effect=lambda s: calls.append("force_state"))
     harness._machine.resume = MagicMock(side_effect=lambda: calls.append("resume"))
     harness._regroup_after_recovery = AsyncMock(side_effect=lambda: calls.append("regroup"))
+    harness._settle_recovery_batch = AsyncMock()
 
     await ClientManager._run_recovery_queue(harness)
 

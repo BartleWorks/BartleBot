@@ -141,6 +141,11 @@ class FakeMachine:
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
         self.chat_baselines: dict[object, str] = {}
+        # Which client hwnds are currently exempt from ClientHealthMonitor, and which have
+        # been put back. A node that suspends and forgets to restore leaves a real crash
+        # unnoticed for the rest of the run, so both sides are recorded.
+        self.health_checks_suspended: set[int] = set()
+        self.health_checks_resumed: set[int] = set()
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))
@@ -158,6 +163,14 @@ class FakeMachine:
 
     def set_chat_baseline(self, client, text: str) -> None:
         self.chat_baselines[client] = text
+
+    def suspend_health_checks_for(self, hwnds) -> None:
+        """Record a health-check suspension. Real BotMachine flags them on its monitor."""
+        self.health_checks_suspended.update(hwnds)
+
+    def resume_health_checks_for(self, hwnds) -> None:
+        self.health_checks_suspended.difference_update(hwnds)
+        self.health_checks_resumed.update(hwnds)
 
     def get_option(self, name: str, default=None):
         """Return configured option value, or a sensible test default.

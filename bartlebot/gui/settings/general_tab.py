@@ -170,6 +170,27 @@ class GeneralTab(QWidget):
         )
         bot_form.addRow("Automatically select a character:", self._auto_select_cb)
 
+        self._relog_interval_sb = QDoubleSpinBox()
+        self._relog_interval_sb.setRange(0.0, 24.0)
+        self._relog_interval_sb.setSingleStep(0.5)
+        self._relog_interval_sb.setDecimals(1)
+        self._relog_interval_sb.setSuffix(" hours")
+        self._relog_interval_sb.setSpecialValueText("Off")
+        self._relog_interval_sb.setValue(sm.relog_interval_hours)
+        self._relog_interval_sb.setToolTip(
+            "How often a running bot logs every player out and back in.\n\n"
+            "A game client gets slower the longer it stays logged in — over one measured "
+            "overnight run the same fight went from 23 to 32 seconds — and relogging is the "
+            "only thing that clears it. The cost is roughly three minutes per cycle for four "
+            "players, against about ten minutes an hour lost to the slowdown by the end of a "
+            "long session.\n\n"
+            "The run pauses at a node boundary, every player is closed and brought back by the "
+            "same path used after a crash, and the bot resumes at its recovery state. It is "
+            "skipped entirely if any player could not be logged back in.\n\n"
+            "Set to Off to never relog."
+        )
+        bot_form.addRow("Relog players every:", self._relog_interval_sb)
+
         self._quick_tp_cb = QCheckBox()
         self._quick_tp_cb.setChecked(sm.disable_quick_friend_teleport)
         self._quick_tp_cb.setToolTip(
@@ -270,6 +291,7 @@ class GeneralTab(QWidget):
         sm.default_safety_delay = self._safety_delay_sb.value()
         sm.auto_group_players = self._auto_group_cb.isChecked()
         sm.auto_select_character = self._auto_select_cb.isChecked()
+        sm.relog_interval_hours = self._relog_interval_sb.value()
         sm.disable_quick_friend_teleport = self._quick_tp_cb.isChecked()
         friend_name = self._friend_name_edit.text().strip()
         if friend_name != sm.default_friend_name:

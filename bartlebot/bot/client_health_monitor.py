@@ -128,6 +128,29 @@ class ClientHealthMonitor:
         """Clear flagged HWNDs so recovered clients can be monitored again."""
         self._flagged.clear()
 
+    def is_flagged(self, hwnd: int) -> bool:
+        """Whether this client is currently being ignored by every watcher."""
+        return hwnd in self._flagged
+
+    def unflag(self, hwnd: int) -> None:
+        """Start watching this client again, without touching anyone else's flag.
+
+        The counterpart to ``flag`` for a suspension that ends inside a run rather than at
+        a resume: ``clear_flagged`` would also un-flag a client that is genuinely dead and
+        part-way through recovery.
+        """
+        self._flagged.discard(hwnd)
+
+    def flag(self, hwnd: int) -> None:
+        """Stop every watcher reacting to this client until the flags are cleared.
+
+        Flagging is how a watcher records "already dealt with", and a deliberate relog
+        needs exactly that from the outside: a client being closed on purpose, or sitting
+        at character select, fails ``zone_name()`` and shows loading screens, which is
+        indistinguishable here from the crash those watchers exist to catch.
+        """
+        self._flagged.add(hwnd)
+
     async def run(self) -> None:
         """Start all health-check loops and wait until the stop flag is set."""
         dialog_task = asyncio.create_task(self._disconnect_dialog_watcher())

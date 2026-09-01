@@ -160,6 +160,34 @@ CLIENT_TERMINATE_TIMEOUT = 2.0
 # asynchronous — it returns before the kernel has torn the process down — and
 # remove_dead_clients() only reaps the client once the handle reports exited.
 
+RELOG_CHAR_SELECT_TIMEOUT = 60.0
+# How long the relog node waits for character select to appear after clicking Quit. The
+# logout tears down the world and the connection, so this is a server round trip rather
+# than a UI animation.
+
+RELOG_IN_GAME_TIMEOUT = 180.0
+# How long the relog node waits for a character to finish loading back into the world.
+# Matched to the launch path's patience rather than to a healthy client's: this node exists
+# for clients that have become slow, and giving up early on one strands the fleet a player
+# short.
+
+RELOG_WATCH_INTERVAL = 60.0
+# How often a running bot checks whether a relog is due (#163) and samples each client's
+# GDI count (#164). Deliberately coarse: the timer it serves is measured in hours, and GDI
+# climbs over a whole session, so anything faster is memory reads bought for nothing.
+
+RELOG_PARK_TIMEOUT = 300.0
+# How long a scheduled relog waits for the FSM to reach a node boundary before giving up
+# and trying again on the next tick. Generous on purpose — the longest node in a farming
+# bot is a fight, and a slow one on a degraded client is exactly what this feature exists
+# to fix, so timing out mid-fight and retrying is cheaper than killing a client in one.
+
+RECOVERY_BATCH_SETTLE = 5.0
+# How long the recovery queue waits for the rest of a relog batch before relaunching what
+# it has. A relog closes several clients at once, but each window is only noticed missing
+# on the next _client_loop poll, so the queue would otherwise start on the first one alone
+# and relaunch the fleet a client at a time -- which is the whole cost the batch avoids.
+
 CLIENT_REFRESH_TIMEOUT = 1.0
 # Per-widget timeout for a single refresh cycle. If any one client's
 # zone/xyz reads take longer than this (e.g. during a zone transition),

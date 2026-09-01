@@ -127,7 +127,17 @@ async def _tree_is_readable(client) -> bool:
         return False
 
 
-async def _at_character_select(client) -> bool:
+async def press_character_select_play(hwnd: int) -> None:
+    """Take the highlighted character on a screen already confirmed to be character select.
+
+    Public so the relog node presses Play exactly the way a launch does. Enter rather than
+    clicking ``btnPlay``: the button's own visibility flickers while the screen settles,
+    which is the same reason ``at_character_select`` reads the panel instead.
+    """
+    await _press(hwnd, _VK_RETURN)
+
+
+async def at_character_select(client) -> bool:
     """Whether the character-select screen is up.
 
     Reads ``WorldView/mainWindow`` — the panel's own path, not a control inside it, per the
@@ -227,7 +237,7 @@ async def _drive_by_sight(
             logger.info("Auto-select: '%s' is in-game", expected_title)
             return True
 
-        if await _at_character_select(client):
+        if await at_character_select(client):
             seen_character_select = True
             if enters < AUTO_SELECT_MAX_ENTER:
                 await _try_press(expected_title, _VK_RETURN)
