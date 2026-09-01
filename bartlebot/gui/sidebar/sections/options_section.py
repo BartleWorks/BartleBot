@@ -25,7 +25,9 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import BotOptionModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_SPECS
 
 if TYPE_CHECKING:
@@ -39,7 +41,7 @@ _PLACEHOLDER = "—"
 # ---------------------------------------------------------------------------
 
 
-class _AddOptionDialog(QDialog):
+class _AddOptionDialog(ThemedMixin, QDialog):
     """Dialog for adding or editing a bot-wide boolean option.
 
     Pass ``existing_option`` to open in edit mode (pre-populated fields,
@@ -87,7 +89,6 @@ class _AddOptionDialog(QDialog):
         form.addRow("Default", default_widget)
 
         self._err_lbl = QLabel()
-        self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
         self._err_lbl.setWordWrap(True)
         self._err_lbl.setVisible(False)
 
@@ -116,6 +117,11 @@ class _AddOptionDialog(QDialog):
                 self._bool_false.setChecked(True)
         else:
             self._bool_false.setChecked(True)
+
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
 
     def get_option(self) -> BotOptionModel:
         assert self._result is not None
@@ -391,8 +397,9 @@ def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLab
 
     desc_lbl: QLabel | None = None
     if opt.description:
-        desc_lbl = QLabel(opt.description)
-        desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9px;")
+        # Themed, for the same reason field_label is: this is handed back to a
+        # caller that has nothing to restyle it with.
+        desc_lbl = ThemedTextLabel(opt.description, css="font-size: 9px;")
         desc_lbl.setWordWrap(True)
 
     return row, widget, desc_lbl

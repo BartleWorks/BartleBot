@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 _PLACEHOLDER = "—"
 _QWIDGETSIZE_MAX = 16777215  # Qt's QWIDGETSIZE_MAX
@@ -166,11 +167,14 @@ class SidebarSection(QWidget):
 
 
 def field_label(text: str) -> QLabel:
-    """Semi-bold field label in muted colour."""
-    lbl = QLabel(text + ":")
-    lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;")
-    lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
-    return lbl
+    """The small muted caption above a sidebar field.
+
+    Returns a ``ThemedTextLabel`` rather than styling a bare ``QLabel``: a factory
+    cannot restyle what it has handed back, so the colour would otherwise go stale on
+    every caller — which is exactly what ``ClientWidget`` and ``SidebarField`` were
+    doing.
+    """
+    return ThemedTextLabel(text, css="font-size: 11px; font-weight: 600;")
 
 
 class SidebarField(QWidget):
