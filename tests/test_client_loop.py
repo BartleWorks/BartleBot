@@ -92,6 +92,7 @@ class LoopHarness:
         self._sync_embedded_clients = MagicMock()
         self._on_clients_removed = MagicMock()
         self._refresh_wizard_names = AsyncMock()
+        self._learn_character_roster = MagicMock()
 
     def start(self) -> None:
         self._client_loop_task = asyncio.create_task(self._client_loop())

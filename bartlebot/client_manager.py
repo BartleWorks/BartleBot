@@ -108,6 +108,10 @@ class ClientManager(QObject):
         # Account-level user id per window, once one has been read. Identifies a client
         # BartleBot did not launch, whose title carries no account tag.
         self._hwnd_user_ids: dict[int, int] = {}
+        # Character roster per account, loaded from keyring on first use. Cached because
+        # the learning pass runs every client-loop tick and a keyring read is not free;
+        # this process is the only writer, so the cache cannot go stale under us.
+        self._rosters: dict[str, list[dict]] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
         self._client_order: list[str | None] = []
         # Slots pending recovery: original_position → username
@@ -481,6 +485,7 @@ class ClientManager(QObject):
                 # first would announce names to tiles that do not exist yet — and the next
                 # tick would see no change and stay quiet.
                 await self._refresh_wizard_names(self._clients)
+                self._learn_character_roster(self._clients)
 
                 await asyncio.sleep(CLIENT_DETECT_INTERVAL)
 
@@ -566,6 +571,70 @@ class ClientManager(QObject):
         if changed or names != self._last_wizard_names:
             self._last_wizard_names = names
             self.wizard_names_changed.emit(list(names))
+
+    def _learn_character_roster(self, clients: list) -> None:
+        """Record which characters each identified account has, for the launch screen.
+
+        The launch screen has to describe an account that is not running, and nothing
+        else in the app remembers a character past the life of its window. This is the
+        one moment both halves are in hand: a live client whose account the map has
+        placed, whose name the cache holds, and whose character id says which character
+        that name belongs to.
+
+        Cheap by construction. Both reads are dict lookups into caches the loop has
+        already filled — no memory access of its own — and a keyring write only happens
+        when the roster actually changes, which for a stable set of characters is once
+        each, ever.
+
+        Never raises: this runs inside the client loop, whose MemoryReadError branch
+        empties the client list, so an exception escaping here would look like every
+        client vanishing at once. character_roster's own calls swallow their failures,
+        so the remaining risk is a client object going away mid-pass.
+        """
+        from bartlebot import character_roster, wizard_names  # noqa: PLC0415
+
+        for client in clients:
+            try:
+                username = self._hwnd_account_map.get(client.window_handle)
+                if not username:
+                    continue  # unidentified — an adopted window we have never launched
+                name = wizard_names.cached_name(client)
+                gid = wizard_names.cached_character_id(client)
+                if not name or gid == wizard_names.NO_CHARACTER:
+                    continue  # at character select, mid-login, or the name is not read yet
+                roster = self._rosters.get(username)
+                if roster is None:
+                    roster = character_roster.load(username)
+                    self._rosters[username] = roster
+                updated = character_roster.upsert(roster, gid, name)
+                if updated == roster:
+                    continue
+                self._rosters[username] = updated
+                if character_roster.save(username, updated):
+                    # No name and no id in the message: a log line naming a wizard is the
+                    # thing the roster's keyring storage exists to avoid, and the count is
+                    # what makes this line useful anyway.
+                    logger.info(
+                        "Learned a character for account '%s' (%d known)",
+                        username,
+                        len(updated),
+                    )
+            except Exception:
+                logger.debug("Could not update the character roster for a client", exc_info=True)
+
+    def characters_for(self, username: str) -> list[dict]:
+        """The known characters for *username*, newest last. Never raises.
+
+        Public because the launch screen asks about accounts that are not running, which
+        is precisely the case no client object can answer.
+        """
+        from bartlebot import character_roster  # noqa: PLC0415
+
+        roster = self._rosters.get(username)
+        if roster is None:
+            roster = character_roster.load(username)
+            self._rosters[username] = roster
+        return list(roster)
 
     async def _refresh_account_identity(self, live_clients: list) -> None:
         """Tie each client to an account by the user id it reports, learning or adopting.

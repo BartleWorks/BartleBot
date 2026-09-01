@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -473,12 +474,15 @@ class AccountsTab(QWidget):
         reply = QMessageBox.question(
             self,
             "Delete account",
-            f"Remove '{username}' and its stored password?",
+            f"Remove '{username}', its stored password, and its known characters?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
         CredentialStore.delete(username)
+        # A roster is wizard names. Leaving one behind for an account the user has just
+        # removed is exactly the data character_roster is careful about.
+        character_roster.forget(username)
         accounts = [a for a in SettingsManager.instance().accounts if a["username"] != username]
         SettingsManager.instance().accounts = accounts
         # Remove the deleted account from all profiles
