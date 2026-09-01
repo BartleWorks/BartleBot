@@ -3,7 +3,7 @@ import logging
 import re
 import time
 from collections import Counter, deque
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING
 
 from transitions.extensions.asyncio import AsyncMachine
@@ -79,6 +79,10 @@ class BotMachine:
         self._chat_baselines: dict[object, str] = {}
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
+        # Set by the run loop once it has actually reached its paused wait. pause() only
+        # clears _resume_event, which says a pause was *asked for*, not that the node that
+        # was running has finished -- see wait_until_parked.
+        self._parked = asyncio.Event()
         self._ambient_combat_lock = asyncio.Lock()
         self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
         self._ambient_dialog_last_seen: float = 0.0  # monotonic timestamp of last dismissed banner
@@ -270,6 +274,56 @@ class BotMachine:
     def is_stopped(self) -> bool:
         return self._stop_flag.is_set()
 
+    @property
+    def is_ambient_combat_active(self) -> bool:
+        """Whether the ambient combat watcher is currently running a fight.
+
+        The watcher runs *concurrently* with the run loop, so a parked loop does not mean
+        the clients are idle -- the watcher can be mid-fight on all of them. Anything that
+        acts on the clients while the FSM is paused has to check both.
+        """
+        return self._ambient_combat_lock.locked()
+
+    @property
+    def health_monitor(self) -> "ClientHealthMonitor | None":
+        """The monitor for the current run, or None when no run is in flight."""
+        return self._health_monitor
+
+    async def wait_until_parked(self, timeout: float) -> bool:
+        """Wait for the run loop to reach its paused wait. True once it has.
+
+        ``pause()`` clears an event and returns immediately, so ``is_paused`` goes true
+        while the current node is still running -- for the whole of a fight, in the worst
+        case. Closing a client on the strength of that kills it mid-node.
+
+        False on timeout, and False when no run loop is active at all: a machine that was
+        never started, or one already past its loop, never parks and callers must not wait
+        out the timeout expecting otherwise.
+        """
+        if self._stop_flag.is_set():
+            return False
+        try:
+            await asyncio.wait_for(self._parked.wait(), timeout)
+        except TimeoutError:
+            return False
+        return True
+
+    def suspend_health_checks_for(self, hwnds: Iterable[int]) -> None:
+        """Stop ClientHealthMonitor reacting to these clients until the run resumes.
+
+        Closing clients on purpose, or logging one out to character select, looks exactly
+        like a disconnect to the watchers: ``zone_name()`` starts failing, loading screens
+        appear, and the status watcher force-queues a recovery that is already under way.
+        Flagging the hwnds is the monitor's own mechanism for "already dealt with".
+
+        ``resume()`` clears the flags, so the suspension lifts on its own and nothing has
+        to remember to undo it. A no-op when no run is in flight.
+        """
+        if self._health_monitor is None:
+            return
+        for hwnd in hwnds:
+            self._health_monitor.flag(hwnd)
+
     def set_clients(self, clients: list) -> None:
         """Replace the active client list."""
         self.clients = clients
@@ -342,7 +396,13 @@ class BotMachine:
         health_task = asyncio.create_task(self._health_monitor.run())
         try:
             while not self._stop_flag.is_set():
-                await self._resume_event.wait()  # block here while paused
+                if not self._resume_event.is_set():
+                    # Announce the park only from here: this is the one point in the loop
+                    # where no node is running, which is what a caller waiting to close
+                    # clients out from under the FSM actually needs to know.
+                    self._parked.set()
+                    await self._resume_event.wait()  # block here while paused
+                    self._parked.clear()
                 if self._stop_flag.is_set():
                     break
                 state_id = self.state
@@ -634,6 +694,7 @@ class BotMachine:
         if not self._stop_flag.is_set():
             self._log_machine("Bot stopped.", logging.INFO)
         self._stop_flag.set()
+        self._parked.clear()
         self._resume_event.set()  # unblock any paused wait so stop is seen immediately
         # Schedule hard cancellation as a fallback if the node doesn't exit cooperatively.
         try:
@@ -657,14 +718,31 @@ class BotMachine:
             task.cancel()
 
     def pause(self) -> None:
-        """Suspend the FSM after the current node finishes."""
+        """Suspend the FSM after the current node finishes.
+
+        Returns immediately. The loop has not necessarily parked yet -- await
+        wait_until_parked for that.
+        """
         self._resume_event.clear()
 
     def resume(self) -> None:
         """Resume a paused FSM."""
         if self._health_monitor is not None:
             self._health_monitor.clear_flagged()  # allow re-detection after client recovery
+        self._parked.clear()
         self._resume_event.set()
+
+    def resume_health_checks_for(self, hwnds: Iterable[int]) -> None:
+        """Undo suspend_health_checks_for, one client at a time.
+
+        A relog that happens *inside* a node has to put the watchers back itself: nothing
+        calls resume() on the way out, so without this the clients it touched would go
+        unwatched for the rest of the run.
+        """
+        if self._health_monitor is None:
+            return
+        for hwnd in hwnds:
+            self._health_monitor.unflag(hwnd)
 
     def force_state(self, state_id: str) -> None:
         """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks."""
