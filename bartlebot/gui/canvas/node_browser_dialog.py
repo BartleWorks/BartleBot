@@ -39,6 +39,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
@@ -104,7 +105,7 @@ class _Chip(QLabel):
 # ---------------------------------------------------------------------------
 
 
-class _DetailPanel(QScrollArea):
+class _DetailPanel(ThemedMixin, QScrollArea):
     """Scrollable right panel displaying full NodeSpec documentation."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -114,15 +115,73 @@ class _DetailPanel(QScrollArea):
 
         self._node_type: str = ""
         self._layout: QVBoxLayout | None = None
+        # The arguments of the last show_node, replayed to restyle. See
+        # apply_theme_styles.
+        self._shown: tuple[str, NodeSpec, object, object] | None = None
+        self._pending_scroll = None
+        self.refresh_theme_styles()
 
-        # Show placeholder until a node is selected
-        placeholder = QLabel("Select a node to view its documentation.")
-        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 13px;")
-        self.setWidget(placeholder)
+    def apply_theme_styles(self) -> None:
+        """Rebuild the panel, rather than restyle it in place.
+
+        Everything here is built by ``show_node``, which throws the whole container
+        away and makes a new one on every selection — so there is nothing stable to
+        hold a reference to, and holding the seventeen labels it can produce would
+        mean maintaining that list forever. Replaying the last call is both shorter
+        and automatically complete.
+
+        The rebuild keeps the scroll position, which ``show_node`` deliberately does
+        not: switching *node* should start at the top, switching *theme* should leave
+        the reader where they were.
+        """
+        if self._shown is None:
+            placeholder = QLabel("Select a node to view its documentation.")
+            placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 13px;")
+            self.setWidget(placeholder)
+            return
+        offset = self.verticalScrollBar().value()
+        self._build(*self._shown)
+        self._restore_scroll(offset)
+
+    def _restore_scroll(self, offset: int) -> None:
+        """Put the scrollbar back once the rebuilt content has been measured.
+
+        ``setWidget`` resets the range to zero, and the real range only arrives a
+        layout pass later — so ``setValue`` immediately after the rebuild, or from a
+        ``singleShot(0)``, is clamped to zero and the reader is dumped at the top.
+        ``rangeChanged`` is the signal that says the new content has a size, and the
+        ``maximum <= 0`` check skips the reset on the way there.
+        """
+        if not offset:
+            return
+        bar = self.verticalScrollBar()
+        self._clear_pending_scroll()
+
+        def restore(_minimum: int, maximum: int) -> None:
+            if maximum <= 0:
+                return
+            self._clear_pending_scroll()
+            bar.setValue(offset)
+
+        self._pending_scroll = restore
+        bar.rangeChanged.connect(restore)
+
+    def _clear_pending_scroll(self) -> None:
+        """Drop an unfired restore — content short enough never to scroll leaves one."""
+        if self._pending_scroll is not None:
+            self.verticalScrollBar().rangeChanged.disconnect(self._pending_scroll)
+            self._pending_scroll = None
 
     def show_node(self, node_type: str, spec: NodeSpec, on_see_also=None, on_favorite_toggled=None) -> None:
         """Replace the scroll area content with documentation for node_type."""
+        self._shown = (node_type, spec, on_see_also, on_favorite_toggled)
+        self._clear_pending_scroll()
+        self._build(node_type, spec, on_see_also, on_favorite_toggled)
+        # Scroll to top when switching nodes
+        QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
+
+    def _build(self, node_type: str, spec: NodeSpec, on_see_also=None, on_favorite_toggled=None) -> None:
         self._node_type = node_type
 
         # Build a fresh container each call — avoids the stale-widget problem that
@@ -301,8 +360,6 @@ class _DetailPanel(QScrollArea):
             self._layout.addLayout(see_row)
 
         self._layout.addStretch()
-        # Scroll to top when switching nodes
-        QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
 
     def _build_params_table(self, params: list[ParamField]) -> QTableWidget:
         """Build a read-only table showing all parameters for this node."""
@@ -408,7 +465,7 @@ class _NodeListItem(QListWidgetItem):
 # ---------------------------------------------------------------------------
 
 
-class NodeBrowserDialog(QDialog):
+class NodeBrowserDialog(ThemedMixin, QDialog):
     """Node browser and reference dialog.
 
     Args:
@@ -453,9 +510,6 @@ class NodeBrowserDialog(QDialog):
         # ── Search bar ────────────────────────────────────────────
         self._search = SearchLineEdit("Search nodes…")
         self._search.setClearButtonEnabled(True)
-        self._search.setStyleSheet(
-            f"padding: 4px 8px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"
-        )
         self._search.textChanged.connect(self._on_search_changed)
 
         # ── Tab bar ───────────────────────────────────────────────
@@ -469,30 +523,12 @@ class NodeBrowserDialog(QDialog):
         self._list = QListWidget()
         self._list.setAlternatingRowColors(True)
         self._list.setSpacing(1)
-        self._list.setStyleSheet(
-            f"""
-            QListWidget {{
-                border: 1px solid {THEME.border};
-                font-size: 11px;
-                background: {THEME.bg};
-                alternate-background-color: {THEME.surface};
-            }}
-            QListWidget::item {{
-                padding: 5px 8px;
-            }}
-            QListWidget::item:selected {{
-                background: {THEME.accent};
-                color: #ffffff;
-            }}
-            """
-        )
         self._list.currentItemChanged.connect(self._on_list_selection_changed)
         self._list.itemDoubleClicked.connect(self._on_double_click)
 
         # Empty-search label (shown when search has no results)
         self._empty_label = QLabel()
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._empty_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         self._empty_label.hide()
 
         # Stack: page 0 = list, page 1 = empty label
@@ -520,13 +556,12 @@ class NodeBrowserDialog(QDialog):
         splitter.setCollapsible(1, False)
 
         # ── Button row ────────────────────────────────────────────
+        # Only built in "add" mode, so apply_theme_styles has to tolerate its absence.
+        self._add_btn: QPushButton | None = None
         if mode == "add":
             self._add_btn = QPushButton("Add")
             self._add_btn.setDefault(True)
             self._add_btn.setEnabled(False)
-            self._add_btn.setStyleSheet(
-                f"background: {THEME.accent}; color: #ffffff; padding: 5px 18px; border-radius: 4px; font-weight: bold;"
-            )
             self._add_btn.clicked.connect(self._on_add)
 
             cancel_btn = QPushButton("Cancel")
@@ -573,6 +608,40 @@ class NodeBrowserDialog(QDialog):
 
         # Focus the search bar on open
         QTimer.singleShot(0, self._search.setFocus)
+
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        """Restyle the four long-lived pieces of dialog chrome.
+
+        The detail panel is not one of them — it is a ThemedMixin of its own and
+        Qt delivers StyleChange to it directly.
+        """
+        self._search.setStyleSheet(
+            f"padding: 4px 8px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"
+        )
+        self._list.setStyleSheet(
+            f"""
+            QListWidget {{
+                border: 1px solid {THEME.border};
+                font-size: 11px;
+                background: {THEME.bg};
+                alternate-background-color: {THEME.surface};
+            }}
+            QListWidget::item {{
+                padding: 5px 8px;
+            }}
+            QListWidget::item:selected {{
+                background: {THEME.accent};
+                color: #ffffff;
+            }}
+            """
+        )
+        self._empty_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        if self._add_btn is not None:
+            self._add_btn.setStyleSheet(
+                f"background: {THEME.accent}; color: #ffffff; padding: 5px 18px; border-radius: 4px; font-weight: bold;"
+            )
 
     # ------------------------------------------------------------------
     # Public API
