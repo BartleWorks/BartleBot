@@ -105,19 +105,40 @@ def _themed_helpers(trees: dict[pathlib.Path, ast.Module]) -> set[str]:
         themed |= grew
 
 
-def _handles_theme_change(cls: ast.ClassDef) -> bool:
+def _base_names(cls: ast.ClassDef) -> list[str]:
+    return [n for b in cls.bases if (n := getattr(b, "id", getattr(b, "attr", None)))]
+
+
+def _handles_theme_change(cls: ast.ClassDef, classes: dict[str, ast.ClassDef], _seen: set[str] | None = None) -> bool:
     """True if this class re-derives its styling when the theme switches.
 
     A ``changeEvent`` that never mentions ``StyleChange`` does not count — an
     empty override is how a half-finished fix looks, and it would otherwise
     silence this check for the class forever.
+
+    Inheritance is followed through base classes defined in this package, because
+    a card that subclasses a themed base and overrides ``apply_theme_styles`` is
+    already correct — blaming it would push someone toward re-declaring the mixin
+    on the subclass, and a mixin listed second aborts the process on a theme
+    switch. Bases are matched by bare name, like ``_themed_helpers`` above: these
+    are package-local classes, and a collision can only over-report — which fails
+    loudly rather than silently.
     """
-    if any(getattr(b, "id", getattr(b, "attr", None)) == THEMED_MIXIN for b in cls.bases):
+    if any(name == THEMED_MIXIN for name in _base_names(cls)):
         return True
-    return any(
+    if any(
         isinstance(s, ast.FunctionDef) and s.name == "changeEvent" and "StyleChange" in ast.unparse(s)
         for s in ast.walk(cls)
-    )
+    ):
+        return True
+    seen = _seen or {cls.name}
+    for name in _base_names(cls):
+        base = classes.get(name)
+        if base is None or name in seen:
+            continue
+        if _handles_theme_change(base, classes, seen | {name}):
+            return True
+    return False
 
 
 @functools.lru_cache(maxsize=1)
@@ -125,6 +146,7 @@ def _violations_cached() -> tuple[tuple[str, tuple[str, ...]], ...]:
     """Map "module:ClassName" -> the themed things it does without re-deriving them."""
     trees = {p: ast.parse(p.read_text(encoding="utf-8")) for p in _iter_gui_files()}
     helpers = _themed_helpers(trees)
+    classes = {n.name: n for t in trees.values() for n in ast.walk(t) if isinstance(n, ast.ClassDef)}
 
     found: dict[str, list[str]] = {}
     for path, tree in trees.items():
@@ -132,7 +154,7 @@ def _violations_cached() -> tuple[tuple[str, tuple[str, ...]], ...]:
         for cls in (n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)):
             reasons = sorted({r for s in ast.walk(cls) if (r := _direct_themed(s))})
             reasons += [f"calls {h}()" for h in sorted(_called_names(cls) & helpers)]
-            if reasons and not _handles_theme_change(cls):
+            if reasons and not _handles_theme_change(cls, classes):
                 found[f"{module}:{cls.name}"] = reasons
     return tuple((k, tuple(v)) for k, v in sorted(found.items()))
 

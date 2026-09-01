@@ -200,6 +200,9 @@ class MainWindow(QMainWindow):
         )
         self._game_view_panel.launch_profile_requested.connect(lambda n: asyncio.ensure_future(self._launch_profile(n)))
         self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
+        self._game_view_panel.edit_profile_requested.connect(
+            lambda name: self._open_settings(tab_name="game", edit_profile=name)
+        )
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -414,11 +417,21 @@ class MainWindow(QMainWindow):
         elif tab == "combat":
             self.left_sidebar.switch_to_combat()
 
-    def _open_settings(self, tab_name: str = "general") -> None:
+    def _open_settings(self, tab_name: str = "general", edit_profile: str | None = None) -> None:
+        """Open Settings, optionally landing straight in one launch profile's editor.
+
+        *edit_profile* is the launch screen's route: a profile card names the profile it
+        stands for, and the settings dialog owns where that profile is edited.
+
+        Called from synchronous Qt slots only. exec() re-enters Qt's event loop, which
+        Python 3.13 forbids from inside a running asyncio task — see CLAUDE.md.
+        """
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
 
         dlg = SettingsDialog(self)
         dlg.open_tab(tab_name)
+        if edit_profile:
+            dlg.edit_profile(edit_profile)
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()

@@ -25,6 +25,7 @@ class GameViewPanel(QWidget):
 
     launch_account_requested = pyqtSignal(str, str)  # forwarded from GameView
     launch_profile_requested = pyqtSignal(str)  # forwarded from GameView
+    edit_profile_requested = pyqtSignal(str)  # forwarded from GameView
     manage_accounts_requested = pyqtSignal()  # forwarded from GameView
 
     def __init__(self, parent=None) -> None:
@@ -35,6 +36,7 @@ class GameViewPanel(QWidget):
         # Forward placeholder signals
         self.game_view.launch_account_requested.connect(self.launch_account_requested)
         self.game_view.launch_profile_requested.connect(self.launch_profile_requested)
+        self.game_view.edit_profile_requested.connect(self.edit_profile_requested)
         self.game_view.manage_accounts_requested.connect(self.manage_accounts_requested)
 
     # ------------------------------------------------------------------
@@ -44,6 +46,10 @@ class GameViewPanel(QWidget):
     def refresh_launch_lists(self) -> None:
         """Rebuild the Quick Launch lists — see GameView.refresh_launch_lists."""
         self.game_view.refresh_launch_lists()
+
+    def set_roster_source(self, source) -> None:
+        """Supply what the account cards ask for their characters."""
+        self.game_view.set_roster_source(source)
 
     def repaint_tile_labels(self) -> None:
         """Repaint the tile captions — see GameView.repaint_tile_labels."""

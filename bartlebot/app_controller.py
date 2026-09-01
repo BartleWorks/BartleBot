@@ -172,6 +172,12 @@ class AppController(QObject):
         # refresh loop, so it needs no connection here.
         self._client_manager.wizard_names_changed.connect(w.game_view.set_wizard_names)
 
+        # The launch screen describes accounts that are *not* running, so its character
+        # lines cannot come from a client — they come from the persisted roster, which
+        # ClientManager owns and fills. Injected rather than imported so the widget does
+        # not reach for a manager it has no business constructing.
+        w.game_view.set_roster_source(self._client_manager.characters_for)
+
         # All clients (active + unhooked) → sidebar rebuild
         self._client_manager.all_clients_changed.connect(
             lambda active, unhooked: w.right_sidebar.clients.set_all_clients(active, unhooked)

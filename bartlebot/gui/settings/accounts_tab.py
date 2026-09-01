@@ -536,8 +536,24 @@ class AccountsTab(QWidget):
         row = self._profile_list.currentRow()
         if row < 0:
             return
-        profile = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
-        old_name = profile.get("name", "")
+        self.edit_profile(self._profile_list.item(row).data(Qt.ItemDataRole.UserRole).get("name", ""))
+
+    def edit_profile(self, old_name: str) -> None:
+        """Open the profile editor for the profile named *old_name*.
+
+        Public and keyed by name rather than by list row because the launch screen's
+        profile cards open this too, and a card knows the name it stands for and nothing
+        about this tab's selection. One editor for a profile, wherever it is reached
+        from: the card shows what a profile will do, and the dialog is where it is
+        changed.
+
+        Must be called from a synchronous Qt slot. ``exec()`` re-enters Qt's event loop,
+        which Python 3.13 forbids from inside a running asyncio task — see the qasync
+        section of CLAUDE.md.
+        """
+        profile = next((p for p in SettingsManager.instance().launch_profiles if p.get("name") == old_name), None)
+        if profile is None:
+            return
         raw_res = profile.get("resolution")
         existing_res = tuple(raw_res) if raw_res else None
         dlg = _ProfileDialog(

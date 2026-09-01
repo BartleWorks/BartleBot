@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes
+import logging
 
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QCursor
@@ -20,13 +21,15 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.credentials import CredentialStore
 from bartlebot.gui.game_embed.client_tile import FOCUS_BORDER, LABEL_RESERVE, ClientTile, DetachedTile
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
+
+logger = logging.getLogger(__name__)
 
 _user32 = ctypes.windll.user32
 _VK_LBUTTON = 0x01
@@ -54,10 +57,13 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
     launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
+    edit_profile_requested = pyqtSignal(str)  # (profile_name)
     manage_accounts_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
+        # Set before _build_ui: the constructor's own refresh() reads it.
+        self._roster_source = None
         self._build_ui()
         self.refresh_theme_styles()
         self.refresh()
@@ -171,42 +177,53 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
         )
 
+    def set_roster_source(self, source) -> None:
+        """Supply the callable that answers ``characters_for(username)``.
+
+        Injected rather than imported because the rosters are cached on ClientManager,
+        which this widget does not own and must not construct. Without it the account
+        cards simply show no characters, which is also the correct display for an
+        install that has never launched anything.
+        """
+        self._roster_source = source
+        self.refresh()
+
     def refresh(self) -> None:
-        """Rebuild account and profile lists from current settings."""
+        """Rebuild the account and profile cards from current settings."""
         sm = SettingsManager.instance()
+        accounts = sm.accounts
 
-        self._rebuild_list(
-            self._accounts_area,
-            items=[
-                (
-                    CredentialStore.display_name(a["username"], a.get("alias") or None),
-                    lambda *_, u=a["username"], alias=a.get("alias") or None: self.launch_account_requested.emit(
-                        u, CredentialStore.display_name(u, alias)
-                    ),
-                )
-                for a in sm.accounts
-            ],
-            empty_hint="(No accounts)",
-        )
+        account_cards: list[QWidget] = []
+        for account in accounts:
+            card = AccountCard(account, self._characters_for(account.get("username", "")))
+            card.launch_account_requested.connect(self.launch_account_requested)
+            account_cards.append(card)
+        self._rebuild_list(self._accounts_area, account_cards, empty_hint="(No accounts)")
 
-        self._rebuild_list(
-            self._profiles_area,
-            items=[
-                (p["name"], lambda *_, n=p["name"]: self.launch_profile_requested.emit(n)) for p in sm.launch_profiles
-            ],
-            empty_hint="(No profiles)",
-        )
+        profile_cards: list[QWidget] = []
+        for profile in sm.launch_profiles:
+            card = ProfileCard(profile, accounts)
+            card.launch_profile_requested.connect(self.launch_profile_requested)
+            card.edit_profile_requested.connect(self.edit_profile_requested)
+            profile_cards.append(card)
+        self._rebuild_list(self._profiles_area, profile_cards, empty_hint="(No profiles)")
+
+    def _characters_for(self, username: str) -> list[dict]:
+        """The known characters for *username*, or none if no source has been supplied."""
+        if self._roster_source is None or not username:
+            return []
+        try:
+            return self._roster_source(username)
+        except Exception:
+            logger.debug("Could not read the character roster for the launch screen", exc_info=True)
+            return []
 
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _rebuild_list(
-        area: QScrollArea,
-        items: list[tuple[str, object]],
-        empty_hint: str,
-    ) -> None:
+    def _rebuild_list(area: QScrollArea, cards: list[QWidget], empty_hint: str) -> None:
         container = area.widget()
         layout = container.layout()
 
@@ -216,7 +233,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        if not items:
+        if not cards:
             # ThemedTextLabel because _rebuild_list is static and the hints it makes
             # are replaced on every refresh — there is nothing to hold a reference on.
             hint = ThemedTextLabel(empty_hint, css="font-size: 11px;")
@@ -224,11 +241,9 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(hint)
         else:
-            for label, callback in items:
-                btn = QPushButton(f"{label}")
-                btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-                btn.clicked.connect(callback)
-                layout.addWidget(btn)
+            for card in cards:
+                card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                layout.addWidget(card)
 
         layout.addStretch()
 
@@ -244,6 +259,7 @@ class GameView(ThemedMixin, QWidget):
     embed_state_changed = pyqtSignal(bool)  # True = ≥1 client embedded
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)
+    edit_profile_requested = pyqtSignal(str)
     manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
 
@@ -261,6 +277,7 @@ class GameView(ThemedMixin, QWidget):
         self._placeholder = _GamePlaceholder(self)
         self._placeholder.launch_account_requested.connect(self.launch_account_requested)
         self._placeholder.launch_profile_requested.connect(self.launch_profile_requested)
+        self._placeholder.edit_profile_requested.connect(self.edit_profile_requested)
         self._placeholder.manage_accounts_requested.connect(self.manage_accounts_requested)
         self._placeholder.show()
 
@@ -391,6 +408,10 @@ class GameView(ThemedMixin, QWidget):
         through to it.
         """
         self._placeholder.refresh()
+
+    def set_roster_source(self, source) -> None:
+        """Supply what the account cards ask for their characters — see the placeholder."""
+        self._placeholder.set_roster_source(source)
 
     def repaint_tile_labels(self) -> None:
         """Repaint every tile's caption without changing what it is showing.
