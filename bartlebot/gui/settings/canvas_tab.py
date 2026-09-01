@@ -13,14 +13,19 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
 
 def _hint(text: str) -> QLabel:
-    lbl = QLabel(text)
+    """The dimmed explanation under a settings row.
+
+    A ThemedTextLabel, not a styled QLabel: this hands the label back to a caller
+    that has no way to restyle it, so a plain one keeps whichever theme was active
+    when the tab was built.
+    """
+    lbl = ThemedTextLabel(text, css="font-size: 11px; padding-bottom: 4px;")
     lbl.setWordWrap(True)
-    lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; padding-bottom: 4px;")
     return lbl
 
 

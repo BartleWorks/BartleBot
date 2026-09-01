@@ -12,7 +12,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QEvent, QSize, QStringListModel, Qt, pyqtSignal
+from PyQt6.QtCore import QSize, QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
@@ -41,6 +41,7 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -252,7 +253,7 @@ class _ZoneWidget(QWidget):
             pass
 
 
-class _AppSettingStrWidget(QWidget):
+class _AppSettingStrWidget(ThemedMixin, QWidget):
     """A string field the *user* owns rather than the bot, for ``app_setting_str`` fields.
 
     Edits go straight to the SettingsManager general key named by the field's
@@ -298,16 +299,23 @@ class _AppSettingStrWidget(QWidget):
         hint.setWordWrap(True)
         outer.addWidget(hint)
 
+        # Only present while the bot still carries a literal, so apply_theme_styles
+        # has to tolerate its absence.
+        self._warn: QLabel | None = None
         if legacy_value.strip():
-            warn = QLabel(
+            self._warn = warn = QLabel(
                 f"This bot still stores a name of its own ({legacy_value.strip()}). It wins at run time "
                 "for now, and is dropped the next time this bot is saved."
             )
-            warn.setStyleSheet(f"font-size: 10px; color: {THEME.warning};")
             warn.setWordWrap(True)
             outer.addWidget(warn)
 
         self._refresh_suggestions()
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        if self._warn is not None:
+            self._warn.setStyleSheet(f"font-size: 10px; color: {THEME.warning};")
 
     # ------------------------------------------------------------------
     # Settings access — lazy and defensive, as _TriBoolComboBox is.
@@ -467,7 +475,7 @@ class _StrChoiceComboBox(QComboBox):
 # ---------------------------------------------------------------------------
 
 
-class _DynamicParamForm(QWidget):
+class _DynamicParamForm(ThemedMixin, QWidget):
     changed = pyqtSignal()
 
     def __init__(self, parent=None):
@@ -478,6 +486,12 @@ class _DynamicParamForm(QWidget):
         self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
+        # Every label load_schema builds that carries a THEME colour, cleared and
+        # refilled alongside _widgets. Field labels keep their ParamField because the
+        # required marker is a colour baked into *rich text* rather than a stylesheet,
+        # so restyling one means rebuilding its text.
+        self._field_labels: list[tuple[QLabel, Any, bool]] = []
+        self._muted_labels: list[QLabel] = []
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
@@ -507,16 +521,14 @@ class _DynamicParamForm(QWidget):
                 item.widget().deleteLater()
         self._widgets.clear()
         self._required_widgets.clear()
+        self._field_labels.clear()
+        self._muted_labels.clear()
         insert_idx = 0
         for field in schema:
-            label_text = field.label
-            if field.required:
-                label_text += f" <span style='color:{THEME.error}'>*</span>"
-            label_w = QLabel(label_text)
+            label_w = QLabel()
             label_w.setTextFormat(Qt.TextFormat.RichText)
-            _muted = f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;"
-            style = _muted + (" margin-top: 8px;" if insert_idx > 0 else "")
-            label_w.setStyleSheet(style)
+            self._field_labels.append((label_w, field, insert_idx > 0))
+            self._style_field_label(label_w, field, insert_idx > 0)
             if field.help:
                 label_w.setToolTip(field.help)
             val = params.get(field.key, field.default)
@@ -549,12 +561,14 @@ class _DynamicParamForm(QWidget):
                 insert_idx += 2
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(f"Default: {field.default_hint}")
+                self._muted_labels.append(hint_lbl)
                 hint_lbl.setStyleSheet(f"color: {THEME.text_muted};")
                 hint_lbl.setWordWrap(True)
                 self._form.insertWidget(insert_idx, hint_lbl)
                 insert_idx += 1
         if not schema:
             placeholder = QLabel("This node type has no parameters.")
+            self._muted_labels.append(placeholder)
             placeholder.setStyleSheet(f"color: {THEME.text_muted};")
             self._form.insertWidget(0, placeholder)
         # Wire disabled_by: disable the target widget when the controller is "active".
@@ -586,7 +600,10 @@ class _DynamicParamForm(QWidget):
                     )
         self._suppress = False
         self._push_context()
-        self._validate_required_fields()
+        # load_schema *is* this widget's construction — everything above was just
+        # built, so this is where its styling is first applied. It also covers
+        # _validate_required_fields, which apply_theme_styles re-runs.
+        self.refresh_theme_styles()
 
     def set_param_value(self, key: str, value) -> None:
         """Set one param's widget from outside, as if the user had typed it.
@@ -632,6 +649,31 @@ class _DynamicParamForm(QWidget):
                 display_w = widget
                 empty = False
             display_w.setStyleSheet(f"border: 1px solid {THEME.error};" if empty else "")
+
+    @staticmethod
+    def _style_field_label(label: QLabel, field: Any, spaced: bool) -> None:
+        """Set a field label's text and colour together.
+
+        They cannot be separated: the required marker is a ``<span>`` carrying
+        ``THEME.error`` inside the label's own text, so a theme switch has to rewrite
+        the text, not just the stylesheet. Nothing in the guard test can see that —
+        it looks for setStyleSheet, and this is setText.
+        """
+        text = field.label
+        if field.required:
+            text += f" <span style='color:{THEME.error}'>*</span>"
+        label.setText(text)
+        muted = f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;"
+        label.setStyleSheet(muted + (" margin-top: 8px;" if spaced else ""))
+
+    def apply_theme_styles(self) -> None:
+        for label, field, spaced in self._field_labels:
+            self._style_field_label(label, field, spaced)
+        for label in self._muted_labels:
+            label.setStyleSheet(f"color: {THEME.text_muted};")
+        # The red border on an empty required field is THEME.error, and is applied
+        # outside load_schema — re-running the check is what re-derives it.
+        self._validate_required_fields()
 
     def widget(self, key: str):
         """The input widget for one param key, or None.
@@ -882,6 +924,7 @@ class _DynamicParamForm(QWidget):
             w.currentTextChanged.connect(self._emit_changed)
             return w
         w = QLabel(f"(unsupported type: {field_type})")
+        self._muted_labels.append(w)
         w.setStyleSheet(f"color: {THEME.text_muted};")
         return w
 
@@ -1058,7 +1101,7 @@ def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
 # ---------------------------------------------------------------------------
 
 
-class _FlagConditionsWidget(QWidget):
+class _FlagConditionsWidget(ThemedMixin, QWidget):
     """Widget that edits flag conditions on a TransitionModel.
 
     Supports two levels of boolean logic:
@@ -1091,7 +1134,7 @@ class _FlagConditionsWidget(QWidget):
         _oor.setContentsMargins(0, 0, 0, 0)
         _oor.setSpacing(4)
         _oor_lbl = QLabel("Groups combine with:")
-        _oor_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;")
+        _oor_lbl.setObjectName("FlagMutedBold")
         self._groups_op_combo = QComboBox()
         self._groups_op_combo.addItems(["OR", "AND"])
         self._groups_op_combo.setFixedWidth(64)
@@ -1117,10 +1160,27 @@ class _FlagConditionsWidget(QWidget):
         # Separator
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet(f"color: {THEME.border};")
+        sep.setObjectName("FlagSep")
         outer.addWidget(sep)
 
         self._groups_op_combo.currentTextChanged.connect(self._on_any_changed)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        """One sheet on self, matching descendants by objectName.
+
+        Groups and rows are added and removed as the user edits, so a list of
+        references would need clearing and refilling in step with them. ID selectors
+        need none of that: a row built *after* a theme switch is styled by the same
+        sheet, with no bookkeeping to forget.
+        """
+        self.setStyleSheet(
+            f"#FlagMutedBold {{ color: {THEME.text_muted}; font-size: 11px;"
+            f"  font-weight: 600; border: none; }}"
+            f"#FlagSep {{ color: {THEME.border}; }}"
+            f"#FlagGroupFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}"
+            f"#FlagRemove {{ color: {THEME.error}; font-weight: bold; border: none; padding: 0; }}"
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -1186,7 +1246,7 @@ class _FlagConditionsWidget(QWidget):
     def _add_group(self, flags: list[FlagCondition] | None = None, op: str = "AND") -> None:
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.StyledPanel)
-        frame.setStyleSheet(f"QFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}")
+        frame.setObjectName("FlagGroupFrame")
         frame_layout = QVBoxLayout(frame)
         frame_layout.setContentsMargins(6, 4, 6, 4)
         frame_layout.setSpacing(3)
@@ -1199,7 +1259,7 @@ class _FlagConditionsWidget(QWidget):
         h_layout.setSpacing(4)
 
         op_lbl = QLabel("Combine with:")
-        op_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600; border: none;")
+        op_lbl.setObjectName("FlagMutedBold")
         inner_op = QComboBox()
         inner_op.addItems(["AND", "OR"])
         inner_op.setFixedWidth(64)
@@ -1208,7 +1268,7 @@ class _FlagConditionsWidget(QWidget):
 
         rem_group_btn = QPushButton("✕")
         rem_group_btn.setFixedWidth(self._REM_W)
-        rem_group_btn.setStyleSheet(f"color: {THEME.error}; font-weight: bold; border: none; padding: 0;")
+        rem_group_btn.setObjectName("FlagRemove")
 
         h_layout.addWidget(op_lbl)
         h_layout.addWidget(inner_op)
@@ -1271,7 +1331,7 @@ class _FlagConditionsWidget(QWidget):
 
         rem_btn = QPushButton("✕")
         rem_btn.setFixedWidth(self._REM_W)
-        rem_btn.setStyleSheet(f"color: {THEME.error}; font-weight: bold; border: none; padding: 0;")
+        rem_btn.setObjectName("FlagRemove")
 
         row_layout.addWidget(not_cb)
         row_layout.addWidget(opt_combo, 1)
@@ -1357,7 +1417,7 @@ class _NodeTypeDelegate(QStyledItemDelegate):
         return super().sizeHint(option, index)
 
 
-class _ParamPanel(QWidget):
+class _ParamPanel(ThemedMixin, QWidget):
     properties_changed = pyqtSignal()
     label_committed = pyqtSignal()
     # Emitted for discrete structural property changes (node type switch, edge
@@ -1411,10 +1471,9 @@ class _ParamPanel(QWidget):
         layout.addWidget(self._stack)
 
         # Page 0 — idle
-        idle = QLabel("Select a node or edge to edit its properties.")
-        idle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        idle.setStyleSheet(f"color: {THEME.text_muted};")
-        self._stack.addWidget(idle)
+        self._idle_lbl = QLabel("Select a node or edge to edit its properties.")
+        self._idle_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._stack.addWidget(self._idle_lbl)
 
         # Page 1 — node
         node_w = QWidget()
@@ -1423,6 +1482,9 @@ class _ParamPanel(QWidget):
         self._node_id_lbl = QLabel()
         self._node_label_edit = QLineEdit()
         self._node_type_combo = QComboBox()
+        # The category headers carry a THEME colour on the model item rather than a
+        # stylesheet, so apply_theme_styles re-sets their foreground by hand.
+        self._node_type_headers: list[QStandardItem] = []
         _model = QStandardItemModel()
         for _i, (_category, _node_types) in enumerate(NODE_CATEGORIES):
             if _i > 0:
@@ -1438,8 +1500,8 @@ class _ParamPanel(QWidget):
             _font.setBold(True)
             _font.setPointSize(max(1, _font.pointSize() - 1))
             _header.setFont(_font)
-            _header.setForeground(QColor(THEME.text_muted))
             _model.appendRow(_header)
+            self._node_type_headers.append(_header)
             for _node_type in _node_types:
                 _item = QStandardItem("    " + _node_type)
                 _item.setData(_node_type, Qt.ItemDataRole.UserRole)
@@ -1449,11 +1511,6 @@ class _ParamPanel(QWidget):
         self._node_help_btn = QPushButton("?")
         self._node_help_btn.setFixedSize(22, 22)
         self._node_help_btn.setToolTip("View node documentation")
-        self._node_help_btn.setStyleSheet(
-            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
-            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
-        )
         self._node_help_btn.clicked.connect(self._on_node_help)
 
         _node_type_row = QWidget()
@@ -1500,9 +1557,8 @@ class _ParamPanel(QWidget):
         returns_layout = QVBoxLayout(self._returns_section)
         returns_layout.setContentsMargins(6, 4, 6, 4)
         returns_layout.setSpacing(2)
-        returns_title = QLabel("Returns:")
-        returns_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-        returns_layout.addWidget(returns_title)
+        self._returns_title = QLabel("Returns:")
+        returns_layout.addWidget(self._returns_title)
         self._returns_body_layout = QVBoxLayout()
         self._returns_body_layout.setSpacing(1)
         returns_layout.addLayout(self._returns_body_layout)
@@ -1513,9 +1569,8 @@ class _ParamPanel(QWidget):
         _ov_vbox = QVBoxLayout(self._overrides_section)
         _ov_vbox.setContentsMargins(6, 4, 6, 4)
         _ov_vbox.setSpacing(4)
-        _ov_title = QLabel("Option Overrides:")
-        _ov_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-        _ov_vbox.addWidget(_ov_title)
+        self._ov_title = QLabel("Option Overrides:")
+        _ov_vbox.addWidget(self._ov_title)
         self._overrides_body = QVBoxLayout()
         self._overrides_body.setSpacing(4)
         _ov_vbox.addLayout(self._overrides_body)
@@ -1531,7 +1586,6 @@ class _ParamPanel(QWidget):
         self._record_btn = QPushButton("Record")
         self._record_btn.setFixedWidth(70)
         self._record_status_lbl = QLabel("")
-        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         _rr_layout.addWidget(self._record_btn)
         _rr_layout.addWidget(self._record_status_lbl, 1)
         self._record_row.setVisible(False)
@@ -1556,15 +1610,10 @@ class _ParamPanel(QWidget):
         _notes_vbox.setContentsMargins(6, 4, 6, 6)
         _notes_vbox.setSpacing(3)
         self._notes_title = QLabel("Notes:")
-        self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
         _notes_vbox.addWidget(self._notes_title)
         self._notes_edit = QPlainTextEdit()
         self._notes_edit.setPlaceholderText("Add notes about this node…")
         self._notes_edit.setFixedHeight(72)
-        self._notes_edit.setStyleSheet(
-            f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
-        )
         _notes_vbox.addWidget(self._notes_edit)
 
         # Connections section — lists outgoing/incoming transitions for this node
@@ -1579,10 +1628,6 @@ class _ParamPanel(QWidget):
         _conn_header_layout.setSpacing(4)
         self._conn_toggle_btn = QPushButton("▾ Connections")
         self._conn_toggle_btn.setFlat(True)
-        self._conn_toggle_btn.setStyleSheet(
-            f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-            " border: none; padding: 0; font-size: 11px; background: transparent; }"
-        )
         _conn_header_layout.addWidget(self._conn_toggle_btn)
         _conn_header_layout.addStretch()
         _conn_outer.addWidget(_conn_header)
@@ -1631,12 +1676,8 @@ class _ParamPanel(QWidget):
         ef.addRow("Dest", self._edge_dst_combo)
         ef.addRow("When", self._edge_when_combo)
 
-        flags_lbl = QLabel("Flag conditions")
-        flags_lbl.setStyleSheet(
-            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.text_muted};"
-            " font-size: 11px; font-weight: 600; margin-top: 4px;"
-        )
-        flags_lbl.setToolTip(
+        self._flags_lbl = QLabel("Flag conditions")
+        self._flags_lbl.setToolTip(
             "Bot options that must be satisfied for this transition to fire.\n"
             "Combine multiple conditions with AND (all must be true) or OR (any must be true).\n"
             "Check NOT to invert a condition."
@@ -1645,7 +1686,7 @@ class _ParamPanel(QWidget):
         self._flag_conditions_widget = _FlagConditionsWidget()
 
         edge_vbox.addWidget(edge_form_w)
-        edge_vbox.addWidget(flags_lbl)
+        edge_vbox.addWidget(self._flags_lbl)
         edge_vbox.addWidget(self._flag_conditions_widget)
         edge_vbox.addStretch()
         self._stack.addWidget(edge_outer)
@@ -1662,18 +1703,50 @@ class _ParamPanel(QWidget):
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
 
-    def changeEvent(self, event: QEvent) -> None:
-        super().changeEvent(event)
-        if event.type() == QEvent.Type.StyleChange:
-            self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-            self._notes_edit.setStyleSheet(
-                f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-                f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
-            )
-            self._conn_toggle_btn.setStyleSheet(
-                f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-                " border: none; padding: 0; font-size: 11px; background: transparent; }"
-            )
+        # The connection rows are the one part of this panel a theme switch has to
+        # rebuild rather than restyle, and rebuilding deletes widgets — so it is
+        # deferred off the StyleChange handler. See apply_theme_styles.
+        self._conn_theme_timer = QTimer(self)
+        self._conn_theme_timer.setSingleShot(True)
+        self._conn_theme_timer.timeout.connect(self._rebuild_connections_for_theme)
+
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self._idle_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+        for header in self._node_type_headers:
+            header.setForeground(QColor(THEME.text_muted))
+        self._node_help_btn.setStyleSheet(
+            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
+            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
+        )
+        section_title = f"font-weight: bold; color: {THEME.text_subtle};"
+        self._returns_title.setStyleSheet(section_title)
+        self._ov_title.setStyleSheet(section_title)
+        self._notes_title.setStyleSheet(section_title)
+        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._notes_edit.setStyleSheet(
+            f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+        )
+        self._conn_toggle_btn.setStyleSheet(
+            f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
+            " border: none; padding: 0; font-size: 11px; background: transparent; }"
+        )
+        self._flags_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600; margin-top: 4px;")
+        # Connection rows are built per selection and hold four THEME colours each
+        # (chip background, accent link, hover surface), so replaying the build is
+        # both shorter and more complete than holding a reference to every label.
+        # It deletes the old rows, which must not happen while
+        # QApplication.setStyleSheet is iterating over every widget.
+        if self._state is not None:
+            self._conn_theme_timer.start(0)
+
+    def _rebuild_connections_for_theme(self) -> None:
+        """Replay the connections build for the shown node under the new theme."""
+        if self._state is not None:
+            self._rebuild_connections(self._state.id)
 
     @property
     def node_type_combo(self) -> QComboBox:

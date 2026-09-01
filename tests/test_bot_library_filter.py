@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 
 import pytest
+from PyQt6.QtCore import QEvent, QPointF
+from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QApplication, QLabel
 
+import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, filter_bot_metas
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.tag_picker import group_accent
@@ -226,3 +229,92 @@ def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):
 
     assert THEME.pill_neutral_bg in styles
     assert f"background: {THEME.accent}" not in styles
+
+
+# ---------------------------------------------------------------------------
+# Following a theme switch
+#
+# The reported bug: card text kept the old palette, and the search bar and
+# category list did not recolour at all until the app was restarted. Only the
+# card *frame* appeared to work, because hover was the one thing re-reading
+# THEME — so a card recoloured when the mouse crossed it and not otherwise.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def theme():
+    before = theme_mod.active_theme()
+    yield theme_mod.set_theme
+    theme_mod.set_theme_instance(before)
+
+
+def _switch(qapp, widget, theme, mode: str) -> None:
+    """Change the theme the way AppController._apply_theme does, for one widget."""
+    theme(mode)
+    qapp.sendEvent(widget, QEvent(QEvent.Type.StyleChange))
+
+
+def test_a_card_recolours_its_text_on_a_theme_switch(qapp, theme):
+    theme("light")
+    card = _BotCard(_meta("Nightside Flax", description="Flax farm", authors="BartleBot"))
+    before = [lbl.styleSheet() for lbl in card.findChildren(QLabel)]
+
+    _switch(qapp, card, theme, "dark")
+
+    after = [lbl.styleSheet() for lbl in card.findChildren(QLabel)]
+    assert before != after
+    assert THEME.text_muted in card._desc_lbl.styleSheet()
+
+
+def test_a_card_not_hovered_still_recolours(qapp, theme):
+    """The frame used to follow the theme only via enterEvent/leaveEvent, so an
+    untouched card stayed stale until the mouse crossed it."""
+    theme("light")
+    card = _BotCard(_meta("Nightside Flax"))
+    before = card.styleSheet()
+
+    _switch(qapp, card, theme, "dark")
+
+    assert card.styleSheet() != before
+    assert THEME.surface in card.styleSheet()
+
+
+def test_hover_survives_a_theme_switch(qapp, theme):
+    """Hover is state now, not a separate stylesheet, so a switch while hovered
+    must keep the hover colours rather than reverting to the resting ones."""
+    theme("light")
+    card = _BotCard(_meta("Nightside Flax"))
+    card.enterEvent(QEnterEvent(QPointF(1, 1), QPointF(1, 1), QPointF(1, 1)))
+
+    _switch(qapp, card, theme, "dark")
+
+    assert THEME.node_fill in card.styleSheet()
+    assert THEME.accent in card.styleSheet()
+
+
+def test_the_panel_chrome_recolours_on_a_theme_switch(qapp, theme):
+    """The search bar, category list and card area — none of which rebuild
+    themselves, and all of which needed a restart before."""
+    theme("light")
+    panel = _BotLibraryPanel()
+    before = (panel._top_bar.styleSheet(), panel._cat_list.styleSheet(), panel._cards_area.styleSheet())
+
+    _switch(qapp, panel, theme, "dark")
+
+    after = (panel._top_bar.styleSheet(), panel._cat_list.styleSheet(), panel._cards_area.styleSheet())
+    assert all(a != b for a, b in zip(before, after))
+    assert THEME.surface in panel._top_bar.styleSheet()
+
+
+def test_the_clear_button_recolours_while_it_exists(qapp, theme):
+    """It is rebuilt on every selection change, so it is absent most of the time
+    and stale in between."""
+    theme("light")
+    panel = _BotLibraryPanel()
+    panel._set_tag_selection(["Gear"])
+    assert panel._clear_btn is not None
+    before = panel._clear_btn.styleSheet()
+
+    _switch(qapp, panel, theme, "dark")
+
+    assert panel._clear_btn.styleSheet() != before

@@ -63,8 +63,9 @@ node params" in CLAUDE.md for how the quicksell params were handled.
       `TRUE`/`FALSE` for conditions)
 - [ ] **New node, background task, or non-trivial utility**: ships with a test file
       covering the success path, one failure path, and any timeout/retry behavior
-- [ ] **Widget sets a stylesheet from `THEME`**: overrides `changeEvent` to re-apply
-      it on `QEvent.Type.StyleChange`
+- [ ] **Widget builds anything from `THEME`** (a stylesheet, or a bare `svg_icon`):
+      inherits `ThemedMixin` and implements `apply_theme_styles`, and
+      `test_theme_refresh_guard.py` passes
 - [ ] **Widget starts an asyncio task or `QThread`**: cancelled or joined in
       `closeEvent`
 - [ ] **Timing**: constants imported from `bartlebot/nodes/timing.py`, none defined

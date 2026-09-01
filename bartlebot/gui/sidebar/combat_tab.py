@@ -50,6 +50,7 @@ from bartlebot.gui.sidebar.sidebar_section import (
 from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -173,7 +174,7 @@ class _StrategyChip(QPushButton):
 # ---------------------------------------------------------------------------
 
 
-class _PlayerDecksSection(SidebarSection):
+class _PlayerDecksSection(ThemedMixin, SidebarSection):
     """Collapsible section showing one import/apply row per player slot."""
 
     import_requested = pyqtSignal(int)  # 1-based slot number
@@ -222,7 +223,9 @@ class _PlayerDecksSection(SidebarSection):
             apply_btn.clicked.connect(lambda _checked, slot=i: self.apply_requested.emit(slot))
 
             menu_btn = QToolButton()
-            menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
+            # No setIcon here: svg_icon bakes THEME.icon_tint in at render time, so the
+            # icon is set by apply_theme_styles instead, over the _menu_btns the loop
+            # already collects.
             menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
             menu_btn.setToolTip("More deck actions")
             menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
@@ -247,6 +250,11 @@ class _PlayerDecksSection(SidebarSection):
             self._deck_summary_labels.append(deck_summary)
 
         self.set_content_layout(layout)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        for btn in self._menu_btns:
+            btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
 
     #: Label, and the stored value it means, for the three-state override.
     _ARCHMASTERY_MODES = (

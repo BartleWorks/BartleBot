@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 _PLACEHOLDER = "—"
 _QWIDGETSIZE_MAX = 16777215  # Qt's QWIDGETSIZE_MAX
@@ -166,9 +167,18 @@ class SidebarSection(QWidget):
 
 
 def field_label(text: str) -> QLabel:
-    """Semi-bold field label in muted colour."""
-    lbl = QLabel(text + ":")
-    lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;")
+    """The small muted caption above a sidebar field.
+
+    Returns a ``ThemedTextLabel`` rather than styling a bare ``QLabel``: a factory
+    cannot restyle what it has handed back, so the colour would otherwise go stale on
+    every caller — which is exactly what ``ClientWidget`` and ``SidebarField`` were
+    doing.
+
+    The trailing colon and the fixed horizontal policy are part of the caption: the
+    policy is what holds the label column at a consistent width in ``ClientWidget``'s
+    rows, whose value labels are added with stretch.
+    """
+    lbl = ThemedTextLabel(text + ":", css="font-size: 11px; font-weight: 600;")
     lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
     return lbl
 
