@@ -165,6 +165,12 @@ Two failure modes the guard cannot see, so check them by hand:
   `refresh_theme_styles()` is called *somewhere* outside `changeEvent`, not that
   construction reaches it. `WikiImportDialog` passed while its only caller was
   `_set_status`, and opened unstyled.
+- **A hand-written `changeEvent` that only restyles some of the widget.** The guard
+  asks whether a class handles `StyleChange`, not whether it handles all of it, so a
+  partial handler passes and reads as done. `_ParamPanel` restyled three of its ten
+  themed widgets that way, leaving the node help button in the old palette. Prefer
+  the mixin — one hook that restyles everything is easier to keep complete than a
+  handler someone extended once.
 
 ### Popup menus
 

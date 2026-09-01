@@ -12,7 +12,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QEvent, QSize, QStringListModel, Qt, pyqtSignal
+from PyQt6.QtCore import QSize, QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
@@ -1417,7 +1417,7 @@ class _NodeTypeDelegate(QStyledItemDelegate):
         return super().sizeHint(option, index)
 
 
-class _ParamPanel(QWidget):
+class _ParamPanel(ThemedMixin, QWidget):
     properties_changed = pyqtSignal()
     label_committed = pyqtSignal()
     # Emitted for discrete structural property changes (node type switch, edge
@@ -1471,10 +1471,9 @@ class _ParamPanel(QWidget):
         layout.addWidget(self._stack)
 
         # Page 0 — idle
-        idle = QLabel("Select a node or edge to edit its properties.")
-        idle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        idle.setStyleSheet(f"color: {THEME.text_muted};")
-        self._stack.addWidget(idle)
+        self._idle_lbl = QLabel("Select a node or edge to edit its properties.")
+        self._idle_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._stack.addWidget(self._idle_lbl)
 
         # Page 1 — node
         node_w = QWidget()
@@ -1483,6 +1482,9 @@ class _ParamPanel(QWidget):
         self._node_id_lbl = QLabel()
         self._node_label_edit = QLineEdit()
         self._node_type_combo = QComboBox()
+        # The category headers carry a THEME colour on the model item rather than a
+        # stylesheet, so apply_theme_styles re-sets their foreground by hand.
+        self._node_type_headers: list[QStandardItem] = []
         _model = QStandardItemModel()
         for _i, (_category, _node_types) in enumerate(NODE_CATEGORIES):
             if _i > 0:
@@ -1498,8 +1500,8 @@ class _ParamPanel(QWidget):
             _font.setBold(True)
             _font.setPointSize(max(1, _font.pointSize() - 1))
             _header.setFont(_font)
-            _header.setForeground(QColor(THEME.text_muted))
             _model.appendRow(_header)
+            self._node_type_headers.append(_header)
             for _node_type in _node_types:
                 _item = QStandardItem("    " + _node_type)
                 _item.setData(_node_type, Qt.ItemDataRole.UserRole)
@@ -1509,11 +1511,6 @@ class _ParamPanel(QWidget):
         self._node_help_btn = QPushButton("?")
         self._node_help_btn.setFixedSize(22, 22)
         self._node_help_btn.setToolTip("View node documentation")
-        self._node_help_btn.setStyleSheet(
-            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
-            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
-        )
         self._node_help_btn.clicked.connect(self._on_node_help)
 
         _node_type_row = QWidget()
@@ -1560,9 +1557,8 @@ class _ParamPanel(QWidget):
         returns_layout = QVBoxLayout(self._returns_section)
         returns_layout.setContentsMargins(6, 4, 6, 4)
         returns_layout.setSpacing(2)
-        returns_title = QLabel("Returns:")
-        returns_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-        returns_layout.addWidget(returns_title)
+        self._returns_title = QLabel("Returns:")
+        returns_layout.addWidget(self._returns_title)
         self._returns_body_layout = QVBoxLayout()
         self._returns_body_layout.setSpacing(1)
         returns_layout.addLayout(self._returns_body_layout)
@@ -1573,9 +1569,8 @@ class _ParamPanel(QWidget):
         _ov_vbox = QVBoxLayout(self._overrides_section)
         _ov_vbox.setContentsMargins(6, 4, 6, 4)
         _ov_vbox.setSpacing(4)
-        _ov_title = QLabel("Option Overrides:")
-        _ov_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-        _ov_vbox.addWidget(_ov_title)
+        self._ov_title = QLabel("Option Overrides:")
+        _ov_vbox.addWidget(self._ov_title)
         self._overrides_body = QVBoxLayout()
         self._overrides_body.setSpacing(4)
         _ov_vbox.addLayout(self._overrides_body)
@@ -1591,7 +1586,6 @@ class _ParamPanel(QWidget):
         self._record_btn = QPushButton("Record")
         self._record_btn.setFixedWidth(70)
         self._record_status_lbl = QLabel("")
-        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         _rr_layout.addWidget(self._record_btn)
         _rr_layout.addWidget(self._record_status_lbl, 1)
         self._record_row.setVisible(False)
@@ -1616,15 +1610,10 @@ class _ParamPanel(QWidget):
         _notes_vbox.setContentsMargins(6, 4, 6, 6)
         _notes_vbox.setSpacing(3)
         self._notes_title = QLabel("Notes:")
-        self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
         _notes_vbox.addWidget(self._notes_title)
         self._notes_edit = QPlainTextEdit()
         self._notes_edit.setPlaceholderText("Add notes about this node…")
         self._notes_edit.setFixedHeight(72)
-        self._notes_edit.setStyleSheet(
-            f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
-        )
         _notes_vbox.addWidget(self._notes_edit)
 
         # Connections section — lists outgoing/incoming transitions for this node
@@ -1639,10 +1628,6 @@ class _ParamPanel(QWidget):
         _conn_header_layout.setSpacing(4)
         self._conn_toggle_btn = QPushButton("▾ Connections")
         self._conn_toggle_btn.setFlat(True)
-        self._conn_toggle_btn.setStyleSheet(
-            f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-            " border: none; padding: 0; font-size: 11px; background: transparent; }"
-        )
         _conn_header_layout.addWidget(self._conn_toggle_btn)
         _conn_header_layout.addStretch()
         _conn_outer.addWidget(_conn_header)
@@ -1691,12 +1676,8 @@ class _ParamPanel(QWidget):
         ef.addRow("Dest", self._edge_dst_combo)
         ef.addRow("When", self._edge_when_combo)
 
-        flags_lbl = QLabel("Flag conditions")
-        flags_lbl.setStyleSheet(
-            f"color: {__import__('bartlebot.gui.theme', fromlist=['THEME']).THEME.text_muted};"
-            " font-size: 11px; font-weight: 600; margin-top: 4px;"
-        )
-        flags_lbl.setToolTip(
+        self._flags_lbl = QLabel("Flag conditions")
+        self._flags_lbl.setToolTip(
             "Bot options that must be satisfied for this transition to fire.\n"
             "Combine multiple conditions with AND (all must be true) or OR (any must be true).\n"
             "Check NOT to invert a condition."
@@ -1705,7 +1686,7 @@ class _ParamPanel(QWidget):
         self._flag_conditions_widget = _FlagConditionsWidget()
 
         edge_vbox.addWidget(edge_form_w)
-        edge_vbox.addWidget(flags_lbl)
+        edge_vbox.addWidget(self._flags_lbl)
         edge_vbox.addWidget(self._flag_conditions_widget)
         edge_vbox.addStretch()
         self._stack.addWidget(edge_outer)
@@ -1722,18 +1703,50 @@ class _ParamPanel(QWidget):
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
 
-    def changeEvent(self, event: QEvent) -> None:
-        super().changeEvent(event)
-        if event.type() == QEvent.Type.StyleChange:
-            self._notes_title.setStyleSheet(f"font-weight: bold; color: {THEME.text_subtle};")
-            self._notes_edit.setStyleSheet(
-                f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-                f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
-            )
-            self._conn_toggle_btn.setStyleSheet(
-                f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-                " border: none; padding: 0; font-size: 11px; background: transparent; }"
-            )
+        # The connection rows are the one part of this panel a theme switch has to
+        # rebuild rather than restyle, and rebuilding deletes widgets — so it is
+        # deferred off the StyleChange handler. See apply_theme_styles.
+        self._conn_theme_timer = QTimer(self)
+        self._conn_theme_timer.setSingleShot(True)
+        self._conn_theme_timer.timeout.connect(self._rebuild_connections_for_theme)
+
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self._idle_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+        for header in self._node_type_headers:
+            header.setForeground(QColor(THEME.text_muted))
+        self._node_help_btn.setStyleSheet(
+            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
+            f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
+        )
+        section_title = f"font-weight: bold; color: {THEME.text_subtle};"
+        self._returns_title.setStyleSheet(section_title)
+        self._ov_title.setStyleSheet(section_title)
+        self._notes_title.setStyleSheet(section_title)
+        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._notes_edit.setStyleSheet(
+            f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+        )
+        self._conn_toggle_btn.setStyleSheet(
+            f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
+            " border: none; padding: 0; font-size: 11px; background: transparent; }"
+        )
+        self._flags_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600; margin-top: 4px;")
+        # Connection rows are built per selection and hold four THEME colours each
+        # (chip background, accent link, hover surface), so replaying the build is
+        # both shorter and more complete than holding a reference to every label.
+        # It deletes the old rows, which must not happen while
+        # QApplication.setStyleSheet is iterating over every widget.
+        if self._state is not None:
+            self._conn_theme_timer.start(0)
+
+    def _rebuild_connections_for_theme(self) -> None:
+        """Replay the connections build for the shown node under the new theme."""
+        if self._state is not None:
+            self._rebuild_connections(self._state.id)
 
     @property
     def node_type_combo(self) -> QComboBox:
