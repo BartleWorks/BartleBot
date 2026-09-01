@@ -122,6 +122,14 @@ REALM_PREV_PAGE_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmO
 REALM_GO_TO_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "btnGoToRealm"]
 REALM_PAGE_LABEL_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "RealmOptions", "txtRealmPage"]
 
+# Return to the character-select screen, on the same spellbook settings page the realm
+# controls live on. Reachable from SPELLBOOK_BUTTON_PATH -> SPELLBOOK_PREFERENCES_TAB_PATH.
+#
+# The Realms tab is the one tab that hides this button, and REALM_CURRENT_NAME_PATH above
+# is how that is detected — a settings page opened fresh always shows it, so closing the
+# spellbook and reopening is the reliable way back to it.
+SETTINGS_QUIT_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "QuitButton"]
+
 
 def realm_name_path(row: int) -> list[str]:
     """Return the path to the realm name label for the given row (0–6)."""

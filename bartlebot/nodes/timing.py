@@ -160,6 +160,17 @@ CLIENT_TERMINATE_TIMEOUT = 2.0
 # asynchronous — it returns before the kernel has torn the process down — and
 # remove_dead_clients() only reaps the client once the handle reports exited.
 
+RELOG_CHAR_SELECT_TIMEOUT = 60.0
+# How long the relog node waits for character select to appear after clicking Quit. The
+# logout tears down the world and the connection, so this is a server round trip rather
+# than a UI animation.
+
+RELOG_IN_GAME_TIMEOUT = 180.0
+# How long the relog node waits for a character to finish loading back into the world.
+# Matched to the launch path's patience rather than to a healthy client's: this node exists
+# for clients that have become slow, and giving up early on one strands the fleet a player
+# short.
+
 RELOG_WATCH_INTERVAL = 60.0
 # How often a running bot checks whether a relog is due (#163) and samples each client's
 # GDI count (#164). Deliberately coarse: the timer it serves is measured in hours, and GDI
