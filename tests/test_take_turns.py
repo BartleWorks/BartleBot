@@ -41,7 +41,7 @@ async def _run(clients, turn_fn, **kwargs):
         safety_delay=0.01,
         turn_fn=turn_fn,
         poll_interval=0,
-        stagger=0,
+        object_use_delay=0,
         **kwargs,
     )
 
@@ -194,7 +194,7 @@ async def test_unfinished_turn_is_distinguished_from_an_absent_prompt():
     assert nh.summarize_turns(results, [3, 5, 7]) == ([7], [5])
 
 
-async def test_stagger_is_paid_between_turns_only():
+async def test_the_delay_between_uses_is_paid_between_turns_only():
     """The gap between clients is waited out once per handover, not before the first turn."""
     clients = [_positional_client() for _ in range(3)]
     sleeps: list[float] = []
@@ -206,7 +206,9 @@ async def test_stagger_is_paid_between_turns_only():
         return True
 
     with patch.object(nh.asyncio, "sleep", side_effect=_sleep):
-        await nh.take_turns(clients, _INTERACT, _RESET, safety_delay=0.01, turn_fn=_turn, poll_interval=0, stagger=2.5)
+        await nh.take_turns(
+            clients, _INTERACT, _RESET, safety_delay=0.01, turn_fn=_turn, poll_interval=0, object_use_delay=2.5
+        )
 
     assert sleeps.count(2.5) == 2  # three clients, two handovers
 

@@ -347,7 +347,7 @@ async def test_sequential_each_client_uses_the_list_alone():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
-        patch(f"{_NH}.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
         patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
         patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
@@ -372,7 +372,7 @@ async def test_sequential_entry_not_found_cancels_and_fails():
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
         patch.object(evl, "_MAX_PAGES", 2),
-        patch(f"{_NH}.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
         patch(f"{_NH}.get_text_by_path", AsyncMock(return_value="Wizard City")),
         patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
@@ -394,7 +394,7 @@ async def test_sequential_prompt_never_appears_fails():
 
     with (
         patch.object(evl, "POLL_INTERVAL", 0),
-        patch(f"{_NH}.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
         patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
         patch(f"{_NH}.click_by_path", AsyncMock(return_value=True)),
     ):

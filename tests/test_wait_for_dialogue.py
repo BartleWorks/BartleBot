@@ -144,3 +144,39 @@ async def test_timer_resets_after_dialogue():
 
     assert result == "SUCCESS"
     assert _spacebar_count(client) == 1  # exactly one SPACEBAR for the one dialogue window
+
+
+async def test_animation_delay_is_added_to_the_safety_delay(monkeypatch):
+    """A pause mid-cutscene is not the end of the conversation, and the wait says so."""
+    seen: list[float] = []
+
+    async def _fake(clients, safety_delay, timeout):
+        seen.append(safety_delay)
+        return True
+
+    monkeypatch.setattr(nh, "advance_dialogue_until_clear", _fake)
+
+    result = await wfd.run(
+        FakeMachine(options={"Safety Delay": 3.0}),
+        [FakeClient()],
+        {"animation_delay": 2.0},
+    )
+
+    assert result == "SUCCESS"
+    assert seen == [5.0]
+
+
+async def test_without_an_animation_delay_the_quiet_period_is_the_safety_delay(monkeypatch):
+    """Zero is the default: a bot that never opts in waits exactly what it always did."""
+    seen: list[float] = []
+
+    async def _fake(clients, safety_delay, timeout):
+        seen.append(safety_delay)
+        return True
+
+    monkeypatch.setattr(nh, "advance_dialogue_until_clear", _fake)
+
+    result = await wfd.run(FakeMachine(options={"Safety Delay": 3.0}), [FakeClient()], {})
+
+    assert result == "SUCCESS"
+    assert seen == [3.0]

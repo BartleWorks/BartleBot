@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT
+from bartlebot.nodes.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, TRIGGER_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -78,6 +78,20 @@ PARAM_SCHEMA: list[ParamField] = [
         ),
         default=False,
         default_hint="All players interact at once.",
+        required=False,
+    ),
+    ParamField(
+        key="object_use_delay",
+        type="float",
+        label="Delay Between Object Uses (s)",
+        help=(
+            "Seconds to leave between one player finishing at the object and the next player starting "
+            "on it, in Sequential Interaction. The object becoming free again has no readable signal, "
+            "so this is the only cover for it — raise it for an object whose menu takes several "
+            "seconds to close and reopen. Ignored unless Sequential Interaction is on."
+        ),
+        default=OBJECT_USE_DELAY,
+        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
         required=False,
     ),
 ]
@@ -184,6 +198,7 @@ async def run(machine, clients: list, params: dict) -> str:
             _turn,
             numbers=numbers,
             poll_interval=POLL_INTERVAL,
+            object_use_delay=params.get("object_use_delay"),
             log=machine.log,
         )
         unprompted, unfinished = node_helpers.summarize_turns(results, numbers)

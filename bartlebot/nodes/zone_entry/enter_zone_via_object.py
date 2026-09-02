@@ -8,6 +8,13 @@ from wizwalker import XYZ, Keycode
 from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.timing import (
+    MAX_RETRIES,
+    OBJECT_USE_DELAY,
+    POLL_INTERVAL,
+    TRIGGER_TIMEOUT,
+    ZONE_CHANGE_TIMEOUT,
+)
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -61,6 +68,20 @@ PARAM_SCHEMA: list[ParamField] = [
         default_hint="All players interact at once.",
         required=False,
     ),
+    ParamField(
+        key="object_use_delay",
+        type="float",
+        label="Delay Between Object Uses (s)",
+        help=(
+            "Seconds to leave between one player finishing at the object and the next player starting "
+            "on it, in Sequential Interaction. The object becoming free again has no readable signal, "
+            "so this is the only cover for it — raise it for a teleporter that takes several seconds "
+            "to reset between uses. Ignored unless Sequential Interaction is on."
+        ),
+        default=OBJECT_USE_DELAY,
+        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
+        required=False,
+    ),
 ]
 
 NODE_SPEC = NodeSpec(
@@ -99,8 +120,6 @@ NODE_SPEC = NodeSpec(
     ),
 )
 
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
-
 
 async def _loading_or_arrived(client, to_zone: str) -> bool:
     """Return True once this client has committed to the transition.
@@ -135,7 +154,7 @@ async def _await_arrival(machine, clients: list, to_zone: str) -> str:
 
 
 async def _trigger_sequentially(
-    machine, clients: list, interact, reset, to_zone: str, safety_delay: float
+    machine, clients: list, interact, reset, to_zone: str, safety_delay: float, object_use_delay: float | None
 ) -> str | None:
     """Send each client through the object alone. Returns "FAILURE", or None to carry on.
 
@@ -169,6 +188,7 @@ async def _trigger_sequentially(
         _turn,
         numbers=numbers,
         poll_interval=POLL_INTERVAL,
+        object_use_delay=object_use_delay,
         # The client leaves the zone under its own power, so there is nothing to park —
         # and a teleport aimed at a client already on a loading screen goes nowhere good.
         park_after_turn=False,
@@ -245,7 +265,9 @@ async def run(machine, clients: list, params: dict) -> str:
     #     commits to the transition alone. Steps 6–7 below are shared by both modes.
     if params.get("sequential", False):
         if (
-            failure := await _trigger_sequentially(machine, clients, interact, reset, to_zone, safety_delay)
+            failure := await _trigger_sequentially(
+                machine, clients, interact, reset, to_zone, safety_delay, params.get("object_use_delay")
+            )
         ) is not None:
             return failure
         return await _await_arrival(machine, clients, to_zone)

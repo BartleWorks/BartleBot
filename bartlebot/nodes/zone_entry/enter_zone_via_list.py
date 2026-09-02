@@ -15,7 +15,7 @@ from bartlebot.nodes.paths import (
     UNIVERSE_TELEPORT_BUTTON,
     universe_zone_option_path,
 )
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
+from bartlebot.nodes.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -92,6 +92,21 @@ PARAM_SCHEMA: list[ParamField] = [
         ),
         default=False,
         default_hint="All players interact at once.",
+        required=False,
+    ),
+    ParamField(
+        key="object_use_delay",
+        type="float",
+        label="Delay Between Object Uses (s)",
+        help=(
+            "Seconds to leave between one player finishing at the list object and the next player "
+            "starting on it, in Sequential Interaction. The object becoming free again has no "
+            "readable signal, so this is the only cover for it — raise it for a list object that "
+            "takes several seconds to become usable again. Ignored unless Sequential Interaction is "
+            "on."
+        ),
+        default=OBJECT_USE_DELAY,
+        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
         required=False,
     ),
 ]
@@ -222,7 +237,14 @@ async def _confirm_arrival(machine, clients: list, to_zone: str) -> str:
 
 
 async def _use_list_sequentially(
-    machine, clients: list, interact, reset, zone_list_entry: str, safety_delay: float, aliases: list[str]
+    machine,
+    clients: list,
+    interact,
+    reset,
+    zone_list_entry: str,
+    safety_delay: float,
+    aliases: list[str],
+    object_use_delay: float | None,
 ) -> str | None:
     """Let each client use the list object alone. Returns "FAILURE", or None to carry on.
 
@@ -264,6 +286,7 @@ async def _use_list_sequentially(
         _turn,
         numbers=numbers,
         poll_interval=POLL_INTERVAL,
+        object_use_delay=object_use_delay,
         # The teleport takes the client out of the zone itself; parking it would aim a
         # teleport at a client that is already leaving.
         park_after_turn=False,
@@ -351,7 +374,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 2s. Sequential mode replaces steps 2–7b; step 8 runs either way.
     if params.get("sequential", False):
         failure = await _use_list_sequentially(
-            machine, clients, interact, reset, zone_list_entry, safety_delay, aliases
+            machine, clients, interact, reset, zone_list_entry, safety_delay, aliases, params.get("object_use_delay")
         )
         if failure is not None:
             return failure
