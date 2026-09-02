@@ -361,6 +361,42 @@ Nothing rewrites an option on load. `_apply_bot_defaults` used to overwrite Safe
 Delay from the app setting on open, which is why `bots/` moved on every run;
 `test_opening_and_saving_a_bot_changes_none_of_its_options` is what keeps it still.
 
+#### A declaration is derived, not persisted
+
+An option a node requires is **not written to the bot file**. Its name, type,
+default and description are composed from `NODE_SPECS` at load, by
+`bot_options.compose_options()`; the file keeps only what is authorial — an
+option the author hand-added, or a required one whose default they deliberately
+changed. `BotConfig.save` prunes the rest through `storable_options()`.
+
+Injection is what made a description fix leave 80 stale copies behind, and it put
+`Challenge Mode` in 61 bots when 2 could act on it. It also never refreshed what
+it had added: 26 files shipped a description no current NodeSpec produced, four
+mutually contradictory texts for the one setting.
+
+- **The prune matches by name, never by byte-identity.** Only 66 of 97 stored
+  declarations agreed with a NodeSpec exactly; the other 31 differed only by
+  carrying one of those stale injections, and byte-identity would have filed
+  every one of them as author intent. So for a derived option, type and
+  description are dropped unconditionally and the default survives only when it
+  differs from the composed one.
+- **`3` and `3.0` agree; `False` and `0` do not.** JSON cannot tell an int
+  default from a float once written, so a pin equal to the node's default is
+  dropped either way. `False == 0` in Python, and collapsing those would throw
+  away a checkbox's real answer.
+- **The file stops being self-describing, so the orphan check is not optional.**
+  A transition guarding on an option nothing declares still runs —
+  `_flag_<name>` resolves to `False` rather than erroring — so the bot quietly
+  stops taking that edge. `orphaned_flag_options()` walks both flag forms and
+  the editor reports it in the validation banner;
+  `test_no_bot_guards_a_transition_on_an_option_nothing_declares` keeps the
+  shipped library clean of them.
+- **Editing a derived option in the Config tab materialises it into the file.**
+  That tab edits *declarations*, and a declaration has to be in the file to
+  exist; `OptionsSection._declaration_for` is where the transient composed row
+  becomes a stored one. The save-time prune takes it back out if the user
+  changes their mind back.
+
 #### App settings vs. node params
 
 An app setting that a node param also expresses must never be applied by rewriting
