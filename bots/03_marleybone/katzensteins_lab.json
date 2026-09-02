@@ -783,8 +783,7 @@
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -801,8 +800,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -825,8 +823,7 @@
           "y": 2299.25,
           "z": 20.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -849,8 +846,7 @@
           "y": 1559.81,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -873,8 +869,7 @@
           "y": 1635.3,
           "z": -240.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -891,8 +886,7 @@
           "y": 3782.12,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -909,8 +903,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -925,8 +918,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -954,8 +946,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -972,8 +963,7 @@
           "y": 11414.99,
           "z": -230.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -996,8 +986,7 @@
           "y": 11904.9,
           "z": -240.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1012,8 +1001,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1025,8 +1013,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -1049,8 +1036,7 @@
           "y": -1705.1,
           "z": -724.72
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -1078,8 +1064,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -1107,8 +1092,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -1136,8 +1120,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1165,8 +1148,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1194,8 +1176,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -1218,8 +1199,7 @@
           "y": 19518.16,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1234,8 +1214,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1247,8 +1226,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -1271,8 +1249,7 @@
           "y": -1088.12,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -1289,8 +1266,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -1307,8 +1283,7 @@
           "y": 51705.4,
           "z": -1450.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_38",
@@ -1323,8 +1298,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -1341,8 +1315,7 @@
           "y": 52836.64,
           "z": -129.69
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -1357,8 +1330,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -1381,8 +1353,7 @@
           "y": -5433.72,
           "z": -230.0
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

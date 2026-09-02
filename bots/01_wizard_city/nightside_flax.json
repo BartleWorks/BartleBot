@@ -32,8 +32,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -56,8 +55,7 @@
           "y": 4588.22,
           "z": 2.46
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -77,8 +75,7 @@
         "entity_names": [
           "FrostedFlax_01"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -90,8 +87,7 @@
       },
       "params": {
         "duration": 3.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

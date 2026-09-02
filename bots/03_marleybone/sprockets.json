@@ -338,8 +338,7 @@
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -362,8 +361,7 @@
           "y": 8491.09,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -386,8 +384,7 @@
           "y": 5948.36,
           "z": 249.97
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -402,8 +399,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -426,8 +422,7 @@
           "y": -4835.73,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -444,8 +439,7 @@
           "y": -1691.39,
           "z": 3850.0
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

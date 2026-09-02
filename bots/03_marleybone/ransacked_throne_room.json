@@ -172,8 +172,7 @@
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -196,8 +195,7 @@
           "y": 1336.23,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -220,8 +218,7 @@
           "y": -5557.71,
           "z": -4823.63
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -238,8 +235,7 @@
         "fail_if_health_below": 0.1,
         "fail_if_mana_below": 0.1,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -254,8 +250,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -270,8 +265,7 @@
         "wiki_page": "Creature:The Monster (Standard)",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -295,8 +289,7 @@
           "z": 1.5
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -311,8 +304,7 @@
         "sell_pets": false,
         "sell_socket_wrenches": null,
         "sell_skeleton_keys": null
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -334,8 +326,7 @@
           "y": -4446.71,
           "z": 1.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -345,8 +336,7 @@
         "x": 5280.0,
         "y": 90.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_11",
@@ -364,8 +354,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -383,8 +372,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -417,8 +405,7 @@
         ],
         "menu_timeout": 10.0,
         "sequential": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -447,8 +434,7 @@
         "confirm_path": [],
         "confirm_visible": true,
         "confirm_timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -481,8 +467,7 @@
         ],
         "menu_timeout": 10.0,
         "sequential": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -515,8 +500,7 @@
         ],
         "menu_timeout": 10.0,
         "sequential": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -545,8 +529,7 @@
         "confirm_path": [],
         "confirm_visible": true,
         "confirm_timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -575,8 +558,7 @@
         "confirm_path": [],
         "confirm_visible": true,
         "confirm_timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -599,8 +581,7 @@
           "y": -4532.09,
           "z": 1.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -615,8 +596,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

@@ -648,8 +648,7 @@
       },
       "params": {
         "zone": "Mirage/MR_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -667,8 +666,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -686,8 +684,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -710,8 +707,7 @@
           "y": -1661.63,
           "z": 0.05
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -734,8 +730,7 @@
           "y": 3466.43,
           "z": -2088.67
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -752,8 +747,7 @@
           "y": -6503.3,
           "z": -696.58
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -767,8 +761,7 @@
         "enemy": "MR_Mongoose_Warrior_C_Boss_01",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -792,8 +785,7 @@
           "z": 1.37
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -810,8 +802,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -828,8 +819,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -844,8 +834,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -862,8 +851,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -880,8 +868,7 @@
           "y": 3497.69,
           "z": -2088.67
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -895,8 +882,7 @@
         "keep_list": [
           "Epic Opal"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

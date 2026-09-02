@@ -479,8 +479,7 @@
       },
       "params": {
         "zone": "Mirage/MR_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -496,8 +495,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -520,8 +518,7 @@
           "y": -1707.89,
           "z": 0.05
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -545,8 +542,7 @@
           "z": -2088.67
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -569,8 +565,7 @@
           "y": -2539.24,
           "z": 2.52
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -585,8 +580,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -603,8 +597,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -619,8 +612,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Mirage/MR_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -644,8 +636,7 @@
           "z": 2.52
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -659,8 +650,7 @@
         "keep_list": [
           "Epic"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

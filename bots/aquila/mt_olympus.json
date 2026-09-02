@@ -316,8 +316,7 @@
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -340,8 +339,7 @@
           "y": 3936.62,
           "z": -120.04
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -351,8 +349,7 @@
         "x": 880.0,
         "y": -90.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_4",
@@ -374,8 +371,7 @@
           "y": 85.87,
           "z": -68.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -400,8 +396,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -418,8 +413,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -442,8 +436,7 @@
           "y": 8338.67,
           "z": -10.14
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -458,8 +451,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -484,8 +476,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -508,8 +499,7 @@
           "y": -1256.01,
           "z": 4.13
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -526,8 +516,7 @@
           "y": -282.45,
           "z": -68.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -552,8 +541,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -570,8 +558,7 @@
           "y": 1985.96,
           "z": -68.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -594,8 +581,7 @@
           "y": 8329.66,
           "z": -10.14
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -610,8 +596,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -628,8 +613,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -644,8 +628,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -670,8 +653,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -694,8 +676,7 @@
           "y": -1696.92,
           "z": 109.27
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -712,8 +693,7 @@
           "y": 12070.12,
           "z": 318.36
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -738,8 +718,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -756,8 +735,7 @@
           "y": 1985.96,
           "z": -68.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -774,8 +752,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -790,8 +767,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -816,8 +792,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -842,8 +817,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -860,8 +834,7 @@
           "y": 1985.96,
           "z": -68.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -876,8 +849,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -902,8 +874,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -920,8 +891,7 @@
           "y": 9460.88,
           "z": -1671.39
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -946,8 +916,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -972,8 +941,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -998,8 +966,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -1015,7 +982,6 @@
         "combat_config": "",
         "max_duration": 0.0
       },
-      "option_overrides": {},
       "notes": "Drops Fiery Skeleturion. Only spawns if puzzle is failed."
     },
     {
@@ -1041,8 +1007,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_36",
@@ -1059,8 +1024,7 @@
           "y": 1985.96,
           "z": -68.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -1077,8 +1041,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_38",
@@ -1101,8 +1064,7 @@
           "y": 13002.94,
           "z": -1290.59
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_39",
@@ -1117,8 +1079,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_40",
@@ -1141,8 +1102,7 @@
           "y": 4543.75,
           "z": 200.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_41",
@@ -1167,8 +1127,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_42",
@@ -1191,8 +1150,7 @@
           "y": -818.27,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_43",
@@ -1215,8 +1173,7 @@
           "y": -4525.75,
           "z": 200.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_44",
@@ -1242,8 +1199,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_45",
@@ -1269,8 +1225,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_46",
@@ -1296,8 +1251,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_47",
@@ -1323,8 +1277,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_48",
@@ -1347,8 +1300,7 @@
           "y": 8338.67,
           "z": -10.14
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_49",
@@ -1371,8 +1323,7 @@
           "y": -1256.01,
           "z": 4.13
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_50",
@@ -1395,8 +1346,7 @@
           "y": 13002.94,
           "z": -1290.59
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_51",
@@ -1419,8 +1369,7 @@
           "y": 4543.75,
           "z": 200.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_52",
@@ -1445,8 +1394,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_53",
@@ -1469,8 +1417,7 @@
           "y": -818.27,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_54",
@@ -1493,8 +1440,7 @@
           "y": -4525.75,
           "z": 200.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_55",
@@ -1517,8 +1463,7 @@
           "y": 15041.11,
           "z": 317.76
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_56",
@@ -1533,8 +1478,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_57",
@@ -1557,8 +1501,7 @@
           "y": 4555.02,
           "z": 200.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_58",
@@ -1573,8 +1516,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_59",
@@ -1597,8 +1539,7 @@
           "y": 131.96,
           "z": 0.17
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_60",
@@ -1609,10 +1550,8 @@
         "y": -90.0
       },
       "params": {
-        "timeout": 60.0
-      },
-      "option_overrides": {
-        "Safety Delay": 5.0
+        "timeout": 60.0,
+        "animation_delay": 5.0
       }
     },
     {
@@ -1630,8 +1569,7 @@
           "y": -2061.98,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_62",
@@ -1648,8 +1586,7 @@
           "y": -2061.54,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_63",
@@ -1665,7 +1602,6 @@
           "Heavenly"
         ]
       },
-      "option_overrides": {},
       "notes": "Helmet of Heavenly Gaze is the Fire Zeus hat, and is the only piece of of the Zeus gear set that does not have the word Zeus in the name."
     },
     {
@@ -1678,8 +1614,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_65",
@@ -1691,8 +1626,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_66",
@@ -1704,8 +1638,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_67",
@@ -1717,8 +1650,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

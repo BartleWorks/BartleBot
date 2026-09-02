@@ -805,8 +805,7 @@
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -824,8 +823,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -843,8 +841,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -868,8 +865,7 @@
           "z": 0.3
         },
         "zone_list_entry": "Black Lagoon"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -886,8 +882,7 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -910,8 +905,7 @@
           "y": -2012.5,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -925,8 +919,7 @@
         "enemy": "",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -943,8 +936,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -968,8 +960,7 @@
           "z": 371.01
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -985,8 +976,7 @@
           "Damage",
           "Piercing"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1001,8 +991,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1019,8 +1008,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

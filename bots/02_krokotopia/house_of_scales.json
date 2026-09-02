@@ -439,7 +439,6 @@
       "params": {
         "zone": "G14_HS/HS_Z01_ZigazagUpper"
       },
-      "option_overrides": {},
       "notes": "Failure path assumes you are in Zigazag already and skips ahead"
     },
     {
@@ -468,8 +467,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -492,8 +490,7 @@
           "y": 3179.02,
           "z": 25.79
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -505,8 +502,7 @@
       },
       "params": {
         "duration": 30.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -529,8 +525,7 @@
           "y": 2864.78,
           "z": 1205.15
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -553,8 +548,7 @@
           "y": -40.77,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -569,8 +563,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -593,8 +586,7 @@
           "y": -2717.88,
           "z": 219.37
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -611,8 +603,7 @@
           "y": -3794.35,
           "z": 295.58
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -640,8 +631,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -658,8 +648,7 @@
           "y": 520.35,
           "z": 81.78
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -674,8 +663,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -698,8 +686,7 @@
           "y": 5599.34,
           "z": 331.21
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -716,8 +703,7 @@
           "y": -602.28,
           "z": 522.23
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -732,8 +718,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -750,8 +735,7 @@
           "y": 1731.39,
           "z": 242.96
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -768,8 +752,7 @@
           "y": 12379.58,
           "z": 87.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -783,8 +766,7 @@
         "enemy": "G14-HS-Ifzt",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -807,8 +789,7 @@
           "y": 13972.42,
           "z": 85.39
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -825,8 +806,7 @@
           "y": -23.71,
           "z": 190.75
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -843,8 +823,7 @@
           "y": -32.4,
           "z": -49.58
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -859,8 +838,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -877,8 +855,7 @@
           "y": 23.08,
           "z": 351.98
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -892,8 +869,7 @@
         "enemy": "G14-HS-Apep_Boss",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -916,8 +892,7 @@
           "y": -1724.58,
           "z": 131.01
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -934,8 +909,7 @@
           "y": -5561.85,
           "z": -2808.99
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -949,8 +923,7 @@
         "enemy": "G14-HS-Ammit",
         "use_default_strategy": false,
         "max_duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -962,8 +935,7 @@
       },
       "params": {
         "zone": "G14_HS/HS_Z01_ZigazagUpper"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -980,8 +952,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -993,8 +964,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -1006,8 +976,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -1019,8 +988,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -1032,8 +1000,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -1046,7 +1013,6 @@
       "params": {
         "zone": "Krokotopia/KT_Hub"
       },
-      "option_overrides": {},
       "notes": "Failure path assumes you are in Zigazag already and skips ahead"
     },
     {
@@ -1065,8 +1031,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_36",
@@ -1078,8 +1043,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -1091,8 +1055,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_38",
@@ -1104,8 +1067,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_39",
@@ -1122,8 +1084,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_40",
@@ -1140,8 +1101,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_41",
@@ -1158,8 +1118,7 @@
           "y": 9260.85,
           "z": 127.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_42",
@@ -1176,8 +1135,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_43",
@@ -1194,8 +1152,7 @@
           "y": 9260.85,
           "z": 127.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_44",
@@ -1207,8 +1164,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

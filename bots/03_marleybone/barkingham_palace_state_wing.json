@@ -303,8 +303,7 @@
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -327,8 +326,7 @@
           "y": 1336.23,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -351,8 +349,7 @@
           "y": -4035.35,
           "z": -4823.63
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -369,8 +366,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -385,8 +381,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -401,8 +396,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -419,8 +413,7 @@
           "y": -862.99,
           "z": 0.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -432,8 +425,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -445,8 +437,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -475,8 +466,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -500,8 +490,7 @@
           "z": 0.2
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -513,8 +502,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -529,8 +517,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -542,8 +529,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -567,8 +553,7 @@
           "z": 0.2
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -580,8 +565,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -596,8 +580,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -609,8 +592,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -639,8 +621,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

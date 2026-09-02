@@ -1123,8 +1123,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -1142,8 +1141,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1155,8 +1153,7 @@
       },
       "params": {
         "zone": "Lemuria/LM_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1180,8 +1177,7 @@
           "z": -287.39
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1204,8 +1200,7 @@
           "y": -3140.14,
           "z": 543.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1219,8 +1214,7 @@
         "enemy": "LM_Dog_Hero_A_01",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1244,8 +1238,7 @@
           "z": 6.2
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1260,8 +1253,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1275,8 +1267,7 @@
         "keep_list": [
           "Merciless"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1293,8 +1284,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1304,8 +1294,7 @@
         "x": 2640.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_12",
@@ -1327,8 +1316,7 @@
           "y": 2528.3,
           "z": 6.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1340,8 +1328,7 @@
       },
       "params": {
         "keep_list": []
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

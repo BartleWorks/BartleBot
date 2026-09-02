@@ -32,8 +32,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -51,8 +50,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -64,8 +62,7 @@
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -82,8 +79,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -107,8 +103,7 @@
           "z": 0.3
         },
         "zone_list_entry": "Scholomance"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -125,8 +120,7 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -149,8 +143,7 @@
           "y": 1627.78,
           "z": 909.08
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -162,8 +155,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -177,8 +169,7 @@
         "enemy": "DM_Dox_Base_B_01",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -195,8 +186,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -222,8 +212,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -249,8 +238,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -276,8 +264,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -303,8 +290,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -330,8 +316,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -357,8 +342,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -384,8 +368,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -411,8 +394,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -438,8 +420,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -465,8 +446,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -492,8 +472,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -519,8 +498,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -546,8 +524,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -564,8 +541,7 @@
           "y": 23084.7,
           "z": -447.64
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -579,8 +555,7 @@
         "enemy": "DM_Khrulhu_Instructor_A_02",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -592,8 +567,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -610,8 +584,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -628,8 +601,7 @@
           "y": 26555.33,
           "z": -594.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -641,8 +613,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -656,8 +627,7 @@
         "enemy": "DM_Dragon_BalaurHead_A_01",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -674,8 +644,7 @@
           "y": 24160.35,
           "z": -447.64
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -692,8 +661,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -710,8 +678,7 @@
           "y": -86.19,
           "z": 153.72
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_35",
@@ -728,8 +695,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_36",
@@ -753,8 +719,7 @@
           "z": 153.72
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -771,8 +736,7 @@
           "Death Disabling",
           "Death Crushing"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -787,8 +751,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

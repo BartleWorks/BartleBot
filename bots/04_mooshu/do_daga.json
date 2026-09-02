@@ -543,8 +543,7 @@
           "y": 2775.06,
           "z": 1.1
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -567,8 +566,7 @@
           "y": -48412.0,
           "z": 0.1
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -582,8 +580,7 @@
         "enemy": "Pig-War-Warrior-MSBoss-L42",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -606,8 +603,7 @@
           "y": -1473.53,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -624,8 +620,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -635,8 +630,7 @@
         "x": 880.0,
         "y": -270.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_8",
@@ -648,8 +642,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -672,8 +665,7 @@
           "y": -480.59,
           "z": 898.45
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -695,8 +687,7 @@
           "y": 926.12,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -714,8 +705,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -727,8 +717,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -746,8 +735,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

@@ -495,8 +495,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -519,8 +518,7 @@
           "y": 2775.06,
           "z": 1.1
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -543,8 +541,7 @@
           "y": -27516.95,
           "z": 79.59
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -569,8 +566,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -594,10 +590,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -622,10 +616,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -650,10 +642,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -678,10 +668,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -707,8 +695,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -732,10 +719,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -760,10 +745,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -788,10 +771,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -816,10 +797,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -845,8 +824,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -863,8 +841,7 @@
           "y": 19479.15,
           "z": 216.48
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -881,8 +858,7 @@
           "y": 17766.01,
           "z": -149.74
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -899,8 +875,7 @@
           "y": 18090.65,
           "z": -149.69
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -925,8 +900,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -951,8 +925,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -977,8 +950,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1003,8 +975,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1029,8 +1000,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -1053,8 +1023,7 @@
           "y": 26092.55,
           "z": 53.96
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -1068,8 +1037,7 @@
         "enemy": "Troll-Yellow-MSBoss-L42",
         "use_bot_default": true,
         "combat_config": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -1092,8 +1060,7 @@
           "y": -996.3,
           "z": -100.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -1118,8 +1085,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -1143,10 +1109,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -1174,10 +1138,8 @@
           2,
           3,
           4
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 1.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -1203,8 +1165,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -1229,8 +1190,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -1247,8 +1207,7 @@
           "y": 9284.73,
           "z": -389.72
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -1262,8 +1221,7 @@
         "enemy": "Pig-War-Warrior-LXX",
         "use_bot_default": false,
         "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_35",
@@ -1277,8 +1235,7 @@
         "enemy": "",
         "use_bot_default": false,
         "combat_config": "### p1\n{1} pass\n{2} pass\n{3} tempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_36",
@@ -1295,8 +1252,7 @@
           "y": 17251.1,
           "z": -149.72
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -1310,8 +1266,7 @@
         "enemy": "",
         "use_bot_default": false,
         "combat_config": "### p1\n{1} pass\n{2} pass\ntempest[epic]\n\n### p2\npass\n\n### p3\npass\n\n### p4\npass"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -1328,8 +1283,7 @@
           "y": 17251.1,
           "z": -149.72
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_38",
@@ -1341,8 +1295,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_39",
@@ -1367,8 +1320,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_40",
@@ -1391,8 +1343,7 @@
           "y": 68188.27,
           "z": 79.6
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_41",
@@ -1406,8 +1357,7 @@
         "enemy": "Pig-War-Lord-MSBoss-L43",
         "use_bot_default": true,
         "combat_config": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_42",
@@ -1424,8 +1374,7 @@
           "y": -1415.3,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_43",
@@ -1437,8 +1386,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_44",
@@ -1452,8 +1400,7 @@
         "enemy": "Oni-War-MSBoss-L50",
         "use_bot_default": true,
         "combat_config": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_46",
@@ -1469,8 +1416,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_47",
@@ -1487,8 +1433,7 @@
           "y": 17251.1,
           "z": -149.72
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -1504,8 +1449,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_48",
@@ -1520,8 +1464,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_45",
@@ -1533,8 +1476,7 @@
       },
       "params": {
         "duration": 3.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

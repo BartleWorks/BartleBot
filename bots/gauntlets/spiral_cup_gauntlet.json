@@ -404,8 +404,7 @@
       "params": {
         "target_hooked_player": false,
         "to_zone": "Housing_AR_Dormroom/Interior"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -417,8 +416,7 @@
       },
       "params": {
         "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -443,8 +441,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -468,8 +465,7 @@
           "z": 1.23
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -484,8 +480,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -508,8 +503,7 @@
           "y": 825.16,
           "z": 0.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -534,8 +528,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -559,8 +552,7 @@
           "z": 1.08
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -575,8 +567,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -599,8 +590,7 @@
           "y": 918.21,
           "z": 0.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -616,8 +606,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -642,8 +631,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -667,8 +655,7 @@
           "z": 1.15
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -683,8 +670,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -707,8 +693,7 @@
           "y": 785.95,
           "z": 0.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -724,8 +709,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -741,8 +725,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -767,8 +750,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -792,8 +774,7 @@
           "z": 1.15
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -808,8 +789,7 @@
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -832,8 +812,7 @@
           "y": 785.95,
           "z": 0.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -849,8 +828,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -874,8 +852,7 @@
           "z": 1.41
         },
         "sequential": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -890,8 +867,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -908,8 +884,7 @@
           "y": 832.96,
           "z": 0.19
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -921,8 +896,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -938,7 +912,6 @@
         "use_default_strategy": true,
         "max_duration": 600.0
       },
-      "option_overrides": {},
       "notes": "Drops vary by tier"
     },
     {
@@ -952,8 +925,7 @@
       "params": {
         "threshold": 0.8,
         "timeout": 120.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -972,8 +944,7 @@
         "sell_pets": null,
         "sell_socket_wrenches": null,
         "sell_skeleton_keys": null
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

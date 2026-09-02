@@ -38,8 +38,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -57,8 +56,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -70,8 +68,7 @@
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -95,8 +92,7 @@
           "z": -0.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -119,8 +115,7 @@
           "y": 5948.02,
           "z": 250.03
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -141,8 +136,7 @@
           "Scraplron",
           "Wood"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -166,8 +160,7 @@
           "z": -0.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

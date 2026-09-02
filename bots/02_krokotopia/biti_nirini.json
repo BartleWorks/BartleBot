@@ -526,8 +526,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -550,8 +549,7 @@
           "y": 7298.94,
           "z": 496.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -574,8 +572,7 @@
           "y": 2143.9,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -592,8 +589,7 @@
           "y": -26990.78,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -610,8 +606,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -634,8 +629,7 @@
           "y": -26997.28,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -650,8 +644,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -666,8 +659,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -690,8 +682,7 @@
           "y": -2631.07,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -708,8 +699,7 @@
           "y": -26990.78,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -721,8 +711,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -745,8 +734,7 @@
           "y": -1408.83,
           "z": -117.74
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -771,8 +759,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -797,8 +784,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -823,8 +809,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -836,8 +821,7 @@
       },
       "params": {
         "duration": 15.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -860,8 +844,7 @@
           "y": -8112.82,
           "z": -373.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -884,8 +867,7 @@
           "y": 5821.56,
           "z": -501.58
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -907,8 +889,7 @@
           "y": 521.6,
           "z": 1.46
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -918,8 +899,7 @@
         "x": 9240.0,
         "y": 180.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_21",
@@ -929,8 +909,7 @@
         "x": 3520.0,
         "y": 180.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_22",
@@ -947,8 +926,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -966,8 +944,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

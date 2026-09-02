@@ -22,8 +22,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -46,8 +45,7 @@
           "y": 4733.91,
           "z": -27.91
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -64,8 +62,7 @@
           "y": 6382.21,
           "z": 29.85
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -79,8 +76,7 @@
         "enemy": "",
         "max_duration": 0.0,
         "use_default_strategy": true
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

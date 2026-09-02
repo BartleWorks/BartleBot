@@ -524,8 +524,7 @@
       },
       "params": {
         "zone": "Celestia/CL_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -542,8 +541,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -566,8 +564,7 @@
           "y": 15532.26,
           "z": -1099.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -584,8 +581,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -600,8 +596,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -618,8 +613,7 @@
           "y": 1713.86,
           "z": -284.36
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -631,8 +625,7 @@
       },
       "params": {
         "duration": 1.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -655,8 +648,7 @@
           "y": 28802.86,
           "z": -93.41
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -671,8 +663,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -695,8 +686,7 @@
           "y": 1260.81,
           "z": 67.46
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -708,8 +698,7 @@
       },
       "params": {
         "threshold": 0.8
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -721,8 +710,7 @@
       },
       "params": {
         "threshold": 0.1
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -740,8 +728,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -758,8 +745,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -774,8 +760,7 @@
           "Atavistic",
           "Accurate"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

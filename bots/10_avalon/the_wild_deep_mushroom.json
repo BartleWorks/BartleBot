@@ -32,8 +32,7 @@
       },
       "params": {
         "zone": "Avalon/AV_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -56,8 +55,7 @@
           "y": -711.47,
           "z": 0.4
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -80,8 +78,7 @@
           "y": 4526.11,
           "z": -493.65
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -104,8 +101,7 @@
           "y": 13396.95,
           "z": 13.15
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -128,8 +124,7 @@
           "y": 14794.37,
           "z": 1126.04
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -142,8 +137,7 @@
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -163,8 +157,7 @@
         "entity_names": [
           "Mushroom"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

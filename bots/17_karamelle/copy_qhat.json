@@ -1018,8 +1018,7 @@
       },
       "params": {
         "zone": "Karamelle/KM_Z00_HUB"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -1037,8 +1036,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1056,8 +1054,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1067,8 +1064,7 @@
         "x": -440.0,
         "y": -90.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_5",
@@ -1092,8 +1088,7 @@
           "z": -6.57
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1117,8 +1112,7 @@
           "z": 3.43
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1141,8 +1135,7 @@
           "y": -726.4,
           "z": 0.92
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1164,8 +1157,7 @@
           "y": -2945.67,
           "z": -440.52
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1177,8 +1169,7 @@
       },
       "params": {
         "zone": "Karamelle/KM_Z00_HUB"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1202,8 +1193,7 @@
           "z": -628.05
         },
         "zone_list_entry": "Gutenstadt"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1226,8 +1216,7 @@
           "y": 1910.58,
           "z": 2.78
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1244,8 +1233,7 @@
           "y": 3972.38,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1259,8 +1247,7 @@
         "enemy": "KM_Cat_WarriorF_F_01",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -1284,8 +1271,7 @@
           "z": 2.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -1297,8 +1283,7 @@
       },
       "params": {
         "threshold": 0.5
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -1315,8 +1300,7 @@
           "y": -746.62,
           "z": 2.78
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1328,8 +1312,7 @@
       },
       "params": {
         "duration": 3.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1346,8 +1329,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -1364,8 +1346,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1380,8 +1361,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1393,8 +1373,7 @@
       },
       "params": {
         "threshold": 0.1
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

@@ -806,8 +806,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -825,8 +824,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -838,8 +836,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -856,8 +853,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -881,8 +877,7 @@
           "z": -154.57
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -906,8 +901,7 @@
           "z": 0.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -930,8 +924,7 @@
           "y": 16798.13,
           "z": -532.83
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -957,8 +950,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -975,8 +967,7 @@
           "y": 7629.23,
           "z": -199.9
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1002,8 +993,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1027,8 +1017,7 @@
           "z": 153.52
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1042,8 +1031,7 @@
         "enemy": "Pig-Death-Warrior-MSBoss-L48",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1067,8 +1055,7 @@
           "z": -0.0
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -1094,8 +1081,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -1121,8 +1107,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -1145,8 +1130,7 @@
           "y": 6878.68,
           "z": 0.1
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -1163,8 +1147,7 @@
           "y": 4057.67,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1178,8 +1161,7 @@
         "enemy": "Pig-Death-Lord-MSBoss-L49",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1196,8 +1178,7 @@
           "y": 4057.67,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -1209,8 +1190,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1224,8 +1204,7 @@
         "enemy": "Oni-Death-MSBoss-L61",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1237,8 +1216,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -1253,8 +1231,7 @@
           "Oni"
         ],
         "sell_skeleton_keys": true
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

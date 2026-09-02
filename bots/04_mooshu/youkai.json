@@ -299,8 +299,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -323,8 +322,7 @@
           "y": -12240.59,
           "z": -152.64
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -347,8 +345,7 @@
           "y": 1526.98,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -365,8 +362,7 @@
           "y": 17294.95,
           "z": -337.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -383,8 +379,7 @@
           "y": 17294.95,
           "z": -337.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -396,8 +391,7 @@
       },
       "params": {
         "duration": 3.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -420,8 +414,7 @@
           "y": 17294.95,
           "z": -337.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -445,8 +438,7 @@
           "z": 0.0
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -461,8 +453,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -479,8 +470,7 @@
           "y": 17294.95,
           "z": -337.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -495,8 +485,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -512,8 +501,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

@@ -967,8 +967,7 @@
       },
       "params": {
         "zone": "Celestia/CL_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -984,8 +983,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1008,8 +1006,7 @@
           "y": 10735.17,
           "z": -899.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1026,8 +1023,7 @@
           "y": 23197.55,
           "z": -1994.53
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1039,8 +1035,7 @@
       },
       "params": {
         "duration": 1.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1054,8 +1049,7 @@
         "enemy": "Cl-SharkWarrior-Grey-Boss-R10",
         "use_bot_default": true,
         "combat_config": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1070,8 +1064,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Celestia/CL_Hub"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

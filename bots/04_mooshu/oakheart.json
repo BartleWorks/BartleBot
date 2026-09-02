@@ -551,8 +551,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -575,8 +574,7 @@
           "y": -12372.38,
           "z": -154.07
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -599,8 +597,7 @@
           "y": 1563.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -623,8 +620,7 @@
           "y": 30840.0,
           "z": -158.71
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -647,8 +643,7 @@
           "y": 49697.96,
           "z": 49.88
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -662,8 +657,7 @@
         "enemy": "Treant-MSBoss-L54",
         "use_bot_default": true,
         "combat_config": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -679,8 +673,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -703,8 +696,7 @@
           "y": -1077.73,
           "z": -100.0
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

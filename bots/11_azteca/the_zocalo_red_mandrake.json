@@ -32,8 +32,7 @@
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -46,8 +45,7 @@
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -67,8 +65,7 @@
         "entity_names": [
           "Mandrake"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -88,8 +85,7 @@
         "entity_names": [
           "Mandrake"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -109,8 +105,7 @@
         "entity_names": [
           "Mandrake"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -130,8 +125,7 @@
         "entity_names": [
           "Mandrake"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -151,8 +145,7 @@
         "entity_names": [
           "Mandrake"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

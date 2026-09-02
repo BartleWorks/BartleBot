@@ -906,8 +906,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -930,8 +929,7 @@
           "y": -10177.47,
           "z": -29.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -947,8 +945,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -961,8 +958,7 @@
       "params": {
         "threshold": 1.0,
         "timeout": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -986,8 +982,7 @@
           "z": -139.33
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1002,8 +997,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1020,8 +1014,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1038,8 +1031,7 @@
           "y": -858.92,
           "z": -5.33
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1051,8 +1043,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1071,8 +1062,7 @@
           "Spell",
           "Shot"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1087,8 +1077,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1102,8 +1091,7 @@
         "target_hooked_player": true,
         "target_player": 1,
         "to_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [
