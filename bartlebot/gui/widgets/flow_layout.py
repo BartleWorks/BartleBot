@@ -35,19 +35,36 @@ def flow_geometry(
     An item wider than *width* still gets a row to itself rather than being dropped
     or shrunk — a pill for a long tag name is better clipped by the sidebar than
     absent from it, and the alternative is an item that never places at all.
+
+    Items shorter than their row are **centred** in it rather than hung from its top.
+    The bot header's byline is the case: an 18px tag chip beside a 27px "Add Rewards…"
+    button sat four pixels high, which reads as a misalignment rather than as a row of
+    two different things.  That is also why the rows are collected before any position
+    is assigned — a row's height is only known once the row is complete.
     """
-    positions: list[QPoint] = []
-    x = y = 0
-    row_height = 0
-    for size in sizes:
+    rows: list[list[int]] = []
+    current: list[int] = []
+    x = 0
+    for index, size in enumerate(sizes):
         if x and x + size.width() > width:
+            rows.append(current)
+            current = []
             x = 0
-            y += row_height + v_spacing
-            row_height = 0
-        positions.append(QPoint(x, y))
+        current.append(index)
         x += size.width() + h_spacing
-        row_height = max(row_height, size.height())
-    return positions, y + row_height
+    if current:
+        rows.append(current)
+
+    positions: list[QPoint] = []
+    y = 0
+    for row in rows:
+        row_height = max(sizes[i].height() for i in row)
+        x = 0
+        for i in row:
+            positions.append(QPoint(x, y + (row_height - sizes[i].height()) // 2))
+            x += sizes[i].width() + h_spacing
+        y += row_height + v_spacing
+    return positions, max(y - v_spacing, 0)
 
 
 class FlowLayout(QLayout):

@@ -44,6 +44,16 @@ def test_the_row_height_is_the_tallest_item_in_it():
     assert height == 40
 
 
+def test_a_short_item_is_centred_in_a_row_a_taller_one_set_the_height_of():
+    """The byline puts 18px tag chips beside a 27px "Add Rewards…" button.  Hung from
+    the top of the row the chips read as misaligned rather than as a row of two
+    different things."""
+    positions, height = flow_geometry([QSize(40, 14), QSize(40, 22)], 300)
+
+    assert [p.y() for p in positions] == [4, 0]
+    assert height == 22
+
+
 def test_an_item_wider_than_the_layout_still_gets_a_row():
     """A pill for a long tag name is better clipped by the sidebar than absent from
     it — and an item that never places at all is the alternative."""
