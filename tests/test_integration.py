@@ -27,6 +27,7 @@ from unittest.mock import AsyncMock, patch
 import bartlebot.nodes.zone_entry.enter_zone as gtz
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, StateModel, TransitionModel
+from bartlebot.bot_options import orphaned_flag_options
 from bartlebot.nodes.registry import NODE_REGISTRY
 from tests.conftest import FakeClient
 
@@ -633,25 +634,41 @@ def test_every_bot_file_has_an_id():
     assert not missing, f"bot files with no id: {missing}"
 
 
-def test_opening_and_saving_a_bot_changes_none_of_its_options(tmp_path):
+def test_opening_and_saving_a_bot_changes_nothing_in_the_file(tmp_path):
     """The churn goal, as a check: `bots/` moved on every run because opening a
     bot rewrote Safety Delay from the app setting, and editing any value wrote
     it back into the file. Nothing rewrites an option on load now.
 
-    Options only, not the whole file: several bots still carry pre-epic legacy
-    keys and hand-written field order, so a byte-identity check over the file
-    would fail for reasons that have nothing to do with option values.
+    The whole file, not only its options. That is worth more than it looks: the
+    library also carried pre-epic legacy combat keys and hand-written field
+    order that a save silently dropped or reordered, so *any* save churned a
+    third of the library for reasons no diff explained. Every file has now been
+    through one, and a save is a no-op from here.
     """
     dest = tmp_path / "roundtrip.json"
     churned = []
     for path in _all_bot_files():
         BotConfig.load(path).save(dest)
-        before = _load_raw(path).get("options", [])
-        after = _load_raw(dest).get("options", [])
-        if before != after:
+        if _load_raw(path) != _load_raw(dest):
             churned.append(path.relative_to(_BOTS_DIR).as_posix())
 
-    assert not churned, f"opening and saving changed the options of: {churned}"
+    assert not churned, f"opening and saving changed: {churned}"
+
+
+def test_no_bot_guards_a_transition_on_an_option_nothing_declares():
+    """The cost of deriving declarations, as a check: an option only exists while
+    a node in the graph requires it or the file hand-declares it, so cutting a
+    node can take one out from under a transition that reads it. Nothing errors
+    when that happens -- ``_flag_<name>`` evaluates False -- so the bot silently
+    stops taking the edge. The editor's warning banner is the other half; this
+    keeps the shipped library clean of them."""
+    orphans = {}
+    for path in _all_bot_files():
+        names = sorted({name for _t, name in orphaned_flag_options(BotConfig.load(path))})
+        if names:
+            orphans[path.relative_to(_BOTS_DIR).as_posix()] = names
+
+    assert not orphans, f"transitions reading options nothing declares: {orphans}"
 
 
 def test_bot_ids_are_unique():

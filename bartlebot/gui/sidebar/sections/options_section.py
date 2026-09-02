@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
+from bartlebot.bot_options import compose_options
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -194,7 +195,42 @@ class OptionsSection(SidebarSection):
 
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
-        self._rebuild_options(config.options if config else [])
+        self._rebuild_options(self._composed())
+
+    @property
+    def option_widgets(self) -> dict[str, QWidget]:
+        """``{option name: value widget}`` for the rows currently shown.
+
+        The rows are built from the composed list, so this is the only way to ask
+        what a bot's options are once they stopped being in its file.
+        """
+        return dict(self._option_widgets)
+
+    def _composed(self) -> list:
+        """What to show: the file's own options plus the ones the graph derives.
+
+        A derived option is not in the file, so this is the only place its name,
+        type and description come from. The rows built from it are transient --
+        editing one materialises it into the file through ``_declaration_for``.
+        """
+        if self._config is None:
+            return []
+        return compose_options(self._config)
+
+    def _declaration_for(self, opt) -> BotOptionModel:
+        """The file's own model for *opt*, adding it to the file if it is derived.
+
+        An edit here is an edit to the *declaration* -- the author's recommended
+        value -- and a declaration has to be in the file to exist at all. The
+        save-time prune drops it again if it ends up agreeing with the NodeSpec,
+        so materialising costs nothing when the user changes their mind back.
+        """
+        assert self._config is not None
+        for existing in self._config.options:
+            if existing.name == opt.name:
+                return existing
+        self._config.options.append(opt)
+        return opt
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable returning the currently hooked clients."""
@@ -280,11 +316,11 @@ class OptionsSection(SidebarSection):
     def _on_add_option(self) -> None:
         if self._config is None:
             return
-        existing = [o.name for o in self._config.options]
+        existing = [o.name for o in self._composed()]
         dlg = _AddOptionDialog(existing, parent=self)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self._config.options.append(dlg.get_option())
-            self._rebuild_options(self._config.options)
+            self._rebuild_options(self._composed())
             self.options_changed.emit()
 
     def _on_edit_option(self, name: str) -> None:
@@ -293,7 +329,7 @@ class OptionsSection(SidebarSection):
         original = next((o for o in self._config.options if o.name == name), None)
         if original is None:
             return
-        existing = [o.name for o in self._config.options]
+        existing = [o.name for o in self._composed()]
         dlg = _AddOptionDialog(existing, parent=self, existing_option=original)
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
@@ -305,7 +341,7 @@ class OptionsSection(SidebarSection):
                         fc.option = updated.name
         idx = next(i for i, o in enumerate(self._config.options) if o.name == name)
         self._config.options[idx] = updated
-        self._rebuild_options(self._config.options)
+        self._rebuild_options(self._composed())
         self.options_changed.emit()
 
     def _on_delete_option(self, name: str) -> None:
@@ -314,14 +350,14 @@ class OptionsSection(SidebarSection):
         self._config.options = [o for o in self._config.options if o.name != name]
         for t in self._config.transitions:
             t.flags = [fc for fc in t.flags if fc.option != name]
-        self._rebuild_options(self._config.options)
+        self._rebuild_options(self._composed())
         self.options_changed.emit()
 
     def _connect_option_widget(self, widget: QWidget, opt) -> None:
         def _update(value) -> None:
             if self._suppress or self._config is None:
                 return
-            opt.default = value
+            self._declaration_for(opt).default = value
             self.options_changed.emit()
 
         if isinstance(widget, QCheckBox):
@@ -362,10 +398,13 @@ def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLab
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(1)
     tooltip = opt.description or ""
+    # None is a declaration meaning "the author has no opinion" -- there is still
+    # a widget to fill, and every type has an empty-handed value to fill it with.
+    value = opt.default
 
     if opt.type == "bool":
         widget = QCheckBox(opt.name)
-        widget.setChecked(bool(opt.default))
+        widget.setChecked(bool(value))
         if tooltip:
             widget.setToolTip(tooltip)
         layout.addWidget(widget)
@@ -378,18 +417,18 @@ def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLab
         if opt.type == "int":
             widget = QSpinBox()
             widget.setRange(-2_147_483_648, 2_147_483_647)
-            widget.setValue(int(opt.default))
+            widget.setValue(int(value or 0))
         elif opt.type == "float":
             widget = QDoubleSpinBox()
             widget.setDecimals(4)
             widget.setRange(-1e12, 1e12)
-            widget.setValue(float(opt.default))
+            widget.setValue(float(value or 0.0))
         elif opt.type == "player_list":
             widget = PlayerListWidget()
             widget.set_available_players(connected)
-            widget.set_value(opt.default if isinstance(opt.default, list) else [])
+            widget.set_value(value if isinstance(value, list) else [])
         else:  # str
-            widget = QLineEdit(str(opt.default))
+            widget = QLineEdit("" if value is None else str(value))
 
         if tooltip:
             widget.setToolTip(tooltip)

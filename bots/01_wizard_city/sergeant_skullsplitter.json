@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_9",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "start_location": "Anywhere in Wizard City",
   "drops": [
     {
@@ -288,14 +287,7 @@
     "Gear",
     "Boss"
   ],
-  "options": [
-    {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_1",

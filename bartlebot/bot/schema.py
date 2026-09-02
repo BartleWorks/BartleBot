@@ -283,6 +283,25 @@ class BotConfig(BaseModel):
             data = json.load(f)
         return cls.model_validate(data)
 
+    def _dump_for_file(self) -> dict:
+        """The JSON body of this bot, with derived declarations left out.
+
+        An option a node requires is composed at load time from its NodeSpec, so
+        writing it back would put 80 copies of one description in the library and
+        let a value the user edited ride out to everyone who opens the bot. The
+        prune is in :mod:`bartlebot.bot_options`; it keeps only what is
+        authorial -- a hand-added option, or a required one whose default the
+        author deliberately changed.
+
+        Done at dump time rather than on ``self``: the in-memory config is what
+        the editor is showing, and a save is not an edit.
+        """
+        from bartlebot.bot_options import storable_options  # noqa: PLC0415 - avoids an import cycle
+
+        data = self.model_dump(exclude_none=True)
+        data["options"] = [o.model_dump(exclude_none=True) for o in storable_options(self)]
+        return data
+
     def save(self, path: str | Path) -> None:
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -291,7 +310,7 @@ class BotConfig(BaseModel):
         fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
-                json.dump(self.model_dump(exclude_none=True), f, indent=2)
+                json.dump(self._dump_for_file(), f, indent=2)
             os.replace(tmp_path, path)
         except Exception:
             try:

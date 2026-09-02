@@ -23,7 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel, TransitionModel
+from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
@@ -258,50 +258,6 @@ def _unique_id(existing: list[str]) -> str:
         if suffix != state_id and suffix.isdigit():
             highest = max(highest, int(suffix))
     return f"state_{highest + 1}"
-
-
-def _inject_required_options(config: BotConfig) -> None:
-    """Sync bot options required by node specs with config.options.
-
-    - Adds options for any NodeSpec requirement not already present.
-    - Removes options that are system-managed (known to any NodeSpec) but are no
-      longer required by any state currently in the config.
-    - Existing user-set values are preserved when options are re-added.
-    """
-    # Collect option names required by the current set of states.
-    required_now: set[str] = set()
-    for state in config.states:
-        spec = NODE_SPECS.get(state.node_type)
-        if spec:
-            for req in spec.required_bot_options:
-                required_now.add(req.name)
-
-    # Collect all option names that are system-managed (declared by any NodeSpec).
-    all_system_names: set[str] = set()
-    for spec in NODE_SPECS.values():
-        for req in spec.required_bot_options:
-            all_system_names.add(req.name)
-
-    # Prune system-managed options that are no longer required by any state.
-    config.options = [o for o in config.options if o.name not in all_system_names or o.name in required_now]
-
-    # Add missing required options (preserves user-customised values already present).
-    existing = {o.name for o in config.options}
-    for state in config.states:
-        spec = NODE_SPECS.get(state.node_type)
-        if not spec:
-            continue
-        for req in spec.required_bot_options:
-            if req.name not in existing:
-                config.options.append(
-                    BotOptionModel(
-                        name=req.name,
-                        type=req.type,
-                        default=req.default,
-                        description=req.description,
-                    )
-                )
-                existing.add(req.name)
 
 
 # ---------------------------------------------------------------------------

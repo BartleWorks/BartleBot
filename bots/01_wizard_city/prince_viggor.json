@@ -6,8 +6,6 @@
   "clients": "all",
   "initial": "state_6",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nany<blade>[sharp] @ self | any<blade> @ self | lord[epic] | scarecrow[epic]\n\n### p2\nany<blade>[sharp] @ ally(0) | any<blade> @ ally(0) | purge @ ally(0) | lord[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Wizard City",
   "drops": [
     {
@@ -173,14 +171,7 @@
     "Reagents",
     "Boss"
   ],
-  "options": [
-    {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_1",

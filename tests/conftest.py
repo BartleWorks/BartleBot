@@ -384,3 +384,39 @@ def _no_strategy_writes_into_the_repo(_record_baseline_strategy_files):
         f"This test wrote {len(new)} strategy file(s) into the repo: {listed}\n"
         "Redirect the store first: request the `store` fixture, or pass root=tmp_path."
     )
+
+
+# ---------------------------------------------------------------------------
+# Application stylesheet
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _restore_app_stylesheet():
+    """Undo any ``QApplication.setStyleSheet`` a test leaves behind.
+
+    The theme tests broadcast a switch the way ``AppController._apply_theme`` does —
+    ``qapp.setStyleSheet(THEME.global_stylesheet())`` — because that is the only thing
+    that reaches a themed child of a plain parent. There is one QApplication per xdist
+    worker, though, so the stylesheet outlives the test that set it and every widget
+    built afterwards in that worker is styled by it.
+
+    That is order-dependent state, and ``-n auto`` hands tests to workers in an order
+    that changes run to run, so it surfaces as a flake rather than as a failure. The one
+    that sent us looking: an app stylesheet raises the canvas viewport 461px -> 470px,
+    which flips the parity of the centering indent QGraphicsView applies when the scene
+    fits, and ``test_leaving_focus_mode_puts_the_camera_back`` then read a camera one
+    device pixel from where it started -- 6 failures in 13 runs, and none in isolation.
+
+    Restores only when the stylesheet actually changed — assigning one is a StyleChange
+    broadcast to every live widget, which is not worth paying on 3,000 tests that never
+    touch it.
+    """
+    from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
+
+    app = QApplication.instance()
+    before = app.styleSheet() if app is not None else None
+    yield
+    app = QApplication.instance()
+    if app is not None and before is not None and app.styleSheet() != before:
+        app.setStyleSheet(before)

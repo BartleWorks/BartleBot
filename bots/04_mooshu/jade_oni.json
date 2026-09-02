@@ -990,18 +990,11 @@
   ],
   "options": [
     {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Minimum seconds to watch for dialog windows after triggering an interaction before concluding that none will open."
-    },
-    {
       "name": "Level Scaling Players",
       "type": "player_list",
       "default": [
         2
-      ],
-      "description": "1-based player numbers to check/apply level scaling (e.g. '2, 3'). Empty = no players (no scaling performed). Shared by check_level_scaling and apply_level_scaling."
+      ]
     }
   ],
   "states": [

@@ -386,12 +386,6 @@
   ],
   "options": [
     {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to wait after interacting before verifying elixir status."
-    },
-    {
       "name": "Defeat final boss",
       "type": "bool",
       "default": true,

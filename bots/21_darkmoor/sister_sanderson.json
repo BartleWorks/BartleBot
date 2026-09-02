@@ -603,14 +603,7 @@
     "Spellements",
     "Boss"
   ],
-  "options": [
-    {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to wait after interacting before verifying elixir status."
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_2",

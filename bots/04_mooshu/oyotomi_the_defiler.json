@@ -373,26 +373,13 @@
   ],
   "options": [
     {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
-    },
-    {
       "name": "Level Scaling Players",
       "type": "player_list",
       "default": [
         2,
         3,
         4
-      ],
-      "description": "Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling."
-    },
-    {
-      "name": "Challenge Mode",
-      "type": "bool",
-      "default": false,
-      "description": "Enter dungeons in Challenge Mode. Each player toggles the sigil's mode on the entrance prompt before pressing X. Fails if the dungeon does not offer Challenge Mode."
+      ]
     }
   ],
   "states": [

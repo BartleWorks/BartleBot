@@ -38,12 +38,12 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
     _EditView,
-    _inject_required_options,
     _node_returns,
     _reachable_states,
     _validate_node,
@@ -1110,7 +1110,6 @@ class BotCanvas(QWidget):
         self.exit_focus_mode()
         self._close_search()
         self._tab_idx = 0
-        _inject_required_options(config)
         self._config = config
         self._param_panel.refresh_drops()
         # Auto-layout when no positions are saved and the setting is enabled
@@ -1740,8 +1739,6 @@ class BotCanvas(QWidget):
         self._scene.refresh_recovery(recovery_state_id)
 
     def _on_scene_changed(self) -> None:
-        if self._scene._config is not None:
-            _inject_required_options(self._scene._config)
         self._refresh_node_labels()
         self._refresh_node_returns()
         self._refresh_initial()
@@ -1893,7 +1890,6 @@ class BotCanvas(QWidget):
         self._scene.setup(config)
         self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._param_panel.show_idle()
-        _inject_required_options(config)
         self._on_scene_changed()
 
     def prepare_for_shutdown(self) -> None:
@@ -1952,7 +1948,24 @@ class BotCanvas(QWidget):
             _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
+        warning_lines.extend(self._orphan_flag_lines(config))
         return error_lines, warning_lines
+
+    def _orphan_flag_lines(self, config: BotConfig) -> list[str]:
+        """One warning per transition guarding on an option nothing declares.
+
+        Declarations are derived from the nodes in the graph, so cutting a node
+        can take an option out from under a transition that reads it -- and
+        ``_flag_<name>`` then quietly evaluates False rather than erroring. The
+        bot still runs; it just stops taking that edge, which is the kind of
+        thing that is only noticed hours into a run.
+        """
+        labels = {s.id: (s.label or s.id) for s in config.states}
+        lines: list[str] = []
+        for trans, option in orphaned_flag_options(config):
+            where = f"{labels.get(trans.source, trans.source)} → {labels.get(trans.dest, trans.dest)}"
+            lines.append(f"{where}: condition reads option '{option}', which nothing declares")
+        return lines
 
     def validation_errors(self) -> list[str]:
         """The error lines currently behind the red badge, one per problem."""
@@ -2082,7 +2095,7 @@ class BotCanvas(QWidget):
                             spec = NODE_SPECS.get(src_state.node_type)
                             if spec:
                                 src_returns = [r.name for r in spec.returns]
-                        option_names = [opt.name for opt in self._scene._config.options if opt.type == "bool"]
+                        option_names = [opt.name for opt in compose_options(self._scene._config) if opt.type == "bool"]
                         self._param_panel.show_transition(
                             trans,
                             src_returns,

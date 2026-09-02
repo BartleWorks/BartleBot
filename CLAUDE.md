@@ -361,6 +361,42 @@ Nothing rewrites an option on load. `_apply_bot_defaults` used to overwrite Safe
 Delay from the app setting on open, which is why `bots/` moved on every run;
 `test_opening_and_saving_a_bot_changes_none_of_its_options` is what keeps it still.
 
+#### A declaration is derived, not persisted
+
+An option a node requires is **not written to the bot file**. Its name, type,
+default and description are composed from `NODE_SPECS` at load, by
+`bot_options.compose_options()`; the file keeps only what is authorial — an
+option the author hand-added, or a required one whose default they deliberately
+changed. `BotConfig.save` prunes the rest through `storable_options()`.
+
+Injection is what made a description fix leave 80 stale copies behind, and it put
+`Challenge Mode` in 61 bots when 2 could act on it. It also never refreshed what
+it had added: 26 files shipped a description no current NodeSpec produced, four
+mutually contradictory texts for the one setting.
+
+- **The prune matches by name, never by byte-identity.** Only 66 of 97 stored
+  declarations agreed with a NodeSpec exactly; the other 31 differed only by
+  carrying one of those stale injections, and byte-identity would have filed
+  every one of them as author intent. So for a derived option, type and
+  description are dropped unconditionally and the default survives only when it
+  differs from the composed one.
+- **`3` and `3.0` agree; `False` and `0` do not.** JSON cannot tell an int
+  default from a float once written, so a pin equal to the node's default is
+  dropped either way. `False == 0` in Python, and collapsing those would throw
+  away a checkbox's real answer.
+- **The file stops being self-describing, so the orphan check is not optional.**
+  A transition guarding on an option nothing declares still runs —
+  `_flag_<name>` resolves to `False` rather than erroring — so the bot quietly
+  stops taking that edge. `orphaned_flag_options()` walks both flag forms and
+  the editor reports it in the validation banner;
+  `test_no_bot_guards_a_transition_on_an_option_nothing_declares` keeps the
+  shipped library clean of them.
+- **Editing a derived option in the Config tab materialises it into the file.**
+  That tab edits *declarations*, and a declaration has to be in the file to
+  exist; `OptionsSection._declaration_for` is where the transient composed row
+  becomes a stored one. The save-time prune takes it back out if the user
+  changes their mind back.
+
 #### App settings vs. node params
 
 An app setting that a node param also expresses must never be applied by rewriting
@@ -540,6 +576,38 @@ breaks.
 Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
 in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
 `_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
+
+#### One QApplication per worker
+
+There is exactly one `QApplication` per xdist worker and it lives for the whole session,
+so anything set *on it* — stylesheet, palette, style, application font — is process-wide
+state shared with every test that lands in the same worker afterwards. `-n auto` with the
+default `dist=load` hands out individual tests, so which tests share a process changes run
+to run, and leaked global state surfaces as a flake rather than as a failure.
+
+**A test that mutates process-global GUI state restores it.** `_restore_app_stylesheet`
+in `conftest.py` does that for the stylesheet, because the theme tests legitimately need
+`qapp.setStyleSheet(...)` — it is the only broadcast that reaches a themed child of a
+plain parent — and four modules were leaving it set. It restores only when the value
+actually changed: assigning one is a `StyleChange` delivered to every live widget, not
+something to pay on 3,000 tests that never touch it.
+
+**Do not assert finer than the mechanism can express.** An app stylesheet raises the
+canvas viewport from 461px to 470px, which flips the parity of the centering indent
+`QGraphicsView` applies when the scene fits, so the camera `exit_focus_mode` restores
+lands one device pixel from where it started. `camera_state` is a transform plus two
+*integer* scrollbars and that indent is integer too, so a pixel is the floor — but
+`test_leaving_focus_mode_puts_the_camera_back` asserted `< 1.0` in *scene* units, and at
+a zoomed-out fit one pixel is over nine of those. The assertion now converts to device
+pixels, which also stops its strictness varying with the zoom it happens to measure at.
+
+Neither of those was a race: with a stylesheet leaked the mismatch is 70/70 across
+viewport heights, and without one it is 0/70. A GUI flake under `-n auto` is usually
+order-dependent state, so look for what an earlier test left behind before reaching for
+`processEvents` or a sleep.
+
+`--dist loadfile` would hide this class of bug by making the accident stable. Order
+independence is a property worth keeping, so CI stays on `load`.
 
 ### Use public API across class boundaries
 

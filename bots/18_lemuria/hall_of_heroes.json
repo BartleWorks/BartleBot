@@ -1086,19 +1086,12 @@
   ],
   "options": [
     {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
-    },
-    {
       "name": "Level Scaling Players",
       "type": "player_list",
       "default": [
         1,
         3
-      ],
-      "description": "Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling."
+      ]
     },
     {
       "name": "Quicksell (keep Merciless gear)",
