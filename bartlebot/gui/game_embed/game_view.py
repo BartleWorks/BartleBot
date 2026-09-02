@@ -197,7 +197,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
         account_cards: list[QWidget] = []
         for account in accounts:
-            card = AccountCard(account, self._characters_for(account.get("username", "")))
+            card = AccountCard(account, self._characters_for(account.get("username", "")), accounts)
             card.launch_account_requested.connect(self.launch_account_requested)
             account_cards.append(card)
         self._rebuild_list(self._accounts_area, account_cards, empty_hint="(No accounts)")

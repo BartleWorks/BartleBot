@@ -36,10 +36,17 @@ import pathlib
 
 GUI_ROOT = pathlib.Path(__file__).resolve().parent.parent / "bartlebot" / "gui"
 
-# A call is "themed" when its argument mentions one of these. Two are indirect:
-# pill_style and group_accent resolve THEME internally, so the call site names
-# neither THEME nor a colour.
-THEME_MARKERS = ("THEME.", "pill_style(", "group_accent(", "region_color(")
+# A call is "themed" when its argument mentions one of these. Several are indirect:
+# pill_style, group_accent, account_accent and account_tint resolve THEME internally,
+# so the call site names neither THEME nor a colour.
+THEME_MARKERS = (
+    "THEME.",
+    "pill_style(",
+    "group_accent(",
+    "region_color(",
+    "account_accent(",
+    "account_tint(",
+)
 
 # Inheriting this is accepted in place of a hand-written changeEvent.
 THEMED_MIXIN = "ThemedMixin"

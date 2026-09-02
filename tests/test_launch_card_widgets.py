@@ -14,7 +14,9 @@ from PyQt6.QtGui import QEnterEvent, QMouseEvent
 from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
+from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, ProfileCard
+from bartlebot.gui.widgets.tag_pill import AccountPill
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"], "resolution": [1280, 720]}
@@ -181,3 +183,56 @@ def test_an_account_card_uses_more_rows_before_dropping_a_name(qapp):
 
     assert "more" not in text
     assert 1 < len(text.split("\n")) <= MAX_CHARACTER_ROWS
+
+
+# ---------------------------------------------------------------------------
+# Account colour
+# ---------------------------------------------------------------------------
+
+
+def _pills(card) -> list[AccountPill]:
+    return card.findChildren(AccountPill)
+
+
+def test_an_account_card_is_striped_with_its_colour(qapp):
+    card = AccountCard(ACCOUNT, ROSTER)
+    assert f"border-left: 3px solid {account_accent(card.color_key)}" in card.styleSheet()
+
+
+def test_the_stripe_survives_the_frame_shorthand(qapp):
+    """The shorthand sets all four sides, so a stripe written before it would be
+    overwritten — and the stylesheet would still look right to anyone reading it."""
+    card = AccountCard(ACCOUNT, ROSTER)
+    sheet = card.styleSheet()
+    assert sheet.index("border:") < sheet.index("border-left:")
+
+
+def test_a_profile_pill_matches_that_account_card(qapp):
+    """The pair is the whole feature: a colour on the pills alone would be decoration,
+    because nothing else on the screen would say which account it stands for."""
+    account_card = AccountCard(ACCOUNT, ROSTER)
+    profile_card = ProfileCard(PROFILE, [ACCOUNT])
+
+    (pill,) = _pills(profile_card)
+
+    assert pill.color_key == account_card.color_key
+
+
+def test_the_resolution_pill_stays_neutral(qapp):
+    """It names a setting, not an account. A hue on it would put the one pill that says
+    nothing about membership into the same language as the ones that do."""
+    card = ProfileCard(PROFILE, [ACCOUNT])
+    assert len(_pills(card)) == 1
+
+
+def test_a_theme_switch_restyles_an_account_pill(qapp, theme):
+    """The pill holds its palette slot, not a colour, so this is a re-resolve rather
+    than a repaint of a stale hex — and a card's stylesheet does not reach its pills."""
+    theme("light")
+    pill = AccountPill("Main", 1)
+    light = pill.styleSheet()
+
+    theme("dark")
+    qapp.setStyleSheet(theme_mod.THEME.global_stylesheet())
+
+    assert pill.styleSheet() != light

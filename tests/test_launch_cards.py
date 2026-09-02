@@ -4,11 +4,17 @@ The cards are QWidgets and need a QApplication, so what is tested here is the te
 build — extracted as plain functions for exactly that reason, per CLAUDE.md.
 """
 
+from bartlebot.gui import account_accent
 from bartlebot.gui.game_embed import launch_cards
 from bartlebot.settings_manager import SettingsManager
 
 LUKE = {"gid": 1001, "name": "Luke SkullHunter"}
 MISHA = {"gid": 1002, "name": "Misha SkullSeer"}
+
+
+def _displays(usernames, accounts):
+    """Just the pill captions — most of these tests are about the text, not the colour."""
+    return [spec.display for spec in launch_cards.account_pill_specs(usernames, accounts)]
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +143,7 @@ def test_character_names_number_by_roster_position():
 
 def test_account_pills_use_aliases():
     accounts = [{"username": "someone@example.com", "alias": "Main"}]
-    assert launch_cards.account_display_names(["someone@example.com"], accounts) == ["Main"]
+    assert _displays(["someone@example.com"], accounts) == ["Main"]
 
 
 def test_account_pills_keep_launch_order():
@@ -147,17 +153,38 @@ def test_account_pills_keep_launch_order():
         {"username": "a@example.com", "alias": "Zeta"},
         {"username": "b@example.com", "alias": "Alpha"},
     ]
-    assert launch_cards.account_display_names(["a@example.com", "b@example.com"], accounts) == ["Zeta", "Alpha"]
+    assert _displays(["a@example.com", "b@example.com"], accounts) == ["Zeta", "Alpha"]
 
 
 def test_a_deleted_account_still_gets_a_pill():
     """Dropping it would make a profile that cannot launch look complete."""
-    assert launch_cards.account_display_names(["gone@example.com"], []) == ["g***m"]
+    assert _displays(["gone@example.com"], []) == ["g***m"]
 
 
 def test_an_account_without_an_alias_is_censored():
     accounts = [{"username": "someone@example.com", "alias": ""}]
-    assert launch_cards.account_display_names(["someone@example.com"], accounts) == ["s***m"]
+    assert _displays(["someone@example.com"], accounts) == ["s***m"]
+
+
+def test_a_profile_pill_is_coloured_by_its_account():
+    """The whole point of the colour: the pill and that account's own card match, so a
+    profile's membership can be read by looking rather than by parsing four names."""
+    account = {"username": "someone@example.com", "alias": "Main"}
+    (spec,) = launch_cards.account_pill_specs(["someone@example.com"], [account])
+    assert spec.color_key == account_accent.account_color_key("someone@example.com", account)
+
+
+def test_a_pinned_colour_beats_the_derived_one():
+    account = {"username": "someone@example.com", "alias": "Main", "color": 4}
+    (spec,) = launch_cards.account_pill_specs(["someone@example.com"], [account])
+    assert spec.color_key == 4
+
+
+def test_a_deleted_account_still_gets_a_colour():
+    """A grey pill would read as "no account colour" rather than as the missing account
+    it is, and there is no card left to match it against either way."""
+    (spec,) = launch_cards.account_pill_specs(["gone@example.com"], [])
+    assert 1 <= spec.color_key <= account_accent.ACCOUNT_PALETTE_SIZE
 
 
 def test_resolution_label_shows_a_pinned_resolution():

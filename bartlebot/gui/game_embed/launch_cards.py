@@ -28,11 +28,23 @@ WHAT THE PILLS MEAN
 A launch profile's pills are its accounts, in launch order. That ordering is real -- it
 decides which window becomes Player 1 -- so the pills are laid out in it rather than
 sorted for looks.
+
+Each pill is outlined in its account's colour, and the account card carrying that
+colour wears it as a stripe down its left edge. The pair is the point: a colour on the
+profile pills alone would be decoration, because nothing else on the screen would say
+which account it stands for. bartlebot/gui/account_accent.py owns the mapping and
+explains where a colour comes from.
+
+Both card types are therefore handed the *whole* account list, not just the account
+they draw: a colour is only distinct with respect to the others on screen, and a card
+that resolved its own hue in isolation is how the first version of this shipped three
+colours for six accounts.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import NamedTuple
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics
@@ -40,10 +52,11 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QToolButton, QVBox
 
 from bartlebot import streamer_mode
 from bartlebot.credentials import CredentialStore
+from bartlebot.gui.account_accent import account_accent, account_color_key, account_color_keys
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.tag_pill import NeutralPill
+from bartlebot.gui.widgets.tag_pill import AccountPill, NeutralPill
 
 # Characters listed in full on an account card before the rest become "+N more", used
 # only when nothing has told the card how wide it is -- during construction, and in the
@@ -64,6 +77,11 @@ _SEP = " · "
 _MORE_GAP = "  "
 
 _EDIT_BTN_SIZE = 22
+
+# Width of an account card's colour stripe. Wide enough to be a colour rather than a
+# line at a glance down the column, narrow enough that the card still reads as a card
+# and not as a labelled swatch.
+STRIPE_WIDTH = 3
 
 
 # ---------------------------------------------------------------------------
@@ -177,24 +195,37 @@ def fit_character_summary(
     return "\n".join(rows)
 
 
-def account_display_names(usernames: list[str], accounts: list[dict]) -> list[str]:
-    """Display names for *usernames*, in the order given.
+class PillSpec(NamedTuple):
+    """What one account pill needs: what it says, and which colour says whose it is."""
+
+    display: str
+    color_key: int
+
+
+def account_pill_specs(usernames: list[str], accounts: list[dict]) -> list[PillSpec]:
+    """A pill per username, in the order given.
 
     Order is preserved because a profile's account order decides which window becomes
     Player 1 — sorting these for looks would misreport the launch.
 
+    Colours come from the whole account list rather than one username at a time, so
+    that two pills on one profile can never share a hue while a slot is going spare.
+
     A username the accounts list no longer holds still gets a pill, built from the raw
     username: dropping it would make a profile referring to a deleted account look
-    complete, and that profile will fail to launch.
+    complete, and that profile will fail to launch. It keeps a colour too — a grey pill
+    would read as "no account colour" rather than as the missing account it is. That
+    one is the bare derived slot, and so may repeat a real account's: it is outside the
+    set being de-duplicated, and there is no card left for it to match anyway.
     """
     meta = {a.get("username"): a for a in accounts}
-    out: list[str] = []
+    keys = account_color_keys(accounts)
+    out: list[PillSpec] = []
     for username in usernames:
         entry = meta.get(username)
-        if entry is None:
-            out.append(CredentialStore.display_name(username, None))
-        else:
-            out.append(CredentialStore.display_name(username, entry.get("alias") or None))
+        alias = None if entry is None else (entry.get("alias") or None)
+        key = keys.get(username) or account_color_key(username, entry)
+        out.append(PillSpec(CredentialStore.display_name(username, alias), key))
     return out
 
 
@@ -246,11 +277,25 @@ class _LaunchCard(ThemedMixin, QWidget):
         self._name_lbl: QLabel | None = None
         self._detail_lbl: QLabel | None = None
         self._quiet_lbl: QLabel | None = None
+        # The account palette slot this card's left edge is striped with, when it stands
+        # for a single account. None means no stripe -- a profile brings several accounts
+        # and has no one colour, which is what its pills are for.
+        self._stripe_key: int | None = None
 
     def apply_theme_styles(self) -> None:
         bg = THEME.node_fill if self._hovered else THEME.surface
         border = THEME.accent if self._hovered else THEME.border
-        self.setStyleSheet(f"#LaunchCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
+        # The stripe rule comes after the shorthand, which sets all four sides: written
+        # the other way round the shorthand would overwrite it and the card would lose
+        # its colour with nothing in the stylesheet looking wrong.
+        stripe = (
+            ""
+            if self._stripe_key is None
+            else f" border-left: {STRIPE_WIDTH}px solid {account_accent(self._stripe_key)};"
+        )
+        self.setStyleSheet(
+            f"#LaunchCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px;{stripe} }}"
+        )
         if self._name_lbl is not None:
             self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
@@ -288,18 +333,38 @@ class AccountCard(_LaunchCard):
     while its client is hooked, which is never true of an account on this screen, so the
     names come from ``character_roster`` — learned as clients connect and persisted per
     account.
+
+    The left edge carries the account's colour, which is what the outlined pills on the
+    profile cards beside it point at. A stripe rather than a coloured name: the name is
+    the thing you read, and it should stay at full contrast.
+
+    That colour is chosen against every other account, so the card is given the list it
+    belongs to as well as its own entry.
     """
 
     launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
 
-    def __init__(self, account: dict, roster: list[dict], parent=None) -> None:
+    def __init__(self, account: dict, roster: list[dict], accounts: list[dict] | None = None, parent=None) -> None:
         super().__init__(parent)
         self._username = account.get("username", "")
         self._display_name = CredentialStore.display_name(self._username, account.get("alias") or None)
         self._roster = roster
+        # The list this account sits in, because its colour is chosen against the others
+        # rather than from its username alone. Defaulting to the account by itself is for
+        # the caller that genuinely has one — there is nothing for it to collide with.
+        siblings = [account] if accounts is None else accounts
+        # Set before refresh_theme_styles: the stripe is painted by the frame's own rule.
+        self._stripe_key = account_color_keys(siblings).get(self._username) or account_color_key(
+            self._username, account
+        )
         self._build()
         self.refresh_theme_styles()
         self.launch_requested.connect(lambda: self.launch_account_requested.emit(self._username, self._display_name))
+
+    @property
+    def color_key(self) -> int:
+        """The account palette slot this card is striped with, and its pills outlined in."""
+        return self._stripe_key
 
     def _build(self) -> None:
         layout = QVBoxLayout(self)
@@ -342,7 +407,7 @@ class AccountCard(_LaunchCard):
         if self._detail_lbl is None or not self._roster:
             return
         margins = self.layout().contentsMargins()
-        available = self.width() - margins.left() - margins.right()
+        available = self.width() - margins.left() - margins.right() - STRIPE_WIDTH
         metrics = QFontMetrics(self._detail_lbl.font())
         self._detail_lbl.setText(
             fit_character_summary(character_names(self._roster), available, metrics.horizontalAdvance)
@@ -355,6 +420,13 @@ class ProfileCard(_LaunchCard):
     The account pills are the point. A profile's name says nothing about its membership,
     which is the single hardest thing to see on the old screen — you had to open Settings
     to find out what a profile would do.
+
+    Each pill is outlined in its account's colour, matching the stripe on that account's
+    own card in the column beside it, so "which accounts is this?" can be answered by
+    looking rather than by reading four censored usernames. The resolution pill stays
+    neutral: it names a setting, not an account, and giving it a hue would put the one
+    pill on the card that means nothing about membership in the same language as the
+    ones that do.
     """
 
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
@@ -408,8 +480,8 @@ class ProfileCard(_LaunchCard):
         pills = QHBoxLayout()
         pills.setContentsMargins(0, 0, 0, 0)
         pills.setSpacing(4)
-        for display in account_display_names(self._profile.get("accounts") or [], self._accounts):
-            pills.addWidget(NeutralPill(display), 0, Qt.AlignmentFlag.AlignVCenter)
+        for spec in account_pill_specs(self._profile.get("accounts") or [], self._accounts):
+            pills.addWidget(AccountPill(spec.display, spec.color_key), 0, Qt.AlignmentFlag.AlignVCenter)
         pills.addStretch()
         layout.addLayout(pills)
 
