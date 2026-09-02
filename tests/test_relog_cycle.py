@@ -18,6 +18,24 @@ import pytest
 from bartlebot.client_manager import ClientManager
 
 
+async def _until(predicate, timeout: float = 2.0) -> None:
+    """Wait for *predicate* to hold, rather than for a fixed slice of wall clock.
+
+    The watch loop is compressed to a 10 ms cadence here, so "sleep 50 ms and
+    expect it to have ticked five times" reads as generous -- right up until a
+    two-core CI runner under ``-n auto`` delivers exactly one. That is the
+    ceiling-versus-cadence rule in CLAUDE.md: the poll interval can be
+    compressed as far as the timer tick allows, but the window the test races
+    against has to stay an order of magnitude wider than the polls nominally
+    cost, or the test stops being about the loop and starts being about the
+    runner.
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    while not predicate() and loop.time() < deadline:
+        await asyncio.sleep(0.005)
+
+
 class FakeClient:
     def __init__(self, hwnd: int, pid: int) -> None:
         self.window_handle = hwnd
@@ -293,17 +311,20 @@ class TestWatchLoop:
     async def test_relogs_once_the_interval_has_elapsed(self, watching):
         watching.relog_clients = AsyncMock(return_value=True)
         # 0.01 hours is 36 s of wall clock, so the clock is what has to move, not the test.
-        with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", return_value=3_200):
+        with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", return_value=3_200) as gdi:
             watching._start_relog_watch()
-            await asyncio.sleep(0.05)
+            # Waiting on the ticks themselves: "not relogged" only means something
+            # once the loop has run and declined to.
+            await _until(lambda: gdi.call_count > 1)
             watching._stop_relog_watch()
+        assert gdi.call_count > 1
         watching.relog_clients.assert_not_awaited()  # off means off
 
     async def test_a_tiny_interval_fires_and_names_the_reason(self, watching):
         watching.relog_clients = AsyncMock(return_value=True)
         with self._settings(hours=1e-9), patch("bartlebot.client_manager.gdi_object_count", return_value=3_200):
             watching._start_relog_watch()
-            await asyncio.sleep(0.05)
+            await _until(lambda: watching.relog_clients.await_args is not None)
             watching._stop_relog_watch()
         assert watching.relog_clients.await_args.kwargs["reason"] == "scheduled"
 
@@ -311,7 +332,7 @@ class TestWatchLoop:
         watching.relog_clients = AsyncMock(return_value=True)
         with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", return_value=9_999):
             watching._start_relog_watch()
-            await asyncio.sleep(0.05)
+            await _until(lambda: watching.relog_clients.await_args is not None)
             watching._stop_relog_watch()
         assert watching.relog_clients.await_args.kwargs["reason"] == "GDI quota"
 
@@ -325,7 +346,7 @@ class TestWatchLoop:
         with self._settings(hours=0.0), patch("bartlebot.client_manager.gdi_object_count", _explode):
             with caplog.at_level(logging.ERROR):
                 watching._start_relog_watch()
-                await asyncio.sleep(0.05)
+                await _until(lambda: len(calls) > 1)
                 watching._stop_relog_watch()
         assert len(calls) > 1  # it kept ticking after the first failure
         assert "Relog watch loop error" in caplog.text
