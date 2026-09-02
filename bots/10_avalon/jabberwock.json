@@ -6,8 +6,6 @@
   "clients": "all",
   "initial": "state_2",
   "recovery_state": "state_1",
-  "default_combat_config": "### p1\nfeint@boss\n\n### p2\nkraken[\"Epic - Amulet\"]@boss | bats[epic]@boss | any<damage>@boss",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Avalon",
   "drops": [
     {
@@ -470,14 +468,7 @@
     "Housing",
     "Boss"
   ],
-  "options": [
-    {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_1",

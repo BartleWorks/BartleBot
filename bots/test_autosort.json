@@ -5,8 +5,8 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "use_bartlebot_default_combat_config": true,
   "drops": [],
+  "tags": [],
   "options": [],
   "states": [
     {
@@ -131,7 +131,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -139,7 +141,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -147,7 +151,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -155,7 +161,9 @@
       "dest": "state_5",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -163,7 +171,9 @@
       "dest": "state_5",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -171,7 +181,9 @@
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -179,7 +191,9 @@
       "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -187,7 +201,9 @@
       "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -195,7 +211,9 @@
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -203,7 +221,9 @@
       "dest": "state_2",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": []

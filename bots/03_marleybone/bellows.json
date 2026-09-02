@@ -6,8 +6,6 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "default_combat_config": "tempest[epic]",
-  "use_bartlebot_default_combat_config": false,
   "start_location": "Anywhere in Marleybone",
   "drops": [
     {
@@ -513,12 +511,6 @@
   ],
   "options": [
     {
-      "name": "Safety Delay",
-      "type": "float",
-      "default": 3.0,
-      "description": "Seconds to allow for game-server responses when waiting for prompts or menus. Increase on high-latency connections."
-    },
-    {
       "name": "Skip to boss",
       "type": "bool",
       "default": true
@@ -652,7 +644,9 @@
       "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -660,7 +654,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -668,7 +664,9 @@
       "dest": "state_14",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -676,7 +674,9 @@
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -684,7 +684,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -692,7 +694,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -700,7 +704,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -708,7 +714,9 @@
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -716,7 +724,9 @@
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -724,7 +734,9 @@
       "dest": "state_15",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -732,7 +744,9 @@
       "dest": "state_15",
       "when": "FAILURE",
       "flags": [],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
@@ -745,7 +759,9 @@
           "negate": false
         }
       ],
-      "flag_op": "AND"
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": []

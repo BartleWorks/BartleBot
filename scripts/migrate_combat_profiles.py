@@ -12,6 +12,15 @@ The script is idempotent: re-running it after migration is a no-op for bots that
 have already had their legacy fields removed.
 
 Reference commit for old default_combat_config values: 5edbd5879a67439eddcb76848e6a2d76ac154da7
+
+**Its idempotency check no longer detects an unmigrated bot.** Deriving option
+declarations (#159) put every bot file through ``BotConfig.save`` once, which
+drops any key the model does not carry -- so the legacy fields this script looks
+for are gone from ``bots/`` whether or not the bot was ever migrated. Thirteen
+files still had a ``default_combat_config`` and no ``bot_strategies/`` entry
+behind it at that point; their DSL is unchanged at the reference commit above,
+which is where ``_read_old_bot_json`` reads it from anyway. To finish that
+migration, list the bots from the reference commit rather than from the tree.
 """
 
 from __future__ import annotations
