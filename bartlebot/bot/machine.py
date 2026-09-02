@@ -100,8 +100,8 @@ class BotMachine:
         self._results_seen: Counter[str] = Counter()
         # Options whose resolution has already been logged this run. See get_option().
         self._logged_option_sources: set[str] = set()
-        # name -> BotOptionSpec, composed lazily from the registry. See _option_spec().
-        self._option_specs: dict[str, object] | None = None
+        # name -> BotOptionSpec, composed lazily. See _option_specs_for_bot().
+        self._option_specs: dict | None = None
 
         self._state_map = {s["id"]: s for s in config["states"]}
         # Compiled compound flag expressions from to_machine_config().
@@ -182,31 +182,18 @@ class BotMachine:
         Reads live from BotConfig, so a GUI edit takes effect without restarting
         the machine.
         """
-        declaration = None
-        declared_type = None
-        declared = False
-        if self._bot_config is not None:
-            for opt in self._bot_config.options:
-                if opt.name == name:
-                    declaration = opt.default
-                    declared_type = opt.type
-                    declared = True
-                    break
-
-        spec = self._option_spec(name)
-        if not declared and spec is None:
+        if self._bot_config is None:
             return default
-        if declared_type is None and spec is not None:
-            declared_type = spec.type
-
-        resolution = bot_options.resolve_option(
+        resolution = bot_options.resolve_for_config(
+            self._bot_config,
             name,
             override=self._option_override(name),
-            declaration=declaration,
-            declared_type=declared_type,
             app_value=self._app_option_value(name),
-            spec_default=spec.default if spec is not None else default,
+            option_specs=self._option_specs_for_bot(),
+            default=default,
         )
+        if resolution is None:
+            return default
         # Once per option per run: get_option("Safety Delay") fires on nearly every
         # node, and a line each would be most of the session log.
         if name not in self._logged_option_sources:
@@ -235,29 +222,11 @@ class BotMachine:
             logger.exception("Failed to read app setting %r", key)
             return bot_options.UNSET
 
-    def _option_spec(self, name: str):
-        """The BotOptionSpec declaring *name*, preferring this bot's own nodes.
-
-        Several nodes declare Safety Delay with slightly different text, so which
-        one answers matters; the bot's own graph is the honest source, and the
-        whole registry is only a fallback for an option whose node has been cut.
-        """
+    def _option_specs_for_bot(self):
+        """``{name: BotOptionSpec}`` for this bot, built once and kept for the run."""
         if self._option_specs is None:
-            from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415 - avoids an import cycle
-
-            specs: dict[str, object] = {}
-            states = self._bot_config.states if self._bot_config is not None else []
-            for state in states:
-                spec = NODE_SPECS.get(state.node_type)
-                if spec is None:
-                    continue
-                for req in spec.required_bot_options:
-                    specs.setdefault(req.name, req)
-            for spec in NODE_SPECS.values():
-                for req in spec.required_bot_options:
-                    specs.setdefault(req.name, req)
-            self._option_specs = specs
-        return self._option_specs.get(name)
+            self._option_specs = bot_options.option_specs_for(self._bot_config)
+        return self._option_specs
 
     # --- Logging ---
 

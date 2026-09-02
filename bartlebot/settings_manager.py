@@ -581,6 +581,25 @@ class SettingsManager:
         self.set("bot_option_overrides", value=overrides)
         self.save()
 
+    def rename_option_override(self, bot_id: str, old_name: str, new_name: str) -> None:
+        """Move the user's stored value from *old_name* to *new_name*.
+
+        Renaming an option in the editor already fixes up every transition that
+        guards on it; the override store has to join that fixup or the rename
+        silently resets the user's value -- the failure mode that ruled out
+        per-node-id keys for the friend name in #102.
+        """
+        if old_name == new_name:
+            return
+        overrides = dict(self.get("bot_option_overrides") or {})
+        row = dict(overrides.get(bot_id) or {})
+        if old_name not in row:
+            return
+        row[new_name] = row.pop(old_name)
+        overrides[bot_id] = row
+        self.set("bot_option_overrides", value=overrides)
+        self.save()
+
     # There is deliberately no prune_option_overrides() analogue of
     # prune_active_strategies. A strategy id names a file that can genuinely
     # vanish; an option name is composed from whichever nodes are in the graph

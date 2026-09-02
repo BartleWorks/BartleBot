@@ -51,6 +51,12 @@ class _Unset:
 
 UNSET = _Unset()
 
+
+def is_set(value: Any) -> bool:
+    """Whether *value* is a real value rather than the "nothing to say" sentinel."""
+    return not isinstance(value, _Unset)
+
+
 SOURCE_OVERRIDE = "your override"
 SOURCE_BOT_FILE = "the bot file"
 SOURCE_APP_SETTING = "the app setting"
@@ -96,6 +102,8 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
         return isinstance(value, str)
     if declared_type == "player_list":
         return isinstance(value, list) and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
+    if declared_type == "str_list":
+        return isinstance(value, list) and all(isinstance(v, str) for v in value)
     return True
 
 
@@ -227,17 +235,21 @@ def compose_options(config, specs=None) -> list:
     return composed
 
 
-def _defaults_agree(stored, composed) -> bool:
-    """Whether a stored default says anything the composed one does not.
+def values_agree(a, b) -> bool:
+    """Whether two option values say the same thing.
 
     ``3`` and ``3.0`` agree -- three NodeSpecs shipped the int form, and JSON
     cannot tell them apart once written.  ``False`` and ``0`` do not: a checkbox
     answering "no" is not the number zero, and collapsing them would drop a real
     answer.
+
+    Used at both ends of the same question: the save-time prune asking whether a
+    stored declaration says anything the composed one does not, and the Setup view
+    asking whether the value just typed is already what the option resolves to.
     """
-    if isinstance(stored, bool) != isinstance(composed, bool):
+    if isinstance(a, bool) != isinstance(b, bool):
         return False
-    return stored == composed
+    return a == b
 
 
 def storable_options(config, specs=None) -> list:
@@ -263,7 +275,7 @@ def storable_options(config, specs=None) -> list:
         spec = required.get(opt.name)
         if spec is None:
             continue
-        if opt.default is None or _defaults_agree(opt.default, spec.default):
+        if opt.default is None or values_agree(opt.default, spec.default):
             continue
         kept.append(BotOptionModel(name=opt.name, type=spec.type, default=opt.default, description=None))
     return kept
@@ -291,3 +303,70 @@ def orphaned_flag_options(config, specs=None) -> list[tuple]:
             if name not in declared and (trans, name) not in orphans:
                 orphans.append((trans, name))
     return orphans
+
+
+def option_specs_for(config, specs=None) -> dict:
+    """``{name: BotOptionSpec}`` reachable from *config*, its own nodes first.
+
+    Several nodes declare Safety Delay with slightly different text, so which one
+    answers matters: the bot's own graph is the honest source, and the rest of the
+    registry is only a fallback for an option whose node has since been cut.
+    """
+    out: dict = dict(required_option_specs(config, specs))
+    for spec in _all_specs(specs).values():
+        for req in spec.required_bot_options:
+            out.setdefault(req.name, req)
+    return out
+
+
+def resolve_for_config(
+    config,
+    name: str,
+    *,
+    override: Any = UNSET,
+    app_value: Any = UNSET,
+    specs=None,
+    option_specs: dict | None = None,
+    default: Any = None,
+) -> OptionResolution | None:
+    """Resolve one of *config*'s options, reading the declaration off the file itself.
+
+    The two halves of the four-level lookup live in different places: the
+    declaration and the node default come from the bot and the registry, which
+    this gathers, while the override and the app setting come from
+    ``SettingsManager``, which this module must not import.  So the caller passes
+    those two in -- ``BotMachine`` at run time, the Setup view for display.
+
+    Returns ``None`` when *name* is not an option of this bot at all: neither
+    declared in its file nor required by any node the registry knows.
+
+    *option_specs* is ``option_specs_for(config)`` precomputed.  ``get_option``
+    fires on nearly every node, and rebuilding that map over the whole registry
+    per call is the one part of this lookup worth remembering.
+    """
+    declaration = None
+    declared_type = None
+    declared = False
+    for opt in config.options:
+        if opt.name == name:
+            declaration = opt.default
+            declared_type = opt.type
+            declared = True
+            break
+
+    if option_specs is None:
+        option_specs = option_specs_for(config, specs)
+    spec = option_specs.get(name)
+    if not declared and spec is None:
+        return None
+    if declared_type is None and spec is not None:
+        declared_type = spec.type
+
+    return resolve_option(
+        name,
+        override=override,
+        declaration=declaration,
+        declared_type=declared_type,
+        app_value=app_value,
+        spec_default=spec.default if spec is not None else default,
+    )
