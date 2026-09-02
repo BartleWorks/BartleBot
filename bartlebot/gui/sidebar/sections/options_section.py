@@ -24,7 +24,6 @@ from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
@@ -46,6 +45,7 @@ from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     TYPE_LABELS,
     connect_widget,
+    empty_value,
     make_option_widget,
     set_widget_value,
     widget_value,
@@ -94,6 +94,13 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self.setMinimumWidth(320)
         self._existing_names = [n for n in existing_names if n != existing_option.name] if edit_mode else existing_names
         self._result: BotOptionModel | None = None
+        # A declaration of None means "the author has no opinion", which is only
+        # meaningful under an option that has an app setting or a NodeSpec default
+        # beneath it -- and a hand-added option has neither, so a null there
+        # resolves to None and `_flag_<name>` silently reads False.  So this dialog
+        # never *creates* one; it only declines to destroy one it was handed.
+        self._was_null = edit_mode and existing_option.default is None
+        self._default_touched = False
 
         form = QFormLayout()
         form.setSpacing(6)
@@ -110,10 +117,14 @@ class _AddOptionDialog(ThemedMixin, QDialog):
 
         # One page per type, built up front: swapping the visible page is what
         # keeps the value the user already typed for a type they switch back to.
+        # The bool page states both answers rather than offering a lone tick box,
+        # because here the field is captioned "Default" rather than by the option's
+        # own name, and "[ ] True" reads as though False were unavailable.
         self._default_stack = QStackedWidget()
         self._default_widgets: dict[str, QWidget] = {}
         for opt_type in OPTION_TYPES:
-            widget = make_option_widget(opt_type, None, connected=4, label="True")
+            widget = make_option_widget(opt_type, None, connected=4, explicit_bool=True)
+            connect_widget(widget, lambda _v: setattr(self, "_default_touched", True))
             self._default_widgets[opt_type] = widget
             page = QWidget()
             page_layout = QHBoxLayout(page)
@@ -122,18 +133,10 @@ class _AddOptionDialog(ThemedMixin, QDialog):
             self._default_stack.addWidget(page)
         self._type_combo.currentIndexChanged.connect(self._default_stack.setCurrentIndex)
 
-        # A declaration of None is the author saying "I have no opinion", which is
-        # what makes the app setting below it reachable at all -- without a way to
-        # express it here, every hand-added option would outrank the user's setting
-        # forever.  It reads as a checkbox because that is the question it asks.
-        self._no_opinion = QCheckBox("No recommendation — use the app setting or the node's own default")
-        self._no_opinion.toggled.connect(lambda on: self._default_stack.setDisabled(on))
-
         form.addRow("Name", self._name_edit)
         form.addRow("Type", self._type_combo)
         form.addRow("Description", self._desc_edit)
         form.addRow("Default", self._default_stack)
-        form.addRow("", self._no_opinion)
 
         self._err_lbl = QLabel()
         self._err_lbl.setWordWrap(True)
@@ -159,10 +162,14 @@ class _AddOptionDialog(ThemedMixin, QDialog):
             self._name_edit.setText(existing_option.name)
             self._desc_edit.setText(existing_option.description or "")
             self._select_type(existing_option.type)
-            if existing_option.default is None:
-                self._no_opinion.setChecked(True)
-            else:
-                set_widget_value(self._default_widgets[self._current_type()], existing_option.default)
+            set_widget_value(
+                self._default_widgets[self._current_type()],
+                empty_value(existing_option.type) if existing_option.default is None else existing_option.default,
+            )
+            if self._was_null and existing_option.type == "bool":
+                # The radio pair can show "neither", so a null bool is visible as
+                # well as preserved.  No other type has a spare state to show it in.
+                set_widget_value(self._default_widgets[self._current_type()], None)
         else:
             self._select_type("bool")
 
@@ -194,10 +201,15 @@ class _AddOptionDialog(ThemedMixin, QDialog):
             self._show_error(f"An option named '{name}' already exists.")
             return
         opt_type = self._current_type()
+        value = widget_value(self._default_widgets[opt_type])
+        if self._was_null and not self._default_touched:
+            # Opening Edit to fix a typo in a description must not quietly promote a
+            # null declaration to whatever the control had to show in its place.
+            value = None
         self._result = BotOptionModel(
             name=name,
             type=opt_type,
-            default=None if self._no_opinion.isChecked() else widget_value(self._default_widgets[opt_type]),
+            default=value,
             description=self._desc_edit.text().strip() or None,
         )
         self.accept()

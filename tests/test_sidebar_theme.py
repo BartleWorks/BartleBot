@@ -172,6 +172,6 @@ def test_the_add_option_dialog_still_builds_completely(qapp):
 
     assert dlg._name_edit is not None
     assert dlg._current_type() == "bool"
-    assert not dlg._default_widgets["bool"].isChecked()
+    assert dlg._default_widgets["bool"].value() is False
     assert dlg.layout() is not None
     dlg.deleteLater()

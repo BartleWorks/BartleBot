@@ -412,12 +412,27 @@ context this app already has.
   `test_a_bot_file_is_untouched_by_a_value_edit` is the guard.
 - **A row says where its value came from.** The four-level resolution runs for
   display too, through `bot_options.resolve_for_config` — the same gatherer
-  `BotMachine.get_option` uses, so the panel and the run cannot disagree. An
-  inherited row carries a caption naming the level; an overridden one carries a
-  coloured bar and a Reset button whose tooltip names what a reset falls back
-  to. That tooltip is the mitigation for storing overrides as bare values: an
-  author who later improves a declaration is outranked silently, so the one-way
-  door has to be visibly openable.
+  `BotMachine.get_option` uses, so the panel and the run cannot disagree. The
+  caption under a row names the level that answered, the gutter bar is the
+  accent colour when the user is that level, and Reset's tooltip names what a
+  reset falls back to. That tooltip is the mitigation for storing overrides as
+  bare values: an author who later improves a declaration is outranked
+  silently, so the one-way door has to be visibly openable.
+- **Setting a value back to the resolved one drops the override.** Reverting by
+  hand and pressing Reset are the same act, so they have to leave the same state
+  behind — a row marked as changed while holding the value it would have had
+  anyway is a lie about what the user did, and it would go on to outrank an
+  author who later improved the declaration it happens to match.
+  `values_agree` is the comparison, shared with the save-time prune, so `3` and
+  `3.0` agree and `False` and `0` do not.
+- **No chrome appears or disappears with the override state, and a value edit
+  refreshes one row rather than rebuilding the list.** Both are the same
+  concern: a spin box whose row is rebuilt on `valueChanged` vanishes from under
+  the pointer on the first arrow click, and a Reset button that only exists once
+  a value is overridden moves everything under it as you type. So the bar
+  changes colour rather than appearing, Reset greys out rather than vanishing,
+  every level including the user's own has a caption, and `_refresh_row` is what
+  a value edit calls.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.
@@ -432,6 +447,17 @@ context this app already has.
   no bot option can have. Three copies of this mapping is how the dialog came to
   hardcode `type="bool"` while the rows rendered floats — pressing Edit on
   Safety Delay rewrote it as a checkbox.
+- **A bool is a checkbox in a list and a radio pair on its own.** In a row the
+  caption is the option's name and a tick plainly means yes; under a field
+  labelled `Default` a lone box captioned "True" reads as though False were
+  unavailable. `BoolChoice` is the second form, and its third state — neither
+  radio — is how a null declaration is shown rather than silently rewritten.
+- **The Add Option dialog never creates a null declaration.** Null means "use
+  the level below me", and a hand-added option has no app setting and no
+  NodeSpec default beneath it — so a null there resolves to `None` and
+  `_flag_<name>` reads it as `False`. The dialog only declines to *destroy* a
+  null it was handed, which is what `_was_null` and `_default_touched` are for:
+  opening Edit to fix a description must not promote the declaration.
 
 #### App settings vs. node params
 

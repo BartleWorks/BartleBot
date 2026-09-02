@@ -235,17 +235,21 @@ def compose_options(config, specs=None) -> list:
     return composed
 
 
-def _defaults_agree(stored, composed) -> bool:
-    """Whether a stored default says anything the composed one does not.
+def values_agree(a, b) -> bool:
+    """Whether two option values say the same thing.
 
     ``3`` and ``3.0`` agree -- three NodeSpecs shipped the int form, and JSON
     cannot tell them apart once written.  ``False`` and ``0`` do not: a checkbox
     answering "no" is not the number zero, and collapsing them would drop a real
     answer.
+
+    Used at both ends of the same question: the save-time prune asking whether a
+    stored declaration says anything the composed one does not, and the Setup view
+    asking whether the value just typed is already what the option resolves to.
     """
-    if isinstance(stored, bool) != isinstance(composed, bool):
+    if isinstance(a, bool) != isinstance(b, bool):
         return False
-    return stored == composed
+    return a == b
 
 
 def storable_options(config, specs=None) -> list:
@@ -271,7 +275,7 @@ def storable_options(config, specs=None) -> list:
         spec = required.get(opt.name)
         if spec is None:
             continue
-        if opt.default is None or _defaults_agree(opt.default, spec.default):
+        if opt.default is None or values_agree(opt.default, spec.default):
             continue
         kept.append(BotOptionModel(name=opt.name, type=spec.type, default=opt.default, description=None))
     return kept

@@ -36,6 +36,7 @@ from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
+    BoolChoice,
     StrListLineEdit,
     make_option_widget,
     set_widget_value,
@@ -179,9 +180,69 @@ def test_reset_removes_the_override_row(qapp, settings):
     assert section.option_widgets["repeat"].isChecked() is True
 
 
+def test_typing_a_value_back_to_the_default_forgets_the_override(qapp, settings):
+    """Reverting by hand and pressing Reset are the same act and must agree.
+
+    An override storing the value the level below it already supplies marks the row
+    as changed while changing nothing -- and would then silently outrank an author
+    who later improved the declaration it happens to match.
+    """
+    config = _config([_repeat(default=True)])
+    section = SetupSection(settings=settings)
+    section.set_config(config)
+
+    section.option_widgets["repeat"].setChecked(False)
+    assert settings.get_option_override("test-bot", "repeat") is False
+
+    section.option_widgets["repeat"].setChecked(True)
+
+    assert settings.get("bot_option_overrides") == {}
+    assert section.resolution_for("repeat").source == bot_options.SOURCE_BOT_FILE
+
+
+def test_a_value_edit_keeps_the_control_it_was_made_in(qapp, settings):
+    """Rebuilding the list would delete the spin box under the arrow being clicked."""
+    config = _config([BotOptionModel(name="Passes", type="int", default=1)])
+    section = SetupSection(settings=settings)
+    section.set_config(config)
+    before = section.option_widgets["Passes"]
+
+    before.setValue(5)
+
+    assert section.option_widgets["Passes"] is before
+    assert settings.get_option_override("test-bot", "Passes") == 5
+
+
+def test_resetting_puts_the_resolved_value_back_on_screen(qapp, settings):
+    config = _config([BotOptionModel(name="Passes", type="int", default=1)])
+    section = SetupSection(settings=settings)
+    section.set_config(config)
+
+    section.option_widgets["Passes"].setValue(5)
+    section._on_reset("Passes")
+
+    assert section.option_widgets["Passes"].value() == 1
+    assert settings.get("bot_option_overrides") == {}
+
+
+def test_the_reset_button_is_enabled_only_while_a_value_is_overridden(qapp, settings):
+    config = _config([_repeat(default=True)])
+    section = SetupSection(settings=settings)
+    section.set_config(config)
+    chrome = section._chrome["repeat"]
+
+    assert not chrome.reset_btn.isEnabled()
+
+    section.option_widgets["repeat"].setChecked(False)
+    assert chrome.reset_btn.isEnabled()
+
+    section._on_reset("repeat")
+    assert not chrome.reset_btn.isEnabled()
+
+
 def test_a_false_override_is_a_choice_and_survives_a_rebuild(qapp, settings):
     """Absence is unset; a stored ``false`` is an answer. Nothing may prune it."""
-    config = _config([_repeat(default=True)])
+    config = _config([_repeat(default=True)])  # so False really is the user's choice
     section = SetupSection(settings=settings)
     section.set_config(config)
 
@@ -378,27 +439,69 @@ def test_the_dialog_refuses_a_duplicate_name(qapp):
     dlg.deleteLater()
 
 
-def test_the_dialog_can_declare_no_recommendation_at_all(qapp):
-    """A null declaration is what makes the app setting below it reachable."""
+def test_the_dialog_offers_both_answers_for_a_bool(qapp):
+    """Under a field captioned "Default", a lone tick box reads as True-or-nothing."""
     from bartlebot.gui.sidebar.sections.options_section import _AddOptionDialog
 
     dlg = _AddOptionDialog([])
-    dlg._name_edit.setText("Safety Delay")
-    dlg._select_type("float")
-    dlg._no_opinion.setChecked(True)
-    dlg._on_ok()
+    dlg._name_edit.setText("Silly option")
 
-    assert dlg.get_option().default is None
+    assert isinstance(dlg._default_widgets["bool"], BoolChoice)
+    assert dlg._default_widgets["bool"].value() is False
+
+    dlg._on_ok()
+    assert dlg.get_option().default is False
     dlg.deleteLater()
 
 
-def test_editing_a_null_declaration_opens_with_no_recommendation_ticked(qapp):
+def test_a_new_option_never_gets_a_null_declaration(qapp):
+    """Null means "use the level below", and a hand-added option has none."""
     from bartlebot.gui.sidebar.sections.options_section import _AddOptionDialog
 
-    opt = BotOptionModel(name="Safety Delay", type="float", default=None)
-    dlg = _AddOptionDialog(["Safety Delay"], existing_option=opt)
+    for opt_type in OPTION_TYPES:
+        dlg = _AddOptionDialog([])
+        dlg._name_edit.setText("Silly option")
+        dlg._select_type(opt_type)
+        dlg._on_ok()
 
-    assert dlg._no_opinion.isChecked()
+        assert dlg.get_option().default is not None
+        dlg.deleteLater()
+
+
+def test_editing_a_null_declaration_does_not_promote_it_to_a_value(qapp):
+    """Opening Edit to fix a description must not change what the option resolves to."""
+    opt = BotOptionModel(name="Safety Delay", type="float", default=None, description="old")
+    from bartlebot.gui.sidebar.sections.options_section import _AddOptionDialog
+
+    dlg = _AddOptionDialog(["Safety Delay"], existing_option=opt)
+    dlg._desc_edit.setText("new")
     dlg._on_ok()
+
     assert dlg.get_option().default is None
+    assert dlg.get_option().description == "new"
+    dlg.deleteLater()
+
+
+def test_a_null_bool_shows_as_neither_answer(qapp):
+    """The radio pair has a spare state, so the null is visible and not just kept."""
+    from bartlebot.gui.sidebar.sections.options_section import _AddOptionDialog
+
+    opt = BotOptionModel(name="repeat", type="bool", default=None)
+    dlg = _AddOptionDialog(["repeat"], existing_option=opt)
+
+    assert dlg._default_widgets["bool"].value() is None
+    dlg.deleteLater()
+
+
+def test_touching_the_default_of_a_null_declaration_replaces_it(qapp):
+    from bartlebot.gui.sidebar.sections.options_section import _AddOptionDialog
+
+    opt = BotOptionModel(name="repeat", type="bool", default=None)
+    dlg = _AddOptionDialog(["repeat"], existing_option=opt)
+
+    dlg._default_widgets["bool"].set_value(True)
+    dlg._default_touched = True  # what a click on the radio does
+    dlg._on_ok()
+
+    assert dlg.get_option().default is True
     dlg.deleteLater()

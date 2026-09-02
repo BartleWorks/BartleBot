@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
@@ -39,11 +40,11 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import bot_options
-from bartlebot.bot_options import UNSET, compose_options, is_set
+from bartlebot.bot_options import UNSET, compose_options, is_set, values_agree
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget
+from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, set_widget_value
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
@@ -56,10 +57,11 @@ logger = logging.getLogger(__name__)
 _PLACEHOLDER = "—"
 _BAR_WIDTH_PX = 3
 
-# What to print under a row whose value the user did not choose.  The override
-# source is deliberately absent: an overridden row already carries the bar and
-# the Reset button, and captioning it as well says the same thing three times.
-_INHERITED_CAPTION: dict[str, str] = {
+# What to print under a row, naming the level that answered.  Every level has an
+# entry, including the user's own: a caption that appears and disappears would
+# move every row beneath it each time a value was typed.
+_SOURCE_CAPTION: dict[str, str] = {
+    bot_options.SOURCE_OVERRIDE: "your value",
     bot_options.SOURCE_BOT_FILE: "from the bot",
     bot_options.SOURCE_APP_SETTING: "from the app setting",
     bot_options.SOURCE_NODE_DEFAULT: "from the node default",
@@ -67,15 +69,37 @@ _INHERITED_CAPTION: dict[str, str] = {
 
 
 class _OverrideBar(ThemedMixin, QFrame):
-    """The coloured gutter marking a row the user has overridden."""
+    """The gutter marking a row the user has overridden.
+
+    Always present and always the same width: it changes *colour* rather than
+    appearing, so a row does not shift sideways the moment a value is typed.
+    """
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setFixedWidth(_BAR_WIDTH_PX)
+        self._active = False
+        self.refresh_theme_styles()
+
+    def set_active(self, active: bool) -> None:
+        if active == self._active:
+            return
+        self._active = active
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"background: {THEME.accent}; border: none;")
+        colour = THEME.accent if self._active else "transparent"
+        self.setStyleSheet(f"background: {colour}; border: none;")
+
+
+@dataclass
+class _RowChrome:
+    """The parts of one row that change when its override state does."""
+
+    widget: QWidget
+    bar: _OverrideBar
+    reset_btn: QPushButton
+    caption: ThemedTextLabel
 
 
 class SetupSection(SidebarSection):
@@ -91,6 +115,8 @@ class SetupSection(SidebarSection):
         self._config: BotConfig | None = None
         self._settings = settings
         self._rows: list[QWidget] = []
+        self._composed: dict[str, object] = {}
+        self._chrome: dict[str, _RowChrome] = {}
         self._option_widgets: dict[str, QWidget] = {}
         self._get_clients: Callable[[], list] = lambda: []
 
@@ -193,13 +219,22 @@ class SetupSection(SidebarSection):
     # ------------------------------------------------------------------
 
     def _rebuild(self) -> None:
+        """Build the whole list. Only a *different set of options* needs this.
+
+        A value edit refreshes one row in place instead -- rebuilding would destroy
+        the control the user is still holding, which for a spin box means the arrow
+        they are clicking vanishes from under the pointer on the first click.
+        """
         for row in self._rows:
             self._rows_layout.removeWidget(row)
             row.deleteLater()
         self._rows.clear()
+        self._composed.clear()
         self._option_widgets.clear()
+        self._chrome.clear()
 
         options = compose_options(self._config) if self._config is not None else []
+        self._composed = {opt.name: opt for opt in options}
         if not options:
             self._empty_lbl.show()
             return
@@ -212,18 +247,23 @@ class SetupSection(SidebarSection):
             self._rows.append(row)
 
     def _build_row(self, opt, connected: int) -> QWidget:
-        resolution = self.resolution_for(opt.name)
-        overridden = resolution is not None and resolution.source == bot_options.SOURCE_OVERRIDE
-        value = resolution.value if resolution is not None else opt.default
+        """One option's row. Every piece of chrome is built once and updated after.
 
+        Nothing here appears or disappears with the override state: the bar keeps
+        its width and changes colour, Reset keeps its place and greys out, and the
+        caption always names a level. Chrome that comes and goes as you type moves
+        everything under it, which on a spin box means the second click of a pair
+        lands somewhere else.
+        """
         body = QWidget()
         body_layout = QVBoxLayout(body)
         body_layout.setContentsMargins(0, 0, 0, 0)
         body_layout.setSpacing(1)
 
+        resolution = self.resolution_for(opt.name)
         widget = make_option_widget(
             opt.type,
-            value,
+            resolution.value if resolution is not None else opt.default,
             connected=connected,
             tooltip=opt.description or "",
             label=opt.name,
@@ -234,16 +274,15 @@ class SetupSection(SidebarSection):
                 lbl.setToolTip(opt.description)
             body_layout.addWidget(lbl)
 
+        reset_btn = QPushButton("Reset")
+        reset_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
+
         value_row = QWidget()
         value_layout = QHBoxLayout(value_row)
         value_layout.setContentsMargins(0, 0, 0, 0)
         value_layout.setSpacing(4)
         value_layout.addWidget(widget, 1)
-        if overridden:
-            reset_btn = QPushButton("Reset")
-            reset_btn.setToolTip(self._reset_tooltip(opt))
-            reset_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
-            value_layout.addWidget(reset_btn, 0)
+        value_layout.addWidget(reset_btn, 0)
         body_layout.addWidget(value_row)
 
         if opt.description:
@@ -251,68 +290,114 @@ class SetupSection(SidebarSection):
             desc.setWordWrap(True)
             body_layout.addWidget(desc)
 
-        caption = _INHERITED_CAPTION.get(resolution.source) if resolution is not None else None
-        if caption is not None:
-            body_layout.addWidget(ThemedTextLabel(caption, color="text_disabled", css="font-size: 9px;"))
+        caption = ThemedTextLabel("", color="text_disabled", css="font-size: 9px;")
+        body_layout.addWidget(caption)
 
         connect_widget(widget, lambda new_value, name=opt.name: self._on_value_changed(name, new_value))
         self._option_widgets[opt.name] = widget
 
         # The bar is a sibling of the body, not a border on it: a stylesheet border
-        # set on the row would be inherited by every control inside it.  The unset
-        # rows carry an equally wide spacer so nothing shifts sideways when a value
-        # gains or loses its override.
+        # set on the row would be inherited by every control inside it.
+        bar = _OverrideBar()
         outer = QWidget()
         outer_layout = QHBoxLayout(outer)
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.setSpacing(5)
-        if overridden:
-            outer_layout.addWidget(_OverrideBar())
-        else:
-            spacer = QWidget()
-            spacer.setFixedWidth(_BAR_WIDTH_PX)
-            outer_layout.addWidget(spacer)
+        outer_layout.addWidget(bar)
         outer_layout.addWidget(body, 1)
+
+        self._chrome[opt.name] = _RowChrome(widget=widget, bar=bar, reset_btn=reset_btn, caption=caption)
+        self._refresh_row(opt.name)
         return outer
 
-    def _reset_tooltip(self, opt) -> str:
-        """Name the value a reset would fall back to, and the level it comes from."""
-        fallback = bot_options.resolve_option(
-            opt.name,
+    def _refresh_row(self, name: str) -> None:
+        """Re-mark one row from its current resolution, touching no other row."""
+        chrome = self._chrome.get(name)
+        resolution = self.resolution_for(name)
+        if chrome is None or resolution is None:
+            return
+        overridden = resolution.source == bot_options.SOURCE_OVERRIDE
+        chrome.bar.set_active(overridden)
+        chrome.reset_btn.setEnabled(overridden)
+        chrome.reset_btn.setToolTip(
+            self._reset_tooltip(name) if overridden else "Already the value this option resolves to"
+        )
+        chrome.caption.setText(_SOURCE_CAPTION.get(resolution.source, ""))
+
+    def _fallback_for(self, name: str) -> bot_options.OptionResolution | None:
+        """What *name* would resolve to with the user's override taken away.
+
+        Two callers, and they are the same question asked from opposite sides: the
+        Reset tooltip naming where the value would land, and a value edit asking
+        whether it has landed there already.
+        """
+        opt = self._composed.get(name)
+        if opt is None:
+            return None
+        return bot_options.resolve_option(
+            name,
             override=UNSET,
-            declaration=self._declared_default(opt.name),
+            declaration=self._declared_default(name),
             declared_type=opt.type,
-            app_value=self._app_value(opt.name),
+            app_value=self._app_value(name),
             spec_default=opt.default,
         )
-        where = _INHERITED_CAPTION.get(fallback.source, fallback.source)
-        return f"Reset to {fallback.value!r} ({where})"
+
+    def _reset_tooltip(self, name: str) -> str:
+        """Name the value a reset would fall back to, and the level it comes from."""
+        fallback = self._fallback_for(name)
+        if fallback is None:
+            return "Reset to the value this bot recommends"
+        return f"Reset to {fallback.value!r} ({_SOURCE_CAPTION.get(fallback.source, fallback.source)})"
 
     # ------------------------------------------------------------------
     # Edits
     # ------------------------------------------------------------------
 
     def _on_value_changed(self, name: str, value: Any) -> None:
+        """Store the user's value -- or forget it, when they have typed their way back.
+
+        Setting a control back to what the option already resolves to is the same
+        act as pressing Reset, and has to leave the same state behind. A row marked
+        as overridden while holding the value it would have had anyway is a lie
+        about what the user did, and it would then silently outrank an author who
+        later improved the declaration it happens to match. Every settings UI that
+        marks overrides this way drops the row instead; so does this one.
+        """
         if self._config is None:
             return
-        current = self._override(name)
-        if is_set(current) and current == value and isinstance(current, bool) == isinstance(value, bool):
+        fallback = self._fallback_for(name)
+        if fallback is not None and values_agree(fallback.value, value):
+            self._on_reset(name)
+            return
+        if values_agree(self._override(name), value):
             return
         try:
             self._sm().set_option_override(self._config.id, name, value)
         except Exception:
             logger.exception("Failed to store your value for option %r", name)
             return
-        self._rebuild()
+        self._refresh_row(name)
         self.values_changed.emit()
 
     def _on_reset(self, name: str) -> None:
+        """Forget the user's value for *name* and put the resolved one back on screen."""
         if self._config is None:
             return
+        had_override = is_set(self._override(name))
         try:
             self._sm().drop_option_override(self._config.id, name)
         except Exception:
             logger.exception("Failed to forget your value for option %r", name)
             return
-        self._rebuild()
-        self.values_changed.emit()
+        chrome = self._chrome.get(name)
+        fallback = self._fallback_for(name)
+        if chrome is not None and fallback is not None:
+            # Blocked, because writing the value back through the widget would come
+            # straight back round as an edit -- and land here again.
+            chrome.widget.blockSignals(True)
+            set_widget_value(chrome.widget, fallback.value)
+            chrome.widget.blockSignals(False)
+        self._refresh_row(name)
+        if had_override:
+            self.values_changed.emit()

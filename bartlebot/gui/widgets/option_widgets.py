@@ -22,10 +22,14 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QDoubleSpinBox,
+    QHBoxLayout,
     QLineEdit,
+    QRadioButton,
     QSpinBox,
     QWidget,
 )
@@ -45,6 +49,58 @@ TYPE_LABELS: dict[str, str] = {
     "str_list": "List of text",
     "player_list": "Players",
 }
+
+
+class BoolChoice(QWidget):
+    """An explicitly two-way bool: True and False as a radio pair.
+
+    A checkbox is the right control in a *list* of options, where the caption is
+    the option's name and a tick plainly means yes.  On its own, under a field
+    labelled "Default", a lone box captioned "True" reads as though False were
+    unavailable -- and now that a declaration can also be *absent*, an unticked
+    box is genuinely ambiguous between "False" and "nothing chosen".  Two radios
+    say all three states without a word of explanation: True, False, or neither.
+    """
+
+    changed = pyqtSignal()
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._true = QRadioButton("True")
+        self._false = QRadioButton("False")
+        self._group = QButtonGroup(self)
+        self._group.addButton(self._true)
+        self._group.addButton(self._false)
+        self._group.buttonClicked.connect(lambda _btn: self.changed.emit())
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+        layout.addWidget(self._true)
+        layout.addWidget(self._false)
+        layout.addStretch()
+
+    def value(self) -> bool | None:
+        """``True``, ``False``, or ``None`` while neither has been chosen."""
+        if self._true.isChecked():
+            return True
+        if self._false.isChecked():
+            return False
+        return None
+
+    def set_value(self, value: Any) -> None:
+        if value is None:
+            # A QButtonGroup enforces exclusivity on its own, so clearing both
+            # radios means relaxing the group rather than the buttons' own
+            # autoExclusive -- which is why unsetting one silently did nothing.
+            self._group.setExclusive(False)
+            self._true.setChecked(False)
+            self._false.setChecked(False)
+            self._group.setExclusive(True)
+        elif value:
+            self._true.setChecked(True)
+        else:
+            self._false.setChecked(True)
 
 
 class StrListLineEdit(QLineEdit):
@@ -81,16 +137,19 @@ def make_option_widget(
     connected: int = 0,
     tooltip: str = "",
     label: str = "",
+    explicit_bool: bool = False,
 ) -> QWidget:
     """Build the control that edits an option of *opt_type*, showing *value*.
 
     *connected* is how many clients are hooked right now; it only greys the player
     checkboxes that have nobody behind them.  *label* is the checkbox caption a
-    ``bool`` carries instead of a separate field label.
+    ``bool`` carries instead of a separate field label.  Pass *explicit_bool* where
+    a bool is not sitting in a list of named options and needs to state both
+    answers for itself -- see :class:`BoolChoice`.
     """
     widget: QWidget
     if opt_type == "bool":
-        widget = QCheckBox(label)
+        widget = BoolChoice() if explicit_bool else QCheckBox(label)
     elif opt_type == "int":
         widget = QSpinBox()
         widget.setRange(-2_147_483_648, 2_147_483_647)
@@ -120,7 +179,9 @@ def set_widget_value(widget: QWidget, value: Any) -> None:
     strands every value written under the old one -- and a control that refuses to
     build is worse than one showing an empty-handed value the user can correct.
     """
-    if isinstance(widget, QCheckBox):
+    if isinstance(widget, BoolChoice):
+        widget.set_value(value)
+    elif isinstance(widget, QCheckBox):
         widget.setChecked(bool(value))
     elif isinstance(widget, QSpinBox):
         widget.setValue(_as_int(value))
@@ -136,6 +197,8 @@ def set_widget_value(widget: QWidget, value: Any) -> None:
 
 def widget_value(widget: QWidget) -> Any:
     """Read the current value out of *widget*, in the type the option declares."""
+    if isinstance(widget, BoolChoice):
+        return widget.value()
     if isinstance(widget, QCheckBox):
         return widget.isChecked()
     if isinstance(widget, (QSpinBox, QDoubleSpinBox)):
@@ -156,7 +219,9 @@ def connect_widget(widget: QWidget, callback: Callable[[Any], None]) -> None:
     edit writes an override row to ``settings.json``, and a save per character
     typed is a disk write per character typed.
     """
-    if isinstance(widget, QCheckBox):
+    if isinstance(widget, BoolChoice):
+        widget.changed.connect(lambda: callback(widget_value(widget)))
+    elif isinstance(widget, QCheckBox):
         widget.toggled.connect(lambda _checked: callback(widget_value(widget)))
     elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
         widget.valueChanged.connect(lambda _v: callback(widget_value(widget)))
