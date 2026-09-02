@@ -856,8 +856,9 @@ class TestBatchRecovery:
         harness.recovery_error.emit.assert_called_once()
         message: str = harness.recovery_error.emit.call_args[0][0]
         assert "user1" in message and "user2" in message
-        # Nothing is driven when the user is doing the logging in.
-        assert launch.await_args.kwargs["drive"] is None
+        # The drive still runs — it clears the loading screens so the windows arrive at
+        # character select — it just stops there rather than picking anyone.
+        assert launch.await_args.kwargs["drive"] is not None
         assert harness._client_order == ["user1", "user2"]
 
 

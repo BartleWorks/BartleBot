@@ -247,11 +247,17 @@ class ClientManager(QObject):
         class can answer. Recovery uses it too, so a relaunched client and a freshly
         launched one take exactly the same path in.
 
-        The single place the auto-select setting is read. With it off the window is left
-        at character select for the user, and False says so — callers that need the client
-        anyway (recovery) fall back to await_client_in.
+        The single place the auto-select setting is read. With it off the loading screens
+        are still cleared — they carry no decision — but the window is then left sitting at
+        character select for the user to pick from, and False says so: the client is not
+        in-game. Callers that need it anyway (recovery) fall back to await_client_in.
         """
         if not SettingsManager.instance().auto_select_character:
+            await auto_select.drive_to_character_select(
+                expected_title,
+                lambda: self.has_client_titled(expected_title),
+                lambda: self.pending_client_titled(expected_title),
+            )
             return False
         return await auto_select.drive_client_in(
             expected_title,
@@ -1227,7 +1233,10 @@ class ClientManager(QObject):
                 await launch_accounts(
                     [(t.username, t.password, t.display_name) for t in group],
                     resolution=resolution,
-                    drive=_drive if auto_select_on else None,
+                    # Handed the drive either way: with auto-select off it presses nothing
+                    # that picks a character, it just clears the loading screens so the
+                    # user arrives at a character-select screen rather than a black one.
+                    drive=_drive,
                 )
             except Exception:
                 logger.exception(
@@ -1238,7 +1247,8 @@ class ClientManager(QObject):
                 return
 
         if not auto_select_on:
-            # Nothing to drive, so every window is waited on at once rather than in turn.
+            # The drive stopped at character select, so nothing above answered whether the
+            # client got in — wait every window out at once rather than in turn.
             results = await asyncio.gather(*[self.await_client_in(t.title) for t in targets])
             reached = {t.title: ok for t, ok in zip(targets, results)}
 

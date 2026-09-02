@@ -23,6 +23,7 @@ from bartlebot.launcher.auto_select import (
     _WM_KEYDOWN,
     auto_select_character,
     drive_client_in,
+    drive_to_character_select,
     wait_for_client_in,
 )
 from bartlebot.launcher.launch_profile import launch_account
@@ -283,6 +284,53 @@ async def test_press_failure_is_retried(keys, fast):
 
 
 # ---------------------------------------------------------------------------
+# drive_to_character_select — the auto-select-off drive
+# ---------------------------------------------------------------------------
+
+
+async def test_loading_screens_are_skipped_with_auto_select_off(keys, fast, game):
+    """The screens carry no decision, so they are cleared either way."""
+    reached = await drive_to_character_select(TITLE, lambda: False, lambda: game)
+    assert reached is True
+    assert _VK_SPACE in keys.keys_down
+
+
+async def test_play_is_never_pressed_with_auto_select_off(keys, fast, game):
+    """The whole point: the client is delivered to character select and left there."""
+    await drive_to_character_select(TITLE, lambda: False, lambda: game)
+    assert _VK_RETURN not in keys.keys_down
+    assert game.screen == "charselect"
+
+
+async def test_nothing_is_pressed_once_character_select_is_up(keys, fast, game):
+    """The drive returns at character select rather than idling on it and pressing."""
+    await drive_to_character_select(TITLE, lambda: False, lambda: game)
+    assert keys.keys_down.count(_VK_SPACE) <= game.polls
+
+
+async def test_no_blind_fallback_with_auto_select_off(keys, fast):
+    """Blind means Enter, which picks a character — so there is no fallback here."""
+    blind = FakeGameClient(root_ready=False)
+    reached = await drive_to_character_select(TITLE, Hooked(after=None), lambda: blind)
+    assert reached is False
+    assert keys.posted == []
+
+
+async def test_returns_immediately_if_the_client_is_already_in_game(keys, fast, game):
+    reached = await drive_to_character_select(TITLE, lambda: True, lambda: game)
+    assert reached is True
+    assert keys.posted == []
+
+
+async def test_character_select_drive_times_out_without_raising(keys, fast):
+    stuck = FakeGameClient(loading_polls=10**6)
+    with patch.object(auto_select, "is_visible_by_path", lambda c, path: c.is_visible(path)):
+        reached = await drive_to_character_select(TITLE, Hooked(after=None), lambda: stuck, timeout=0.3)
+    assert reached is False
+    assert _VK_RETURN not in keys.keys_down
+
+
+# ---------------------------------------------------------------------------
 # wait_for_client_in — the auto-select-off path
 # ---------------------------------------------------------------------------
 
@@ -373,13 +421,22 @@ class _Gate:
         self._handler = MagicMock(clients=[])
 
 
-async def test_setting_off_leaves_the_window_alone(keys, fast):
-    """Auto-select off means a launched window is left at character select, untouched."""
-    with patch("bartlebot.client_manager.SettingsManager") as sm:
+async def test_setting_off_drives_only_as_far_as_character_select(keys, fast):
+    """Auto-select off still clears the loading screens — it just picks no character.
+
+    False is still the answer: the client is not in-game, and recovery has to keep waiting.
+    """
+    driver = AsyncMock(return_value=True)
+    with (
+        patch("bartlebot.client_manager.SettingsManager") as sm,
+        patch.object(auto_select, "drive_to_character_select", driver),
+        patch.object(auto_select, "drive_client_in", AsyncMock(return_value=True)) as full,
+    ):
         sm.instance.return_value = MagicMock(auto_select_character=False)
         reached = await _Gate().drive_client_in(TITLE)
     assert reached is False
-    assert keys.posted == []
+    driver.assert_awaited_once()
+    full.assert_not_awaited()
 
 
 async def test_setting_on_runs_the_drive(keys, fast):
