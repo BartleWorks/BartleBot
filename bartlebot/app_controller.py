@@ -339,17 +339,28 @@ class AppController(QObject):
         # A fork gets its own identity. The copy would otherwise share the original's
         # id, and with it every value the user has stored against that bot -- and the
         # remembered combat strategy, which is a fork's to choose again.
+        old_id = self._loaded_config.id
         self._loaded_config.id = str(uuid4())
         try:
             self._loaded_config.save(path)
-            self._last_save_path = path
-            self._has_unsaved_changes = False
-            self._delete_autosave(old_save_path)
-            self._window.set_bot_name(self._loaded_config.name, Path(path).name)
-            self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
-            self._window.bot_canvas.refresh_placeholder()
         except Exception as e:
+            # Nothing was written, so the file on disk is still the original and the
+            # loaded bot is still that bot. Keeping the minted id here would orphan
+            # every value the user has stored against it for the rest of the session.
+            self._loaded_config.id = old_id
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
+            return
+        self._last_save_path = path
+        self._has_unsaved_changes = False
+        self._delete_autosave(old_save_path)
+        self._window.set_bot_name(self._loaded_config.name, Path(path).name)
+        self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
+        self._window.bot_canvas.refresh_placeholder()
+        # A new id resolves against a different set of stored values -- none, for a
+        # fresh fork -- so every surface displaying one has to re-resolve. Without
+        # this, Setup goes on showing the original's overrides against a bot that
+        # does not have them, and only a reopen tells the truth.
+        self._window.left_sidebar.refresh_options(self._loaded_config)
 
     # ------------------------------------------------------------------
     # Bot control
