@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import restricted_zones
+from bartlebot import bot_options, restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
+from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +98,10 @@ class BotMachine:
         self._pass_count: int = 0
         self._states_executed: int = 0
         self._results_seen: Counter[str] = Counter()
+        # Options whose resolution has already been logged this run. See get_option().
+        self._logged_option_sources: set[str] = set()
+        # name -> BotOptionSpec, composed lazily from the registry. See _option_spec().
+        self._option_specs: dict[str, object] | None = None
 
         self._state_map = {s["id"]: s for s in config["states"]}
         # Compiled compound flag expressions from to_machine_config().
@@ -164,26 +169,95 @@ class BotMachine:
     # --- Options ---
 
     def get_option(self, name: str, default=None):
-        """Return the current value of a bot option, or default if not found.
+        """Return the effective value of a bot option.
 
-        Checks the current state's per-node option_overrides first, then falls
-        back to the bot-wide option value. Reads live from BotConfig so GUI
-        changes take effect without restarting the machine.
+        Four levels, most local first -- the user's own value, the author's
+        declaration, the app setting, then the node's default. The policy is in
+        :mod:`bartlebot.bot_options`; this only gathers the inputs, so the
+        precedence rules stay testable without a settings file or a bot.
+
+        *default* is the caller's floor, used when nothing else has an answer --
+        chiefly ``_flag_<name>`` asking about an option that no longer exists.
+
+        Reads live from BotConfig, so a GUI edit takes effect without restarting
+        the machine.
         """
-        # Per-node override takes priority
-        try:
-            state_def = self._state_map.get(self.state, {})
-            overrides = state_def.get("option_overrides") or {}
-            if name in overrides:
-                return overrides[name]
-        except AttributeError:
-            pass  # self.state not yet initialised
-        if self._bot_config is None:
+        declaration = None
+        declared_type = None
+        declared = False
+        if self._bot_config is not None:
+            for opt in self._bot_config.options:
+                if opt.name == name:
+                    declaration = opt.default
+                    declared_type = opt.type
+                    declared = True
+                    break
+
+        spec = self._option_spec(name)
+        if not declared and spec is None:
             return default
-        for opt in self._bot_config.options:
-            if opt.name == name:
-                return opt.default
-        return default
+        if declared_type is None and spec is not None:
+            declared_type = spec.type
+
+        resolution = bot_options.resolve_option(
+            name,
+            override=self._option_override(name),
+            declaration=declaration,
+            declared_type=declared_type,
+            app_value=self._app_option_value(name),
+            spec_default=spec.default if spec is not None else default,
+        )
+        # Once per option per run: get_option("Safety Delay") fires on nearly every
+        # node, and a line each would be most of the session log.
+        if name not in self._logged_option_sources:
+            self._logged_option_sources.add(name)
+            self._log_machine(f"Option {name!r} = {resolution.value!r}, from {resolution.source}")
+        return resolution.value
+
+    def _option_override(self, name: str):
+        """The user's stored value for *name*, or UNSET."""
+        if self._bot_config is None:
+            return bot_options.UNSET
+        try:
+            return SettingsManager.instance().get_option_override(self._bot_config.id, name)
+        except Exception:
+            logger.exception("Failed to read the stored value for option %r", name)
+            return bot_options.UNSET
+
+    def _app_option_value(self, name: str):
+        """The app setting behind *name*, or UNSET when the option has none."""
+        key = bot_options.APP_SETTING_KEYS.get(name)
+        if key is None:
+            return bot_options.UNSET
+        try:
+            return SettingsManager.instance().get("general", key, default=bot_options.UNSET)
+        except Exception:
+            logger.exception("Failed to read app setting %r", key)
+            return bot_options.UNSET
+
+    def _option_spec(self, name: str):
+        """The BotOptionSpec declaring *name*, preferring this bot's own nodes.
+
+        Several nodes declare Safety Delay with slightly different text, so which
+        one answers matters; the bot's own graph is the honest source, and the
+        whole registry is only a fallback for an option whose node has been cut.
+        """
+        if self._option_specs is None:
+            from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415 - avoids an import cycle
+
+            specs: dict[str, object] = {}
+            states = self._bot_config.states if self._bot_config is not None else []
+            for state in states:
+                spec = NODE_SPECS.get(state.node_type)
+                if spec is None:
+                    continue
+                for req in spec.required_bot_options:
+                    specs.setdefault(req.name, req)
+            for spec in NODE_SPECS.values():
+                for req in spec.required_bot_options:
+                    specs.setdefault(req.name, req)
+            self._option_specs = specs
+        return self._option_specs.get(name)
 
     # --- Logging ---
 

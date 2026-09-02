@@ -12,6 +12,7 @@ from bartlebot.bot.schema import BotConfig
 # ---------------------------------------------------------------------------
 
 VALID_DATA = {
+    "id": "test-bot",
     "name": "Test Bot",
     "initial": "state_a",
     "recovery_state": "state_a",

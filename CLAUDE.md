@@ -317,6 +317,50 @@ precedent.
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
+#### Bot options: whose value is it
+
+`BotOptionModel.default` is the **author's** recommended value, never the user's
+current one. The user's value lives in `settings.json` under
+`bot_option_overrides: {bot_id: {option_name: value}}` — value only, no snapshot of
+what it overrode — reached through `get_option_override` /
+`set_option_override` / `drop_option_override`, which follow
+`get_active_strategy`'s shape.
+
+`machine.get_option()` resolves four levels, most local first, and logs which one
+answered — once per option per run, because `get_option("Safety Delay")` fires on
+nearly every node:
+
+```
+user override  ->  declaration (if non-null)  ->  app setting  ->  BotOptionSpec.default
+```
+
+The policy is `bartlebot/bot_options.py`: pure, like `bartlebot/relog.py` — no Qt,
+no settings, no client, so precedence is testable without any of them. The machine
+gathers the four inputs; `resolve_option` decides between them and never raises.
+
+Four things that are load-bearing:
+
+- **A declaration of `None` means the author has no opinion.** Without it the app
+  setting is unreachable, because a declaration is written for every required
+  option — whichever level sits in the middle would be dead weight. This is
+  `tri_bool` generalised from a param type to a property of every declaration.
+- **Absence is unset; a stored `[]` or `false` is a choice.** Never prune a falsy
+  override. `exclude_none=True` in `BotConfig.save` sets the same trap in the bot
+  file, which is what `tri_bool` already relies on.
+- **`BotConfig.id` is required, with no `default_factory`.** A minted id is
+  indistinguishable from a real one, so a file missing it would take a fresh
+  identity on every load and lose every value keyed to it. Save As mints a new id
+  deliberately — a fork is a different bot, and inherits neither the overrides nor
+  the combat strategy.
+- **There is no prune sweep, and must not be one.** An option name is composed
+  from whichever nodes are in the graph right now, on every graph edit, so cutting
+  a node and pasting it back would drop the user's value in between. A dead row
+  cannot affect a resolution either. Overrides go when the user deletes the option.
+
+Nothing rewrites an option on load. `_apply_bot_defaults` used to overwrite Safety
+Delay from the app setting on open, which is why `bots/` moved on every run;
+`test_opening_and_saving_a_bot_changes_none_of_its_options` is what keeps it still.
+
 #### App settings vs. node params
 
 An app setting that a node param also expresses must never be applied by rewriting

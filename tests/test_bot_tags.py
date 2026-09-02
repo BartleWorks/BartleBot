@@ -48,6 +48,7 @@ def test_non_string_entries_are_skipped():
 
 def _minimal_bot(**extra) -> dict:
     return {
+        "id": "test-bot",
         "name": "T",
         "initial": "s1",
         "recovery_state": "s1",

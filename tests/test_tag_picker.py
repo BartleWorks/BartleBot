@@ -133,6 +133,7 @@ def test_a_theme_change_reapplies_the_stylesheet_without_recursing(qapp):
 def _bot(**extra) -> BotConfig:
     return BotConfig.model_validate(
         {
+            "id": "test-bot",
             "name": "T",
             "initial": "s1",
             "recovery_state": "s1",

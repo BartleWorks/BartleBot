@@ -395,6 +395,7 @@ def test_format_players(players, expected):
 def _config(*states: tuple[str, str | None, bool]) -> BotConfig:
     """Build a BotConfig from (state_id, label, uses_bot_default) triples."""
     return BotConfig(
+        id="test-bot",
         name="Test Bot",
         initial="s0",
         recovery_state="s0",
@@ -494,6 +495,7 @@ def test_legacy_use_default_duel_profile_is_still_honored(tmp_path):
     """Users' un-migrated bots use the pre-v3 param name."""
     bcs = _bcs(tmp_path)
     config = BotConfig(
+        id="test-bot",
         name="Legacy Bot",
         initial="s1",
         recovery_state="s1",
@@ -552,6 +554,7 @@ def test_exposed_combat_states_ignores_non_combat_nodes():
 def test_exposed_combat_states_defaults_missing_param_to_using_the_default():
     """A handle_combat state with no param at all is not exposed."""
     config = BotConfig(
+        id="test-bot",
         name="B",
         initial="s1",
         recovery_state="s1",
@@ -688,6 +691,7 @@ def test_inline_state_assignment_label_uses_the_state_label_when_config_is_given
         ],
     )
     config = BotConfig(
+        id="test-bot",
         name="Bot",
         initial="s0",
         recovery_state="s0",
@@ -723,6 +727,7 @@ def test_state_assignment_with_empty_inline_config_is_reported_as_unassigned(tmp
     """An assignment row exists but was never filled in — same as not being there."""
     bcs = _bcs(tmp_path, state_assignments=[StateAssignment(state_ids=["state_9"])])
     config = BotConfig(
+        id="test-bot",
         name="Bot",
         initial="s0",
         recovery_state="s0",
@@ -755,6 +760,7 @@ def test_state_with_nonempty_inline_config_is_not_reported_as_unassigned(tmp_pat
         ],
     )
     config = BotConfig(
+        id="test-bot",
         name="Bot",
         initial="s0",
         recovery_state="s0",
@@ -781,6 +787,7 @@ def test_unassigned_fallback_message_reflects_inline_default(tmp_path: Path):
         state_assignments=[StateAssignment(state_ids=["state_9"])],  # empty inline — unassigned
     )
     config = BotConfig(
+        id="test-bot",
         name="Bot",
         initial="s0",
         recovery_state="s0",

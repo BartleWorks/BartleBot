@@ -164,7 +164,7 @@ def test_players_on_both_teams_alone_is_not_a_pvp_duel():
 
 def _config(states):
     return BotConfig.model_validate(
-        {"name": "t", "initial": "s0", "recovery_state": "s0", "states": states, "transitions": []}
+        {"id": "test-bot", "name": "t", "initial": "s0", "recovery_state": "s0", "states": states, "transitions": []}
     )
 
 

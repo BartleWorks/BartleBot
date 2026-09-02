@@ -6,6 +6,7 @@ from bartlebot.bot.schema import BotConfig, DropModel
 from scripts.migrate_drop_entries import migrate_drops
 
 _MINIMAL = {
+    "id": "test-bot",
     "name": "Test Bot",
     "initial": "start",
     "recovery_state": "start",
