@@ -13,6 +13,14 @@ Two shapes, because they do different jobs:
   removing the filter or the tag it stands for is the whole point of it being there.
 
 Both take their colour from the same call, so the sizes differ and the hues never do.
+
+:class:`NeutralPill` is the odd one out and lives here for the shape rather than the
+palette: a caption that wants to look like a pill without claiming a tag colour.
+
+:class:`AccountPill` is the other odd one: it claims a colour, but from the account
+palette rather than the tag one, and it wears it as an outline instead of a fill.
+See its docstring for why the two colour systems can share a screen without reading
+as one.
 """
 
 from __future__ import annotations
@@ -21,6 +29,7 @@ from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import QLabel, QPushButton, QWidget
 
 from bartlebot.bot_tags import tag_group
+from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.tag_picker import group_accent
 
@@ -94,6 +103,94 @@ class TagChip(QPushButton):
             )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
+            )
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
+class NeutralPill(QLabel):
+    """A small, inert, grey pill for a caption that is not a tag.
+
+    A bot card's version, a launch profile's resolution — descriptive text that wants
+    the pill *shape* without claiming a tag colour. Colour on these cards means "tag
+    group", and spending an accent on a version number made the loudest pill the one
+    carrying the least information.
+
+    ``pill_neutral_bg`` is a true grey on purpose: the blue-grey ``chip_neutral_bg``
+    read as a third tag colour beside the blue Rewards pill.
+
+    Owns its own colour, like :class:`TagPill`. The predecessor was a factory returning
+    a bare ``QLabel`` for the caller to restyle from ``apply_theme_styles``, which put
+    the staleness on every caller — see the themed-helper note in CLAUDE.md.
+    """
+
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._applying_style = False
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFixedHeight(14)
+        self._restyle()
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            self.setStyleSheet(pill_style(THEME.pill_neutral_bg, THEME.pill_text))
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
+class AccountPill(QLabel):
+    """A pill naming one account, outlined in that account's colour.
+
+    Outlined rather than filled, and with ordinary text rather than coloured text.
+    Both follow from where it is used: a launch profile shows one of these per
+    account, so four of them sit in a row, and four saturated fills make the row
+    the loudest thing on a screen whose point is the profile's *name*. The colour
+    is a match target — you find the account card carrying the same hue — and an
+    outline plus a low-alpha tint is enough to match on while leaving the name at
+    full contrast, which coloured text at 9px is not.
+
+    That the shape differs from :class:`TagPill` is the other half of it: tags mean
+    something different by colour, and the two palettes never have to be told apart
+    because a filled pill and an outlined one are not the same object.
+
+    Holds the palette *slot*, not a colour — like :class:`TagPill` holding its tag —
+    so a theme switch re-resolves rather than repainting a stale hex.
+    """
+
+    def __init__(self, text: str, color_key: int, parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._color_key = color_key
+        self._applying_style = False
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFixedHeight(16)
+        self._restyle()
+
+    @property
+    def color_key(self) -> int:
+        return self._color_key
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            self.setStyleSheet(
+                f"background: {account_tint(self._color_key)}; color: {THEME.text};"
+                f" font-size: 9px; font-weight: bold; border-radius: 8px;"
+                f" border: 1px solid {account_accent(self._color_key)}; padding: 0px 6px;"
             )
         finally:
             self._applying_style = False

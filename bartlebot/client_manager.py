@@ -19,6 +19,7 @@ from bartlebot.nodes.timing import (
     RELOG_WATCH_INTERVAL,
 )
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.tile_slots import TileSlot, build_tile_slots
 from bartlebot.utils.process_resources import gdi_object_count
 from bartlebot.utils.window_kill import force_close_client
 
@@ -108,6 +109,10 @@ class ClientManager(QObject):
         # Account-level user id per window, once one has been read. Identifies a client
         # BartleBot did not launch, whose title carries no account tag.
         self._hwnd_user_ids: dict[int, int] = {}
+        # Character roster per account, loaded from keyring on first use. Cached because
+        # the learning pass runs every client-loop tick and a keyring read is not free;
+        # this process is the only writer, so the cache cannot go stale under us.
+        self._rosters: dict[str, list[dict]] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
         self._client_order: list[str | None] = []
         # Slots pending recovery: original_position → username
@@ -242,11 +247,17 @@ class ClientManager(QObject):
         class can answer. Recovery uses it too, so a relaunched client and a freshly
         launched one take exactly the same path in.
 
-        The single place the auto-select setting is read. With it off the window is left
-        at character select for the user, and False says so — callers that need the client
-        anyway (recovery) fall back to await_client_in.
+        The single place the auto-select setting is read. With it off the loading screens
+        are still cleared — they carry no decision — but the window is then left sitting at
+        character select for the user to pick from, and False says so: the client is not
+        in-game. Callers that need it anyway (recovery) fall back to await_client_in.
         """
         if not SettingsManager.instance().auto_select_character:
+            await auto_select.drive_to_character_select(
+                expected_title,
+                lambda: self.has_client_titled(expected_title),
+                lambda: self.pending_client_titled(expected_title),
+            )
             return False
         return await auto_select.drive_client_in(
             expected_title,
@@ -276,6 +287,10 @@ class ClientManager(QObject):
                 self._client_order[idx_a],
             )
         self._drops_widget.swap_clients(idx_a, idx_b)
+        # Both numbers moved — the slots the tiles sit in and the player indices their
+        # captions read from — so the view is re-derived rather than relabelled. The tiles
+        # themselves are re-keyed, not rebuilt, so no game window is re-parented.
+        self._sync_tiles()
         self.clients_changed.emit(self._clients)
         self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
 
@@ -368,7 +383,7 @@ class ClientManager(QObject):
 
     def _finish_hook_change(self, prev_clients: list) -> None:
         """Reconcile embedding, machine state, and listeners after a hook add/remove."""
-        self._sync_embedded_clients(prev_clients, self._clients)
+        self._sync_tiles()
         if self._machine:
             self._machine.set_clients(self._clients)
         self.clients_changed.emit(list(self._clients))
@@ -392,6 +407,14 @@ class ClientManager(QObject):
                 excluded = self._unhooked_hwnds | self._activating_hwnds | self._failed_hook_hwnds
                 clients = [c for c in clients if c.window_handle not in excluded]
 
+                # Identify windows by title, over *every* live window rather than only the
+                # hooked ones. The launcher titles a window right after login, so this is
+                # what lets a client still at character select be matched to its account,
+                # given a slot below, and put on screen — which is the whole point of
+                # embedding before a character is in game. It is title reads and a window
+                # rect, no memory, so an unhooked window costs nothing here.
+                self._refresh_account_map(self._handler.clients)
+
                 # Clean up _unhooked_clients whose game windows have since closed.
                 handler_hwnds = {c.window_handle for c in self._handler.clients}
                 self._failed_hook_hwnds &= handler_hwnds
@@ -408,8 +431,12 @@ class ClientManager(QObject):
                     if self._clients:
                         removed_hwnds = {c.window_handle for c in self._clients}
                         self._on_clients_removed(removed_hwnds)
-                    self._sync_embedded_clients(self._clients, [])
                     self._clients = []
+                    # Not a return to the launch screen: this branch is also the whole of a
+                    # launch, from the first window appearing until the first character is
+                    # in game, and those windows have tiles.
+                    self._place_pending_accounts()
+                    self._sync_tiles()
                     if self._machine:
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit([])
@@ -417,10 +444,7 @@ class ClientManager(QObject):
                     await asyncio.sleep(CLIENT_DETECT_INTERVAL_IDLE)
                     continue
 
-                # Update the account map for any clients whose titles are now known.
-                self._refresh_account_map(clients)
-
-                # Then place whatever the titles could not: a window BartleBot did not
+                # Place whatever the titles could not: a window BartleBot did not
                 # launch carries no account tag, and is identified by what it reports in
                 # memory instead. Runs before the comparison below so an adopted client
                 # is already placed when its slot is assigned.
@@ -450,24 +474,18 @@ class ClientManager(QObject):
                     for c in new_additions:
                         username = self._hwnd_account_map.get(c.window_handle)
                         if username:
-                            recovery_pos = next(
-                                (pos for pos, u in self._pending_recovery.items() if u == username),
-                                None,
-                            )
-                            if recovery_pos is not None:
-                                # Recovering client — restore to original slot rather than appending.
-                                self._client_order[recovery_pos] = username
-                                self._vacated_slots.pop(username, None)
-                            else:
-                                self._assign_slot(username)
+                            self._place_account(username)
 
-                    ordered = self._build_ordered_clients(clients)
-                    self._sync_embedded_clients(self._clients, ordered)
-                    self._clients = ordered
+                    self._clients = self._build_ordered_clients(clients)
                     if self._machine:
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit(self._clients)
                     self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
+                # Windows still logging in or choosing a character reach neither branch
+                # above — they are not clients yet — so they are placed and drawn here.
+                self._place_pending_accounts()
+                self._sync_tiles()
 
                 # Keep wizard names current: notice character switches, and read the name
                 # for any client that does not have one. One uint64 read per client per
@@ -481,20 +499,21 @@ class ClientManager(QObject):
                 # first would announce names to tiles that do not exist yet — and the next
                 # tick would see no change and stay quiet.
                 await self._refresh_wizard_names(self._clients)
+                self._learn_character_roster(self._clients)
 
                 await asyncio.sleep(CLIENT_DETECT_INTERVAL)
 
             except MemoryReadError:
-                self._sync_embedded_clients(self._clients, [])
                 self._clients = []
+                self._game_view.unembed_all()
                 if self._machine:
                     self._machine.set_clients(self._clients)
                 self.clients_changed.emit([])
                 self.all_clients_changed.emit([], list(self._unhooked_clients))
                 await asyncio.sleep(CLIENT_DETECT_INTERVAL)
             except Exception:
-                self._sync_embedded_clients(self._clients, [])
                 self._clients = []
+                self._game_view.unembed_all()
                 if self._machine:
                     self._machine.set_clients(self._clients)
                 self.clients_changed.emit([])
@@ -566,6 +585,70 @@ class ClientManager(QObject):
         if changed or names != self._last_wizard_names:
             self._last_wizard_names = names
             self.wizard_names_changed.emit(list(names))
+
+    def _learn_character_roster(self, clients: list) -> None:
+        """Record which characters each identified account has, for the launch screen.
+
+        The launch screen has to describe an account that is not running, and nothing
+        else in the app remembers a character past the life of its window. This is the
+        one moment both halves are in hand: a live client whose account the map has
+        placed, whose name the cache holds, and whose character id says which character
+        that name belongs to.
+
+        Cheap by construction. Both reads are dict lookups into caches the loop has
+        already filled — no memory access of its own — and a keyring write only happens
+        when the roster actually changes, which for a stable set of characters is once
+        each, ever.
+
+        Never raises: this runs inside the client loop, whose MemoryReadError branch
+        empties the client list, so an exception escaping here would look like every
+        client vanishing at once. character_roster's own calls swallow their failures,
+        so the remaining risk is a client object going away mid-pass.
+        """
+        from bartlebot import character_roster, wizard_names  # noqa: PLC0415
+
+        for client in clients:
+            try:
+                username = self._hwnd_account_map.get(client.window_handle)
+                if not username:
+                    continue  # unidentified — an adopted window we have never launched
+                name = wizard_names.cached_name(client)
+                gid = wizard_names.cached_character_id(client)
+                if not name or gid == wizard_names.NO_CHARACTER:
+                    continue  # at character select, mid-login, or the name is not read yet
+                roster = self._rosters.get(username)
+                if roster is None:
+                    roster = character_roster.load(username)
+                    self._rosters[username] = roster
+                updated = character_roster.upsert(roster, gid, name)
+                if updated == roster:
+                    continue
+                self._rosters[username] = updated
+                if character_roster.save(username, updated):
+                    # No name and no id in the message: a log line naming a wizard is the
+                    # thing the roster's keyring storage exists to avoid, and the count is
+                    # what makes this line useful anyway.
+                    logger.info(
+                        "Learned a character for account '%s' (%d known)",
+                        username,
+                        len(updated),
+                    )
+            except Exception:
+                logger.debug("Could not update the character roster for a client", exc_info=True)
+
+    def characters_for(self, username: str) -> list[dict]:
+        """The known characters for *username*, newest last. Never raises.
+
+        Public because the launch screen asks about accounts that are not running, which
+        is precisely the case no client object can answer.
+        """
+        from bartlebot import character_roster  # noqa: PLC0415
+
+        roster = self._rosters.get(username)
+        if roster is None:
+            roster = character_roster.load(username)
+            self._rosters[username] = roster
+        return list(roster)
 
     async def _refresh_account_identity(self, live_clients: list) -> None:
         """Tie each client to an account by the user id it reports, learning or adopting.
@@ -827,6 +910,37 @@ class ClientManager(QObject):
                 self._client_order.append(username)
         logger.info("Reserved slot order for launch: %s", self._client_order)
 
+    def _place_account(self, username: str) -> None:
+        """Give *username* its slot, honouring a recovery that is holding one for it.
+
+        A client coming back from a crash goes to the slot it left, not to the first free
+        one — the ordering is the user's, and recovery is meant to be invisible in it.
+        Everything else falls through to _assign_slot's preference order.
+        """
+        recovery_pos = next((pos for pos, u in self._pending_recovery.items() if u == username), None)
+        if recovery_pos is not None:
+            self._client_order[recovery_pos] = username
+            self._vacated_slots.pop(username, None)
+        else:
+            self._assign_slot(username)
+
+    def _place_pending_accounts(self) -> None:
+        """Give every identified window a slot, whether or not its hooks are up.
+
+        A window is identified by its *title*, which the launcher sets immediately after
+        login — long before a character is in game. Claiming the slot then is what lets the
+        tile appear at character select and then *stay where it is* when the client finally
+        hooks: the slot it is drawn in is already the slot it will keep.
+
+        A launch profile has reserved these itself (see reserve_slots), so this changes
+        nothing there. It is what covers an account launched on its own from a card, which
+        states no order and so has nothing to reserve.
+        """
+        for hwnd in sorted(self._embeddable_hwnds()):
+            username = self._hwnd_account_map.get(hwnd)
+            if username and username not in self._client_order:
+                self._place_account(username)
+
     def _assign_slot(self, username: str) -> None:
         """Place *username* into _client_order without growing the ordering needlessly.
 
@@ -867,41 +981,50 @@ class ClientManager(QObject):
                 ordered.append(c)
         return ordered
 
-    def _sync_embedded_clients(self, prev_clients: list, new_clients: list) -> None:
-        """Reconcile the game view's tiles with the new client ordering.
+    def _embeddable_hwnds(self) -> set[int]:
+        """Every live window that may hold a tile, hooked or not.
 
-        Runs in two phases: every slot whose occupant changes is vacated first, then
-        the new occupants are embedded. This ordering matters because GameView keys
-        its tiles by slot index, not by HWND — `unembed_client(idx)` tears down
-        whatever tile currently sits at `idx`. Interleaving unembeds and embeds (the
-        obvious per-client loop) lets one client's unembed destroy a tile another
-        client was already moved into, and `embed_client` silently no-ops when its
-        slot is still occupied. Either way a game window is left floating unembedded.
-
-        Multi-client recovery is where this bites: clients come back one at a time and
-        _build_ordered_clients compacts out the not-yet-recovered slots, so every step
-        renumbers the clients that already returned.
+        A window is embeddable as soon as it exists: ``ClientTile`` needs an hwnd and
+        nothing else, so there is no reason to wait for a character to be in game. Two
+        exclusions, both deliberate. A client the user unhooked by hand is meant to be left
+        alone. A client whose hooks *failed* can never become a player and is never retried
+        (see ``_start_activation``), so giving it a tile would promise something the app
+        cannot deliver.
         """
-        prev_by_idx = {i: c.window_handle for i, c in enumerate(prev_clients)}
-        new_by_idx = {i: c.window_handle for i, c in enumerate(new_clients)}
+        live = {c.window_handle for c in self._handler.clients}
+        return live - self._unhooked_hwnds - self._failed_hook_hwnds
 
-        # Phase 1 — vacate every slot that is losing its current occupant.
-        for idx, hwnd in sorted(prev_by_idx.items()):
-            if new_by_idx.get(idx) != hwnd:
-                try:
-                    self._game_view.unembed_client(idx)
-                except Exception:
-                    # Routine when the window is already gone (crash), so keep it quiet.
-                    logger.debug("unembed_client(%d) failed", idx, exc_info=True)
+    def _account_label(self, username: str) -> str:
+        """What to call a window that has an account but no player index yet."""
+        meta = next((a for a in SettingsManager.instance().accounts if a.get("username") == username), {})
+        return CredentialStore.display_name(username, meta.get("alias") or None)
 
-        # Phase 2 — fill the vacated slots. Every index reached here is free: it was
-        # either unembedded above or never occupied.
-        for idx, hwnd in sorted(new_by_idx.items()):
-            if prev_by_idx.get(idx) != hwnd:
-                try:
-                    self._game_view.embed_client(hwnd, idx)
-                except Exception:
-                    logger.exception("embed_client(hwnd=%d, idx=%d) failed", hwnd, idx)
+    def tile_slots(self) -> list[TileSlot]:
+        """Every window that should be on screen right now, in slot order.
+
+        Public because it is the whole contract with the game view, and because a test
+        that cannot ask this question has to reach into the ordering by hand.
+        """
+        return build_tile_slots(
+            client_order=self._client_order,
+            hwnd_accounts=self._hwnd_account_map,
+            embeddable_hwnds=self._embeddable_hwnds(),
+            client_hwnds=[c.window_handle for c in self._clients],
+            account_label=self._account_label,
+        )
+
+    def _sync_tiles(self) -> None:
+        """Hand the game view the current tile set.
+
+        Called on every client-loop tick rather than only when the client list changes: a
+        window reaching character select changes no client list at all — it is not hooked —
+        and it is exactly the window this exists to put on screen. ``sync_tiles`` is a
+        no-op when nothing moved, so the common tick costs one dict comparison.
+        """
+        try:
+            self._game_view.sync_tiles(self.tile_slots())
+        except Exception:
+            logger.exception("Syncing the game view tiles failed")
 
     # ------------------------------------------------------------------
     # Recovery
@@ -1110,7 +1233,10 @@ class ClientManager(QObject):
                 await launch_accounts(
                     [(t.username, t.password, t.display_name) for t in group],
                     resolution=resolution,
-                    drive=_drive if auto_select_on else None,
+                    # Handed the drive either way: with auto-select off it presses nothing
+                    # that picks a character, it just clears the loading screens so the
+                    # user arrives at a character-select screen rather than a black one.
+                    drive=_drive,
                 )
             except Exception:
                 logger.exception(
@@ -1121,7 +1247,8 @@ class ClientManager(QObject):
                 return
 
         if not auto_select_on:
-            # Nothing to drive, so every window is waited on at once rather than in turn.
+            # The drive stopped at character select, so nothing above answered whether the
+            # client got in — wait every window out at once rather than in turn.
             results = await asyncio.gather(*[self.await_client_in(t.title) for t in targets])
             reached = {t.title: ok for t, ok in zip(targets, results)}
 

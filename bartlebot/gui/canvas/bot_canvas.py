@@ -58,7 +58,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
-from bartlebot.gui.widgets.tag_pill import TagChip, TagPill, pill_style
+from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
@@ -222,19 +222,6 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     return results, matched_drops
 
 
-def _pill(text: str) -> QLabel:
-    """Small rounded caption for a bot card's version — the tags use ``TagPill``.
-
-    Builds the shape only. Colour is the caller's, applied from its
-    ``apply_theme_styles``: a label styled once in here would keep whichever theme
-    was active when the card was built.
-    """
-    lbl = QLabel(text)
-    lbl.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-    lbl.setFixedHeight(14)
-    return lbl
-
-
 class _BotCard(ThemedMixin, QWidget):
     """Single clickable bot entry shown in the library's right panel."""
 
@@ -247,11 +234,12 @@ class _BotCard(ThemedMixin, QWidget):
         self.setObjectName("BotCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        # Every label the card builds is held, because each carries a THEME colour
-        # that apply_theme_styles has to re-derive. Several are conditional, so the
-        # attributes are declared up front rather than only where they are built.
+        # Every *plain* label the card builds is held, because each carries a THEME
+        # colour that apply_theme_styles has to re-derive. Several are conditional, so
+        # the attributes are declared up front rather than only where they are built.
+        # The pills are absent from this list deliberately: TagPill and NeutralPill own
+        # their own colour, so there is nothing here to re-derive for them.
         self._hovered = False
-        self._version_pill: QLabel | None = None
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
         self._match_lbl: QLabel | None = None
@@ -273,14 +261,10 @@ class _BotCard(ThemedMixin, QWidget):
         self._name_lbl.setFont(f)
         header.addWidget(self._name_lbl, 0)
 
-        # Neutral grey, not the accent it used to be. Colour on this card now means
-        # "tag group", and a version is not one — spending the accent on it made the
-        # loudest pill the one carrying the least information. pill_neutral_bg is a
-        # true grey: the blue-grey chip_neutral_bg read as a third tag colour beside
-        # the blue Rewards pill.
+        # Neutral grey rather than an accent, and NeutralPill rather than a label this
+        # card restyles: see its docstring for both halves of the reasoning.
         if self._meta.version:
-            self._version_pill = _pill(f"v{self._meta.version}")
-            header.addWidget(self._version_pill, 0, Qt.AlignmentFlag.AlignVCenter)
+            header.addWidget(NeutralPill(f"v{self._meta.version}"), 0, Qt.AlignmentFlag.AlignVCenter)
 
         # One palette for a tag everywhere it appears: the dot in the picker, the chip
         # in the filter bar, this pill, and the ones in Bot Info. TagPill owns it.
@@ -329,13 +313,6 @@ class _BotCard(ThemedMixin, QWidget):
         self.setStyleSheet(f"#BotCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
 
         self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
-        if self._version_pill is not None:
-            # Neutral grey, not the accent it used to be. Colour on this card now
-            # means "tag group", and a version is not one — spending the accent on it
-            # made the loudest pill the one carrying the least information.
-            # pill_neutral_bg is a true grey: the blue-grey chip_neutral_bg read as a
-            # third tag colour beside the blue Rewards pill.
-            self._version_pill.setStyleSheet(pill_style(THEME.pill_neutral_bg, THEME.pill_text))
         for lbl, color in (
             (self._desc_lbl, THEME.text_muted),
             (self._meta_lbl, THEME.text_subtle),

@@ -250,6 +250,12 @@ AUTO_SELECT_TIMEOUT = 120.0
 # something is wrong — a login queue, a bad password, a server outage — not that the
 # client is slow.
 
+AUTO_SELECT_CHAR_SELECT_TIMEOUT = 60.0
+# Ceiling on driving one client from auto-login as far as character select, for when
+# automatic character selection is off. Shorter than AUTO_SELECT_TIMEOUT because it stops
+# two stages earlier — no Play press and no load-in — and the same reasoning applies:
+# reaching it means something is wrong, not that the client is slow.
+
 AUTO_SELECT_TREE_TIMEOUT = 20.0
 # How long to wait for a launching client's UI tree to become readable before giving up on
 # reading it and driving the client blind instead. Measured at 1.8 s from attach

@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -473,12 +474,15 @@ class AccountsTab(QWidget):
         reply = QMessageBox.question(
             self,
             "Delete account",
-            f"Remove '{username}' and its stored password?",
+            f"Remove '{username}', its stored password, and its known characters?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply != QMessageBox.StandardButton.Yes:
             return
         CredentialStore.delete(username)
+        # A roster is wizard names. Leaving one behind for an account the user has just
+        # removed is exactly the data character_roster is careful about.
+        character_roster.forget(username)
         accounts = [a for a in SettingsManager.instance().accounts if a["username"] != username]
         SettingsManager.instance().accounts = accounts
         # Remove the deleted account from all profiles
@@ -532,8 +536,24 @@ class AccountsTab(QWidget):
         row = self._profile_list.currentRow()
         if row < 0:
             return
-        profile = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
-        old_name = profile.get("name", "")
+        self.edit_profile(self._profile_list.item(row).data(Qt.ItemDataRole.UserRole).get("name", ""))
+
+    def edit_profile(self, old_name: str) -> None:
+        """Open the profile editor for the profile named *old_name*.
+
+        Public and keyed by name rather than by list row because the launch screen's
+        profile cards open this too, and a card knows the name it stands for and nothing
+        about this tab's selection. One editor for a profile, wherever it is reached
+        from: the card shows what a profile will do, and the dialog is where it is
+        changed.
+
+        Must be called from a synchronous Qt slot. ``exec()`` re-enters Qt's event loop,
+        which Python 3.13 forbids from inside a running asyncio task — see the qasync
+        section of CLAUDE.md.
+        """
+        profile = next((p for p in SettingsManager.instance().launch_profiles if p.get("name") == old_name), None)
+        if profile is None:
+            return
         raw_res = profile.get("resolution")
         existing_res = tuple(raw_res) if raw_res else None
         dlg = _ProfileDialog(

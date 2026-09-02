@@ -51,14 +51,21 @@ class HookHarness:
     _rehook_one = ClientManager._rehook_one
     _assign_rehooked_slots = ClientManager._assign_rehooked_slots
     _finish_hook_change = ClientManager._finish_hook_change
-    _sync_embedded_clients = ClientManager._sync_embedded_clients
+    _sync_tiles = ClientManager._sync_tiles
+    tile_slots = ClientManager.tile_slots
+    _embeddable_hwnds = ClientManager._embeddable_hwnds
+    _account_label = ClientManager._account_label
     _assign_slot = ClientManager._assign_slot
 
     def __init__(self) -> None:
         self._clients: list = []
         self._unhooked_clients: list = []
         self._unhooked_hwnds: set[int] = set()
+        self._failed_hook_hwnds: set[int] = set()
         self._hwnd_account_map: dict[int, str] = {}
+        # Every window stays open through an unhook -- that is the point of it -- so the
+        # handler keeps reporting all four regardless of which are hooked.
+        self._handler = MagicMock(clients=[])
         self._client_order: list[str | None] = []
         self._vacated_slots: dict[str, int] = {}
         self._machine = None
@@ -84,7 +91,8 @@ def harness() -> HookHarness:
     h._clients = [FakeClient(10), FakeClient(20), FakeClient(30), FakeClient(40)]
     h._hwnd_account_map = {10: "a", 20: "b", 30: "c", 40: "d"}
     h._client_order = ["a", "b", "c", "d"]
-    h._sync_embedded_clients([], h._clients)
+    h._handler.clients = list(h._clients)
+    h._sync_tiles()
     return h
 
 
@@ -124,7 +132,8 @@ class TestUnhookAll:
         other._clients = [FakeClient(h) for h in (10, 20, 30, 40)]
         other._hwnd_account_map = dict(harness._hwnd_account_map)
         other._client_order = ["a", "b", "c", "d"]
-        other._sync_embedded_clients([], other._clients)
+        other._handler.clients = list(other._clients)
+        other._sync_tiles()
         for _ in range(4):
             await other.unhook_client(0)
 

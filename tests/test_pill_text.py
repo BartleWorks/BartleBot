@@ -29,12 +29,26 @@ def test_label_and_name_stay_independent():
     assert pill_text("Player 3", "Misha SkullSeer") == "Player 3 · Misha SkullSeer"
 
 
+def test_streamer_mode_drops_the_name_and_keeps_the_label():
+    """The slot label is already a position, so the caption does not gain a second one —
+    see pill_text's docstring."""
+    from bartlebot.settings_manager import SettingsManager
+
+    SettingsManager.instance().streamer_mode = True
+    assert pill_text("Player 1", "Luke SkullHunter") == "Player 1"
+    assert pill_text("Player 3", "Misha SkullSeer") == "Player 3"
+
+
 # ---------------------------------------------------------------------------
 # GameView name bookkeeping
 #
 # GameView is a QWidget, so only the index-to-name bookkeeping is exercised here —
 # unbound, against a stub. That bookkeeping is what decides whether a tile created after
 # the names arrived gets one, which is exactly what went wrong the first time.
+#
+# Names arrive keyed by **player** index and tiles are keyed by **slot**, which are only
+# the same number while every account is in game (see bartlebot.tile_slots). _tile_players
+# is the join between them, so every stub here has to state it.
 # ---------------------------------------------------------------------------
 
 
@@ -51,10 +65,15 @@ class _FakeTile:
 
 
 class _StubView:
-    def __init__(self, tiles=None, detached=None):
+    def __init__(self, tiles=None, detached=None, players=None):
         self._tiles = tiles or {}
         self._detached_tiles = detached or {}
         self._wizard_names: list = []
+        # Slot → player. Defaults to the two agreeing, which is the steady state; a test
+        # about a window that is not in game says so explicitly.
+        if players is None:
+            players = {slot: slot for slot in (*self._tiles, *self._detached_tiles)}
+        self._tile_players = players
 
     set_wizard_names = GameView.set_wizard_names
     _wizard_name_for = GameView._wizard_name_for
@@ -91,4 +110,18 @@ def test_a_cleared_name_is_pushed_through():
     """After a character switch the tile must drop the old name, not keep showing it."""
     view = _StubView(tiles={0: _FakeTile("Luke SkullHunter")})
     view.set_wizard_names([None])
+    assert view._tiles[0].wizard_name is None
+
+
+def test_a_name_follows_its_player_rather_than_its_slot():
+    """A crashed slot 0 leaves slot 1 holding player 0 — the name must follow the player."""
+    view = _StubView(tiles={1: _FakeTile()}, players={1: 0})
+    view.set_wizard_names(["Luke SkullHunter"])
+    assert view._tiles[1].wizard_name == "Luke SkullHunter"
+
+
+def test_a_window_that_is_not_in_game_gets_no_name():
+    """It has no player index, so nothing has read a name for it and none is invented."""
+    view = _StubView(tiles={0: _FakeTile()}, players={0: None})
+    view.set_wizard_names(["Luke SkullHunter"])
     assert view._tiles[0].wizard_name is None

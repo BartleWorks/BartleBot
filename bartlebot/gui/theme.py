@@ -162,6 +162,24 @@ class _Theme:
     REGION_PALETTE: tuple = (1, 2, 3, 4, 5, 6)
 
     # ------------------------------------------------------------------
+    # Account palette (numbered — one hue per account, on the launch cards)
+    #
+    # Its own tokens rather than a second use of the region palette: regions are
+    # user-customizable, and recolouring a canvas region must not silently move
+    # which account is blue.  Hues are only ever drawn as a border, a stripe or a
+    # low-alpha tint, never under text, so they can stay vivid enough to tell
+    # apart at pill size on both the light and the dark surface.
+    # ------------------------------------------------------------------
+    account_1: str = "#3B82F6"  # blue
+    account_2: str = "#F59E0B"  # amber
+    account_3: str = "#14B8A6"  # teal
+    account_4: str = "#A855F7"  # violet
+    account_5: str = "#EF4444"  # red
+    account_6: str = "#22C55E"  # green
+    account_7: str = "#EC4899"  # pink
+    account_8: str = "#06B6D4"  # cyan
+
+    # ------------------------------------------------------------------
     # Icon tint
     # ------------------------------------------------------------------
     icon_tint: str = "#404040"
@@ -197,6 +215,10 @@ class _Theme:
     def region_color(self, key: int) -> QColor:
         """Return a QColor for the numbered region palette slot (1-6)."""
         return QColor(getattr(self, f"region_{key}"))
+
+    def account_color(self, key: int) -> QColor:
+        """Return a QColor for the numbered account palette slot (1-8)."""
+        return QColor(getattr(self, f"account_{key}"))
 
     def qcolor_client_pill_bg(self) -> QColor:
         """Semi-transparent black for the client-tile label pill background."""
@@ -453,6 +475,15 @@ DARK = _Theme(
     region_4="#EF4444",
     region_5="#3B82F6",
     region_6="#22C55E",
+    # Accounts (same vivid palette — never carries text, so it works on both)
+    account_1="#3B82F6",
+    account_2="#F59E0B",
+    account_3="#14B8A6",
+    account_4="#A855F7",
+    account_5="#EF4444",
+    account_6="#22C55E",
+    account_7="#EC4899",
+    account_8="#06B6D4",
     # Icon
     icon_tint="#cccccc",
 )

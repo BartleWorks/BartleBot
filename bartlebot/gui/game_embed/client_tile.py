@@ -6,6 +6,7 @@ from PyQt6.QtCore import QRect, Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QPainter
 from PyQt6.QtWidgets import QWidget
 
+from bartlebot import streamer_mode
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
@@ -29,8 +30,15 @@ def pill_text(label: str, wizard_name: str | None) -> str:
     clients renumbers "Player N" while the wizard stays put, and a character switch
     replaces the wizard while the slot stays put. Composing at paint time means neither
     update can clobber the other.
+
+    Streamer Mode drops the name and keeps the label, rather than substituting the
+    positional placeholder streamer_mode.display_name would give: the slot label *is*
+    a position already, so appending a second one would be redundant at best and
+    contradictory at worst — a client in slot 2 can be the account's fourth character.
     """
-    return f"{label} · {wizard_name}" if wizard_name else label
+    if wizard_name and not streamer_mode.enabled():
+        return f"{label} · {wizard_name}"
+    return label
 
 
 class ClientTile(QWidget):

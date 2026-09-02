@@ -109,6 +109,29 @@ class GeneralTab(QWidget):
         layout.addLayout(layout_form)
 
         # ------------------------------------------------------------------
+        # Privacy section
+        # ------------------------------------------------------------------
+        layout.addWidget(_section_label("Privacy"))
+
+        privacy_form = QFormLayout()
+        privacy_form.setSpacing(8)
+
+        self._streamer_mode_cb = QCheckBox()
+        self._streamer_mode_cb.setChecked(sm.streamer_mode)
+        self._streamer_mode_cb.setToolTip(
+            "Replace every wizard name shown in this app with a positional placeholder — "
+            "'Character 1', 'Character 2', and so on.\n\n"
+            "A wizard name links your account to whoever posted the picture, and the launch "
+            "screen and Players list are the two most screenshotted parts of this app. The "
+            "placeholder still tells the characters apart, which is all a name is doing here.\n\n"
+            "Affects display only. Bots keep using the real names, and the logs never contained "
+            "one in the first place."
+        )
+        privacy_form.addRow("Streamer Mode:", self._streamer_mode_cb)
+
+        layout.addLayout(privacy_form)
+
+        # ------------------------------------------------------------------
         # Auto-save section
         # ------------------------------------------------------------------
         layout.addWidget(_section_label("Auto-save"))
@@ -160,12 +183,12 @@ class GeneralTab(QWidget):
         self._auto_select_cb = QCheckBox()
         self._auto_select_cb.setChecked(sm.auto_select_character)
         self._auto_select_cb.setToolTip(
-            "After a launched client logs in, advance it through the loading screens and "
-            "press Play on the most recently played character, with no input from you.\n\n"
-            "Launching a team otherwise means finding each window and clicking through it by "
-            "hand, and nothing embeds into the game view until a character is in-game. With "
-            "this on, every window arrives in one place — switching to a different character "
-            "afterwards is then just a few clicks in the embedded window.\n\n"
+            "After a launched client logs in, press Play on the most recently played "
+            "character, with no input from you.\n\n"
+            "The loading screens before character select are skipped either way — they ask "
+            "for a keypress and nothing else — so with this off every launched window still "
+            "arrives at its character-select screen, embedded in the game view, waiting for "
+            "you to pick. Turning it on is what saves the picking.\n\n"
             "Also used to bring a client back after it crashes mid-run."
         )
         bot_form.addRow("Automatically select a character:", self._auto_select_cb)
@@ -286,6 +309,7 @@ class GeneralTab(QWidget):
         sm.set_general("left_sidebar_width", self._left_sb.value())
         sm.set_general("right_sidebar_width", self._right_sb.value())
         sm.set_general("bottom_section_height", self._bottom_sb.value())
+        sm.streamer_mode = self._streamer_mode_cb.isChecked()
         sm.set_general("auto_save_enabled", self._autosave_cb.isChecked())
         sm.set_general("auto_save_interval_seconds", self._autosave_interval_sb.value())
         sm.default_safety_delay = self._safety_delay_sb.value()

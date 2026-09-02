@@ -61,6 +61,15 @@ class SettingsDialog(QDialog):
         if w := widgets.get(tab_name):
             self._tabs.setCurrentWidget(w)
 
+    def edit_profile(self, profile_name: str) -> None:
+        """Show the Game tab and open the editor for *profile_name*.
+
+        The route the launch screen's profile cards take: they name a profile, and the
+        dialog owns where its editor lives.
+        """
+        self.open_tab("game")
+        self._accounts_tab.edit_profile(profile_name)
+
     def _on_accept(self) -> None:
         self._general_tab.apply()
         self._canvas_tab.apply()

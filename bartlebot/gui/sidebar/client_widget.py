@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker import XYZ
 
-from bartlebot import wizard_names
+from bartlebot import streamer_mode, wizard_names
 from bartlebot.gui.sidebar.sidebar_section import field_label
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 
@@ -310,7 +310,14 @@ class ClientWidget(QWidget):
         # Wizard name — a dict lookup in the shared cache, no memory read of its own.
         # ClientManager's loop is what fills it, so the card shows whatever is known and
         # never triggers detection on its own.
-        self._last_wizard = wizard_names.cached_name(self._client) or _PLACEHOLDER
+        #
+        # Streamer Mode substitutes "Character N" rather than blanking the row: the card
+        # title already says which player this is, so the placeholder is redundant, but
+        # blanking it would read as "not detected yet" — a real state the user needs to
+        # be able to see. Redundant beats ambiguous.
+        self._last_wizard = streamer_mode.display_name(
+            wizard_names.cached_name(self._client), self._index, placeholder=_PLACEHOLDER
+        )
         self._wizard_label.setText(self._last_wizard)
 
         # Zone
