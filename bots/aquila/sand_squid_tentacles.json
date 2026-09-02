@@ -153,8 +153,7 @@
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -171,8 +170,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -195,8 +193,7 @@
           "y": 8965.8,
           "z": -1679.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -213,8 +210,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -243,8 +239,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -254,8 +249,7 @@
         "x": 2640.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_7",
@@ -277,8 +271,7 @@
           "y": -791.43,
           "z": 2.67
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -301,8 +294,7 @@
           "y": 983.85,
           "z": 221.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -317,8 +309,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

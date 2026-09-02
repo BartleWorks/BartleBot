@@ -1824,8 +1824,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -1843,8 +1842,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1856,8 +1854,7 @@
       },
       "params": {
         "zone": "Lemuria/LM_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1881,8 +1878,7 @@
           "z": -440.63
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1905,8 +1901,7 @@
           "y": -13.47,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1920,8 +1915,7 @@
         "enemy": "LM_Khrulhu_Scion_A_01",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1945,8 +1939,7 @@
           "z": 7.51
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1961,8 +1954,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1976,8 +1968,7 @@
         "keep_list": [
           "Merciless"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

@@ -248,7 +248,6 @@ def test_the_idle_page_and_section_titles_recolour(qapp, theme):
     before = [
         panel._idle_lbl.styleSheet(),
         panel._returns_title.styleSheet(),
-        panel._ov_title.styleSheet(),
         panel._record_status_lbl.styleSheet(),
         panel._flags_lbl.styleSheet(),
     ]
@@ -259,7 +258,6 @@ def test_the_idle_page_and_section_titles_recolour(qapp, theme):
     after = [
         panel._idle_lbl.styleSheet(),
         panel._returns_title.styleSheet(),
-        panel._ov_title.styleSheet(),
         panel._record_status_lbl.styleSheet(),
         panel._flags_lbl.styleSheet(),
     ]

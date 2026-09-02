@@ -1025,78 +1025,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
 
 # ---------------------------------------------------------------------------
-# Per-node option-override helpers
-# ---------------------------------------------------------------------------
-
-
-def _make_override_widget(type_str: str, val: Any, help_text: str = "", connected: int = 4) -> QWidget:
-    """Create a value input widget for a bot-option override row.
-
-    *connected* is how many clients are hooked right now; it only greys the
-    player checkboxes that have nobody behind them.
-    """
-    w: QWidget
-    if type_str == "bool":
-        wb = QCheckBox()
-        wb.setChecked(bool(val) if val is not None else False)
-        w = wb
-    elif type_str == "int":
-        wi = QSpinBox()
-        wi.setRange(-999_999, 999_999)
-        try:
-            wi.setValue(int(val) if val is not None else 0)
-        except (TypeError, ValueError):
-            wi.setValue(0)
-        w = wi
-    elif type_str == "float":
-        wf = QDoubleSpinBox()
-        wf.setRange(-999_999.0, 999_999.0)
-        wf.setDecimals(3)
-        wf.setSingleStep(0.1)
-        try:
-            wf.setValue(float(val) if val is not None else 0.0)
-        except (TypeError, ValueError):
-            wf.setValue(0.0)
-        w = wf
-    elif type_str == "player_list":
-        w = PlayerListWidget()
-        w.set_available_players(connected)
-        w.set_value(val if isinstance(val, list) else [])
-    else:  # str
-        ws = QLineEdit()
-        ws.setText(str(val) if val is not None else "")
-        w = ws
-    if help_text:
-        w.setToolTip(help_text)
-    return w
-
-
-def _read_override_widget(w: QWidget) -> Any:
-    if isinstance(w, QCheckBox):
-        return w.isChecked()
-    if isinstance(w, QSpinBox):
-        return w.value()
-    if isinstance(w, QDoubleSpinBox):
-        return w.value()
-    if isinstance(w, PlayerListWidget):
-        return w.get_value()
-    if isinstance(w, QLineEdit):
-        return w.text()
-    return None
-
-
-def _connect_override_widget(w: QWidget, callback: Callable[[], None]) -> None:
-    if isinstance(w, QCheckBox):
-        w.checkStateChanged.connect(lambda _: callback())
-    elif isinstance(w, (QSpinBox, QDoubleSpinBox)):
-        w.valueChanged.connect(lambda _: callback())
-    elif isinstance(w, PlayerListWidget):
-        w.changed.connect(callback)
-    elif isinstance(w, QLineEdit):
-        w.textChanged.connect(lambda _: callback())
-
-
-# ---------------------------------------------------------------------------
 # _FlagConditionsWidget  — dynamic AND/OR/NOT flag condition list for edges
 # ---------------------------------------------------------------------------
 
@@ -1564,20 +1492,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         returns_layout.addLayout(self._returns_body_layout)
         self._returns_section.setVisible(False)
 
-        # Option overrides section (per-node override of bot-wide options)
-        self._overrides_section = QWidget()
-        _ov_vbox = QVBoxLayout(self._overrides_section)
-        _ov_vbox.setContentsMargins(6, 4, 6, 4)
-        _ov_vbox.setSpacing(4)
-        self._ov_title = QLabel("Option Overrides:")
-        _ov_vbox.addWidget(self._ov_title)
-        self._overrides_body = QVBoxLayout()
-        self._overrides_body.setSpacing(4)
-        _ov_vbox.addLayout(self._overrides_body)
-        self._overrides_section.setVisible(False)
-        self._override_rows: list[QWidget] = []
-        self._override_widgets: dict[str, tuple[QCheckBox, QWidget]] = {}
-
         # Record row — shown only for recordable node types
         self._record_row = QWidget()
         _rr_layout = QHBoxLayout(self._record_row)
@@ -1650,7 +1564,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         node_vbox.addWidget(self._record_row)
         node_vbox.addWidget(scroll, 1)
         node_vbox.addWidget(self._wiki_import_row)
-        node_vbox.addWidget(self._overrides_section)
         node_vbox.addWidget(self._returns_section)
         node_vbox.addWidget(self._connections_section)
         node_vbox.addWidget(self._notes_section)
@@ -1723,7 +1636,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         )
         section_title = f"font-weight: bold; color: {THEME.text_subtle};"
         self._returns_title.setStyleSheet(section_title)
-        self._ov_title.setStyleSheet(section_title)
         self._notes_title.setStyleSheet(section_title)
         self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
         self._notes_edit.setStyleSheet(
@@ -1790,9 +1702,8 @@ class _ParamPanel(ThemedMixin, QWidget):
     def refresh_player_availability(self) -> None:
         """Re-grey the player checkboxes — call when clients connect or disconnect.
 
-        findChildren rather than a widget registry: player checkboxes appear both in
-        the param form and in the per-node option-override rows, and this needs no
-        bookkeeping in either.
+        findChildren rather than a widget registry: player checkboxes appear at several
+        depths inside the param form, and this needs no bookkeeping for any of them.
         """
         connected = len(self._get_clients())
         for w in self.findChildren(PlayerListWidget) + self.findChildren(PlayerSlotWidget):
@@ -1825,7 +1736,6 @@ class _ParamPanel(ThemedMixin, QWidget):
             self._node_type_combo.setCurrentIndex(idx)
         schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
         self._param_form.load_schema(schema, state.params or {})
-        self._rebuild_overrides(state)
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
         self._notes_edit.blockSignals(True)
@@ -2021,11 +1931,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._cancel_record()
         self._state.node_type = node_type
         self._state.params = {}
-        self._state.option_overrides = {}
         schema = NODE_PARAM_SCHEMAS.get(node_type, [])
         self._param_form.load_schema(schema, {})
         self._state.params = self._param_form.get_params()
-        self._rebuild_overrides(self._state)
         self._rebuild_returns(node_type)
         self._record_row.setVisible(node_type in recording.RECORDABLE_NODES)
         self._wiki_import_row.setVisible(node_type == "handle_combat")
@@ -2210,67 +2118,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._node_label_edit.setText(label)
         self._suppress = False
         self.properties_changed.emit()
-
-    def _rebuild_overrides(self, state: StateModel) -> None:
-        for row in self._override_rows:
-            self._overrides_body.removeWidget(row)
-            row.deleteLater()
-        self._override_rows.clear()
-        self._override_widgets.clear()
-
-        spec = NODE_SPECS.get(state.node_type)
-        bot_options = spec.required_bot_options if spec else []
-        if not bot_options:
-            self._overrides_section.setVisible(False)
-            return
-
-        overrides = state.option_overrides
-        for bot_opt in bot_options:
-            name = bot_opt.name
-            is_overriding = name in overrides
-            current_val = overrides.get(name, bot_opt.default)
-
-            val_widget = _make_override_widget(
-                bot_opt.type, current_val, bot_opt.description or "", len(self._get_clients())
-            )
-            val_widget.setEnabled(is_overriding)
-
-            cb = QCheckBox(f"Override {name}:")
-            cb.setChecked(is_overriding)
-            if bot_opt.description:
-                cb.setToolTip(bot_opt.description)
-
-            row = QWidget()
-            row_layout = QHBoxLayout(row)
-            row_layout.setContentsMargins(0, 0, 0, 0)
-            row_layout.setSpacing(6)
-            row_layout.addWidget(cb)
-            row_layout.addWidget(val_widget, 1)
-
-            def _on_cb_toggled(checked: bool, n=name, w=val_widget, s=state) -> None:
-                if self._suppress:
-                    return
-                w.setEnabled(checked)
-                if checked:
-                    s.option_overrides[n] = _read_override_widget(w)
-                else:
-                    s.option_overrides.pop(n, None)
-                self.properties_changed.emit()
-
-            def _on_val_changed(n=name, cb_ref=cb, w=val_widget, s=state) -> None:
-                if self._suppress or not cb_ref.isChecked():
-                    return
-                s.option_overrides[n] = _read_override_widget(w)
-                self.properties_changed.emit()
-
-            cb.toggled.connect(_on_cb_toggled)
-            _connect_override_widget(val_widget, _on_val_changed)
-
-            self._overrides_body.addWidget(row)
-            self._override_rows.append(row)
-            self._override_widgets[name] = (cb, val_widget)
-
-        self._overrides_section.setVisible(True)
 
     def _rebuild_returns(self, node_type: str) -> None:
         while self._returns_body_layout.count():

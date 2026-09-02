@@ -429,8 +429,7 @@
       },
       "params": {
         "zone": "Celestia/CL_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -453,8 +452,7 @@
           "y": 15546.97,
           "z": -1099.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -477,8 +475,7 @@
           "y": -1488.0,
           "z": -1115.44
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -492,8 +489,7 @@
         "enemy": "CL-AnglerBoss-R10-3",
         "use_bot_default": true,
         "combat_config": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -509,8 +505,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -533,8 +528,7 @@
           "y": 64.26,
           "z": 25.85
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -549,8 +543,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

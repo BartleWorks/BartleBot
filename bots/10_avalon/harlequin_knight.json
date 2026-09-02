@@ -458,8 +458,7 @@
       },
       "params": {
         "zone": "Avalon/AV_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -482,8 +481,7 @@
           "y": 4853.09,
           "z": -509.44
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -506,8 +504,7 @@
           "y": 13175.54,
           "z": 2.49
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -522,8 +519,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -539,8 +535,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -563,8 +558,7 @@
           "y": -1257.27,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -579,8 +573,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Avalon/AV_Z02_HighRoad"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -590,8 +583,7 @@
         "x": 880.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_9",
@@ -614,8 +606,7 @@
           "y": 13396.95,
           "z": 13.15
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -638,8 +629,7 @@
           "y": 23331.06,
           "z": 1090.17
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -662,8 +652,7 @@
           "y": 4294.36,
           "z": -180.82
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -685,8 +674,7 @@
           "y": -3189.31,
           "z": 2.2
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

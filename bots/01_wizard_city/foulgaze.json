@@ -443,8 +443,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -467,8 +466,7 @@
           "y": -3038.14,
           "z": -27.99
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -491,8 +489,7 @@
           "y": -3255.2,
           "z": -29.36
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -515,8 +512,7 @@
           "y": -4819.83,
           "z": -2198.47
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -531,8 +527,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -555,8 +550,7 @@
           "y": -841.74,
           "z": 1.61
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -574,8 +568,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

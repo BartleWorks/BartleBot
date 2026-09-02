@@ -32,8 +32,7 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -46,8 +45,7 @@
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -67,8 +65,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -88,8 +85,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -109,8 +105,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -130,8 +125,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -151,8 +145,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -172,8 +165,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -196,8 +188,7 @@
           "y": -10326.86,
           "z": -29.41
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -212,8 +203,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -233,8 +223,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -254,8 +243,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -275,8 +263,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -296,8 +283,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -317,8 +303,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -338,8 +323,7 @@
         "entity_names": [
           "AetherOre"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

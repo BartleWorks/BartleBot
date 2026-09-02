@@ -18,8 +18,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -35,8 +34,7 @@
           "y": 0.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -52,8 +50,7 @@
           "y": 0.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -69,8 +66,7 @@
           "y": 0.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -86,8 +82,7 @@
           "y": 0.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -103,8 +98,7 @@
           "y": 0.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -120,8 +114,7 @@
           "y": 0.0,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

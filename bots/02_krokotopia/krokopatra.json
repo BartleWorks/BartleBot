@@ -637,8 +637,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -661,8 +660,7 @@
           "y": -1408.83,
           "z": -117.74
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -687,8 +685,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -713,8 +710,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -739,8 +735,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -752,8 +747,7 @@
       },
       "params": {
         "duration": 15.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -776,8 +770,7 @@
           "y": -8112.82,
           "z": -373.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -800,8 +793,7 @@
           "y": 5821.56,
           "z": -501.58
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -823,8 +815,7 @@
           "y": 521.6,
           "z": 1.46
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -841,8 +832,7 @@
           "y": 21039.18,
           "z": -1000.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -857,8 +847,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -881,8 +870,7 @@
           "y": 20289.71,
           "z": -1000.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -897,8 +885,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -908,8 +895,7 @@
         "x": 3520,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_15",
@@ -927,8 +913,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

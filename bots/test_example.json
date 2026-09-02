@@ -32,8 +32,7 @@
           "y": 1740.94,
           "z": -27.99
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "go_to_zone_b",
@@ -51,8 +50,7 @@
           "y": -2037.77,
           "z": -130.64
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_1",
@@ -64,8 +62,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -77,8 +74,7 @@
       },
       "params": {
         "world": "WizardCity"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

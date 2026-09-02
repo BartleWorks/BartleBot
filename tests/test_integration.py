@@ -178,16 +178,16 @@ async def test_botmachine_constructs_from_real_bot_config():
 
 
 async def test_a_bot_wide_option_is_visible_via_get_option():
-    """StateModel option_overrides no longer reach get_option: the user's own value
-    lives in settings.json now, and a per-node pin of a bot-wide option was the same
-    confusion one level down (removed outright in the phase after this one)."""
+    """The declaration answers when the user has set no override of their own. A node
+    can no longer pin a bot-wide option for itself: that was the same author-vs-user
+    confusion one level down, and the field is gone."""
     config = BotConfig(
         id="test-bot",
         name="test",
         initial="state_a",
         recovery_state="state_a",
         options=[BotOptionModel(name="Safety Delay", type="float", default=5.0)],
-        states=[StateModel(id="state_a", node_type="mock", option_overrides={"Safety Delay": 0.0})],
+        states=[StateModel(id="state_a", node_type="mock")],
         transitions=[],  # terminal state — machine stops after one node execution
     )
     mc = config.to_machine_config()
@@ -719,6 +719,24 @@ def test_no_bot_stores_a_friend_name():
                 offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}")
 
     assert not offenders, f"bot states storing a character name: {offenders}"
+
+
+def test_no_bot_pins_a_bot_wide_option_for_one_node():
+    """`option_overrides` is gone from the schema, and Pydantic ignores what it does not
+    know — so a file still carrying one would be silently dropped on the next save rather
+    than failing, taking a real setting with it.
+
+    Every cause behind the pins the library had now has a param of its own: has_dialogue
+    for an interaction with nothing to say, animation_delay for a cutscene, object_use_delay for
+    a slow shared object. See scripts/migrate_option_overrides.py.
+    """
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for state in _load_raw(path).get("states") or []:
+            if "option_overrides" in state:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}")
+
+    assert not offenders, f"bot states with per-node option overrides: {offenders}"
 
 
 def test_no_bot_uses_legacy_combat_params():

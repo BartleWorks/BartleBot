@@ -766,8 +766,7 @@
       },
       "params": {
         "zone": "Wallaru/WL_Z01_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -791,8 +790,7 @@
           "z": 2.0
         },
         "zone_list_entry": "Billabong Resort"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -815,8 +813,7 @@
           "y": 20454.89,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -831,8 +828,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -849,8 +845,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -873,8 +868,7 @@
           "y": -293.11,
           "z": 2.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -891,8 +885,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -907,8 +900,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -922,8 +914,7 @@
         "keep_list": [
           "155"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

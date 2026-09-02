@@ -708,8 +708,7 @@
       },
       "params": {
         "zone": "G14_DM/DM_Z01_CastleDarkmoor"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -727,8 +726,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -746,8 +744,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -759,8 +756,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -783,8 +779,7 @@
           "y": 4440.57,
           "z": 2.4
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -807,8 +802,7 @@
           "y": -314.31,
           "z": 1.27
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -825,8 +819,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -841,8 +834,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -854,8 +846,7 @@
       },
       "params": {
         "keep_list": []
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -878,8 +869,7 @@
           "y": -1807.9,
           "z": -126.32
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -902,8 +892,7 @@
           "y": 1966.77,
           "z": 0.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -917,8 +906,7 @@
         "enemy": "G14-DM-Ghoul_Boss",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -935,8 +923,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -960,8 +947,7 @@
           "z": 0.52
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -978,8 +964,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

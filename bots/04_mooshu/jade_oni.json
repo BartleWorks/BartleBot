@@ -1008,8 +1008,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -1025,8 +1024,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1049,8 +1047,7 @@
           "y": -27.69,
           "z": 898.45
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1074,10 +1071,8 @@
         },
         "interact_clients": [
           1
-        ]
-      },
-      "option_overrides": {
-        "Safety Delay": 0.0
+        ],
+        "has_dialogue": false
       }
     },
     {
@@ -1093,8 +1088,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1110,8 +1104,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1128,8 +1121,7 @@
           "y": 1642.87,
           "z": 767.77
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1141,8 +1133,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1157,8 +1148,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1175,8 +1165,7 @@
           "y": 1642.87,
           "z": 767.77
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1186,8 +1175,7 @@
         "x": 1760,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_12",
@@ -1209,8 +1197,7 @@
           "y": 877.88,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

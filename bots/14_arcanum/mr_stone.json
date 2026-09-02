@@ -290,8 +290,7 @@
       },
       "params": {
         "zone": "Arcanum/AR_Z01_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -309,8 +308,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -328,8 +326,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -352,8 +349,7 @@
           "y": -1053.46,
           "z": -105.18
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -370,8 +366,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -388,8 +383,7 @@
           "y": -7423.41,
           "z": -2.6
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -403,8 +397,7 @@
         "enemy": "DM_Gargoyle_Base_C_01",
         "use_default_strategy": false,
         "max_duration": 300.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -428,8 +421,7 @@
           "z": -2.6
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -444,8 +436,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Arcanum/AR_Z01_Hub"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

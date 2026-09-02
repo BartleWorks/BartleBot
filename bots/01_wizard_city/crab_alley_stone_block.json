@@ -32,8 +32,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -56,8 +55,7 @@
           "y": -2802.26,
           "z": -27.99
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -80,8 +78,7 @@
           "y": -3295.22,
           "z": -29.36
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -104,8 +101,7 @@
           "y": -616.32,
           "z": -1397.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -120,8 +116,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -144,8 +139,7 @@
           "y": -2767.04,
           "z": -1394.23
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -158,8 +152,7 @@
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -179,8 +172,7 @@
         "entity_names": [
           "Stone"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -200,8 +192,7 @@
         "entity_names": [
           "Stone"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -221,8 +212,7 @@
         "entity_names": [
           "Stone"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -242,8 +232,7 @@
         "entity_names": [
           "Stone"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -261,8 +250,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

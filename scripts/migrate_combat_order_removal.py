@@ -11,11 +11,14 @@ Nothing outside ``bots/`` has read these fields since that migration, but they
 survive in the JSON: the option still renders in the bot options panel, where
 editing it does nothing at all.
 
-Three removals per bot:
+Two removals per bot:
 
   a. The ``"Default Combat Order"`` entry in the bot's ``options`` list.
-  b. Any ``"Default Combat Order"`` key in a state's ``option_overrides``.
-  c. Any ``combat_order`` key in a state's ``params``.
+  b. Any ``combat_order`` key in a state's ``params``.
+
+A third removal — the option's key in a state's ``option_overrides`` — was here
+until per-node option overrides were retired outright; see
+``scripts/migrate_option_overrides.py``, which drops the whole field.
 
 Only the combat *order* fields are touched. The other v2 combat leftovers
 (``combat_config``, ``use_bot_default``, ``default_combat_config``,
@@ -71,11 +74,6 @@ def migrate_bot_data(data: dict) -> tuple[dict, list[str]]:
         if not isinstance(state, dict):
             continue
         state_id = state.get("id", "?")
-
-        overrides = state.get("option_overrides")
-        if isinstance(overrides, dict) and OPTION_NAME in overrides:
-            del overrides[OPTION_NAME]
-            changes.append(f"state {state_id!r}: removed {OPTION_NAME!r} override")
 
         params = state.get("params")
         if isinstance(params, dict) and PARAM_NAME in params:

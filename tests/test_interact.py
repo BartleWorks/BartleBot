@@ -347,7 +347,7 @@ async def test_sequential_each_client_interacts_alone():
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(_nh, "POLL_INTERVAL", 0),
-        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(_nh, "OBJECT_USE_DELAY", 0),
     ):
         result = await ix.run(FakeMachine(), clients, params)
 
@@ -387,7 +387,7 @@ async def test_sequential_advances_dialogue_per_client():
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(_nh, "POLL_INTERVAL", 0),
         patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
-        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(_nh, "OBJECT_USE_DELAY", 0),
         patch.object(_nh, "is_visible_by_path", side_effect=_visible),
     ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
@@ -408,7 +408,7 @@ async def test_sequential_prompt_never_appears_fails():
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(_nh, "POLL_INTERVAL", 0),
-        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(_nh, "OBJECT_USE_DELAY", 0),
     ):
         result = await ix.run(machine, [good, bad], params)
 
@@ -424,7 +424,7 @@ async def test_sequential_respects_interact_clients_subset():
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(_nh, "POLL_INTERVAL", 0),
-        patch.object(_nh, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(_nh, "OBJECT_USE_DELAY", 0),
     ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
@@ -468,3 +468,116 @@ async def test_late_dialog_caught_within_safety_window():
         result = await ix.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
+
+
+# ---------------------------------------------------------------------------
+# Animation Delay — additive on top of the resolved Safety Delay
+# ---------------------------------------------------------------------------
+
+
+def _capture_quiet(monkeypatch) -> list[float]:
+    """Record the quiet period each advance_dialogue_until_clear call is given."""
+    seen: list[float] = []
+
+    async def _fake(clients, safety_delay, timeout):
+        seen.append(safety_delay)
+        return True
+
+    monkeypatch.setattr(_nh, "advance_dialogue_until_clear", _fake)
+    return seen
+
+
+async def test_animation_delay_is_added_to_the_safety_delay(monkeypatch):
+    """The two waits measure different things, so the quiet period has to cover both."""
+    seen = _capture_quiet(monkeypatch)
+    client = _ready_client()
+
+    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(_nh, "POLL_INTERVAL", 0):
+        result = await ix.run(
+            FakeMachine(options={"Safety Delay": 3.0}),
+            [client],
+            {**_PARAMS, "animation_delay": 2.0},
+        )
+
+    assert result == "SUCCESS"
+    assert seen == [5.0]
+
+
+async def test_no_animation_delay_leaves_the_quiet_period_at_the_safety_delay(monkeypatch):
+    """Zero is the default, and it must not shift a bot that never opts in."""
+    seen = _capture_quiet(monkeypatch)
+    client = _ready_client()
+
+    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(_nh, "POLL_INTERVAL", 0):
+        result = await ix.run(FakeMachine(options={"Safety Delay": 3.0}), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert seen == [3.0]
+
+
+async def test_animation_delay_applies_on_the_sequential_path_too(monkeypatch):
+    """Sequential mode advances each client's dialogue itself, and pays the same wait."""
+    seen = _capture_quiet(monkeypatch)
+    client = _ready_client()
+
+    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+        return [_nh.TurnResult(prompted=True, completed=bool(await turn_fn(c))) for c in clients]
+
+    monkeypatch.setattr(_nh, "take_turns", _fake_take_turns)
+
+    result = await ix.run(
+        FakeMachine(options={"Safety Delay": 3.0}),
+        [client],
+        {**_PARAMS, "sequential": True, "animation_delay": 2.0},
+    )
+
+    assert result == "SUCCESS"
+    assert seen == [5.0]
+
+
+async def test_animation_delay_costs_nothing_when_the_interaction_is_silent(monkeypatch):
+    """has_dialogue=False returns before the quiet period is reached at all."""
+    seen = _capture_quiet(monkeypatch)
+    client = _ready_client()
+
+    with patch.object(ix, "POLL_INTERVAL", 0), patch.object(_nh, "POLL_INTERVAL", 0):
+        result = await ix.run(
+            FakeMachine(options={"Safety Delay": 3.0}),
+            [client],
+            {**_PARAMS, "has_dialogue": False, "animation_delay": 2.0},
+        )
+
+    assert result == "SUCCESS"
+    assert seen == []
+
+
+async def test_the_object_use_delay_param_reaches_take_turns(monkeypatch):
+    """The gap between uses was already a take_turns argument; the node now exposes it."""
+    captured: dict = {}
+
+    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+        captured.update(kwargs)
+        return [_nh.TurnResult(prompted=True, completed=True) for _ in clients]
+
+    monkeypatch.setattr(_nh, "take_turns", _fake_take_turns)
+
+    result = await ix.run(FakeMachine(), [_ready_client()], {**_PARAMS, "sequential": True, "object_use_delay": 9.0})
+
+    assert result == "SUCCESS"
+    assert captured["object_use_delay"] == 9.0
+
+
+async def test_an_unset_object_use_delay_leaves_take_turns_on_its_own_default(monkeypatch):
+    """None, not 0.0 — take_turns reads the constant at call time so it stays patchable."""
+    captured: dict = {}
+
+    async def _fake_take_turns(clients, interact_xyz, reset_xyz, safety_delay, turn_fn, **kwargs):
+        captured.update(kwargs)
+        return [_nh.TurnResult(prompted=True, completed=True) for _ in clients]
+
+    monkeypatch.setattr(_nh, "take_turns", _fake_take_turns)
+
+    result = await ix.run(FakeMachine(), [_ready_client()], {**_PARAMS, "sequential": True})
+
+    assert result == "SUCCESS"
+    assert captured["object_use_delay"] is None

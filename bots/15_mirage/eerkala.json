@@ -48,8 +48,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -67,8 +66,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -80,8 +78,7 @@
       },
       "params": {
         "zone": "Mirage/MR_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -104,8 +101,7 @@
           "y": 413.96,
           "z": 0.05
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -128,8 +124,7 @@
           "y": -14.64,
           "z": 51.25
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -146,8 +141,7 @@
           "y": -30.55,
           "z": 100.78
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -161,8 +155,7 @@
         "enemy": "MR_Djinn_MageF_B_Boss_01",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -185,8 +178,7 @@
           "y": 4938.1,
           "z": 26.95
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -196,8 +188,7 @@
         "x": 6160.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_10",
@@ -220,8 +211,7 @@
           "y": -935.07,
           "z": 0.05
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -244,8 +234,7 @@
           "y": -7752.96,
           "z": 71.22
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -268,8 +257,7 @@
           "y": 16.66,
           "z": 2.73
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -292,8 +280,7 @@
           "y": -4306.88,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -315,8 +302,7 @@
           "y": -9078.1,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -328,8 +314,7 @@
       },
       "params": {
         "zone": "Mirage/MR_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -339,8 +324,7 @@
         "x": -1760.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_18",
@@ -357,8 +341,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -375,8 +358,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -391,8 +373,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -406,8 +387,7 @@
         "keep_list": [
           "Epic Opal"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -419,8 +399,7 @@
       },
       "params": {
         "duration": 1.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

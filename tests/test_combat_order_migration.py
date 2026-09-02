@@ -45,20 +45,16 @@ def test_removes_bot_option():
     assert changes == [f"removed bot option {OPTION_NAME!r}"]
 
 
-def test_removes_option_override_and_param():
+def test_removes_param():
     state = {
         "id": "state_5",
         "node_type": "handle_combat",
         "params": {"enemy": "Boss", "combat_order": [1, 2]},
-        "option_overrides": {OPTION_NAME: [2, 1], "Safety Delay": 5.0},
     }
     data, changes = migrate_bot_data(_bot(states=[state]))
 
-    params = data["states"][0]["params"]
-    overrides = data["states"][0]["option_overrides"]
-    assert params == {"enemy": "Boss"}
-    assert overrides == {"Safety Delay": 5.0}
-    assert len(changes) == 2
+    assert data["states"][0]["params"] == {"enemy": "Boss"}
+    assert len(changes) == 1
 
 
 def test_leaves_other_legacy_combat_fields_alone():
@@ -85,7 +81,6 @@ def test_idempotent_second_run_is_a_no_op():
                 "id": "state_1",
                 "node_type": "handle_combat",
                 "params": {"combat_order": [1, 2]},
-                "option_overrides": {OPTION_NAME: [2, 1]},
             }
         ],
     )
@@ -100,7 +95,7 @@ def test_idempotent_second_run_is_a_no_op():
 def test_clean_bot_reports_no_changes():
     data = _bot(
         options=[_safety_option()],
-        states=[{"id": "state_1", "node_type": "handle_combat", "params": {"enemy": ""}, "option_overrides": {}}],
+        states=[{"id": "state_1", "node_type": "handle_combat", "params": {"enemy": ""}}],
     )
     _, changes = migrate_bot_data(data)
 

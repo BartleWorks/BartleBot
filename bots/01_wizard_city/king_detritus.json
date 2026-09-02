@@ -309,8 +309,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -333,8 +332,7 @@
           "y": 2382.29,
           "z": 229.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -349,8 +347,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -373,8 +370,7 @@
           "y": 2355.38,
           "z": 0.1
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -397,8 +393,7 @@
           "y": -14630.11,
           "z": 4.74
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -415,8 +410,7 @@
           "y": -4538.14,
           "z": 539.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -426,8 +420,7 @@
         "x": 3080,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_8",
@@ -444,8 +437,7 @@
           "y": -1463.68,
           "z": 539.5
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -455,8 +447,7 @@
         "x": 4400.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_10",
@@ -481,8 +472,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -506,8 +496,7 @@
           "z": 0.4
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -521,8 +510,7 @@
         "enemy": "CC_Trash_Boss_A_01",
         "use_default_strategy": false,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -539,8 +527,7 @@
           "y": 2549.58,
           "z": 1.8
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -550,8 +537,7 @@
         "x": 4840.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_15",
@@ -563,8 +549,7 @@
       },
       "params": {
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -574,8 +559,7 @@
         "x": 7040.0,
         "y": 0.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_17",
@@ -589,8 +573,7 @@
         "keep_list": [
           "Vanguard"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -602,8 +585,7 @@
       },
       "params": {
         "duration": 3.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -621,8 +603,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -634,8 +615,7 @@
       },
       "params": {
         "duration": 7.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

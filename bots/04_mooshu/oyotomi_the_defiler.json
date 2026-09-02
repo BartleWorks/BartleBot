@@ -393,8 +393,7 @@
       },
       "params": {
         "world": "MooShu"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -412,8 +411,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -437,8 +435,7 @@
           "z": 0.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -450,8 +447,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -469,8 +465,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -480,8 +475,7 @@
         "x": 1760.0,
         "y": -180.0
       },
-      "params": {},
-      "option_overrides": {}
+      "params": {}
     },
     {
       "id": "state_7",
@@ -493,8 +487,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -517,8 +510,7 @@
           "y": -488.0,
           "z": 898.45
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -540,8 +532,7 @@
           "y": -5.69,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -559,8 +550,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -584,8 +574,7 @@
           "z": -154.11
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -597,8 +586,7 @@
       },
       "params": {
         "zone": "MooShu/MS_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -622,8 +610,7 @@
           "z": -203.94
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -640,8 +627,7 @@
           "y": 36646.89,
           "z": -320.4
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -656,8 +642,7 @@
         "wiki_page": "Creature:Oyotomi the Defiler",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -674,8 +659,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -692,8 +676,7 @@
           "y": 35844.7,
           "z": -379.38
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -708,8 +691,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -721,8 +703,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -741,8 +722,7 @@
         "sell_pets": null,
         "sell_socket_wrenches": null,
         "sell_skeleton_keys": null
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -766,8 +746,7 @@
           "z": 0.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

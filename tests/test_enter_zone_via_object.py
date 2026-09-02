@@ -292,7 +292,7 @@ async def test_sequential_clients_transition_one_at_a_time():
     with (
         patch.object(itz, "POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
         patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
         patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
     ):
@@ -318,7 +318,7 @@ async def test_sequential_client_never_triggers_fails():
         patch.object(itz, "POLL_INTERVAL", 0),
         patch.object(itz, "TRIGGER_TIMEOUT", 0.05),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
         patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
         patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
     ):
@@ -336,7 +336,7 @@ async def test_sequential_does_not_park_a_departing_client():
     with (
         patch.object(itz, "POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
         patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
         patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
     ):

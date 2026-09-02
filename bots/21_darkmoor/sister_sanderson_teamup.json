@@ -498,8 +498,7 @@
           "z": 0.0
         },
         "minimum_team_size": 2
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -514,8 +513,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -531,8 +529,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -555,8 +552,7 @@
           "y": 269.16,
           "z": 1.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -572,8 +568,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -588,8 +583,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Darkmoor/DM_Z01_Graveholm"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -603,8 +597,7 @@
         "keep_list": [
           "Abomination"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -616,8 +609,7 @@
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -641,8 +633,7 @@
           "z": 0.3
         },
         "zone_list_entry": "DM_Z01_Graveholm"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

@@ -548,8 +548,7 @@
       },
       "params": {
         "zone": "Polaris/PL_Z00_Walruskberg"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -572,8 +571,7 @@
           "y": -28080.47,
           "z": 3979.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -591,8 +589,7 @@
           "y": -3900.85,
           "z": -0.26
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -606,8 +603,7 @@
         "enemy": "PL_WolfGryphon_Warrior_C",
         "use_bot_default": false,
         "combat_config": "### p1\nmass | feint[potent]@boss | feint@boss\n\n### p2\nany<aura & out_damage> | lord[epic] | tempest[epic]"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -625,8 +621,7 @@
           "y": 163.52,
           "z": 2.28
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -644,8 +639,7 @@
           "y": 168.13,
           "z": -0.22
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -668,8 +662,7 @@
           "y": 2130.41,
           "z": -129.34
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -685,8 +678,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -701,8 +693,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Polaris/PL_Z03_IcefallPassage"
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

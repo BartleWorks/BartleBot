@@ -26,8 +26,8 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
     DIALOG_TIMEOUT,
     MAX_RETRIES,
+    OBJECT_USE_DELAY,
     POLL_INTERVAL,
-    SEQUENTIAL_INTERACT_STAGGER,
     WINDOW_CLOSE_CONFIRM_INTERVAL,
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
@@ -534,7 +534,7 @@ async def take_turns(
     turn_fn,
     numbers: list[int] | None = None,
     poll_interval: float = POLL_INTERVAL,
-    stagger: float | None = None,
+    object_use_delay: float | None = None,
     park_after_turn: bool = True,
     log=None,
 ) -> list[TurnResult]:
@@ -571,7 +571,7 @@ async def take_turns(
     """
     labels = numbers if numbers is not None else list(range(1, len(clients) + 1))
     # Read at call time rather than bound as a default, so the constant stays patchable.
-    gap = SEQUENTIAL_INTERACT_STAGGER if stagger is None else stagger
+    gap = OBJECT_USE_DELAY if object_use_delay is None else object_use_delay
 
     def _log(message: str, level: int = logging.DEBUG) -> None:
         if log:

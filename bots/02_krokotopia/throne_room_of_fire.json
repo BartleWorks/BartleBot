@@ -479,8 +479,7 @@
       },
       "params": {
         "zone": "Krokotopia/KT_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -503,8 +502,7 @@
           "y": 7291.8,
           "z": 496.29
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -527,8 +525,7 @@
           "y": 7080.77,
           "z": 950.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -551,8 +548,7 @@
           "y": -16089.92,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -569,8 +565,7 @@
           "y": -4970.93,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -595,8 +590,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -613,8 +607,7 @@
           "y": 28272.75,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -629,8 +622,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -655,8 +647,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -671,8 +662,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 300.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -687,8 +677,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -705,8 +694,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

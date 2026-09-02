@@ -290,8 +290,7 @@
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -314,8 +313,7 @@
           "y": 8740.77,
           "z": 276.01
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -338,8 +336,7 @@
           "y": 6347.6,
           "z": 3.24
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -362,8 +359,7 @@
           "y": 1983.34,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -378,8 +374,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -391,8 +386,7 @@
       },
       "params": {
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -415,8 +409,7 @@
           "y": -620.0,
           "z": 91.05
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

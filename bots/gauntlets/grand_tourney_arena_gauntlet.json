@@ -278,8 +278,7 @@
         "target_hooked_player": false,
         "target_player": 1,
         "to_zone": "*Housing*"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -291,8 +290,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -307,8 +305,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -320,8 +317,7 @@
       },
       "params": {
         "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -336,8 +332,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -360,8 +355,7 @@
           "y": -3240.93,
           "z": -13.42
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -386,8 +380,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -410,8 +403,7 @@
           "y": -241.53,
           "z": 2.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -426,8 +418,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -450,8 +441,7 @@
           "y": -2674.04,
           "z": -13.62
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -476,8 +466,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -500,8 +489,7 @@
           "y": 108.75,
           "z": 2.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -516,8 +504,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -540,8 +527,7 @@
           "y": -3261.16,
           "z": -13.42
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -566,8 +552,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -590,8 +575,7 @@
           "y": -276.53,
           "z": 2.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -606,8 +590,7 @@
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -630,8 +613,7 @@
           "y": -1376.3,
           "z": -8.74
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -656,8 +638,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -680,8 +661,7 @@
           "y": -273.14,
           "z": 2.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -696,8 +676,7 @@
         "use_bot_default": false,
         "combat_config": "bunyip[epic] | tempest[epic]",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -714,8 +693,7 @@
           "y": -76.98,
           "z": -12.37
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -731,8 +709,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

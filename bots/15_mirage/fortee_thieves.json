@@ -790,8 +790,7 @@
           "y": -151.59,
           "z": -58.24
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -806,8 +805,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -824,8 +822,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -842,8 +839,7 @@
           "y": -151.59,
           "z": -58.24
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -855,8 +851,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -871,8 +866,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Mirage/MR_Z07_ThievesDen"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -886,8 +880,7 @@
         "keep_list": [
           "Piercing"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

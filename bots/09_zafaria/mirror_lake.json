@@ -1666,8 +1666,7 @@
       },
       "params": {
         "zone": "Zafaria/ZF_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -1685,8 +1684,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1704,8 +1702,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1722,8 +1719,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1738,8 +1734,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1762,8 +1757,7 @@
           "y": 2325.59,
           "z": -1026.06
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1780,8 +1774,7 @@
           "y": -448.09,
           "z": -1514.03
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1793,8 +1786,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1820,8 +1812,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1835,8 +1826,7 @@
         "enemy": "ZF-TseTse-Main-R11-Boss",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1848,8 +1838,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1873,8 +1862,7 @@
           "z": -1133.37
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1891,8 +1879,7 @@
           "y": 11672.53,
           "z": 285.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -1906,8 +1893,7 @@
         "enemy": "ZF-Elephant-Spectral-Guardian-R11",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -1924,8 +1910,7 @@
           "y": 9009.3,
           "z": 285.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -1937,8 +1922,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -1962,8 +1946,7 @@
           "z": 285.84
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1980,8 +1963,7 @@
           "y": -354.29,
           "z": -1540.21
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1995,8 +1977,7 @@
         "enemy": "ZF-Goliath-R11-Boss-03",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -2013,8 +1994,7 @@
           "y": 3907.46,
           "z": -1615.3
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -2026,8 +2006,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -2041,8 +2020,7 @@
         "enemy": "ZF-Spider-Model-Starburst-R11",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -2054,8 +2032,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -2080,8 +2057,7 @@
           "Quick Stepping Boots",
           "Splendid"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

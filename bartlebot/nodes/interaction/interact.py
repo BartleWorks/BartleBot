@@ -7,6 +7,13 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.timing import (
+    DIALOG_TIMEOUT,
+    INTERACT_ANIMATION_DELAY,
+    MAX_RETRIES,
+    OBJECT_USE_DELAY,
+    POLL_INTERVAL,
+)
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -57,6 +64,22 @@ PARAM_SCHEMA: list[ParamField] = [
         required=False,
     ),
     ParamField(
+        key="animation_delay",
+        type="float",
+        label="Animation Delay (s)",
+        help=(
+            "Extra seconds to wait for this interaction's own animation, on top of the "
+            "Safety Delay. Added to the quiet period the node requires before it calls the "
+            "dialogue finished, so a cutscene that opens a late dialogue window is not "
+            "mistaken for silence. Additive rather than a replacement: the animation takes "
+            "the same time on every connection, while Safety Delay is the slack this "
+            "player's connection needs on top of it."
+        ),
+        default=INTERACT_ANIMATION_DELAY,
+        default_hint="No animation to wait out.",
+        required=False,
+    ),
+    ParamField(
         key="sequential",
         type="bool",
         label="Sequential Interaction",
@@ -69,6 +92,21 @@ PARAM_SCHEMA: list[ParamField] = [
         ),
         default=False,
         default_hint="All players interact at once.",
+        required=False,
+    ),
+    ParamField(
+        key="object_use_delay",
+        type="float",
+        label="Delay Between Object Uses (s)",
+        help=(
+            "Seconds to leave between one player finishing at the object and the next player starting "
+            "on it, in Sequential Interaction. The object becoming free again has no readable signal, "
+            "so this is the only cover for it — raise it for an object with a slow cycle, such as a "
+            "teleporter that takes several seconds to reset. Ignored unless Sequential Interaction is "
+            "on."
+        ),
+        default=OBJECT_USE_DELAY,
+        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
         required=False,
     ),
 ]
@@ -106,8 +144,6 @@ NODE_SPEC = NodeSpec(
     ),
 )
 
-from bartlebot.nodes.timing import DIALOG_TIMEOUT, MAX_RETRIES, POLL_INTERVAL
-
 
 async def run(machine, clients: list, params: dict) -> str:
     """
@@ -127,8 +163,9 @@ async def run(machine, clients: list, params: dict) -> str:
          Return FAILURE if the prompt never appeared.
       5. Press X on all active_clients.
       6. Advance dialogue: click the advance button while any client is in_dialog().
-         Continue until no client is in dialogue AND Safety Delay seconds have elapsed
-         (to avoid missing late-opening windows). Return FAILURE if DIALOG_TIMEOUT expires.
+         Continue until no client is in dialogue AND Safety Delay + Animation Delay
+         seconds have elapsed (to avoid missing late-opening windows). Return FAILURE if
+         DIALOG_TIMEOUT expires.
 
     FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES;
     dialogue did not clear within DIALOG_TIMEOUT.
@@ -163,6 +200,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     has_dialogue: bool = params.get("has_dialogue", True)
+    # The animation is a property of the object and the connection slack is a property of
+    # the machine, so the quiet period has to cover both rather than pick one.
+    dialogue_quiet: float = safety_delay + float(params.get("animation_delay") or INTERACT_ANIMATION_DELAY)
 
     # 3s. Sequential mode: one client uses the object from approach to last dialogue box
     #     before the next one starts. Its dialogue is advanced per-client rather than for
@@ -175,7 +215,7 @@ async def run(machine, clients: list, params: dict) -> str:
             await client.send_key(Keycode.X, 0.1)
             if not has_dialogue:
                 return True
-            return await node_helpers.advance_dialogue_until_clear([client], safety_delay, DIALOG_TIMEOUT)
+            return await node_helpers.advance_dialogue_until_clear([client], dialogue_quiet, DIALOG_TIMEOUT)
 
         numbers = [i + 1 for i in interact_indices]
         results = await node_helpers.take_turns(
@@ -186,6 +226,7 @@ async def run(machine, clients: list, params: dict) -> str:
             _turn,
             numbers=numbers,
             poll_interval=POLL_INTERVAL,
+            object_use_delay=params.get("object_use_delay"),
             log=machine.log,
         )
         unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
@@ -256,7 +297,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "SUCCESS"
 
     machine.log("Advancing dialogue…", logging.DEBUG)
-    if not await node_helpers.advance_dialogue_until_clear(active_clients, safety_delay, DIALOG_TIMEOUT):
+    if not await node_helpers.advance_dialogue_until_clear(active_clients, dialogue_quiet, DIALOG_TIMEOUT):
         machine.log(
             f"FAILURE: dialogue did not clear within {DIALOG_TIMEOUT}s",
             logging.WARNING,

@@ -281,16 +281,28 @@ LEVEL_SCALING_STAGGER_DELAY = 1.0
 # staggering only the clicks loses the elixir for everyone after the first. Anyone still
 # missing it is retried rather than failed, so this only has to cover the common case.
 
-SEQUENTIAL_INTERACT_STAGGER = 1.0
-# Seconds between one client finishing its turn at a shared world object and the next one
+OBJECT_USE_DELAY = 1.0
+# Seconds between one player finishing its turn at a shared world object and the next one
 # starting on it, in the optional sequential mode of the interaction nodes. Some objects —
-# zone teleporters among them — only serve one player at a time, so a second client
-# interacting while the first is mid-interaction has its keypress swallowed. The gap covers
-# the object becoming free again, which has no readable signal of its own.
+# zone teleporters among them — only serve one player at a time, so a second player
+# interacting while the first is mid-interaction has its keypress swallowed. The delay
+# covers the object becoming free again, which has no readable signal of its own.
 #
 # Distinct from LEVEL_SCALING_STAGGER_DELAY, which paces the one station apply_level_scaling
 # is hardcoded against; these are separate knobs because there is no reason to believe every
 # contended object frees up at the same rate.
+
+INTERACT_ANIMATION_DELAY = 0.0
+# Extra seconds an interaction's own animation is given, on top of the resolved Safety
+# Delay, before its dialogue is treated as finished. Zero by default: most interactions
+# have no animation to wait out.
+#
+# Additive rather than a replacement because the two waits measure different things. A
+# cutscene — a milk churn tipping over, a statue rising — takes the same N seconds on
+# every connection, while Safety Delay is how much slack the *user's* connection needs
+# for the server response that follows. A node that pinned Safety Delay to cover an
+# animation took the user's slack away to buy the animation's time, which is the bug
+# this exists to retire.
 
 WISP_COLLECT_TIMEOUT = 10.0
 # Ceiling on how long a single client may spend collecting wisps for one

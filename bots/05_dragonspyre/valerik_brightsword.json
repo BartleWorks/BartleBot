@@ -132,8 +132,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -156,8 +155,7 @@
           "y": -898.65,
           "z": -0.04
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -180,8 +178,7 @@
           "y": 14877.34,
           "z": 1091.11
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -206,8 +203,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -224,8 +220,7 @@
           "y": 14503.84,
           "z": -700.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -240,8 +235,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -258,8 +252,7 @@
           "y": 14503.84,
           "z": -700.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -271,8 +264,7 @@
       },
       "params": {
         "duration": 5.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -287,8 +279,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -304,8 +295,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -321,8 +311,7 @@
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -335,8 +324,7 @@
       "params": {
         "threshold": 0.8,
         "timeout": 600.0
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

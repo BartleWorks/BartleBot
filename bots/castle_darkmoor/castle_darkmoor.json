@@ -935,8 +935,7 @@
       },
       "params": {
         "zone": "G14_DM/DM_Z01_CastleDarkmoor"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -954,8 +953,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -978,8 +976,7 @@
           "y": -422.23,
           "z": 16.55
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -997,8 +994,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1010,8 +1006,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1034,8 +1029,7 @@
           "y": 4440.57,
           "z": 2.4
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1058,8 +1052,7 @@
           "y": -314.31,
           "z": 1.27
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1076,8 +1069,7 @@
           "y": -2075.39,
           "z": 11.51
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1091,8 +1083,7 @@
         "enemy": "G14-DM-Werewolf_Boss",
         "max_duration": 0.0,
         "use_default_strategy": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1104,8 +1095,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1128,8 +1118,7 @@
           "y": 3531.13,
           "z": 506.14
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1146,8 +1135,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1159,8 +1147,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -1174,8 +1161,7 @@
         "enemy": "G14-DM-DeathKnight_Boss",
         "max_duration": 1200.0,
         "use_default_strategy": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -1187,8 +1173,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -1211,8 +1196,7 @@
           "y": 2822.98,
           "z": 1.89
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -1235,8 +1219,7 @@
           "y": 316.0,
           "z": 351.08
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1262,8 +1245,7 @@
           1
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1289,8 +1271,7 @@
           1
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -1313,8 +1294,7 @@
           "y": -2186.98,
           "z": 401.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1337,8 +1317,7 @@
           "y": 15.69,
           "z": 1100.2
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1355,8 +1334,7 @@
           "y": -3018.78,
           "z": -11.34
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -1368,8 +1346,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -1398,8 +1375,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -1428,8 +1404,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -1441,8 +1416,7 @@
       },
       "params": {
         "duration": 1.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -1454,8 +1428,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -1478,8 +1451,7 @@
           "y": -5488.02,
           "z": -11.22
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -1496,8 +1468,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -1523,8 +1494,7 @@
           2
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -1541,8 +1511,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -1557,8 +1526,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -1578,8 +1546,7 @@
           "Deception",
           "Unchecked"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -1605,8 +1572,7 @@
           2
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

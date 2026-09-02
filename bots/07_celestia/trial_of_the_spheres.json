@@ -1343,8 +1343,7 @@
       },
       "params": {
         "zone": "Celestia/CL_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -1367,8 +1366,7 @@
           "y": 14693.1,
           "z": -1099.7
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -1385,8 +1383,7 @@
           "y": -3673.38,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -1403,8 +1400,7 @@
           "y": -3872.6,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -1429,8 +1425,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -1455,8 +1450,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -1481,8 +1475,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -1507,8 +1500,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -1525,8 +1517,7 @@
           "y": -3453.99,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -1551,8 +1542,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -1577,8 +1567,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -1603,8 +1592,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -1621,8 +1609,7 @@
           "y": 1050.27,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -1647,8 +1634,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -1673,8 +1659,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -1699,8 +1684,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -1725,8 +1709,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1751,8 +1734,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1777,8 +1759,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -1801,8 +1782,7 @@
           "y": 3656.29,
           "z": -0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1817,8 +1797,7 @@
         "use_bot_default": false,
         "combat_config": "### p1\nshatter@boss | any<blade>@ally(0) | feint@boss | any<aoe>[epic]\n\n### p2\nbunyip[epic] | any<aura & out_damage> | tempest[epic]",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1835,8 +1814,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -1859,8 +1837,7 @@
           "y": 1154.49,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -1877,8 +1854,7 @@
           "y": 3813.74,
           "z": 1036.12
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -1893,8 +1869,7 @@
         "use_bot_default": false,
         "combat_config": "### p1\nany<blade>@ally(0) | any<aoe>[epic]\n\n### p2\nbunyip[epic] | tempest[epic]",
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -1917,8 +1892,7 @@
           "y": 7805.32,
           "z": 1036.12
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -1943,8 +1917,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -1969,8 +1942,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -1995,8 +1967,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -2021,8 +1992,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -2047,8 +2017,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -2073,8 +2042,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -2099,8 +2067,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -2125,8 +2092,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_35",
@@ -2151,8 +2117,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_36",
@@ -2177,8 +2142,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -2203,8 +2167,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_38",
@@ -2229,8 +2192,7 @@
         "interact_clients": [
           1
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_39",
@@ -2253,8 +2215,7 @@
           "y": 519.89,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_40",
@@ -2269,8 +2230,7 @@
         "use_bot_default": false,
         "combat_config": "any<aoe>[epic]",
         "max_duration": 120.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_41",
@@ -2293,8 +2253,7 @@
           "y": 1826.29,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_42",
@@ -2309,8 +2268,7 @@
           "Atavistic",
           "Bygone"
         ]
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

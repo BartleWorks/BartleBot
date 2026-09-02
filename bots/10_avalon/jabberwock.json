@@ -480,8 +480,7 @@
       },
       "params": {
         "zone": "Avalon/AV_Z00_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -499,8 +498,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -523,8 +521,7 @@
           "y": 5148.22,
           "z": -509.62
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -542,8 +539,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -566,8 +562,7 @@
           "y": 8499.71,
           "z": 190.19
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -582,8 +577,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -606,8 +600,7 @@
           "y": -148.95,
           "z": -26.3
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -624,8 +617,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -640,8 +632,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -653,8 +644,7 @@
       },
       "params": {
         "keep_list": []
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

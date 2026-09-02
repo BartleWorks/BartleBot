@@ -39,8 +39,7 @@
       },
       "params": {
         "zone": "DragonSpire/DS_Hub_Cathedral"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -63,8 +62,7 @@
           "y": -757.32,
           "z": -0.04
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -77,8 +75,7 @@
       "params": {
         "start_realm_page": 3,
         "end_realm_page": 5
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -98,8 +95,7 @@
         "entity_names": [
           "Mushroom"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -119,8 +115,7 @@
         "entity_names": [
           "Mushroom"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -140,8 +135,7 @@
         "entity_names": [
           "Mushroom"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -161,8 +155,7 @@
         "entity_names": [
           "Mushroom"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -185,8 +178,7 @@
           "y": -982.27,
           "z": -185.3
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -201,8 +193,7 @@
         "entity_names": [
           "Ore"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -225,8 +216,7 @@
           "y": 32677.65,
           "z": 0.0
         }
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

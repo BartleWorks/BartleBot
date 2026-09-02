@@ -618,8 +618,7 @@
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -642,8 +641,7 @@
           "y": -2802.26,
           "z": -27.99
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -666,8 +664,7 @@
           "y": -3295.22,
           "z": -29.36
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -690,8 +687,7 @@
           "y": -616.32,
           "z": -1397.84
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -706,8 +702,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -730,8 +725,7 @@
           "y": -2767.04,
           "z": -1394.23
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -749,8 +743,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -773,8 +766,7 @@
           "y": -2846.84,
           "z": 28.69
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -803,8 +795,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -821,8 +812,7 @@
           "y": 1329.81,
           "z": -2.19
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_10",
@@ -834,8 +824,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -864,8 +853,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -889,8 +877,7 @@
           "z": -2.15
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -905,8 +892,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -930,8 +916,7 @@
           "z": -48.93
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -946,8 +931,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -976,8 +960,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_18",
@@ -1000,8 +983,7 @@
           "y": -9.59,
           "z": -48.92
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_19",
@@ -1024,8 +1006,7 @@
           "y": 0.4,
           "z": -48.92
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_20",
@@ -1049,8 +1030,7 @@
           "z": -2.15
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_22",
@@ -1079,8 +1059,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_21",
@@ -1095,8 +1074,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_23",
@@ -1120,8 +1098,7 @@
           "z": -45.24
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_24",
@@ -1138,8 +1115,7 @@
           "y": -1212.6,
           "z": -79.97
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_25",
@@ -1151,8 +1127,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_26",
@@ -1166,8 +1141,7 @@
         "enemy": "",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_27",
@@ -1196,8 +1170,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_28",
@@ -1220,8 +1193,7 @@
           "y": 122.98,
           "z": -104.97
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_29",
@@ -1244,8 +1216,7 @@
           "y": 1576.34,
           "z": -44.06
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_30",
@@ -1262,8 +1233,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_31",
@@ -1287,8 +1257,7 @@
           "z": -2.16
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_32",
@@ -1303,8 +1272,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_33",
@@ -1328,8 +1296,7 @@
           "z": -48.93
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_34",
@@ -1344,8 +1311,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_35",
@@ -1374,8 +1340,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_36",
@@ -1398,8 +1363,7 @@
           "y": 8.86,
           "z": -48.92
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_37",
@@ -1422,8 +1386,7 @@
           "y": -6.6,
           "z": -48.92
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_38",
@@ -1447,8 +1410,7 @@
           "z": -2.15
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_39",
@@ -1477,8 +1439,7 @@
           4
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_40",
@@ -1507,8 +1468,7 @@
           4
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_41",
@@ -1537,8 +1497,7 @@
           4
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_42",
@@ -1567,8 +1526,7 @@
           4
         ],
         "has_dialogue": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_43",
@@ -1585,8 +1543,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_44",
@@ -1610,8 +1567,7 @@
           "z": -45.24
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_45",
@@ -1626,8 +1582,7 @@
         "use_bot_default": true,
         "combat_config": "",
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_46",
@@ -1656,8 +1611,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_47",
@@ -1680,8 +1634,7 @@
           "y": 2.91,
           "z": -48.92
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_48",
@@ -1705,8 +1658,7 @@
           "z": -44.26
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_49",
@@ -1723,8 +1675,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_50",
@@ -1753,8 +1704,7 @@
           4
         ],
         "has_dialogue": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_51",
@@ -1766,8 +1716,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_52",
@@ -1781,8 +1730,7 @@
         "enemy": "Tri-Gauntlet-Angler",
         "use_default_strategy": false,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_53",
@@ -1794,8 +1742,7 @@
       },
       "params": {
         "timeout": 60.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_54",
@@ -1819,8 +1766,7 @@
           "Esprit",
           "Judgment"
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_55",
@@ -1837,8 +1783,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_56",
@@ -1862,8 +1807,7 @@
           "z": -2.15
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_57",
@@ -1887,8 +1831,7 @@
           "z": -48.92
         },
         "stagger": true
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_58",
@@ -1903,8 +1846,7 @@
         "if_mana_below": 0.05,
         "refill_potions": true,
         "mark_zone": ""
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

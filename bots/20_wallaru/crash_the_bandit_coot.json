@@ -28,8 +28,7 @@
       },
       "params": {
         "zone": "Wallaru/WL_Z01_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -47,8 +46,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_3",
@@ -72,8 +70,7 @@
           "z": 2.0
         },
         "zone_list_entry": "Wobbegong"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -88,8 +85,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Wallaru/WL_Z05_Wobbegong_JT"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -112,8 +108,7 @@
           "y": -2693.45,
           "z": 193.83
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -127,8 +122,7 @@
         "enemy": "WL_Dingo_Crash_A_01",
         "use_default_strategy": true,
         "max_duration": 600.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -145,8 +139,7 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_8",
@@ -170,8 +163,7 @@
           "z": -976.89
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_9",
@@ -183,8 +175,7 @@
       },
       "params": {
         "keep_list": []
-      },
-      "option_overrides": {}
+      }
     }
   ],
   "transitions": [

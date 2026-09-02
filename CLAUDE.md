@@ -431,6 +431,27 @@ Two things that fall out of it:
 `Safety Delay` is the deliberate exception — it describes the machine's connection
 rather than the bot, so no stored value should outrank the app setting.
 
+#### A node cannot pin a bot-wide option
+
+`StateModel.option_overrides` let one node override a bot-wide option for itself. It
+is gone, with no shim, because it was this same confusion one level down: every
+surviving use in the library pinned `Safety Delay`, so a bot pinning `0.0` gave a
+user on a bad connection no slack at all and no way to get it back.
+
+A pin is always a symptom, and naming the actual cause replaces it with something
+cheaper as well as more honest. The three causes behind the sixteen the library had:
+
+| the pin was buying | now |
+|---|---|
+| a shorter post-interact quiet period, on an interaction with no dialogue | `has_dialogue: false` — which returns *before* that wait, so 1.0 s becomes 0 |
+| time for a cutscene | `animation_delay`, **added to** the resolved Safety Delay — the animation takes N seconds on any connection, and *then* the response needs the user's slack |
+| retries against a slow shared object, in sequential mode | `object_use_delay` ("Delay Between Object Uses"), the gap `take_turns` already left between players and no node exposed |
+
+`scripts/migrate_option_overrides.py` is the migration, and
+`test_no_bot_pins_a_bot_wide_option_for_one_node` keeps the library clean — Pydantic
+ignores an unknown key rather than rejecting it, so a re-introduced pin would be
+dropped silently on the next save instead of failing.
+
 #### When no bot should ever store a value
 
 `tri_bool` says "no bot *needs* to pin this". Some values are stronger than that:

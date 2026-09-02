@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Spike the Crusher in Big Ben, Marleybone",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_3",
-  "recovery_state": "state_1",
+  "initial": "state_18",
+  "recovery_state": "state_18",
   "start_location": "Anywhere in Marleybone",
   "drops": [
     {
@@ -245,8 +245,7 @@
       },
       "params": {
         "zone": "Marleybone/MB_Hub"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_2",
@@ -264,27 +263,7 @@
           3,
           4
         ]
-      },
-      "option_overrides": {}
-    },
-    {
-      "id": "state_3",
-      "node_type": "check_zone",
-      "label": "Check if in Marleybone",
-      "position": {
-        "x": -880.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Marleybone/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_4",
@@ -308,8 +287,7 @@
           "z": -0.0
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_5",
@@ -332,8 +310,7 @@
           "y": 4112.19,
           "z": -350.03
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_6",
@@ -350,8 +327,7 @@
           "y": 21007.16,
           "z": -202.88
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_7",
@@ -365,8 +341,7 @@
         "enemy": "Golem-Clockwork-MBBoss-L37",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_11",
@@ -394,10 +369,8 @@
           3,
           4
         ],
-        "has_dialogue": true
-      },
-      "option_overrides": {
-        "Safety Delay": 5.0
+        "has_dialogue": true,
+        "animation_delay": 5.0
       }
     },
     {
@@ -423,10 +396,8 @@
         "interact_clients": [
           1
         ],
-        "has_dialogue": true
-      },
-      "option_overrides": {
-        "Safety Delay": 5.0
+        "has_dialogue": true,
+        "animation_delay": 5.0
       }
     },
     {
@@ -452,10 +423,8 @@
         "interact_clients": [
           1
         ],
-        "has_dialogue": true
-      },
-      "option_overrides": {
-        "Safety Delay": 5.0
+        "has_dialogue": true,
+        "animation_delay": 5.0
       }
     },
     {
@@ -473,8 +442,7 @@
           "y": 11994.05,
           "z": -202.8
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_12",
@@ -488,8 +456,7 @@
         "enemy": "",
         "use_default_strategy": true,
         "max_duration": 0.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_13",
@@ -506,8 +473,7 @@
           "y": 11998.99,
           "z": -202.74
         }
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_14",
@@ -524,8 +490,7 @@
         "fail_if_mana_below": 0.1,
         "only_safe": true,
         "timeout": 10.0
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_15",
@@ -549,8 +514,7 @@
           "z": -202.79
         },
         "stagger": false
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_16",
@@ -565,8 +529,7 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": "Marleybone/MB_BigBen/MB_Museum"
-      },
-      "option_overrides": {}
+      }
     },
     {
       "id": "state_17",
@@ -582,8 +545,19 @@
           "Crusher"
         ]
       },
-      "option_overrides": {},
       "notes": "Keeps all school design gear"
+    },
+    {
+      "id": "state_18",
+      "node_type": "go_to_world",
+      "label": "Go to Marleybone",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "world": "Marleybone"
+      }
     }
   ],
   "transitions": [
@@ -739,6 +713,56 @@
     },
     {
       "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_18",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_2",
       "dest": "state_1",
       "when": "FALSE",
@@ -751,16 +775,6 @@
       "trigger": "advance",
       "source": "state_2",
       "dest": "state_16",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_2",
       "when": "TRUE",
       "flags": [],
       "flag_op": "AND",
@@ -882,36 +896,6 @@
       "source": "state_9",
       "dest": "state_10",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

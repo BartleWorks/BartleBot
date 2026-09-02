@@ -240,7 +240,7 @@ async def test_sequential_each_client_opens_the_menu_alone():
 
     with (
         patch.object(im, "POLL_INTERVAL", 0),
-        patch.object(node_helpers, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(node_helpers, "OBJECT_USE_DELAY", 0),
         patch.object(node_helpers, "is_visible_by_path", AsyncMock(return_value=True)),
     ):
         result = await im.run(FakeMachine(), clients, params)
@@ -257,7 +257,7 @@ async def test_sequential_menu_never_appears_reports_that_client():
 
     with (
         patch.object(im, "POLL_INTERVAL", 0),
-        patch.object(node_helpers, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(node_helpers, "OBJECT_USE_DELAY", 0),
         patch.object(node_helpers, "is_visible_by_path", AsyncMock(return_value=False)),
     ):
         result = await im.run(machine, [client], params)
@@ -277,7 +277,7 @@ async def test_sequential_prompt_never_appears_reports_that_client():
 
     with (
         patch.object(im, "POLL_INTERVAL", 0),
-        patch.object(node_helpers, "SEQUENTIAL_INTERACT_STAGGER", 0),
+        patch.object(node_helpers, "OBJECT_USE_DELAY", 0),
         patch.object(node_helpers, "is_visible_by_path", AsyncMock(return_value=True)),
     ):
         result = await im.run(machine, [client], params)
