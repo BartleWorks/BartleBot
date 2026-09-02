@@ -5,7 +5,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_1",
-  "recovery_state": "state_8",
+  "recovery_state": "state_1",
   "start_location": "Anywhere in Azteca",
   "drops": [
     {
@@ -680,20 +680,14 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "check_zone",
-      "label": "Check if in Azteca",
+      "node_type": "go_to_world",
+      "label": "Go to Azteca",
       "position": {
         "x": -880.0,
         "y": -90.0
       },
       "params": {
-        "zone": "Azteca/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "world": "Azteca"
       }
     },
     {
@@ -1307,8 +1301,18 @@
     {
       "trigger": "advance",
       "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
       "dest": "state_8",
-      "when": "TRUE",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
