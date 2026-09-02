@@ -1,23 +1,38 @@
-"""Sidebar section: bot-wide options (add / edit / delete)."""
+"""Sidebar section: the *declaration* half of a bot's options.
+
+This is the author's surface: what options exist, what type each is, what the
+author recommends, and what the tooltip says.  Editing a default here changes the
+**recommendation**, not the user's value -- that lives in ``settings.json`` and is
+edited in ``setup_section``, which is the other half of the split.
+
+Only hand-added options are editable.  An option a node requires is derived from
+its ``NodeSpec`` on every load (see ``bot_options.compose_options``), so renaming
+or deleting one here would be undone the moment the file was re-opened; those
+rows carry no Edit or Delete button.  Changing a derived option's *default* is
+allowed, and materialises the declaration into the file through
+``_declaration_for``.
+
+Both fixups an option name needs on a rename are done here, because this is the
+only place a name changes: the two transition flag forms, and the override store.
+"""
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
-    QButtonGroup,
     QCheckBox,
+    QComboBox,
     QDialog,
-    QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
-    QRadioButton,
-    QSpinBox,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -27,12 +42,23 @@ from bartlebot.bot_options import compose_options
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.option_widgets import (
+    OPTION_TYPES,
+    TYPE_LABELS,
+    connect_widget,
+    make_option_widget,
+    set_widget_value,
+    widget_value,
+)
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+
+logger = logging.getLogger(__name__)
 
 _PLACEHOLDER = "—"
 
@@ -43,10 +69,16 @@ _PLACEHOLDER = "—"
 
 
 class _AddOptionDialog(ThemedMixin, QDialog):
-    """Dialog for adding or editing a bot-wide boolean option.
+    """Dialog for adding or editing one bot-wide option declaration.
 
     Pass ``existing_option`` to open in edit mode (pre-populated fields,
     "Save" button, name uniqueness check excludes the original name).
+
+    The type picker is what makes this dialog usable on anything but a checkbox.
+    It used to hardcode ``type="bool"``, so pressing Edit on a ``float`` such as
+    Safety Delay silently rewrote it as a bool -- a one-click way to break a bot.
+    The default control swaps with the type, through the same builder both option
+    surfaces use.
     """
 
     def __init__(
@@ -69,25 +101,39 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("e.g. repeat")
 
+        self._type_combo = QComboBox()
+        for opt_type in OPTION_TYPES:
+            self._type_combo.addItem(TYPE_LABELS[opt_type], opt_type)
+
         self._desc_edit = QLineEdit()
         self._desc_edit.setPlaceholderText("Optional description")
 
-        default_widget = QWidget()
-        default_layout = QHBoxLayout(default_widget)
-        default_layout.setContentsMargins(0, 0, 0, 0)
-        default_layout.setSpacing(12)
-        self._bool_true = QRadioButton("True")
-        self._bool_false = QRadioButton("False")
-        self._bool_group = QButtonGroup(self)
-        self._bool_group.addButton(self._bool_true)
-        self._bool_group.addButton(self._bool_false)
-        default_layout.addWidget(self._bool_true)
-        default_layout.addWidget(self._bool_false)
-        default_layout.addStretch()
+        # One page per type, built up front: swapping the visible page is what
+        # keeps the value the user already typed for a type they switch back to.
+        self._default_stack = QStackedWidget()
+        self._default_widgets: dict[str, QWidget] = {}
+        for opt_type in OPTION_TYPES:
+            widget = make_option_widget(opt_type, None, connected=4, label="True")
+            self._default_widgets[opt_type] = widget
+            page = QWidget()
+            page_layout = QHBoxLayout(page)
+            page_layout.setContentsMargins(0, 0, 0, 0)
+            page_layout.addWidget(widget)
+            self._default_stack.addWidget(page)
+        self._type_combo.currentIndexChanged.connect(self._default_stack.setCurrentIndex)
+
+        # A declaration of None is the author saying "I have no opinion", which is
+        # what makes the app setting below it reachable at all -- without a way to
+        # express it here, every hand-added option would outrank the user's setting
+        # forever.  It reads as a checkbox because that is the question it asks.
+        self._no_opinion = QCheckBox("No recommendation — use the app setting or the node's own default")
+        self._no_opinion.toggled.connect(lambda on: self._default_stack.setDisabled(on))
 
         form.addRow("Name", self._name_edit)
+        form.addRow("Type", self._type_combo)
         form.addRow("Description", self._desc_edit)
-        form.addRow("Default", default_widget)
+        form.addRow("Default", self._default_stack)
+        form.addRow("", self._no_opinion)
 
         self._err_lbl = QLabel()
         self._err_lbl.setWordWrap(True)
@@ -112,12 +158,13 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         if edit_mode:
             self._name_edit.setText(existing_option.name)
             self._desc_edit.setText(existing_option.description or "")
-            if bool(existing_option.default):
-                self._bool_true.setChecked(True)
+            self._select_type(existing_option.type)
+            if existing_option.default is None:
+                self._no_opinion.setChecked(True)
             else:
-                self._bool_false.setChecked(True)
+                set_widget_value(self._default_widgets[self._current_type()], existing_option.default)
         else:
-            self._bool_false.setChecked(True)
+            self._select_type("bool")
 
         self.refresh_theme_styles()
 
@@ -128,6 +175,16 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         assert self._result is not None
         return self._result
 
+    def _current_type(self) -> str:
+        return self._type_combo.currentData() or "bool"
+
+    def _select_type(self, opt_type: str) -> None:
+        index = self._type_combo.findData(opt_type)
+        # An option declaring a type this build does not know still has to be
+        # editable; falling back to the first entry beats refusing to open.
+        self._type_combo.setCurrentIndex(index if index >= 0 else 0)
+        self._default_stack.setCurrentIndex(self._type_combo.currentIndex())
+
     def _on_ok(self) -> None:
         name = self._name_edit.text().strip()
         if not name:
@@ -136,10 +193,11 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         if name in self._existing_names:
             self._show_error(f"An option named '{name}' already exists.")
             return
+        opt_type = self._current_type()
         self._result = BotOptionModel(
             name=name,
-            type="bool",
-            default=self._bool_true.isChecked(),
+            type=opt_type,
+            default=None if self._no_opinion.isChecked() else widget_value(self._default_widgets[opt_type]),
             description=self._desc_edit.text().strip() or None,
         )
         self.accept()
@@ -155,14 +213,14 @@ class _AddOptionDialog(ThemedMixin, QDialog):
 
 
 class OptionsSection(SidebarSection):
-    """Collapsible 'Options' section: per-option value widgets + CRUD controls."""
+    """Collapsible 'Options' section: per-option declaration widgets + CRUD controls."""
 
     options_changed = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, settings: SettingsManager | None = None):
         super().__init__("Options", parent)
         self._config: BotConfig | None = None
-        self._suppress: bool = False
+        self._settings = settings
         self._editable: bool = False
         self._option_rows: list[QWidget] = []
         self._option_widgets: dict[str, QWidget] = {}
@@ -199,7 +257,7 @@ class OptionsSection(SidebarSection):
 
     @property
     def option_widgets(self) -> dict[str, QWidget]:
-        """``{option name: value widget}`` for the rows currently shown.
+        """``{option name: default widget}`` for the rows currently shown.
 
         The rows are built from the composed list, so this is the only way to ask
         what a bot's options are once they stopped being in its file.
@@ -255,6 +313,25 @@ class OptionsSection(SidebarSection):
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _sm(self) -> SettingsManager:
+        """The settings store, resolved late so a test can inject its own."""
+        if self._settings is None:
+            self._settings = SettingsManager.instance()
+        return self._settings
+
+    def _required_names(self) -> set[str]:
+        """Option names locked by at least one node currently in the bot."""
+        names: set[str] = set()
+        if self._config is None:
+            return names
+        for state in self._config.states:
+            spec = NODE_SPECS.get(state.node_type)
+            if spec is None:
+                continue
+            for req in spec.required_bot_options:
+                names.add(req.name)
+        return names
+
     def _rebuild_options(self, options: list) -> None:
         for row in self._option_rows:
             self._options_layout.removeWidget(row)
@@ -268,23 +345,18 @@ class OptionsSection(SidebarSection):
             self._no_options_lbl.show()
             return
 
-        # Compute which option names are locked by at least one node in the bot.
-        required_names: set[str] = set()
-        if self._config is not None:
-            for state in self._config.states:
-                spec = NODE_SPECS.get(state.node_type)
-                if spec:
-                    for req in spec.required_bot_options:
-                        required_names.add(req.name)
+        required_names = self._required_names()
+        connected = len(self._get_clients())
 
         self._no_options_lbl.hide()
         for opt in options:
-            inner, widget, desc_lbl = _build_option_parts(opt, len(self._get_clients()))
+            inner, widget, desc_lbl = _build_option_parts(opt, connected)
             self._connect_option_widget(widget, opt)
 
-            is_system = opt.name in required_names
-
-            if is_system:
+            # A derived option is re-composed from its NodeSpec on every load, so a
+            # rename or a delete here would not survive the round trip.  Its default
+            # is still the author's to change.
+            if opt.name in required_names:
                 if desc_lbl is not None:
                     inner.layout().addWidget(desc_lbl)
                 outer = inner
@@ -335,10 +407,7 @@ class OptionsSection(SidebarSection):
             return
         updated = dlg.get_option()
         if updated.name != name:
-            for t in self._config.transitions:
-                for fc in t.flags:
-                    if fc.option == name:
-                        fc.option = updated.name
+            self._rename_option(name, updated.name)
         idx = next(i for i, o in enumerate(self._config.options) if o.name == name)
         self._config.options[idx] = updated
         self._rebuild_options(self._composed())
@@ -348,39 +417,59 @@ class OptionsSection(SidebarSection):
         if self._config is None:
             return
         self._config.options = [o for o in self._config.options if o.name != name]
-        for t in self._config.transitions:
-            t.flags = [fc for fc in t.flags if fc.option != name]
+        for trans in self._config.transitions:
+            trans.flags = [fc for fc in trans.flags if fc.option != name]
+            for group in trans.flag_groups:
+                group.flags = [fc for fc in group.flags if fc.option != name]
+            trans.flag_groups = [g for g in trans.flag_groups if g.flags]
+        self._drop_override(name)
         self._rebuild_options(self._composed())
         self.options_changed.emit()
 
+    def _rename_option(self, old_name: str, new_name: str) -> None:
+        """Carry everything keyed on an option's name across the rename.
+
+        Three things are, and all three were missed before: the flat ``flags``
+        list, the grouped ``flag_groups`` the edge editor actually writes -- which
+        take precedence at run time, so guarding on the stale name silently
+        evaluated ``False`` -- and the user's stored value.
+        """
+        assert self._config is not None
+        for trans in self._config.transitions:
+            for fc in trans.flags:
+                if fc.option == old_name:
+                    fc.option = new_name
+            for group in trans.flag_groups:
+                for fc in group.flags:
+                    if fc.option == old_name:
+                        fc.option = new_name
+        try:
+            self._sm().rename_option_override(self._config.id, old_name, new_name)
+        except Exception:
+            # A lost override is a value the user has to re-enter, not a reason to
+            # abandon a rename the graph has already taken.
+            logger.exception("Failed to carry your value for option %r across a rename", old_name)
+
+    def _drop_override(self, name: str) -> None:
+        assert self._config is not None
+        try:
+            self._sm().drop_option_override(self._config.id, name)
+        except Exception:
+            logger.exception("Failed to forget your value for deleted option %r", name)
+
     def _connect_option_widget(self, widget: QWidget, opt) -> None:
         def _update(value) -> None:
-            if self._suppress or self._config is None:
+            if self._config is None:
                 return
             self._declaration_for(opt).default = value
             self.options_changed.emit()
 
-        if isinstance(widget, QCheckBox):
-            widget.toggled.connect(_update)
-        elif isinstance(widget, QSpinBox):
-            widget.valueChanged.connect(_update)
-        elif isinstance(widget, QDoubleSpinBox):
-            widget.valueChanged.connect(_update)
-        elif isinstance(widget, PlayerListWidget):
-            widget.changed.connect(lambda: _update(widget.get_value()))
-        elif isinstance(widget, QLineEdit):
-            widget.editingFinished.connect(lambda: _update(widget.text()))
+        connect_widget(widget, _update)
 
 
 # ---------------------------------------------------------------------------
 # Option row builder
 # ---------------------------------------------------------------------------
-
-
-def _build_option_row(opt, connected: int = 4) -> tuple[QWidget, QWidget]:
-    """Return (container_widget, input_widget) for a single BotOptionModel."""
-    row, widget, _desc = _build_option_parts(opt, connected)
-    return row, widget
 
 
 def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLabel | None]:
@@ -398,41 +487,16 @@ def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLab
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(1)
     tooltip = opt.description or ""
+
     # None is a declaration meaning "the author has no opinion" -- there is still
     # a widget to fill, and every type has an empty-handed value to fill it with.
-    value = opt.default
-
-    if opt.type == "bool":
-        widget = QCheckBox(opt.name)
-        widget.setChecked(bool(value))
-        if tooltip:
-            widget.setToolTip(tooltip)
-        layout.addWidget(widget)
-    else:
+    widget = make_option_widget(opt.type, opt.default, connected=connected, tooltip=tooltip, label=opt.name)
+    if opt.type != "bool":
         lbl = field_label(opt.name)
         if tooltip:
             lbl.setToolTip(tooltip)
         layout.addWidget(lbl)
-
-        if opt.type == "int":
-            widget = QSpinBox()
-            widget.setRange(-2_147_483_648, 2_147_483_647)
-            widget.setValue(int(value or 0))
-        elif opt.type == "float":
-            widget = QDoubleSpinBox()
-            widget.setDecimals(4)
-            widget.setRange(-1e12, 1e12)
-            widget.setValue(float(value or 0.0))
-        elif opt.type == "player_list":
-            widget = PlayerListWidget()
-            widget.set_available_players(connected)
-            widget.set_value(value if isinstance(value, list) else [])
-        else:  # str
-            widget = QLineEdit("" if value is None else str(value))
-
-        if tooltip:
-            widget.setToolTip(tooltip)
-        layout.addWidget(widget)
+    layout.addWidget(widget)
 
     desc_lbl: QLabel | None = None
     if opt.description:

@@ -391,11 +391,47 @@ mutually contradictory texts for the one setting.
   the editor reports it in the validation banner;
   `test_no_bot_guards_a_transition_on_an_option_nothing_declares` keeps the
   shipped library clean of them.
-- **Editing a derived option in the Config tab materialises it into the file.**
-  That tab edits *declarations*, and a declaration has to be in the file to
-  exist; `OptionsSection._declaration_for` is where the transient composed row
-  becomes a stored one. The save-time prune takes it back out if the user
-  changes their mind back.
+- **Editing a derived option in the Options surface materialises it into the
+  file.** That surface edits *declarations*, and a declaration has to be in the
+  file to exist; `OptionsSection._declaration_for` is where the transient
+  composed row becomes a stored one. The save-time prune takes it back out if
+  the user changes their mind back.
+
+#### Two surfaces: Setup edits values, Options edits declarations
+
+The Config tab holds both, swapped by edit mode — Run shows **Setup**
+(`setup_section.py`), Edit shows **Options** (`options_section.py`). Every
+production system that solves this split separates the surfaces by context
+rather than by a toggle inside one panel (Unity's Prefab Mode, Unreal's Class
+Defaults, VS Code's settings UI against `package.json`), and edit mode is the
+context this app already has.
+
+- **Setup writes `settings.json`, never the bot file.** `values_changed` is
+  deliberately *not* wired to `config_changed`: an override is not an edit to
+  the bot, and a shared bot must stay byte-identical however its users tune it.
+  `test_a_bot_file_is_untouched_by_a_value_edit` is the guard.
+- **A row says where its value came from.** The four-level resolution runs for
+  display too, through `bot_options.resolve_for_config` — the same gatherer
+  `BotMachine.get_option` uses, so the panel and the run cannot disagree. An
+  inherited row carries a caption naming the level; an overridden one carries a
+  coloured bar and a Reset button whose tooltip names what a reset falls back
+  to. That tooltip is the mitigation for storing overrides as bare values: an
+  author who later improves a declaration is outranked silently, so the one-way
+  door has to be visibly openable.
+- **A derived option has no Edit or Delete button.** It is re-composed from its
+  NodeSpec on every load, so either edit would be undone by the round trip. Its
+  *default* is still the author's to change.
+- **Renaming an option is three fixups, not one.** The flat `flags` list, the
+  `flag_groups` the edge editor actually writes — which take precedence at run
+  time, so a stale name there evaluates `False` in silence — and the override
+  store. `OptionsSection._rename_option` does all three; deleting does the same
+  three in reverse.
+- **One option-type → widget mapping**, in `gui/widgets/option_widgets.py`, used
+  by both surfaces and the Add/Edit dialog. `param_panel._make_widget` stays
+  separate: it maps *param* fields, a larger vocabulary (zone, xyz, wiki_page)
+  no bot option can have. Three copies of this mapping is how the dialog came to
+  hardcode `type="bool"` while the rows rendered floats — pressing Edit on
+  Safety Delay rewrote it as a checkbox.
 
 #### App settings vs. node params
 

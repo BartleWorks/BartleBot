@@ -147,7 +147,7 @@ class AppController(QObject):
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
         w.bot_canvas.save_done.connect(self._save_bot)
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
-        w.left_sidebar.options.set_clients_getter(lambda: self._client_manager.clients)
+        w.left_sidebar.set_clients_getter(lambda: self._client_manager.clients)
 
         def _zone_getter() -> list[str]:
             settings = SettingsManager.instance()
@@ -937,7 +937,7 @@ class AppController(QObject):
             self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
             self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)
-            self._window.left_sidebar.options.set_config(self._loaded_config)
+            self._window.left_sidebar.refresh_options(self._loaded_config)
             filename = Path(self._last_save_path).name if self._last_save_path else "Untitled"
             self._window.set_bot_name(self._loaded_config.name, filename)
 
@@ -955,7 +955,7 @@ class AppController(QObject):
         # Player checkboxes grey out the players nobody is behind; both panels build
         # them once and would otherwise stay stale until the next node selection.
         self._window.bot_canvas.refresh_player_availability()
-        self._window.left_sidebar.options.refresh_player_availability()
+        self._window.left_sidebar.refresh_player_availability()
 
     # ------------------------------------------------------------------
     # Auto-save / crash recovery

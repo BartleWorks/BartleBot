@@ -100,11 +100,11 @@ class StateModel(BaseModel):
 
 class BotOptionModel(BaseModel):
     name: str
-    type: Literal["bool", "int", "float", "str", "player_list"]
+    type: Literal["bool", "int", "float", "str", "str_list", "player_list"]
     # The author's recommended value -- *not* the user's current one, which lives in
     # settings.json (see bartlebot.bot_options). None means the author has no opinion,
     # which is what lets the app setting below it be reachable at all.
-    default: bool | int | float | str | list[int] | None = None
+    default: bool | int | float | str | list[int] | list[str] | None = None
     description: str | None = None
 
 
