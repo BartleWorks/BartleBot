@@ -132,7 +132,7 @@ def test_a_theme_change_reapplies_the_stylesheet_without_recursing(qapp):
 
 def _header() -> BotHeader:
     """A header with three throwaway button clusters standing in for the toolbar."""
-    return BotHeader(QWidget(), QWidget(), QWidget())
+    return BotHeader(QWidget(), QWidget())
 
 
 def _bot(**extra) -> BotConfig:

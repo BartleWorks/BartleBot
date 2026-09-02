@@ -89,6 +89,13 @@ def _status_dot_color(state: str) -> str:
 
 _ICON_SIZE = QSize(20, 20)
 _BTN_SIZE = QSize(32, 32)
+# Gap *within* a cluster, and between clusters.  Set explicitly on every toolbar row:
+# the style's default spacing is 6 px on Windows, so a row that only called
+# addSpacing(4) got 16 px between its buttons and overflowed the fixed width it was
+# given -- which is what was clipping the Save button off the right-hand end.
+_BTN_GAP = 4
+_GROUP_GAP = 10
+_PAIR_WIDTH = _BTN_SIZE.width() * 2 + _BTN_GAP
 
 
 def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
@@ -903,62 +910,84 @@ class BotCanvas(QWidget):
             self._save_done_btn: "save_done",
         }
 
-        # ── Swappable center zone ─────────────────────────────────────
-        run_center = QWidget()
-        run_center_row = QHBoxLayout(run_center)
-        run_center_row.setContentsMargins(0, 0, 0, 0)
-        run_center_row.addWidget(self._run_pause_btn)
-        run_center_row.addSpacing(4)
-        run_center_row.addWidget(self.stop_button)
+        # ── Centre zone: the transport, in Edit mode as well ─────────
+        # A transport is a landmark: people aim at it without looking, so it stays put
+        # and is *disabled* when it cannot be used rather than swapped for something
+        # else. Add State and Auto-Layout used to occupy these exact pixels in Edit
+        # mode, which made the same target do two different things with no cue at the
+        # target saying which -- and they are graph-editing tools, so they belong with
+        # the mode toggle that summons them, not in the run's seat.
+        run_controls = QWidget()
+        run_row = QHBoxLayout(run_controls)
+        run_row.setContentsMargins(0, 0, 0, 0)
+        run_row.setSpacing(_BTN_GAP)
+        run_row.addWidget(self._run_pause_btn)
+        run_row.addWidget(self.stop_button)
 
-        edit_center = QWidget()
-        edit_center_row = QHBoxLayout(edit_center)
-        edit_center_row.setContentsMargins(0, 0, 0, 0)
-        edit_center_row.addWidget(self._add_state_btn)
-        edit_center_row.addSpacing(4)
-        edit_center_row.addWidget(self._layout_btn)
+        # ── Edit tools: add a state, tidy the graph ──────────────────
+        edit_tools = QWidget()
+        edit_tools_row = QHBoxLayout(edit_tools)
+        edit_tools_row.setContentsMargins(0, 0, 0, 0)
+        edit_tools_row.setSpacing(_BTN_GAP)
+        edit_tools_row.addWidget(self._add_state_btn)
+        edit_tools_row.addWidget(self._layout_btn)
 
-        self._center_stack = QStackedWidget()
-        self._center_stack.addWidget(run_center)  # _TB_RUN  = 0
-        self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
+        self._edit_tools_stack = QStackedWidget()
+        self._edit_tools_stack.setFixedWidth(_PAIR_WIDTH)
+        self._edit_tools_stack.addWidget(QWidget())  # _TB_RUN  = 0 -- deliberately empty
+        self._edit_tools_stack.addWidget(edit_tools)  # _TB_EDIT = 1
 
-        # ── View tools (68 px fixed: fit + failure-edge toggle) ──────
+        # ── View tools (fit + failure-edge toggle) ───────────────────
         # These act on the *view*, not on the bot, so they sit with the mode toggle
         # on the right rather than among the metadata on the left.
         view_tools = QWidget()
-        view_tools.setFixedWidth(68)
+        view_tools.setFixedWidth(_PAIR_WIDTH)
         view_row = QHBoxLayout(view_tools)
         view_row.setContentsMargins(0, 0, 0, 0)
-        view_row.setSpacing(4)
+        view_row.setSpacing(_BTN_GAP)
         view_row.addWidget(self._fit_btn)
         view_row.addWidget(self._failure_edges_btn)
 
-        # ── Right mode-toggle zone (68 px fixed) ─────────────────────
-        # Run mode page: single icon right-aligned inside 68 px
+        # ── Right mode-toggle zone ───────────────────────────────────
+        # Run mode page: single icon right-aligned inside the pair's width
         run_right = QWidget()
         run_right_row = QHBoxLayout(run_right)
         run_right_row.setContentsMargins(0, 0, 0, 0)
+        run_right_row.setSpacing(_BTN_GAP)
         run_right_row.addStretch(1)
         run_right_row.addWidget(self._edit_btn)
 
-        # Edit mode page: two icons, fills 68 px naturally (32+4+32)
+        # Edit mode page: two icons, filling the pair's width exactly
         edit_right = QWidget()
         edit_right_row = QHBoxLayout(edit_right)
         edit_right_row.setContentsMargins(0, 0, 0, 0)
+        edit_right_row.setSpacing(_BTN_GAP)
         edit_right_row.addWidget(self._done_btn)
-        edit_right_row.addSpacing(4)
         edit_right_row.addWidget(self._save_done_btn)
 
         self._right_stack = QStackedWidget()
-        self._right_stack.setFixedWidth(68)
+        self._right_stack.setFixedWidth(_PAIR_WIDTH)
         self._right_stack.addWidget(run_right)  # _TB_RUN  = 0
         self._right_stack.addWidget(edit_right)  # _TB_EDIT = 1
+
+        # ── The right-hand end, grouped by what each cluster acts on ─
+        # Widening scope, left to right: the document, then the view of it, then the
+        # way out of the mode.  Every cluster is a fixed pair-width and the empty page
+        # of the edit stack reserves its slot in Run mode, so nothing here moves when
+        # the mode changes -- only the mode toggle is anchored by the right margin.
+        tools = QWidget()
+        tools_row = QHBoxLayout(tools)
+        tools_row.setContentsMargins(0, 0, 0, 0)
+        tools_row.setSpacing(_GROUP_GAP)
+        tools_row.addWidget(self._edit_tools_stack)
+        tools_row.addWidget(view_tools)
+        tools_row.addWidget(self._right_stack)
 
         # ── Validation badge — shown left of center when errors/warnings exist ──
         # ── Persistent header row (Bar B) ─────────────────────────────
         # The two stretches this used to hold the clusters apart with are now the
         # bot's identity and its run status: the bar above the graph owns the bot.
-        self._toolbar = BotHeader(self._center_stack, view_tools, self._right_stack)
+        self._toolbar = BotHeader(run_controls, tools)
         toolbar = self._toolbar
         self._toolbar.metadata_changed.connect(self.config_changed)
 
@@ -1748,20 +1777,29 @@ class BotCanvas(QWidget):
         self._mode = mode
         self._toolbar.set_editable(mode == BotMode.EDIT)
         if mode == BotMode.RUN:
-            self._center_stack.setCurrentIndex(_TB_RUN)
+            self._edit_tools_stack.setCurrentIndex(_TB_RUN)
             self._right_stack.setCurrentIndex(_TB_RUN)
             self._favorites_bar.setVisible(False)
             self._scene.set_interactive(False)
             self._param_panel.show_idle()
             self._undo_mgr.set_enabled(False)
             self._undo_mgr.cancel_debounce()
+            # The transport is on show in both modes now, so returning from Edit has to
+            # put its enabled state back -- _apply_run_btn_state is a no-op while the
+            # mode is EDIT, so nothing else would.
+            self._apply_run_btn_state()
             self._emit_bot_status()
         else:
-            self._center_stack.setCurrentIndex(_TB_EDIT)
+            self._edit_tools_stack.setCurrentIndex(_TB_EDIT)
             self._right_stack.setCurrentIndex(_TB_EDIT)
             self._favorites_bar.setVisible(True)
             self._scene.set_interactive(True)
             self._undo_mgr.set_enabled(True)
+            # Visible but not usable, and the tooltip says why rather than leaving a
+            # dead button to be poked at.
+            self._run_pause_btn.setEnabled(False)
+            self._run_pause_btn.setToolTip("Finish editing to run")
+            self.stop_button.setEnabled(False)
             self._emit_bot_status()
         self._refresh_undo_actions()
 

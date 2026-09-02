@@ -490,6 +490,26 @@ sitting high. Fixing that by spanning only the right column would put the two
 clusters at different heights, which is worse. So the status moved onto the button
 row and both columns span.
 
+**The transport is a landmark: it stays in the centre in both modes, and is disabled
+rather than replaced.** Add State and Auto-Layout used to occupy its exact pixels in
+Edit mode, so the same target did two different things with no cue at the target
+saying which. Every production tool with a transport treats it this way — Unity,
+Unreal, Xcode, every NLE — because people aim at one without looking. The two are
+graph-editing tools besides, so they belong with the mode toggle that summons them.
+
+The right-hand end is three clusters, grouped by widening scope: the **document**
+(add state, auto-layout), the **view** of it (fit, failure edges), then the way out
+of the **mode** (edit, or done/save). Each is a fixed `_PAIR_WIDTH` slot and the edit
+tools' Run-mode page is deliberately *empty*, so nothing there moves when the mode
+changes; the mode toggle right-aligns inside its own slot and stays anchored to the
+margin whether it holds one button or two.
+
+**Set the spacing on every toolbar row explicitly** (`_BTN_GAP` within a cluster,
+`_GROUP_GAP` between). The style's default is 6px on Windows, so a row that only
+called `addSpacing(4)` came to 80px inside a 68px slot and clipped the Save button
+off its right-hand end. `tests/test_canvas_toolbar_layout.py` checks that no button
+overruns the slot it sits in, in either mode.
+
 The two side columns take **equal stretch**, which is what keeps the centre column
 near mid-bar. The cost is that the metadata is capped at roughly half the bar, so a
 long filename elides and a heavily tagged bot wraps its byline in Edit mode. Both
@@ -508,7 +528,10 @@ stylesheet `font-size` never reaches `QWidget.font()`, so the metrics would be m
 at the wrong size.
 
 Bot name and run status were in Bar A, which meant they vanished whenever the
-game view was hidden (#80). `BotCanvas` writes the status straight into its own
+game view was hidden (#80). `BotHeader` takes two opaque widgets — the transport, and the
+whole right-hand end — rather than naming each cluster, because which clusters exist
+depends on the mode, and that is knowledge the header should not acquire.
+`BotCanvas` writes the status straight into its own
 header and *also* emits `bot_status_changed`, because the menu actions and Bar A's
 active-node caption still need it; routing Bar B's own status out to MainWindow
 and back would make the bar depend on a window that may not have connected yet.

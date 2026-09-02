@@ -57,7 +57,7 @@ def _squeeze(label: _ElidedLabel, width: int) -> None:
 @pytest.fixture
 def header(qapp) -> BotHeader:
     """A header with three throwaway clusters standing in for the toolbar buttons."""
-    return BotHeader(QWidget(), QWidget(), QWidget())
+    return BotHeader(QWidget(), QWidget())
 
 
 # ---------------------------------------------------------------------------
@@ -252,7 +252,7 @@ def test_a_longer_status_word_does_not_move_the_run_buttons(qapp):
     side columns exist to keep out of the bar, re-introduced in its middle."""
     transport = QWidget()
     transport.setFixedSize(64, 32)
-    header = BotHeader(transport, QWidget(), QWidget())
+    header = BotHeader(transport, QWidget())
     header.resize(900, 48)
     # Shown, because an unshown header never applies the geometry its layout computed
     # and every child reports the same default rectangle -- which the assertion below

@@ -16,8 +16,11 @@ here whole.  Everything else the old Bot tab carried is gone —
 * the **full description** moved to the top of Setup (read) and Options (edit),
   because eliding it here would hide the ``REQUIREMENTS:`` blocks four bots carry.
 
-The header does not own the buttons.  ``BotCanvas`` builds and wires them and hands
-them in as three opaque widgets, so this module holds no run semantics at all.
+The header does not own the buttons.  ``BotCanvas`` builds, wires and *groups* them,
+and hands them in as two opaque widgets — the transport, and everything that belongs
+at the right-hand end — so this module holds no run semantics at all.  The right-hand
+grouping is the caller's because which of those clusters exists depends on the mode,
+which is knowledge the header does not have and should not acquire.
 """
 
 from __future__ import annotations
@@ -267,7 +270,7 @@ class BotHeader(ThemedMixin, QWidget):
     natural heights -- 32 px buttons against 11 px captions -- and the spanning
     clusters have to centre against the metadata block as a whole.
 
-    The three button clusters are ``BotCanvas``'s; they are placed but never touched.
+    Both button clusters are ``BotCanvas``'s; they are placed but never touched.
     """
 
     metadata_changed = pyqtSignal()
@@ -275,8 +278,7 @@ class BotHeader(ThemedMixin, QWidget):
     def __init__(
         self,
         run_controls: QWidget,
-        view_tools: QWidget,
-        mode_controls: QWidget,
+        tools: QWidget,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -370,15 +372,6 @@ class BotHeader(ThemedMixin, QWidget):
         run_row.addWidget(self._elapsed_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         run_row.addWidget(run_controls, 0, Qt.AlignmentFlag.AlignVCenter)
         run_row.addWidget(self._status_side, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        # -- Right column, row 1: view tools, then the mode toggle ----
-        tools = QWidget()
-        tools_row = QHBoxLayout(tools)
-        tools_row.setContentsMargins(0, 0, 0, 0)
-        tools_row.setSpacing(4)
-        tools_row.addWidget(view_tools)
-        tools_row.addSpacing(4)
-        tools_row.addWidget(mode_controls)
 
         # -- Assemble -------------------------------------------------
         centred = Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
