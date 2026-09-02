@@ -226,12 +226,52 @@ def test_both_rows_of_the_metadata_are_in_the_metadata_column(header):
     assert grid.getItemPosition(grid.indexOf(header._byline))[:2] == (1, 0)
 
 
-def test_the_status_sits_under_the_run_controls(header):
-    """It says what they are doing, so it reads as a caption on them rather than as
-    a fourth thing competing for the right-hand end of the bar."""
+def test_the_two_button_clusters_are_level_with_each_other(header):
+    """The status used to sit under the transport, which left the view tools as the
+    only cluster with an empty row beneath them -- so they centred in row 1 and read
+    as sitting high.  Neither column stacks anything now, so both span the metadata's
+    two rows and land on the bar's own centre."""
     grid = header.layout()
 
-    assert grid.getItemPosition(grid.indexOf(header._status_lbl.parentWidget()))[:2] == (1, 1)
+    run = grid.getItemPosition(grid.indexOf(grid.itemAtPosition(0, 1).widget()))
+    tools = grid.getItemPosition(grid.indexOf(grid.itemAtPosition(0, 2).widget()))
+
+    assert run[:1] == tools[:1] == (0,)  # same row
+    assert run[2:] == tools[2:] == (2, 1)  # both two rows deep
+
+
+def test_the_clock_and_the_status_reserve_the_same_width(header):
+    """Equal slots either side are what put the transport in the middle of its own
+    column, so that centring the column centres the buttons."""
+    assert header._elapsed_lbl.minimumWidth() == header._status_side.minimumWidth() > 0
+
+
+def test_a_longer_status_word_does_not_move_the_run_buttons(qapp):
+    """``Idle`` -> ``Running`` on a free-width label would shuffle play and stop
+    sideways at the one moment the user is watching them -- the drift the equal-stretch
+    side columns exist to keep out of the bar, re-introduced in its middle."""
+    transport = QWidget()
+    transport.setFixedSize(64, 32)
+    header = BotHeader(transport, QWidget(), QWidget())
+    header.resize(900, 48)
+    # Shown, because an unshown header never applies the geometry its layout computed
+    # and every child reports the same default rectangle -- which the assertion below
+    # would read as "nothing moved".
+    header.show()
+
+    header.set_status("#888888", "Idle", "")
+    header.layout().activate()
+    idle_x = transport.mapTo(header, transport.rect().topLeft()).x()
+
+    header.set_status("#00ff00", "Running", "00:01:23")
+    header.layout().activate()
+
+    assert transport.mapTo(header, transport.rect().topLeft()).x() == idle_x
+    # And centred *within its own column*, which is what the equal slots buy: where
+    # that column then sits is the side columns' business, not this one's.
+    column = transport.parentWidget()
+    assert abs(transport.geometry().center().x() - column.rect().center().x()) <= 1
+    header.close()
 
 
 def test_a_long_caption_shortens_rather_than_shoving_the_run_button_off_centre(qapp):

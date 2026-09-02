@@ -1,4 +1,4 @@
-"""Bar B — the two-line header above the bot's graph.
+"""Bar B — the header above the bot's graph.
 
 Bar B sits above the graph, so it owns the *bot*: its name, version, file, author
 and tags, plus the run controls and the run status.  Bar A sits above the game
@@ -50,6 +50,11 @@ if TYPE_CHECKING:
 _PLACEHOLDER = "—"
 _NO_BOT = "No bot loaded"
 _ZERO_ELAPSED = "00:00:00"
+# Every word ``BotCanvas._emit_bot_status`` can hand to ``set_status``.  The status
+# slot is sized for the widest of them so that the transport buttons do not shuffle
+# sideways when the run state changes; see ``_size_status_slots``.
+_STATUS_WORDS = ("Editing", "Idle", "Running", "Paused")
+_STATUS_FONT_PX = 11
 # QLabel adds a pixel of its own around the text, so a hint of exactly the advance
 # is one pixel short and the label elides a character off text that fits.
 _LABEL_PADDING_PX = 2
@@ -239,21 +244,28 @@ class _TagsField(QWidget):
 
 
 class BotHeader(ThemedMixin, QWidget):
-    """Three columns, two rows, above the graph.
+    """Three columns above the graph; only the leftmost is two rows deep.
 
     ::
 
-        Name  v1.0 · file.json        [play][stop]      [fit][edges]  [edit]
-        by Author  <tag pills>        * Idle  00:00:00
+        Name  v1.0 · file.json    00:00:00 [play][stop] * Idle    [fit][edges]  [edit]
+        by Author  <tag pills>
 
     The grouping is by *subject*, which is what makes the bar readable at a glance:
     everything about the bot is one block on the left, the run controls own the
-    centre with what they are doing directly beneath them, and the tools that act on
-    the *view* sit with the mode toggle on the right.
+    centre with the clock and the run state either side of them, and the tools that
+    act on the *view* sit with the mode toggle on the right.
 
-    A ``QGridLayout`` rather than two rows of boxes, because the columns have very
-    different natural heights -- 32 px buttons against 11 px captions -- and only a
-    grid keeps row 2 of the metadata level with row 2 of the status.
+    The status used to be a caption *beneath* the transport.  That read well on its
+    own, but it left the right-hand cluster as the only thing in the bar with an
+    empty row under it, so those buttons centred themselves in row 1 and sat visibly
+    high.  Stacking nothing is what lets both clusters span the full height and come
+    out level with each other; ``_size_status_slots`` is what stops the status word
+    dragging the transport off centre now that it shares the row.
+
+    Still a ``QGridLayout`` rather than boxes: the columns have very different
+    natural heights -- 32 px buttons against 11 px captions -- and the spanning
+    clusters have to centre against the metadata block as a whole.
 
     The three button clusters are ``BotCanvas``'s; they are placed but never touched.
     """
@@ -327,21 +339,37 @@ class BotHeader(ThemedMixin, QWidget):
         byline_row.addWidget(self._tags_field, 0)
         byline_row.addStretch(1)
 
-        # -- Centre column, row 2: what the run controls are doing ----
-        self._dot_lbl = QLabel("●")
-        self._status_lbl = QLabel("Idle")
+        # -- Centre column: clock, transport, status — one row --------
         # Always shown, and zeroed rather than hidden while idle.  A clock that
-        # appeared on Run would shove the status word sideways at the one moment the
+        # appeared on Run would shove the transport sideways at the one moment the
         # user is watching it, and the placeholder says what the field will hold.
         self._elapsed_lbl = QLabel(_ZERO_ELAPSED)
+        self._elapsed_lbl.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
-        status = QWidget()
-        status_row = QHBoxLayout(status)
+        self._dot_lbl = QLabel("●")
+        self._status_lbl = QLabel("Idle")
+        status_font = self._status_lbl.font()
+        # Set on the widget rather than through the stylesheet: a stylesheet
+        # ``font-size`` never reaches ``QWidget.font()``, so the metrics
+        # ``_size_status_slots`` measures with would be the wrong size entirely.
+        status_font.setPixelSize(_STATUS_FONT_PX)
+        self._status_lbl.setFont(status_font)
+
+        self._status_side = QWidget()
+        status_row = QHBoxLayout(self._status_side)
         status_row.setContentsMargins(0, 0, 0, 0)
         status_row.setSpacing(6)
         status_row.addWidget(self._dot_lbl)
         status_row.addWidget(self._status_lbl)
-        status_row.addWidget(self._elapsed_lbl)
+        status_row.addStretch(1)
+
+        run = QWidget()
+        run_row = QHBoxLayout(run)
+        run_row.setContentsMargins(0, 0, 0, 0)
+        run_row.setSpacing(8)
+        run_row.addWidget(self._elapsed_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        run_row.addWidget(run_controls, 0, Qt.AlignmentFlag.AlignVCenter)
+        run_row.addWidget(self._status_side, 0, Qt.AlignmentFlag.AlignVCenter)
 
         # -- Right column, row 1: view tools, then the mode toggle ----
         tools = QWidget()
@@ -359,10 +387,13 @@ class BotHeader(ThemedMixin, QWidget):
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(0)
         grid.addWidget(title, 0, _COL_META)
-        grid.addWidget(run_controls, 0, _COL_RUN, centred)
-        grid.addWidget(tools, 0, _COL_TOOLS, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         grid.addWidget(self._byline, 1, _COL_META)
-        grid.addWidget(status, 1, _COL_RUN, centred)
+        # Both control clusters span the two metadata rows, which is what puts them on
+        # the bar's own vertical centre rather than on the centre of row 1.  Nothing is
+        # stacked in either column any more, so they are level with each other -- which
+        # they would not be if only one of them spanned.
+        grid.addWidget(run, 0, _COL_RUN, 2, 1, centred)
+        grid.addWidget(tools, 0, _COL_TOOLS, 2, 1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         # The two side columns take equal stretch, which is the only arrangement that
         # centres the Run button exactly: the centre lands in the middle of the bar
         # only while the columns either side of it are the same width.  The cost is
@@ -515,9 +546,32 @@ class BotHeader(ThemedMixin, QWidget):
         self._elapsed_lbl.setText(elapsed or _ZERO_ELAPSED)
         self._elapsed_lbl.setStyleSheet(f"color: {THEME.text_muted if elapsed else THEME.text_subtle};")
 
+    def _size_status_slots(self) -> None:
+        """Give the clock and the status the same width, either side of the transport.
+
+        Two things rest on this.  The status word cycles through ``_STATUS_WORDS`` as
+        the run goes on, and a slot sized to whichever word is showing would shuffle
+        the play and stop buttons sideways every time it changed -- the same drift the
+        equal-stretch side columns exist to keep out of the bar.  And equal slots are
+        what put the transport in the middle of its own column, so that centring the
+        column centres the buttons.
+
+        A minimum rather than a fixed width: a status word longer than any we know of
+        should widen its slot rather than be clipped by it.  Re-measured on a theme
+        switch, because the clock is in ``THEME.font_mono()``.
+        """
+        clock = QFontMetrics(self._elapsed_lbl.font()).horizontalAdvance(_ZERO_ELAPSED)
+        dot = QFontMetrics(self._dot_lbl.font()).horizontalAdvance(self._dot_lbl.text())
+        words = QFontMetrics(self._status_lbl.font())
+        status = dot + 6 + max(words.horizontalAdvance(w) for w in _STATUS_WORDS)
+        slot = max(clock, status) + _LABEL_PADDING_PX
+        self._elapsed_lbl.setMinimumWidth(slot)
+        self._status_side.setMinimumWidth(slot)
+
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(f"BotHeader {{ background: {THEME.surface}; }}")
         self._name_lbl.setStyleSheet(f"color: {THEME.text};")
-        self._status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._status_lbl.setStyleSheet(f"color: {THEME.text_muted};")
         self._elapsed_lbl.setFont(THEME.font_mono())
+        self._size_status_slots()
         self._apply_status()

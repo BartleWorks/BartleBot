@@ -476,22 +476,36 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 | **Bar A** (`game_view_panel.py`) | the game windows | the clients: how many are hooked, the launch profile, the node they are being driven through |
 | **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
 
-Bar B is a three-column grid, two rows deep, grouped by *subject*: everything about
-the bot on the left, the run controls in the middle with the status and the clock
-directly beneath them, and the tools that act on the *view* — fit, failure-edge
-toggle — out on the right with the mode toggle. It is a `QGridLayout` because the
-columns have wildly different natural heights (32px buttons against 11px captions)
-and only a grid keeps row 2 of the metadata level with row 2 of the status.
+Bar B is a three-column grid grouped by *subject*: everything about the bot on the
+left, the run controls in the middle with the clock and the run state either side of
+them, and the tools that act on the *view* — fit, failure-edge toggle — out on the
+right with the mode toggle. Only the metadata column is two rows deep; both control
+clusters span those two rows, which is what puts them on the bar's own vertical
+centre and level with each other.
 
-The two side columns take **equal stretch**, which is the only arrangement that
-centres the Run button exactly — the centre column lands mid-bar only while the
-columns either side of it are the same width. The cost is that the metadata is
-capped at half the bar however much of it there is, so a long filename elides and a
-heavily tagged bot wraps its byline in Edit mode. Both degrade quietly; a Run button
-that drifts with the length of the bot's name does not.
+**Nothing is stacked in the centre or on the right, and that is the point.** The
+status used to be a caption beneath the transport, which left the view tools as the
+only cluster with an empty row under them — they centred in row 1 and read as
+sitting high. Fixing that by spanning only the right column would put the two
+clusters at different heights, which is worse. So the status moved onto the button
+row and both columns span.
 
-The clock is **zeroed, not hidden**, while idle. One that appeared on Run would shove
-the status word sideways at the one moment the user is watching it.
+The two side columns take **equal stretch**, which is what keeps the centre column
+near mid-bar. The cost is that the metadata is capped at roughly half the bar, so a
+long filename elides and a heavily tagged bot wraps its byline in Edit mode. Both
+degrade quietly; a Run button that drifts with the length of the bot's name does not.
+
+The clock is **zeroed, not hidden**, while idle, and the clock and the status
+**reserve equal, fixed widths** either side of the transport (`_size_status_slots`).
+Both are the same concern: anything either side of those buttons that grows or
+appears shoves them sideways at the one moment the user is watching them, and the
+status word cycles `Editing` / `Idle` / `Running` / `Paused` as the run goes on.
+Equal slots are also what centre the transport within its own column. The slot is a
+*minimum* width, so an unforeseen longer word widens it rather than being clipped,
+and it is re-measured on a theme switch because the clock is in `THEME.font_mono()`.
+The status label's font size is set on the widget rather than in its stylesheet — a
+stylesheet `font-size` never reaches `QWidget.font()`, so the metrics would be measured
+at the wrong size.
 
 Bot name and run status were in Bar A, which meant they vanished whenever the
 game view was hidden (#80). `BotCanvas` writes the status straight into its own
