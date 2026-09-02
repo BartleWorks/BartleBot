@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_1",
-  "start_location": "Anywhere in Celestia",
   "drops": [
     {
       "name": "Abyss Bodkin"

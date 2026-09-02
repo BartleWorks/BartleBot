@@ -199,36 +199,8 @@ def test_the_node_badge_follows_the_role(canvas):
     assert canvas.scene.node_items["b"].is_initial
 
 
-# ---------------------------------------------------------------------------
-# Bot Info is now a read-only mirror
-# ---------------------------------------------------------------------------
-
-
-def test_bot_info_shows_the_role_holders_label(qapp, canvas):
-    from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
-
-    config = canvas.config
-    config.states[1].label = "Second"
-    sidebar = LeftSidebar(canvas.param_panel)
-    sidebar.set_config(config)
-
-    _show(canvas, "b").request_initial_role()
-    sidebar.bot_info.refresh_states(config.states)
-
-    assert sidebar.bot_info.initial_text == "Second"
-    assert sidebar.bot_info.recovery_text == "a"
-
-
-def test_bot_info_role_rows_never_become_editable(qapp, canvas):
-    """They are labels now, so edit mode must not swap in a widget for them (#71)."""
-    from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
-
-    sidebar = LeftSidebar(canvas.param_panel)
-    sidebar.set_config(canvas.config)
-    sidebar.set_editable(True)
-
-    assert sidebar.bot_info.initial_text == "a"
-    assert sidebar.bot_info.recovery_text == "a"
+# The Bot Info mirror of the two roles is gone with the Bot tab (#80): the badge on
+# the node is the only view of them now, which is what the test above covers.
 
 
 # ---------------------------------------------------------------------------

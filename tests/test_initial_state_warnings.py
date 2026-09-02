@@ -76,7 +76,6 @@ class _Harness:
             self.loaded = canvas_config
             self.sidebar.sync_config(canvas_config, self.canvas.mode == BotMode.EDIT)
         if self.loaded is not None:
-            self.sidebar.bot_info.refresh_states(self.loaded.states)
             self.canvas.refresh_initial(self.loaded.initial)
             self.canvas.refresh_recovery(self.loaded.recovery_state)
 

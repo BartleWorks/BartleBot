@@ -90,12 +90,25 @@ class FlowLayout(QLayout):
         super().setGeometry(rect)
         left, top, right, bottom = self.getContentsMargins()
         positions, _ = self._geometry(rect.width() - left - right)
-        for item, pos in zip(self._items, positions):
+        for item, pos in zip(self._live(), positions):
             size = item.sizeHint()
             item.setGeometry(QRect(rect.x() + left + pos.x(), rect.y() + top + pos.y(), size.width(), size.height()))
 
     def sizeHint(self) -> QSize:  # noqa: N802  (Qt override)
-        return self.minimumSize()
+        """One row of everything -- what this would *like*, not what it needs.
+
+        Preferred and minimum are different questions, and answering both with the
+        minimum is what made a row of two tag pills stack vertically in a bar 1400px
+        wide: the parent handed the widget the widest single pill, because that is
+        all it had asked for. Wrapping is still what happens when the width is not
+        there; ``minimumSize`` below is what allows it.
+        """
+        left, top, right, bottom = self.getContentsMargins()
+        items = self._live()
+        width = sum(item.sizeHint().width() for item in items)
+        width += self._spacing * max(len(items) - 1, 0)
+        height = max((item.sizeHint().height() for item in items), default=0)
+        return QSize(width + left + right, height + top + bottom)
 
     def minimumSize(self) -> QSize:  # noqa: N802  (Qt override)
         """The widest single item, not the sum — anything else refuses to wrap.
@@ -105,13 +118,23 @@ class FlowLayout(QLayout):
         """
         left, top, right, bottom = self.getContentsMargins()
         size = QSize(0, 0)
-        for item in self._items:
+        for item in self._live():
             size = size.expandedTo(item.minimumSize())
         return size + QSize(left + right, top + bottom)
 
+    def _live(self) -> list[QLayoutItem]:
+        """The items that are actually on screen.
+
+        A hidden widget must not reserve a gap, and here it would reserve a whole
+        one: the tag field parks its "Add…" buttons in this layout and hides them
+        outside Edit mode, and counted in they pushed the pills onto a second row in
+        a bar with room to spare. ``QBoxLayout`` skips hidden items too.
+        """
+        return [item for item in self._items if not item.isEmpty()]
+
     def _geometry(self, width: int) -> tuple[list[QPoint], int]:
         return flow_geometry(
-            [item.sizeHint() for item in self._items],
+            [item.sizeHint() for item in self._live()],
             max(width, 0),
             h_spacing=self._spacing,
             v_spacing=self._spacing,

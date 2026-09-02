@@ -160,6 +160,7 @@ class AppController(QObject):
 
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
+        w.right_sidebar.config_changed.connect(self._on_config_changed)
 
         # Deck import / apply requests from Combat tab
         w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
@@ -209,7 +210,7 @@ class AppController(QObject):
 
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
         w.settings_applied.connect(self._reconfigure_autosave_timer)
-        w.settings_applied.connect(w.left_sidebar.log_panel.apply_settings)
+        w.settings_applied.connect(w.right_sidebar.log_panel.apply_settings)
         w.settings_applied.connect(self._apply_theme)
 
     # ------------------------------------------------------------------
@@ -256,6 +257,7 @@ class AppController(QObject):
         self._window.set_bot_name(config.name, "Untitled")
         self._window.bot_canvas.setup(config)
         self._window.left_sidebar.set_config(config)
+        self._window.right_sidebar.set_config(config)
         self._window.bot_canvas.enter_edit_mode()
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
@@ -279,6 +281,7 @@ class AppController(QObject):
         self._window.set_bot_name(config.name, Path(path).name)
         self._window.bot_canvas.setup(config)
         self._window.left_sidebar.set_config(config)
+        self._window.right_sidebar.set_config(config)
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
@@ -309,6 +312,7 @@ class AppController(QObject):
         self._has_unsaved_changes = False
         self._window.bot_canvas.close_bot()
         self._window.left_sidebar.set_config(None)
+        self._window.right_sidebar.set_config(None)
         self._window.set_bot_name(None, None)
         self._window.set_save_enabled(False)
         self._window.set_close_enabled(False)
@@ -691,8 +695,8 @@ class AppController(QObject):
         self._window.set_start_enabled(False)
         self._window.right_sidebar.drops.setup_clients(len(self._client_manager.clients))
         self._window.right_sidebar.drops.clear_drops()
-        self._window.left_sidebar.log_panel.on_run_started()
-        log_cb = self._window.left_sidebar.log_panel.append_log_formatted
+        self._window.right_sidebar.log_panel.on_run_started()
+        log_cb = self._window.right_sidebar.log_panel.append_log_formatted
         add_gui_callback(log_cb)
         self._window.bot_canvas.set_running()
         self._window.right_sidebar.clients.set_bot_running(True)
@@ -945,7 +949,6 @@ class AppController(QObject):
             # follow it or its edits go nowhere (#53).  No-op the rest of the time.
             self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
         if self._loaded_config is not None:
-            self._window.left_sidebar.bot_info.refresh_states(self._loaded_config.states)
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
             self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)
             self._window.left_sidebar.refresh_options(self._loaded_config)
@@ -954,6 +957,7 @@ class AppController(QObject):
 
     def _on_mode_changed(self, mode: BotMode) -> None:
         self._window.left_sidebar.set_editable(mode == BotMode.EDIT)
+        self._window.right_sidebar.set_editable(mode == BotMode.EDIT)
         if mode == BotMode.RUN:
             self._window.set_start_enabled(self._start_enabled())
 
@@ -962,6 +966,7 @@ class AppController(QObject):
 
     def _on_clients_changed(self, clients: list) -> None:
         self._window.set_start_enabled(self._start_enabled())
+        self._window.set_client_summary(len(clients))
         self._window.left_sidebar.combat_tab.set_client_count(len(clients))
         # Player checkboxes grey out the players nobody is behind; both panels build
         # them once and would otherwise stay stale until the next node selection.
@@ -1104,6 +1109,7 @@ class AppController(QObject):
             self._window.set_bot_name(config.name, display_name)
             self._window.bot_canvas.setup(config)
             self._window.left_sidebar.set_config(config)
+            self._window.right_sidebar.set_config(config)
             self._window.bot_canvas.enter_edit_mode()
             self._window.set_save_enabled(True)
             self._window.set_close_enabled(True)

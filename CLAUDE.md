@@ -399,12 +399,13 @@ mutually contradictory texts for the one setting.
 
 #### Two surfaces: Setup edits values, Options edits declarations
 
-The Config tab holds both, swapped by edit mode — Run shows **Setup**
-(`setup_section.py`), Edit shows **Options** (`options_section.py`). Every
-production system that solves this split separates the surfaces by context
-rather than by a toggle inside one panel (Unity's Prefab Mode, Unreal's Class
-Defaults, VS Code's settings UI against `package.json`), and edit mode is the
-context this app already has.
+They are separate tabs of the left sidebar, and edit mode decides which pair is
+there at all — Run shows **Setup** (`setup_section.py`) and Combat, Edit shows
+**Options** (`options_section.py`) and Properties. Every production system that
+solves this split separates the surfaces by context rather than by a toggle
+inside one panel (Unity's Prefab Mode, Unreal's Class Defaults, VS Code's
+settings UI against `package.json`), and edit mode is the context this app
+already has.
 
 - **Setup writes `settings.json`, never the bot file.** `values_changed` is
   deliberately *not* wired to `config_changed`: an override is not an edit to
@@ -459,7 +460,65 @@ context this app already has.
   null it was handed, which is what `_was_null` and `_default_touched` are for:
   opening Edit to fix a description must not promote the declaration.
 
-#### App settings vs. node params
+#### Which panel owns what
+
+`LeftSidebar` is the bot's configuration and nothing else, and its tabs are
+*rebuilt* per mode rather than hidden — a `QTabWidget` cannot hide one tab, and a
+tab that stays put while changing meaning is the toggle the split above exists to
+avoid. A tab the current mode does not offer is parked on a hidden child widget,
+because `removeTab` otherwise leaves it parentless, which is to say a top-level
+window.
+
+Two bars, and which one a thing belongs to is decided by what it is *about*:
+
+| | above | owns |
+|---|---|---|
+| **Bar A** (`game_view_panel.py`) | the game windows | the clients: how many are hooked, the launch profile, the node they are being driven through |
+| **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
+
+Bar B is a three-column grid, two rows deep, grouped by *subject*: everything about
+the bot on the left, the run controls in the middle with the status and the clock
+directly beneath them, and the tools that act on the *view* — fit, failure-edge
+toggle — out on the right with the mode toggle. It is a `QGridLayout` because the
+columns have wildly different natural heights (32px buttons against 11px captions)
+and only a grid keeps row 2 of the metadata level with row 2 of the status.
+
+The two side columns take **equal stretch**, which is the only arrangement that
+centres the Run button exactly — the centre column lands mid-bar only while the
+columns either side of it are the same width. The cost is that the metadata is
+capped at half the bar however much of it there is, so a long filename elides and a
+heavily tagged bot wraps its byline in Edit mode. Both degrade quietly; a Run button
+that drifts with the length of the bot's name does not.
+
+The clock is **zeroed, not hidden**, while idle. One that appeared on Run would shove
+the status word sideways at the one moment the user is watching it.
+
+Bot name and run status were in Bar A, which meant they vanished whenever the
+game view was hidden (#80). `BotCanvas` writes the status straight into its own
+header and *also* emits `bot_status_changed`, because the menu actions and Bar A's
+active-node caption still need it; routing Bar B's own status out to MainWindow
+and back would make the bar depend on a window that may not have connected yet.
+
+Three things the header does not hold, and should not be given back:
+
+- **`start_location`** is gone from the schema. Nothing in the engine ever read
+  it, `go_to_world` and the bot templates make it moot, and a field naming a
+  place the app will not take you to reads as a promise. Pydantic ignores it in
+  an older file and `save()` drops it.
+- **Initial State / Recovery State** are badges on the nodes themselves (#71);
+  the labels only restated the graph.
+- **The description** heads Setup (read) and Options (edit) instead. Elided into
+  a header it would hide exactly the text a user must read — four bots carry
+  multi-line `REQUIREMENTS:` blocks saying things like "change the client
+  resolution to…".
+
+**Possible Drops** sits with the live drop tables in the right sidebar's Drops
+tab: the two answer the same question at different times, what this run could
+yield and what it has. It is the only authorial thing over there, which is what
+`RightSidebar.config_changed` exists for. **Log** is the third tab there, so it
+can be read without closing Setup.
+
+### App settings vs. node params
 
 An app setting that a node param also expresses must never be applied by rewriting
 the param on load. That is what `AppController._apply_bot_defaults` used to do to

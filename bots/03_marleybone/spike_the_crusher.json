@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_18",
   "recovery_state": "state_18",
-  "start_location": "Anywhere in Marleybone",
   "drops": [
     {
       "name": "Admirable Shoes"

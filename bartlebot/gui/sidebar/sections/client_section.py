@@ -124,6 +124,11 @@ class ClientSection(QWidget):
             w.set_bot_running(running)
         self._update_bulk_buttons()
 
+    @property
+    def players_visible(self) -> bool:
+        """Whether the Players tab is the one on screen, which sets the poll rate."""
+        return self._players_visible
+
     def set_players_visible(self, visible: bool) -> None:
         """Tell the section whether its tab is on screen, so polling can back off."""
         if visible == self._players_visible:

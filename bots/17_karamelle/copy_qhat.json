@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_2",
   "recovery_state": "state_4",
-  "start_location": "Anywhere in Karamelle",
   "drops": [
     {
       "name": "Aether",

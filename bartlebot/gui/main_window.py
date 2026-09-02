@@ -171,9 +171,9 @@ class MainWindow(QMainWindow):
         )
 
         # Wire wiki import from handle_combat node panel → possible drops list
-        self.bot_canvas.param_panel.wiki_import_completed.connect(self.left_sidebar.possible_drops.add_drops)
+        self.bot_canvas.param_panel.wiki_import_completed.connect(self.right_sidebar.possible_drops.add_drops)
         # Wire drop list edits → quicksell keep-list picker, so it lists the current drops
-        self.left_sidebar.possible_drops.drops_changed.connect(self.bot_canvas.param_panel.refresh_drops)
+        self.right_sidebar.possible_drops.drops_changed.connect(self.bot_canvas.param_panel.refresh_drops)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # Wire sidebar tab switching from canvas
@@ -259,13 +259,17 @@ class MainWindow(QMainWindow):
         self.bot_canvas.set_state(state_id)
 
     def set_bot_name(self, name: str, filename: str | None) -> None:
-        if filename:
-            self.setWindowTitle(f"BartleBot — {filename}")
-            self.left_sidebar.bot_info.set_file(filename)
-        else:
-            self.setWindowTitle("BartleBot")
-            self.left_sidebar.bot_info.set_file(None)
-        self._game_view_panel.set_bot_name(name or None)
+        """Retitle the window and the header above the graph.
+
+        *name* is not pushed anywhere: the header reads it from the BotConfig it was
+        given, and in Edit mode it is the field the user is typing into.
+        """
+        self.setWindowTitle(f"BartleBot — {filename}" if filename else "BartleBot")
+        self.bot_canvas.set_bot_file(filename)
+
+    def set_client_summary(self, connected: int) -> None:
+        """Tell Bar A how many clients are hooked — it is the bar that owns them."""
+        self._game_view_panel.set_client_summary(connected)
 
     def set_start_enabled(self, enabled: bool) -> None:
         self.bot_canvas.set_run_enabled(enabled)
@@ -339,7 +343,9 @@ class MainWindow(QMainWindow):
             self._outer_splitter.setSizes(self._pre_maximize_sizes.get("outer", [600, 220]))
 
     def _on_bot_status_changed(self, color: str, status: str, state_label: str, elapsed: str) -> None:
-        self._game_view_panel.set_bot_status(color, status, state_label, elapsed)
+        # The dot, the status word and the clock live in Bar B now; the only part of
+        # this Bar A still wants is which node the clients are being driven through.
+        self._game_view_panel.set_active_node(state_label)
         idle = status == "Idle"
         running_or_paused = status in ("Running", "Paused")
         editing = status == "Editing"
@@ -409,11 +415,9 @@ class MainWindow(QMainWindow):
 
     def _on_canvas_tab_switch(self, tab: str) -> None:
         if tab == "log":
-            self.left_sidebar.switch_to_log()
+            self.right_sidebar.switch_to_log()
         elif tab == "properties":
             self.left_sidebar.switch_to_properties()
-        elif tab == "bot":
-            self.left_sidebar.switch_to_bot()
         elif tab == "combat":
             self.left_sidebar.switch_to_combat()
 
@@ -478,6 +482,7 @@ class MainWindow(QMainWindow):
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
+            self._game_view_panel.set_launch_profile(profile_name)
             await launch_profile(profile_name, drive=self.auto_select_driver, reserve=self.slot_reserver)
             self._record_recent_launch("profile", profile_name)
         except Exception as e:

@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_11",
   "recovery_state": "state_1",
-  "start_location": "Anywhere in Marleybone",
   "drops": [
     {
       "name": "6 Royal Brooch",

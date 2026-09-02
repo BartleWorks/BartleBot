@@ -431,6 +431,7 @@ def test_a_new_bot_is_born_with_an_id():
             set_close_enabled=lambda *a: None,
             set_start_enabled=lambda *a: None,
             left_sidebar=SimpleNamespace(set_config=lambda *a: None),
+            right_sidebar=SimpleNamespace(set_config=lambda *a: None),
             bot_canvas=SimpleNamespace(setup=lambda *a: None, enter_edit_mode=lambda: None),
         ),
     )

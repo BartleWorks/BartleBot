@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_12",
   "recovery_state": "state_1",
-  "start_location": "Anywhere in Wizard City",
   "drops": [
     {
       "name": "Adventurer's Robe",

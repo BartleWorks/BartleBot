@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_15",
   "recovery_state": "state_1",
-  "start_location": "Anywhere in Krokotopia",
   "drops": [
     {
       "name": "Alligator Pear Tree"

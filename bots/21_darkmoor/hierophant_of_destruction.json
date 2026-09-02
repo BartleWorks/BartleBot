@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_3",
   "recovery_state": "state_1",
-  "start_location": "Anywhere in Darkmoor",
   "drops": [
     {
       "name": "2 Outsider Relic",

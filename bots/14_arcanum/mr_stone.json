@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_2",
   "recovery_state": "state_1",
-  "start_location": "Anywhere in Arcanum",
   "drops": [
     {
       "name": "Ammut"

@@ -1,14 +1,20 @@
 """Tests for the wrapping layout behind the tag pills.
 
-Only ``flow_geometry`` is covered: it holds the arithmetic and is pure, so the
-wrapping can be checked at any width without a screen — the same split as
-``popup_position`` in tests/test_picker_popup.py. The ``QLayout`` around it is
-Qt plumbing.
+``flow_geometry`` holds the arithmetic and is pure, so the wrapping can be checked
+at any width without a screen — the same split as ``popup_position`` in
+tests/test_picker_popup.py. The ``QLayout`` around it is mostly Qt plumbing, but
+not entirely: what it reports as *preferred* against *minimum*, and whether it
+counts hidden items, both decide how the bot header's byline wraps, so those have
+tests of their own at the bottom.
 """
 
-from PyQt6.QtCore import QSize
+import sys
 
-from bartlebot.gui.widgets.flow_layout import flow_geometry
+import pytest
+from PyQt6.QtCore import QSize
+from PyQt6.QtWidgets import QApplication, QWidget
+
+from bartlebot.gui.widgets.flow_layout import flow_container, flow_geometry
 
 
 def _sizes(*widths: int, height: int = 14) -> list[QSize]:
@@ -71,3 +77,66 @@ def test_narrowing_the_width_adds_rows_rather_than_dropping_items():
 
     assert len(wide) == len(narrow) == 18
     assert narrow_h > wide_h
+
+
+# ---------------------------------------------------------------------------
+# The QLayout around it — two answers that are not the same answer
+# ---------------------------------------------------------------------------
+#
+# These need a QApplication because they are about real widgets, but what they
+# assert is not Qt plumbing: preferred and minimum are different questions, and
+# for a long while this layout answered both with the minimum.
+
+
+@pytest.fixture(scope="module")
+def qapp():
+    return QApplication.instance() or QApplication(sys.argv)
+
+
+def _host(*widths: int):
+    """A flow container holding one fixed-size widget per width."""
+    host, layout = flow_container(spacing=4)
+    for w in widths:
+        child = QWidget()
+        child.setFixedSize(w, 14)
+        layout.addWidget(child)
+    return host, layout
+
+
+def test_the_preferred_width_is_one_row_of_everything(qapp):
+    """Answering with the minimum is what made two tag pills stack vertically in a
+    bar 1400px wide: the parent handed the widget the widest single pill, because
+    that was all it had asked for."""
+    _host_w, layout = _host(40, 60)
+
+    assert layout.sizeHint().width() == 104  # 40 + 4 + 60
+
+
+def test_the_minimum_width_is_still_the_widest_single_item(qapp):
+    """A minimum of one whole row would make the parent demand that width, and the
+    sidebar would then never narrow enough for the layout to do its job."""
+    _host_w, layout = _host(40, 60)
+
+    assert layout.minimumSize().width() == 60
+
+
+def test_a_hidden_item_reserves_nothing(qapp):
+    """The tag field parks its "Add…" buttons in this layout and hides them outside
+    Edit mode. Counted in, they pushed the pills onto a second row in a bar with
+    room to spare."""
+    host, layout = _host(40, 60)
+    host.layout().itemAt(1).widget().hide()
+
+    assert layout.sizeHint().width() == 40
+
+
+def test_hiding_an_item_moves_the_ones_after_it_up(qapp):
+    host, layout = _host(60, 60, 60)
+    host.resize(130, 100)
+    layout.setGeometry(host.rect())
+    assert layout.itemAt(2).widget().y() > 0  # third item was on row two
+
+    layout.itemAt(0).widget().hide()
+    layout.setGeometry(host.rect())
+
+    assert layout.itemAt(2).widget().y() == 0  # now the two visible ones share a row

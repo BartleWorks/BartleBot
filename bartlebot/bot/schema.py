@@ -151,7 +151,9 @@ class BotConfig(BaseModel):
     # only discovers that mid-run, in a log line, at the moment a crash has already
     # happened -- the same "ask before the run, not after" reasoning as recovery_readiness.
     recovery_state: str
-    start_location: str | None = None
+    # No ``start_location``: nothing in the engine ever read it, ``go_to_world`` and the
+    # bot templates make it moot, and it read as a promise the app would take you there.
+    # Pydantic ignores it in an older file, and ``save()`` drops it (#80).
     drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
     # What the bot is *for* — see bartlebot/bot_tags.py. Filters the library panel.

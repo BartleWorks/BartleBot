@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_10",
   "recovery_state": "state_10",
-  "start_location": "The Commons",
   "drops": [
     {
       "name": "Fitzhume's Explorer gear"

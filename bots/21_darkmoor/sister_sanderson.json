@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_7",
   "recovery_state": "state_10",
-  "start_location": "Graveholm",
   "drops": [
     {
       "name": "2 Outsider Relic",

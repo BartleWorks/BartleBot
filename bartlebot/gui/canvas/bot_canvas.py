@@ -40,6 +40,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
+from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
@@ -117,7 +118,6 @@ class _BotMeta:
     authors: str
     drops: list[str]
     tags: list[str]
-    start_location: str
     version: str
     path: Path
 
@@ -150,7 +150,6 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             authors=data.get("authors") or "",
             drops=_drop_names(data.get("drops")),
             tags=normalize_tags(data.get("tags")),
-            start_location=data.get("start_location") or "",
             version=data.get("version") or "",
             path=path,
         )
@@ -802,9 +801,11 @@ class BotCanvas(QWidget):
     pause_requested = pyqtSignal()
     resume_requested = pyqtSignal()
     save_done = pyqtSignal()
-    # Emitted with "log", "properties", or "bot" to switch the sidebar tab
+    # Emitted with "log" or "properties" to switch a sidebar tab.  "log" now lands on
+    # the *right* sidebar; the canvas does not know or care which one holds it.
     tab_switch = pyqtSignal(str)
-    # (css_color, status, state_label, elapsed_text) — consumed by MainWindow title bar
+    # (css_color, status, state_label, elapsed_text).  Bar B is written to directly;
+    # this is for everyone else — the menu actions, and Bar A's active-node caption.
     bot_status_changed = pyqtSignal(str, str, str, str)
     # Undo/redo state for MainWindow menu: (can_undo, can_redo, undo_desc, redo_desc)
     undo_state_changed = pyqtSignal(bool, bool, str, str)
@@ -921,14 +922,16 @@ class BotCanvas(QWidget):
         self._center_stack.addWidget(run_center)  # _TB_RUN  = 0
         self._center_stack.addWidget(edit_center)  # _TB_EDIT = 1
 
-        # ── Left section (68 px fixed: fit + failure-edge toggle) ─
-        left_section = QWidget()
-        left_section.setFixedWidth(68)
-        left_row = QHBoxLayout(left_section)
-        left_row.setContentsMargins(0, 0, 0, 0)
-        left_row.setSpacing(4)
-        left_row.addWidget(self._fit_btn)
-        left_row.addWidget(self._failure_edges_btn)
+        # ── View tools (68 px fixed: fit + failure-edge toggle) ──────
+        # These act on the *view*, not on the bot, so they sit with the mode toggle
+        # on the right rather than among the metadata on the left.
+        view_tools = QWidget()
+        view_tools.setFixedWidth(68)
+        view_row = QHBoxLayout(view_tools)
+        view_row.setContentsMargins(0, 0, 0, 0)
+        view_row.setSpacing(4)
+        view_row.addWidget(self._fit_btn)
+        view_row.addWidget(self._failure_edges_btn)
 
         # ── Right mode-toggle zone (68 px fixed) ─────────────────────
         # Run mode page: single icon right-aligned inside 68 px
@@ -952,16 +955,12 @@ class BotCanvas(QWidget):
         self._right_stack.addWidget(edit_right)  # _TB_EDIT = 1
 
         # ── Validation badge — shown left of center when errors/warnings exist ──
-        # ── Persistent toolbar row ────────────────────────────────────
-        self._toolbar = QWidget()
+        # ── Persistent header row (Bar B) ─────────────────────────────
+        # The two stretches this used to hold the clusters apart with are now the
+        # bot's identity and its run status: the bar above the graph owns the bot.
+        self._toolbar = BotHeader(self._center_stack, view_tools, self._right_stack)
         toolbar = self._toolbar
-        toolbar_row = QHBoxLayout(toolbar)
-        toolbar_row.setContentsMargins(4, 4, 4, 4)
-        toolbar_row.addWidget(left_section)
-        toolbar_row.addStretch(1)
-        toolbar_row.addWidget(self._center_stack)
-        toolbar_row.addStretch(1)
-        toolbar_row.addWidget(self._right_stack)
+        self._toolbar.metadata_changed.connect(self.config_changed)
 
         # ── Validation banner — right-aligned below toolbar ───────────
         # Hidden when valid (takes no space); appears under the edit/save
@@ -1111,6 +1110,7 @@ class BotCanvas(QWidget):
         self._close_search()
         self._tab_idx = 0
         self._config = config
+        self._toolbar.set_config(config)
         self._param_panel.refresh_drops()
         # Auto-layout when no positions are saved and the setting is enabled
         if (
@@ -1144,6 +1144,7 @@ class BotCanvas(QWidget):
         self._scene.teardown()
         self._update_validation_badge()
         self._config = None
+        self._toolbar.set_config(None)
         self._active_state = None
         self._edit_btn.setEnabled(False)
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -1151,6 +1152,10 @@ class BotCanvas(QWidget):
         self._minimap.setVisible(False)
         self._placeholder.refresh()
         self._placeholder.setVisible(True)
+
+    def set_bot_file(self, filename: str | None) -> None:
+        """Name the file the loaded bot came from, shown in the header."""
+        self._toolbar.set_file(filename)
 
     def refresh_placeholder(self) -> None:
         """Rebuild the recent files list in the placeholder."""
@@ -1271,17 +1276,26 @@ class BotCanvas(QWidget):
         return self._active_state
 
     def _emit_bot_status(self) -> None:
-        """Emit bot_status_changed with current run/edit state."""
+        """Show the run/edit state in Bar B, and announce it for everyone else.
+
+        The header is written to directly rather than through the signal: the status
+        lives here now (#80), and routing it out to MainWindow and back would make the
+        bar above the graph depend on a window that may not have connected yet.
+        """
         if self._mode == BotMode.EDIT:
-            self.bot_status_changed.emit(THEME.text_muted, "Editing", "", "")
+            self._publish_status(THEME.text_muted, "Editing", "", "")
             return
         color = _status_dot_color(self._run_state)
         if self._run_state == _IDLE:
-            self.bot_status_changed.emit(color, "Idle", "", "")
+            self._publish_status(color, "Idle", "", "")
         elif self._run_state == _RUNNING:
-            self.bot_status_changed.emit(color, "Running", self._active_state_label(), self._elapsed_str())
+            self._publish_status(color, "Running", self._active_state_label(), self._elapsed_str())
         elif self._run_state == _PAUSED:
-            self.bot_status_changed.emit(color, "Paused", self._active_state_label(), self._elapsed_str())
+            self._publish_status(color, "Paused", self._active_state_label(), self._elapsed_str())
+
+    def _publish_status(self, color: str, status: str, state_label: str, elapsed: str) -> None:
+        self._toolbar.set_status(color, status, elapsed)
+        self.bot_status_changed.emit(color, status, state_label, elapsed)
 
     @property
     def config(self) -> "BotConfig | None":
@@ -1330,6 +1344,9 @@ class BotCanvas(QWidget):
             for btn, icon_name in self._btn_icons.items():
                 btn.setIcon(svg_icon(icon_name))
             self._apply_pill_stylesheets()
+            # The dot's colour is resolved here, not in the header, so a theme
+            # switch has to hand it over again.
+            self._emit_bot_status()
             if self._focus_region_id is not None and self._config is not None:
                 region = next((r for r in self._config.regions if r.id == self._focus_region_id), None)
                 if region is not None:
@@ -1706,6 +1723,7 @@ class BotCanvas(QWidget):
     def _apply_mode(self, mode: BotMode) -> None:
         self.exit_focus_mode()
         self._mode = mode
+        self._toolbar.set_editable(mode == BotMode.EDIT)
         if mode == BotMode.RUN:
             self._center_stack.setCurrentIndex(_TB_RUN)
             self._right_stack.setCurrentIndex(_TB_RUN)
@@ -1887,6 +1905,10 @@ class BotCanvas(QWidget):
 
     def _restore(self, config: BotConfig) -> None:
         self._config = config
+        # Undo hands back a freshly-deserialised BotConfig, so every surface holding
+        # the old object has to be re-bound or its edits go nowhere (#53).
+        self._toolbar.set_config(config)
+        self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._scene.setup(config)
         self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
         self._param_panel.show_idle()
