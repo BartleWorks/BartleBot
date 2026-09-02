@@ -194,6 +194,23 @@ def test_the_frame_covers_the_viewport(canvas):
 # ---------------------------------------------------------------------------
 
 
+def _assert_camera_back(c, before) -> None:
+    """The camera came back to within one device pixel of *before*.
+
+    Not a slack tolerance dressed up as one: ``camera_state`` is a transform plus two
+    *integer* scrollbar values, and when the scene fits the viewport QGraphicsView adds
+    a centering indent that is integer too. One device pixel is the finest thing the
+    mechanism can express, so asserting anything finer asserts an accident of rounding
+    -- at a zoomed-out fit that was over nine scene units, which is how this pair of
+    tests came to fail only in workers where an earlier test had left an app stylesheet
+    behind (see ``_restore_app_stylesheet`` in conftest).
+    """
+    after = c.view.mapToScene(c.view.viewport().rect().center())
+    scale = c.view.transform().m11()  # scene units -> device pixels
+    assert abs(after.x() - before.x()) * scale <= 1.0 + 1e-6
+    assert abs(after.y() - before.y()) * scale <= 1.0 + 1e-6
+
+
 def test_entering_focus_mode_moves_the_camera_to_the_region(canvas):
     """The root of the complaint: the view used to stay put while the graph vanished."""
     c = canvas()
@@ -221,9 +238,7 @@ def test_leaving_focus_mode_puts_the_camera_back(canvas):
     c.enter_focus_mode("r2")
     c.exit_focus_mode()
 
-    after = c.view.mapToScene(c.view.viewport().rect().center())
-    assert abs(after.x() - before.x()) < 1.0
-    assert abs(after.y() - before.y()) < 1.0
+    _assert_camera_back(c, before)
 
 
 def test_the_zoom_is_restored_too(canvas):
@@ -245,9 +260,7 @@ def test_switching_regions_still_restores_the_original_camera(canvas):
     c.enter_focus_mode("r2")
     c.exit_focus_mode()
 
-    after = c.view.mapToScene(c.view.viewport().rect().center())
-    assert abs(after.x() - before.x()) < 1.0
-    assert abs(after.y() - before.y()) < 1.0
+    _assert_camera_back(c, before)
 
 
 def test_exiting_when_not_focused_is_harmless(canvas):
