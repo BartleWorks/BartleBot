@@ -1091,6 +1091,11 @@ class BotCanvas(QWidget):
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
         self._placeholder.show()
+        # Bar B is the *bot's* header, so with no bot there is nothing for it to say
+        # and nothing its buttons can act on. Shown anyway it read as a second strip
+        # of chrome above the library, which is the one moment the library needs to
+        # be the whole surface.
+        self._toolbar.setVisible(False)
 
     # ------------------------------------------------------------------
     # Public API — bot loading
@@ -1100,6 +1105,7 @@ class BotCanvas(QWidget):
         """Load a BotConfig. Enters RUN mode with the graph ready."""
         self._undo_mgr.clear()
         self._placeholder.setVisible(False)
+        self._toolbar.setVisible(True)
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         sm = SettingsManager.instance()
@@ -1150,12 +1156,19 @@ class BotCanvas(QWidget):
         self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._minimap.setVisible(False)
+        self._toolbar.setVisible(False)
         self._placeholder.refresh()
         self._placeholder.setVisible(True)
+        self._reposition_placeholder()
 
     def set_bot_file(self, filename: str | None) -> None:
         """Name the file the loaded bot came from, shown in the header."""
         self._toolbar.set_file(filename)
+
+    @property
+    def header_visible(self) -> bool:
+        """Whether Bar B is showing.  It is hidden while no bot is loaded."""
+        return self._toolbar.isVisibleTo(self)
 
     def refresh_placeholder(self) -> None:
         """Rebuild the recent files list in the placeholder."""
@@ -1182,7 +1195,17 @@ class BotCanvas(QWidget):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        tb_h = self._toolbar.height()
+        self._reposition_placeholder()
+
+    def _reposition_placeholder(self) -> None:
+        """Fill whatever the header is not using.
+
+        The placeholder is an overlay child rather than a page of a stack, so it is
+        positioned by hand.  A hidden widget keeps its last geometry, so the header's
+        height is only its own while it is showing -- otherwise the library would sit
+        a bar's worth down the panel with nothing above it.
+        """
+        tb_h = self._toolbar.height() if self._toolbar.isVisibleTo(self) else 0
         self._placeholder.setGeometry(0, tb_h, self.width(), self.height() - tb_h)
 
     # ------------------------------------------------------------------
