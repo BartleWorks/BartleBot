@@ -13,6 +13,7 @@ def _config(*states: dict) -> BotConfig:
         state_list = [{"id": "s0", "node_type": "sleep"}]
     return BotConfig.model_validate(
         {
+            "id": "test-bot",
             "name": "Test Bot",
             "initial": state_list[0]["id"],
             "recovery_state": state_list[0]["id"],

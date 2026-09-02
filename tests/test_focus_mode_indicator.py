@@ -44,6 +44,7 @@ def _config():
         ),
     ]
     return BotConfig(
+        id="test-bot",
         name="t",
         initial="a",
         recovery_state="a",

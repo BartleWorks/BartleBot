@@ -27,6 +27,7 @@ def mgr(qapp):
 def _config(name: str = "test") -> BotConfig:
     """Minimal BotConfig whose identity can be checked via .name."""
     return BotConfig(
+        id="test-bot",
         name=name,
         initial="s1",
         recovery_state="s1",

@@ -82,7 +82,7 @@ NODE_SPEC = NodeSpec(
         BotOptionSpec(
             name="Safety Delay",
             type="float",
-            default=3,
+            default=3.0,
             description=(
                 "Seconds to allow for game-server responses when waiting for prompts or menus. "
                 "Increase on high-latency connections."

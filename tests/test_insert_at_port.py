@@ -29,6 +29,7 @@ def qapp():
 
 def _config(transitions=None, states=None):
     return BotConfig(
+        id="test-bot",
         name="t",
         initial="a",
         recovery_state="a",

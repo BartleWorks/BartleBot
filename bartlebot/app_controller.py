@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+from uuid import uuid4
 
 from wakepy import ActivationError, keep
 
@@ -243,6 +244,7 @@ class AppController(QObject):
         self._delete_autosave()
         self._has_unsaved_changes = False
         config = BotConfig(
+            id=str(uuid4()),
             name="New Bot",
             initial="state_1",
             recovery_state="state_1",
@@ -276,31 +278,12 @@ class AppController(QObject):
         self._last_save_path = path
         self._window.set_bot_name(config.name, Path(path).name)
         self._window.bot_canvas.setup(config)
-        self._apply_bot_defaults(config)
         self._window.left_sidebar.set_config(config)
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
         self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         self._window.bot_canvas.refresh_placeholder()
-
-    def _apply_bot_defaults(self, config: BotConfig) -> None:
-        """Apply user-configured defaults to a freshly loaded BotConfig.
-
-        Only Safety Delay: it describes the machine's connection rather than the
-        bot, so no stored value should outrank the app setting.
-
-        Nothing else belongs here. Quicksell's sell_* params are the cautionary
-        case — they were rewritten from the app settings on every load, which made
-        the node param unreachable. They are three-state now and resolve against
-        the settings at run time instead, so a bot that pins one keeps it.
-        """
-        sm = SettingsManager.instance()
-
-        delay = sm.default_safety_delay
-        config.options = [
-            opt.model_copy(update={"default": delay}) if opt.name == "Safety Delay" else opt for opt in config.options
-        ]
 
     def _close_bot(self) -> None:
         if self._loaded_config is None:
@@ -353,6 +336,10 @@ class AppController(QObject):
         if not path.endswith(".json"):
             path += ".json"
         old_save_path = self._last_save_path
+        # A fork gets its own identity. The copy would otherwise share the original's
+        # id, and with it every value the user has stored against that bot -- and the
+        # remembered combat strategy, which is a fork's to choose again.
+        self._loaded_config.id = str(uuid4())
         try:
             self._loaded_config.save(path)
             self._last_save_path = path

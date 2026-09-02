@@ -65,6 +65,7 @@ async def test_to_machine_config_condition_string_format():
     Unconditional transitions (no 'when') must not have a conditions key.
     """
     config = BotConfig(
+        id="test-bot",
         name="test",
         initial="a",
         recovery_state="a",
@@ -93,6 +94,7 @@ async def test_to_machine_config_simple_flag_condition():
     emits _flag_<name> directly instead of a compound registry entry.
     """
     config = BotConfig(
+        id="test-bot",
         name="test",
         initial="a",
         recovery_state="a",
@@ -125,6 +127,7 @@ async def test_to_machine_config_compound_flag_conditions_registered():
     so BotMachine.__getattr__ can evaluate it.
     """
     config = BotConfig(
+        id="test-bot",
         name="test",
         initial="a",
         recovery_state="a",
@@ -173,26 +176,17 @@ async def test_botmachine_constructs_from_real_bot_config():
     assert machine.state == config.initial
 
 
-async def test_option_override_per_state_visible_via_get_option():
-    """Per-state option_overrides survive to_machine_config() and are read by BotMachine.
-
-    Exercises: StateModel.option_overrides → to_machine_config() → BotMachine._state_map
-    → BotMachine.get_option() priority (per-state override > bot-wide default).
-    """
+async def test_a_bot_wide_option_is_visible_via_get_option():
+    """StateModel option_overrides no longer reach get_option: the user's own value
+    lives in settings.json now, and a per-node pin of a bot-wide option was the same
+    confusion one level down (removed outright in the phase after this one)."""
     config = BotConfig(
+        id="test-bot",
         name="test",
         initial="state_a",
         recovery_state="state_a",
-        # Bot-wide default: Safety Delay = 5.0
         options=[BotOptionModel(name="Safety Delay", type="float", default=5.0)],
-        states=[
-            StateModel(
-                id="state_a",
-                node_type="mock",
-                # Per-state override: Safety Delay = 0.0
-                option_overrides={"Safety Delay": 0.0},
-            ),
-        ],
+        states=[StateModel(id="state_a", node_type="mock", option_overrides={"Safety Delay": 0.0})],
         transitions=[],  # terminal state — machine stops after one node execution
     )
     mc = config.to_machine_config()
@@ -203,10 +197,9 @@ async def test_option_override_per_state_visible_via_get_option():
         bot_config=config,
     )
 
-    # Machine starts in state_a; the per-state override should take priority
     assert machine.state == "state_a"
-    assert machine.get_option("Safety Delay") == 0.0  # override, not bot-wide 5.0
-    assert machine.get_option("Safety Delay", default=3.0) == 0.0  # still override
+    assert machine.get_option("Safety Delay") == 5.0
+    assert machine.get_option("Safety Delay", default=3.0) == 5.0
 
 
 # ---------------------------------------------------------------------------
@@ -236,6 +229,7 @@ def _make_machine_for_flag_test(options: list[BotOptionModel], flags: list[FlagC
         return "SUCCESS"
 
     config = BotConfig(
+        id="test-bot",
         name="flag-test",
         initial="state_a",
         recovery_state="state_a",
@@ -361,6 +355,7 @@ async def test_enter_zone_success_advances_state():
     transitions_seen: list[tuple] = []
 
     config = BotConfig(
+        id="test-bot",
         name="gz-success-test",
         initial="state_a",
         recovery_state="state_a",
@@ -403,6 +398,7 @@ async def test_enter_zone_failure_self_loops():
     transitions_seen: list[tuple] = []
 
     config = BotConfig(
+        id="test-bot",
         name="gz-failure-test",
         initial="state_a",
         recovery_state="state_a",
@@ -458,6 +454,7 @@ async def test_stop_during_node_execution_cooperative():
         return "FAILURE"
 
     config = BotConfig(
+        id="test-bot",
         name="stop-cooperative-test",
         initial="state_a",
         recovery_state="state_a",
@@ -506,6 +503,7 @@ async def test_stop_forces_cancellation_after_grace_period():
         return "SUCCESS"
 
     config = BotConfig(
+        id="test-bot",
         name="stop-forced-cancel-test",
         initial="state_a",
         recovery_state="state_a",
@@ -576,6 +574,7 @@ async def test_stop_after_client_error_induced_pause():
         raise ClientClosedError("simulated client death")
 
     config = BotConfig(
+        id="test-bot",
         name="client-error-pause-test",
         initial="state_a",
         recovery_state="state_a",
@@ -625,13 +624,34 @@ def _load_raw(path: Path) -> dict:
 
 
 def test_every_bot_file_has_an_id():
-    """A bot without `id` gets a fresh uuid4 on every load (BotConfig.id has a
-    default_factory), so it can never bind a combat strategy that survives a
-    restart — SettingsManager.get_active_strategy() and list_bot_strategies() both
-    key off it. Migrated by scripts/migrate_bot_ids.py."""
+    """A bot without `id` no longer loads at all: every value the user stores
+    against a bot — its combat strategy, and now each of its option values —
+    hangs off that id, and a minted one would be a fresh identity each load.
+    Migrated by scripts/migrate_bot_ids.py."""
     missing = [p.relative_to(_BOTS_DIR).as_posix() for p in _all_bot_files() if not _load_raw(p).get("id")]
 
     assert not missing, f"bot files with no id: {missing}"
+
+
+def test_opening_and_saving_a_bot_changes_none_of_its_options(tmp_path):
+    """The churn goal, as a check: `bots/` moved on every run because opening a
+    bot rewrote Safety Delay from the app setting, and editing any value wrote
+    it back into the file. Nothing rewrites an option on load now.
+
+    Options only, not the whole file: several bots still carry pre-epic legacy
+    keys and hand-written field order, so a byte-identity check over the file
+    would fail for reasons that have nothing to do with option values.
+    """
+    dest = tmp_path / "roundtrip.json"
+    churned = []
+    for path in _all_bot_files():
+        BotConfig.load(path).save(dest)
+        before = _load_raw(path).get("options", [])
+        after = _load_raw(dest).get("options", [])
+        if before != after:
+            churned.append(path.relative_to(_BOTS_DIR).as_posix())
+
+    assert not churned, f"opening and saving changed the options of: {churned}"
 
 
 def test_bot_ids_are_unique():

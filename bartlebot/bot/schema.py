@@ -3,7 +3,6 @@ import os
 import tempfile
 from pathlib import Path
 from typing import Literal
-from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -105,7 +104,10 @@ class StateModel(BaseModel):
 class BotOptionModel(BaseModel):
     name: str
     type: Literal["bool", "int", "float", "str", "player_list"]
-    default: bool | int | float | str | list[int] = False
+    # The author's recommended value -- *not* the user's current one, which lives in
+    # settings.json (see bartlebot.bot_options). None means the author has no opinion,
+    # which is what lets the app setting below it be reachable at all.
+    default: bool | int | float | str | list[int] | None = None
     description: str | None = None
 
 
@@ -139,7 +141,10 @@ class RegionModel(BaseModel):
 
 
 class BotConfig(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    # Required, with no default_factory: a minted id is indistinguishable from a real
+    # one, so a file missing it would silently get a fresh identity on every load --
+    # and every user value keyed on that id would vanish with it. Fixed by saving once.
+    id: str
     name: str
     description: str | None = None
     version: str = "1.0"
@@ -182,6 +187,14 @@ class BotConfig(BaseModel):
         so the stored order stays stable no matter how the editor wrote it.
         """
         return normalize_tags(value)
+
+    @field_validator("id")
+    @classmethod
+    def id_is_not_blank(cls, value: str) -> str:
+        """An empty id is the same failure as a missing one, one step later."""
+        if not value.strip():
+            raise ValueError("id must not be empty")
+        return value
 
     @model_validator(mode="after")
     def initial_state_exists(self) -> "BotConfig":

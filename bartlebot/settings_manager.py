@@ -10,6 +10,8 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
+from bartlebot import bot_options
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -33,7 +35,9 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_pets: bool = True
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
+    default_quicksell_enabled: bool = True
     default_apply_archmastery: bool = False
+    default_level_scaling_players: list[int] = []
     auto_group_players: bool = True
     auto_select_character: bool = True
     relog_interval_hours: float = 4.0
@@ -83,7 +87,9 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_pets": True,
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
+        "default_quicksell_enabled": True,
         "default_apply_archmastery": False,
+        "default_level_scaling_players": [],
         "auto_group_players": True,
         "auto_select_character": True,
         "relog_interval_hours": 4.0,
@@ -117,6 +123,7 @@ _DEFAULTS: dict[str, Any] = {
     "recent_zones": [],
     "recent_friend_names": [],
     "active_bot_strategies": {},  # {bot_uuid: bcs_uuid}
+    "bot_option_overrides": {},  # {bot_uuid: {option_name: value}}
 }
 
 # Valid Wizard101 windowed resolutions (width, height)
@@ -535,6 +542,52 @@ class SettingsManager:
             mapping[bot_id] = strategy_id
         self.set("active_bot_strategies", value=mapping)
         self.save()
+
+    # ------------------------------------------------------------------
+    # Bot option overrides
+    # ------------------------------------------------------------------
+
+    def get_option_override(self, bot_id: str, name: str) -> Any:
+        """Return the user's stored value for one bot option, or UNSET.
+
+        ``UNSET`` rather than ``None``: a stored ``[]`` or ``false`` is an explicit
+        choice, and only the *absence* of the key means "I have no value here".
+        """
+        row = self.get("bot_option_overrides", bot_id) or {}
+        if not isinstance(row, dict) or name not in row:
+            return bot_options.UNSET
+        return row[name]
+
+    def set_option_override(self, bot_id: str, name: str, value: Any) -> None:
+        """Store the user's value for one bot option and persist."""
+        overrides = dict(self.get("bot_option_overrides") or {})
+        row = dict(overrides.get(bot_id) or {})
+        row[name] = value
+        overrides[bot_id] = row
+        self.set("bot_option_overrides", value=overrides)
+        self.save()
+
+    def drop_option_override(self, bot_id: str, name: str) -> None:
+        """Forget the user's value for one bot option, so it resolves again."""
+        overrides = dict(self.get("bot_option_overrides") or {})
+        row = dict(overrides.get(bot_id) or {})
+        if name not in row:
+            return
+        row.pop(name)
+        if row:
+            overrides[bot_id] = row
+        else:
+            overrides.pop(bot_id, None)
+        self.set("bot_option_overrides", value=overrides)
+        self.save()
+
+    # There is deliberately no prune_option_overrides() analogue of
+    # prune_active_strategies. A strategy id names a file that can genuinely
+    # vanish; an option name is composed from whichever nodes are in the graph
+    # right now, on every graph edit -- so cutting a node and pasting it back
+    # would drop the user's value in between. A dead row cannot affect a
+    # resolution either, since resolution only asks about names that exist.
+    # Overrides go when the user deletes the option.
 
     def prune_active_strategies(self, known_strategy_ids: Iterable[str]) -> int:
         """Drop remembered selections whose BotCombatStrategy file no longer exists.
