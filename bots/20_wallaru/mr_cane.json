@@ -753,7 +753,15 @@
     "Jewels",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "155"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -909,11 +917,7 @@
         "x": 2640.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "155"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

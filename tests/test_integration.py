@@ -679,25 +679,45 @@ def test_bot_ids_are_unique():
     assert not duplicates, f"bot ids used by more than one file: {duplicates}"
 
 
-def test_no_bot_pins_a_quicksell_flag_it_does_not_mean_to():
-    """A sell_* param equal to the shipped default was written by the load-time
-    override that used to rewrite all three, not chosen — and left in a file it
-    outranks the user's own app setting. The library was migrated in place when
-    those params became three-state; this is what keeps it migrated, since a save
-    from an editor still holding stale values would put them back."""
-    from bartlebot.nodes.utility.quicksell import APP_DEFAULT_SETTINGS  # noqa: PLC0415
+def test_no_bot_carries_a_dead_quicksell_param():
+    """Quicksell's five settings are bot options now, so a param left in a state is
+    dead weight that ``run()`` will never read.
 
+    That matters most for ``keep_list``: a file still carrying one looks configured
+    and sells the very drops its author picked out. scripts/migrate_quicksell_options.py
+    moved them; this is what keeps them moved, since an older editor saving over a bot
+    would put them back.
+    """
     offenders: list[str] = []
     for path in _all_bot_files():
         for state in _load_raw(path).get("states") or []:
             if state.get("node_type") != "quicksell":
                 continue
-            params = state.get("params") or {}
-            for key, (_, shipped) in APP_DEFAULT_SETTINGS.items():
-                if params.get(key) is shipped:
-                    offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {key}={shipped}")
+            for key in sorted(state.get("params") or {}):
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {key}")
 
-    assert not offenders, f"quicksell states pinning a shipped default: {offenders}"
+    assert not offenders, f"quicksell states still carrying params: {offenders}"
+
+
+def test_no_bot_declares_a_quicksell_flag_it_does_not_mean_to():
+    """A sell flag declared equal to the value it would resolve to anyway says nothing,
+    and outranks the user's own app setting while saying it.
+
+    The save-time prune drops a declaration matching the NodeSpec default, but these
+    three declare ``None`` — the author has no opinion — so a stored ``true``/``false``
+    always survives it and has to be a real choice.
+    """
+    from bartlebot.nodes.utility.quicksell import SELL_FLAG_DEFAULTS, SELL_FLAG_OPTIONS  # noqa: PLC0415
+
+    floors = {SELL_FLAG_OPTIONS[key]: floor for key, floor in SELL_FLAG_DEFAULTS.items()}
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for opt in _load_raw(path).get("options") or []:
+            floor = floors.get(opt.get("name"))
+            if floor is not None and opt.get("default") is floor:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt['name']}={floor}")
+
+    assert not offenders, f"bots declaring a quicksell flag that changes nothing: {offenders}"
 
 
 def test_no_bot_stores_a_friend_name():
@@ -707,18 +727,51 @@ def test_no_bot_stores_a_friend_name():
     ships then and links the account to whoever wrote the commit (CLAUDE.md, "No real
     player data"). It also breaks the bot for everyone else, who has no such friend.
 
-    The teleport target is app settings or a hooked player slot instead. The properties
-    panel cannot write this key back — _AppSettingStrWidget is skipped by get_params —
-    so a file carrying one was either hand-edited or predates the change.
+    The teleport target is the Friend Name bot option or a hooked player slot instead.
+    The option's value lives in settings.json and never in the file; the properties panel
+    has no such field to write from. So a file carrying one was either hand-edited or
+    predates the change.
+
+    Both places are checked: the old param, and a *declaration* of the option — an
+    author who typed a name into the Options tab would put it right back in the file.
     """
     offenders: list[str] = []
     for path in _all_bot_files():
-        for state in _load_raw(path).get("states") or []:
+        raw = _load_raw(path)
+        for state in raw.get("states") or []:
             params = state.get("params")
             if isinstance(params, dict) and params.get("friend_name"):
                 offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}")
+        for opt in raw.get("options") or []:
+            if opt.get("name") == "Friend Name" and opt.get("default"):
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → Friend Name declaration")
 
     assert not offenders, f"bot states storing a character name: {offenders}"
+
+
+def test_no_bot_declares_a_user_owned_option():
+    """Some values are the user's whatever the dungeon is, and a declaration of one
+    outranks the app setting they set it in.
+
+    Safety Delay describes the connection, not the bot -- a declaration would put back
+    the per-node pin #150 removed, one level up. Enable Quicksell is whether the user
+    will part with items at all; an author who did not want selling would leave the node
+    out. Friend Name is a character name (see the test above).
+
+    The Options tab shows none of the three, so a file carrying one was hand-edited.
+    The sell flags and Level Scaling Players are deliberately not here: a bot farming a
+    pet has to be able to say so, and eleven bots name which of their players visit the
+    scaling station.
+    """
+    from bartlebot.bot_options import USER_OWNED_OPTIONS  # noqa: PLC0415
+
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for opt in _load_raw(path).get("options") or []:
+            if opt.get("name") in USER_OWNED_OPTIONS:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt['name']}")
+
+    assert not offenders, f"bots declaring a value only the user owns: {offenders}"
 
 
 def test_no_bot_pins_a_bot_wide_option_for_one_node():

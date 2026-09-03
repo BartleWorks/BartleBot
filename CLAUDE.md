@@ -342,11 +342,11 @@ Four things that are load-bearing:
 
 - **A declaration of `None` means the author has no opinion.** Without it the app
   setting is unreachable, because a declaration is written for every required
-  option — whichever level sits in the middle would be dead weight. This is
-  `tri_bool` generalised from a param type to a property of every declaration.
+  option — whichever level sits in the middle would be dead weight. This is the
+  retired `tri_bool` param type generalised to a property of every declaration.
 - **Absence is unset; a stored `[]` or `false` is a choice.** Never prune a falsy
   override. `exclude_none=True` in `BotConfig.save` sets the same trap in the bot
-  file, which is what `tri_bool` already relies on.
+  file, which is what a null declaration relies on.
 - **`BotConfig.id` is required, with no `default_factory`.** A minted id is
   indistinguishable from a real one, so a file missing it would take a fresh
   identity on every load and lose every value keyed to it. Save As mints a new id
@@ -434,9 +434,56 @@ already has.
   changes colour rather than appearing, Reset greys out rather than vanishing,
   every level including the user's own has a caption, and `_refresh_row` is what
   a value edit calls.
+- **A row is a head line and a control, and the prose folds.** Measured on a
+  shipped bot at a 400px sidebar, an ordinary option row was 41% node-authored
+  description and 17% source caption, leaving the control the minority of its own
+  row -- all of it at 9px, three quarters of the base size and small enough that
+  Windows' subpixel antialiasing colours the strokes. So the caption moved onto
+  the name's line, where it costs nothing, and the description folds behind a `?`
+  and is read at the base font. This is the one thing on the surface that appears
+  and disappears, and it does not contradict the rule above: it moves on a
+  deliberate click of its own button, never on a value edit, and everything it
+  moves is below the button that moved it. `show_option_descriptions` is the
+  switch for reading the whole tab at once -- a property of the reader, so it
+  lives in `settings.json` and not in the bot.
+- **Reset sits beside a short control and on the head line otherwise.** Against a
+  220px table it centres on the table's midpoint, floating with nothing to attach
+  it to, and takes its width from the last column for that whole height. A bool
+  has no separate label, so its checkbox *is* the head line and the whole row --
+  name, `?`, caption, Reset -- fits on one.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.
+- **An option may be required only when a param says so.** `BotOptionSpec.required_when`
+  names a bool param on the same node; the option is composed only while that param is
+  on. Challenge Mode is the case: a handful of dungeons offer one, and composing it
+  unconditionally put a switch into all sixty-odd bots containing a sigil that their
+  users could not act on. The split is the same one the params/options table draws —
+  *whether this dungeon has a Challenge Mode* is a fact about the graph and so a param
+  (`offers_challenge_mode`), *whether to use it* is the user's and so an option. The
+  node gates on both, so a stale override cannot send a client at a toggle that is not
+  there, and the composed default stays `False`: the author is saying it is available,
+  not that it is wanted. They can still pin a default by declaring one.
+- **The list is ordered by where an option comes from, not by whether it is in
+  the file.** The author's own options first, then the derived ones grouped by the
+  node that requires them. Ordering the file's options first instead made a row
+  move the moment its value was edited — editing a derived default materialises a
+  declaration, so the row the user had just touched jumped to the top — and it
+  threaded one node's options through another's. `compose_options` is where that
+  order is decided, so both surfaces get it.
+- **A value only the user owns has no row on the author's surface at all.**
+  `bot_options.USER_OWNED_OPTIONS` names them — Safety Delay, Friend Name, Enable
+  Quicksell — and `OptionsSection` filters them out rather than showing them
+  disabled, because a declaration of one outranks the app setting the user set it
+  in. Safety Delay is the plain case: a declaration there is the per-node pin
+  *A node cannot pin a bot-wide option* removed, one level up. Ownership is a
+  property of the *option*, not of its type — Safety Delay is an ordinary float —
+  so the registry is by name, and it is deliberately narrow: `Sell Pets` stays
+  editable because a bot farming a pet has to be able to say so, and `Level
+  Scaling Players` because eleven shipped bots name which of *their* players visit
+  the station. Nothing prunes such a declaration on save: the resolution stays a
+  plain four levels, a hand-edited file is still honoured, and
+  `test_no_bot_declares_a_user_owned_option` is what keeps the library clean.
 - **Renaming an option is three fixups, not one.** The flat `flags` list, the
   `flag_groups` the edge editor actually writes — which take precedence at run
   time, so a stale name there evaluates `False` in silence — and the override
@@ -555,7 +602,7 @@ yield and what it has. It is the only authorial thing over there, which is what
 `RightSidebar.config_changed` exists for. **Log** is the third tab there, so it
 can be read without closing Setup.
 
-### App settings vs. node params
+### A value the user owns is never a node param
 
 An app setting that a node param also expresses must never be applied by rewriting
 the param on load. That is what `AppController._apply_bot_defaults` used to do to
@@ -563,31 +610,47 @@ quicksell's `sell_*` params, and it made the node param unreachable: a value sto
 in a bot file was overwritten every time the file was opened, then silently written
 back on the next save.
 
-Use a three-state param instead — `ParamField(type="tri_bool", app_setting_key=…)`,
-stored as `true` / `false` / `null`, defaulting to unset. Unset means "use the app
-setting", so a bot with no opinion follows the user, and a bot that pins an answer
-keeps it. Resolve at **run time**, in one place, and log which level answered:
-`quicksell.resolve_app_defaults()` is the model, and `resolve_combat()`'s
-`source_label` is the older precedent for saying where a value came from.
+The fix was two special-purpose param types, `tri_bool` and `app_setting_str`, each
+invented because a user's value had nowhere else to live. **Both are gone**, and so
+is the reason for them: a user's value lives in `settings.json`, four-level
+resolution decides who wins, and the vehicle is a **bot option with a null
+declaration** — see *Bot options: whose value is it* above. A `ParamField` type for
+this would be a third mechanism for a question two levels up already answers.
 
-Everything downstream of that one resolution should see plain bools, which is what
-keeps the keep-list logic and the picker pure and testable without settings.
+Prefer a bot option over a param whenever the value is not a fact about *this node
+in this graph*:
 
-Two things that fall out of it:
+| the value describes | where it goes |
+|---|---|
+| this node's place in this dungeon (a zone name, an XYZ, which player interacts) | a param |
+| the user, or their machine (Safety Delay, what they will let quicksell sell, whose wizard to port to) | a bot option, declared `default=None`, with an entry in `bot_options.APP_SETTING_KEYS` |
+| this dungeon, but bot-wide (quicksell's keep list) | a bot option with a real default |
 
-- Anything showing the user what will happen — the properties panel, the safety
-  warning dialog — has to resolve too, and say when a value came from the app
-  setting. The bot file does not show that.
-- Values the override already wrote have to be dealt with, or they start
-  outranking the app setting the moment it stops rewriting them. Every bot file
-  is in this repo, so the quicksell params were migrated in place rather than at
-  load time: a stored value equal to the shipped default said nothing the app
-  setting does not and was dropped, while one that differs was the only trace of
-  intent the file carried and stayed as a pin. `test_no_bot_pins_a_quicksell_flag_it_does_not_mean_to`
-  keeps the library that way.
+A bot option also reaches **every** node in the bot at once. That is not a detail:
+quicksell's flags were per-node, so `hall_of_heroes` needed two quicksell nodes and
+two mutually exclusive bool options to offer one choice between two keep lists.
 
-`Safety Delay` is the deliberate exception — it describes the machine's connection
-rather than the bot, so no stored value should outrank the app setting.
+Three things that fall out of it:
+
+- **Resolve once, at run time, and log which level answered.** `BotMachine.get_option`
+  does the logging, once per option per run; `quicksell.resolve_options()` is the one
+  place quicksell's five collapse into the plain dict everything below reads, which is
+  what keeps the keep-list logic and the picker pure and testable without settings.
+  `resolve_combat()`'s `source_label` is the older precedent.
+- **Anything showing the user what will happen has to resolve the same way**, through
+  the same gatherer, and say which level answered. `bartlebot/option_values.py` is that
+  gatherer — `bot_options` stays pure and never imports `SettingsManager`, so the run
+  loop, the Setup rows and the safety dialog each hand it the same two impure inputs
+  rather than each fetching them their own way.
+- **Values already written into bot files have to be migrated**, or they start
+  outranking the app setting the moment it stops rewriting them. Every bot file is in
+  this repo, so migrate in place: `scripts/migrate_quicksell_options.py` moved
+  quicksell's five, and `test_no_bot_carries_a_dead_quicksell_param` keeps them moved,
+  because a param a node no longer reads is invisible rather than wrong.
+
+`Safety Delay` was the first of these and is still the plainest: it describes the
+machine's connection rather than the bot, so no stored value should outrank the app
+setting.
 
 #### A node cannot pin a bot-wide option
 
@@ -612,21 +675,41 @@ dropped silently on the next save instead of failing.
 
 #### When no bot should ever store a value
 
-`tri_bool` says "no bot *needs* to pin this". Some values are stronger than that:
-storing one in a bot file is always wrong, because the value describes the user and
-the file is shared. `teleport_to_friend`'s friend name is the case — a character name
-in a committed bot is both a privacy leak and a bot that only its author can run.
+Most user-owned values are "no bot *needs* to pin this". Some are stronger: storing
+one in a bot file is always wrong, because the value describes the user and the file
+is shared. `teleport_to_friend`'s friend name is the case — a character name in a
+committed bot is both a privacy leak and a bot only its author can run.
 
-Those use `ParamField(type="app_setting_str", app_setting_key=…)`. The widget edits
-the app setting directly, and `get_params()` **skips the key entirely**, so the
-properties panel cannot write it back to the bot no matter what the user types. The
-guard is `test_no_bot_stores_a_friend_name`; the run-time resolution, with its
-`source` label, is `teleport_to_friend.resolve_target`.
+That is still a bot option with a null declaration; what changes is that the
+declaration must **stay** null — so `Friend Name` is in `USER_OWNED_OPTIONS` and the
+Options tab has no row for it. Nothing enforces that in the schema, so the guard is
+`test_no_bot_stores_a_friend_name`, which checks both places a name could land: the
+old `friend_name` param, and a *declaration* of the option that a hand-edited file
+could still carry. Setup — where a user actually sets it — writes an override and
+cannot touch the file at all.
+
+The run-time resolution, with its `source` label, is `teleport_to_friend.resolve_target`,
+and it is pure: the resolved option value is passed *in*, so the precedence between it
+and the bot file lives in one function that reads no settings.
 
 A literal left in an older file still wins at run time, logged as deprecated, so
 upgrading does not break a bot — but the editor drops it on the next save, and the
-safety dialog stops offering the app-setting field while it is there, because
-editing a value the run will ignore is worse than not offering it.
+safety dialog stops offering the app-setting field while it is there, because editing
+a value the run will ignore is worse than not offering it. The dialog withholds that
+field for the same reason when a per-bot override is winning.
+
+#### An option type may be node-only
+
+`bool` / `int` / `float` / `str` / `str_list` / `player_list` are what the Add Option
+dialog offers. Two more exist that it deliberately does not: `drop_keep_list` (a
+`str_list` shown as this bot's own drop table, one tick box per item) and
+`friend_name` (a `str` with the online friends list behind a button).
+
+They are types rather than special cases keyed on an option's name, so
+`make_option_widget` stays the one option-type → widget mapping. Each degrades to the
+plain control for the type underneath when its `get_drops` / `get_clients` is missing,
+which is the right answer on a surface with no bot behind it. Neither is offered for
+hand-adding, because a hand-added option has neither of those things behind it.
 
 ### Restricted zones (PvP)
 

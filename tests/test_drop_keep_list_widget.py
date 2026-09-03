@@ -22,8 +22,7 @@ from bartlebot.gui.canvas.drop_keep_list import (
     bulk_needs_confirmation,
     row_visible,
 )
-from bartlebot.gui.canvas.param_panel import _DynamicParamForm
-from bartlebot.nodes.utility.quicksell import PARAM_SCHEMA
+from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, widget_value
 
 _DROPS = [
     DropModel(name="Amber", category="Jewels"),
@@ -32,8 +31,8 @@ _DROPS = [
     DropModel(name="Socket Wrench"),  # uncategorized — unknown is not unsellable
     DropModel(name="Mandrake", category="Reagents"),  # never quicksold
 ]
-# All three sell_* params pinned, so the widget resolves nothing against the app
-# settings and these tests do not depend on the machine they run on.
+# The resolved sell_* answers the host pushes as context. Supplied in full, so
+# these tests do not depend on the settings of the machine they run on.
 _SELL_ALL = {"sell_pets": True, "sell_socket_wrenches": True, "sell_skeleton_keys": True}
 
 
@@ -389,26 +388,46 @@ def test_refresh_picks_up_drops_added_after_construction(qapp):
     assert _rows(w) == ["Amber", "Boots of Dawn"]
 
 
-def test_the_quicksell_form_builds_the_widget_and_round_trips_its_value(qapp):
-    form = _DynamicParamForm()
-    form.set_drops_getter(lambda: list(_DROPS))
-    form.load_schema(PARAM_SCHEMA, {"keep_list": ["Amber"], **_SELL_ALL, "sell_pets": True})
-
-    widget = next(w for w in form.findChildren(DropKeepListWidget))
+def test_the_option_layer_builds_the_picker_and_round_trips_its_value(qapp):
+    """The keep list is a bot option, so the picker is reached through the one
+    option-type -> widget mapping rather than through the properties form."""
+    widget = make_option_widget("drop_keep_list", ["Amber"], get_drops=lambda: list(_DROPS))
+    assert isinstance(widget, DropKeepListWidget)
+    widget.set_context(_SELL_ALL)
     assert _checked(widget, "Amber")
-    assert form.get_params()["keep_list"] == ["Amber"]
+    assert widget_value(widget) == ["Amber"]
 
     _row(widget, "Boots of Dawn").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
-    assert form.get_params()["keep_list"] == ["Amber", "Boots of Dawn"]
+    assert widget_value(widget) == ["Amber", "Boots of Dawn"]
 
 
-def test_the_quicksell_form_feeds_its_sell_bools_to_the_widget(qapp):
-    form = _DynamicParamForm()
-    form.set_drops_getter(lambda: list(_DROPS))
-    form.load_schema(PARAM_SCHEMA, {"keep_list": [], "sell_socket_wrenches": False, "sell_skeleton_keys": True})
+def test_ticking_a_drop_reports_the_whole_new_list(qapp):
+    """A tick is an edit the host stores, so it has to arrive as a value and not as
+    a signal the host then has to go and read."""
+    seen = []
+    widget = make_option_widget("drop_keep_list", [], get_drops=lambda: list(_DROPS))
+    widget.set_context(_SELL_ALL)
+    connect_widget(widget, seen.append)
 
-    widget = next(w for w in form.findChildren(DropKeepListWidget))
-    assert _checked(widget, "Socket Wrench") and not _enabled(widget, "Socket Wrench")
+    _row(widget, "Amber").setCheckState(_COL_KEEP, Qt.CheckState.Checked)
+    assert seen == [["Amber"]]
+
+
+def test_typing_in_the_keyword_line_does_not_report_until_the_field_is_left(qapp):
+    """Storing a value is a settings-file write, and one per keystroke is one write
+    per keystroke -- the same reason connect_widget uses editingFinished elsewhere.
+    The table still repaints live, which is what the check state proves."""
+    seen = []
+    widget = make_option_widget("drop_keep_list", [], get_drops=lambda: list(_DROPS))
+    widget.set_context(_SELL_ALL)
+    connect_widget(widget, seen.append)
+
+    widget._edit.setText("Amber")
+    assert seen == []
+    assert _checked(widget, "Amber")
+
+    widget._edit.editingFinished.emit()
+    assert seen == [["Amber"]]
 
 
 def test_the_default_category_entry_counts_what_it_shows(qapp):
@@ -539,11 +558,9 @@ def test_a_comma_named_entry_can_be_unticked(qapp):
     assert w.get_value() == []
 
 
-def test_a_comma_named_entry_round_trips_through_the_form(qapp):
-    form = _DynamicParamForm()
-    form.set_drops_getter(lambda: list(_COMMA_DROPS))
-    form.load_schema(PARAM_SCHEMA, {"keep_list": ["No Pain, No Gain Onyx"]})
-    assert form.get_params()["keep_list"] == ["No Pain, No Gain Onyx"]
+def test_a_comma_named_entry_round_trips_through_the_option_layer(qapp):
+    widget = make_option_widget("drop_keep_list", ["No Pain, No Gain Onyx"], get_drops=lambda: list(_COMMA_DROPS))
+    assert widget_value(widget) == ["No Pain, No Gain Onyx"]
 
 
 # ---------------------------------------------------------------------------
@@ -619,14 +636,6 @@ def test_flipping_the_pets_bool_updates_the_rows(qapp):
     w.set_context({**_SELL_ALL, "sell_pets": True})
     assert not _checked(w, "Fierce Hound")
     assert not _enabled(w, "Fierce Hound")
-
-
-def test_the_quicksell_form_feeds_its_pets_bool_to_the_widget(qapp):
-    form = _DynamicParamForm()
-    form.set_drops_getter(lambda: list(_PETS))
-    form.load_schema(PARAM_SCHEMA, {"keep_list": [], "sell_pets": False})
-    widget = next(w for w in form.findChildren(DropKeepListWidget))
-    assert _checked(widget, "Fierce Hound") and not _enabled(widget, "Fierce Hound")
 
 
 # ---------------------------------------------------------------------------

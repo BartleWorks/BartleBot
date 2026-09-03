@@ -1805,7 +1805,15 @@
     "Spellements",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Merciless"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -1963,11 +1971,7 @@
         "x": 3520.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Merciless"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

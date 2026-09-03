@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import bot_options, option_values
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import quicksell
@@ -49,71 +50,75 @@ class SafetyWarning:
     """
 
 
-#: The quicksell sell_* params, in the order the dialog lists them.
-_QUICKSELL_FLAG_LABELS: dict[str, str] = {
-    "sell_pets": "Sell Pets",
-    "sell_socket_wrenches": "Sell Socket Wrenches",
-    "sell_skeleton_keys": "Sell Skeleton Keys",
-}
+def _quicksell_details(config, states, clients) -> list[tuple[str, str]]:
+    """What quicksell will actually sell, and which level decided each answer.
 
+    Quicksell's settings are bot options now, so they are the bot's rather than any
+    one state's — every quicksell node in a bot gets the same answers, and the rows
+    are listed once rather than once per state.
 
-def _quicksell_details(states) -> list[tuple[str, str]]:
-    """What each quicksell state will actually sell, and which level decided it.
-
-    The sell_* params are three-state, so the stored value is not the answer: an
-    unset one follows the app setting. This dialog is the last thing between the
-    user and an irreversible sale, so it shows the resolved value — and says when
-    it came from the app setting, because that is the one the bot file does not
-    show.
+    Nothing here reads a stored value directly. Each option goes through the same
+    four levels the run will use, and the caption names the one that answered:
+    this dialog is the last thing between the user and an irreversible sale, and
+    what the bot file says is not the answer.
     """
     details: list[tuple[str, str]] = []
-    for state in states:
-        prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
-        inherited = set(quicksell.inherited_flags(state.params))
-        resolved = quicksell.resolve_app_defaults(state.params)
-        details += [
-            (
-                f"{prefix}{label}",
-                ("Yes" if resolved[key] else "No") + (" (app setting)" if key in inherited else ""),
-            )
-            for key, label in _QUICKSELL_FLAG_LABELS.items()
-        ]
+    for name in (quicksell.OPTION_ENABLED, *quicksell.SELL_FLAG_OPTIONS.values()):
+        resolution = option_values.option_resolution(config, name)
+        if resolution is None:
+            continue
+        details.append((name, f"{'Yes' if resolution.value else 'No'} ({resolution.source})"))
+
+    keep_list = option_values.option_resolution(config, quicksell.OPTION_KEEP_LIST)
+    if keep_list is not None:
+        shown = ", ".join(str(k) for k in keep_list.value) if keep_list.value else "(nothing)"
+        details.append((quicksell.OPTION_KEEP_LIST, f"{shown} ({keep_list.source})"))
     return details
 
 
-def _teleport_to_friend_details(states, clients) -> tuple[list[tuple[str, str]], tuple[str, str] | None]:
+def _teleport_to_friend_details(config, states, clients) -> tuple[list[tuple[str, str]], tuple[str, str] | None]:
     """What each teleport state will port to, resolved the same way the run will resolve it.
 
     The bot file does not show the answer in either mode: a hooked-player target is a slot
-    whose name is read from the game, and a friend name lives in app settings. So this
-    resolves both, and offers the name for editing only when some state actually uses it —
-    in hooked-player mode the name is not the user's to change, and is shown read-only.
+    whose name is read from the game, and a friend name is a bot option resolved against
+    this machine. So this resolves both, and offers the name for editing only when some
+    state actually uses it — in hooked-player mode the name is not the user's to change,
+    and is shown read-only.
+
+    The editable field writes the *app setting*, which is the shared level under the
+    option. Offering it while a per-bot override sits above it would be a field whose
+    edits the run ignores, so it is withheld then — the same reason it is withheld while
+    a deprecated literal in the bot file is winning.
     """
     details: list[tuple[str, str]] = []
     editable: tuple[str, str] | None = None
+    resolution = option_values.option_resolution(config, teleport_to_friend.OPTION_FRIEND_NAME)
+    configured = "" if resolution is None else str(resolution.value or "")
+    outranks_app_setting = resolution is not None and resolution.source == bot_options.SOURCE_OVERRIDE
     for state in states:
         prefix = f"{state.label or state.id}: " if len(states) > 1 else ""
-        target = teleport_to_friend.resolve_target(list(clients or []), state.params)
+        target = teleport_to_friend.resolve_target(list(clients or []), state.params, configured)
         if state.params.get("target_hooked_player", False):
             slot = int(state.params.get("target_player") or 0)
             label = f"{prefix}Target Player"
             details.append((label, f"P{slot} — {target.name}" if target.name else f"P{slot} — {target.error}"))
         else:
             details.append((f"{prefix}Friend Name", target.name or f"({target.error})"))
-            if target.source != "the bot file (deprecated)":
+            if target.source == "the Friend Name option" and not outranks_app_setting:
                 editable = ("Friend Name", teleport_to_friend.APP_SETTING_KEY)
         details.append((f"{prefix}Destination Zone", state.params.get("to_zone", "")))
     details.append(("Required Game Setting", "Options → Gameplay Options 4 → Dblclick Go To Friend: No"))
     return details, editable
 
 
+#: node type -> ``(config, states, clients) -> details`` (or ``(details, editable)``).
+#: Every builder takes all three: what a node will do is now mostly a question about
+#: the bot's options rather than about one state's params, so a builder that could not
+#: see the config could not answer it.
 _DETAIL_BUILDERS = {
     "quicksell": _quicksell_details,
     "teleport_to_friend": _teleport_to_friend_details,
 }
-
-#: Builders that need the live clients as a second argument.
-_CLIENT_AWARE_BUILDERS = {"teleport_to_friend"}
 
 
 def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> list[SafetyWarning]:
@@ -143,7 +148,7 @@ def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> l
         details: list[tuple[str, str]] = []
         editable: tuple[str, str] | None = None
         if detail_builder:
-            built = detail_builder(states, clients) if node_type in _CLIENT_AWARE_BUILDERS else detail_builder(states)
+            built = detail_builder(config, states, clients)
             details, editable = built if isinstance(built, tuple) else (built, None)
         warnings.append(SafetyWarning(message=spec.safety_warning, details=details, editable_setting=editable))
 

@@ -337,6 +337,10 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 type_chip = _Chip(opt.type, THEME.border, THEME.text_muted)
                 row.addWidget(name_chip)
                 row.addWidget(type_chip)
+                # A conditional option is not injected until the param turns it on, so the
+                # note above ("automatically injects") would otherwise be wrong for it.
+                if opt.required_when:
+                    row.addWidget(_Chip(f"if {opt.required_when}", THEME.border, THEME.text_muted))
 
                 if opt.description:
                     opt_desc = QLabel(opt.description)

@@ -379,6 +379,15 @@
         3,
         4
       ]
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Energy Opal",
+        "Huge Energy Opal",
+        "Ultra Energy Opal"
+      ]
     }
   ],
   "states": [
@@ -712,16 +721,7 @@
         "x": 8360.0,
         "y": -180.0
       },
-      "params": {
-        "keep_list": [
-          "Energy Opal",
-          "Huge Energy Opal",
-          "Ultra Energy Opal"
-        ],
-        "sell_pets": null,
-        "sell_socket_wrenches": null,
-        "sell_skeleton_keys": null
-      }
+      "params": {}
     },
     {
       "id": "state_22",

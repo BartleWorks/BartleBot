@@ -13,7 +13,8 @@ transition guarding on an option nothing declares any more.
 
 Written against the real NodeSpecs rather than fakes, because the predicate is
 about agreeing with them: ``interact`` requires Safety Delay (float, 3.0) and
-``enter_dungeon`` also requires Challenge Mode (bool, False).
+``enter_dungeon`` also requires Challenge Mode (bool, False), but only while its
+``offers_challenge_mode`` param is on.
 """
 
 from __future__ import annotations
@@ -34,7 +35,7 @@ def _config(**overrides) -> BotConfig:
         "name": "Test Bot",
         "initial": "s0",
         "recovery_state": "s0",
-        "states": [{"id": "s0", "node_type": "enter_dungeon"}],
+        "states": [{"id": "s0", "node_type": "enter_dungeon", "params": {"offers_challenge_mode": True}}],
         "transitions": [],
     }
     data.update(overrides)
@@ -73,6 +74,37 @@ def test_an_option_no_node_in_the_graph_requires_is_not_composed():
     assert "Challenge Mode" not in _named(compose_options(config))
 
 
+def test_an_option_the_author_has_not_offered_is_not_composed():
+    """Challenge Mode exists in a handful of dungeons and nowhere else, and only the
+    author knows which theirs is. Composing it unconditionally put a switch the user
+    could not act on into all sixty-odd bots with a sigil in them."""
+    config = _config(states=[{"id": "s0", "node_type": "enter_dungeon", "params": {}}])
+
+    composed = _named(compose_options(config))
+
+    assert "Challenge Mode" not in composed
+    assert "Safety Delay" in composed, "the node's unconditional options are unaffected"
+
+
+def test_one_state_offering_it_is_enough():
+    """A bot can enter two dungeons; the option is bot-wide, so any state that can use
+    it makes it worth offering."""
+    config = _config(
+        states=[
+            {"id": "s0", "node_type": "enter_dungeon", "params": {}},
+            {"id": "s1", "node_type": "enter_dungeon", "params": {"offers_challenge_mode": True}},
+        ]
+    )
+
+    assert "Challenge Mode" in _named(compose_options(config))
+
+
+def test_an_offered_option_still_defaults_to_off():
+    """The author says it is available, not that it is wanted -- that stays the user's,
+    and the author may still pin a default by declaring one."""
+    assert _named(compose_options(_config()))["Challenge Mode"].default is False
+
+
 def test_a_hand_added_option_is_composed_as_the_author_wrote_it():
     config = _config(options=[{"name": "Skip to boss", "type": "bool", "default": True}])
 
@@ -105,6 +137,51 @@ def test_a_system_option_no_node_in_the_graph_reads_is_dropped_from_the_composed
     )
 
     assert "Challenge Mode" not in _named(compose_options(config))
+
+
+# ---------------------------------------------------------------------------
+# Order
+# ---------------------------------------------------------------------------
+
+
+def _order(config) -> list[str]:
+    return [o.name for o in compose_options(config)]
+
+
+def test_a_derived_option_keeps_its_place_when_its_declaration_is_materialised():
+    """Editing a derived option's default writes a declaration into the file, and the
+    file's own options come first -- so an order that followed the file moved the row
+    the user had just touched to the top of the list, under the pointer."""
+    config = _config(states=[{"id": "s0", "node_type": "quicksell"}])
+    before = _order(config)
+
+    from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415
+
+    config.options.append(BotOptionModel(name="Sell Pets", type="bool", default=False))
+
+    assert _order(config) == before
+
+
+def test_the_options_of_one_node_stay_together():
+    """quicksell requires five; a declaration of one of them used to pull it out of the
+    group and leave enter_dungeon's Challenge Mode threaded through the rest."""
+    from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415
+
+    config = _config(
+        states=[
+            {"id": "s0", "node_type": "enter_dungeon", "params": {"offers_challenge_mode": True}},
+            {"id": "s1", "node_type": "quicksell"},
+        ],
+        options=[{"name": "Skip to boss", "type": "bool", "default": False}],
+    )
+    config.options.append(BotOptionModel(name="Sell Pets", type="bool", default=False))
+
+    order = _order(config)
+    quicksell = [i for i, name in enumerate(order) if name.startswith(("Sell ", "Enable Quicksell", "Quicksell "))]
+
+    assert order[0] == "Skip to boss", "a hand-added option is the author's own and comes first"
+    assert quicksell == list(range(min(quicksell), max(quicksell) + 1))
+    assert order.index("Challenge Mode") < min(quicksell)
 
 
 # ---------------------------------------------------------------------------

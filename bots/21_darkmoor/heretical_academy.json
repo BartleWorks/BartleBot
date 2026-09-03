@@ -13,7 +13,18 @@
     "Spellements",
     "Dungeon"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Abomination",
+        "Punishing",
+        "Death Disabling",
+        "Death Crushing"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -728,14 +739,7 @@
         "x": 2640.0,
         "y": -90.0
       },
-      "params": {
-        "keep_list": [
-          "Abomination",
-          "Punishing",
-          "Death Disabling",
-          "Death Crushing"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_37",

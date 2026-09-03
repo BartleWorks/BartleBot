@@ -455,34 +455,29 @@ async def test_busy_dialog_behind_the_dungeon_warning_still_fails():
 # ---------------------------------------------------------------------------
 
 
-class _FakeSettings:
-    """Just the one attribute resolve_target reads, so these stay off the real settings file."""
-
-    def __init__(self, name: str = ""):
-        self.default_friend_name = name
-
-
-def test_resolve_target_reads_the_app_setting_when_the_bot_names_nobody():
-    target = ttf.resolve_target([], {"to_zone": _TO_ZONE}, settings=_FakeSettings("Configured Wizard"))
+def test_resolve_target_uses_the_option_when_the_bot_names_nobody():
+    """The Friend Name option arrives already resolved — this holds the precedence
+    between it and the two things in the bot file, and reads no settings itself."""
+    target = ttf.resolve_target([], {"to_zone": _TO_ZONE}, "Configured Wizard")
 
     assert target.name == "Configured Wizard"
-    assert target.source == "the app setting"
+    assert target.source == "the Friend Name option"
     assert not target.error
 
 
 def test_resolve_target_fails_with_a_pointer_when_nothing_is_configured():
     """The failure has to say where to fix it — a silent teleport to nowhere is the bug
     this replaced."""
-    target = ttf.resolve_target([], {"to_zone": _TO_ZONE}, settings=_FakeSettings(""))
+    target = ttf.resolve_target([], {"to_zone": _TO_ZONE}, "")
 
     assert not target.name
-    assert "Settings" in target.error
+    assert "Setup" in target.error and "Settings" in target.error
 
 
 def test_a_literal_friend_name_still_wins_but_is_marked_deprecated():
     """Bot files written before #102 keep working; the source label is what says they
     should not stay that way."""
-    target = ttf.resolve_target([], _PARAMS, settings=_FakeSettings("Configured Wizard"))
+    target = ttf.resolve_target([], _PARAMS, "Configured Wizard")
 
     assert target.name == _FRIEND
     assert target.source == "the bot file (deprecated)"

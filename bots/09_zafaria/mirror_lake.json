@@ -1652,6 +1652,24 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to quicksell items"
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Sidhe Staff",
+        "Boots of Fire Dancing",
+        "Attunement",
+        "Oblivion",
+        "Flameborn",
+        "Frostborn",
+        "Storyborn",
+        "Squamish",
+        "Espirit Chapeau",
+        "Scintillating Tunic",
+        "Quick Stepping Boots",
+        "Splendid"
+      ]
     }
   ],
   "states": [
@@ -2041,22 +2059,7 @@
         "x": 1320.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Sidhe Staff",
-          "Boots of Fire Dancing",
-          "Attunement",
-          "Oblivion",
-          "Flameborn",
-          "Frostborn",
-          "Storyborn",
-          "Squamish",
-          "Espirit Chapeau",
-          "Scintillating Tunic",
-          "Quick Stepping Boots",
-          "Splendid"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

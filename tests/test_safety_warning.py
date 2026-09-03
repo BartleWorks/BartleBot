@@ -6,8 +6,13 @@ from bartlebot.settings_manager import SettingsManager
 from tests.conftest import FakeClient
 
 
-def _config(*states: dict) -> BotConfig:
-    """Build a minimal valid BotConfig containing the given state dicts."""
+def _config(*states: dict, options: list[dict] | None = None) -> BotConfig:
+    """Build a minimal valid BotConfig containing the given state dicts.
+
+    *options* are declarations, which is where a risky node's settings now live:
+    quicksell's five and teleport_to_friend's target name are bot options, so a
+    dialog test says what the bot declares rather than what a state's params hold.
+    """
     state_list = [{"id": f"s{i}", "node_type": "sleep", **s} for i, s in enumerate(states)]
     if not state_list:
         state_list = [{"id": "s0", "node_type": "sleep"}]
@@ -19,6 +24,7 @@ def _config(*states: dict) -> BotConfig:
             "recovery_state": state_list[0]["id"],
             "states": state_list,
             "transitions": [],
+            "options": options or [],
         }
     )
 
@@ -50,68 +56,72 @@ def test_quicksell_emits_warning():
     assert "quicksell" in warnings[0].message.lower() or "backpack" in warnings[0].message.lower()
 
 
-def test_quicksell_unset_flags_show_the_app_setting_and_say_so():
-    """The stored value is not the answer for an unset param, and the file does not
-    show which level decided — this dialog is the last stop before the sale."""
+def test_quicksell_shows_the_resolved_value_and_names_the_level_that_decided_it():
+    """The stored value is not the answer, and the file does not show which level
+    decided — this dialog is the last stop before an irreversible sale."""
     SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
     config = _config({"node_type": "quicksell", "params": {}})
+
     details = dict(collect_safety_warnings(config)[0].details)
-    assert details["Sell Pets"] == "No (app setting)"
+
+    assert details["Sell Pets"] == "No (the app setting)"
 
 
-def test_quicksell_pinned_flags_are_shown_without_the_app_setting_note():
+def test_a_declared_flag_is_shown_as_coming_from_the_bot():
     SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
-    config = _config({"node_type": "quicksell", "params": {"sell_pets": True}})
-    details = dict(collect_safety_warnings(config)[0].details)
-    assert details["Sell Pets"] == "Yes"
-
-
-def test_quicksell_all_flags_false_shows_no():
     config = _config(
-        {
-            "node_type": "quicksell",
-            "params": {
-                "sell_pets": False,
-                "sell_socket_wrenches": False,
-                "sell_skeleton_keys": False,
-            },
-        }
+        {"node_type": "quicksell", "params": {}},
+        options=[{"name": "Sell Pets", "type": "bool", "default": True}],
     )
-    warnings = collect_safety_warnings(config)
-    # Warning still fires (node is present), but details reflect the false values.
-    assert len(warnings) == 1
-    details = warnings[0].details
-    assert all(v == "No" for _, v in details)
+
+    details = dict(collect_safety_warnings(config)[0].details)
+
+    assert details["Sell Pets"] == "Yes (the bot file)"
 
 
-def test_quicksell_details_cover_sell_flags():
+def test_the_users_own_value_is_shown_as_theirs():
     config = _config({"node_type": "quicksell", "params": {}})
-    details = collect_safety_warnings(config)[0].details
-    keys = [k for k, _ in details]
-    assert not any("Crowns" in k for k in keys)
-    assert any("Pets" in k for k in keys)
-    assert any("Socket" in k for k in keys)
-    assert any("Skeleton" in k for k in keys)
+    SettingsManager.instance().set_option_override(config.id, "Sell Pets", False)
+
+    details = dict(collect_safety_warnings(config)[0].details)
+
+    assert details["Sell Pets"] == "No (your override)"
 
 
-def test_multiple_quicksell_states_prefix_details_with_label():
+def test_quicksell_details_cover_the_switch_the_flags_and_the_keep_list():
+    config = _config(
+        {"node_type": "quicksell", "params": {}},
+        options=[{"name": "Quicksell Keep List", "type": "drop_keep_list", "default": ["Amber"]}],
+    )
+
+    details = dict(collect_safety_warnings(config)[0].details)
+
+    assert details["Enable Quicksell"].startswith("Yes")
+    assert set(details) >= {"Sell Pets", "Sell Socket Wrenches", "Sell Skeleton Keys"}
+    assert details["Quicksell Keep List"].startswith("Amber (")
+    assert not any("Crowns" in k for k in details)
+
+
+def test_an_empty_keep_list_says_nothing_rather_than_showing_a_blank():
+    config = _config({"node_type": "quicksell", "params": {}})
+
+    details = dict(collect_safety_warnings(config)[0].details)
+
+    assert details["Quicksell Keep List"].startswith("(nothing)")
+
+
+def test_quicksell_details_are_listed_once_however_many_nodes_there_are():
+    """The settings are the bot's now, not any one state's, so prefixing them with a
+    state label would say they could differ between the two — they cannot."""
     config = _config(
         {"id": "qs1", "node_type": "quicksell", "label": "Sell A", "params": {}},
         {"id": "qs2", "node_type": "quicksell", "label": "Sell B", "params": {}},
     )
-    details = collect_safety_warnings(config)[0].details
-    assert any("Sell A" in k for k, _ in details)
-    assert any("Sell B" in k for k, _ in details)
 
-
-def test_multiple_quicksell_states_no_label_falls_back_to_id():
-    config = _config(
-        {"id": "qs1", "node_type": "quicksell", "params": {}},
-        {"id": "qs2", "node_type": "quicksell", "params": {}},
-    )
     details = collect_safety_warnings(config)[0].details
-    assert any("qs1" in k for k, _ in details)
-    assert any("qs2" in k for k, _ in details)
+
+    assert [k for k, _ in details].count("Sell Pets") == 1
+    assert not any("Sell A" in k or "Sell B" in k for k, _ in details)
 
 
 # ---------------------------------------------------------------------------
@@ -226,7 +236,7 @@ def test_teleport_to_friend_offers_the_name_for_editing(monkeypatch):
     starting the run over — and it is the user's value, so it is theirs to change."""
     from bartlebot.settings_manager import SettingsManager
 
-    monkeypatch.setattr(SettingsManager.instance(), "default_friend_name", "Alice StormBlade")
+    SettingsManager.instance().set_general("default_friend_name", "Alice StormBlade")
     config = _config({"node_type": "teleport_to_friend", "params": {"to_zone": "ZoneX"}})
 
     warning = collect_safety_warnings(config)[0]

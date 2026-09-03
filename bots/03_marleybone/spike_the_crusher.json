@@ -232,7 +232,16 @@
     "Gear",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Spike",
+        "Crusher"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -538,12 +547,7 @@
         "x": 1320.0,
         "y": -90.0
       },
-      "params": {
-        "keep_list": [
-          "Spike",
-          "Crusher"
-        ]
-      },
+      "params": {},
       "notes": "Keeps all school design gear"
     },
     {

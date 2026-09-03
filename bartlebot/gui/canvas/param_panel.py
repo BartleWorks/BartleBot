@@ -36,9 +36,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import DropModel, FlagCondition, FlagGroup, StateModel, TransitionModel
+from bartlebot.bot.schema import FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
-from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -253,191 +252,6 @@ class _ZoneWidget(QWidget):
             pass
 
 
-class _AppSettingStrWidget(ThemedMixin, QWidget):
-    """A string field the *user* owns rather than the bot, for ``app_setting_str`` fields.
-
-    Edits go straight to the SettingsManager general key named by the field's
-    app_setting_key, and ``get_params()`` never writes the key to the bot file — that is
-    the whole point. teleport_to_friend's Friend Name is the case it exists for: a bot must
-    never ship a character name, but every user needs to name their own idler once.
-
-    Suggestions come from the same two-tier arrangement as zones: live first (the online
-    friends list, read from a running client on demand), remembered after
-    (``recent_friend_names``). The history is autocomplete and nothing more — no run-time
-    code consults it, so a suggestion can never decide where a bot teleports.
-    """
-
-    def __init__(self, app_setting_key: str, get_clients: Callable[[], list], legacy_value: str = "", parent=None):
-        super().__init__(parent)
-        self._key = app_setting_key
-        self._get_clients = get_clients
-
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(2)
-
-        self._edit = QLineEdit()
-        self._model = QStringListModel(self)
-        completer = QCompleter(self._model, self)
-        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-        completer.setFilterMode(Qt.MatchFlag.MatchContains)
-        self._edit.setCompleter(completer)
-        self._edit.setText(self._stored())
-        self._edit.setPlaceholderText("Wizard name")
-        self._edit.editingFinished.connect(self._commit)
-        outer.addWidget(self._edit)
-
-        pick = QPushButton("Pick from Friends List")
-        pick.setFixedHeight(22)
-        pick.setToolTip("Read the online friends list from a connected player")
-        pick.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
-        pick.clicked.connect(lambda _: self._show_pick_menu(pick))
-        outer.addWidget(pick)
-
-        hint = QLabel("Stored on this machine and shared by every bot — not saved into the bot file.")
-        hint.setStyleSheet("font-size: 10px; color: gray;")
-        hint.setWordWrap(True)
-        outer.addWidget(hint)
-
-        # Only present while the bot still carries a literal, so apply_theme_styles
-        # has to tolerate its absence.
-        self._warn: QLabel | None = None
-        if legacy_value.strip():
-            self._warn = warn = QLabel(
-                f"This bot still stores a name of its own ({legacy_value.strip()}). It wins at run time "
-                "for now, and is dropped the next time this bot is saved."
-            )
-            warn.setWordWrap(True)
-            outer.addWidget(warn)
-
-        self._refresh_suggestions()
-        self.refresh_theme_styles()
-
-    def apply_theme_styles(self) -> None:
-        if self._warn is not None:
-            self._warn.setStyleSheet(f"font-size: 10px; color: {THEME.warning};")
-
-    # ------------------------------------------------------------------
-    # Settings access — lazy and defensive, as _TriBoolComboBox is.
-    # ------------------------------------------------------------------
-
-    def _settings(self):
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
-
-        return SettingsManager.instance()
-
-    def _stored(self) -> str:
-        try:
-            return str(self._settings().get_general(self._key, default="") or "")
-        except Exception:
-            return ""
-
-    def _commit(self) -> None:
-        name = self._edit.text().strip()
-        if name == self._stored():
-            return
-        try:
-            settings = self._settings()
-            settings.set_general(self._key, name)
-            settings.save()
-            settings.add_recent_friend_name(name)
-        except Exception:
-            logger.exception("Could not save %s", self._key)
-        self._refresh_suggestions()
-
-    def _refresh_suggestions(self) -> None:
-        try:
-            self._model.setStringList(self._settings().recent_friend_names)
-        except Exception:
-            self._model.setStringList([])
-
-    # ------------------------------------------------------------------
-    # Live friends list
-    # ------------------------------------------------------------------
-
-    def _show_pick_menu(self, btn: QPushButton) -> None:
-        clients = self._get_clients()
-        if not clients:
-            QMessageBox.information(self, "No players", "Connect a player to read its friends list.")
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._pick_from(0, btn))
-            return
-        menu = popup_menu(btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Read Player {i + 1}'s friends list")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._pick_from(idx, btn)))
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
-
-    async def _pick_from(self, idx: int, btn: QPushButton) -> None:
-        """Read one client's online friends and offer them as a menu.
-
-        Opening the list moves the game's own UI, so this only ever runs from an explicit
-        button press, never when the panel is merely shown.
-        """
-        from bartlebot.nodes import node_helpers  # noqa: PLC0415 — heavy import, only needed on demand
-
-        clients = self._get_clients()
-        if idx >= len(clients):
-            return
-        client = clients[idx]
-        try:
-            async with client.mouse_handler:
-                names = await node_helpers.list_online_friends(client)
-            await node_helpers.close_friends_list(client)
-        except Exception as exc:
-            logger.debug("Could not read the friends list", exc_info=True)
-            QMessageBox.information(self, "Friends list", f"Could not read the friends list: {exc}")
-            return
-        if not names:
-            QMessageBox.information(self, "Friends list", "No friends are online.")
-            return
-        menu = popup_menu(btn)
-        for name in names:
-            menu.addAction(name).triggered.connect(lambda _checked, n=name: self._choose(n))
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
-
-    def _choose(self, name: str) -> None:
-        self._edit.setText(name)
-        self._commit()
-
-
-class _TriBoolComboBox(QComboBox):
-    """Yes / No / "use the app setting" dropdown, for ``tri_bool`` param fields.
-
-    The unset choice is first and is what a bot carries unless its author pinned an
-    answer, so the app setting reaches every bot that has no opinion. Its label
-    names the value currently in force, because "use the app setting" on its own
-    does not tell the reader what will happen.
-
-    ``get_params()`` returns None, True, or False from the item's data.
-    """
-
-    def __init__(self, app_setting_key: str = "", parent=None):
-        super().__init__(parent)
-        self._app_setting_key = app_setting_key
-        self.addItem(f"Use app setting ({'Yes' if self._app_value() else 'No'})", None)
-        self.addItem("Yes", True)
-        self.addItem("No", False)
-
-    def _app_value(self) -> bool:
-        # Read lazily and defensively: a missing settings file must not stop the
-        # properties panel from opening.
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle at startup
-
-        try:
-            return bool(SettingsManager.instance().get_general(self._app_setting_key, default=False))
-        except Exception:
-            return False
-
-    def set_value(self, value) -> None:
-        index = self.findData(value if isinstance(value, bool) else None)
-        self.setCurrentIndex(max(index, 0))
-
-    def get_value(self):
-        return self.currentData()
-
-
 class _IntChoiceComboBox(QComboBox):
     """QComboBox variant used for 'int_choice' param fields.
 
@@ -495,22 +309,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
-        self._get_drops: Callable[[], list[DropModel]] = lambda: []
-
-    def set_drops_getter(self, fn: Callable[[], list[DropModel]]) -> None:
-        """Pass a callable returning the current bot's drop table."""
-        self._get_drops = fn
-        self.refresh_drops()
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable returning the currently hooked clients."""
         self._get_clients = fn
-
-    def refresh_drops(self) -> None:
-        """Re-read the drop table into any drop-aware widget on the form."""
-        for w in self._widgets.values():
-            if isinstance(w, DropKeepListWidget):
-                w.refresh()
 
     def load_schema(self, schema: list, params: dict) -> None:
         self._suppress = True
@@ -539,13 +341,12 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 field.key,
                 getattr(field, "choices", []),
                 getattr(field, "placeholder", ""),
-                getattr(field, "app_setting_key", ""),
             )
             self._widgets[field.key] = widget
             if field.required:
                 self._required_widgets[field.key] = widget
             display_w = widget if not isinstance(widget, tuple) else widget[3]
-            if field.type in ("bool", "tri_bool"):
+            if field.type == "bool":
                 container = QWidget()
                 row = QHBoxLayout(container)
                 row.setContentsMargins(0, 0, 0, 0)
@@ -599,7 +400,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                         lambda state, w=display_w: w.setEnabled(state == Qt.CheckState.Checked)
                     )
         self._suppress = False
-        self._push_context()
         # load_schema *is* this widget's construction — everything above was just
         # built, so this is where its styling is first applied. It also covers
         # _validate_required_fields, which apply_theme_styles re-runs.
@@ -615,12 +415,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if not isinstance(w, _WikiPageLineEdit) or w.text().strip() == str(value).strip():
             return
         w.setText(str(value))
-
-    def _push_context(self) -> None:
-        """Hand drop-aware widgets the form's other params, which affect what is kept."""
-        for w in self._widgets.values():
-            if isinstance(w, DropKeepListWidget):
-                w.set_context(self.get_params())
 
     def _validate_required_fields(self) -> None:
         """Apply or clear a red border on required input widgets based on whether they are empty."""
@@ -691,10 +485,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
-            elif isinstance(w, _AppSettingStrWidget):
-                # Deliberately not written: the value belongs to the user, not the bot.
-                continue
-            elif isinstance(w, PlayerListWidget | PlayerSlotWidget | DropKeepListWidget):
+            elif isinstance(w, PlayerListWidget | PlayerSlotWidget):
                 result[key] = w.get_value()
             elif isinstance(w, _StrListLineEdit):
                 result[key] = parse_list_text(w.text())
@@ -708,8 +499,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 result[key] = w.value()
             elif isinstance(w, QDoubleSpinBox):
                 result[key] = w.value()
-            elif isinstance(w, _TriBoolComboBox):
-                result[key] = w.get_value()
             elif isinstance(w, _IntChoiceComboBox):
                 try:
                     result[key] = int(w.currentText())
@@ -729,7 +518,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         key: str = "",
         choices: list | None = None,
         placeholder: str = "",
-        app_setting_key: str = "",
     ) -> Any:
         if field_type == "text":
             w = QPlainTextEdit()
@@ -754,11 +542,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 plain.setToolTip(help_text)
             plain.textChanged.connect(self._emit_changed)
             return plain
-        if field_type == "app_setting_str":
-            w = _AppSettingStrWidget(app_setting_key, self._get_clients, legacy_value=str(val or ""))
-            if help_text:
-                w.setToolTip(help_text)
-            return w
         if field_type == "player_slot":
             w = PlayerSlotWidget()
             w.set_available_players(len(self._get_clients()))
@@ -770,13 +553,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if field_type == "player_list":
             w = PlayerListWidget()
             w.set_available_players(len(self._get_clients()))
-            w.set_value(val if isinstance(val, list) else [])
-            if help_text:
-                w.setToolTip(help_text)
-            w.changed.connect(self._emit_changed)
-            return w
-        if field_type == "drop_keep_list":
-            w = DropKeepListWidget(lambda: self._get_drops())
             w.set_value(val if isinstance(val, list) else [])
             if help_text:
                 w.setToolTip(help_text)
@@ -832,13 +608,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if help_text:
                 w.setToolTip(help_text)
             w.checkStateChanged.connect(self._emit_changed)
-            return w
-        if field_type == "tri_bool":
-            w = _TriBoolComboBox(app_setting_key)
-            w.set_value(val)
-            if help_text:
-                w.setToolTip(help_text)
-            w.currentIndexChanged.connect(self._emit_changed)
             return w
         if field_type == "xyz":
             xyz = val if isinstance(val, dict) else {}
@@ -930,7 +699,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
     def _emit_changed(self, *_) -> None:
         if not self._suppress:
-            self._push_context()
             self._validate_required_fields()
             self.changed.emit()
 
@@ -1684,14 +1452,6 @@ class _ParamPanel(ThemedMixin, QWidget):
     def when_choices(self) -> list[str]:
         """The return values currently offered by the When dropdown, in order."""
         return [self._edge_when_combo.itemText(i) for i in range(self._edge_when_combo.count())]
-
-    def set_drops_getter(self, fn: Callable[[], list[DropModel]]) -> None:
-        """Pass a callable returning the current bot's drop table (BotConfig.drops)."""
-        self._param_form.set_drops_getter(fn)
-
-    def refresh_drops(self) -> None:
-        """Re-read the drop table — call when the bot's drops are edited elsewhere."""
-        self._param_form.refresh_drops()
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable returning the currently hooked clients."""

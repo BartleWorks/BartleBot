@@ -37,7 +37,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.bot_options import compose_options
+from bartlebot.bot_options import USER_OWNED_OPTIONS, compose_options, is_user_owned, required_option_specs
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -52,7 +52,6 @@ from bartlebot.gui.widgets.option_widgets import (
 )
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
@@ -325,6 +324,11 @@ class OptionsSection(SidebarSection):
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _drops(self) -> list:
+        """This bot's drop table, so the keep list's *recommended* value is edited with
+        the same picker the user gets rather than as a comma-separated line."""
+        return list(self._config.drops) if self._config is not None else []
+
     def _sm(self) -> SettingsManager:
         """The settings store, resolved late so a test can inject its own."""
         if self._settings is None:
@@ -332,19 +336,21 @@ class OptionsSection(SidebarSection):
         return self._settings
 
     def _required_names(self) -> set[str]:
-        """Option names locked by at least one node currently in the bot."""
-        names: set[str] = set()
+        """Option names locked by at least one node currently in the bot.
+
+        The same walk that composes them, so a conditional option -- Challenge Mode,
+        required only by a state that says its dungeon offers it -- is locked exactly
+        when it is shown.
+        """
         if self._config is None:
-            return names
-        for state in self._config.states:
-            spec = NODE_SPECS.get(state.node_type)
-            if spec is None:
-                continue
-            for req in spec.required_bot_options:
-                names.add(req.name)
-        return names
+            return set()
+        return set(required_option_specs(self._config))
 
     def _rebuild_options(self, options: list) -> None:
+        # A value that is the user's by definition has no declaration to edit, so it
+        # is not on the author's surface at all -- it is a row in Setup instead.  A
+        # disabled row here would only invite the question this answers.
+        options = [o for o in options if not is_user_owned(o.name)]
         for row in self._option_rows:
             self._options_layout.removeWidget(row)
             row.deleteLater()
@@ -362,7 +368,7 @@ class OptionsSection(SidebarSection):
 
         self._no_options_lbl.hide()
         for opt in options:
-            inner, widget, desc_lbl = _build_option_parts(opt, connected)
+            inner, widget, desc_lbl = _build_option_parts(opt, connected, get_drops=self._drops)
             self._connect_option_widget(widget, opt)
 
             # A derived option is re-composed from its NodeSpec on every load, so a
@@ -400,7 +406,9 @@ class OptionsSection(SidebarSection):
     def _on_add_option(self) -> None:
         if self._config is None:
             return
-        existing = [o.name for o in self._composed()]
+        # The user-owned names are reserved as well as taken: a hand-added "Safety
+        # Delay" would be a declaration the editor then refuses to show.
+        existing = [o.name for o in self._composed()] + sorted(USER_OWNED_OPTIONS)
         dlg = _AddOptionDialog(existing, parent=self)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self._config.options.append(dlg.get_option())
@@ -484,11 +492,12 @@ class OptionsSection(SidebarSection):
 # ---------------------------------------------------------------------------
 
 
-def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLabel | None]:
+def _build_option_parts(opt, connected: int = 4, get_drops=None) -> tuple[QWidget, QWidget, QLabel | None]:
     """Return (container_widget, input_widget, description_label) for a BotOptionModel.
 
     *connected* is how many clients are hooked right now; it only greys the player
-    checkboxes that have nobody behind them.
+    checkboxes that have nobody behind them.  *get_drops* feeds the keep-list picker,
+    and without it that type falls back to a plain comma-separated line.
 
     The container holds the label and value widget only (no description). The
     description label is returned separately so callers can place it after
@@ -502,7 +511,9 @@ def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLab
 
     # None is a declaration meaning "the author has no opinion" -- there is still
     # a widget to fill, and every type has an empty-handed value to fill it with.
-    widget = make_option_widget(opt.type, opt.default, connected=connected, tooltip=tooltip, label=opt.name)
+    widget = make_option_widget(
+        opt.type, opt.default, connected=connected, tooltip=tooltip, label=opt.name, get_drops=get_drops
+    )
     if opt.type != "bool":
         lbl = field_label(opt.name)
         if tooltip:

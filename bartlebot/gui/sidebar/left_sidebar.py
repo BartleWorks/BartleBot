@@ -224,6 +224,10 @@ class LeftSidebar(QTabWidget):
         self.setup.refresh_player_availability()
         self.options.refresh_player_availability()
 
+    def refresh_drops(self) -> None:
+        """Re-read the bot's drop table into the quicksell keep-list picker."""
+        self.setup.refresh_drops()
+
     def sync_config(self, config: BotConfig | None, editable: bool) -> None:
         """Rebind the sections if *config* is a different object than they hold.
 

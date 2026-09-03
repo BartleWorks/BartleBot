@@ -158,6 +158,11 @@
       "type": "bool",
       "default": true,
       "description": "If enabled, activates Notes 5-7, which summon minions at the end of the third round"
+    },
+    {
+      "name": "Sell Pets",
+      "type": "bool",
+      "default": false
     }
   ],
   "states": [
@@ -216,7 +221,8 @@
           "x": 2445.19,
           "y": -5557.71,
           "z": -4823.63
-        }
+        },
+        "offers_challenge_mode": true
       }
     },
     {
@@ -298,12 +304,7 @@
         "x": 7040.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [],
-        "sell_pets": false,
-        "sell_socket_wrenches": null,
-        "sell_skeleton_keys": null
-      }
+      "params": {}
     },
     {
       "id": "state_9",

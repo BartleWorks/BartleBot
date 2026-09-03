@@ -68,7 +68,49 @@ SOURCE_NODE_DEFAULT = "the node default"
 APP_SETTING_KEYS: dict[str, str] = {
     "Safety Delay": "default_safety_delay",
     "Level Scaling Players": "default_level_scaling_players",
+    # Quicksell: what to sell describes the user's tolerance for losing an item,
+    # not the dungeon.  The keep list is the one part of it that is authorial.
+    "Enable Quicksell": "default_quicksell_enabled",
+    "Sell Pets": "default_quicksell_sell_pets",
+    "Sell Socket Wrenches": "default_quicksell_sell_socket_wrenches",
+    "Sell Skeleton Keys": "default_quicksell_sell_skeleton_keys",
+    # A character name is never the bot's to carry (#102), so the app setting is
+    # the shared level under a per-bot override.
+    "Friend Name": "default_friend_name",
 }
+
+# Options an author has no business declaring at all, whatever their dungeon does.
+# Having an app setting underneath is *not* the test -- that only says a shared
+# level exists.  The test is whether a declaration could ever be right, and for
+# these three it never is:
+#
+#   Safety Delay    describes the user's connection, not the bot.  A declaration
+#                   would re-create the per-node pin #150 removed, one level up.
+#   Friend Name     is a character name, so a declaration is a privacy leak and a
+#                   bot only its author can run (#102).
+#   Enable Quicksell  is whether the user is willing to lose items at all.  An
+#                   author who did not want selling would leave the node out.
+#
+# Deliberately *not* here: ``Sell Pets`` and its two siblings, because a bot whose
+# target drop is a pet has to be able to say so (the keep list cannot spare an
+# individual pet), and ``Level Scaling Players``, which names *which players in
+# this dungeon* visit the station -- eleven shipped bots declare it, and no two
+# agree.  Those are facts about the graph, and the app setting is only the answer
+# for a bot that has no view.
+USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Enable Quicksell"})
+
+
+def is_user_owned(name: str) -> bool:
+    """Whether *name* is a value only the user may set, never the bot's author.
+
+    The Options surface omits these rows, so nothing the app writes can produce
+    such a declaration.  A hand-edited file carrying one is still honoured -- the
+    resolution stays a plain four levels, and silently deleting a value on save
+    would be worse than the leak it prevents -- and
+    ``test_no_bot_declares_a_user_owned_option`` keeps the shipped library clean
+    of them.
+    """
+    return name in USER_OWNED_OPTIONS
 
 
 @dataclass(frozen=True)
@@ -98,11 +140,11 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
         return isinstance(value, int) and not isinstance(value, bool)
     if declared_type == "float":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if declared_type == "str":
+    if declared_type in ("str", "friend_name"):
         return isinstance(value, str)
     if declared_type == "player_list":
         return isinstance(value, list) and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
-    if declared_type == "str_list":
+    if declared_type in ("str_list", "drop_keep_list"):
         return isinstance(value, list) and all(isinstance(v, str) for v in value)
     return True
 
@@ -174,6 +216,10 @@ def required_option_specs(config, specs=None) -> dict:
     order the bot uses them.  Where two nodes declare the same option with
     different text -- Safety Delay has three variants -- the first state wins,
     which is the same rule ``BotMachine._option_spec`` follows.
+
+    A spec carrying ``required_when`` is required only by a state whose param of
+    that name is on: an option the author has said their dungeon does not offer is
+    not an option, and one state offering it is enough for the whole bot.
     """
     out: dict = {}
     for state in config.states:
@@ -181,6 +227,8 @@ def required_option_specs(config, specs=None) -> dict:
         if spec is None:
             continue
         for req in spec.required_bot_options:
+            if req.required_when and not state.params.get(req.required_when):
+                continue
             out.setdefault(req.name, req)
     return out
 
@@ -195,43 +243,35 @@ def compose_options(config, specs=None) -> list:
 
     Nothing writes this back.  Callers that need to *display* the options a bot
     has use this; the file is the shorter thing underneath it.
+
+    Ordered by **where an option comes from, not by whether it happens to be in
+    the file**: the author's own options first, in file order, then the derived
+    ones grouped by the node that requires them.  A derived option keeps its place
+    whether or not a declaration has been materialised for it, which is what stops
+    a row jumping up the list the moment its value is edited -- and it keeps a
+    node's options together, so quicksell's five are not left with another node's
+    threaded through them.
     """
     from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415 - avoids an import cycle
 
     required = required_option_specs(config, specs)
     system = system_option_names(specs)
+    stored = {opt.name: opt for opt in config.options}
 
-    composed: list = []
-    seen: set[str] = set()
-    for opt in config.options:
-        spec = required.get(opt.name)
-        if spec is None:
-            # A system-managed name no node in this graph asks for is dead weight --
-            # the same prune _inject_required_options did, minus the write-back.
-            if opt.name in system:
-                continue
-            composed.append(opt)
-        else:
-            composed.append(
-                BotOptionModel(
-                    name=opt.name,
-                    type=spec.type,
-                    default=spec.default if opt.default is None else opt.default,
-                    description=spec.description,
-                )
-            )
-        seen.add(opt.name)
+    # A system-managed name no node in this graph asks for is dead weight -- the same
+    # prune _inject_required_options did, minus the write-back.
+    composed: list = [opt for opt in config.options if opt.name not in required and opt.name not in system]
 
     for name, spec in required.items():
-        if name not in seen:
-            composed.append(
-                BotOptionModel(
-                    name=name,
-                    type=spec.type,
-                    default=spec.default,
-                    description=spec.description,
-                )
+        opt = stored.get(name)
+        composed.append(
+            BotOptionModel(
+                name=name,
+                type=spec.type,
+                default=spec.default if opt is None or opt.default is None else opt.default,
+                description=spec.description,
             )
+        )
     return composed
 
 

@@ -641,9 +641,7 @@
         "x": 1320.0,
         "y": -90.0
       },
-      "params": {
-        "keep_list": []
-      }
+      "params": {}
     }
   ],
   "transitions": [

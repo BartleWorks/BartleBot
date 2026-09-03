@@ -1103,6 +1103,13 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to quicksell, including Merciless gear, but keeping skeleton keys and socket wrenches."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Merciless"
+      ]
     }
   ],
   "states": [
@@ -1262,11 +1269,7 @@
         "x": 4840.0,
         "y": 90.0
       },
-      "params": {
-        "keep_list": [
-          "Merciless"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_10",
@@ -1325,9 +1328,7 @@
         "x": 4840.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": []
-      }
+      "params": {}
     }
   ],
   "transitions": [

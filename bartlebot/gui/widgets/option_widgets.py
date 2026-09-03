@@ -37,8 +37,18 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 
-#: Every type a bot option may declare, in the order the Add/Edit dialog lists them.
+#: Every type the Add/Edit dialog offers, in the order it lists them.
 OPTION_TYPES: tuple[str, ...] = ("bool", "int", "float", "str", "str_list", "player_list")
+
+#: Types a **node** may declare that the dialog does not offer.  Each is one of the
+#: types above underneath -- a str_list, a str -- with a control that knows something
+#: the generic one cannot: this bot's own drop table, this machine's friends list.
+#: Not offered for hand-adding, because a hand-added option has neither behind it.
+NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name")
+
+#: Types whose control is a table rather than a field, so a list of rows reads better
+#: with them at the bottom than with the short rows arranged around them.
+TALL_TYPES: frozenset[str] = frozenset({"drop_keep_list"})
 
 #: What to call each type to a user who has never read the schema.
 TYPE_LABELS: dict[str, str] = {
@@ -48,6 +58,8 @@ TYPE_LABELS: dict[str, str] = {
     "str": "Text",
     "str_list": "List of text",
     "player_list": "Players",
+    "drop_keep_list": "Keep list",
+    "friend_name": "Wizard name",
 }
 
 
@@ -125,7 +137,7 @@ def empty_value(opt_type: str) -> Any:
         return 0
     if opt_type == "float":
         return 0.0
-    if opt_type in ("str_list", "player_list"):
+    if opt_type in ("str_list", "player_list", "drop_keep_list"):
         return []
     return ""
 
@@ -138,6 +150,8 @@ def make_option_widget(
     tooltip: str = "",
     label: str = "",
     explicit_bool: bool = False,
+    get_drops: Callable[[], list] | None = None,
+    get_clients: Callable[[], list] | None = None,
 ) -> QWidget:
     """Build the control that edits an option of *opt_type*, showing *value*.
 
@@ -146,9 +160,24 @@ def make_option_widget(
     ``bool`` carries instead of a separate field label.  Pass *explicit_bool* where
     a bool is not sitting in a list of named options and needs to state both
     answers for itself -- see :class:`BoolChoice`.
+
+    *get_drops* and *get_clients* are what the two node-only controls have that the
+    generic ones do not.  Without them each falls back to the plain control for the
+    type underneath, which is the right answer on a surface with no bot behind it --
+    the Add/Edit dialog, or a test.
     """
     widget: QWidget
-    if opt_type == "bool":
+    if opt_type == "drop_keep_list" and get_drops is not None:
+        # Imported here: the picker pulls in the drop tree and the wiki tables, which
+        # is a lot of machinery for a module every option row goes through.
+        from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget  # noqa: PLC0415
+
+        widget = DropKeepListWidget(get_drops)
+    elif opt_type == "friend_name":
+        from bartlebot.gui.widgets.friend_name_edit import FriendNameEdit  # noqa: PLC0415
+
+        widget = FriendNameEdit(get_clients)
+    elif opt_type == "bool":
         widget = BoolChoice() if explicit_bool else QCheckBox(label)
     elif opt_type == "int":
         widget = QSpinBox()
@@ -160,7 +189,7 @@ def make_option_widget(
     elif opt_type == "player_list":
         widget = PlayerListWidget()
         widget.set_available_players(connected)
-    elif opt_type == "str_list":
+    elif opt_type in ("str_list", "drop_keep_list"):
         widget = StrListLineEdit()
         widget.setPlaceholderText("e.g. ItemA, ItemB")
     else:  # str, and any type a future schema adds that this build cannot name
@@ -193,6 +222,8 @@ def set_widget_value(widget: QWidget, value: Any) -> None:
         widget.setText(format_list_text([str(v) for v in value]) if isinstance(value, list) else str(value or ""))
     elif isinstance(widget, QLineEdit):
         widget.setText("" if value is None else str(value))
+    elif _is_rich_widget(widget):
+        widget.set_value(value)
 
 
 def widget_value(widget: QWidget) -> Any:
@@ -209,6 +240,8 @@ def widget_value(widget: QWidget) -> Any:
         return parse_list_text(widget.text())
     if isinstance(widget, QLineEdit):
         return widget.text()
+    if _is_rich_widget(widget):
+        return widget.get_value()
     return None
 
 
@@ -229,6 +262,19 @@ def connect_widget(widget: QWidget, callback: Callable[[Any], None]) -> None:
         widget.changed.connect(lambda: callback(widget_value(widget)))
     elif isinstance(widget, QLineEdit):
         widget.editingFinished.connect(lambda: callback(widget_value(widget)))
+    elif _is_rich_widget(widget):
+        widget.changed.connect(lambda: callback(widget_value(widget)))
+
+
+def _is_rich_widget(widget: QWidget) -> bool:
+    """Whether *widget* speaks the get/set/changed protocol the node-only controls share.
+
+    Duck-typed rather than by class: both live behind lazy imports precisely so a
+    plain option row never pays for the drop tree, and naming their classes here
+    would undo that on the first ``isinstance``.  Each dispatch checks this last, so
+    a widget with its own branch keeps it.
+    """
+    return hasattr(widget, "get_value") and hasattr(widget, "set_value") and hasattr(widget, "changed")
 
 
 def _as_int(value: Any) -> int:

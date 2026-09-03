@@ -772,7 +772,15 @@
     "Jewels",
     "Mobs"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Piercing"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -875,11 +883,7 @@
         "x": 2200,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Piercing"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

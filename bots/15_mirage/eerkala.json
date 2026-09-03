@@ -28,6 +28,13 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to quicksell items"
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Epic Opal"
+      ]
     }
   ],
   "states": [
@@ -382,11 +389,7 @@
         "x": 5720.0,
         "y": 90.0
       },
-      "params": {
-        "keep_list": [
-          "Epic Opal"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_21",

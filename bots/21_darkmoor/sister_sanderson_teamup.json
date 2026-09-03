@@ -473,7 +473,15 @@
     "Boss",
     "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Abomination"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_2",
@@ -592,11 +600,7 @@
         "x": 3520,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Abomination"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_10",
