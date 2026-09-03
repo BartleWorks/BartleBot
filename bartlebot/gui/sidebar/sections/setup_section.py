@@ -102,6 +102,10 @@ _SOURCE_CAPTION: dict[str, str] = {
 #: ``canvas/bot_header.py`` documents.
 _CAPTION_PX = 9
 
+# The separator between the two description switches, matched to ``LinkButton``'s
+# own default so the dot sits on the links' baseline rather than above it.
+_SWITCH_FONT_PX = 10
+
 
 def _ordered(options: list) -> list:
     """The composed options, with the table-shaped controls moved to the end.
@@ -256,21 +260,38 @@ class SetupSection(SidebarSection):
         outer = QVBoxLayout()
         outer.setSpacing(4)
 
-        # One switch for the reader who wants the whole tab as a document, rather
-        # than a row at a time.  Off by default, and remembered: it is a property of
-        # the person reading, not of the bot.
+        # Two commands for the reader who wants the whole tab as a document, rather
+        # than a row at a time.  The default is off, and remembered: it is a property
+        # of the person reading, not of the bot.
         #
-        # A link rather than a check box, and at the top of the *body* rather than on
+        # Links rather than a check box, and at the top of the *body* rather than on
         # the section header.  A tick box captioned "Show descriptions" sitting above
         # a list of options reads as the first option; a link whose text names what a
         # click will do states its effect without a state to be read first.  The
         # header is a click-through row that toggles the section, so a control inside
         # it would be a hit-testing problem for no gain -- and it would hide with the
         # section it belongs to.
-        self._show_all = LinkButton(self._show_all_text())
+        #
+        # Both are present at once rather than one link that flips its caption,
+        # because the per-row ``?`` moves rows independently: after one of those the
+        # surface is *mixed*, and a single toggle then names whichever half it last
+        # set rather than what the rows are actually doing -- so the one click the
+        # reader wants ("just fold them all") can be the click that unfolds them all.
+        # Two unconditional commands say what they do whatever state the rows are in.
+        switches = QHBoxLayout()
+        switches.setContentsMargins(0, 0, 0, 0)
+        switches.setSpacing(0)
+        self._show_all = LinkButton("Show descriptions")
         self._show_all.setToolTip("Show every option's description, instead of one at a time")
-        self._show_all.clicked.connect(lambda: self._on_show_all_toggled(not self._show_descriptions))
-        outer.addWidget(self._show_all, 0, Qt.AlignmentFlag.AlignLeft)
+        self._show_all.clicked.connect(lambda: self._on_show_all_toggled(True))
+        self._hide_all = LinkButton("Hide descriptions")
+        self._hide_all.setToolTip("Fold every option's description away")
+        self._hide_all.clicked.connect(lambda: self._on_show_all_toggled(False))
+        switches.addWidget(self._show_all, 0)
+        switches.addWidget(ThemedTextLabel(" · ", css=f"font-size: {_SWITCH_FONT_PX}px;"), 0)
+        switches.addWidget(self._hide_all, 0)
+        switches.addStretch(1)
+        outer.addLayout(switches)
 
         self._rows_layout = QVBoxLayout()
         self._rows_layout.setSpacing(6)
@@ -320,9 +341,13 @@ class SetupSection(SidebarSection):
         return self._show_descriptions
 
     def set_descriptions_visible(self, shown: bool) -> None:
-        """Show or fold every option's description, exactly as the switch would."""
-        if shown != self._show_descriptions:
-            self._on_show_all_toggled(shown)
+        """Show or fold every option's description, exactly as the switches would.
+
+        Unconditional, like the switches themselves: the per-row ``?`` can leave the
+        rows disagreeing with the remembered default, and a no-op here when the two
+        already match would leave those rows where they were.
+        """
+        self._on_show_all_toggled(shown)
 
     def resolution_for(self, name: str) -> bot_options.OptionResolution | None:
         """The effective value of *name* and the level that supplied it."""
@@ -654,10 +679,6 @@ class SetupSection(SidebarSection):
         self._push_keep_list_context()
         self.values_changed.emit()
 
-    def _show_all_text(self) -> str:
-        """What the switch says it will do, which is the opposite of the current state."""
-        return "Hide descriptions" if self._show_descriptions else "Show descriptions"
-
     def _read_show_descriptions(self) -> bool:
         try:
             return bool(self._sm().get("general", "show_option_descriptions", default=False))
@@ -669,7 +690,7 @@ class SetupSection(SidebarSection):
         """Set every row at once, and remember the choice.
 
         The per-row ``?`` still overrides one row afterwards; this is the default
-        each row is built with and what a later flip of this switch puts them back
+        each row is built with and what a later use of these switches puts them back
         to. Nothing here touches the bot -- it is a reading preference.
         """
         self._show_descriptions = shown
@@ -677,7 +698,6 @@ class SetupSection(SidebarSection):
             self._sm().set("general", "show_option_descriptions", value=shown)
         except Exception:
             logger.exception("Failed to remember whether option descriptions are shown")
-        self._show_all.setText(self._show_all_text())
         for chrome in self._chrome.values():
             chrome.help_btn.setChecked(shown)
 

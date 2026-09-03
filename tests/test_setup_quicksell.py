@@ -354,6 +354,35 @@ def test_the_switch_shows_every_description_and_is_remembered(qapp, settings):
         section.hide()
 
 
+def test_both_switches_are_offered_at_once(qapp, settings):
+    """A single toggle names whichever half it last set, not what the rows are doing."""
+    section = _section(settings, _config())
+
+    assert section._show_all.text() == "Show descriptions"
+    assert section._hide_all.text() == "Hide descriptions"
+
+
+def test_a_switch_still_acts_on_rows_the_help_button_moved(qapp, settings):
+    """The per-row ``?`` leaves the surface mixed; an unconditional command has to
+    reach the rows that already agree with the remembered default."""
+    section = _section(settings, _config())
+    section.show()
+    qapp.processEvents()
+    try:
+        _help_button(section, qs.OPTION_ENABLED).setChecked(True)
+
+        section.set_descriptions_visible(False)
+
+        assert not any(_description(section, n).isVisible() for n in section.option_widgets)
+
+        _help_button(section, qs.OPTION_ENABLED).setChecked(False)
+        section.set_descriptions_visible(True)
+
+        assert all(_description(section, n).isVisible() for n in section.option_widgets)
+    finally:
+        section.hide()
+
+
 def test_a_remembered_switch_builds_the_rows_already_unfolded(qapp, settings):
     settings.set("general", "show_option_descriptions", value=True)
 
