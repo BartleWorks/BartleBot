@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QStandardPaths, Qt
 from PyQt6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PyQt6.QtSvg import QSvgRenderer
 
@@ -64,3 +64,36 @@ def svg_pixmap(name: str, size: int, tint: str | None = None, opacity: float = 1
     p3.drawPixmap(0, 0, pm)
     p3.end()
     return faded
+
+
+def svg_qss_url(name: str, tint: str, size: int = 24) -> str | None:
+    """A ``url(...)`` token naming a tinted PNG of *name*, or None if one cannot be made.
+
+    QSS has no way to recolour an image, and it will not take a ``data:`` URI either,
+    so a themed icon used inside a stylesheet has to exist on disk as a file per
+    colour.  The render goes through :func:`svg_pixmap`, so the tinting is the same
+    code path every other icon in the app uses; only the destination is new.
+
+    Written once per (name, tint, size) into the platform cache directory and reused,
+    which makes a theme switch a different filename rather than a re-render.  The
+    cache directory is a cache in the ordinary sense: deleting it costs one render.
+
+    Returns None rather than raising if the file cannot be written — a stylesheet is
+    built during startup and on every theme switch, and a read-only or missing cache
+    directory is not worth taking the app down for.  Callers are expected to drop the
+    rule that would have used it; see ``_Theme.global_stylesheet``.
+    """
+    cache = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.CacheLocation)
+    if not cache:
+        return None
+    path = Path(cache) / "icons" / f"{name}-{size}-{tint.lstrip('#')}.png"
+    try:
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if not svg_pixmap(name, size, tint=tint).save(str(path), "PNG"):
+                return None
+    except OSError:
+        return None
+    # Quoted, and with forward slashes: an unquoted Windows path breaks the QSS parser
+    # on the drive colon, and a backslash is an escape character to it.
+    return f'url("{path.as_posix()}")'

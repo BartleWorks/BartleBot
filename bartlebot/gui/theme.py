@@ -36,6 +36,10 @@ from dataclasses import dataclass, fields
 
 from PyQt6.QtGui import QColor, QFont, QPalette
 
+# Displayed size of the combo box arrow, in px.  Rendered at twice this so it stays
+# sharp where the display scales; QSS scales the image down to the width given.
+_COMBO_ARROW_PX = 9
+
 
 @dataclass(frozen=True)
 class _Theme:
@@ -300,13 +304,93 @@ class _Theme:
     # Global QSS stylesheet
     # ------------------------------------------------------------------
 
+    def _combo_arrow_qss(self) -> str:
+        """The ``::drop-down`` / ``::down-arrow`` pair for combo boxes, or "".
+
+        Once the input rule below claims a combo box's frame, QStyleSheetStyle draws
+        the drop-down subcontrol its own way and gives it a rounded 1px box of its
+        own, which lands on top of the frame as a three-pixel-thick right-hand edge
+        and a stray corner beside the arrow.  Any ``::drop-down`` rule at all replaces
+        that box — but it also stops the style drawing the arrow, and *no* rule can
+        put a native one back: Qt's QSS box model fills a subcontrol's box, so the CSS
+        transparent-border triangle renders as a square block.  The arrow has to be an
+        image, which is why ``svg_qss_url`` exists.
+
+        Returns "" if the icon cache is unwritable, which leaves the combo boxes with
+        the style's own arrow and that thick edge — cosmetically worse, and the only
+        alternative is a dropdown with no arrow at all.
+        """
+        from bartlebot.gui.icon_utils import svg_qss_url
+
+        px = _COMBO_ARROW_PX
+        arrow = svg_qss_url("arrow_down", self.icon_tint, size=px * 2)
+        # A disabled combo keeps an arrow, dimmed — ``image: none`` would take it away
+        # entirely, which reads as a different control rather than an unavailable one.
+        dim = svg_qss_url("arrow_down", self.text_disabled, size=px * 2)
+        if arrow is None or dim is None:
+            return ""
+        return f"""
+            QComboBox::drop-down {{
+                subcontrol-origin: padding;
+                subcontrol-position: center right;
+                border: none;
+                background: transparent;
+                width: {px * 2}px;
+            }}
+            QComboBox::down-arrow {{
+                image: {arrow};
+                width: {px}px;
+                height: {px}px;
+            }}
+            QComboBox::down-arrow:disabled {{
+                image: {dim};
+            }}
+        """
+
     def global_stylesheet(self) -> str:
         """Return the application-level QSS string.
 
         Applied once to ``QApplication`` at startup (and re-applied on
         theme switch).  Contains rules that QPalette alone cannot express.
+
+        Not quite pure: the combo box arrow is an image file, so building the
+        stylesheet renders one into the icon cache the first time each theme asks
+        for it.  See ``icon_utils.svg_qss_url``.
         """
-        return f"""
+        return f"""{self._combo_arrow_qss()}
+            /* ── Text inputs and dropdowns ──
+               Fusion draws an input's frame in a colour it derives itself, as
+               ``palette.window().darker(140)`` — so ``border`` was a dead token for
+               every field in the app, and a custom theme changing it moved nothing.
+               In the light theme that derivation lands within a shade of the token by
+               luck; in the dark theme ``#1e1e1e`` darkened is #151515, near-black, and
+               visibly unlike the ``PickerButton`` beside it, which draws the real one.
+               The palette is no lever here: no ColorRole feeds that outline.
+
+               ``QAbstractSpinBox`` is deliberately absent.  A ``border`` on it makes
+               QStyleSheetStyle take over the whole control and the up/down buttons
+               stop being drawn at all — the same takeover ``build_palette`` avoids for
+               QPushButton.  Restoring them means writing ::up-button and ::down-arrow
+               with our own art, which is a bigger change than this one is.  A stepper
+               keeping the style's frame is a defensible seam; a field and the dropdown
+               next to it disagreeing is not.
+
+               Only the frame is claimed.  Fill and text still come from the palette,
+               which is what keeps the Disabled group's recessed look — *except* under
+               :disabled, where the takeover does reach the fill, so it is restated. */
+            QLineEdit, QComboBox, QPlainTextEdit, QTextEdit {{
+                border: 1px solid {self.border};
+                border-radius: 3px;
+            }}
+            QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus, QTextEdit:focus {{
+                border-color: {self.accent};
+            }}
+            QLineEdit:disabled, QComboBox:disabled,
+            QPlainTextEdit:disabled, QTextEdit:disabled {{
+                border-color: {self.surface_disabled};
+                background: {self.surface_disabled};
+            }}
+
             /* ── Splitter handles ── */
             QSplitter::handle {{
                 background: {self.border};

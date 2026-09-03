@@ -61,6 +61,10 @@ class AppController(QObject):
     def __init__(self, app: QApplication) -> None:
         super().__init__()
         self._app = app
+        # Named before the first stylesheet is built, because QStandardPaths derives
+        # the cache directory from it and that is where the themed combo box arrow is
+        # written. Left unset, Qt falls back to the executable's name — "python".
+        self._app.setApplicationName("BartleBot")
         self._app.setStyle("Fusion")
         self._apply_theme()
         self._handler = WizSprinter()
