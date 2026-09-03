@@ -237,43 +237,35 @@ def compose_options(config, specs=None) -> list:
 
     Nothing writes this back.  Callers that need to *display* the options a bot
     has use this; the file is the shorter thing underneath it.
+
+    Ordered by **where an option comes from, not by whether it happens to be in
+    the file**: the author's own options first, in file order, then the derived
+    ones grouped by the node that requires them.  A derived option keeps its place
+    whether or not a declaration has been materialised for it, which is what stops
+    a row jumping up the list the moment its value is edited -- and it keeps a
+    node's options together, so quicksell's five are not left with another node's
+    threaded through them.
     """
     from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415 - avoids an import cycle
 
     required = required_option_specs(config, specs)
     system = system_option_names(specs)
+    stored = {opt.name: opt for opt in config.options}
 
-    composed: list = []
-    seen: set[str] = set()
-    for opt in config.options:
-        spec = required.get(opt.name)
-        if spec is None:
-            # A system-managed name no node in this graph asks for is dead weight --
-            # the same prune _inject_required_options did, minus the write-back.
-            if opt.name in system:
-                continue
-            composed.append(opt)
-        else:
-            composed.append(
-                BotOptionModel(
-                    name=opt.name,
-                    type=spec.type,
-                    default=spec.default if opt.default is None else opt.default,
-                    description=spec.description,
-                )
-            )
-        seen.add(opt.name)
+    # A system-managed name no node in this graph asks for is dead weight -- the same
+    # prune _inject_required_options did, minus the write-back.
+    composed: list = [opt for opt in config.options if opt.name not in required and opt.name not in system]
 
     for name, spec in required.items():
-        if name not in seen:
-            composed.append(
-                BotOptionModel(
-                    name=name,
-                    type=spec.type,
-                    default=spec.default,
-                    description=spec.description,
-                )
+        opt = stored.get(name)
+        composed.append(
+            BotOptionModel(
+                name=name,
+                type=spec.type,
+                default=spec.default if opt is None or opt.default is None else opt.default,
+                description=spec.description,
             )
+        )
     return composed
 
 

@@ -437,6 +437,13 @@ already has.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.
+- **The list is ordered by where an option comes from, not by whether it is in
+  the file.** The author's own options first, then the derived ones grouped by the
+  node that requires them. Ordering the file's options first instead made a row
+  move the moment its value was edited — editing a derived default materialises a
+  declaration, so the row the user had just touched jumped to the top — and it
+  threaded one node's options through another's. `compose_options` is where that
+  order is decided, so both surfaces get it.
 - **A value only the user owns has no row on the author's surface at all.**
   `bot_options.USER_OWNED_OPTIONS` names them — Safety Delay, Friend Name, Enable
   Quicksell — and `OptionsSection` filters them out rather than showing them

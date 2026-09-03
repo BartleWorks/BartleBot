@@ -108,6 +108,48 @@ def test_a_system_option_no_node_in_the_graph_reads_is_dropped_from_the_composed
 
 
 # ---------------------------------------------------------------------------
+# Order
+# ---------------------------------------------------------------------------
+
+
+def _order(config) -> list[str]:
+    return [o.name for o in compose_options(config)]
+
+
+def test_a_derived_option_keeps_its_place_when_its_declaration_is_materialised():
+    """Editing a derived option's default writes a declaration into the file, and the
+    file's own options come first -- so an order that followed the file moved the row
+    the user had just touched to the top of the list, under the pointer."""
+    config = _config(states=[{"id": "s0", "node_type": "quicksell"}])
+    before = _order(config)
+
+    from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415
+
+    config.options.append(BotOptionModel(name="Sell Pets", type="bool", default=False))
+
+    assert _order(config) == before
+
+
+def test_the_options_of_one_node_stay_together():
+    """quicksell requires five; a declaration of one of them used to pull it out of the
+    group and leave enter_dungeon's Challenge Mode threaded through the rest."""
+    from bartlebot.bot.schema import BotOptionModel  # noqa: PLC0415
+
+    config = _config(
+        states=[{"id": "s0", "node_type": "enter_dungeon"}, {"id": "s1", "node_type": "quicksell"}],
+        options=[{"name": "Skip to boss", "type": "bool", "default": False}],
+    )
+    config.options.append(BotOptionModel(name="Sell Pets", type="bool", default=False))
+
+    order = _order(config)
+    quicksell = [i for i, name in enumerate(order) if name.startswith(("Sell ", "Enable Quicksell", "Quicksell "))]
+
+    assert order[0] == "Skip to boss", "a hand-added option is the author's own and comes first"
+    assert quicksell == list(range(min(quicksell), max(quicksell) + 1))
+    assert order.index("Challenge Mode") < min(quicksell)
+
+
+# ---------------------------------------------------------------------------
 # The save-time prune
 # ---------------------------------------------------------------------------
 
