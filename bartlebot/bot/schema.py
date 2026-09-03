@@ -100,7 +100,9 @@ class StateModel(BaseModel):
 
 class BotOptionModel(BaseModel):
     name: str
-    type: Literal["bool", "int", "float", "str", "str_list", "player_list"]
+    # The last two are declared by nodes only and never offered in the Add Option
+    # dialog: they are a str / str_list underneath, with a richer control in Setup.
+    type: Literal["bool", "int", "float", "str", "str_list", "player_list", "drop_keep_list", "friend_name"]
     # The author's recommended value -- *not* the user's current one, which lives in
     # settings.json (see bartlebot.bot_options). None means the author has no opinion,
     # which is what lets the app setting below it be reachable at all.

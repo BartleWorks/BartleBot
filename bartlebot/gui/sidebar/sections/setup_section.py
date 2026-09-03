@@ -44,7 +44,12 @@ from bartlebot.bot_options import UNSET, compose_options, is_set, values_agree
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.option_widgets import connect_widget, make_option_widget, set_widget_value
+from bartlebot.gui.widgets.option_widgets import (
+    TALL_TYPES,
+    connect_widget,
+    make_option_widget,
+    set_widget_value,
+)
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
@@ -66,6 +71,17 @@ _SOURCE_CAPTION: dict[str, str] = {
     bot_options.SOURCE_APP_SETTING: "from the app setting",
     bot_options.SOURCE_NODE_DEFAULT: "from the node default",
 }
+
+
+def _ordered(options: list) -> list:
+    """The composed options, with the table-shaped controls moved to the end.
+
+    Order otherwise follows the states that require each option, which is the order
+    the bot uses them in.  A 220px drop table sitting between two spin boxes pushes
+    everything after it off the bottom of the sidebar, so those go last -- the only
+    rearrangement, and it depends on the control rather than on any option's name.
+    """
+    return [o for o in options if o.type not in TALL_TYPES] + [o for o in options if o.type in TALL_TYPES]
 
 
 class _OverrideBar(ThemedMixin, QFrame):
@@ -233,7 +249,7 @@ class SetupSection(SidebarSection):
         self._option_widgets.clear()
         self._chrome.clear()
 
-        options = compose_options(self._config) if self._config is not None else []
+        options = _ordered(compose_options(self._config) if self._config is not None else [])
         self._composed = {opt.name: opt for opt in options}
         if not options:
             self._empty_lbl.show()
@@ -245,6 +261,7 @@ class SetupSection(SidebarSection):
             row = self._build_row(opt, connected)
             self._rows_layout.addWidget(row)
             self._rows.append(row)
+        self._push_keep_list_context()
 
     def _build_row(self, opt, connected: int) -> QWidget:
         """One option's row. Every piece of chrome is built once and updated after.
@@ -267,6 +284,8 @@ class SetupSection(SidebarSection):
             connected=connected,
             tooltip=opt.description or "",
             label=opt.name,
+            get_drops=self._drops,
+            get_clients=lambda: self._get_clients(),
         )
         if opt.type != "bool":
             lbl = field_label(opt.name)
@@ -309,6 +328,41 @@ class SetupSection(SidebarSection):
         self._chrome[opt.name] = _RowChrome(widget=widget, bar=bar, reset_btn=reset_btn, caption=caption)
         self._refresh_row(opt.name)
         return outer
+
+    def refresh_drops(self) -> None:
+        """Re-read the drop table into the keep-list picker, after a Possible Drops edit."""
+        for name, widget in self._option_widgets.items():
+            if self._composed_type(name) == "drop_keep_list":
+                widget.refresh()
+
+    def _drops(self) -> list:
+        """This bot's drop table, for the keep-list picker to show."""
+        return list(self._config.drops) if self._config is not None else []
+
+    def _push_keep_list_context(self) -> None:
+        """Tell the keep-list picker what the sell flags resolved to.
+
+        The picker shows what will *happen* to each drop, and three of the answers
+        are not its own: Sell Pets off spares every pet whatever the list says, and
+        Sell Socket Wrenches off adds a keyword the user never typed. Those are
+        separate rows on this same surface, so flipping one has to reach the table.
+        """
+        pickers = [w for name, w in self._option_widgets.items() if self._composed_type(name) == "drop_keep_list"]
+        if not pickers or self._config is None:
+            return
+        try:
+            from bartlebot.nodes.utility import quicksell  # noqa: PLC0415 - heavy import, only when shown
+
+            context = quicksell.resolve_options_for(self._config, settings=self._settings)
+        except Exception:
+            logger.exception("Could not resolve the quicksell options behind the keep-list picker")
+            return
+        for picker in pickers:
+            picker.set_context(context)
+
+    def _composed_type(self, name: str) -> str | None:
+        opt = self._composed.get(name)
+        return getattr(opt, "type", None)
 
     def _refresh_row(self, name: str) -> None:
         """Re-mark one row from its current resolution, touching no other row."""
@@ -378,6 +432,7 @@ class SetupSection(SidebarSection):
             logger.exception("Failed to store your value for option %r", name)
             return
         self._refresh_row(name)
+        self._push_keep_list_context()
         self.values_changed.emit()
 
     def _on_reset(self, name: str) -> None:
@@ -399,5 +454,6 @@ class SetupSection(SidebarSection):
             set_widget_value(chrome.widget, fallback.value)
             chrome.widget.blockSignals(False)
         self._refresh_row(name)
+        self._push_keep_list_context()
         if had_override:
             self.values_changed.emit()

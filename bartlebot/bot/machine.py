@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import bot_options, restricted_zones
+from bartlebot import bot_options, option_values, restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
-from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
 
@@ -184,11 +183,9 @@ class BotMachine:
         """
         if self._bot_config is None:
             return default
-        resolution = bot_options.resolve_for_config(
+        resolution = option_values.option_resolution(
             self._bot_config,
             name,
-            override=self._option_override(name),
-            app_value=self._app_option_value(name),
             option_specs=self._option_specs_for_bot(),
             default=default,
         )
@@ -200,27 +197,6 @@ class BotMachine:
             self._logged_option_sources.add(name)
             self._log_machine(f"Option {name!r} = {resolution.value!r}, from {resolution.source}")
         return resolution.value
-
-    def _option_override(self, name: str):
-        """The user's stored value for *name*, or UNSET."""
-        if self._bot_config is None:
-            return bot_options.UNSET
-        try:
-            return SettingsManager.instance().get_option_override(self._bot_config.id, name)
-        except Exception:
-            logger.exception("Failed to read the stored value for option %r", name)
-            return bot_options.UNSET
-
-    def _app_option_value(self, name: str):
-        """The app setting behind *name*, or UNSET when the option has none."""
-        key = bot_options.APP_SETTING_KEYS.get(name)
-        if key is None:
-            return bot_options.UNSET
-        try:
-            return SettingsManager.instance().get("general", key, default=bot_options.UNSET)
-        except Exception:
-            logger.exception("Failed to read app setting %r", key)
-            return bot_options.UNSET
 
     def _option_specs_for_bot(self):
         """``{name: BotOptionSpec}`` for this bot, built once and kept for the run."""

@@ -1,16 +1,19 @@
 """Tests for the quicksell keep-list logic shared by the node and the properties panel."""
 
 from bartlebot.nodes.utility.quicksell import (
-    APP_DEFAULT_SETTINGS,
     NEVER_QUICKSOLD_CATEGORIES,
+    OPTION_ENABLED,
+    OPTION_KEEP_LIST,
+    SELL_FLAG_DEFAULTS,
+    SELL_FLAG_OPTIONS,
     UNMATCHABLE_CATEGORIES,
     category_keep_reasons,
     category_unmatchable_reasons,
+    describe_config,
     drop_keep_states,
     effective_keep_list,
-    inherited_flags,
     matching_keyword,
-    resolve_app_defaults,
+    resolve_options,
     sell_flag,
     set_drops_in_keep_list,
     toggle_drop_in_keep_list,
@@ -238,52 +241,75 @@ def test_unmatchable_categories_are_all_sellable():
 
 
 # ---------------------------------------------------------------------------
-# Three-state sell_* params
+# resolve_options
 #
-# Each is True (sell), False (keep), or unset — "use the app setting", which is
-# what a bot carries unless its author pinned an answer. resolve_app_defaults is
-# the single place that collapses the third state to a bool; everything else in
-# this module sees plain bools.
+# The five settings are bot options now, so the node asks for them by name rather
+# than reading a params block.  This is the one place the option layer touches
+# quicksell; everything above it sees the plain dict this produces.
 # ---------------------------------------------------------------------------
 
-_APP = {"sell_pets": False, "sell_socket_wrenches": True, "sell_skeleton_keys": True}
+
+def _answers(values: dict):
+    """A get_option stand-in that knows *values* and nothing else."""
+    return lambda name, default=None: values.get(name, default)
 
 
-def test_an_absent_param_is_inherited():
-    assert inherited_flags({}) == list(APP_DEFAULT_SETTINGS)
+def test_the_options_collapse_to_the_dict_the_pure_helpers_read():
+    params = resolve_options(
+        _answers(
+            {
+                OPTION_ENABLED: True,
+                OPTION_KEEP_LIST: ["Amber"],
+                SELL_FLAG_OPTIONS["sell_pets"]: False,
+                SELL_FLAG_OPTIONS["sell_socket_wrenches"]: True,
+                SELL_FLAG_OPTIONS["sell_skeleton_keys"]: True,
+            }
+        )
+    )
+    assert params == {
+        "enabled": True,
+        "keep_list": ["Amber"],
+        "sell_pets": False,
+        "sell_socket_wrenches": True,
+        "sell_skeleton_keys": True,
+    }
 
 
-def test_an_explicit_null_is_inherited():
-    # What the properties panel writes, and what a saved bot file carries.
-    assert inherited_flags({**_SELL_ALL, "sell_pets": None}) == ["sell_pets"]
+def test_an_unanswered_option_falls_back_to_its_floor():
+    # Nothing pure may go and read the settings, so these are the floor rather than
+    # the answer: the four levels above them are get_option's business.
+    params = resolve_options(_answers({}))
+    assert params["enabled"] is True
+    assert params["keep_list"] == []
+    for key, floor in SELL_FLAG_DEFAULTS.items():
+        assert params[key] is floor
 
 
-def test_a_pinned_param_is_not_inherited():
-    assert inherited_flags({**_SELL_ALL, "sell_pets": True}) == []
+def test_a_value_of_the_wrong_type_falls_back_rather_than_being_believed():
+    # An override written under an older declaration, or a stub answering everything
+    # with a number. Either way the fallback must be the floor, never the more
+    # destructive reading of a truthy value.
+    params = resolve_options(_answers(dict.fromkeys(SELL_FLAG_OPTIONS.values(), 1) | {OPTION_KEEP_LIST: "Amber"}))
+    assert params["sell_pets"] is True
+    assert params["sell_socket_wrenches"] is False
+    assert params["keep_list"] == []
 
 
-def test_resolution_fills_in_only_the_unset_params():
-    resolved = resolve_app_defaults({"sell_pets": None, "sell_socket_wrenches": False}, _APP)
-    assert resolved["sell_pets"] is False  # from the app setting
-    assert resolved["sell_socket_wrenches"] is False  # pinned by the bot, app setting ignored
-    assert resolved["sell_skeleton_keys"] is True  # absent → from the app setting
+def test_enable_quicksell_off_survives_resolution():
+    assert resolve_options(_answers({OPTION_ENABLED: False}))["enabled"] is False
 
 
-def test_resolution_leaves_other_params_alone():
-    resolved = resolve_app_defaults({"keep_list": ["hat"]}, _APP)
-    assert resolved["keep_list"] == ["hat"]
+def test_describe_config_names_every_answer_and_the_effective_keep_list():
+    line = describe_config(
+        {"enabled": True, "keep_list": ["Amber"], "sell_socket_wrenches": False, "sell_skeleton_keys": True}
+    )
+    assert "enabled=True" in line
+    # The implied keyword is in it, because that is what the node will match on.
+    assert "'amber'" in line and "'socket wrench'" in line
+    assert "sell_socket_wrenches=False" in line
 
 
-def test_a_fully_pinned_config_is_returned_untouched():
-    # The identity check matters: it is what lets a config that pins everything
-    # resolve without reading the settings file at all.
-    params = {**_SELL_ALL, "sell_pets": True}
-    assert resolve_app_defaults(params) is params
-
-
-def test_an_unset_param_reaching_pure_logic_uses_the_shipped_default():
-    # Nothing pure may go read the settings, so this is the floor, not the answer:
-    # callers holding a bot's raw params run resolve_app_defaults first.
+def test_an_unset_flag_reaching_pure_logic_uses_the_floor():
     assert sell_flag({}, "sell_pets") is True
     assert sell_flag({}, "sell_socket_wrenches") is False
     assert sell_flag({"sell_pets": False}, "sell_pets") is False

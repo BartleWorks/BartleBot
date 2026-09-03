@@ -44,6 +44,7 @@ from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     TYPE_LABELS,
+    USER_ONLY_TYPES,
     connect_widget,
     empty_value,
     make_option_widget,
@@ -325,6 +326,11 @@ class OptionsSection(SidebarSection):
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _drops(self) -> list:
+        """This bot's drop table, so the keep list's *recommended* value is edited with
+        the same picker the user gets rather than as a comma-separated line."""
+        return list(self._config.drops) if self._config is not None else []
+
     def _sm(self) -> SettingsManager:
         """The settings store, resolved late so a test can inject its own."""
         if self._settings is None:
@@ -362,8 +368,14 @@ class OptionsSection(SidebarSection):
 
         self._no_options_lbl.hide()
         for opt in options:
-            inner, widget, desc_lbl = _build_option_parts(opt, connected)
-            self._connect_option_widget(widget, opt)
+            inner, widget, desc_lbl = _build_option_parts(opt, connected, get_drops=self._drops)
+            if opt.type in USER_ONLY_TYPES:
+                # Shown, so the option is discoverable here with the rest, but inert:
+                # writing a default would put a character name in a file people share.
+                widget.setEnabled(False)
+                widget.setToolTip("This is your value, not the bot's — set it in the Setup tab.")
+            else:
+                self._connect_option_widget(widget, opt)
 
             # A derived option is re-composed from its NodeSpec on every load, so a
             # rename or a delete here would not survive the round trip.  Its default
@@ -484,11 +496,12 @@ class OptionsSection(SidebarSection):
 # ---------------------------------------------------------------------------
 
 
-def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLabel | None]:
+def _build_option_parts(opt, connected: int = 4, get_drops=None) -> tuple[QWidget, QWidget, QLabel | None]:
     """Return (container_widget, input_widget, description_label) for a BotOptionModel.
 
     *connected* is how many clients are hooked right now; it only greys the player
-    checkboxes that have nobody behind them.
+    checkboxes that have nobody behind them.  *get_drops* feeds the keep-list picker,
+    and without it that type falls back to a plain comma-separated line.
 
     The container holds the label and value widget only (no description). The
     description label is returned separately so callers can place it after
@@ -502,7 +515,9 @@ def _build_option_parts(opt, connected: int = 4) -> tuple[QWidget, QWidget, QLab
 
     # None is a declaration meaning "the author has no opinion" -- there is still
     # a widget to fill, and every type has an empty-handed value to fill it with.
-    widget = make_option_widget(opt.type, opt.default, connected=connected, tooltip=tooltip, label=opt.name)
+    widget = make_option_widget(
+        opt.type, opt.default, connected=connected, tooltip=tooltip, label=opt.name, get_drops=get_drops
+    )
     if opt.type != "bool":
         lbl = field_label(opt.name)
         if tooltip:

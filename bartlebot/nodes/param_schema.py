@@ -31,22 +31,17 @@ class ParamField:
 
     Attributes:
         key:          JSON key used in the params dict.
-        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "tri_bool" | "xyz" |
+        type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
                       "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
-                      "drop_keep_list" | "wiki_page" | "app_setting_str".
+                      "wiki_page".
                       "text" renders as a multi-line QPlainTextEdit.
-                      "tri_bool" is a bool that can also be left unset, meaning "use the app setting named by
-                      app_setting_key". Stored as true / false / null, and null is what a bot carries unless
-                      its author pinned an answer. The node resolves it; see quicksell.resolve_app_defaults.
                       "player_slot" is the single-select sibling of "player_list": one 1-based client
                       index, or 0 for none.
-                      "app_setting_str" is a string the *user* owns rather than the bot — the widget edits
-                      the SettingsManager general-settings key named by app_setting_key, and get_params()
-                      never writes the key to the bot file. Use it when no bot should ever ship a value,
-                      which is a stronger claim than "tri_bool"'s "no bot needs to"; teleport_to_friend's
-                      friend_name is the case it was built for.
-                      "drop_keep_list" is a str_list of quicksell keep-list keywords, shown alongside the bot's
-                      drop table with a checkbox per drop; the value on disk is a plain list of strings.
+                      There is deliberately no param type for a value the *user* owns. "tri_bool" and
+                      "app_setting_str" were two such, invented before there was anywhere else for a
+                      user's value to live; both are gone. A value the user owns is a **bot option**
+                      with a null declaration — see bartlebot/bot_options.py — which reaches every node
+                      in the bot at once instead of once per node that thought to offer it.
                       "wiki_page" records the Wizard101 Central page a node's data came from. Editor-only —
                       no node reads it at run time. Stored as a bare page title, never a URL; resolve it
                       through bartlebot.wiki_pages.resolve_wiki_page() and never by hand.
@@ -64,9 +59,6 @@ class ParamField:
                       named bool field is False. Pairing the two on opposite fields is how
                       mutually exclusive alternatives are expressed — see teleport_to_friend,
                       where the target is either a hooked player or a name, never both.
-        app_setting_key: For type="tri_bool": the SettingsManager general-settings key holding the
-                      app-level answer this field falls back to. The widget reads it to label the
-                      unset choice with the value currently in force.
         required:     When True the param must be explicitly set in state.params
                       (i.e. the user must open the properties panel and save).
                       Used by the GUI to flag unconfigured nodes as errors.
@@ -81,7 +73,6 @@ class ParamField:
     placeholder: str = ""
     disabled_by: str = ""
     enabled_by: str = ""
-    app_setting_key: str = ""
     required: bool = False
     choices: list[Any] = field(default_factory=list)
     """The ordered dropdown options.

@@ -27,12 +27,11 @@ from PyQt6.QtWidgets import QApplication, QLabel
 import bartlebot.gui.theme as theme_mod
 from bartlebot.bot.schema import StateModel, TransitionModel
 from bartlebot.gui.canvas.param_panel import (
-    _AppSettingStrWidget,
     _DynamicParamForm,
     _FlagConditionsWidget,
     _ParamPanel,
 )
-from bartlebot.gui.theme import THEME, build_custom_theme
+from bartlebot.gui.theme import THEME
 from bartlebot.nodes.param_schema import ParamField
 
 
@@ -174,35 +173,6 @@ def test_a_group_added_after_a_switch_is_still_styled(qapp, theme):
     frame = w._groups[-1][0]
     assert frame.objectName() == "FlagGroupFrame"
     assert THEME.border in w.styleSheet()
-
-
-# ---------------------------------------------------------------------------
-# _AppSettingStrWidget
-# ---------------------------------------------------------------------------
-
-
-def test_the_legacy_warning_recolours(qapp, theme):
-    """Switched through a custom theme rather than light/dark, because THEME.warning
-    happens to hold the same value in both — a gold that cannot lighten and still pass
-    WCAG AA — so the usual pair would prove nothing here."""
-    theme("light")
-    w = _AppSettingStrWidget("recent_friend_names", lambda: [], legacy_value="Someone Elsewhere")
-    assert w._warn is not None
-    before = w._warn.styleSheet()
-
-    theme_mod.set_theme_instance(build_custom_theme({"warning": "#ff00ff"}, base=theme_mod.active_theme()))
-    qapp.sendEvent(w, QEvent(QEvent.Type.StyleChange))
-
-    assert w._warn.styleSheet() != before
-    assert "#ff00ff" in w._warn.styleSheet()
-
-
-def test_no_legacy_value_means_no_warning_to_restyle(qapp, theme):
-    theme("light")
-    w = _AppSettingStrWidget("recent_friend_names", lambda: [])
-    assert w._warn is None
-
-    _switch(qapp, w, theme, "dark")  # must not raise
 
 
 # ---------------------------------------------------------------------------

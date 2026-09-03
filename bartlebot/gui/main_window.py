@@ -172,8 +172,9 @@ class MainWindow(QMainWindow):
 
         # Wire wiki import from handle_combat node panel → possible drops list
         self.bot_canvas.param_panel.wiki_import_completed.connect(self.right_sidebar.possible_drops.add_drops)
-        # Wire drop list edits → quicksell keep-list picker, so it lists the current drops
-        self.right_sidebar.possible_drops.drops_changed.connect(self.bot_canvas.param_panel.refresh_drops)
+        # Wire drop list edits → the quicksell keep-list picker in Setup, so it lists
+        # the current drops. The picker is a bot option now, so it lives over there.
+        self.right_sidebar.possible_drops.drops_changed.connect(self.left_sidebar.refresh_drops)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # Wire sidebar tab switching from canvas

@@ -68,6 +68,15 @@ SOURCE_NODE_DEFAULT = "the node default"
 APP_SETTING_KEYS: dict[str, str] = {
     "Safety Delay": "default_safety_delay",
     "Level Scaling Players": "default_level_scaling_players",
+    # Quicksell: what to sell describes the user's tolerance for losing an item,
+    # not the dungeon.  The keep list is the one part of it that is authorial.
+    "Enable Quicksell": "default_quicksell_enabled",
+    "Sell Pets": "default_quicksell_sell_pets",
+    "Sell Socket Wrenches": "default_quicksell_sell_socket_wrenches",
+    "Sell Skeleton Keys": "default_quicksell_sell_skeleton_keys",
+    # A character name is never the bot's to carry (#102), so the app setting is
+    # the shared level under a per-bot override.
+    "Friend Name": "default_friend_name",
 }
 
 
@@ -98,11 +107,11 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
         return isinstance(value, int) and not isinstance(value, bool)
     if declared_type == "float":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if declared_type == "str":
+    if declared_type in ("str", "friend_name"):
         return isinstance(value, str)
     if declared_type == "player_list":
         return isinstance(value, list) and all(isinstance(v, int) and not isinstance(v, bool) for v in value)
-    if declared_type == "str_list":
+    if declared_type in ("str_list", "drop_keep_list"):
         return isinstance(value, list) and all(isinstance(v, str) for v in value)
     return True
 

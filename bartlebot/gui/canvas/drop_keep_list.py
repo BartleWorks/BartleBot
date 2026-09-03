@@ -1,8 +1,8 @@
 """Quicksell keep-list picker: the bot's drop table as a filterable, checkable table.
 
-Rendered for the quicksell node's ``keep_list`` param (``ParamField.type ==
-"drop_keep_list"``). The keyword line edit is the stored value; the table below it
-shows what those keywords do to each drop the bot can farm.
+Rendered in Setup for the ``Quicksell Keep List`` bot option (``BotOptionModel.type ==
+"drop_keep_list"``). The keyword line edit is the value; the table below it shows what
+those keywords do to each drop the bot can farm.
 
 Drop tables are large — the biggest shipped bot lists 597 items — so the table is
 built for search-and-filter rather than scrolling, and it never rebuilds rows for a
@@ -48,8 +48,9 @@ _COL_CATEGORY = 2
 
 _TABLE_MAX_HEIGHT = 220
 
-#: The ParamField key this widget renders. It owns that param, so it supplies the
-#: value itself rather than taking it from the form's context.
+#: The key this widget's own value occupies in the resolved-config dict quicksell's
+#: pure helpers read. It owns that entry, so it supplies it rather than taking it
+#: from the context its host pushes.
 _VALUE_PARAM_KEY = "keep_list"
 
 
@@ -171,6 +172,11 @@ class DropKeepListWidget(QWidget):
         self._edit = QLineEdit()
         self._edit.setPlaceholderText("e.g. ItemA, ItemB")
         self._edit.textChanged.connect(self._on_text_edited)
+        # Typing repaints the table live, but only reports a *change* once the field
+        # is left. The host stores this as a value, and a write per keystroke is a
+        # settings-file write per keystroke — the same reason connect_widget uses
+        # editingFinished for every other line edit.
+        self._edit.editingFinished.connect(self.changed.emit)
         outer.addWidget(self._edit)
 
         # Two lines: the rule, which never changes, and the live count under it.
@@ -267,14 +273,14 @@ class DropKeepListWidget(QWidget):
         self.refresh()
 
     def set_context(self, params: dict) -> None:
-        """Supply the node's other params, whose sell_* bools affect what is kept.
+        """Supply the resolved sell_* bools, which decide what the keep list can reach.
 
-        The form pushes this on every edit, including the widget's own, so it
+        The host pushes this on every edit, including the widget's own, so it
         returns early when nothing relevant moved. Without that, each keystroke in
         the keyword line rebuilt every row's state twice: once for the edit, then
         again for the context push the resulting ``changed`` signal triggers.
         """
-        # The widget's own param is excluded rather than compared: it changes on
+        # The widget's own value is excluded rather than compared: it changes on
         # every keystroke, which would defeat the guard, and _apply_states reads it
         # straight from the widget anyway.
         params = {k: v for k, v in params.items() if k != _VALUE_PARAM_KEY}
@@ -362,10 +368,10 @@ class DropKeepListWidget(QWidget):
         # node ever sees. Zipped positionally rather than looked up by name: several
         # drops can share one in-game name, and a dict would collapse them.
         match_keys = [entry.match_key for entry in entries]
-        # Resolved here rather than downstream: the sell_* params can each be left to
-        # the app setting, and the picker has to show what the run will actually do,
-        # not the unset state. A config that pins all three never reads the settings.
-        params = quicksell.resolve_app_defaults({**self._context, _VALUE_PARAM_KEY: self.get_value()})
+        # The context arrives already resolved -- the sell_* options each go through
+        # the same four levels the run will use, so the picker shows what will
+        # actually happen rather than an unset state.
+        params = {**self._context, _VALUE_PARAM_KEY: self.get_value()}
         states = quicksell.drop_keep_states(match_keys, params)
         shared = Counter(key.casefold() for key in match_keys)
         # Categories a sell_* bool spares wholesale. Unlike the never-sold set these
@@ -581,7 +587,6 @@ class DropKeepListWidget(QWidget):
             return
         self._value = parse_list_text(self._edit.text())
         self.refresh()
-        self.changed.emit()
 
     # ------------------------------------------------------------------
     # Theming

@@ -27,76 +27,45 @@ from bartlebot.nodes.paths import (
 
 logger = logging.getLogger(__name__)
 
-# The sell_* params are three-state: True (sell), False (keep), or unset — meaning
-# "use the app setting", which is how every bot behaves until someone deliberately
-# pins it. Maps each param to the SettingsManager key holding that app setting, and
-# to the value to assume when settings cannot be read at all.
+# Quicksell's settings are **bot options**, not node params, and every one of them
+# is now user-owned except the keep list.
 #
-# Unset is stored as null (or an absent key) in the bot file, and is the schema
-# default, so a bot only pins a value when its author had a reason to.
-APP_DEFAULT_SETTINGS: dict[str, tuple[str, bool]] = {
-    "sell_pets": ("default_quicksell_sell_pets", True),
-    "sell_socket_wrenches": ("default_quicksell_sell_socket_wrenches", False),
-    "sell_skeleton_keys": ("default_quicksell_sell_skeleton_keys", False),
+# What a user is willing to lose is a fact about that user -- their tolerance for a
+# pet or a socket wrench going with the rest -- so it belongs beside their Safety
+# Delay rather than in a file they share.  Which drops *this dungeon* yields that are
+# worth keeping is the opposite: the author knows it and the user has no way to.  So
+# the keep list is the one authorial declaration here, and the user's own list
+# replaces it, seeded from the author's.
+#
+# There was one bot in the library with two quicksell nodes, and it existed only to
+# offer a choice between two keep lists.  Under bot options that choice is a value
+# the user edits directly, so the reason for a second node is gone.
+
+#: The option whose answer decides whether this node does anything at all.
+OPTION_ENABLED = "Enable Quicksell"
+
+#: The authorial one: keywords naming this dungeon's drops worth keeping.
+OPTION_KEEP_LIST = "Quicksell Keep List"
+
+#: Internal key -> option name, for the three bools. The internal keys are what every
+#: pure helper below is written against, and what the editor's picker speaks.
+SELL_FLAG_OPTIONS: dict[str, str] = {
+    "sell_pets": "Sell Pets",
+    "sell_socket_wrenches": "Sell Socket Wrenches",
+    "sell_skeleton_keys": "Sell Skeleton Keys",
 }
 
-PARAM_SCHEMA: list[ParamField] = [
-    ParamField(
-        key="keep_list",
-        type="drop_keep_list",
-        label="Keep List",
-        help=(
-            "Keywords to match against item names when quickselling. "
-            "Any item whose name contains one of these strings (case-insensitive) will NOT be sold. "
-            "Partial matches count — 'hat' will keep any item with 'hat' in the name. "
-            "Tick an item below to add its exact name to the list."
-        ),
-        default=[],
-        required=False,
-    ),
-    ParamField(
-        key="sell_pets",
-        type="tri_bool",
-        label="Sell Pets",
-        app_setting_key=APP_DEFAULT_SETTINGS["sell_pets"][0],
-        help=(
-            "Whether pets are sold along with everything else. Left on the app setting unless this "
-            "bot needs one answer specifically. "
-            "The keep list cannot spare an individual pet: the quicksell window lists a pet by the "
-            "nickname its owner gave it, never by the body type the drop table names it with, so a "
-            "keyword for a pet never matches. Keep is the only thing that keeps a pet."
-        ),
-        default=None,
-        default_hint="the app setting in Settings → General → Bot.",
-        required=False,
-    ),
-    ParamField(
-        key="sell_socket_wrenches",
-        type="tri_bool",
-        label="Sell Socket Wrenches",
-        app_setting_key=APP_DEFAULT_SETTINGS["sell_socket_wrenches"][0],
-        help=(
-            "Whether items whose name contains 'Socket Wrench' are sold. Keep adds that keyword to "
-            "the keep list. Left on the app setting unless this bot needs one answer specifically."
-        ),
-        default=None,
-        default_hint="the app setting in Settings → General → Bot.",
-        required=False,
-    ),
-    ParamField(
-        key="sell_skeleton_keys",
-        type="tri_bool",
-        label="Sell Skeleton Keys",
-        app_setting_key=APP_DEFAULT_SETTINGS["sell_skeleton_keys"][0],
-        help=(
-            "Whether items whose name contains 'Skeleton Key' are sold. Keep adds that keyword to "
-            "the keep list. Left on the app setting unless this bot needs one answer specifically."
-        ),
-        default=None,
-        default_hint="the app setting in Settings → General → Bot.",
-        required=False,
-    ),
-]
+#: The floor under each bool -- what to assume when nothing above has an answer.
+#: Not the user's setting: that is a level above this, resolved by ``get_option``.
+SELL_FLAG_DEFAULTS: dict[str, bool] = {
+    "sell_pets": True,
+    "sell_socket_wrenches": False,
+    "sell_skeleton_keys": False,
+}
+
+#: Nothing left. Quicksell used to carry five params; all five are bot options now,
+#: which is what lets one answer cover every quicksell node in a bot.
+PARAM_SCHEMA: list[ParamField] = []
 
 NODE_SPEC = NodeSpec(
     description=(
@@ -122,14 +91,67 @@ NODE_SPEC = NodeSpec(
                 "Increase on high-latency connections."
             ),
         ),
+        BotOptionSpec(
+            name=OPTION_ENABLED,
+            type="bool",
+            # Null: the author has no opinion, so the app setting answers. Quicksell
+            # is on by default, which is what every bot did before it could be off.
+            default=None,
+            description=(
+                "Whether this bot sells anything at all. Turn it off to farm without selling: the "
+                "backpack fills, and after that new drops go to your shared bank instead. Once the "
+                "bank is full too, only Crowns items are still kept and everything else is lost."
+            ),
+        ),
+        BotOptionSpec(
+            name=SELL_FLAG_OPTIONS["sell_pets"],
+            type="bool",
+            default=None,
+            description=(
+                "Whether pets are sold along with everything else. The keep list cannot spare an "
+                "individual pet: the quicksell window lists a pet by the nickname its owner gave it, "
+                "never by the body type a drop table names it with, so no keyword ever matches one. "
+                "Turning this off is the only thing that keeps a pet."
+            ),
+        ),
+        BotOptionSpec(
+            name=SELL_FLAG_OPTIONS["sell_socket_wrenches"],
+            type="bool",
+            default=None,
+            description=(
+                "Whether items whose name contains 'Socket Wrench' are sold. Off adds that keyword to the keep list."
+            ),
+        ),
+        BotOptionSpec(
+            name=SELL_FLAG_OPTIONS["sell_skeleton_keys"],
+            type="bool",
+            default=None,
+            description=(
+                "Whether items whose name contains 'Skeleton Key' are sold. Off adds that keyword to the keep list."
+            ),
+        ),
+        BotOptionSpec(
+            name=OPTION_KEEP_LIST,
+            # Node-declared type: a str_list underneath, shown in Setup as this bot's
+            # own drop table with a tick box per item.
+            type="drop_keep_list",
+            default=[],
+            description=(
+                "Keywords to match against item names when quickselling. Any item whose name "
+                "contains one of these (case-insensitive, partial matches count) is not sold. "
+                "The bot's author recommends a list; yours replaces it."
+            ),
+        ),
     ],
     max_consecutive_retries=5,
     safety_warning=(
         "This bot quicksells items when your backpack is full. "
-        "Ensure that you have locked any valuable items or have added them "
-        "to the keep list in the quicksell node parameters. "
+        "Ensure that you have locked any valuable items or have added them to the keep list in "
+        "Setup. "
         "Pets are the exception: the quicksell window lists them by nickname, so the keep list "
-        "cannot spare one — turn Sell Pets off to keep your pets."
+        "cannot spare one — turn Sell Pets off to keep your pets. "
+        "With Enable Quicksell off nothing is sold: the backpack fills, further drops overflow "
+        "into your shared bank, and once that is full too only Crowns items are kept."
     ),
 )
 
@@ -216,52 +238,52 @@ QUICKSELLABLE_CATEGORIES: frozenset[str] = frozenset(
 )
 
 
-def app_default_flags() -> dict[str, bool]:
-    """The current app-level answer for each sell_* param.
+def resolve_options(get_option) -> dict:
+    """Collapse the five quicksell options into the plain dict everything else reads.
 
-    Read from SettingsManager rather than passed in, because the settings are a
-    property of the machine and not of the bot. Falls back to the values in
-    APP_DEFAULT_SETTINGS if the settings file cannot be read at all — a quicksell
-    run must not fail over a missing preference.
+    This is the one place the option layer touches quicksell.  Below it nothing
+    knows an option exists: the keep-list logic, the picker and ``run()`` all see
+    ``{"enabled": bool, "keep_list": [...], "sell_pets": bool, ...}``, which is what
+    keeps them pure and testable without a settings file.
+
+    *get_option* is ``BotMachine.get_option`` at run time and a settings-backed
+    lookup in the editor.  Its answer is checked rather than trusted: an override
+    written under an older type, or a stub that answers everything with a number,
+    must not turn a bool into "sell everything".  A value of the wrong shape falls
+    back to the floor in ``SELL_FLAG_DEFAULTS``, never to something more destructive.
     """
-    fallbacks = {key: fallback for key, (_, fallback) in APP_DEFAULT_SETTINGS.items()}
-    try:
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids a GUI import at node load
-
-        sm = SettingsManager.instance()
-    except Exception:
-        logger.warning("quicksell: could not read app settings — assuming %r", fallbacks)
-        return fallbacks
-    return {
-        key: bool(sm.get_general(settings_key, default=fallback))
-        for key, (settings_key, fallback) in APP_DEFAULT_SETTINGS.items()
+    keep_list = get_option(OPTION_KEEP_LIST, [])
+    enabled = get_option(OPTION_ENABLED, True)
+    values: dict = {
+        "enabled": enabled if isinstance(enabled, bool) else True,
+        "keep_list": [str(k) for k in keep_list] if isinstance(keep_list, list) else [],
     }
+    for key, name in SELL_FLAG_OPTIONS.items():
+        value = get_option(name, SELL_FLAG_DEFAULTS[key])
+        values[key] = value if isinstance(value, bool) else SELL_FLAG_DEFAULTS[key]
+    return values
 
 
-def inherited_flags(params: dict) -> list[str]:
-    """The sell_* params this config leaves to the app setting, in schema order."""
-    return [key for key in APP_DEFAULT_SETTINGS if not isinstance(params.get(key), bool)]
+def resolve_options_for(config, settings=None) -> dict:
+    """The same resolved dict ``run()`` builds, for a *config* the editor is holding.
 
-
-def resolve_app_defaults(params: dict, defaults: dict[str, bool] | None = None) -> dict:
-    """Return *params* with every unset sell_* param filled in from the app settings.
-
-    This is the one place the three-state value collapses to a bool. Everything
-    downstream — the keep-list logic, the picker, run() — sees a plain True/False
-    and does not care where it came from, which is what keeps those functions pure.
-
-    *defaults* is for tests and for callers that already read the settings; when it
-    is None the settings are consulted, but only if something actually needs them.
-    A config that pins all three never touches SettingsManager.
+    The editor has no machine, so it resolves through ``option_values`` instead --
+    the same four levels, the same order.  Kept here rather than in each caller so
+    the picker, the safety dialog and the run cannot drift apart about what this
+    bot will sell.
     """
-    if not inherited_flags(params):
-        return params
-    defaults = app_default_flags() if defaults is None else defaults
-    resolved = dict(params)
-    for key, (_, fallback) in APP_DEFAULT_SETTINGS.items():
-        if not isinstance(resolved.get(key), bool):
-            resolved[key] = bool(defaults.get(key, fallback))
-    return resolved
+    from bartlebot import option_values  # noqa: PLC0415 - avoids a settings import at node load
+
+    return resolve_options(
+        lambda name, default=None: option_values.option_value(config, name, default, settings=settings)
+    )
+
+
+def describe_config(params: dict) -> str:
+    """One line naming everything this quicksell will do, for the log."""
+    return f"enabled={params.get('enabled', True)} keep_list={effective_keep_list(params)!r} " + " ".join(
+        f"{key}={sell_flag(params, key)}" for key in SELL_FLAG_OPTIONS
+    )
 
 
 def _typed_keywords(params: dict) -> list[str]:
@@ -273,14 +295,14 @@ def _typed_keywords(params: dict) -> list[str]:
 def sell_flag(params: dict, param_key: str) -> bool:
     """One resolved sell_* value.
 
-    Callers holding a bot's raw params should run them through resolve_app_defaults
-    first, so an unset param picks up the *user's* app setting. Reaching this with
-    an unset one is still well defined — it falls back to the shipped default in
-    APP_DEFAULT_SETTINGS — but that is a floor, not a substitute: nothing in a pure
-    function may go and read the settings itself.
+    Callers holding the options should run them through ``resolve_options`` first,
+    which is where the user's answer comes from. Reaching this with a missing key is
+    still well defined — it falls back to the floor in SELL_FLAG_DEFAULTS — but that
+    is a floor, not a substitute: nothing in a pure function may go and read the
+    settings itself.
     """
     value = params.get(param_key)
-    return value if isinstance(value, bool) else APP_DEFAULT_SETTINGS[param_key][1]
+    return value if isinstance(value, bool) else SELL_FLAG_DEFAULTS[param_key]
 
 
 def _implied_keywords(params: dict) -> list[str]:
@@ -299,8 +321,7 @@ def category_keep_reasons(params: dict) -> dict[str, str]:
     reasons = {}
     for param_key, category in CATEGORY_SELL_FLAGS.items():
         if not sell_flag(params, param_key):
-            field = next((f for f in PARAM_SCHEMA if f.key == param_key), None)
-            label = field.label if field is not None else param_key
+            label = SELL_FLAG_OPTIONS.get(param_key, param_key)
             reasons[category] = f"Kept because {label} is off, not by the keep list."
     return reasons
 
@@ -402,11 +423,11 @@ async def run(machine, clients: list, params: dict) -> str:
           node_helpers.click_by_path(), node_helpers.get_text_by_path()
 
     Flow (per client, run concurrently via asyncio.gather):
-      1. Resolve the three-state sell_* params against the app settings via
-         resolve_app_defaults(), then build the effective keep_list via
-         effective_keep_list(): the keep_list param plus the keywords implied by the
-         resolved sell_* bools. The properties panel resolves the same way, so what it
-         shows is what this will do.
+      0. Resolve the five bot options via resolve_options(). Enable Quicksell off is
+         SUCCESS without touching a client -- a node that does nothing has not failed.
+      1. Build the effective keep_list via effective_keep_list(): the Quicksell Keep
+         List option plus the keywords implied by the sell_* bools that are off. The
+         Setup picker resolves the same way, so what it shows is what this will do.
       2. Open the inventory page (B key); read backpack_space() to check if full.
       3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
       4. If neither is full, close the backpack and return SUCCESS.
@@ -429,19 +450,21 @@ async def run(machine, clients: list, params: dict) -> str:
     FAILURE: quicksell open button did not appear; shop UI did not appear;
     sell confirmation dialog did not appear.
     """
-    # Fill in whichever sell_* params this bot left to the app settings. Everything
-    # below reads plain bools; which level answered is only interesting to the log.
-    inherited = inherited_flags(params)
-    params = resolve_app_defaults(params)
+    # The one place the option layer is read. Everything below sees plain values;
+    # which level answered each one is already in the log, written once per run by
+    # get_option itself, so this line says only what the node will do with them.
+    params = resolve_options(machine.get_option)
     keep_list = effective_keep_list(params)
     sell_pets: bool = params["sell_pets"]
-    sell_socket_wrenches: bool = params["sell_socket_wrenches"]
-    sell_skeleton_keys: bool = params["sell_skeleton_keys"]
-    source = f" ({', '.join(inherited)} from app settings)" if inherited else " (all set by the bot)"
-    machine.log(
-        f"quicksell: keep_list={keep_list!r} sell_pets={sell_pets} "
-        f"sell_socket_wrenches={sell_socket_wrenches} sell_skeleton_keys={sell_skeleton_keys}{source}"
-    )
+    machine.log(f"quicksell: {describe_config(params)}")
+
+    if not params["enabled"]:
+        # Not a failure: the user turned selling off, and the run carries on without
+        # it. What that costs them is in the option's own description and in the
+        # safety dialog -- the backpack fills, then the bank, and after that only
+        # Crowns items are kept.
+        machine.log("quicksell: Enable Quicksell is off — nothing will be sold.")
+        return "SUCCESS"
 
     # Only when the user typed keywords of their own: the implied ones can never
     # name a pet, so keying off the effective list would fire this on every bot

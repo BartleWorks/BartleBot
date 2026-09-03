@@ -240,14 +240,23 @@ class GeneralTab(QWidget):
         )
         bot_form.addRow("Friend teleport target:", self._friend_name_edit)
 
-        # Defaults, not policy: a quicksell node whose matching param is left on
-        # "Use app setting" follows these, and one that pins Yes or No does not.
-        # Labelled that way so nobody reads the row as a guarantee.
+        # Defaults, not policy: these are the *app setting* level of four, so a value
+        # set for one bot in Setup wins over them, and so does an author who declared
+        # an answer their dungeon needs. Labelled that way so nobody reads a row here
+        # as a guarantee about what a given bot will sell.
         _quicksell_tip = (
-            "Applies to every quicksell node left on 'Use app setting', which is how they come.\n\n"
-            "A bot that needs one answer specifically can pin it in the node's parameters, and "
-            "that pin wins over this."
+            "The starting answer for every bot. Change it for one bot in that bot's Setup tab, "
+            "which leaves this alone.\n\n"
+            "A bot whose author needed one answer specifically also wins over this."
         )
+
+        self._quicksell_enabled_cb = QCheckBox()
+        self._quicksell_enabled_cb.setChecked(sm.get_general("default_quicksell_enabled", default=True))
+        self._quicksell_enabled_cb.setToolTip(
+            _quicksell_tip + "\n\nOff means no bot sells anything: backpacks fill, further drops go to "
+            "your shared bank, and once that is full too only Crowns items are kept."
+        )
+        bot_form.addRow("Quicksell default — Enable Quicksell:", self._quicksell_enabled_cb)
 
         self._sell_pets_cb = QCheckBox()
         self._sell_pets_cb.setChecked(sm.get_general("default_quicksell_sell_pets", default=True))
@@ -321,6 +330,7 @@ class GeneralTab(QWidget):
         if friend_name != sm.default_friend_name:
             sm.default_friend_name = friend_name
             sm.add_recent_friend_name(friend_name)
+        sm.set_general("default_quicksell_enabled", self._quicksell_enabled_cb.isChecked())
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())

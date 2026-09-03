@@ -4,6 +4,7 @@ import logging
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.utility.quicksell as qs
+from bartlebot.bot.schema import BotConfig, BotOptionModel
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     QUICKSELL_CLOSE_BUTTON_PATH,
@@ -16,8 +17,23 @@ from bartlebot.nodes.paths import (
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import FakeClient, FakeMachine
 
-_NO_KEEPS: dict = {"keep_list": []}
-_HAT_KEEPS: dict = {"keep_list": ["hat"]}
+
+def _machine(**options) -> FakeMachine:
+    """A FakeMachine answering quicksell's options by their user-facing names.
+
+    Quicksell reads bot options rather than params now, so a test says what the
+    *bot* is set to do rather than what one node's params hold. The keyword
+    arguments are the internal keys the pure helpers speak; this maps them across.
+    """
+    answers: dict = {}
+    for key, value in options.items():
+        if key == "keep_list":
+            answers[qs.OPTION_KEEP_LIST] = value
+        elif key == "enabled":
+            answers[qs.OPTION_ENABLED] = value
+        else:
+            answers[qs.SELL_FLAG_OPTIONS[key]] = value
+    return FakeMachine(options=answers)
 
 
 def _make_patchers(
@@ -58,7 +74,7 @@ async def test_returns_success_when_neither_backpack_full():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+        result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -79,7 +95,7 @@ async def test_quicksells_when_main_backpack_full():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+        result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -100,7 +116,7 @@ async def test_quicksells_when_jewel_full():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+        result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -121,7 +137,7 @@ async def test_skips_quicksell_when_not_full():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+        result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -142,7 +158,7 @@ async def test_quicksells_once_when_both_full():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+        result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -164,7 +180,7 @@ async def test_closes_shop_gui_when_all_items_kept():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        result = await qs.run(FakeMachine(), [client], _HAT_KEEPS)
+        result = await qs.run(_machine(keep_list=["hat"]), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -184,7 +200,7 @@ async def test_keeps_items_matching_keyword():
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
         with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
-            result = await qs.run(FakeMachine(), [client], _HAT_KEEPS)
+            result = await qs.run(_machine(keep_list=["hat"]), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -204,7 +220,7 @@ async def test_case_insensitive_keep_match():
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
         with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
-            result = await qs.run(FakeMachine(), [client], {"keep_list": ["STAFF"]})
+            result = await qs.run(_machine(keep_list=["STAFF"]), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -224,7 +240,7 @@ async def test_non_matching_items_not_unchecked():
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
         with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
-            result = await qs.run(FakeMachine(), [client], _HAT_KEEPS)
+            result = await qs.run(_machine(keep_list=["hat"]), [client], {})
 
     assert result == "SUCCESS"
     clicked_paths = [c.args[1] for c in mock_click.call_args_list]
@@ -240,7 +256,7 @@ async def test_iterates_multiple_pages():
     # is_enabled_by_path calls: next-page True (advance), next-page False (stop), sell-button False (grayed).
     with p["poll_until"], p["click_by_path"] as mock_click, p["get_text"], p["jewel_full"], p["poll_interval"]:
         with patch.object(node_helpers, "is_enabled_by_path", new_callable=AsyncMock, side_effect=[True, False, False]):
-            result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+            result = await qs.run(_machine(), [client], {})
 
     assert result == "SUCCESS"
     next_page_clicks = [c for c in mock_click.call_args_list if c.args[1] == QUICKSELL_NEXT_PAGE_PATH]
@@ -254,7 +270,7 @@ async def test_returns_failure_when_quicksell_ui_never_opens():
 
     p = _make_patchers(poll_until_returns=False, is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        result = await qs.run(FakeMachine(), [client], _NO_KEEPS)
+        result = await qs.run(_machine(), [client], {})
 
     assert result == "FAILURE"
 
@@ -268,7 +284,7 @@ async def test_handles_multiple_clients():
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        result = await qs.run(FakeMachine(), [client1, client2], _NO_KEEPS)
+        result = await qs.run(_machine(), [client1, client2], {})
 
     assert result == "SUCCESS"
     assert client1.send_key.called
@@ -295,11 +311,11 @@ async def test_warns_that_a_keep_list_cannot_spare_a_pet():
     """Sell Pets on plus a keep list is the case where a pet is silently sold."""
     client = FakeClient()
     client.backpack_space.return_value = (50, 100)
-    machine = FakeMachine()
+    machine = _machine(keep_list=["hat"], sell_pets=True)
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        await qs.run(machine, [client], {**_HAT_KEEPS, "sell_pets": True})
+        await qs.run(machine, [client], {})
 
     # INFO, not WARNING: the notice is advisory — Sell Pets with a keep list is a legitimate
     # configuration, just one whose keywords cannot match a pet. Keyed on the message rather
@@ -311,11 +327,11 @@ async def test_no_pet_warning_without_a_keep_list():
     """Nothing was asked to be kept, so there is nothing to be surprised by."""
     client = FakeClient()
     client.backpack_space.return_value = (50, 100)
-    machine = FakeMachine()
+    machine = _machine()
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        await qs.run(machine, [client], _NO_KEEPS)
+        await qs.run(machine, [client], {})
 
     assert not [msg for msg, level in machine.logs if level == logging.INFO and "nickname" in msg]
 
@@ -323,21 +339,25 @@ async def test_no_pet_warning_without_a_keep_list():
 async def test_no_pet_warning_when_pets_are_not_being_sold():
     client = FakeClient()
     client.backpack_space.return_value = (50, 100)
-    machine = FakeMachine()
+    machine = _machine(keep_list=["hat"], sell_pets=False)
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        await qs.run(machine, [client], {**_HAT_KEEPS, "sell_pets": False})
+        await qs.run(machine, [client], {})
 
     assert not [msg for msg, level in machine.logs if level == logging.INFO and "nickname" in msg]
 
 
 # ---------------------------------------------------------------------------
-# Three-state sell_* params
+# Bot options, and the levels behind them
 #
-# Unset means "use the app setting". run() resolves that once, up front, so the
-# rest of the node sees plain bools. The settings here are the per-test isolated
-# ones from conftest, not the developer's.
+# The node asks ``machine.get_option`` and does what it is told; which of the four
+# levels answered is ``bot_options``' business, and is logged there. What is worth
+# pinning down here is the round trip: that a value set at each level reaches the
+# clicks this node makes, and that Enable Quicksell off stops it doing anything.
+#
+# The settings used are the per-test isolated ones from conftest, not the
+# developer's.
 # ---------------------------------------------------------------------------
 
 
@@ -347,9 +367,36 @@ def _full_backpack() -> FakeClient:
     return client
 
 
-async def test_an_unset_sell_pets_follows_the_app_setting():
-    """App setting says keep, bot says nothing → the Pet tab is deselected."""
-    SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
+def _bot(*options: BotOptionModel) -> BotConfig:
+    """A one-node bot whose only state is the quicksell this is all about."""
+    return BotConfig.model_validate(
+        {
+            "id": "quicksell-bot",
+            "name": "Quicksell Bot",
+            "initial": "s0",
+            "recovery_state": "s0",
+            "states": [{"id": "s0", "node_type": "quicksell"}],
+            "transitions": [],
+            "options": [o.model_dump() for o in options],
+        }
+    )
+
+
+async def test_enable_quicksell_off_is_a_no_op_that_succeeds():
+    """A user who turned selling off has not broken the run, so this is not a failure —
+    and nothing may be clicked, because the backpack is full and it would sell."""
+    client = _full_backpack()
+
+    p = _make_patchers(is_jewel_full_returns=False)
+    with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["get_text"], p["jewel_full"]:
+        result = await qs.run(_machine(enabled=False), [client], {})
+
+    assert result == "SUCCESS"
+    assert mock_click.call_args_list == []
+    client.send_key.assert_not_called()
+
+
+async def test_sell_pets_off_deselects_the_pet_tab():
     client = _full_backpack()
 
     p = _make_patchers(is_jewel_full_returns=False)
@@ -361,14 +408,12 @@ async def test_an_unset_sell_pets_follows_the_app_setting():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        await qs.run(FakeMachine(), [client], {"keep_list": []})
+        await qs.run(_machine(sell_pets=False), [client], {})
 
     assert any(call.args[1] == QUICKSELL_PET_TAB_PATH for call in mock_click.call_args_list)
 
 
-async def test_a_pinned_sell_pets_outranks_the_app_setting():
-    """The point of the third state: a bot that needs pets sold still sells them."""
-    SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
+async def test_sell_pets_on_leaves_the_pet_tab_alone():
     client = _full_backpack()
 
     p = _make_patchers(is_jewel_full_returns=False)
@@ -380,33 +425,76 @@ async def test_a_pinned_sell_pets_outranks_the_app_setting():
         p["jewel_full"],
         p["poll_interval"],
     ):
-        await qs.run(FakeMachine(), [client], {"keep_list": [], "sell_pets": True})
+        await qs.run(_machine(sell_pets=True), [client], {})
 
     assert not any(call.args[1] == QUICKSELL_PET_TAB_PATH for call in mock_click.call_args_list)
 
 
-async def test_an_unset_sell_wrenches_picks_up_the_keyword_from_the_app_setting():
-    """Keep is expressed as a keep-list keyword, so the app setting has to reach it."""
-    SettingsManager.instance().set_general("default_quicksell_sell_socket_wrenches", False)
-    machine = FakeMachine()
+async def test_sell_wrenches_off_adds_the_keyword_to_the_keep_list():
+    """Keep is expressed as a keep-list keyword, so the bool has to reach the list —
+    the union of the two mechanisms happens in one place or they drift apart."""
+    machine = _machine(sell_socket_wrenches=False)
     client = _full_backpack()
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        await qs.run(machine, [client], {"keep_list": []})
+        await qs.run(machine, [client], {})
 
     assert any("socket wrench" in msg for msg, _ in machine.logs)
 
 
-async def test_the_log_says_which_values_came_from_the_app_settings():
-    """Which level answered is invisible in the bot file, so the log has to say."""
-    machine = FakeMachine()
+async def test_the_log_names_every_resolved_value():
+    """The bot file does not show what will be sold, so the log has to."""
+    machine = _machine(keep_list=["hat"], sell_pets=True, sell_socket_wrenches=False)
     client = _full_backpack()
 
     p = _make_patchers(is_jewel_full_returns=False)
     with p["poll_until"], p["click_by_path"], p["is_enabled"], p["get_text"], p["jewel_full"], p["poll_interval"]:
-        await qs.run(machine, [client], {"keep_list": [], "sell_pets": True})
+        await qs.run(machine, [client], {})
 
-    line = next(msg for msg, _ in machine.logs if msg.startswith("quicksell: keep_list="))
-    assert "sell_socket_wrenches, sell_skeleton_keys from app settings" in line
-    assert "sell_pets," not in line
+    line = next(msg for msg, _ in machine.logs if msg.startswith("quicksell: enabled="))
+    assert "sell_pets=True" in line and "sell_socket_wrenches=False" in line
+    assert "'hat'" in line and "'socket wrench'" in line
+
+
+# --- the four levels, through the editor's own resolver ---------------------------
+#
+# resolve_options_for is what the Setup picker and the safety dialog read, and it
+# goes through the same four levels the run does. Asserting on it rather than on a
+# live BotMachine keeps these about precedence rather than about the FSM.
+
+
+def test_an_unset_flag_follows_the_app_setting():
+    SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
+
+    assert qs.resolve_options_for(_bot())["sell_pets"] is False
+
+
+def test_a_declared_flag_outranks_the_app_setting():
+    """An author who needs pets sold in this dungeon still gets them sold."""
+    SettingsManager.instance().set_general("default_quicksell_sell_pets", False)
+
+    config = _bot(BotOptionModel(name=qs.SELL_FLAG_OPTIONS["sell_pets"], type="bool", default=True))
+
+    assert qs.resolve_options_for(config)["sell_pets"] is True
+
+
+def test_the_users_own_value_outranks_the_declaration():
+    config = _bot(BotOptionModel(name=qs.SELL_FLAG_OPTIONS["sell_pets"], type="bool", default=True))
+    SettingsManager.instance().set_option_override(config.id, qs.SELL_FLAG_OPTIONS["sell_pets"], False)
+
+    assert qs.resolve_options_for(config)["sell_pets"] is False
+
+
+def test_a_users_keep_list_replaces_the_authors_rather_than_adding_to_it():
+    """Replace, not merge: the widget shows the resolved list and writes its whole
+    state, so a user who unticks something has actually unticked it."""
+    config = _bot(BotOptionModel(name=qs.OPTION_KEEP_LIST, type="drop_keep_list", default=["Amber"]))
+    SettingsManager.instance().set_option_override(config.id, qs.OPTION_KEEP_LIST, ["Onyx"])
+
+    assert qs.resolve_options_for(config)["keep_list"] == ["Onyx"]
+
+
+def test_enable_quicksell_defaults_to_on():
+    """Every bot sold before this option existed, and none of them opted in."""
+    assert qs.resolve_options_for(_bot())["enabled"] is True
