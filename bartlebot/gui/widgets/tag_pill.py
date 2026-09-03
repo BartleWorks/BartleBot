@@ -113,6 +113,54 @@ class TagChip(QPushButton):
             self._restyle()
 
 
+class NeutralChip(QPushButton):
+    """A grey chip that removes the word it names when clicked.
+
+    :class:`TagChip`'s shape without a tag's colour, for a list of plain strings the
+    user assembled: the quicksell keep list's keywords are the case. Colour on a chip
+    means "tag group" everywhere else in the app, so a keyword that borrowed one
+    would read as a tag.
+
+    The keep list is why this is a chip at all rather than the comma-separated line
+    edit it replaced. At a 400px sidebar that field showed the *middle* of a scrolled
+    string -- "electable Hooves, Skyscream, Frostbit, ..." -- which is neither
+    readable nor safely editable, and removing one keyword from it meant selecting
+    text between two commas.
+    """
+
+    removed = pyqtSignal(str)
+
+    def __init__(self, text: str, *, tooltip: str | None = None, parent: QWidget | None = None) -> None:
+        super().__init__(f"{text}  ✕", parent)
+        self._text = text
+        self._applying_style = False
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(tooltip or f"Remove {text}")
+        self._restyle()
+        self.clicked.connect(lambda: self.removed.emit(self._text))
+
+    @property
+    def value(self) -> str:
+        return self._text
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            base = pill_style(THEME.pill_neutral_bg, THEME.pill_text, font_size=10, radius=9, pad="2px 9px")
+            self.setStyleSheet(
+                f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
+            )
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
 class NeutralPill(QLabel):
     """A small, inert, grey pill for a caption that is not a tag.
 

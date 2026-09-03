@@ -214,41 +214,85 @@ def test_turning_quicksell_off_writes_an_override(qapp, settings):
 
 
 # ---------------------------------------------------------------------------
-# Where Reset sits
+# The gutter
 # ---------------------------------------------------------------------------
 
 
-def _reset_button(section, name):
-    return section._chrome[name].reset_btn
+def _revert_button(section, name):
+    return section._chrome[name].revert_btn
 
 
-def test_reset_sits_on_the_label_line_of_a_tall_row(qapp, settings):
-    """Beside a 220px table a Reset button centres against it -- floating in the
-    middle of the row with nothing to attach it to -- and takes its width from the
-    table for that whole height, which clips the last column."""
+def _x(section, widget) -> int:
+    return widget.mapTo(section, widget.rect().topLeft()).x()
+
+
+def test_the_gutter_buttons_line_up_across_every_shape_of_row(qapp, settings):
+    """The property the gutter exists for, and the one a later refactor would
+    quietly break. Reset used to live in two places -- on the head line for a bool
+    or a table, beside the control otherwise -- and the ``?`` followed the name, so
+    both staircased down the panel."""
+    section = _section(settings, _config())
+    section.resize(400, 900)
+    section.show()
+    qapp.processEvents()
+    try:
+        rows = [qs.OPTION_ENABLED, "Safety Delay", qs.OPTION_KEEP_LIST]  # bool, float, tall
+        revert_x = {_x(section, _revert_button(section, name)) for name in rows}
+        help_x = {_x(section, section._chrome[name].help_btn) for name in rows}
+
+        assert len(revert_x) == 1
+        assert len(help_x) == 1
+        # Revert is against the bar it agrees with; the destructive one is furthest
+        # from the text being read.
+        assert revert_x.pop() < help_x.pop()
+    finally:
+        section.hide()
+
+
+def test_the_gutter_keeps_its_help_slot_on_a_row_with_nothing_to_explain(qapp, settings):
+    """A gutter that closes up on undescribed options is not a column any more."""
+    options = [BotOptionModel(name="Passes", type="int", default=1)]  # no description
+    section = _section(settings, _config(options=options))
+    section.resize(400, 900)
+    section.show()
+    qapp.processEvents()
+    try:
+        help_btn = section._chrome["Passes"].help_btn
+
+        assert not help_btn.isVisible()
+        assert _x(section, section._chrome["Passes"].revert_btn) == _x(section, _revert_button(section, "Safety Delay"))
+        assert _x(section, help_btn) == _x(section, section._chrome["Safety Delay"].help_btn)
+    finally:
+        section.hide()
+
+
+def test_the_table_keeps_the_whole_width_of_its_row(qapp, settings):
+    """Nothing shares the value row with a 220px table any more, which is what the
+    trailing Reset used to do -- taking its width from the last column for the whole
+    height of the table."""
     section = _section(settings, _config())
     section.resize(400, 900)
     section.show()
     qapp.processEvents()
     try:
         picker = _picker(section)
-        reset = _reset_button(section, qs.OPTION_KEEP_LIST)
 
-        # Above the table, on the label's line -- not beside it.
-        assert reset.mapTo(section, reset.rect().bottomLeft()).y() <= picker.mapTo(section, picker.rect().topLeft()).y()
-        # And the table keeps the whole row width.
-        assert picker.width() == reset.parentWidget().width()
+        assert picker.width() == picker.parentWidget().width()
     finally:
         section.hide()
 
 
-def test_reset_stays_beside_a_short_control(qapp, settings):
-    section = _section(settings, _config())
+def test_reverting_still_drops_the_override(qapp, settings):
+    config = _config()
+    section = _section(settings, config)
 
-    widget = section.option_widgets["Safety Delay"]
-    reset = _reset_button(section, "Safety Delay")
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
+    assert settings.get_option_override(config.id, qs.OPTION_ENABLED) is False
 
-    assert reset.parentWidget() is widget.parentWidget()
+    _revert_button(section, qs.OPTION_ENABLED).click()
+
+    assert not settings.get("bot_option_overrides", default={}).get(config.id, {})
+    assert section.option_widgets[qs.OPTION_ENABLED].isChecked() is True
 
 
 # ---------------------------------------------------------------------------
@@ -333,7 +377,7 @@ def test_the_source_caption_shares_the_name_line(qapp, settings):
         caption = section._chrome["Safety Delay"].caption
         widget = section.option_widgets["Safety Delay"]
 
-        assert caption.text() == "from the app setting"
+        assert caption.text() == "App settings"
         assert (
             caption.mapTo(section, caption.rect().bottomLeft()).y()
             <= widget.mapTo(section, widget.rect().topLeft()).y()

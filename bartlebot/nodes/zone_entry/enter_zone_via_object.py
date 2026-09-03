@@ -79,6 +79,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "to reset between uses. Ignored unless Sequential Interaction is on."
         ),
         default=OBJECT_USE_DELAY,
+        minimum=0.0,
         default_hint=f"{OBJECT_USE_DELAY}s between uses.",
         required=False,
     ),
@@ -106,6 +107,8 @@ NODE_SPEC = NodeSpec(
             name="Safety Delay",
             type="float",
             default=3.0,
+            minimum=0.0,
+            suffix=" s",
             description=(
                 "Seconds to allow for game-server responses when waiting for prompts or menus. "
                 "Increase on high-latency connections."

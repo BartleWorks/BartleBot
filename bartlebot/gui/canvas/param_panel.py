@@ -341,6 +341,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 field.key,
                 getattr(field, "choices", []),
                 getattr(field, "placeholder", ""),
+                minimum=getattr(field, "minimum", None),
+                maximum=getattr(field, "maximum", None),
             )
             self._widgets[field.key] = widget
             if field.required:
@@ -518,7 +520,15 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         key: str = "",
         choices: list | None = None,
         placeholder: str = "",
+        minimum: float | None = None,
+        maximum: float | None = None,
     ) -> Any:
+        """Build the control for one param field.
+
+        *minimum* / *maximum* bound the numeric types only, and ``None`` keeps the
+        wide range these used to have unconditionally. A delay param that accepts a
+        negative fails silently rather than loudly -- see ``BotOptionSpec.minimum``.
+        """
         if field_type == "text":
             w = QPlainTextEdit()
             w.setPlainText(str(val) if val is not None else "")
@@ -580,7 +590,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             return w
         if field_type == "int":
             w = QSpinBox()
-            w.setRange(-999_999, 999_999)
+            w.setRange(-999_999 if minimum is None else int(minimum), 999_999 if maximum is None else int(maximum))
             try:
                 w.setValue(int(val) if val is not None else 0)
             except (TypeError, ValueError):
@@ -591,7 +601,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             return w
         if field_type == "float":
             w = QDoubleSpinBox()
-            w.setRange(-999_999.0, 999_999.0)
+            w.setRange(
+                -999_999.0 if minimum is None else float(minimum),
+                999_999.0 if maximum is None else float(maximum),
+            )
             w.setDecimals(3)
             w.setSingleStep(1.0)
             try:

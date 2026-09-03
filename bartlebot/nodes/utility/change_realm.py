@@ -76,6 +76,8 @@ NODE_SPEC = NodeSpec(
             name="Safety Delay",
             type="float",
             default=3.0,
+            minimum=0.0,
+            suffix=" s",
             description=(
                 "Seconds to allow for game-server responses when waiting for UI panels "
                 "to appear, and for the realm list to initially render. "

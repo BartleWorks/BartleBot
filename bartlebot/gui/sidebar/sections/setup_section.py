@@ -11,10 +11,16 @@ Two markings, both borrowed from the systems that solved this before us:
 
 * an **inherited** caption naming the level that answered -- the safety dialog's
   ``(app setting)`` suffix generalised to all four levels;
-* a coloured **left bar** plus a **Reset** button on any row the user has
-  overridden, following VS Code's settings gutter and Unity's prefab overrides.
+* a coloured **left bar** plus an enabled **revert** button on any row the user
+  has overridden, following VS Code's settings gutter and Unity's prefab
+  overrides.
 
-The Reset tooltip names the value a reset would fall back to, which is the free
+Those two live in a fixed leading **gutter**, ``[bar][revert][?]``, which is what
+gives every row's chrome one column each instead of a staircase -- see
+``_build_row`` for why no other placement does.  The accepted cost is roughly
+40px of permanent, mostly blank left inset.
+
+The revert tooltip names the value a reset would fall back to, which is the free
 mitigation for the one accepted cost of storing overrides as bare values: an
 author who later improves their declaration is outranked silently, so the
 one-way door has to be visibly openable.
@@ -38,8 +44,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QFont, QFontMetrics
 from PyQt6.QtWidgets import (
-    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -53,6 +59,8 @@ from bartlebot.bot_options import UNSET, compose_options, is_set, values_agree
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.icon_button import ThemedIconButton
+from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.option_widgets import (
     TALL_TYPES,
     connect_widget,
@@ -71,15 +79,28 @@ logger = logging.getLogger(__name__)
 _PLACEHOLDER = "—"
 _BAR_WIDTH_PX = 3
 
+# The leading gutter: [bar][revert][?], then the row's own content.  Both buttons
+# are 20px targets around 16px glyphs, and both are *always* present -- a slot that
+# collapses when a row has no description is a column that is not a column.
+_GUTTER_BTN_PX = 20
+_GUTTER_GAP_PX = 2
+_GUTTER_TO_BODY_PX = 5
+
 # What to print under a row, naming the level that answered.  Every level has an
 # entry, including the user's own: a caption that appears and disappears would
 # move every row beneath it each time a value was typed.
 _SOURCE_CAPTION: dict[str, str] = {
-    bot_options.SOURCE_OVERRIDE: "your value",
-    bot_options.SOURCE_BOT_FILE: "from the bot",
-    bot_options.SOURCE_APP_SETTING: "from the app setting",
-    bot_options.SOURCE_NODE_DEFAULT: "from the node default",
+    bot_options.SOURCE_OVERRIDE: "Your value",
+    bot_options.SOURCE_BOT_FILE: "Bot default",
+    bot_options.SOURCE_APP_SETTING: "App settings",
+    bot_options.SOURCE_NODE_DEFAULT: "Default",
 }
+
+#: Pixel size of the source caption.  Set on the *font* rather than in the style
+#: sheet, because a style sheet's ``font-size`` never reaches ``QWidget.font()`` and
+#: the slot below is measured from the font -- the same trap the run status label in
+#: ``canvas/bot_header.py`` documents.
+_CAPTION_PX = 9
 
 
 def _ordered(options: list) -> list:
@@ -127,9 +148,13 @@ class _HelpToggle(ThemedMixin, QPushButton):
     Quick Help, Unreal's property tooltips).  This is that affordance, and it is a
     *button* rather than a hover tooltip because the prose is load-bearing -- the
     only thing that keeps a pet is a sentence in one of these.
+
+    It sits in the row's leading gutter, against the name it explains, and keeps
+    its slot on a row that has no description to show -- so the column stays a
+    column whatever mix of options a bot happens to declare.
     """
 
-    _SIZE_PX = 16
+    _SIZE_PX = _GUTTER_BTN_PX
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__("?", parent)
@@ -145,8 +170,55 @@ class _HelpToggle(ThemedMixin, QPushButton):
         # over, so it is the same shape and the same accent, only smaller.
         self.setStyleSheet(
             f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 3px; color: {THEME.accent}; font-weight: bold; font-size: 10px; padding: 0; }}"
+            f"border-radius: 3px; color: {THEME.accent}; font-weight: bold; font-size: 11px; padding: 0; }}"
             f"QPushButton:hover, QPushButton:checked {{ background: {THEME.accent}; color: #ffffff; }}"
+        )
+
+
+class _SourceCaption(ThemedTextLabel):
+    """The right-hand end of a row's head line, naming the level that answered.
+
+    Given a **fixed** slot, wide enough for the longest of the four words, and
+    right-aligned inside it.  The word changes as a value is edited, and a caption
+    that resized with its own text would drag the option's name sideways on every
+    keystroke -- the same reasoning as ``_size_status_slots`` in
+    ``canvas/bot_header.py``, which reserves equal widths either side of the
+    transport for exactly this.  The slot is a *minimum*: an unforeseen longer word
+    widens it rather than being clipped.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__("", color="text_disabled", parent=parent)
+        self.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        font = QFont(THEME.font_ui_family)
+        font.setPixelSize(_CAPTION_PX)
+        self.setFont(font)
+        metrics = QFontMetrics(font)
+        self.setMinimumWidth(max(metrics.horizontalAdvance(text) for text in _SOURCE_CAPTION.values()))
+        super().apply_theme_styles()
+
+
+class _RevertButton(ThemedIconButton):
+    """Discards the user's value for one row, putting the inherited one back.
+
+    Icon-only, and less discoverable than the word "Reset" it replaces -- the two
+    mitigations are that it tints ``THEME.accent`` only while there is something to
+    discard, and that its tooltip names the value and the level a click falls back
+    to.  It sits against the override bar because the two say the same thing: both
+    are set by the same two lines of ``_refresh_row``, and adjacent they read as one
+    affordance instead of two facts to correlate.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(
+            "revert",
+            size=_GUTTER_BTN_PX,
+            icon_size=16,
+            accent_when_enabled=True,
+            parent=parent,
         )
 
 
@@ -156,10 +228,10 @@ class _RowChrome:
 
     widget: QWidget
     bar: _OverrideBar
-    reset_btn: QPushButton
-    caption: ThemedTextLabel
+    revert_btn: _RevertButton
+    caption: _SourceCaption
+    help_btn: _HelpToggle
     description: QWidget | None = None
-    help_btn: _HelpToggle | None = None
 
 
 class SetupSection(SidebarSection):
@@ -171,7 +243,7 @@ class SetupSection(SidebarSection):
     values_changed = pyqtSignal()
 
     def __init__(self, parent=None, settings: SettingsManager | None = None):
-        super().__init__("Setup", parent)
+        super().__init__("Bot Settings", parent)
         self._config: BotConfig | None = None
         self._settings = settings
         self._rows: list[QWidget] = []
@@ -187,11 +259,18 @@ class SetupSection(SidebarSection):
         # One switch for the reader who wants the whole tab as a document, rather
         # than a row at a time.  Off by default, and remembered: it is a property of
         # the person reading, not of the bot.
-        self._show_all = QCheckBox("Show descriptions")
-        self._show_all.setChecked(self._show_descriptions)
+        #
+        # A link rather than a check box, and at the top of the *body* rather than on
+        # the section header.  A tick box captioned "Show descriptions" sitting above
+        # a list of options reads as the first option; a link whose text names what a
+        # click will do states its effect without a state to be read first.  The
+        # header is a click-through row that toggles the section, so a control inside
+        # it would be a hit-testing problem for no gain -- and it would hide with the
+        # section it belongs to.
+        self._show_all = LinkButton(self._show_all_text())
         self._show_all.setToolTip("Show every option's description, instead of one at a time")
-        self._show_all.toggled.connect(self._on_show_all_toggled)
-        outer.addWidget(self._show_all)
+        self._show_all.clicked.connect(lambda: self._on_show_all_toggled(not self._show_descriptions))
+        outer.addWidget(self._show_all, 0, Qt.AlignmentFlag.AlignLeft)
 
         self._rows_layout = QVBoxLayout()
         self._rows_layout.setSpacing(6)
@@ -242,7 +321,8 @@ class SetupSection(SidebarSection):
 
     def set_descriptions_visible(self, shown: bool) -> None:
         """Show or fold every option's description, exactly as the switch would."""
-        self._show_all.setChecked(shown)
+        if shown != self._show_descriptions:
+            self._on_show_all_toggled(shown)
 
     def resolution_for(self, name: str) -> bot_options.OptionResolution | None:
         """The effective value of *name* and the level that supplied it."""
@@ -328,11 +408,22 @@ class SetupSection(SidebarSection):
         self._push_keep_list_context()
 
     def _build_row(self, opt, connected: int) -> QWidget:
-        """One option's row. Every piece of chrome is built once and updated after.
+        """One option's row: a fixed leading gutter, then a head line and a control.
 
-        Nothing here appears or disappears with the override state: the bar keeps
-        its width and changes colour, Reset keeps its place and greys out, and the
-        caption always names a level. Chrome that comes and goes as you type moves
+        The gutter is ``[bar][revert][?]``, and it is the only placement that gives
+        those two buttons one column each.  Right-aligning the ``?`` gives *two*
+        columns rather than one, because the head line's right edge sits at two
+        different x values; a fixed-width name column fails on any long name, and on
+        a bool row, which has no separate label at all.  In the gutter both buttons
+        top-align with the head line whether the row is 20px tall or 240.
+
+        Revert sits against the ``_OverrideBar`` it agrees with, ``?`` against the
+        name it explains -- so the destructive button is the one furthest from the
+        text being read.
+
+        Nothing here appears or disappears with the override state: the bar keeps its
+        width and changes colour, revert keeps its slot and greys out, and the
+        caption always names a level.  Chrome that comes and goes as you type moves
         everything under it, which on a spin box means the second click of a pair
         lands somewhere else.
 
@@ -352,19 +443,19 @@ class SetupSection(SidebarSection):
             connected=connected,
             tooltip=opt.description or "",
             label=opt.name,
+            minimum=getattr(opt, "minimum", None),
+            maximum=getattr(opt, "maximum", None),
+            suffix=getattr(opt, "suffix", None),
             get_drops=self._drops,
             get_clients=lambda: self._get_clients(),
         )
-        tall = opt.type in TALL_TYPES
         is_bool = opt.type == "bool"
-        reset_btn = QPushButton("Reset")
-        reset_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
-        caption = ThemedTextLabel("", color="text_disabled", css="font-size: 9px;")
+        caption = _SourceCaption()
 
-        # The head line carries everything that names the row: what it is called,
-        # the affordance for its description, and -- right-aligned -- the level its
-        # value came from.  The caption used to have a line of its own beneath the
-        # control, which cost every row 12px to say four words.
+        # The head line is the same shape on every row -- name on the left, source on
+        # the right -- now that the ``?`` has moved into the gutter.  The caption used
+        # to have a line of its own beneath the control, which cost every row 12px to
+        # say two words.
         head = QHBoxLayout()
         head.setContentsMargins(0, 0, 0, 0)
         head.setSpacing(4)
@@ -379,32 +470,12 @@ class SetupSection(SidebarSection):
                 # the only one, and a tooltip costs no height.
                 lbl.setToolTip(opt.description)
             head.addWidget(lbl, 0)
-
-        help_btn: _HelpToggle | None = None
-        if opt.description:
-            help_btn = _HelpToggle()
-            help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
-            head.addWidget(help_btn, 0)
         head.addStretch(1)
         head.addWidget(caption, 0)
-        # Reset joins the head line whenever there is no short control to sit beside:
-        # against a 220px table it would otherwise centre on the table's midpoint,
-        # floating with nothing to attach it to, and take its width from the last
-        # column for that whole height.
-        if is_bool or tall:
-            head.addWidget(reset_btn, 0)
         body_layout.addLayout(head)
 
-        if tall:
+        if not is_bool:
             body_layout.addWidget(widget)
-        elif not is_bool:
-            value_row = QWidget()
-            value_layout = QHBoxLayout(value_row)
-            value_layout.setContentsMargins(0, 0, 0, 0)
-            value_layout.setSpacing(4)
-            value_layout.addWidget(widget, 1)
-            value_layout.addWidget(reset_btn, 0)
-            body_layout.addWidget(value_row)
 
         description: QWidget | None = None
         if opt.description:
@@ -414,8 +485,6 @@ class SetupSection(SidebarSection):
             description.setWordWrap(True)
             description.setVisible(self._show_descriptions)
             body_layout.addWidget(description)
-            if help_btn is not None:
-                help_btn.setChecked(self._show_descriptions)
 
         connect_widget(widget, lambda new_value, name=opt.name: self._on_value_changed(name, new_value))
         self._option_widgets[opt.name] = widget
@@ -423,20 +492,40 @@ class SetupSection(SidebarSection):
         # The bar is a sibling of the body, not a border on it: a stylesheet border
         # set on the row would be inherited by every control inside it.
         bar = _OverrideBar()
+        revert_btn = _RevertButton()
+        revert_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
+
+        help_btn = _HelpToggle()
+        help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
+        if description is None:
+            # Hidden, but still taking its space: a gutter that closes up on the rows
+            # with nothing to explain is not a column any more.
+            policy = help_btn.sizePolicy()
+            policy.setRetainSizeWhenHidden(True)
+            help_btn.setSizePolicy(policy)
+            help_btn.setVisible(False)
+        else:
+            help_btn.setChecked(self._show_descriptions)
+
         outer = QWidget()
         outer_layout = QHBoxLayout(outer)
         outer_layout.setContentsMargins(0, 0, 0, 0)
-        outer_layout.setSpacing(5)
+        outer_layout.setSpacing(0)
+        top = Qt.AlignmentFlag.AlignTop
         outer_layout.addWidget(bar)
+        outer_layout.addSpacing(_GUTTER_GAP_PX)
+        outer_layout.addWidget(revert_btn, 0, top)
+        outer_layout.addWidget(help_btn, 0, top)
+        outer_layout.addSpacing(_GUTTER_TO_BODY_PX)
         outer_layout.addWidget(body, 1)
 
         self._chrome[opt.name] = _RowChrome(
             widget=widget,
             bar=bar,
-            reset_btn=reset_btn,
+            revert_btn=revert_btn,
             caption=caption,
-            description=description,
             help_btn=help_btn,
+            description=description,
         )
         self._refresh_row(opt.name)
         return outer
@@ -483,9 +572,12 @@ class SetupSection(SidebarSection):
         if chrome is None or resolution is None:
             return
         overridden = resolution.source == bot_options.SOURCE_OVERRIDE
+        # These two lines are the whole reason revert sits against the bar: they are
+        # one fact -- "this value is yours" -- said twice, and adjacent they read as
+        # one affordance rather than two marks to correlate across a row.
         chrome.bar.set_active(overridden)
-        chrome.reset_btn.setEnabled(overridden)
-        chrome.reset_btn.setToolTip(
+        chrome.revert_btn.setEnabled(overridden)
+        chrome.revert_btn.setToolTip(
             self._reset_tooltip(name) if overridden else "Already the value this option resolves to"
         )
         chrome.caption.setText(_SOURCE_CAPTION.get(resolution.source, ""))
@@ -507,14 +599,29 @@ class SetupSection(SidebarSection):
             declared_type=opt.type,
             app_value=self._app_value(name),
             spec_default=opt.default,
+            minimum=getattr(opt, "minimum", None),
+            maximum=getattr(opt, "maximum", None),
         )
 
     def _reset_tooltip(self, name: str) -> str:
-        """Name the value a reset would fall back to, and the level it comes from."""
+        """Name the value a reset would fall back to, and the level it comes from.
+
+        This is the mitigation for two things at once: an icon-only button is less
+        discoverable than the word it replaced, and storing overrides as bare values
+        means an author who later improves their declaration is outranked silently.
+        Both are answered by saying, on hover, exactly what a click would leave
+        behind.
+
+        The level is named in running prose rather than parenthesised as a
+        capitalised noun phrase -- "Reset to 3.0 - app settings", not
+        "Reset to 3.0 (App settings)".  The captions are labels on a column and are
+        capitalised for that; a tooltip is a sentence.
+        """
         fallback = self._fallback_for(name)
         if fallback is None:
             return "Reset to the value this bot recommends"
-        return f"Reset to {fallback.value!r} ({_SOURCE_CAPTION.get(fallback.source, fallback.source)})"
+        level = _SOURCE_CAPTION.get(fallback.source, fallback.source).lower()
+        return f"Reset to {fallback.value!r} \u2014 {level}"
 
     # ------------------------------------------------------------------
     # Edits
@@ -547,6 +654,10 @@ class SetupSection(SidebarSection):
         self._push_keep_list_context()
         self.values_changed.emit()
 
+    def _show_all_text(self) -> str:
+        """What the switch says it will do, which is the opposite of the current state."""
+        return "Hide descriptions" if self._show_descriptions else "Show descriptions"
+
     def _read_show_descriptions(self) -> bool:
         try:
             return bool(self._sm().get("general", "show_option_descriptions", default=False))
@@ -566,9 +677,9 @@ class SetupSection(SidebarSection):
             self._sm().set("general", "show_option_descriptions", value=shown)
         except Exception:
             logger.exception("Failed to remember whether option descriptions are shown")
+        self._show_all.setText(self._show_all_text())
         for chrome in self._chrome.values():
-            if chrome.help_btn is not None:
-                chrome.help_btn.setChecked(shown)
+            chrome.help_btn.setChecked(shown)
 
     def _set_row_description(self, name: str, shown: bool) -> None:
         """Fold one row's description in or out, leaving every other row alone."""

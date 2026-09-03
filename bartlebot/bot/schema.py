@@ -108,6 +108,13 @@ class BotOptionModel(BaseModel):
     # which is what lets the app setting below it be reachable at all.
     default: bool | int | float | str | list[int] | list[str] | None = None
     description: str | None = None
+    # Bounds and unit, carried onto a *composed* declaration from its BotOptionSpec.
+    # Derived, never persisted -- exactly like type and description: storable_options
+    # rebuilds a derived option without them, and an author's own option never sets
+    # one, so exclude_none keeps all three out of every file.
+    minimum: float | None = None
+    maximum: float | None = None
+    suffix: str | None = None
 
 
 # Maps old named region color keys to numbered slots for backward compatibility.

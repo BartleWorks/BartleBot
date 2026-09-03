@@ -32,6 +32,7 @@ from bartlebot.bot_options import (
     UNSET,
     resolve_option,
     value_matches_type,
+    value_within_bounds,
 )
 from bartlebot.settings_manager import SettingsManager
 
@@ -155,6 +156,73 @@ def test_an_override_of_an_untyped_option_is_kept():
     got = resolve_option("Whatever", override="anything", declaration=None, spec_default=1)
 
     assert got.source == SOURCE_OVERRIDE
+
+
+# ---------------------------------------------------------------------------
+# resolve_option — a value outside the option's range (#182)
+# ---------------------------------------------------------------------------
+
+
+def test_a_negative_override_of_a_bounded_option_falls_through_to_the_app_setting():
+    """A negative Safety Delay fails silently rather than loudly: asyncio.sleep
+    returns at once, the ambient watcher never enters fast-poll, and every window
+    polled *for* that many seconds expires on its first check. The spin box cannot
+    be the only guard -- a value can arrive from a hand-edited settings.json."""
+    got = resolve_option(
+        "Safety Delay",
+        override=-1.0,
+        declaration=None,
+        declared_type="float",
+        app_value=3.0,
+        spec_default=3.0,
+        minimum=0.0,
+    )
+
+    assert (got.value, got.source) == (3.0, SOURCE_APP_SETTING)
+
+
+def test_a_negative_value_in_the_bot_file_is_discarded_too():
+    """Both files are hand-editable, so both go through the same funnel."""
+    got = resolve_option(
+        "Safety Delay",
+        declaration=-1.0,
+        declared_type="float",
+        app_value=UNSET,
+        spec_default=3.0,
+        minimum=0.0,
+    )
+
+    assert (got.value, got.source) == (3.0, SOURCE_NODE_DEFAULT)
+
+
+def test_a_value_at_the_boundary_is_kept():
+    got = resolve_option("Safety Delay", override=0.0, declared_type="float", spec_default=3.0, minimum=0.0)
+
+    assert (got.value, got.source) == (0.0, SOURCE_OVERRIDE)
+
+
+def test_an_out_of_range_value_is_discarded_and_never_clamped():
+    """Coercing -1 to 0 would hide a wrong file behind a value nobody chose."""
+    got = resolve_option("Passes", override=99, declared_type="int", spec_default=1, minimum=0.0, maximum=10.0)
+
+    assert got.value == 1
+
+
+@pytest.mark.parametrize(
+    ("value", "minimum", "maximum", "expected"),
+    [
+        (3.0, 0.0, None, True),
+        (-0.1, 0.0, None, False),
+        (0.0, 0.0, None, True),
+        (11, None, 10.0, False),
+        (False, 0.0, None, True),  # a bool is not the number zero here
+        ("3", 0.0, None, True),  # nothing to compare; the type check owns this
+        ([], 0.0, None, True),
+        (-5, None, None, True),
+    ],
+)
+def test_value_within_bounds(value, minimum, maximum, expected):
+    assert value_within_bounds(value, minimum, maximum) is expected
 
 
 @pytest.mark.parametrize(

@@ -225,19 +225,22 @@ def test_resetting_puts_the_resolved_value_back_on_screen(qapp, settings):
     assert settings.get("bot_option_overrides") == {}
 
 
-def test_the_reset_button_is_enabled_only_while_a_value_is_overridden(qapp, settings):
+def test_revert_is_enabled_exactly_while_the_value_is_the_users(qapp, settings):
+    """Revert going live and the override bar going accent are one fact said twice,
+    which is why they sit next to each other in the gutter."""
     config = _config([_repeat(default=True)])
     section = SetupSection(settings=settings)
     section.set_config(config)
     chrome = section._chrome["repeat"]
 
-    assert not chrome.reset_btn.isEnabled()
+    assert not chrome.revert_btn.isEnabled()
 
     section.option_widgets["repeat"].setChecked(False)
-    assert chrome.reset_btn.isEnabled()
+    assert chrome.revert_btn.isEnabled()
+    assert section.resolution_for("repeat").source == bot_options.SOURCE_OVERRIDE
 
     section._on_reset("repeat")
-    assert not chrome.reset_btn.isEnabled()
+    assert not chrome.revert_btn.isEnabled()
 
 
 def test_a_false_override_is_a_choice_and_survives_a_rebuild(qapp, settings):

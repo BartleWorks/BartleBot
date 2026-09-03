@@ -31,6 +31,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "the slack this player's connection needs on top of it."
         ),
         default=INTERACT_ANIMATION_DELAY,
+        minimum=0.0,
         default_hint="No animation to wait out.",
         required=False,
     ),
@@ -53,6 +54,8 @@ NODE_SPEC = NodeSpec(
             name="Safety Delay",
             type="float",
             default=3.0,
+            minimum=0.0,
+            suffix=" s",
             description=(
                 "Seconds to allow for game-server responses when waiting for prompts or menus. "
                 "Increase on high-latency connections."

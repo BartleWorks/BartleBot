@@ -149,6 +149,23 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
     return True
 
 
+def value_within_bounds(value: Any, minimum: float | None, maximum: float | None) -> bool:
+    """Whether *value* sits inside the option's declared range.
+
+    Only numbers are bounded, and a bool is never one of them: ``False`` is not the
+    number zero here, the same distinction :func:`values_agree` draws.  A value of
+    any other shape passes -- this gates a discard, and discarding what the bounds
+    do not describe would throw away a good value.
+    """
+    if minimum is None and maximum is None:
+        return True
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return True
+    if minimum is not None and value < minimum:
+        return False
+    return not (maximum is not None and value > maximum)
+
+
 def resolve_option(
     name: str,
     *,
@@ -157,8 +174,16 @@ def resolve_option(
     declared_type: str | None = None,
     app_value: Any = UNSET,
     spec_default: Any = None,
+    minimum: float | None = None,
+    maximum: float | None = None,
 ) -> OptionResolution:
     """Resolve one option through the four levels, most local first.
+
+    A level whose value is the wrong type, or outside the option's declared range,
+    is **discarded with a warning** and the level below it answers instead.  Never
+    coerced: clamping a hand-edited ``-1`` to ``0`` would hide a wrong file, and
+    this is the one funnel every consumer of an option goes through, so it is the
+    only place a value arriving from outside the UI can be caught at all.
 
     Args:
         name:          Option name, used only in the discard warning.
@@ -167,22 +192,44 @@ def resolve_option(
         declared_type: The option's declared type, used to discard a stale override.
         app_value:     The matching app setting, or ``UNSET`` if the option has none.
         spec_default:  The ``BotOptionSpec`` default -- the floor, always answers.
+        minimum:       Lowest value any level may supply, or ``None`` for no floor.
+        maximum:       Highest value any level may supply, or ``None`` for no ceiling.
     """
-    if not isinstance(override, _Unset):
-        if value_matches_type(override, declared_type):
-            return OptionResolution(override, SOURCE_OVERRIDE)
-        # An author who changes an option's type strands every stored override of
-        # it. Nothing here raises, so a kept value would reach the node as the
-        # wrong type and fail somewhere with no mention of where it came from.
-        logger.warning(
-            "Discarding your saved value for %r: it is %s, but the option is now %s.",
-            name,
-            type(override).__name__,
-            declared_type,
-        )
-    if declaration is not None:
+
+    def usable(value: Any, level: str, *, check_type: bool = False) -> bool:
+        # The type check is the *override's* alone: an author who changes an option's
+        # type strands every stored override of it, and nothing here raises, so a kept
+        # value would reach the node as the wrong type and fail somewhere with no
+        # mention of where it came from. A declaration's type is the one the file
+        # itself states, so there is nothing to disagree with.
+        if check_type and not value_matches_type(value, declared_type):
+            logger.warning(
+                "Discarding %s for %r: it is %s, but the option is now %s.",
+                level,
+                name,
+                type(value).__name__,
+                declared_type,
+            )
+            return False
+        # Bounds apply at every level, because a value can arrive from a hand-edited
+        # settings.json *or* bot file and this is the one funnel both go through.
+        if not value_within_bounds(value, minimum, maximum):
+            logger.warning(
+                "Discarding %s for %r: %r is outside the allowed range (%s to %s).",
+                level,
+                name,
+                value,
+                "any" if minimum is None else minimum,
+                "any" if maximum is None else maximum,
+            )
+            return False
+        return True
+
+    if not isinstance(override, _Unset) and usable(override, "your saved value", check_type=True):
+        return OptionResolution(override, SOURCE_OVERRIDE)
+    if declaration is not None and usable(declaration, "the bot file's value"):
         return OptionResolution(declaration, SOURCE_BOT_FILE)
-    if not isinstance(app_value, _Unset) and app_value is not None:
+    if not isinstance(app_value, _Unset) and app_value is not None and usable(app_value, "the app setting"):
         return OptionResolution(app_value, SOURCE_APP_SETTING)
     return OptionResolution(spec_default, SOURCE_NODE_DEFAULT)
 
@@ -270,6 +317,9 @@ def compose_options(config, specs=None) -> list:
                 type=spec.type,
                 default=spec.default if opt is None or opt.default is None else opt.default,
                 description=spec.description,
+                minimum=spec.minimum,
+                maximum=spec.maximum,
+                suffix=spec.suffix,
             )
         )
     return composed
@@ -409,4 +459,6 @@ def resolve_for_config(
         declared_type=declared_type,
         app_value=app_value,
         spec_default=spec.default if spec is not None else default,
+        minimum=getattr(spec, "minimum", None),
+        maximum=getattr(spec, "maximum", None),
     )

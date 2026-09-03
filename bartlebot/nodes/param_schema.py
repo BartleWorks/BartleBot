@@ -17,6 +17,16 @@ class BotOptionSpec:
         type:        One of "bool", "int", "float", "str", "player_list".
         default:     Default value shown in the sidebar.
         description: Tooltip shown next to the option widget.
+        minimum:     Lowest value the option may take, or None for no floor. Enforced in
+                     two places, and both are needed: the control clamps what can be
+                     typed, and resolve_option discards an out-of-range value that
+                     arrived from a hand-edited settings.json or bot file. A negative
+                     Safety Delay is the case -- it fails silently rather than loudly,
+                     since asyncio.sleep returns at once and every window polled *for*
+                     that many seconds expires on its first check (#182).
+        maximum:     Highest value the option may take, or None for no ceiling.
+        suffix:      Unit shown inside the control, e.g. " s". Presentation only; the
+                     stored value is the bare number.
         required_when: Key of a bool param on the *same node*; the option is required
                      only while that param is True. Empty string = always required.
 
@@ -31,6 +41,9 @@ class BotOptionSpec:
     type: str
     default: bool | int | float | str | list = 0.0
     description: str | None = None
+    minimum: float | None = None
+    maximum: float | None = None
+    suffix: str | None = None
     required_when: str = ""
 
 
@@ -57,6 +70,8 @@ class ParamField:
         label:        Human-readable form label.
         help:         Tooltip / documentation text shown on hover.
         default:      Value used when no existing param data is present.
+        minimum:      Lowest value a numeric param may take, or None for no floor.
+        maximum:      Highest value a numeric param may take, or None for no ceiling.
         default_hint: Short description of the default behaviour shown as a dimmed hint
                       below the input widget when the field is optional. Leave blank for
                       required fields or fields where the default needs no explanation.
@@ -79,6 +94,8 @@ class ParamField:
     help: str = ""
     default: Any = None
     default_hint: str = ""
+    minimum: float | None = None
+    maximum: float | None = None
     placeholder: str = ""
     disabled_by: str = ""
     enabled_by: str = ""
