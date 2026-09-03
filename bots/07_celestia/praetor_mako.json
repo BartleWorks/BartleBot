@@ -511,7 +511,16 @@
     "Gear",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Atavistic",
+        "Accurate"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -754,12 +763,7 @@
         "x": 5280.0,
         "y": -90.0
       },
-      "params": {
-        "keep_list": [
-          "Atavistic",
-          "Accurate"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

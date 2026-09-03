@@ -1330,7 +1330,16 @@
     "Gear",
     "Dungeon"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Atavistic",
+        "Bygone"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -2262,12 +2271,7 @@
         "x": 13640.0,
         "y": -360.0
       },
-      "params": {
-        "keep_list": [
-          "Atavistic",
-          "Bygone"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

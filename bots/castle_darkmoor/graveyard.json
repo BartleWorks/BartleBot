@@ -843,9 +843,7 @@
         "x": 1320.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": []
-      }
+      "params": {}
     },
     {
       "id": "state_3",

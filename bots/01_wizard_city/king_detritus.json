@@ -296,7 +296,15 @@
     "Reagents",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Vanguard"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -568,11 +576,7 @@
         "x": 7920.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Vanguard"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_18",

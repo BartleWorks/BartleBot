@@ -170,7 +170,15 @@
     "Pets",
     "Dungeon"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Potbelly"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -519,11 +527,7 @@
         "x": 1760.0,
         "y": -90.0
       },
-      "params": {
-        "keep_list": [
-          "Potbelly"
-        ]
-      }
+      "params": {}
     }
   ],
   "transitions": [

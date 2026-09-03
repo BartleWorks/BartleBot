@@ -787,7 +787,20 @@
     "Gear",
     "Dungeon"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Oni"
+      ]
+    },
+    {
+      "name": "Sell Skeleton Keys",
+      "type": "bool",
+      "default": true
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -1225,12 +1238,7 @@
         "x": 9680.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Oni"
-        ],
-        "sell_skeleton_keys": true
-      }
+      "params": {}
     }
   ],
   "transitions": [

@@ -302,6 +302,14 @@
       "type": "bool",
       "default": false,
       "description": "Whether or not to fail the puzzle that Eris gives you. If failed, the puzzle will spawn the Carthaginian Elephant, which drops the Fiery Skeleturion pet."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Zeus",
+        "Heavenly"
+      ]
     }
   ],
   "states": [
@@ -1595,12 +1603,7 @@
         "x": 28600.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Zeus",
-          "Heavenly"
-        ]
-      },
+      "params": {},
       "notes": "Helmet of Heavenly Gaze is the Fire Zeus hat, and is the only piece of of the Zeus gear set that does not have the word Zeus in the name."
     },
     {

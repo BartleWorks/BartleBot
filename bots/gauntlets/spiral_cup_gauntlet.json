@@ -389,6 +389,15 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to defeat Barbarous van der Borst. Does NOT drop energy gear."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Greenwarden's Energetic Boots",
+        "Greenwarden's Energetic Mask",
+        "Greenwarden's Energetic Shroud"
+      ]
     }
   ],
   "states": [
@@ -934,16 +943,7 @@
         "x": 12320.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Greenwarden's Energetic Boots",
-          "Greenwarden's Energetic Mask",
-          "Greenwarden's Energetic Shroud"
-        ],
-        "sell_pets": null,
-        "sell_socket_wrenches": null,
-        "sell_skeleton_keys": null
-      }
+      "params": {}
     }
   ],
   "transitions": [

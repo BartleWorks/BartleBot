@@ -604,6 +604,23 @@
       "type": "bool",
       "default": true,
       "description": "REQUIRES 4 PLAYERS TO WORK. If enabled, respawns Sylster Glowstorm by exiting and re-entering the main room."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Mastery",
+        "Savory Shroud",
+        "Tasty Tunic",
+        "Delectable Hooves",
+        "Skyscream",
+        "Frostbit",
+        "Firestarter",
+        "Hangman",
+        "Tricksy",
+        "Esprit",
+        "Judgment"
+      ]
     }
   ],
   "states": [
@@ -1751,21 +1768,7 @@
         "x": 22880.0,
         "y": -180.0
       },
-      "params": {
-        "keep_list": [
-          "Mastery",
-          "Savory Shroud",
-          "Tasty Tunic",
-          "Delectable Hooves",
-          "Skyscream",
-          "Frostbit",
-          "Firestarter",
-          "Hangman",
-          "Tricksy",
-          "Esprit",
-          "Judgment"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_55",

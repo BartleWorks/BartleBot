@@ -893,7 +893,20 @@
     "Seeds",
     "Mobs"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Boon",
+        "Giver",
+        "Dealer",
+        "Armor",
+        "Spell",
+        "Shot"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_1",
@@ -1052,16 +1065,7 @@
         "x": 4400.0,
         "y": -90.0
       },
-      "params": {
-        "keep_list": [
-          "Boon",
-          "Giver",
-          "Dealer",
-          "Armor",
-          "Spell",
-          "Shot"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_11",

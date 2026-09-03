@@ -921,6 +921,19 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to skip the Observatory puzzle at the end of the dungeon."
+    },
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Carpathes",
+        "Chaplet",
+        "Betrayed",
+        "Werewolf",
+        "Lovelorn",
+        "Deception",
+        "Unchecked"
+      ]
     }
   ],
   "states": [
@@ -1535,17 +1548,7 @@
         "x": 1320.0,
         "y": 0.0
       },
-      "params": {
-        "keep_list": [
-          "Carpathes",
-          "Chaplet",
-          "Betrayed",
-          "Werewolf",
-          "Lovelorn",
-          "Deception",
-          "Unchecked"
-        ]
-      }
+      "params": {}
     },
     {
       "id": "state_34",
