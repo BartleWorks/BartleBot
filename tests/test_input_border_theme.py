@@ -16,7 +16,7 @@ import sys
 
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QImage
+from PyQt6.QtGui import QColor, QImage
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -97,21 +97,47 @@ def _right_edge_px(image: QImage) -> int:
     return n
 
 
+# How far a pixel may sit from the tint and still be counted as part of the arrow,
+# per channel.  Wide enough to take in the antialiased body of the triangle, and far
+# narrower than the gap between either tint and anything else the control draws --
+# the nearest is the enabled tint against the disabled one, which no tolerance short
+# of 114 could confuse.
+_ARROW_TOLERANCE = 10
+
+
 def _arrow_pixels(widget: QWidget, colour: str) -> int:
-    """Pixels of exactly *colour* in the right-hand end of *widget*.
+    """Pixels close to *colour* in the right-hand end of *widget*.
 
     The arrow is a solid triangle in a colour nothing else in the control uses, so it
-    is counted by matching that colour rather than by subtracting a background. Most
-    of the triangle is a blend — it is a scaled image, and the tests run on the real
-    platform plugin, so a display scale of 125% antialiases it — but its interior
-    survives, and the count is a clean handful against a flat zero.
+    is counted by matching that colour rather than by subtracting a background.
+
+    Near, not exact, because the triangle is an image scaled from 18px into a 9px box
+    and these tests run on the real platform plugin: how much of it survives as the
+    unblended tint is a property of the display the suite happens to be running on.
+    Measured here, at 100% scale every case gives 7 exact pixels; at 125% the same
+    four give 3, 4, 2, 2 -- so a threshold of three passed the light theme by a single
+    pixel and failed the dark one outright, on nothing but a docking change.  With the
+    tolerance the count is 10 at either scale, against a flat zero for a control with
+    no arrow, which is the distinction being drawn.
     """
     image = _render(widget)
+    want = QColor(colour)
     return sum(
         1
         for y in range(image.height())
         for x in range(image.width() - 30, image.width())
-        if image.pixelColor(x, y).name() == colour
+        if _within(image.pixelColor(x, y), want, _ARROW_TOLERANCE)
+    )
+
+
+def _within(pixel: QColor, target: QColor, tolerance: int) -> bool:
+    """True when no channel of *pixel* is more than *tolerance* from *target*'s."""
+    return all(
+        abs(a - b) <= tolerance
+        for a, b in zip(
+            (pixel.red(), pixel.green(), pixel.blue()),
+            (target.red(), target.green(), target.blue()),
+        )
     )
 
 
@@ -194,7 +220,7 @@ def test_a_dropdown_still_has_an_arrow(themed_app):
     the arrow back are separate, and dropping the second leaves a combo box that is
     indistinguishable from a text field.
     """
-    assert _arrow_pixels(_combo(), themed_app.icon_tint) >= 3
+    assert _arrow_pixels(_combo(), themed_app.icon_tint) >= 5
     assert _arrow_pixels(QLineEdit(), themed_app.icon_tint) == 0
 
 
@@ -205,7 +231,7 @@ def test_a_disabled_dropdown_keeps_its_arrow_dimmed(themed_app):
     answer, so both halves are asserted: an arrow is there, and it is not the enabled
     one merely inherited.
     """
-    assert _arrow_pixels(_combo(enabled=False), themed_app.text_disabled) >= 3
+    assert _arrow_pixels(_combo(enabled=False), themed_app.text_disabled) >= 5
     assert _arrow_pixels(_combo(enabled=False), themed_app.icon_tint) == 0
 
 
