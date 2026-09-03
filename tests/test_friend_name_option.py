@@ -8,8 +8,8 @@ live.  It has somewhere now, so the name is an ordinary bot option with a null
 declaration, and the guarantee comes from the option layer rather than from a
 widget that refuses to report itself.
 
-What is worth pinning down is the shape of that guarantee: the editing surface is
-Setup, which writes overrides and never the file, and the app setting is still the
+What is worth pinning down is the shape of that guarantee: the only editing surface
+is Setup, which writes overrides and never the file, and the app setting is still the
 level underneath, so one idler serves every bot until some bot needs another.
 
 Real widget tests (QApplication required).  The settings store is injected.
@@ -114,20 +114,15 @@ def test_the_name_is_remembered_for_autocomplete_only(qapp, settings, monkeypatc
     assert _NAME in settings.recent_friend_names
 
 
-def test_the_declaration_editor_shows_the_row_but_will_not_write_it(qapp, settings):
-    """Discoverable with the rest of the bot's options, and inert: a default typed here
-    would be a character name in a file people share."""
+def test_the_declaration_editor_does_not_offer_it_at_all(qapp, settings):
+    """A row here would be a place to type a character name into a file people
+    share. The author has nothing to say about whose wizard you port to, so the
+    option is simply not on their surface -- it is a row in Setup instead."""
     from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 
     config = _config()
     section = OptionsSection(settings=settings)
     section.set_config(config)
 
-    widget = section.option_widgets[_OPTION]
-    assert not widget.isEnabled()
-    assert "Setup" in widget.toolTip()
-
-    widget.set_value("Someone Elsewhere")
-    widget.changed.emit()
-
+    assert _OPTION not in section.option_widgets
     assert config.options == []

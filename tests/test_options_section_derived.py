@@ -62,13 +62,25 @@ def _section(config):
 
 
 def test_the_config_tab_shows_an_option_the_file_does_not_hold(qapp):
-    """The bot file is empty of options; the node still requires two."""
+    """The bot file is empty of options; the node still requires two.
+
+    Only one of the two is on *this* surface. ``enter_dungeon`` also requires Safety
+    Delay, which is the user's value and so has no declaration to edit here."""
     config = _config()
 
     section = _section(config)
 
-    assert set(section.option_widgets) == {"Safety Delay", "Challenge Mode"}
+    assert set(section.option_widgets) == {"Challenge Mode"}
     assert config.options == []
+
+
+def test_a_value_only_the_user_owns_is_not_on_the_authors_surface(qapp):
+    """Safety Delay describes the connection rather than the dungeon, so a
+    declaration of it would outrank the app setting the user set it in -- the
+    per-node pin #150 removed, one level up. The row lives in Setup instead."""
+    section = _section(_config())
+
+    assert "Safety Delay" not in section.option_widgets
 
 
 def test_an_option_no_node_requires_is_not_shown(qapp):
@@ -93,10 +105,10 @@ def test_editing_a_derived_value_twice_writes_one_declaration(qapp):
     config = _config()
     section = _section(config)
 
-    section.option_widgets["Safety Delay"].setValue(5.0)
-    section.option_widgets["Safety Delay"].setValue(6.0)
+    section.option_widgets["Challenge Mode"].setChecked(True)
+    section.option_widgets["Challenge Mode"].setChecked(False)
 
-    assert [(o.name, o.default) for o in config.options] == [("Safety Delay", 6.0)]
+    assert [(o.name, o.default) for o in config.options] == [("Challenge Mode", False)]
 
 
 def test_a_hand_added_option_still_shows_and_edits_in_place(qapp):

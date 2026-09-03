@@ -437,6 +437,19 @@ already has.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.
+- **A value only the user owns has no row on the author's surface at all.**
+  `bot_options.USER_OWNED_OPTIONS` names them — Safety Delay, Friend Name, Enable
+  Quicksell — and `OptionsSection` filters them out rather than showing them
+  disabled, because a declaration of one outranks the app setting the user set it
+  in. Safety Delay is the plain case: a declaration there is the per-node pin
+  *A node cannot pin a bot-wide option* removed, one level up. Ownership is a
+  property of the *option*, not of its type — Safety Delay is an ordinary float —
+  so the registry is by name, and it is deliberately narrow: `Sell Pets` stays
+  editable because a bot farming a pet has to be able to say so, and `Level
+  Scaling Players` because eleven shipped bots name which of *their* players visit
+  the station. Nothing prunes such a declaration on save: the resolution stays a
+  plain four levels, a hand-edited file is still honoured, and
+  `test_no_bot_declares_a_user_owned_option` is what keeps the library clean.
 - **Renaming an option is three fixups, not one.** The flat `flags` list, the
   `flag_groups` the edge editor actually writes — which take precedence at run
   time, so a stale name there evaluates `False` in silence — and the override
@@ -634,11 +647,12 @@ is shared. `teleport_to_friend`'s friend name is the case — a character name i
 committed bot is both a privacy leak and a bot only its author can run.
 
 That is still a bot option with a null declaration; what changes is that the
-declaration must **stay** null. Nothing enforces it in the schema, so the guard is
+declaration must **stay** null — so `Friend Name` is in `USER_OWNED_OPTIONS` and the
+Options tab has no row for it. Nothing enforces that in the schema, so the guard is
 `test_no_bot_stores_a_friend_name`, which checks both places a name could land: the
-old `friend_name` param, and a *declaration* of the `Friend Name` option that an
-author could type into the Options tab. Setup — where a user actually sets it —
-writes an override and cannot touch the file at all.
+old `friend_name` param, and a *declaration* of the option that a hand-edited file
+could still carry. Setup — where a user actually sets it — writes an override and
+cannot touch the file at all.
 
 The run-time resolution, with its `source` label, is `teleport_to_friend.resolve_target`,
 and it is pure: the resolved option value is passed *in*, so the precedence between it

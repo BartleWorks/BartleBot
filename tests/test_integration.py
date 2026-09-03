@@ -749,6 +749,31 @@ def test_no_bot_stores_a_friend_name():
     assert not offenders, f"bot states storing a character name: {offenders}"
 
 
+def test_no_bot_declares_a_user_owned_option():
+    """Some values are the user's whatever the dungeon is, and a declaration of one
+    outranks the app setting they set it in.
+
+    Safety Delay describes the connection, not the bot -- a declaration would put back
+    the per-node pin #150 removed, one level up. Enable Quicksell is whether the user
+    will part with items at all; an author who did not want selling would leave the node
+    out. Friend Name is a character name (see the test above).
+
+    The Options tab shows none of the three, so a file carrying one was hand-edited.
+    The sell flags and Level Scaling Players are deliberately not here: a bot farming a
+    pet has to be able to say so, and eleven bots name which of their players visit the
+    scaling station.
+    """
+    from bartlebot.bot_options import USER_OWNED_OPTIONS  # noqa: PLC0415
+
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for opt in _load_raw(path).get("options") or []:
+            if opt.get("name") in USER_OWNED_OPTIONS:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt['name']}")
+
+    assert not offenders, f"bots declaring a value only the user owns: {offenders}"
+
+
 def test_no_bot_pins_a_bot_wide_option_for_one_node():
     """`option_overrides` is gone from the schema, and Pydantic ignores what it does not
     know — so a file still carrying one would be silently dropped on the next save rather

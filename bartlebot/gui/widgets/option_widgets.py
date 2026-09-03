@@ -50,13 +50,6 @@ NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name")
 #: with them at the bottom than with the short rows arranged around them.
 TALL_TYPES: frozenset[str] = frozenset({"drop_keep_list"})
 
-#: Types whose value is the *user's* by definition, so an author has nothing to
-#: declare.  ``friend_name`` is the case: a character name in a shared bot file is
-#: both a privacy leak and a bot only its author can run, so the declaration editor
-#: shows the row and refuses to write it -- see CLAUDE.md, "When no bot should ever
-#: store a value".
-USER_ONLY_TYPES: frozenset[str] = frozenset({"friend_name"})
-
 #: What to call each type to a user who has never read the schema.
 TYPE_LABELS: dict[str, str] = {
     "bool": "Yes / No",

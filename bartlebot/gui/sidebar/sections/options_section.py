@@ -37,14 +37,13 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.bot_options import compose_options
+from bartlebot.bot_options import USER_OWNED_OPTIONS, compose_options, is_user_owned
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     TYPE_LABELS,
-    USER_ONLY_TYPES,
     connect_widget,
     empty_value,
     make_option_widget,
@@ -351,6 +350,10 @@ class OptionsSection(SidebarSection):
         return names
 
     def _rebuild_options(self, options: list) -> None:
+        # A value that is the user's by definition has no declaration to edit, so it
+        # is not on the author's surface at all -- it is a row in Setup instead.  A
+        # disabled row here would only invite the question this answers.
+        options = [o for o in options if not is_user_owned(o.name)]
         for row in self._option_rows:
             self._options_layout.removeWidget(row)
             row.deleteLater()
@@ -369,13 +372,7 @@ class OptionsSection(SidebarSection):
         self._no_options_lbl.hide()
         for opt in options:
             inner, widget, desc_lbl = _build_option_parts(opt, connected, get_drops=self._drops)
-            if opt.type in USER_ONLY_TYPES:
-                # Shown, so the option is discoverable here with the rest, but inert:
-                # writing a default would put a character name in a file people share.
-                widget.setEnabled(False)
-                widget.setToolTip("This is your value, not the bot's — set it in the Setup tab.")
-            else:
-                self._connect_option_widget(widget, opt)
+            self._connect_option_widget(widget, opt)
 
             # A derived option is re-composed from its NodeSpec on every load, so a
             # rename or a delete here would not survive the round trip.  Its default
@@ -412,7 +409,9 @@ class OptionsSection(SidebarSection):
     def _on_add_option(self) -> None:
         if self._config is None:
             return
-        existing = [o.name for o in self._composed()]
+        # The user-owned names are reserved as well as taken: a hand-added "Safety
+        # Delay" would be a declaration the editor then refuses to show.
+        existing = [o.name for o in self._composed()] + sorted(USER_OWNED_OPTIONS)
         dlg = _AddOptionDialog(existing, parent=self)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             self._config.options.append(dlg.get_option())

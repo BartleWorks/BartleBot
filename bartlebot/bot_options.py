@@ -79,6 +79,39 @@ APP_SETTING_KEYS: dict[str, str] = {
     "Friend Name": "default_friend_name",
 }
 
+# Options an author has no business declaring at all, whatever their dungeon does.
+# Having an app setting underneath is *not* the test -- that only says a shared
+# level exists.  The test is whether a declaration could ever be right, and for
+# these three it never is:
+#
+#   Safety Delay    describes the user's connection, not the bot.  A declaration
+#                   would re-create the per-node pin #150 removed, one level up.
+#   Friend Name     is a character name, so a declaration is a privacy leak and a
+#                   bot only its author can run (#102).
+#   Enable Quicksell  is whether the user is willing to lose items at all.  An
+#                   author who did not want selling would leave the node out.
+#
+# Deliberately *not* here: ``Sell Pets`` and its two siblings, because a bot whose
+# target drop is a pet has to be able to say so (the keep list cannot spare an
+# individual pet), and ``Level Scaling Players``, which names *which players in
+# this dungeon* visit the station -- eleven shipped bots declare it, and no two
+# agree.  Those are facts about the graph, and the app setting is only the answer
+# for a bot that has no view.
+USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Enable Quicksell"})
+
+
+def is_user_owned(name: str) -> bool:
+    """Whether *name* is a value only the user may set, never the bot's author.
+
+    The Options surface omits these rows, so nothing the app writes can produce
+    such a declaration.  A hand-edited file carrying one is still honoured -- the
+    resolution stays a plain four levels, and silently deleting a value on save
+    would be worse than the leak it prevents -- and
+    ``test_no_bot_declares_a_user_owned_option`` keeps the shipped library clean
+    of them.
+    """
+    return name in USER_OWNED_OPTIONS
+
 
 @dataclass(frozen=True)
 class OptionResolution:
