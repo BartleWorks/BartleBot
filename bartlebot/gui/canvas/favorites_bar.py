@@ -23,6 +23,9 @@ from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
 
 _SLOT_MIME = "application/x-bartlebot-favorites-slot"
+# Gap between the slots, and the strip's margin on every side -- the same number,
+# deliberately: see ``FavoritesBar.__init__``.
+_SLOT_GAP = 4
 
 
 def _slot_key_label(slot: int) -> str:
@@ -199,8 +202,11 @@ class FavoritesBar(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         row = QHBoxLayout(self)
-        row.setContentsMargins(4, 2, 4, 2)
-        row.setSpacing(4)
+        # The margin matches the gap between the slots on every side: a strip whose
+        # slots sit closer to the toolbar above them than to each other reads as
+        # crowded upwards rather than as one row of equal things.
+        row.setContentsMargins(_SLOT_GAP, _SLOT_GAP, _SLOT_GAP, _SLOT_GAP)
+        row.setSpacing(_SLOT_GAP)
         self._slots: list[_SlotButton] = []
         for i in range(10):
             btn = _SlotButton(i, self)

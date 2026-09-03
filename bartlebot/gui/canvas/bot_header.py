@@ -119,13 +119,33 @@ class _ElidedLabel(ThemedMixin, QLabel):
         QLabel derives its hint from ``text()``, which here is already shortened --
         so a label that once elided would keep asking for the shorter width and never
         grow back when the window did.
+
+        The margins are added back in because ``set_baseline_shift`` puts the label's
+        vertical nudge there: a hint that ignored them would have the layout hand the
+        label its text height exactly, and the nudge would then squeeze the text
+        rather than move it.
         """
         metrics = QFontMetrics(self.font())
-        return QSize(metrics.horizontalAdvance(self._full) + _LABEL_PADDING_PX, metrics.height())
+        pad = self.contentsMargins()
+        return QSize(
+            metrics.horizontalAdvance(self._full) + _LABEL_PADDING_PX + pad.left() + pad.right(),
+            metrics.height() + pad.top() + pad.bottom(),
+        )
 
     def minimumSizeHint(self) -> QSize:  # noqa: N802 - Qt override
         """Zero width: eliding is only possible for a label allowed to be narrow."""
-        return QSize(0, QFontMetrics(self.font()).height())
+        pad = self.contentsMargins()
+        return QSize(0, QFontMetrics(self.font()).height() + pad.top() + pad.bottom())
+
+    def set_baseline_shift(self, pixels: int) -> None:
+        """Move the text *pixels* down (negative: up) without moving the box's centre.
+
+        Padding one side and letting the layout re-centre the taller box moves the
+        text by half of what was added, so the padding is twice the shift wanted.
+        """
+        pad = 2 * pixels
+        self.setContentsMargins(0, max(pad, 0), 0, max(-pad, 0))
+        self.updateGeometry()
 
     def resizeEvent(self, event) -> None:  # noqa: N802 - Qt override
         super().resizeEvent(event)
@@ -133,7 +153,9 @@ class _ElidedLabel(ThemedMixin, QLabel):
 
     def _apply_elide(self) -> None:
         metrics = QFontMetrics(self.font())
-        super().setText(metrics.elidedText(self._full, Qt.TextElideMode.ElideRight, max(0, self.width())))
+        pad = self.contentsMargins()
+        room = max(0, self.width() - pad.left() - pad.right())
+        super().setText(metrics.elidedText(self._full, Qt.TextElideMode.ElideRight, room))
         self.setToolTip(self._full if super().text() != self._full else "")
 
     def apply_theme_styles(self) -> None:
@@ -319,9 +341,9 @@ class BotHeader(ThemedMixin, QWidget):
         title_row = QHBoxLayout(title)
         title_row.setContentsMargins(0, 0, 0, 0)
         title_row.setSpacing(6)
-        title_row.addWidget(_swappable(self._name_lbl, self._name_edit), 0)
+        title_row.addWidget(_swappable(self._name_lbl, self._name_edit), 0, Qt.AlignmentFlag.AlignVCenter)
         title_row.addWidget(_swappable(self._version_pill, self._version_edit), 0, Qt.AlignmentFlag.AlignVCenter)
-        title_row.addWidget(self._file_lbl, 0)
+        title_row.addWidget(self._file_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         title_row.addStretch(1)
 
         # -- Left column, row 2: byline and tags ----------------------
@@ -336,9 +358,16 @@ class BotHeader(ThemedMixin, QWidget):
         byline_row = QHBoxLayout(self._byline)
         byline_row.setContentsMargins(0, 0, 0, 0)
         byline_row.setSpacing(6)
-        byline_row.addWidget(_swappable(self._authors_lbl, self._authors_edit), 0)
+        # Centred rather than stretched, both of them.  A box layout hands a
+        # stretched child the whole row, and ``FlowLayout`` then lays its rows from
+        # the top of what it was given -- so whenever the grid row is taller than the
+        # byline itself (the spanning button clusters are what make it so), the pills
+        # sat against the row's ceiling with the slack all underneath.  The byline is
+        # a row of things of different heights; centring each keeps them on one line
+        # however tall the row around them gets.
+        byline_row.addWidget(_swappable(self._authors_lbl, self._authors_edit), 0, Qt.AlignmentFlag.AlignVCenter)
         byline_row.addSpacing(4)
-        byline_row.addWidget(self._tags_field, 0)
+        byline_row.addWidget(self._tags_field, 0, Qt.AlignmentFlag.AlignVCenter)
         byline_row.addStretch(1)
 
         # -- Centre column: clock, transport, status — one row --------
@@ -561,10 +590,32 @@ class BotHeader(ThemedMixin, QWidget):
         self._elapsed_lbl.setMinimumWidth(slot)
         self._status_side.setMinimumWidth(slot)
 
+    def _align_file_baseline(self) -> None:
+        """Sit the filename on the bot name's baseline rather than on the row's centre.
+
+        Two texts of different sizes centred in the same row do not share a baseline.
+        Centring matches the *boxes*, and a font box is mostly ascent -- so the smaller
+        of the two carries its baseline higher, and the filename read as a pixel above
+        the line the name sets.  The eye compares baselines, not boxes.
+
+        The shift is the difference between the two fonts' ascents, less the
+        difference their box heights already account for.  The row's height cancels
+        out of that, which is what makes one number right in both modes: in Edit mode
+        the name is a QLineEdit, but its text is the same font box centred in the same
+        row, so it sets the same baseline.
+        """
+        name = QFontMetrics(self._name_lbl.font())
+        stamp = QFontMetrics(self._file_lbl.font())
+        shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
+        self._file_lbl.set_baseline_shift(round(shift))
+
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(f"BotHeader {{ background: {THEME.surface}; }}")
         self._name_lbl.setStyleSheet(f"color: {THEME.text};")
         self._status_lbl.setStyleSheet(f"color: {THEME.text_muted};")
         self._elapsed_lbl.setFont(THEME.font_mono())
         self._size_status_slots()
+        # After the labels above have their own styles: the shift is measured from the
+        # fonts a stylesheet may just have changed.
+        self._align_file_baseline()
         self._apply_status()

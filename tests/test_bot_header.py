@@ -308,3 +308,62 @@ def test_the_tags_share_the_byline_rather_than_taking_a_row_of_their_own(header,
     pills = header._tags_field._pill_host.findChildren(TagPill)
     assert len(pills) == 2
     assert pills[0].y() == pills[1].y()
+
+
+def _tall_header(px: int) -> BotHeader:
+    """A header whose spanning clusters force the metadata rows taller than their text."""
+    from PyQt6.QtWidgets import QHBoxLayout, QPushButton
+
+    def cluster() -> QWidget:
+        w = QWidget()
+        row = QHBoxLayout(w)
+        row.setContentsMargins(0, 0, 0, 0)
+        btn = QPushButton()
+        btn.setFixedSize(px, px)
+        row.addWidget(btn)
+        return w
+
+    return BotHeader(cluster(), cluster())
+
+
+def test_the_byline_centres_in_its_row_however_tall_the_row_gets(qapp):
+    """``FlowLayout`` lays its rows from the top of whatever space it is handed.
+
+    A box layout stretches a child to the full row by default, so once the spanning
+    button clusters made the grid row taller than the byline itself, the tag pills
+    sat against the row's ceiling with all the slack underneath.
+    """
+    header = _tall_header(70)
+    header.set_config(_config(tags=["Gear", "Boss"]))
+    header.resize(1400, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    row = header.layout().cellRect(1, 0)
+    tags = header._tags_field
+    top = tags.mapTo(header, tags.rect().topLeft()).y()
+
+    assert tags.height() == tags.sizeHint().height(), "stretched, not centred"
+    assert abs((top + tags.height() / 2) - (row.y() + row.height() / 2)) <= 1
+
+
+def test_the_filename_sits_on_the_bot_name_s_baseline(qapp):
+    """Centring matches the boxes, and a font box is mostly ascent -- so the smaller
+    of two texts centred in one row carries its baseline a pixel above the other's.
+    The eye compares baselines, so that reads as a filename floating off the line."""
+    from PyQt6.QtGui import QFontMetrics
+
+    header = _tall_header(32)
+    header.set_config(_config())
+    header.set_file("jade_oni.json")
+    header.resize(1400, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    def baseline(widget: QWidget) -> float:
+        metrics = QFontMetrics(widget.font())
+        pad = widget.contentsMargins().top()
+        centred = (widget.height() - pad - metrics.height()) // 2 if pad == 0 else 0
+        return widget.mapTo(header, widget.rect().topLeft()).y() + pad + centred + metrics.ascent()
+
+    assert baseline(header._file_lbl) == baseline(header._name_lbl)
