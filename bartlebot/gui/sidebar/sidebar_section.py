@@ -131,13 +131,23 @@ class SidebarSection(QWidget):
 
     # Standard padding applied around every section's content area.
     _CONTENT_MARGINS = (0, 2, 0, 6)
-    # Vertical size policy used when the section is expanded.  Subclasses that
+    # Vertical size policy used while the section is expanded.  Subclasses that
     # need to grow (e.g. a list that should fill remaining space) override this.
-    _expanded_v_policy: QSizePolicy.Policy = QSizePolicy.Policy.Maximum
+    #
+    # ``Preferred`` rather than ``Maximum``, because a section's content can be
+    # height-for-width and ``Maximum`` caps the widget at ``sizeHint()``, which is
+    # computed at no particular width.  A folded-out option description makes
+    # ``heightForWidth()`` the taller of the two, so the layout reserves the tall
+    # cell and then refuses to let the widget fill it -- and ``QWidgetItem``
+    # centres a widget that cannot fill its cell, which reads as the section
+    # sliding downwards as it grows.  The collapsed state still uses
+    # ``Maximum``; see ``_on_section_toggled``.
+    _expanded_v_policy: QSizePolicy.Policy = QSizePolicy.Policy.Preferred
 
     def __init__(self, title: str, parent=None):
         super().__init__(parent)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        # A section is born expanded, so it starts on the expanded policy.
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, self._expanded_v_policy)
 
         vbox = QVBoxLayout(self)
         vbox.setContentsMargins(0, 0, 0, 0)
@@ -145,7 +155,10 @@ class SidebarSection(QWidget):
 
         self._header = _SectionHeader(title)
         self._body = QWidget()
-        self._body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        # Same reasoning as the section's own policy: capped at ``sizeHint()`` the
+        # body cannot fill a height-for-width cell, and the leftover is split above
+        # and below it -- which pushes the body away from the header it belongs to.
+        self._body.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
         vbox.addWidget(self._header)
         vbox.addWidget(self._body)

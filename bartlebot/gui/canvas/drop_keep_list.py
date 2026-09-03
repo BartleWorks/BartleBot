@@ -34,8 +34,10 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
-from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
+from bartlebot.gui.widgets.flow_layout import FlowLayout
+from bartlebot.gui.widgets.list_text import parse_list_text
 from bartlebot.gui.widgets.search_field import SearchLineEdit
+from bartlebot.gui.widgets.tag_pill import NeutralChip
 from bartlebot.nodes.utility import quicksell
 
 # Bulk-checking more than this many rows asks first. A drop table can hold hundreds
@@ -169,15 +171,29 @@ class DropKeepListWidget(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(3)
 
+        # The keep list is a *set of keywords*, and it used to be shown as the
+        # comma-separated string those keywords serialise to. At a 400px sidebar a
+        # 32-keyword list showed the middle of a scrolled string — "electable Hooves,
+        # Skyscream, Frostbit, …" — which is neither readable nor safely editable,
+        # while the table underneath already says the same thing better. So the field
+        # only *adds* now, and the list itself is a row of removable chips that wraps.
+        #
+        # Nothing below this changed: parse_list_text still parses what is typed, and
+        # the value is still the list of keywords.
         self._edit = QLineEdit()
-        self._edit.setPlaceholderText("e.g. ItemA, ItemB")
-        self._edit.textChanged.connect(self._on_text_edited)
-        # Typing repaints the table live, but only reports a *change* once the field
-        # is left. The host stores this as a value, and a write per keystroke is a
-        # settings-file write per keystroke — the same reason connect_widget uses
-        # editingFinished for every other line edit.
-        self._edit.editingFinished.connect(self.changed.emit)
+        self._edit.setPlaceholderText("Add a keyword, e.g. Amber")
+        # A keyword is committed whole, on Enter or on leaving the field: there is no
+        # half-typed value to report any more, which is what the old "repaint live,
+        # report on editingFinished" split existed to avoid. A write per keystroke is
+        # a settings-file write per keystroke.
+        self._edit.returnPressed.connect(self._commit_typed)
+        self._edit.editingFinished.connect(self._commit_typed)
         outer.addWidget(self._edit)
+
+        self._keywords = QWidget()
+        self._keyword_layout = FlowLayout(self._keywords, spacing=4)
+        self._keywords.setVisible(False)
+        outer.addWidget(self._keywords)
 
         # Two lines: the rule, which never changes, and the live count under it.
         self._rule = QLabel()
@@ -268,7 +284,7 @@ class DropKeepListWidget(QWidget):
     def set_value(self, value: list[str]) -> None:
         self._suppress = True
         self._value = [str(v) for v in value] if isinstance(value, list) else parse_list_text(str(value or ""))
-        self._edit.setText(format_list_text(self._value))
+        self._render_keywords()
         self._suppress = False
         self.refresh()
 
@@ -574,7 +590,7 @@ class DropKeepListWidget(QWidget):
     def _set_keep_list(self, keep_list: list[str]) -> None:
         self._suppress = True
         self._value = list(keep_list)
-        self._edit.setText(format_list_text(self._value))
+        self._render_keywords()
         self._suppress = False
         # Via refresh() rather than _apply_states() directly, so the rows are still
         # rebuilt if the drop table changed underneath us — the states are zipped
@@ -582,11 +598,58 @@ class DropKeepListWidget(QWidget):
         self.refresh()
         self.changed.emit()
 
-    def _on_text_edited(self) -> None:
+    # ------------------------------------------------------------------
+    # Keywords
+    # ------------------------------------------------------------------
+
+    def _commit_typed(self) -> None:
+        """Turn whatever is in the add-field into chips, ignoring what is already there.
+
+        ``editingFinished`` and ``returnPressed`` both land here, and Enter fires
+        both, so this has to be idempotent — which it is, because the field is
+        cleared as part of committing it.
+
+        A pasted comma-separated list is still accepted: ``parse_list_text`` is what
+        reads it, so the old format survives as an input even though it is no longer
+        how the value is shown.
+        """
         if self._suppress:
             return
-        self._value = parse_list_text(self._edit.text())
-        self.refresh()
+        typed = parse_list_text(self._edit.text())
+        self._edit.clear()
+        existing = {v.casefold() for v in self._value}
+        added = [word for word in typed if word.casefold() not in existing]
+        if not added:
+            return
+        self._set_keep_list([*self._value, *added])
+
+    def _remove_keyword(self, word: str) -> None:
+        self._set_keep_list([v for v in self._value if v != word])
+
+    def _render_keywords(self) -> None:
+        """Rebuild the chip row from the keep list.
+
+        A full rebuild rather than a diff: the list is a handful of short strings the
+        user edits one at a time, and ``FlowLayout`` re-wraps the whole row on any
+        change anyway.
+
+        An outgoing chip is **hidden and left parented**, never ``setParent(None)``.
+        A widget with no parent is a top-level window, and ``deleteLater`` does not
+        run until the event loop turns — so a chip removed by its own ✕ spent that
+        interval as a real window, which Windows drew and then took away. Hiding it
+        takes it off screen immediately and the delete still happens once the click
+        it is being deleted from inside of has finished unwinding.
+        """
+        while (item := self._keyword_layout.takeAt(0)) is not None:
+            widget = item.widget()
+            if widget is not None:
+                widget.hide()
+                widget.deleteLater()
+        for word in self._value:
+            chip = NeutralChip(word, tooltip=f"Stop keeping drops matching “{word}”")
+            chip.removed.connect(self._remove_keyword)
+            self._keyword_layout.addWidget(chip)
+        self._keywords.setVisible(bool(self._value))
 
     # ------------------------------------------------------------------
     # Theming

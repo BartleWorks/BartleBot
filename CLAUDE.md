@@ -429,9 +429,9 @@ already has.
 - **No chrome appears or disappears with the override state, and a value edit
   refreshes one row rather than rebuilding the list.** Both are the same
   concern: a spin box whose row is rebuilt on `valueChanged` vanishes from under
-  the pointer on the first arrow click, and a Reset button that only exists once
+  the pointer on the first arrow click, and a revert button that only exists once
   a value is overridden moves everything under it as you type. So the bar
-  changes colour rather than appearing, Reset greys out rather than vanishing,
+  changes colour rather than appearing, revert greys out rather than vanishing,
   every level including the user's own has a caption, and `_refresh_row` is what
   a value edit calls.
 - **A row is a head line and a control, and the prose folds.** Measured on a
@@ -446,11 +446,54 @@ already has.
   moves is below the button that moved it. `show_option_descriptions` is the
   switch for reading the whole tab at once -- a property of the reader, so it
   lives in `settings.json` and not in the bot.
-- **Reset sits beside a short control and on the head line otherwise.** Against a
-  220px table it centres on the table's midpoint, floating with nothing to attach
-  it to, and takes its width from the last column for that whole height. A bool
-  has no separate label, so its checkbox *is* the head line and the whole row --
-  name, `?`, caption, Reset -- fits on one.
+- **Every row's chrome lives in a fixed leading gutter, `[bar][revert][?]`.** It
+  is the only placement that yields one column per button. Right-aligning the `?`
+  gives *two* columns, because the head line's right edge sits at two different x
+  values; a fixed-width name column fails on any long name, and on a bool row,
+  which has no separate label at all. In the gutter both buttons top-align with
+  the head line whether the row is 20px tall or 240, which deletes the branch that
+  used to put Reset beside a short control and on the head line otherwise. It also
+  co-locates two facts that are one fact: the bar going accent and revert going
+  enabled are set by the same two lines of `_refresh_row`, and adjacent they read
+  as one affordance. This is VS Code's settings gutter verbatim. The accepted
+  costs, so a later session does not relitigate them: ~40px of permanent, mostly
+  blank left inset, and an icon-only revert being less discoverable than the word
+  — mitigated by `_reset_tooltip` naming the value and level a click falls back
+  to, and by tinting the icon `THEME.accent` only while it can act.
+  `test_the_gutter_buttons_line_up_across_every_shape_of_row` is the guard.
+- **Revert is furthest from the text, `?` is nearest it.** Two small targets a few
+  pixels apart, one meaning "explain this" and the other "discard what I typed",
+  and reverting has no undo — on the keep list the loss is a hand-picked selection.
+  The ordering and the 20px targets are the mitigation.
+- **The head line is the same shape on every row:** name on the left, source
+  caption right-aligned in a fixed slot (`_SourceCaption`, measured from the font
+  rather than a stylesheet — a stylesheet `font-size` never reaches
+  `QWidget.font()`). A bool has no separate label, so its checkbox *is* the head
+  line and the whole row fits on one.
+- **Show descriptions is a link, not a check box.** A tick box captioned "Show
+  descriptions" above a list of options reads as the bot's first option; a link
+  whose text flips *Show* / *Hide* names its own effect. It sits at the top of the
+  section body rather than on the header, which is a click-through row that
+  toggles collapse. `LinkButton` (`gui/widgets/link_button.py`) is the shared
+  control.
+- **A numeric option may declare bounds, and both ends enforce them.**
+  `BotOptionSpec.minimum` / `maximum` / `suffix` are carried onto the composed
+  declaration by `compose_options` — derived, never persisted, exactly like `type`
+  and `description`. `make_option_widget` applies them, so both surfaces and the
+  Add/Edit dialog get them for free; `resolve_option` applies them again, because
+  a value can arrive from a hand-edited `settings.json` or bot file and that is
+  the one funnel every consumer goes through. An out-of-range value is
+  **discarded with a warning so the level below answers, never clamped** — coercing
+  a hand-edited `-1` to `0` hides a wrong file. A negative Safety Delay is the case
+  the feature exists for (#182): it fails silently rather than loudly, since
+  `asyncio.sleep` returns at once and every window polled *for* that many seconds
+  expires on its first check.
+- **The keep list's keywords are chips, not a comma-separated field.** At a 400px
+  sidebar a 32-keyword CSV string shows only its own middle, and removing one
+  entry means selecting text between two commas. The field only *adds* now
+  (`parse_list_text` still reads a pasted CSV), and the value renders as
+  `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
+  `_VALUE_PARAM_KEY` changed.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.
@@ -1215,15 +1258,17 @@ Three mechanisms, three questions. Do not make one do another's job:
 | **Milestone** | when does it ship | one per issue, closes |
 | **Project board** | what am I doing next | one board, ongoing |
 
-Most of the board is automated by the project's built-in workflows: an issue is
-auto-added at `Backlog`, moves to `In progress` when a pull request links to it,
-and moves to `Done` when it closes or its PR merges. Do not hand-set a Status a
-workflow owns. `Ready` and `Blocked` are the only ones set by hand, and both are
-judgment calls.
+Two of the board's built-in workflows still run: an issue is auto-added at
+`Backlog`, and moves to `Done` when it closes — which a `Closes #N` line in a
+merge commit does, exactly as a PR body used to. Do not hand-set `Done`.
+
+The third, `In progress` on a linked pull request, no longer fires, because work
+lands by direct merge (see `docs/MERGING.md`). `In progress`, `Ready` and
+`Blocked` are all set by hand now, and all three are judgment calls.
 
 Closing an issue by dragging its card to `Done` is deliberately *not* enabled —
 the **Auto-close issue** workflow is off, so a mis-drag cannot close an issue with
-no PR trail behind it.
+no commit trail behind it.
 
 ### Filing
 
@@ -1248,19 +1293,39 @@ no PR trail behind it.
 
 ### Closing
 
-- **Issues close via PR, not by hand.** Every PR body carries one `Closes #N` line
-  per issue it resolves. Multi-issue PRs are normal here; each issue still needs
-  its own line.
-- Closing keywords fire only on merges into the **default branch** (`master`).
+- **Issues close via a merge commit, not by hand.** Every merge into `master`
+  carries one `Closes #N` line per issue it resolves. Multi-issue merges are
+  normal here; each issue still needs its own line, because comma-separated
+  keywords do not chain reliably.
+- Closing keywords fire on any push to the **default branch** (`master`), which
+  is what makes this work without a pull request.
 - **Close by hand only for won't-do or duplicate**, and set the reason to
   `not planned` so the issue does not read as completed.
+
+### Merging
+
+Branches land on `master` by **direct merge, not a pull request** — the full
+convention, the merge-commit message template, and the pre-merge read-through
+are in `docs/MERGING.md`. The three things that matter here:
+
+- **`git merge --no-ff`, always.** The merge commit is where the message lives,
+  and a fast-forward has nowhere to put it.
+- **The message carries what a PR body used to** — why now, the rejected
+  alternative, the limitation the tests do not cover, the `Closes #N` lines. A
+  PR body is GitHub metadata and will not survive the migration to the release
+  repo at 1.0.0; a commit message will.
+- **The gate is local.** `poetry run pytest -n auto` and `poetry run ruff check`
+  before every commit. CI runs on push to `master` and now confirms after the
+  fact rather than blocking, so a failure there is fixed forward at once.
 
 ### Board
 
 - `Ready` is a pull queue, not a wish list — it means scoped enough to start
   without further thinking. Keep it short.
-- `In progress` is set for you the moment a PR links to the issue. Set it by hand
-  only when work genuinely starts before a PR exists — otherwise leave it alone.
+- `In progress` is set by hand when work genuinely starts. Nothing sets it for
+  you any more: it was driven by a linked pull request, and there is no longer
+  one. A card left in `Backlog` while its branch exists is the failure mode to
+  watch for.
 - `Blocked` needs a comment naming the blocker, or it is just a stale `Ready`.
 
 ### Areas

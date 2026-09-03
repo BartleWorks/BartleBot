@@ -50,6 +50,16 @@ NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name")
 #: with them at the bottom than with the short rows arranged around them.
 TALL_TYPES: frozenset[str] = frozenset({"drop_keep_list"})
 
+#: How wide a spin box is allowed to get.  A number field that spans a 400px sidebar
+#: reads as a text field and gives four decimal places' worth of room to a value that
+#: is nearly always one digit -- "3.00 s" occupying the whole panel was half of what
+#: made the Setup screenshot behind #182 look wrong.
+NUMERIC_MAX_WIDTH_PX = 110
+
+#: Decimals shown by a float control.  Four was the old default: Safety Delay read
+#: "3.0000", which says nothing true about a value nobody tunes past a tenth.
+FLOAT_DECIMALS = 2
+
 #: What to call each type to a user who has never read the schema.
 TYPE_LABELS: dict[str, str] = {
     "bool": "Yes / No",
@@ -150,6 +160,9 @@ def make_option_widget(
     tooltip: str = "",
     label: str = "",
     explicit_bool: bool = False,
+    minimum: float | None = None,
+    maximum: float | None = None,
+    suffix: str | None = None,
     get_drops: Callable[[], list] | None = None,
     get_clients: Callable[[], list] | None = None,
 ) -> QWidget:
@@ -160,6 +173,13 @@ def make_option_widget(
     ``bool`` carries instead of a separate field label.  Pass *explicit_bool* where
     a bool is not sitting in a list of named options and needs to state both
     answers for itself -- see :class:`BoolChoice`.
+
+    *minimum*, *maximum* and *suffix* come off the option's ``BotOptionSpec`` and
+    apply to the numeric types only; ``None`` keeps the wide range this used to have
+    unconditionally.  Both option surfaces and the Add/Edit dialog pick them up from
+    here, which is the point of there being one option-type -> widget mapping.  The
+    range is *not* the enforcement, only the near end of it -- a value can arrive
+    from a hand-edited file, which is why ``resolve_option`` checks it as well.
 
     *get_drops* and *get_clients* are what the two node-only controls have that the
     generic ones do not.  Without them each falls back to the plain control for the
@@ -181,11 +201,21 @@ def make_option_widget(
         widget = BoolChoice() if explicit_bool else QCheckBox(label)
     elif opt_type == "int":
         widget = QSpinBox()
-        widget.setRange(-2_147_483_648, 2_147_483_647)
+        widget.setRange(
+            -2_147_483_648 if minimum is None else int(minimum),
+            2_147_483_647 if maximum is None else int(maximum),
+        )
+        widget.setMaximumWidth(NUMERIC_MAX_WIDTH_PX)
+        if suffix:
+            widget.setSuffix(suffix)
     elif opt_type == "float":
         widget = QDoubleSpinBox()
-        widget.setDecimals(4)
-        widget.setRange(-1e12, 1e12)
+        widget.setDecimals(FLOAT_DECIMALS)
+        widget.setRange(-1e12 if minimum is None else float(minimum), 1e12 if maximum is None else float(maximum))
+        widget.setSingleStep(0.5)
+        widget.setMaximumWidth(NUMERIC_MAX_WIDTH_PX)
+        if suffix:
+            widget.setSuffix(suffix)
     elif opt_type == "player_list":
         widget = PlayerListWidget()
         widget.set_available_players(connected)

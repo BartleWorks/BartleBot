@@ -53,6 +53,17 @@ def _make(qapp, drops=None, keep_list=None, context=None):
     return w
 
 
+def _keyword_chips(widget) -> list[str]:
+    """The keep list as the user reads it: one removable chip per keyword."""
+    layout = widget._keyword_layout
+    return [layout.itemAt(i).widget().value for i in range(layout.count())]
+
+
+def _keyword_chip(widget, word):
+    layout = widget._keyword_layout
+    return next(layout.itemAt(i).widget() for i in range(layout.count()) if layout.itemAt(i).widget().value == word)
+
+
 def _rows(w) -> list[str]:
     return [row.text(_COL_ITEM) for row in w._rows]
 
@@ -413,10 +424,10 @@ def test_ticking_a_drop_reports_the_whole_new_list(qapp):
     assert seen == [["Amber"]]
 
 
-def test_typing_in_the_keyword_line_does_not_report_until_the_field_is_left(qapp):
+def test_a_typed_keyword_is_reported_once_the_field_is_left_and_not_per_keystroke(qapp):
     """Storing a value is a settings-file write, and one per keystroke is one write
     per keystroke -- the same reason connect_widget uses editingFinished elsewhere.
-    The table still repaints live, which is what the check state proves."""
+    A keyword is committed whole, and the table repaints when it is."""
     seen = []
     widget = make_option_widget("drop_keep_list", [], get_drops=lambda: list(_DROPS))
     widget.set_context(_SELL_ALL)
@@ -424,10 +435,63 @@ def test_typing_in_the_keyword_line_does_not_report_until_the_field_is_left(qapp
 
     widget._edit.setText("Amber")
     assert seen == []
-    assert _checked(widget, "Amber")
+    assert not _checked(widget, "Amber")
 
     widget._edit.editingFinished.emit()
     assert seen == [["Amber"]]
+    assert _checked(widget, "Amber")
+
+
+def test_a_committed_keyword_becomes_a_chip_and_leaves_the_field_empty(qapp):
+    """The value is shown as chips because a 32-keyword CSV string at a 400px sidebar
+    shows only its own middle."""
+    widget = make_option_widget("drop_keep_list", [], get_drops=lambda: list(_DROPS))
+
+    widget._edit.setText("Amber, Onyx")
+    widget._edit.editingFinished.emit()
+
+    assert _keyword_chips(widget) == ["Amber", "Onyx"]
+    assert widget._edit.text() == ""
+    assert widget.get_value() == ["Amber", "Onyx"]
+
+
+def test_a_keyword_already_kept_is_not_added_twice(qapp):
+    widget = make_option_widget("drop_keep_list", ["Amber"], get_drops=lambda: list(_DROPS))
+    seen = []
+    connect_widget(widget, seen.append)
+
+    widget._edit.setText("amber")
+    widget._edit.editingFinished.emit()
+
+    assert widget.get_value() == ["Amber"]
+    assert seen == []
+
+
+def test_a_chip_removes_its_own_keyword(qapp):
+    """Removing one entry from the CSV line meant selecting text between two commas."""
+    widget = make_option_widget("drop_keep_list", ["Amber", "Onyx"], get_drops=lambda: list(_DROPS))
+    seen = []
+    connect_widget(widget, seen.append)
+
+    _keyword_chip(widget, "Amber").click()
+
+    assert _keyword_chips(widget) == ["Onyx"]
+    assert seen == [["Onyx"]]
+
+
+def test_removing_a_chip_never_leaves_it_parentless(qapp):
+    """A parentless widget is a top-level window, and deleteLater is a turn away.
+
+    The removed chip spent that interval as a real window, which Windows drew and
+    then took away — a small box flashing beside the sidebar on every ✕.
+    """
+    widget = make_option_widget("drop_keep_list", ["Amber", "Onyx"], get_drops=lambda: list(_DROPS))
+    chip = _keyword_chip(widget, "Amber")
+
+    chip.click()
+
+    assert chip.parent() is not None
+    assert not chip.isVisible()
 
 
 def test_the_default_category_entry_counts_what_it_shows(qapp):

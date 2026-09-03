@@ -597,7 +597,8 @@
     {
       "name": "Skip mobs",
       "type": "bool",
-      "default": true
+      "default": true,
+      "description": "Whether or not to teleport past mobs when possible. Can only skip mob fights in intermediate rooms that do not have levers."
     },
     {
       "name": "Respawn Sylster Glowstorm",

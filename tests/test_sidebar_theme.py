@@ -175,3 +175,48 @@ def test_the_add_option_dialog_still_builds_completely(qapp):
     assert dlg._default_widgets["bool"].value() is False
     assert dlg.layout() is not None
     dlg.deleteLater()
+
+
+# ---------------------------------------------------------------------------
+# The Setup gutter's two new controls
+# ---------------------------------------------------------------------------
+
+
+def test_the_link_button_recolours(qapp, theme):
+    from bartlebot.gui.widgets.link_button import LinkButton
+
+    theme("light")
+    btn = LinkButton("Show descriptions")
+    light = btn.styleSheet()
+
+    _switch(qapp, btn, theme, "dark")
+
+    assert btn.styleSheet() != light
+    assert THEME.accent in btn.styleSheet()
+
+
+def test_the_revert_button_re_renders_its_icon(qapp, theme):
+    """A bare ``svg_icon`` bakes ``THEME.icon_tint`` in at render time, so an icon
+    set once and kept goes stale with no stylesheet anywhere to grep for."""
+    from bartlebot.gui.widgets.icon_button import ThemedIconButton
+
+    theme("light")
+    btn = ThemedIconButton("revert", accent_when_enabled=True)
+    light = btn.icon().pixmap(16, 16).toImage()
+
+    _switch(qapp, btn, theme, "dark")
+
+    assert btn.icon().pixmap(16, 16).toImage() != light
+
+
+def test_the_revert_button_spends_the_accent_only_while_it_can_act(qapp, theme):
+    """Its being enabled is one of the two marks saying the value is the user's."""
+    from bartlebot.gui.widgets.icon_button import ThemedIconButton
+
+    theme("light")
+    btn = ThemedIconButton("revert", accent_when_enabled=True)
+    enabled = btn.icon().pixmap(16, 16).toImage()
+
+    btn.setEnabled(False)
+
+    assert btn.icon().pixmap(16, 16).toImage() != enabled
