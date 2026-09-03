@@ -1258,15 +1258,17 @@ Three mechanisms, three questions. Do not make one do another's job:
 | **Milestone** | when does it ship | one per issue, closes |
 | **Project board** | what am I doing next | one board, ongoing |
 
-Most of the board is automated by the project's built-in workflows: an issue is
-auto-added at `Backlog`, moves to `In progress` when a pull request links to it,
-and moves to `Done` when it closes or its PR merges. Do not hand-set a Status a
-workflow owns. `Ready` and `Blocked` are the only ones set by hand, and both are
-judgment calls.
+Two of the board's built-in workflows still run: an issue is auto-added at
+`Backlog`, and moves to `Done` when it closes — which a `Closes #N` line in a
+merge commit does, exactly as a PR body used to. Do not hand-set `Done`.
+
+The third, `In progress` on a linked pull request, no longer fires, because work
+lands by direct merge (see `docs/MERGING.md`). `In progress`, `Ready` and
+`Blocked` are all set by hand now, and all three are judgment calls.
 
 Closing an issue by dragging its card to `Done` is deliberately *not* enabled —
 the **Auto-close issue** workflow is off, so a mis-drag cannot close an issue with
-no PR trail behind it.
+no commit trail behind it.
 
 ### Filing
 
@@ -1291,19 +1293,39 @@ no PR trail behind it.
 
 ### Closing
 
-- **Issues close via PR, not by hand.** Every PR body carries one `Closes #N` line
-  per issue it resolves. Multi-issue PRs are normal here; each issue still needs
-  its own line.
-- Closing keywords fire only on merges into the **default branch** (`master`).
+- **Issues close via a merge commit, not by hand.** Every merge into `master`
+  carries one `Closes #N` line per issue it resolves. Multi-issue merges are
+  normal here; each issue still needs its own line, because comma-separated
+  keywords do not chain reliably.
+- Closing keywords fire on any push to the **default branch** (`master`), which
+  is what makes this work without a pull request.
 - **Close by hand only for won't-do or duplicate**, and set the reason to
   `not planned` so the issue does not read as completed.
+
+### Merging
+
+Branches land on `master` by **direct merge, not a pull request** — the full
+convention, the merge-commit message template, and the pre-merge read-through
+are in `docs/MERGING.md`. The three things that matter here:
+
+- **`git merge --no-ff`, always.** The merge commit is where the message lives,
+  and a fast-forward has nowhere to put it.
+- **The message carries what a PR body used to** — why now, the rejected
+  alternative, the limitation the tests do not cover, the `Closes #N` lines. A
+  PR body is GitHub metadata and will not survive the migration to the release
+  repo at 1.0.0; a commit message will.
+- **The gate is local.** `poetry run pytest -n auto` and `poetry run ruff check`
+  before every commit. CI runs on push to `master` and now confirms after the
+  fact rather than blocking, so a failure there is fixed forward at once.
 
 ### Board
 
 - `Ready` is a pull queue, not a wish list — it means scoped enough to start
   without further thinking. Keep it short.
-- `In progress` is set for you the moment a PR links to the issue. Set it by hand
-  only when work genuinely starts before a PR exists — otherwise leave it alone.
+- `In progress` is set by hand when work genuinely starts. Nothing sets it for
+  you any more: it was driven by a linked pull request, and there is no longer
+  one. A card left in `Backlog` while its branch exists is the failure mode to
+  watch for.
 - `Blocked` needs a comment naming the blocker, or it is just a stale `Ready`.
 
 ### Areas
