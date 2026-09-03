@@ -36,6 +36,17 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
+        key="reset_xyz",
+        type="xyz",
+        label="Reset XYZ",
+        help=(
+            "Coordinates used to dismiss the entrance prompt and reset state. "
+            "The prompt must NOT appear when standing here."
+        ),
+        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        required=True,
+    ),
+    ParamField(
         key="offers_challenge_mode",
         type="bool",
         label="Offers Challenge Mode",
@@ -46,17 +57,6 @@ PARAM_SCHEMA: list[ParamField] = [
         ),
         default=False,
         default_hint="Off — the dungeon is entered in normal mode.",
-    ),
-    ParamField(
-        key="reset_xyz",
-        type="xyz",
-        label="Reset XYZ",
-        help=(
-            "Coordinates used to dismiss the entrance prompt and reset state. "
-            "The prompt must NOT appear when standing here."
-        ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
-        required=True,
     ),
 ]
 
