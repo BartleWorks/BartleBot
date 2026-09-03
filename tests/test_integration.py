@@ -27,7 +27,12 @@ from unittest.mock import AsyncMock, patch
 import bartlebot.nodes.zone_entry.enter_zone as gtz
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, StateModel, TransitionModel
-from bartlebot.bot_options import orphaned_flag_options
+from bartlebot.bot_options import (
+    orphaned_flag_options,
+    required_option_specs,
+    storable_options,
+    system_option_names,
+)
 from bartlebot.nodes.registry import NODE_REGISTRY
 from tests.conftest import FakeClient
 
@@ -759,9 +764,8 @@ def test_no_bot_declares_a_user_owned_option():
     out. Friend Name is a character name (see the test above).
 
     The Options tab shows none of the three, so a file carrying one was hand-edited.
-    The sell flags and Level Scaling Players are deliberately not here: a bot farming a
-    pet has to be able to say so, and eleven bots name which of their players visit the
-    scaling station.
+    The sell flags are deliberately not here: a bot whose target drop is a pet has to be
+    able to say so, and the keep list cannot spare an individual pet.
     """
     from bartlebot.bot_options import USER_OWNED_OPTIONS  # noqa: PLC0415
 
@@ -772,6 +776,94 @@ def test_no_bot_declares_a_user_owned_option():
                 offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt['name']}")
 
     assert not offenders, f"bots declaring a value only the user owns: {offenders}"
+
+
+def _guarded_option_names(raw: dict) -> set[str]:
+    """Every option name some transition of *raw* reads, in either flag form.
+
+    The grouped form is what the edge editor writes and what takes precedence at run
+    time; the flat one is still what an older editor left behind.
+    """
+    names: set[str] = set()
+    for trans in raw.get("transitions") or []:
+        for flag in trans.get("flags") or []:
+            names.add(flag.get("option"))
+        for group in trans.get("flag_groups") or []:
+            for flag in group.get("flags") or []:
+                names.add(flag.get("option"))
+    return names
+
+
+def test_no_bot_stores_a_declaration_that_says_nothing():
+    """A derived option's declaration belongs in the file only when it *differs* from
+    what the NodeSpec composes -- otherwise it is a copy that goes stale the moment the
+    node's text or default is improved, which is how one description fix left 80 files
+    behind it.
+
+    ``BotConfig.save`` prunes these, so this is the guard against an editor running an
+    older build putting them back. It overlaps
+    ``test_opening_and_saving_a_bot_changes_nothing_in_the_file`` on purpose: that one
+    asserts a round trip moves nothing and would fail for any of a dozen reasons, and
+    this one says which reason.
+    """
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        config = BotConfig.load(path)
+        kept = {opt.name for opt in storable_options(config)}
+        for opt in config.options:
+            if opt.name not in kept:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt.name}")
+
+    assert not offenders, f"declarations a save would drop as saying nothing: {offenders}"
+
+
+def test_no_bot_declares_an_option_nothing_reads():
+    """The mirror of ``test_no_bot_guards_a_transition_on_an_option_nothing_declares``.
+
+    An option a node requires is read by that node. An option the *author* hand-added
+    has no node behind it, so a transition guarding on it is the only thing that can
+    ever read it -- without one it is a switch wired to nothing, and the Setup surface
+    offers it to the user as though it did something. ``graveyard.json`` carried two
+    copied out of ``castle_darkmoor.json`` along with a graph that has no Observatory
+    and no treasure chest in it.
+    """
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        config = BotConfig.load(path)
+        required = set(required_option_specs(config))
+        guarded = _guarded_option_names(_load_raw(path))
+        for opt in config.options:
+            if opt.name not in required and opt.name not in guarded:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt.name}")
+
+    assert not offenders, f"declared options no node requires and no transition reads: {offenders}"
+
+
+def test_no_bot_declares_an_option_borrowed_from_a_node_it_does_not_run():
+    """A hand-added option whose name collides with one *any* node declares is deleted
+    from the file on the next save, silently.
+
+    ``compose_options`` and ``storable_options`` both treat every name in
+    ``system_option_names()`` as derived, so such an option is filed as dead weight
+    rather than as author intent -- and it is the file that is the only copy. Inherited
+    from ``_inject_required_options`` (docs/DESIGN_REVIEW.md), but sharper now that the
+    prune runs on every save.
+
+    ``test_no_bot_stores_a_declaration_that_says_nothing`` catches the symptom -- a
+    borrowed option is dropped like any other -- but names the wrong cause, and the
+    fix it implies (delete it, the save would anyway) is the opposite of the right
+    one. This says the option is real and its *name* is the problem.
+    """
+    offenders: list[str] = []
+    system = system_option_names()
+    for path in _all_bot_files():
+        config = BotConfig.load(path)
+        required = set(required_option_specs(config))
+        for opt in config.options:
+            if opt.name in system and opt.name not in required:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt.name}")
+
+    assert not offenders, f"declarations borrowed from a node the bot does not run: {offenders}"
 
 
 def test_no_bot_pins_a_bot_wide_option_for_one_node():

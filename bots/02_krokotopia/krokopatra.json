@@ -614,17 +614,7 @@
     "Spellements",
     "Boss"
   ],
-  "options": [
-    {
-      "name": "Level Scaling Players",
-      "type": "player_list",
-      "default": [
-        2,
-        3,
-        4
-      ]
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_1",

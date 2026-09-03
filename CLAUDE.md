@@ -391,6 +391,18 @@ mutually contradictory texts for the one setting.
   the editor reports it in the validation banner;
   `test_no_bot_guards_a_transition_on_an_option_nothing_declares` keeps the
   shipped library clean of them.
+- **A hand-added option must not borrow a name any NodeSpec uses.** Both
+  `compose_options` and `storable_options` treat every name in
+  `system_option_names()` as derived, wherever it is declared — so an author's own
+  option that happens to share a name with one some unrelated node requires is
+  filed as dead weight and dropped on the next save, silently, from the only copy.
+  Inherited from `_inject_required_options` (`docs/DESIGN_REVIEW.md`), but sharper
+  now the prune runs every save.
+  `test_no_bot_declares_an_option_borrowed_from_a_node_it_does_not_run` is the
+  guard; its two siblings —
+  `test_no_bot_stores_a_declaration_that_says_nothing` and
+  `test_no_bot_declares_an_option_nothing_reads` — catch a stale copy and a switch
+  wired to nothing.
 - **Editing a derived option in the Options surface materialises it into the
   file.** That surface edits *declarations*, and a declaration has to be in the
   file to exist; `OptionsSection._declaration_for` is where the transient
@@ -522,10 +534,14 @@ already has.
   *A node cannot pin a bot-wide option* removed, one level up. Ownership is a
   property of the *option*, not of its type — Safety Delay is an ordinary float —
   so the registry is by name, and it is deliberately narrow: `Sell Pets` stays
-  editable because a bot farming a pet has to be able to say so, and `Level
-  Scaling Players` because eleven shipped bots name which of *their* players visit
-  the station. Nothing prunes such a declaration on save: the resolution stays a
-  plain four levels, a hand-edited file is still honoured, and
+  editable because a bot farming a pet has to be able to say so, and the keep list
+  cannot spare an individual pet. `Level Scaling Players` is the near miss — eleven
+  bots declared it, which read as intent until the values were looked at, and six
+  were one `[2, 3, 4]` propagated by copy. Which of a user's wizards are
+  underlevelled is a fact about their team, so all eleven were dropped; the option
+  stays editable anyway, because a wrong answer there costs an elixir rather than
+  an item, a name, or a run. Nothing prunes such a declaration on save: the
+  resolution stays a plain four levels, a hand-edited file is still honoured, and
   `test_no_bot_declares_a_user_owned_option` is what keeps the library clean.
 - **Renaming an option is three fixups, not one.** The flat `flags` list, the
   `flag_groups` the edge editor actually writes — which take precedence at run
@@ -671,7 +687,10 @@ in this graph*:
 
 A bot option also reaches **every** node in the bot at once. That is not a detail:
 quicksell's flags were per-node, so `hall_of_heroes` needed two quicksell nodes and
-two mutually exclusive bool options to offer one choice between two keep lists.
+two mutually exclusive bool options to offer one choice between two keep lists. It
+is one node now, declaring `["Merciless"]`: the choice is a value the user edits,
+and `Enable Quicksell` already answers the third branch that skipped selling
+altogether.
 
 Three things that fall out of it:
 

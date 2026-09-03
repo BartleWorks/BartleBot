@@ -682,20 +682,7 @@
     "Gear",
     "Dungeon"
   ],
-  "options": [
-    {
-      "name": "Open Treasure Chest",
-      "type": "bool",
-      "default": true,
-      "description": "Whether or not to use a Stone Skeleton Key to open the Treasure Chest in the spiral staircase before the Observatory."
-    },
-    {
-      "name": "Skip Observatory puzzle",
-      "type": "bool",
-      "default": true,
-      "description": "Whether or not to skip the Observatory puzzle at the end of the dungeon."
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_1",

@@ -1085,26 +1085,6 @@
   ],
   "options": [
     {
-      "name": "Level Scaling Players",
-      "type": "player_list",
-      "default": [
-        1,
-        3
-      ]
-    },
-    {
-      "name": "Quicksell (keep Merciless gear)",
-      "type": "bool",
-      "default": false,
-      "description": "Whether or not to quicksell items. Keeps Merciless gear, skeleton keys, and socket wrenches only."
-    },
-    {
-      "name": "Quicksell (keep nothing)",
-      "type": "bool",
-      "default": true,
-      "description": "Whether or not to quicksell, including Merciless gear, but keeping skeleton keys and socket wrenches."
-    },
-    {
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
@@ -1262,16 +1242,6 @@
       }
     },
     {
-      "id": "state_9",
-      "node_type": "quicksell",
-      "label": "Quicksell (keep Merciless gear)",
-      "position": {
-        "x": 4840.0,
-        "y": 90.0
-      },
-      "params": {}
-    },
-    {
       "id": "state_10",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
@@ -1323,7 +1293,7 @@
     {
       "id": "state_13",
       "node_type": "quicksell",
-      "label": "Quicksell (keep nothing)",
+      "label": "Quicksell",
       "position": {
         "x": 4840.0,
         "y": 0.0
@@ -1525,73 +1495,11 @@
     {
       "trigger": "advance",
       "source": "state_7",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell (keep nothing)",
-              "negate": true
-            },
-            {
-              "option": "Quicksell (keep Merciless gear)",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell (keep Merciless gear)",
-              "negate": true
-            },
-            {
-              "option": "Quicksell (keep nothing)",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell (keep Merciless gear)",
-              "negate": true
-            },
-            {
-              "option": "Quicksell (keep Merciless gear)",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
+      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
@@ -1619,26 +1527,6 @@
       "source": "state_8",
       "dest": "state_3",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_8",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

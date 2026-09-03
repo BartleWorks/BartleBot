@@ -92,11 +92,19 @@ APP_SETTING_KEYS: dict[str, str] = {
 #                   author who did not want selling would leave the node out.
 #
 # Deliberately *not* here: ``Sell Pets`` and its two siblings, because a bot whose
-# target drop is a pet has to be able to say so (the keep list cannot spare an
-# individual pet), and ``Level Scaling Players``, which names *which players in
-# this dungeon* visit the station -- eleven shipped bots declare it, and no two
-# agree.  Those are facts about the graph, and the app setting is only the answer
-# for a bot that has no view.
+# target drop is a pet has to be able to say so, and the keep list cannot spare an
+# individual pet -- that is a fact about the dungeon, so the author gets a say.
+#
+# ``Level Scaling Players`` is the near miss, and worth recording.  Eleven shipped
+# bots declared it, which read as authorial intent until the values were looked at:
+# six were the same ``[2, 3, 4]`` propagated by copy, and the remaining five --
+# ``[1, 2, 3, 4]`` twice, then ``[2]``, ``[1, 2, 3]``, ``[1, 3]`` -- are simply
+# whichever of one author's own wizards were underlevelled the day they recorded
+# the bot.  Which players need the elixir is a fact about the *user's team*, so all
+# eleven were dropped and the app setting answers.  It stays out of this set even
+# so: an author who really does know their dungeon scales only some players may
+# still say so, and unlike the three above a wrong answer here costs an elixir
+# rather than an item, a name, or a run.
 USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Enable Quicksell"})
 
 
