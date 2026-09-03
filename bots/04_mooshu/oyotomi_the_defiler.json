@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_5",
   "recovery_state": "state_5",
-  "start_location": "Anywhere",
   "drops": [
     {
       "name": "Balance-Off Citrine",

@@ -1,14 +1,14 @@
-"""Tests for the bot-tag picker shared by Bot Info and the library panel."""
+"""Tests for the bot-tag picker shared by the bot header and the library panel."""
 
 import sys
 
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QWidget
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
-from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
+from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.widgets.picker_popup import _RowWidget
 from bartlebot.gui.widgets.tag_picker import (
     TagPickerButton,
@@ -126,8 +126,13 @@ def test_a_theme_change_reapplies_the_stylesheet_without_recursing(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Bot Info wiring
+# Bot header wiring
 # ---------------------------------------------------------------------------
+
+
+def _header() -> BotHeader:
+    """A header with three throwaway button clusters standing in for the toolbar."""
+    return BotHeader(QWidget(), QWidget())
 
 
 def _bot(**extra) -> BotConfig:
@@ -145,7 +150,7 @@ def _bot(**extra) -> BotConfig:
 
 
 def test_loading_a_bot_shows_its_tags_without_marking_it_dirty(qapp):
-    section = BotInfoSection()
+    section = _header()
     dirty = []
     section.metadata_changed.connect(lambda: dirty.append(1))
 
@@ -156,7 +161,7 @@ def test_loading_a_bot_shows_its_tags_without_marking_it_dirty(qapp):
 
 
 def test_toggling_a_tag_writes_it_back_in_vocabulary_order(qapp):
-    section = BotInfoSection()
+    section = _header()
     config = _bot(tags=["Boss"])
     section.set_config(config)
     section.set_editable(True)
@@ -171,7 +176,7 @@ def test_toggling_a_tag_writes_it_back_in_vocabulary_order(qapp):
 
 def test_the_editor_offers_no_counts(qapp):
     """Counts describe the library, which the editor knows nothing about."""
-    section = BotInfoSection()
+    section = _header()
     section.set_config(_bot())
     picker = section._tags_field._pickers["Activity"]
     picker._open()
@@ -211,7 +216,7 @@ def test_a_grouped_button_counts_its_selection_rather_than_listing_it(qapp):
 
 
 def test_an_ungrouped_button_still_lists_its_selection(qapp):
-    """Bot Info has one picker, where naming what is selected beats counting it."""
+    """The library's ungrouped picker names what is selected rather than counting."""
     btn = TagPickerButton()
     btn._open()
 
@@ -238,7 +243,7 @@ def _field(tags: list[str], *, editable: bool):
     Both are returned because the test has to hold the section: dropping it collects
     the C++ side and every child widget with it, mid-assertion.
     """
-    section = BotInfoSection()
+    section = _header()
     section.set_config(_bot(tags=tags))
     section.set_editable(editable)
     return section._tags_field, section
@@ -282,7 +287,7 @@ def test_an_add_button_keeps_its_caption_once_something_is_selected(qapp):
 
 
 def test_removing_a_chip_writes_the_shorter_list_back(qapp):
-    section = BotInfoSection()
+    section = _header()
     config = _bot(tags=["Gear", "Jewels", "Boss"])
     section.set_config(config)
     section.set_editable(True)
@@ -303,7 +308,7 @@ def test_the_placeholder_stands_in_for_the_pills_only_while_read_only(qapp):
 
 def test_tags_from_both_pickers_come_back_in_vocabulary_order(qapp):
     """Two buttons feed one list, and BOT_TAGS order is what gets saved."""
-    section = BotInfoSection()
+    section = _header()
     config = _bot()
     section.set_config(config)
     section.set_editable(True)

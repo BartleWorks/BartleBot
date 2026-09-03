@@ -399,12 +399,13 @@ mutually contradictory texts for the one setting.
 
 #### Two surfaces: Setup edits values, Options edits declarations
 
-The Config tab holds both, swapped by edit mode — Run shows **Setup**
-(`setup_section.py`), Edit shows **Options** (`options_section.py`). Every
-production system that solves this split separates the surfaces by context
-rather than by a toggle inside one panel (Unity's Prefab Mode, Unreal's Class
-Defaults, VS Code's settings UI against `package.json`), and edit mode is the
-context this app already has.
+They are separate tabs of the left sidebar, and edit mode decides which pair is
+there at all — Run shows **Setup** (`setup_section.py`) and Combat, Edit shows
+**Options** (`options_section.py`) and Properties. Every production system that
+solves this split separates the surfaces by context rather than by a toggle
+inside one panel (Unity's Prefab Mode, Unreal's Class Defaults, VS Code's
+settings UI against `package.json`), and edit mode is the context this app
+already has.
 
 - **Setup writes `settings.json`, never the bot file.** `values_changed` is
   deliberately *not* wired to `config_changed`: an override is not an edit to
@@ -459,7 +460,102 @@ context this app already has.
   null it was handed, which is what `_was_null` and `_default_touched` are for:
   opening Edit to fix a description must not promote the declaration.
 
-#### App settings vs. node params
+#### Which panel owns what
+
+`LeftSidebar` is the bot's configuration and nothing else, and its tabs are
+*rebuilt* per mode rather than hidden — a `QTabWidget` cannot hide one tab, and a
+tab that stays put while changing meaning is the toggle the split above exists to
+avoid. A tab the current mode does not offer is parked on a hidden child widget,
+because `removeTab` otherwise leaves it parentless, which is to say a top-level
+window.
+
+Two bars, and which one a thing belongs to is decided by what it is *about*:
+
+| | above | owns |
+|---|---|---|
+| **Bar A** (`game_view_panel.py`) | the game windows | the clients: how many are hooked, the launch profile, the node they are being driven through |
+| **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
+
+Bar B is a three-column grid grouped by *subject*: everything about the bot on the
+left, the run controls in the middle with the clock and the run state either side of
+them, and the tools that act on the *view* — fit, failure-edge toggle — out on the
+right with the mode toggle. Only the metadata column is two rows deep; both control
+clusters span those two rows, which is what puts them on the bar's own vertical
+centre and level with each other.
+
+**Nothing is stacked in the centre or on the right, and that is the point.** The
+status used to be a caption beneath the transport, which left the view tools as the
+only cluster with an empty row under them — they centred in row 1 and read as
+sitting high. Fixing that by spanning only the right column would put the two
+clusters at different heights, which is worse. So the status moved onto the button
+row and both columns span.
+
+**The transport is a landmark: it stays in the centre in both modes, and is disabled
+rather than replaced.** Add State and Auto-Layout used to occupy its exact pixels in
+Edit mode, so the same target did two different things with no cue at the target
+saying which. Every production tool with a transport treats it this way — Unity,
+Unreal, Xcode, every NLE — because people aim at one without looking. The two are
+graph-editing tools besides, so they belong with the mode toggle that summons them.
+
+The right-hand end is three clusters, grouped by widening scope: the **document**
+(add state, auto-layout), the **view** of it (fit, failure edges), then the way out
+of the **mode** (edit, or done/save). Each is a fixed `_PAIR_WIDTH` slot and the edit
+tools' Run-mode page is deliberately *empty*, so nothing there moves when the mode
+changes; the mode toggle right-aligns inside its own slot and stays anchored to the
+margin whether it holds one button or two.
+
+**Set the spacing on every toolbar row explicitly** (`_BTN_GAP` within a cluster,
+`_GROUP_GAP` between). The style's default is 6px on Windows, so a row that only
+called `addSpacing(4)` came to 80px inside a 68px slot and clipped the Save button
+off its right-hand end. `tests/test_canvas_toolbar_layout.py` checks that no button
+overruns the slot it sits in, in either mode.
+
+The two side columns take **equal stretch**, which is what keeps the centre column
+near mid-bar. The cost is that the metadata is capped at roughly half the bar, so a
+long filename elides and a heavily tagged bot wraps its byline in Edit mode. Both
+degrade quietly; a Run button that drifts with the length of the bot's name does not.
+
+The clock is **zeroed, not hidden**, while idle, and the clock and the status
+**reserve equal, fixed widths** either side of the transport (`_size_status_slots`).
+Both are the same concern: anything either side of those buttons that grows or
+appears shoves them sideways at the one moment the user is watching them, and the
+status word cycles `Editing` / `Idle` / `Running` / `Paused` as the run goes on.
+Equal slots are also what centre the transport within its own column. The slot is a
+*minimum* width, so an unforeseen longer word widens it rather than being clipped,
+and it is re-measured on a theme switch because the clock is in `THEME.font_mono()`.
+The status label's font size is set on the widget rather than in its stylesheet — a
+stylesheet `font-size` never reaches `QWidget.font()`, so the metrics would be measured
+at the wrong size.
+
+Bot name and run status were in Bar A, which meant they vanished whenever the
+game view was hidden (#80). `BotHeader` takes two opaque widgets — the transport, and the
+whole right-hand end — rather than naming each cluster, because which clusters exist
+depends on the mode, and that is knowledge the header should not acquire.
+`BotCanvas` writes the status straight into its own
+header and *also* emits `bot_status_changed`, because the menu actions and Bar A's
+active-node caption still need it; routing Bar B's own status out to MainWindow
+and back would make the bar depend on a window that may not have connected yet.
+
+Three things the header does not hold, and should not be given back:
+
+- **`start_location`** is gone from the schema. Nothing in the engine ever read
+  it, `go_to_world` and the bot templates make it moot, and a field naming a
+  place the app will not take you to reads as a promise. Pydantic ignores it in
+  an older file and `save()` drops it.
+- **Initial State / Recovery State** are badges on the nodes themselves (#71);
+  the labels only restated the graph.
+- **The description** heads Setup (read) and Options (edit) instead. Elided into
+  a header it would hide exactly the text a user must read — four bots carry
+  multi-line `REQUIREMENTS:` blocks saying things like "change the client
+  resolution to…".
+
+**Possible Drops** sits with the live drop tables in the right sidebar's Drops
+tab: the two answer the same question at different times, what this run could
+yield and what it has. It is the only authorial thing over there, which is what
+`RightSidebar.config_changed` exists for. **Log** is the third tab there, so it
+can be read without closing Setup.
+
+### App settings vs. node params
 
 An app setting that a node param also expresses must never be applied by rewriting
 the param on load. That is what `AppController._apply_bot_defaults` used to do to

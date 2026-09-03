@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_4",
   "recovery_state": "state_1",
-  "start_location": "The Basilica",
   "drops": [
     {
       "name": "Level 50 hat"

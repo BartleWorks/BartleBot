@@ -6,14 +6,16 @@
   "clients": "all",
   "initial": "state_2",
   "recovery_state": "state_2",
-  "start_location": "The Commons",
   "drops": [
     {
       "name": "Nothing"
     }
   ],
   "authors": "BartleBot",
-  "tags": [],
+  "tags": [
+    "Gold",
+    "Gathering"
+  ],
   "options": [],
   "states": [
     {

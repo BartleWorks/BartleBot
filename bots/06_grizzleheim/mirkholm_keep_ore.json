@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_3",
   "recovery_state": "state_3",
-  "start_location": "Anywhere in Grizzleheim",
   "drops": [
     {
       "name": "Cattail"

@@ -14,13 +14,34 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.game_embed.game_view import GameView
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 
 
-class GameViewPanel(QWidget):
+def client_summary(connected: int, profile: str | None) -> str:
+    """The caption for the left of Bar A: how many clients, launched from what.
+
+    Pure, so the wording is testable without a ``QApplication`` — the same reasoning
+    as ``client_refresh_interval()``.  The profile is named only when there is one
+    *and* something is connected: "0 clients · Four Wizards" reads as a claim that
+    the profile is running.
+    """
+    noun = "client" if connected == 1 else "clients"
+    text = f"{connected} {noun} connected" if connected else "No clients connected"
+    if connected and profile:
+        text = f"{text} · {profile}"
+    return text
+
+
+class GameViewPanel(ThemedMixin, QWidget):
     """Middle panel: a title bar above the embedded game view.
 
     Title bar layout (left → right):
-        [● Status  elapsed]    [Bot display name]    [Node title]
+        [N clients connected · Profile]        [active node title]
+
+    The bar sits above the *game windows*, so it says what the clients are doing.
+    The bot's name and run status used to live here and moved to Bar B above the
+    graph (#80) — they belong to the bot, and here they vanished with the game view
+    whenever it was hidden.
     """
 
     launch_account_requested = pyqtSignal(str, str)  # forwarded from GameView
@@ -31,6 +52,8 @@ class GameViewPanel(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.game_view = GameView()
+        self._connected = 0
+        self._profile: str | None = None
         self._build_ui()
 
         # Forward placeholder signals
@@ -69,41 +92,15 @@ class GameViewPanel(QWidget):
 
         outer.addWidget(self.game_view, stretch=1)
 
+        self.refresh_theme_styles()
+
     def _make_header(self) -> QWidget:
         bar = QWidget()
 
-        mono = THEME.font_mono()
-
-        # ── Left: status dot + text + elapsed ────────────────────────
-        self._dot_lbl = QLabel("●")
-        self._dot_lbl.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        self._status_lbl = QLabel("Idle")
-        self._status_lbl.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        self._elapsed_lbl = QLabel()
-        self._elapsed_lbl.setFont(mono)
-        self._elapsed_lbl.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        self._elapsed_lbl.setVisible(False)
-
-        left = QWidget()
-        left.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        left_row = QHBoxLayout(left)
-        left_row.setContentsMargins(6, 0, 0, 0)
-        left_row.setSpacing(4)
-        left_row.addWidget(self._dot_lbl)
-        left_row.addWidget(self._status_lbl)
-        left_row.addWidget(self._elapsed_lbl)
-        left_row.addStretch()
-
-        # ── Center: bot display name (main title) ────────────────────
-        self._name_lbl = QLabel("No bot loaded")
-        title_font = self._name_lbl.font()
-        title_font.setBold(True)
-        title_font.setPointSize(title_font.pointSize() + 1)
-        self._name_lbl.setFont(title_font)
-        self._name_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
-        self._name_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        # ── Left: what is connected, and what launched it ────────────
+        self._clients_lbl = QLabel(client_summary(0, None))
+        self._clients_lbl.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self._clients_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         # ── Right: node title (active state label) ───────────────────
         self._state_lbl = QLabel()
@@ -111,21 +108,11 @@ class GameViewPanel(QWidget):
         self._state_lbl.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self._state_lbl.setVisible(False)
 
-        right = QWidget()
-        right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        right_row = QHBoxLayout(right)
-        right_row.setContentsMargins(0, 0, 6, 0)
-        right_row.setSpacing(0)
-        right_row.addStretch()
-        right_row.addWidget(self._state_lbl)
-
-        # ── Assemble ─────────────────────────────────────────────────
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(0, 4, 0, 4)
-        layout.setSpacing(0)
-        layout.addWidget(left, stretch=1)
-        layout.addWidget(self._name_lbl, stretch=1)
-        layout.addWidget(right, stretch=1)
+        layout.setContentsMargins(6, 4, 6, 4)
+        layout.setSpacing(6)
+        layout.addWidget(self._clients_lbl, stretch=1)
+        layout.addWidget(self._state_lbl, stretch=1)
 
         return bar
 
@@ -133,15 +120,37 @@ class GameViewPanel(QWidget):
     # Public API — called by MainWindow
     # ------------------------------------------------------------------
 
-    def set_bot_name(self, name: str | None) -> None:
-        self._name_lbl.setText(name or "No bot loaded")
+    def set_client_summary(self, connected: int, profile: str | None = None) -> None:
+        """How many clients are hooked, and the launch profile that produced them.
 
-    def set_bot_status(self, color: str, status: str, state_label: str, elapsed: str) -> None:
-        self._dot_lbl.setStyleSheet(f"color: {color};")
-        self._status_lbl.setText(status)
+        *profile* is remembered when omitted, because the client count changes on
+        every detection tick while the profile changes only on a launch.
+        """
+        self._connected = connected
+        if profile is not None:
+            self._profile = profile
+        self._clients_lbl.setText(client_summary(self._connected, self._profile))
 
-        self._elapsed_lbl.setText(elapsed)
-        self._elapsed_lbl.setVisible(bool(elapsed))
+    def set_launch_profile(self, profile: str | None) -> None:
+        """Name the launch profile most recently used, or clear it."""
+        self._profile = profile
+        self._clients_lbl.setText(client_summary(self._connected, self._profile))
 
+    def set_active_node(self, state_label: str) -> None:
+        """Show the node the bot is currently in, or nothing when it is idle."""
         self._state_lbl.setText(state_label)
         self._state_lbl.setVisible(bool(state_label))
+
+    @property
+    def client_text(self) -> str:
+        """What the left of the bar currently reads."""
+        return self._clients_lbl.text()
+
+    @property
+    def node_text(self) -> str:
+        """What the right of the bar currently reads."""
+        return self._state_lbl.text()
+
+    def apply_theme_styles(self) -> None:
+        self._clients_lbl.setStyleSheet(f"color: {THEME.text};")
+        self._state_lbl.setStyleSheet(f"color: {THEME.text_muted};")

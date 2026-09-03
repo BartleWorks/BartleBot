@@ -25,7 +25,6 @@ def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None =
         authors=kw.get("authors", ""),
         drops=drops or [],
         tags=tags or [],
-        start_location="",
         version="1.0",
         path=Path(f"/bots/{name}.json"),
     )

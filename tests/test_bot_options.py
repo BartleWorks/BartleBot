@@ -349,7 +349,22 @@ def test_save_as_mints_a_new_id(tmp_path, monkeypatch):
     monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(dest), "")))
     config = _config()
     original_id = config.id
-    controller = SimpleNamespace(
+    controller = _save_as_controller(config)
+
+    AppController._save_bot_as(controller)
+
+    assert config.id != original_id
+    assert BotConfig.load(dest).id == config.id
+
+
+def _save_as_controller(config, refreshed=None):
+    """A stand-in ``self`` for ``_save_bot_as``.
+
+    Driven through the real method — it touches the window only to relabel it
+    and to re-resolve the option surfaces, and standing up a MainWindow would
+    test Qt rather than the fork.
+    """
+    return SimpleNamespace(
         _loaded_config=config,
         _last_save_path=None,
         _has_unsaved_changes=True,
@@ -358,13 +373,49 @@ def test_save_as_mints_a_new_id(tmp_path, monkeypatch):
             set_bot_name=lambda *a: None,
             update_recent_menu=lambda *a: None,
             bot_canvas=SimpleNamespace(refresh_placeholder=lambda: None),
+            left_sidebar=SimpleNamespace(
+                refresh_options=lambda cfg: (refreshed if refreshed is not None else []).append(cfg.id)
+            ),
         ),
     )
 
+
+def test_save_as_re_resolves_the_value_surfaces(tmp_path, monkeypatch):
+    """The fork has none of the original's stored values, so a panel still showing
+    them is showing a value this bot will not run with. Reported live: Safety Delay
+    stayed at the original's 5.0 until the bot was closed and reopened."""
+    from PyQt6.QtWidgets import QFileDialog  # noqa: PLC0415
+
+    dest = tmp_path / "fork.json"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(dest), "")))
+    config = _config()
+    refreshed: list[str] = []
+
+    AppController._save_bot_as(_save_as_controller(config, refreshed))
+
+    # Refreshed once, and against the *new* identity — refreshing before the mint
+    # would re-resolve the original's overrides and look exactly like the bug.
+    assert refreshed == [config.id]
+
+
+def test_a_failed_save_as_keeps_the_bot_its_identity(tmp_path, monkeypatch):
+    """The write is what makes the fork exist. Without one, the loaded bot is still
+    the original, and a minted id would orphan its stored values for the session."""
+    from PyQt6.QtWidgets import QFileDialog, QMessageBox  # noqa: PLC0415
+
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(tmp_path / "fork.json"), "")))
+    monkeypatch.setattr(QMessageBox, "critical", staticmethod(lambda *a, **k: None))
+    monkeypatch.setattr(BotConfig, "save", lambda self, path: (_ for _ in ()).throw(OSError("disk full")))
+    config = _config()
+    original_id = config.id
+    refreshed: list[str] = []
+    controller = _save_as_controller(config, refreshed)
+
     AppController._save_bot_as(controller)
 
-    assert config.id != original_id
-    assert BotConfig.load(dest).id == config.id
+    assert config.id == original_id
+    assert controller._last_save_path is None
+    assert refreshed == []
 
 
 def test_a_new_bot_is_born_with_an_id():
@@ -380,6 +431,7 @@ def test_a_new_bot_is_born_with_an_id():
             set_close_enabled=lambda *a: None,
             set_start_enabled=lambda *a: None,
             left_sidebar=SimpleNamespace(set_config=lambda *a: None),
+            right_sidebar=SimpleNamespace(set_config=lambda *a: None),
             bot_canvas=SimpleNamespace(setup=lambda *a: None, enter_edit_mode=lambda: None),
         ),
     )

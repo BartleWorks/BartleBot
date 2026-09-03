@@ -1,42 +1,49 @@
-"""Left sidebar: tab-based panel with Bot, Setup/Options, Combat, Properties, and Log tabs."""
+"""Left sidebar: a mode-swapped pair of tab sets.
+
+Run mode shows **Setup** and **Combat** — the two things a user tunes before
+pressing play.  Edit mode shows **Options** and **Properties** — the two things an
+author declares.  Nothing is shown in both, and no tab changes meaning when the
+mode does.
+
+That split is §3.5 of the declarations/overrides plan: every production system
+that separates a declaration surface from a values surface does it by *context*
+(Unity's Prefab Mode, Unreal's Class Defaults, VS Code's ``package.json`` against
+its Settings UI), never a toggle inside one panel — and edit mode is the context
+this app already has.  Setup being the default Run-mode tab is also the whole of
+the pre-run configuration story: adjacency to the Run button, not a gate in front
+of it.
+
+Two tabs went elsewhere entirely.  **Bot** is gone — its metadata is Bar B above
+the graph, its description heads Setup (read-only) and Options (where it is now
+edited), and its Start / Initial / Recovery rows were either unread or already
+badges on the nodes.  **Log** moved to
+the right sidebar, where it can be read while the left one is showing Setup.
+"""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QScrollArea, QStackedWidget, QTabWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 from bartlebot.gui.sidebar.combat_tab import CombatTab
-from bartlebot.gui.sidebar.log_panel import LogPanel
-from bartlebot.gui.sidebar.sections.bot_info_section import BotInfoSection
+from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
-from bartlebot.gui.sidebar.sections.possible_drops_section import PossibleDropsSection
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
 
-_BOT_TAB = 0
-_CONFIG_TAB = 1
-# Pages of the Config tab's stack, and the tab label each one wears.
-_SETUP_PAGE = 0
-_OPTIONS_PAGE = 1
-_CONFIG_TAB_TITLES = ("Setup", "Options")
-_COMBAT_TAB = 2
-_PROPERTIES_TAB = 3
-_LOG_TAB = 4
-
 
 class LeftSidebar(QTabWidget):
-    """Left sidebar with five tabs: Bot, Setup/Options, Combat, Properties, Log.
+    """Two tabs, whose identity depends on the mode.
 
-    - Bot: bot metadata (name, version, description, authors, start, initial/recovery state, possible drops)
-    - Setup / Options: the two halves of a bot's options, swapped by edit mode --
-      Setup edits the user's own values, Options edits the author's declarations
-    - Combat: Bot Combat Profiles, Duel Profiles, player deck config
-    - Properties: node parameter editor (created externally in BotCanvas and passed in)
-    - Log: log viewer
+    - Run:  Setup (the user's values) and Combat
+    - Edit: Options (the author's declarations) and Properties
+
+    ``Properties`` is the node parameter editor, built by ``BotCanvas`` and passed
+    in; everything else is built here.
     """
 
     config_changed = pyqtSignal()
@@ -49,60 +56,45 @@ class LeftSidebar(QTabWidget):
         super().__init__(parent)
         self.setMinimumWidth(300)
         self._config: BotConfig | None = None
+        self._editable = False
 
-        # ── Bot tab ─────────────────────────────────────────────
-        self.bot_info = BotInfoSection()
-        self.possible_drops = PossibleDropsSection()
-
-        bot_content = QWidget()
-        bot_vbox = QVBoxLayout(bot_content)
-        bot_vbox.setContentsMargins(8, 8, 8, 8)
-        bot_vbox.setSpacing(4)
-        bot_vbox.addWidget(self.bot_info)
-        bot_vbox.addWidget(self.possible_drops, 1)  # stretch=1: fills space when expanded
-        bot_vbox.addStretch()  # absorbs leftover when possible_drops is collapsed
-
-        # ── Config tab ──────────────────────────────────────────
-        # Two surfaces, one tab, swapped by mode: Setup edits the user's values,
-        # Options edits the author's declarations.  Every production system that
-        # solves this split separates the two by context rather than by a toggle
-        # inside one panel, and Edit mode is the context we already have.  Phase 5
-        # promotes them to tabs of their own.
+        # ── The two option surfaces ─────────────────────────────────
+        # Each gets the bot's full description above it, in the same position, so
+        # that the four bots carrying multi-line ``REQUIREMENTS:`` blocks put them
+        # in front of the user rather than behind an ellipsis in the header.  The
+        # Options copy is the writable one: the description is authorial, so it
+        # belongs on the declarations surface and not on the values surface (#180).
         self.setup = SetupSection()
         self.options = OptionsSection()
+        self._setup_desc = DescriptionSection(editable=False)
+        self._options_desc = DescriptionSection(editable=True)
 
-        self._config_stack = QStackedWidget()
-        for section in (self.setup, self.options):
-            content = QWidget()
-            vbox = QVBoxLayout(content)
-            vbox.setContentsMargins(8, 8, 8, 8)
-            vbox.setSpacing(4)
-            vbox.addWidget(section)
-            vbox.addStretch()
-            scroll = QScrollArea()
-            scroll.setWidget(content)
-            scroll.setWidgetResizable(True)
-            self._config_stack.addWidget(scroll)
+        self._setup_page = self._wrap(self._setup_desc, self.setup)
+        self._options_page = self._wrap(self._options_desc, self.options)
 
-        # ── Combat tab ──────────────────────────────────────────
+        # ── Combat and Properties ───────────────────────────────────
         self.combat_tab = CombatTab()
+        self._param_panel = param_panel
 
-        self.log_panel = LogPanel()
+        # Where a tab the current mode does not offer waits.  ``removeTab`` leaves
+        # the widget parentless, which makes it a hidden top-level window; parking
+        # it on a hidden child keeps it inside this widget's ownership instead.
+        self._parked = QWidget(self)
+        self._parked.setVisible(False)
 
-        self.addTab(bot_content, "Bot")  # _BOT_TAB        = 0
-        self.addTab(self._config_stack, "Setup")  # _CONFIG_TAB     = 1
-        self.addTab(self.combat_tab, "Combat")  # _COMBAT_TAB     = 2
-        self.addTab(param_panel, "Properties")  # _PROPERTIES_TAB = 3
-        self.addTab(self.log_panel, "Log")  # _LOG_TAB        = 4
+        self._apply_tab_set()
 
         # Propagate section-level signals up as the unified config_changed signal.
-        self.bot_info.metadata_changed.connect(self.config_changed)
-        self.possible_drops.drops_changed.connect(self.config_changed)
         self.options.options_changed.connect(self.config_changed)
         # A changed declaration changes what Setup resolves to, so that surface has
         # to be rebuilt.  The reverse is deliberately *not* wired: an override lives
         # in settings.json, so writing one must never dirty the bot file.
         self.options.options_changed.connect(self._refresh_setup_values)
+        # Editing the description *is* an edit to the bot file, unlike an override.
+        # The Setup copy is not re-bound by a mode switch, so it is refreshed here
+        # rather than left to disagree with the editor above Options.
+        self._options_desc.description_changed.connect(self.config_changed)
+        self._options_desc.description_changed.connect(self._setup_desc.refresh)
         self.combat_tab.combat_config_changed.connect(self.config_changed)
 
         # Refresh the Combat tab's fight profile list whenever it becomes visible,
@@ -110,30 +102,72 @@ class LeftSidebar(QTabWidget):
         self.currentChanged.connect(self._on_tab_changed)
 
     # ------------------------------------------------------------------
-    # Tab switching (called by BotCanvas.on_tab_switch)
+    # Construction helpers
     # ------------------------------------------------------------------
 
-    def switch_to_bot(self) -> None:
-        self.setCurrentIndex(_BOT_TAB)
+    @staticmethod
+    def _wrap(description: QWidget, section: QWidget) -> QScrollArea:
+        content = QWidget()
+        vbox = QVBoxLayout(content)
+        vbox.setContentsMargins(8, 8, 8, 8)
+        vbox.setSpacing(6)
+        vbox.addWidget(description)
+        vbox.addWidget(section)
+        vbox.addStretch()
+        scroll = QScrollArea()
+        scroll.setWidget(content)
+        scroll.setWidgetResizable(True)
+        return scroll
 
-    def switch_to_config(self) -> None:
-        self.setCurrentIndex(_CONFIG_TAB)
+    def _apply_tab_set(self) -> None:
+        """Put the tabs the current mode calls for in place, landing on the first.
+
+        Rebuilding rather than hiding: a ``QTabWidget`` cannot hide one tab, and the
+        four widgets are long-lived members, so removing them costs nothing beyond
+        the re-add.  Signals are blocked across the swap because ``clear()`` moves
+        the current index through every intermediate value on the way.
+        """
+        blocked = self.signalsBlocked()
+        self.blockSignals(True)
+        try:
+            while self.count():
+                page = self.widget(0)
+                self.removeTab(0)
+                page.setParent(self._parked)
+            if self._editable:
+                self.addTab(self._options_page, "Options")
+                self.addTab(self._param_panel, "Properties")
+            else:
+                self.addTab(self._setup_page, "Setup")
+                self.addTab(self.combat_tab, "Combat")
+            self.setCurrentIndex(0)
+        finally:
+            self.blockSignals(blocked)
+
+    # ------------------------------------------------------------------
+    # Tab switching
+    # ------------------------------------------------------------------
+
+    # No ``switch_to_setup``: leaving Edit mode rebuilds the tab set and lands on
+    # Setup already, so a method for it would have no caller.
 
     def switch_to_combat(self) -> None:
-        self.setCurrentIndex(_COMBAT_TAB)
+        self._switch_to(self.combat_tab)
 
     def switch_to_properties(self) -> None:
-        self.setCurrentIndex(_PROPERTIES_TAB)
+        self._switch_to(self._param_panel)
 
-    def switch_to_log(self) -> None:
-        self.setCurrentIndex(_LOG_TAB)
+    def _switch_to(self, widget: QWidget) -> None:
+        index = self.indexOf(widget)
+        if index >= 0:
+            self.setCurrentIndex(index)
 
     # ------------------------------------------------------------------
     # Convenience forwarders (dispatch to bot sections)
     # ------------------------------------------------------------------
 
     def _on_tab_changed(self, index: int) -> None:
-        if index == _COMBAT_TAB:
+        if self.widget(index) is self.combat_tab:
             self.combat_tab.refresh_duel_profiles()
 
     def _refresh_setup_values(self) -> None:
@@ -147,11 +181,10 @@ class LeftSidebar(QTabWidget):
 
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
-        self.bot_info.set_config(config)
-        self.possible_drops.set_config(config)
         self.setup.set_config(config)
         self.options.set_config(config)
         self.combat_tab.set_config(config)
+        self._refresh_description()
 
     def refresh_options(self, config: BotConfig | None) -> None:
         """Rebuild both option surfaces alone, without disturbing the other sections.
@@ -164,6 +197,22 @@ class LeftSidebar(QTabWidget):
         self._config = config
         self.setup.set_config(config)
         self.options.set_config(config)
+        self._refresh_description()
+
+    @property
+    def setup_description(self) -> DescriptionSection:
+        """The read-only description heading Setup."""
+        return self._setup_desc
+
+    @property
+    def options_description(self) -> DescriptionSection:
+        """The editable description heading Options — the bot's only editor for it."""
+        return self._options_desc
+
+    def _refresh_description(self) -> None:
+        """Put the bot's own description above both option surfaces."""
+        for section in (self._setup_desc, self._options_desc):
+            section.set_config(self._config)
 
     def set_clients_getter(self, fn) -> None:
         """Pass the sections a callable returning the currently hooked clients."""
@@ -196,13 +245,13 @@ class LeftSidebar(QTabWidget):
         self.set_editable(editable)
 
     def set_editable(self, editable: bool) -> None:
-        self.bot_info.set_editable(editable)
-        self.possible_drops.set_editable(editable)
         self.options.set_editable(editable)
-        page = _OPTIONS_PAGE if editable else _SETUP_PAGE
-        self._config_stack.setCurrentIndex(page)
-        self.setTabText(_CONFIG_TAB, _CONFIG_TAB_TITLES[page])
-        # Combat tab is intentionally not gated by edit mode — profiles are user config, not bot structure.
+        if editable == self._editable:
+            return
+        self._editable = editable
+        self._apply_tab_set()
+        # Combat is not gated by edit mode — profiles are user config, not bot
+        # structure — it simply is not one of the tabs Edit mode offers.
 
     def set_bot_running(self, running: bool) -> None:
         """Lock the combat tab while the bot is actively running."""

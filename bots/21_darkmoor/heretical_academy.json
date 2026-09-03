@@ -6,7 +6,6 @@
   "clients": "all",
   "initial": "state_1",
   "recovery_state": "state_3",
-  "start_location": "Anywhere in Darkmoor",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
