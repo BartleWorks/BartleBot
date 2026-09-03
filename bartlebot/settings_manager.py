@@ -43,6 +43,7 @@ class _GeneralSettings(BaseModel):
     relog_interval_hours: float = 4.0
     disable_quick_friend_teleport: bool = True
     default_friend_name: str = ""
+    show_option_descriptions: bool = False
 
 
 class _GameEmbedSettings(BaseModel):
@@ -95,6 +96,7 @@ _DEFAULTS: dict[str, Any] = {
         "relog_interval_hours": 4.0,
         "disable_quick_friend_teleport": True,
         "default_friend_name": "",
+        "show_option_descriptions": False,
         "streamer_mode": False,
     },
     "game_embed": {

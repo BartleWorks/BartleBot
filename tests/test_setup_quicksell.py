@@ -211,3 +211,132 @@ def test_turning_quicksell_off_writes_an_override(qapp, settings):
 
     assert settings.get_option_override(config.id, qs.OPTION_ENABLED) is False
     assert config.options == []
+
+
+# ---------------------------------------------------------------------------
+# Where Reset sits
+# ---------------------------------------------------------------------------
+
+
+def _reset_button(section, name):
+    return section._chrome[name].reset_btn
+
+
+def test_reset_sits_on_the_label_line_of_a_tall_row(qapp, settings):
+    """Beside a 220px table a Reset button centres against it -- floating in the
+    middle of the row with nothing to attach it to -- and takes its width from the
+    table for that whole height, which clips the last column."""
+    section = _section(settings, _config())
+    section.resize(400, 900)
+    section.show()
+    qapp.processEvents()
+    try:
+        picker = _picker(section)
+        reset = _reset_button(section, qs.OPTION_KEEP_LIST)
+
+        # Above the table, on the label's line -- not beside it.
+        assert reset.mapTo(section, reset.rect().bottomLeft()).y() <= picker.mapTo(section, picker.rect().topLeft()).y()
+        # And the table keeps the whole row width.
+        assert picker.width() == reset.parentWidget().width()
+    finally:
+        section.hide()
+
+
+def test_reset_stays_beside_a_short_control(qapp, settings):
+    section = _section(settings, _config())
+
+    widget = section.option_widgets["Safety Delay"]
+    reset = _reset_button(section, "Safety Delay")
+
+    assert reset.parentWidget() is widget.parentWidget()
+
+
+# ---------------------------------------------------------------------------
+# Descriptions
+# ---------------------------------------------------------------------------
+
+
+def _description(section, name):
+    return section._chrome[name].description
+
+
+def _help_button(section, name):
+    return section._chrome[name].help_btn
+
+
+def test_descriptions_are_folded_away_until_asked_for(qapp, settings):
+    """41% of an ordinary row was node-authored prose, at 9px, on every row at once."""
+    section = _section(settings, _config())
+    section.show()
+    qapp.processEvents()
+    try:
+        assert not any(_description(section, n).isVisible() for n in section.option_widgets)
+    finally:
+        section.hide()
+
+
+def test_the_help_button_unfolds_one_row_and_only_that_row(qapp, settings):
+    section = _section(settings, _config())
+    section.show()
+    qapp.processEvents()
+    try:
+        _help_button(section, qs.OPTION_ENABLED).setChecked(True)
+
+        assert _description(section, qs.OPTION_ENABLED).isVisible()
+        assert not _description(section, "Sell Pets").isVisible()
+    finally:
+        section.hide()
+
+
+def test_a_description_is_read_at_the_base_font(qapp, settings):
+    """The 9px the captions use is 75% of base and fringes under ClearType. A
+    description is the one piece of prose here, and it is only on screen when asked
+    for, so it has no reason to be the smallest text on the surface."""
+    section = _section(settings, _config())
+
+    assert "font-size" not in _description(section, qs.OPTION_ENABLED).styleSheet()
+
+
+def test_the_switch_shows_every_description_and_is_remembered(qapp, settings):
+    section = _section(settings, _config())
+    section.show()
+    qapp.processEvents()
+    try:
+        section.set_descriptions_visible(True)
+
+        assert all(_description(section, n).isVisible() for n in section.option_widgets)
+        assert settings.get("general", "show_option_descriptions") is True
+    finally:
+        section.hide()
+
+
+def test_a_remembered_switch_builds_the_rows_already_unfolded(qapp, settings):
+    settings.set("general", "show_option_descriptions", value=True)
+
+    section = _section(settings, _config())
+    section.show()
+    qapp.processEvents()
+    try:
+        assert all(_description(section, n).isVisible() for n in section.option_widgets)
+        assert all(_help_button(section, n).isChecked() for n in section.option_widgets)
+    finally:
+        section.hide()
+
+
+def test_the_source_caption_shares_the_name_line(qapp, settings):
+    """It said four words and cost every row a line of its own."""
+    section = _section(settings, _config())
+    section.resize(400, 900)
+    section.show()
+    qapp.processEvents()
+    try:
+        caption = section._chrome["Safety Delay"].caption
+        widget = section.option_widgets["Safety Delay"]
+
+        assert caption.text() == "from the app setting"
+        assert (
+            caption.mapTo(section, caption.rect().bottomLeft()).y()
+            <= widget.mapTo(section, widget.rect().topLeft()).y()
+        )
+    finally:
+        section.hide()

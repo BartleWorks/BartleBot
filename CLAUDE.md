@@ -434,6 +434,23 @@ already has.
   changes colour rather than appearing, Reset greys out rather than vanishing,
   every level including the user's own has a caption, and `_refresh_row` is what
   a value edit calls.
+- **A row is a head line and a control, and the prose folds.** Measured on a
+  shipped bot at a 400px sidebar, an ordinary option row was 41% node-authored
+  description and 17% source caption, leaving the control the minority of its own
+  row -- all of it at 9px, three quarters of the base size and small enough that
+  Windows' subpixel antialiasing colours the strokes. So the caption moved onto
+  the name's line, where it costs nothing, and the description folds behind a `?`
+  and is read at the base font. This is the one thing on the surface that appears
+  and disappears, and it does not contradict the rule above: it moves on a
+  deliberate click of its own button, never on a value edit, and everything it
+  moves is below the button that moved it. `show_option_descriptions` is the
+  switch for reading the whole tab at once -- a property of the reader, so it
+  lives in `settings.json` and not in the bot.
+- **Reset sits beside a short control and on the head line otherwise.** Against a
+  220px table it centres on the table's midpoint, floating with nothing to attach
+  it to, and takes its width from the last column for that whole height. A bool
+  has no separate label, so its checkbox *is* the head line and the whole row --
+  name, `?`, caption, Reset -- fits on one.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.

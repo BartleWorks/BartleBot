@@ -19,6 +19,14 @@ mitigation for the one accepted cost of storing overrides as bare values: an
 author who later improves their declaration is outranked silently, so the
 one-way door has to be visibly openable.
 
+Descriptions are folded away behind a ``?`` and shown at the base font when
+asked for.  Measured on a shipped bot, node-authored prose was 41% of an
+ordinary row's height and the source caption another 17%, leaving the control
+itself the minority of its own row -- at 9px, three quarters of the base size,
+which is where Windows' subpixel antialiasing starts colouring the strokes.
+Every settings surface that shows help inline keeps it to a single line;
+the ones whose prose runs this long put it behind an affordance instead.
+
 The declaration editor is the other half -- see ``options_section``.
 """
 
@@ -31,6 +39,7 @@ from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -108,6 +117,39 @@ class _OverrideBar(ThemedMixin, QFrame):
         self.setStyleSheet(f"background: {colour}; border: none;")
 
 
+class _HelpToggle(ThemedMixin, QPushButton):
+    """The ``?`` beside an option's name, folding its description in and out.
+
+    Descriptions are node-authored prose -- two or three lines each, and 41% of an
+    ordinary row's height with the control itself taking only 42%.  Every settings
+    surface that shows help inline keeps it to one line (Chrome, Windows, GitHub);
+    the ones whose prose is this long put it behind an affordance instead (Xcode's
+    Quick Help, Unreal's property tooltips).  This is that affordance, and it is a
+    *button* rather than a hover tooltip because the prose is load-bearing -- the
+    only thing that keeps a pet is a sentence in one of these.
+    """
+
+    _SIZE_PX = 16
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__("?", parent)
+        self.setCheckable(True)
+        self.setFixedSize(self._SIZE_PX, self._SIZE_PX)
+        self.setToolTip("Show what this option does")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        # The node help button in ``param_panel`` is the same affordance one panel
+        # over, so it is the same shape and the same accent, only smaller.
+        self.setStyleSheet(
+            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 3px; color: {THEME.accent}; font-weight: bold; font-size: 10px; padding: 0; }}"
+            f"QPushButton:hover, QPushButton:checked {{ background: {THEME.accent}; color: #ffffff; }}"
+        )
+
+
 @dataclass
 class _RowChrome:
     """The parts of one row that change when its override state does."""
@@ -116,6 +158,8 @@ class _RowChrome:
     bar: _OverrideBar
     reset_btn: QPushButton
     caption: ThemedTextLabel
+    description: QWidget | None = None
+    help_btn: _HelpToggle | None = None
 
 
 class SetupSection(SidebarSection):
@@ -135,9 +179,19 @@ class SetupSection(SidebarSection):
         self._chrome: dict[str, _RowChrome] = {}
         self._option_widgets: dict[str, QWidget] = {}
         self._get_clients: Callable[[], list] = lambda: []
+        self._show_descriptions = self._read_show_descriptions()
 
         outer = QVBoxLayout()
         outer.setSpacing(4)
+
+        # One switch for the reader who wants the whole tab as a document, rather
+        # than a row at a time.  Off by default, and remembered: it is a property of
+        # the person reading, not of the bot.
+        self._show_all = QCheckBox("Show descriptions")
+        self._show_all.setChecked(self._show_descriptions)
+        self._show_all.setToolTip("Show every option's description, instead of one at a time")
+        self._show_all.toggled.connect(self._on_show_all_toggled)
+        outer.addWidget(self._show_all)
 
         self._rows_layout = QVBoxLayout()
         self._rows_layout.setSpacing(6)
@@ -180,6 +234,15 @@ class SetupSection(SidebarSection):
     def option_widgets(self) -> dict[str, QWidget]:
         """``{option name: value widget}`` for the rows currently shown."""
         return dict(self._option_widgets)
+
+    @property
+    def descriptions_visible(self) -> bool:
+        """Whether descriptions are shown for every row by default."""
+        return self._show_descriptions
+
+    def set_descriptions_visible(self, shown: bool) -> None:
+        """Show or fold every option's description, exactly as the switch would."""
+        self._show_all.setChecked(shown)
 
     def resolution_for(self, name: str) -> bot_options.OptionResolution | None:
         """The effective value of *name* and the level that supplied it."""
@@ -251,6 +314,7 @@ class SetupSection(SidebarSection):
 
         options = _ordered(compose_options(self._config) if self._config is not None else [])
         self._composed = {opt.name: opt for opt in options}
+        self._show_all.setVisible(any(opt.description for opt in options))
         if not options:
             self._empty_lbl.show()
             return
@@ -271,6 +335,10 @@ class SetupSection(SidebarSection):
         caption always names a level. Chrome that comes and goes as you type moves
         everything under it, which on a spin box means the second click of a pair
         lands somewhere else.
+
+        The description is the one exception, and it is not one: it folds on a
+        deliberate click of its own ``?``, never on a value edit, and everything it
+        moves is below the button that moved it.
         """
         body = QWidget()
         body_layout = QVBoxLayout(body)
@@ -287,30 +355,67 @@ class SetupSection(SidebarSection):
             get_drops=self._drops,
             get_clients=lambda: self._get_clients(),
         )
-        if opt.type != "bool":
-            lbl = field_label(opt.name)
-            if opt.description:
-                lbl.setToolTip(opt.description)
-            body_layout.addWidget(lbl)
-
+        tall = opt.type in TALL_TYPES
+        is_bool = opt.type == "bool"
         reset_btn = QPushButton("Reset")
         reset_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
-
-        value_row = QWidget()
-        value_layout = QHBoxLayout(value_row)
-        value_layout.setContentsMargins(0, 0, 0, 0)
-        value_layout.setSpacing(4)
-        value_layout.addWidget(widget, 1)
-        value_layout.addWidget(reset_btn, 0)
-        body_layout.addWidget(value_row)
-
-        if opt.description:
-            desc = ThemedTextLabel(opt.description, css="font-size: 9px;")
-            desc.setWordWrap(True)
-            body_layout.addWidget(desc)
-
         caption = ThemedTextLabel("", color="text_disabled", css="font-size: 9px;")
-        body_layout.addWidget(caption)
+
+        # The head line carries everything that names the row: what it is called,
+        # the affordance for its description, and -- right-aligned -- the level its
+        # value came from.  The caption used to have a line of its own beneath the
+        # control, which cost every row 12px to say four words.
+        head = QHBoxLayout()
+        head.setContentsMargins(0, 0, 0, 0)
+        head.setSpacing(4)
+        # A bool has no separate label: its own caption is the name, so the checkbox
+        # *is* the head line and the whole row fits on it.
+        if is_bool:
+            head.addWidget(widget, 0)
+        else:
+            lbl = field_label(opt.name)
+            if opt.description:
+                # The hover path stays: the ? is the discoverable affordance, not
+                # the only one, and a tooltip costs no height.
+                lbl.setToolTip(opt.description)
+            head.addWidget(lbl, 0)
+
+        help_btn: _HelpToggle | None = None
+        if opt.description:
+            help_btn = _HelpToggle()
+            help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
+            head.addWidget(help_btn, 0)
+        head.addStretch(1)
+        head.addWidget(caption, 0)
+        # Reset joins the head line whenever there is no short control to sit beside:
+        # against a 220px table it would otherwise centre on the table's midpoint,
+        # floating with nothing to attach it to, and take its width from the last
+        # column for that whole height.
+        if is_bool or tall:
+            head.addWidget(reset_btn, 0)
+        body_layout.addLayout(head)
+
+        if tall:
+            body_layout.addWidget(widget)
+        elif not is_bool:
+            value_row = QWidget()
+            value_layout = QHBoxLayout(value_row)
+            value_layout.setContentsMargins(0, 0, 0, 0)
+            value_layout.setSpacing(4)
+            value_layout.addWidget(widget, 1)
+            value_layout.addWidget(reset_btn, 0)
+            body_layout.addWidget(value_row)
+
+        description: QWidget | None = None
+        if opt.description:
+            # At the base font, not the 9px the captions use: this is the one piece
+            # of prose on the surface, and it is only on screen when asked for.
+            description = ThemedTextLabel(opt.description)
+            description.setWordWrap(True)
+            description.setVisible(self._show_descriptions)
+            body_layout.addWidget(description)
+            if help_btn is not None:
+                help_btn.setChecked(self._show_descriptions)
 
         connect_widget(widget, lambda new_value, name=opt.name: self._on_value_changed(name, new_value))
         self._option_widgets[opt.name] = widget
@@ -325,7 +430,14 @@ class SetupSection(SidebarSection):
         outer_layout.addWidget(bar)
         outer_layout.addWidget(body, 1)
 
-        self._chrome[opt.name] = _RowChrome(widget=widget, bar=bar, reset_btn=reset_btn, caption=caption)
+        self._chrome[opt.name] = _RowChrome(
+            widget=widget,
+            bar=bar,
+            reset_btn=reset_btn,
+            caption=caption,
+            description=description,
+            help_btn=help_btn,
+        )
         self._refresh_row(opt.name)
         return outer
 
@@ -434,6 +546,36 @@ class SetupSection(SidebarSection):
         self._refresh_row(name)
         self._push_keep_list_context()
         self.values_changed.emit()
+
+    def _read_show_descriptions(self) -> bool:
+        try:
+            return bool(self._sm().get("general", "show_option_descriptions", default=False))
+        except Exception:
+            logger.exception("Failed to read whether option descriptions are shown")
+            return False
+
+    def _on_show_all_toggled(self, shown: bool) -> None:
+        """Set every row at once, and remember the choice.
+
+        The per-row ``?`` still overrides one row afterwards; this is the default
+        each row is built with and what a later flip of this switch puts them back
+        to. Nothing here touches the bot -- it is a reading preference.
+        """
+        self._show_descriptions = shown
+        try:
+            self._sm().set("general", "show_option_descriptions", value=shown)
+        except Exception:
+            logger.exception("Failed to remember whether option descriptions are shown")
+        for chrome in self._chrome.values():
+            if chrome.help_btn is not None:
+                chrome.help_btn.setChecked(shown)
+
+    def _set_row_description(self, name: str, shown: bool) -> None:
+        """Fold one row's description in or out, leaving every other row alone."""
+        chrome = self._chrome.get(name)
+        if chrome is None or chrome.description is None:
+            return
+        chrome.description.setVisible(shown)
 
     def _on_reset(self, name: str) -> None:
         """Forget the user's value for *name* and put the resolved one back on screen."""
