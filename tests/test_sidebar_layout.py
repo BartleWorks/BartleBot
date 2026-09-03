@@ -17,7 +17,7 @@ import sys
 import pytest
 from PyQt6.QtWidgets import QApplication, QWidget
 
-from bartlebot.bot.schema import BotConfig, DropModel, StateModel
+from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 
@@ -266,3 +266,59 @@ def test_leaving_the_players_tab_lets_the_client_poll_slow_down(qapp):
     panel.switch_to_log()
 
     assert not panel.clients.players_visible
+
+
+# ---------------------------------------------------------------------------
+# Folding a description out grows the section downwards (#186)
+# ---------------------------------------------------------------------------
+#
+# A SidebarSection whose content is height-for-width -- which an option row's
+# word-wrapped description makes it -- asks the layout for a cell taller than its
+# own sizeHint.  Capped at that sizeHint by a Maximum size policy it could not
+# fill the cell, and QWidgetItem centres what cannot fill: the section, and its
+# body inside it, slid *down* as they grew.
+
+
+def _setup_geometry(sidebar: LeftSidebar):
+    """``(y of the Setup section, its height, y of its body)`` inside the scroll content."""
+    qapp = QApplication.instance()
+    for _ in range(5):
+        qapp.processEvents()
+    section = sidebar.setup
+    content = sidebar.widget(0).widget()
+    top = section.mapTo(content, section.rect().topLeft()).y()
+    body_top = section.body.mapTo(content, section.body.rect().topLeft()).y()
+    return top, section.height(), body_top
+
+
+def _wordy_config() -> BotConfig:
+    # Long enough, and enough of them, that unfolding overflows the viewport: the
+    # scrollbar that appears narrows the content, and the section's height-for-width
+    # then exceeds the width-agnostic sizeHint that used to cap it.
+    prose = (
+        "A description long enough to wrap onto several lines at a sidebar width, which is "
+        "what makes the section height-for-width in the first place, and long enough again "
+        "that the height it needs depends on the width it is given. "
+    ) * 2
+    return _config(
+        options=[BotOptionModel(name=f"Option {i}", type="bool", default=False, description=prose) for i in range(12)]
+    )
+
+
+def test_showing_descriptions_grows_the_setup_section_downwards(sidebar):
+    sidebar.resize(400, 600)
+    sidebar.set_config(_wordy_config())
+    sidebar.setup.set_descriptions_visible(False)
+    sidebar.show()
+    try:
+        folded_top, folded_height, folded_body_top = _setup_geometry(sidebar)
+
+        sidebar.setup.set_descriptions_visible(True)
+        shown_top, shown_height, shown_body_top = _setup_geometry(sidebar)
+
+        assert shown_height > folded_height, "the descriptions did not actually unfold"
+        assert shown_top == folded_top
+        assert shown_body_top == folded_body_top
+    finally:
+        sidebar.setup.set_descriptions_visible(False)
+        sidebar.hide()
