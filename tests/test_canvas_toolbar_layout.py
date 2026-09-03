@@ -44,6 +44,12 @@ def canvas(qapp):
     c.deleteLater()
 
 
+# Wide enough for every cluster in either mode, narrow enough that the metadata's
+# Edit-mode minimum used to overflow its half of the bar -- and inside the smallest
+# screen a CI runner offers, so the window is not clamped to something else.
+_NARROW = 900
+
+
 def _right_edge(canvas, widget) -> int:
     return widget.mapTo(canvas, widget.rect().topRight()).x()
 
@@ -60,6 +66,26 @@ def test_the_transport_is_in_the_same_place_in_both_modes(canvas):
     canvas.enter_edit_mode()
 
     assert canvas._run_pause_btn.isVisible()
+    assert _left_edge(canvas, canvas._run_pause_btn) == run_x
+
+
+def test_the_transport_stays_centred_on_a_narrow_bar(canvas):
+    """The centring is equal stretch on the two side columns, and a stretch factor
+    only divides what is left after every column's *minimum*.  Edit mode grew the
+    metadata's minimum past half the bar -- a fixed-width author field and the two
+    Add-tag buttons, neither of which can shrink -- so under about 1030px the
+    metadata pushed the transport right by the overflow.  It passed at 1500px and
+    failed on CI, where the screen clamps the window to ~1030."""
+    canvas.resize(_NARROW, 600)
+    qapp = QApplication.instance()
+    qapp.processEvents()
+    assert canvas.width() == _NARROW, "the bar is not the width this test is about"
+
+    run_x = _left_edge(canvas, canvas._run_pause_btn)
+
+    canvas.enter_edit_mode()
+    qapp.processEvents()
+
     assert _left_edge(canvas, canvas._run_pause_btn) == run_x
 
 

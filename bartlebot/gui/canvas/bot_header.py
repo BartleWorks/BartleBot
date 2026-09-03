@@ -84,6 +84,30 @@ def _swappable(label_w: QWidget, edit_w: QWidget) -> QWidget:
     return w
 
 
+def _let_shrink(w: QWidget) -> None:
+    """Let *w* be narrower than its contents want, so it cannot widen its column.
+
+    The metadata column is capped at its share of the bar by the equal stretch on
+    the two side columns -- but a stretch factor only divides what is *left over*
+    after every column's minimum, and a column's minimum is its contents'.  In Edit
+    mode the metadata grows two things that cannot shrink at all: the author field
+    is a fixed-width ``QLineEdit``, and the two Add-tag buttons are one atomic item
+    in the pill flow.  Together they claimed about 440px, which is more than half of
+    a bar under ~1030px wide -- so on a narrow bar the metadata pushed the centre
+    column, and the transport moved right by the overflow when the mode changed.
+    That is exactly the drift the centre column exists to prevent.
+
+    ``Ignored`` is what drops the minimum: the column is then sized by stretch alone
+    and the metadata elides and wraps inside whatever it is given, which is how this
+    bar is meant to degrade.  It is safe here and not on ``_ElidedLabel`` because a
+    grid column carries the stretch; a widget in a row of stretch-0 siblings that
+    asks for nothing gets nothing.
+    """
+    policy = w.sizePolicy()
+    policy.setHorizontalPolicy(QSizePolicy.Policy.Ignored)
+    w.setSizePolicy(policy)
+
+
 class _ElidedLabel(ThemedMixin, QLabel):
     """A one-line label that shortens its text rather than widening the bar.
 
@@ -345,6 +369,7 @@ class BotHeader(ThemedMixin, QWidget):
         title_row.addWidget(_swappable(self._version_pill, self._version_edit), 0, Qt.AlignmentFlag.AlignVCenter)
         title_row.addWidget(self._file_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         title_row.addStretch(1)
+        _let_shrink(title)
 
         # -- Left column, row 2: byline and tags ----------------------
         self._authors_lbl = _ElidedLabel()
@@ -369,6 +394,7 @@ class BotHeader(ThemedMixin, QWidget):
         byline_row.addSpacing(4)
         byline_row.addWidget(self._tags_field, 0, Qt.AlignmentFlag.AlignVCenter)
         byline_row.addStretch(1)
+        _let_shrink(self._byline)
 
         # -- Centre column: clock, transport, status — one row --------
         # Always shown, and zeroed rather than hidden while idle.  A clock that
@@ -418,11 +444,13 @@ class BotHeader(ThemedMixin, QWidget):
         grid.addWidget(tools, 0, _COL_TOOLS, 2, 1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         # The two side columns take equal stretch, which is the only arrangement that
         # centres the Run button exactly: the centre lands in the middle of the bar
-        # only while the columns either side of it are the same width.  The cost is
-        # that the metadata is capped at half the bar however much of it there is --
-        # so a long filename elides, and in Edit mode a heavily tagged bot wraps its
-        # byline.  Both degrade quietly; a Run button that drifts with the length of
-        # the bot's name does not.
+        # only while the columns either side of it are the same width.  Stretch alone
+        # is not enough to guarantee that -- it divides what is left after each
+        # column's minimum -- which is why both metadata rows went through
+        # ``_let_shrink`` above.  The cost is that the metadata is capped at half the
+        # bar however much of it there is -- so a long filename elides, and in Edit
+        # mode a heavily tagged bot wraps its byline.  Both degrade quietly; a Run
+        # button that drifts with the length of the bot's name does not.
         grid.setColumnStretch(_COL_META, 1)
         grid.setColumnStretch(_COL_TOOLS, 1)
 
