@@ -81,10 +81,24 @@ class _SectionHeader(QWidget):
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
+    @property
+    def expanded(self) -> bool:
+        return self._expanded
+
+    def set_expanded(self, expanded: bool) -> None:
+        """Fold or unfold, exactly as a click on the header would.
+
+        A no-op when already in that state, so a caller restoring a remembered
+        position does not emit a toggle nothing acted on.
+        """
+        if expanded == self._expanded:
+            return
+        self._expanded = expanded
+        self.arrow.setPixmap(self._pixmap_down if expanded else self._pixmap_right)
+        self.toggled.emit(expanded)
+
     def mousePressEvent(self, event):  # noqa: ARG002
-        self._expanded = not self._expanded
-        self.arrow.setPixmap(self._pixmap_down if self._expanded else self._pixmap_right)
-        self.toggled.emit(self._expanded)
+        self.set_expanded(not self._expanded)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
@@ -159,6 +173,15 @@ class SidebarSection(QWidget):
     @property
     def body(self) -> QWidget:
         return self._body
+
+    @property
+    def expanded(self) -> bool:
+        """Whether the body is currently unfolded."""
+        return self._header.expanded
+
+    def set_expanded(self, expanded: bool) -> None:
+        """Fold or unfold the section, exactly as a click on its header would."""
+        self._header.set_expanded(expanded)
 
 
 # ---------------------------------------------------------------------------

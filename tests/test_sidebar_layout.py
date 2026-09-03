@@ -119,21 +119,110 @@ def test_the_full_description_heads_both_surfaces(sidebar):
     text = "REQUIREMENTS:\nChange the client resolution to 800x600 before running."
     sidebar.set_config(_config(description=text))
 
-    assert sidebar._setup_desc.text() == text
-    assert sidebar._options_desc.text() == text
+    assert sidebar.setup_description.text() == text
+    assert sidebar.options_description.text() == text
 
 
 def test_a_bot_with_no_description_says_so_rather_than_showing_a_gap(sidebar):
     sidebar.set_config(_config())
 
-    assert sidebar._setup_desc.text() == "This bot has no description."
+    assert sidebar.setup_description.text() == "This bot has no description."
 
 
 def test_closing_the_bot_hides_the_description(sidebar):
     sidebar.set_config(_config(description="Farms Jade Oni."))
     sidebar.set_config(None)
 
-    assert not sidebar._setup_desc.isVisibleTo(sidebar._setup_page)
+    assert not sidebar.setup_description.isVisibleTo(sidebar._setup_page)
+
+
+# ---------------------------------------------------------------------------
+# Only the Options copy is writable (#180)
+# ---------------------------------------------------------------------------
+
+
+def test_the_options_copy_is_the_only_editor(sidebar):
+    """Phase 5 of #145 left the description rendered twice and editable nowhere.
+    The writable copy belongs on the declarations surface, not the values one."""
+    assert sidebar.options_description.is_editable
+    assert not sidebar.setup_description.is_editable
+
+
+def test_both_copies_collapse(sidebar):
+    """A long REQUIREMENTS block is only affordable above a surface the user came
+    to the tab to use if they can fold it away."""
+    sidebar.set_config(_config(description="Farms Jade Oni."))
+
+    sidebar.setup_description.set_expanded(False)
+
+    assert not sidebar.setup_description.expanded
+    assert not sidebar.setup_description.body.isVisibleTo(sidebar.setup_description)
+
+
+def test_typing_a_description_writes_it_to_the_bot(sidebar):
+    config = _config()
+    sidebar.set_config(config)
+
+    sidebar.options_description.set_text("Farms Jade Oni.")
+
+    assert config.description == "Farms Jade Oni."
+
+
+def test_clearing_the_description_stores_none_rather_than_an_empty_string(sidebar):
+    config = _config(description="Farms Jade Oni.")
+    sidebar.set_config(config)
+
+    sidebar.options_description.set_text("")
+
+    assert config.description is None
+
+
+def test_editing_the_description_dirties_the_bot(sidebar):
+    """An override lives in settings.json and must not dirty the file; the
+    description is authorial, so it must."""
+    sidebar.set_config(_config())
+    seen = []
+    sidebar.config_changed.connect(lambda: seen.append(True))
+
+    sidebar.options_description.set_text("Farms Jade Oni.")
+
+    assert seen
+
+
+def test_the_read_only_copy_follows_the_editor(sidebar):
+    """A mode switch re-binds neither copy, so the Setup label would otherwise go
+    on showing whatever the bot said when it was opened."""
+    sidebar.set_config(_config())
+
+    sidebar.options_description.set_text("Farms Jade Oni.")
+
+    assert sidebar.setup_description.text() == "Farms Jade Oni."
+
+
+def test_loading_a_bot_does_not_dirty_it(sidebar):
+    """``setPlainText`` emits ``textChanged`` like any other edit, so an unguarded
+    refresh marks a freshly opened bot as modified."""
+    seen = []
+    sidebar.config_changed.connect(lambda: seen.append(True))
+
+    sidebar.set_config(_config(description="Farms Jade Oni."))
+
+    assert not seen
+
+
+def test_an_edit_elsewhere_does_not_move_the_caret(sidebar):
+    """Every keystroke comes back round as ``refresh_options``; re-setting the text
+    it just wrote would put the cursor back at the start on every character."""
+    config = _config()
+    sidebar.set_config(config)
+    sidebar.options_description.set_text("Farms Jade Oni.")
+    editor = sidebar.options_description.editor
+    editor.moveCursor(editor.textCursor().MoveOperation.End)
+    before = editor.textCursor().position()
+
+    sidebar.refresh_options(config)
+
+    assert editor.textCursor().position() == before
 
 
 # ---------------------------------------------------------------------------

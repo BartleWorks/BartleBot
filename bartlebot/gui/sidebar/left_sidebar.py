@@ -14,8 +14,9 @@ the pre-run configuration story: adjacency to the Run button, not a gate in fron
 of it.
 
 Two tabs went elsewhere entirely.  **Bot** is gone — its metadata is Bar B above
-the graph, its description heads Setup and Options, and its Start / Initial /
-Recovery rows were either unread or already badges on the nodes.  **Log** moved to
+the graph, its description heads Setup (read-only) and Options (where it is now
+edited), and its Start / Initial / Recovery rows were either unread or already
+badges on the nodes.  **Log** moved to
 the right sidebar, where it can be read while the left one is showing Setup.
 """
 
@@ -27,14 +28,12 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 from bartlebot.gui.sidebar.combat_tab import CombatTab
+from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
-
-_NO_DESCRIPTION = "This bot has no description."
 
 
 class LeftSidebar(QTabWidget):
@@ -62,11 +61,13 @@ class LeftSidebar(QTabWidget):
         # ── The two option surfaces ─────────────────────────────────
         # Each gets the bot's full description above it, in the same position, so
         # that the four bots carrying multi-line ``REQUIREMENTS:`` blocks put them
-        # in front of the user rather than behind an ellipsis in the header.
+        # in front of the user rather than behind an ellipsis in the header.  The
+        # Options copy is the writable one: the description is authorial, so it
+        # belongs on the declarations surface and not on the values surface (#180).
         self.setup = SetupSection()
         self.options = OptionsSection()
-        self._setup_desc = self._make_description()
-        self._options_desc = self._make_description()
+        self._setup_desc = DescriptionSection(editable=False)
+        self._options_desc = DescriptionSection(editable=True)
 
         self._setup_page = self._wrap(self._setup_desc, self.setup)
         self._options_page = self._wrap(self._options_desc, self.options)
@@ -89,6 +90,11 @@ class LeftSidebar(QTabWidget):
         # to be rebuilt.  The reverse is deliberately *not* wired: an override lives
         # in settings.json, so writing one must never dirty the bot file.
         self.options.options_changed.connect(self._refresh_setup_values)
+        # Editing the description *is* an edit to the bot file, unlike an override.
+        # The Setup copy is not re-bound by a mode switch, so it is refreshed here
+        # rather than left to disagree with the editor above Options.
+        self._options_desc.description_changed.connect(self.config_changed)
+        self._options_desc.description_changed.connect(self._setup_desc.refresh)
         self.combat_tab.combat_config_changed.connect(self.config_changed)
 
         # Refresh the Combat tab's fight profile list whenever it becomes visible,
@@ -98,12 +104,6 @@ class LeftSidebar(QTabWidget):
     # ------------------------------------------------------------------
     # Construction helpers
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _make_description() -> ThemedTextLabel:
-        label = ThemedTextLabel("", color="text_muted", css="font-size: 11px;")
-        label.setWordWrap(True)
-        return label
 
     @staticmethod
     def _wrap(description: QWidget, section: QWidget) -> QScrollArea:
@@ -199,12 +199,20 @@ class LeftSidebar(QTabWidget):
         self.options.set_config(config)
         self._refresh_description()
 
+    @property
+    def setup_description(self) -> DescriptionSection:
+        """The read-only description heading Setup."""
+        return self._setup_desc
+
+    @property
+    def options_description(self) -> DescriptionSection:
+        """The editable description heading Options — the bot's only editor for it."""
+        return self._options_desc
+
     def _refresh_description(self) -> None:
         """Put the bot's own description above both option surfaces."""
-        text = (self._config.description or "").strip() if self._config else ""
-        for label in (self._setup_desc, self._options_desc):
-            label.setText(text or _NO_DESCRIPTION)
-            label.setVisible(self._config is not None)
+        for section in (self._setup_desc, self._options_desc):
+            section.set_config(self._config)
 
     def set_clients_getter(self, fn) -> None:
         """Pass the sections a callable returning the currently hooked clients."""
