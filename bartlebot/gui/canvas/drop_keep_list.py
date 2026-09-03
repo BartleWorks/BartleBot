@@ -632,11 +632,18 @@ class DropKeepListWidget(QWidget):
         A full rebuild rather than a diff: the list is a handful of short strings the
         user edits one at a time, and ``FlowLayout`` re-wraps the whole row on any
         change anyway.
+
+        An outgoing chip is **hidden and left parented**, never ``setParent(None)``.
+        A widget with no parent is a top-level window, and ``deleteLater`` does not
+        run until the event loop turns — so a chip removed by its own ✕ spent that
+        interval as a real window, which Windows drew and then took away. Hiding it
+        takes it off screen immediately and the delete still happens once the click
+        it is being deleted from inside of has finished unwinding.
         """
         while (item := self._keyword_layout.takeAt(0)) is not None:
             widget = item.widget()
             if widget is not None:
-                widget.setParent(None)
+                widget.hide()
                 widget.deleteLater()
         for word in self._value:
             chip = NeutralChip(word, tooltip=f"Stop keeping drops matching “{word}”")

@@ -479,6 +479,21 @@ def test_a_chip_removes_its_own_keyword(qapp):
     assert seen == [["Onyx"]]
 
 
+def test_removing_a_chip_never_leaves_it_parentless(qapp):
+    """A parentless widget is a top-level window, and deleteLater is a turn away.
+
+    The removed chip spent that interval as a real window, which Windows drew and
+    then took away — a small box flashing beside the sidebar on every ✕.
+    """
+    widget = make_option_widget("drop_keep_list", ["Amber", "Onyx"], get_drops=lambda: list(_DROPS))
+    chip = _keyword_chip(widget, "Amber")
+
+    chip.click()
+
+    assert chip.parent() is not None
+    assert not chip.isVisible()
+
+
 def test_the_default_category_entry_counts_what_it_shows(qapp):
     w = _make(qapp)
     # 5 drops, 1 of them a reagent the default view hides.
