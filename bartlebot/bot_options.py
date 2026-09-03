@@ -216,6 +216,10 @@ def required_option_specs(config, specs=None) -> dict:
     order the bot uses them.  Where two nodes declare the same option with
     different text -- Safety Delay has three variants -- the first state wins,
     which is the same rule ``BotMachine._option_spec`` follows.
+
+    A spec carrying ``required_when`` is required only by a state whose param of
+    that name is on: an option the author has said their dungeon does not offer is
+    not an option, and one state offering it is enough for the whole bot.
     """
     out: dict = {}
     for state in config.states:
@@ -223,6 +227,8 @@ def required_option_specs(config, specs=None) -> dict:
         if spec is None:
             continue
         for req in spec.required_bot_options:
+            if req.required_when and not state.params.get(req.required_when):
+                continue
             out.setdefault(req.name, req)
     return out
 

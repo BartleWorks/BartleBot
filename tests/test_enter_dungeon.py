@@ -21,6 +21,10 @@ _PARAMS = {
     "reset_xyz": {"x": 1.0, "y": 0.0, "z": 0.0},
 }
 
+# Challenge Mode is the author's statement that this dungeon has one; the option is
+# only the user's answer to it, so every Challenge Mode test needs both.
+_CHALLENGE_PARAMS = {**_PARAMS, "offers_challenge_mode": True}
+
 
 def _happy_client() -> FakeClient:
     """Client that starts in Hub and enters Dungeon."""
@@ -271,7 +275,7 @@ async def test_challenge_mode_toggles_until_title_says_challenge():
         patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=title_text)),
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
-        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
     assert result == "SUCCESS"
     toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
@@ -293,7 +297,7 @@ async def test_challenge_mode_already_set_does_not_toggle():
         patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="<center>Challenge Mode Entrance")),
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
-        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
     assert result == "SUCCESS"
     toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
@@ -314,7 +318,7 @@ async def test_challenge_mode_missing_toggle_button_fails():
         patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
         patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click)),
     ):
-        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
     assert result == "FAILURE"
     client.send_key.assert_not_called()
@@ -332,7 +336,7 @@ async def test_challenge_mode_toggle_never_takes_fails():
         patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
-        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _CHALLENGE_PARAMS)
 
     assert result == "FAILURE"
     toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
@@ -352,6 +356,26 @@ async def test_challenge_mode_off_never_reads_or_toggles_the_sigil_mode():
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
+    assert toggles == []
+
+
+async def test_the_option_alone_does_not_enter_challenge_mode():
+    """A user override outliving the param -- or set on a bot that never offered it --
+    must not send a client at a sigil toggle that is not there."""
+    client = _happy_client()
+    click_by_path_mock = AsyncMock(return_value=True)
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Dungeon Entrance")),
+        patch.object(nh, "click_by_path", click_by_path_mock),
+    ):
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], _PARAMS)
 
     assert result == "SUCCESS"
     toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]

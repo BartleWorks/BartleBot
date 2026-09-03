@@ -29,7 +29,16 @@ def _config(states=("enter_dungeon",), options=None, transitions=None):
         initial="s0",
         recovery_state="s0",
         options=options or [],
-        states=[StateModel(id=f"s{i}", node_type=nt, params={}) for i, nt in enumerate(states)],
+        # enter_dungeon's Challenge Mode is required only by a state that says its
+        # dungeon offers one, which is what these tests use it as an exemplar of.
+        states=[
+            StateModel(
+                id=f"s{i}",
+                node_type=nt,
+                params={"offers_challenge_mode": True} if nt == "enter_dungeon" else {},
+            )
+            for i, nt in enumerate(states)
+        ],
         transitions=transitions or [],
     )
 

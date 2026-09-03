@@ -384,7 +384,7 @@ def test_a_derived_option_cannot_be_renamed_or_deleted(qapp, settings):
         name="Test Bot",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id="a", node_type="enter_dungeon", params={})],
+        states=[StateModel(id="a", node_type="enter_dungeon", params={"offers_challenge_mode": True})],
         transitions=[],
     )
     section = OptionsSection(settings=settings)

@@ -17,12 +17,21 @@ class BotOptionSpec:
         type:        One of "bool", "int", "float", "str", "player_list".
         default:     Default value shown in the sidebar.
         description: Tooltip shown next to the option widget.
+        required_when: Key of a bool param on the *same node*; the option is required
+                     only while that param is True. Empty string = always required.
+
+                     This is for a choice only the author can say is available at all:
+                     Challenge Mode exists in a handful of dungeons and nowhere else, so
+                     offering the user a switch for it in the other sixty is noise they
+                     cannot act on. The author states the fact about their dungeon in a
+                     param, and the *option* -- whether to use it -- stays the user's.
     """
 
     name: str
     type: str
     default: bool | int | float | str | list = 0.0
     description: str | None = None
+    required_when: str = ""
 
 
 @dataclass

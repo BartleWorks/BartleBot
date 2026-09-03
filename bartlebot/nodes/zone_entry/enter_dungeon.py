@@ -36,6 +36,18 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
+        key="offers_challenge_mode",
+        type="bool",
+        label="Offers Challenge Mode",
+        help=(
+            "Tick this only if this dungeon's sigil offers Challenge Mode. It adds the "
+            "Challenge Mode bot option, so the user can choose whether to use it; leave it "
+            "off and the option does not appear at all, because there is nothing to choose."
+        ),
+        default=False,
+        default_hint="Off — the dungeon is entered in normal mode.",
+    ),
+    ParamField(
         key="reset_xyz",
         type="xyz",
         label="Reset XYZ",
@@ -52,7 +64,8 @@ NODE_SPEC = NodeSpec(
     description=(
         "Enters a dungeon via its sigil. Handles prompt detection, "
         "dungeon warning confirmation, and player zone desynchronization. "
-        "Enable the Challenge Mode bot option to toggle the sigil into Challenge Mode before entering."
+        "Tick Offers Challenge Mode if this dungeon has it: that gives the user a Challenge Mode "
+        "bot option, and when they turn it on the sigil is toggled before entering."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -80,9 +93,12 @@ NODE_SPEC = NodeSpec(
             type="bool",
             default=False,
             description=(
-                "Enter dungeons in Challenge Mode. Each player toggles the sigil's mode on the "
-                "entrance prompt before pressing X. Fails if the dungeon does not offer Challenge Mode."
+                "Enter this bot's dungeon in Challenge Mode. Each player toggles the sigil's mode "
+                "on the entrance prompt before pressing X."
             ),
+            # Only the author knows whether their dungeon has a Challenge Mode at all, and
+            # most do not. Without this the option appeared in every bot with a sigil in it.
+            required_when="offers_challenge_mode",
         ),
     ],
     max_consecutive_retries=10,
@@ -137,9 +153,9 @@ async def run(machine, clients: list, params: dict) -> str:
       2. Clear any pre-existing dungeon entrance prompt by teleporting to reset_xyz.
       3. Retry loop (up to MAX_RETRIES): teleport to sigil_xyz, wait for the entrance
          prompt. If it does not appear, teleport to reset_xyz and retry.
-      3b. If the Challenge Mode bot option is on, click each client's sigil mode toggle
-         until the prompt title reads "Challenge". Return FAILURE if any client cannot
-         be toggled into it.
+      3b. If the dungeon offers Challenge Mode and the option is on, click each client's
+         sigil mode toggle until the prompt title reads "Challenge". Return FAILURE if
+         any client cannot be toggled into it.
       4. Press X on all clients to interact with the sigil.
       5. Poll for a dungeon warning dialog for Safety Delay seconds; confirm it if present.
       6. Wait for all clients to leave from_zone. Return FAILURE if timeout expires.
@@ -155,7 +171,11 @@ async def run(machine, clients: list, params: dict) -> str:
     sigil = XYZ(**params["sigil_xyz"])
     reset = XYZ(**params["reset_xyz"])
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
-    challenge_mode: bool = bool(machine.get_option("Challenge Mode", False))
+    # The param is the gate and the option is the choice: a user's leftover override
+    # cannot ask for Challenge Mode in a dungeon the author has said does not have one.
+    challenge_mode: bool = bool(params.get("offers_challenge_mode")) and bool(
+        machine.get_option("Challenge Mode", False)
+    )
     mode_label = "Challenge Mode" if challenge_mode else "normal mode"
     machine.log(f"enter_dungeon: {from_zone!r} → {dungeon_zone!r} ({mode_label})")
 

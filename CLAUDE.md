@@ -437,6 +437,16 @@ already has.
 - **A derived option has no Edit or Delete button.** It is re-composed from its
   NodeSpec on every load, so either edit would be undone by the round trip. Its
   *default* is still the author's to change.
+- **An option may be required only when a param says so.** `BotOptionSpec.required_when`
+  names a bool param on the same node; the option is composed only while that param is
+  on. Challenge Mode is the case: a handful of dungeons offer one, and composing it
+  unconditionally put a switch into all sixty-odd bots containing a sigil that their
+  users could not act on. The split is the same one the params/options table draws —
+  *whether this dungeon has a Challenge Mode* is a fact about the graph and so a param
+  (`offers_challenge_mode`), *whether to use it* is the user's and so an option. The
+  node gates on both, so a stale override cannot send a client at a toggle that is not
+  there, and the composed default stays `False`: the author is saying it is available,
+  not that it is wanted. They can still pin a default by declaring one.
 - **The list is ordered by where an option comes from, not by whether it is in
   the file.** The author's own options first, then the derived ones grouped by the
   node that requires them. Ordering the file's options first instead made a row

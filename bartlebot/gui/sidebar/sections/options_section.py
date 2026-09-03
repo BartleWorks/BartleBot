@@ -37,7 +37,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.bot_options import USER_OWNED_OPTIONS, compose_options, is_user_owned
+from bartlebot.bot_options import USER_OWNED_OPTIONS, compose_options, is_user_owned, required_option_specs
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -52,7 +52,6 @@ from bartlebot.gui.widgets.option_widgets import (
 )
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
@@ -337,17 +336,15 @@ class OptionsSection(SidebarSection):
         return self._settings
 
     def _required_names(self) -> set[str]:
-        """Option names locked by at least one node currently in the bot."""
-        names: set[str] = set()
+        """Option names locked by at least one node currently in the bot.
+
+        The same walk that composes them, so a conditional option -- Challenge Mode,
+        required only by a state that says its dungeon offers it -- is locked exactly
+        when it is shown.
+        """
         if self._config is None:
-            return names
-        for state in self._config.states:
-            spec = NODE_SPECS.get(state.node_type)
-            if spec is None:
-                continue
-            for req in spec.required_bot_options:
-                names.add(req.name)
-        return names
+            return set()
+        return set(required_option_specs(self._config))
 
     def _rebuild_options(self, options: list) -> None:
         # A value that is the user's by definition has no declaration to edit, so it
