@@ -28,6 +28,7 @@ from bartlebot.bot.strategy_models import (
 )
 from bartlebot.gui.sidebar.combat_tab import (
     _BUILT_IN_LABEL,
+    _NO_STRATEGY_LABEL,
     _NOT_CONFIGURED_LABEL,
     _STATE_INHERIT_LABEL,
     CombatTab,
@@ -567,6 +568,118 @@ def test_inline_state_binding_with_content_is_persisted(qapp, store):
     reloaded = store_mod.load_bot_strategy(bcs.id)
     assert len(reloaded.state_assignments) == 1
     assert reloaded.state_assignments[0].duel_config.player_assignments
+
+
+# ---------------------------------------------------------------------------
+# rebind_identity — Save As gives the loaded bot a new id (#179)
+# ---------------------------------------------------------------------------
+
+
+def _tab_with_active_bcs(bot_id: str = "bot-1"):
+    """A tab showing ``bot_id``'s active strategy, with the config it is bound to."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    bcs = BotCombatStrategy(name="BCS", bot_id=bot_id)
+    store_mod.save_bot_strategy(bcs)
+    tab = CombatTab()
+    config = _config()
+    config.id = bot_id
+    SettingsManager.instance().set_active_strategy(bot_id, bcs.id)
+    tab.set_config(config)
+    return tab, config, bcs
+
+
+def test_rebind_identity_drops_the_originals_strategy(qapp, store):
+    """A fork inherits no strategy — the chip must stop naming the original's."""
+    tab, config, bcs = _tab_with_active_bcs("drops-orig")
+    assert tab._bcs is not None and tab._bcs.id == bcs.id
+
+    config.id = "drops-fork"
+    tab.rebind_identity()
+
+    assert tab._bcs is None
+    assert tab._all_bcs == []
+    assert tab._bcs_chip.strategy_name() == _NO_STRATEGY_LABEL
+
+
+def test_rebind_identity_does_not_bind_the_fork_to_the_originals_strategy(qapp, store):
+    """The bug this exists for: a combat edit after Save As wrote the *original's*
+    strategy under the *new* id, which is what minting an id was meant to prevent."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    tab, config, _bcs = _tab_with_active_bcs("no-bind-orig")
+
+    config.id = "no-bind-fork"
+    tab.rebind_identity()
+    tab._save_bcs()
+
+    assert SettingsManager.instance().get_active_strategy("no-bind-fork") is None
+
+
+def test_rebind_identity_finds_the_forks_own_strategy(qapp, store):
+    """Not a blanket clear: whatever the new id does resolve to is what shows."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    tab, config, _bcs = _tab_with_active_bcs("own-orig")
+    fork_bcs = BotCombatStrategy(name="Fork BCS", bot_id="own-fork")
+    store_mod.save_bot_strategy(fork_bcs)
+    SettingsManager.instance().set_active_strategy("own-fork", fork_bcs.id)
+
+    config.id = "own-fork"
+    tab.rebind_identity()
+
+    assert tab._bcs is not None and tab._bcs.id == fork_bcs.id
+    assert tab._bcs_chip.strategy_name() == "Fork BCS"
+
+
+def test_rebind_identity_commits_a_pending_edit_to_the_original(qapp, store):
+    """The debounced edit belongs to the strategy that was on screen when it was
+    made. Replacing _bcs without committing it would drop it on the floor."""
+    tab, config, bcs = _tab_with_active_bcs("pending-orig")
+    dcs = DuelCombatStrategy(name="Frenzy AoE")
+    store_mod.save_duel_strategy(dcs)
+    tab._state_bindings["state_9"].duel_combat_strategy_id = dcs.id
+    tab._schedule_save()
+    assert tab._save_timer.isActive()
+
+    config.id = "pending-fork"
+    tab.rebind_identity()
+
+    assert not tab._save_timer.isActive()
+    reloaded = store_mod.load_bot_strategy(bcs.id)
+    assert [a.duel_combat_strategy_id for a in reloaded.state_assignments] == [dcs.id]
+
+
+def test_rebind_identity_commits_that_edit_silently(qapp, store):
+    """combat_config_changed reaches the controller as an unsaved edit — against a
+    bot Save As has just written."""
+    tab, config, _bcs = _tab_with_active_bcs("silent-orig")
+    tab._state_bindings["state_9"].duel_combat_strategy_id = "some-dcs"
+    tab._schedule_save()
+    seen: list[int] = []
+    tab.combat_config_changed.connect(lambda: seen.append(1))
+
+    config.id = "silent-fork"
+    tab.rebind_identity()
+
+    assert seen == []
+
+
+def test_rebind_identity_redraws_the_state_panels(qapp, store):
+    """The rows carry the original's links; leaving them is the same lie as the chip."""
+    dcs = DuelCombatStrategy(name="Frenzy AoE")
+    store_mod.save_duel_strategy(dcs)
+    tab, config, bcs = _tab_with_active_bcs("redraw-orig")
+    bcs.state_assignments = [StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)]
+    store_mod.save_bot_strategy(bcs)
+    tab.set_config(config)
+    assert tab._state_bindings["state_9"].duel_combat_strategy_id == dcs.id
+
+    config.id = "redraw-fork"
+    tab.rebind_identity()
+
+    assert tab._state_bindings["state_9"].duel_combat_strategy_id is None
+    assert tab._state_panels["state_9"]._chip.strategy_name() == _STATE_INHERIT_LABEL
 
 
 def test_refresh_strategy_data_does_not_replace_panel_widgets(qapp, store):

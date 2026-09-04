@@ -370,6 +370,9 @@ class AppController(QObject):
         # this, Setup goes on showing the original's overrides against a bot that
         # does not have them, and only a reopen tells the truth.
         self._window.left_sidebar.refresh_options(self._loaded_config)
+        # The combat half of the same re-resolve: the active strategy and the BCS
+        # list are both keyed on the id, and a fork inherits neither (#179).
+        self._window.left_sidebar.rebind_identity()
 
     # ------------------------------------------------------------------
     # Bot control

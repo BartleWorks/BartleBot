@@ -223,6 +223,15 @@ class LeftSidebar(QTabWidget):
         self.options.set_config(config)
         self._refresh_description()
 
+    def rebind_identity(self) -> None:
+        """Forward a change of the config's *id* to the surfaces keyed on it.
+
+        Save As is the only thing that moves an id under a loaded bot.  Options
+        and Setup are re-resolved by ``refresh_options``; this is the combat
+        half, kept separate because it must not go through ``set_config``.
+        """
+        self.combat_tab.rebind_identity()
+
     @property
     def setup_description(self) -> DescriptionSection:
         """The read-only description heading Setup."""
