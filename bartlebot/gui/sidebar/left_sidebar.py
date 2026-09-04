@@ -52,6 +52,10 @@ class LeftSidebar(QTabWidget):
     # both option surfaces, which is ~80ms on a large bot -- affordable once per
     # graph edit, and not affordable once per keystroke.
     metadata_changed = pyqtSignal()
+    # Setup's link to the app-setting level its rows resolve through.  Only the
+    # window owns the settings dialog, so the request is passed up rather than
+    # answered here.
+    app_settings_requested = pyqtSignal()
 
     def __init__(
         self,
@@ -94,14 +98,14 @@ class LeftSidebar(QTabWidget):
         # A changed declaration changes what Setup resolves to, so that surface has
         # to be rebuilt.  The reverse is deliberately *not* wired: an override lives
         # in settings.json, so writing one must never dirty the bot file.
-        self.options.options_changed.connect(self._refresh_setup_values)
+        self.options.options_changed.connect(self.refresh_setup_values)
         # A changed *default* dirties the bot file but cannot change what its
         # options are, so it goes out as ``metadata_changed`` for the same reason
         # the description does: ``config_changed`` would rebuild the Options list
         # from under the control the user is still holding.  Setup is rebuilt
         # because the declaration it resolves through has moved.
         self.options.defaults_changed.connect(self.metadata_changed)
-        self.options.defaults_changed.connect(self._refresh_setup_values)
+        self.options.defaults_changed.connect(self.refresh_setup_values)
         # Editing the description *is* an edit to the bot file, unlike an override --
         # but it is prose, and no option is composed from it.  So it goes out as
         # ``metadata_changed``, which only marks the bot dirty: routing it through
@@ -111,6 +115,7 @@ class LeftSidebar(QTabWidget):
         self._options_desc.description_changed.connect(self.metadata_changed)
         self._options_desc.description_changed.connect(self._setup_desc.refresh)
         self.combat_tab.combat_config_changed.connect(self.config_changed)
+        self.setup.app_settings_requested.connect(self.app_settings_requested)
 
         # Refresh the Combat tab's fight profile list whenever it becomes visible,
         # so that handle_combat nodes edited in the Properties tab are reflected.
@@ -185,8 +190,12 @@ class LeftSidebar(QTabWidget):
         if self.widget(index) is self.combat_tab:
             self.combat_tab.refresh_duel_profiles()
 
-    def _refresh_setup_values(self) -> None:
-        """Re-resolve the Setup rows after an edit to the declarations behind them."""
+    def refresh_setup_values(self) -> None:
+        """Re-resolve the Setup rows after an edit to the level beneath them.
+
+        A declaration edit and a change to the app settings are the same event from
+        this surface's point of view: a level Setup resolves *through* has moved.
+        """
         self.setup.set_config(self._config)
 
     @property

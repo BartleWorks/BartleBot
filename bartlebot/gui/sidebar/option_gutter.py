@@ -34,6 +34,8 @@ inline, a button on 16% of rows makes 16% of rows a different shape.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
 
@@ -164,14 +166,31 @@ class DescriptionSwitches(QWidget):
     what the rows are actually doing -- so the one click the reader wants ("just
     fold them all") can be the click that unfolds them all.  Two unconditional
     commands say what they do whatever state the rows are in.
+
+    A third link may be added at the *far* end of the row, for the one place a
+    surface has somewhere else to send the reader -- Setup's route to the app
+    settings its rows resolve through.  It is separated by the stretch rather than
+    the dot, because it is not a third description command: the two on the left are
+    one group and it is not in it.  It rides this row so that the link is written
+    once rather than repeated into every row's hint, where the eye would have to
+    learn that eight identical links all go to the same page.
     """
 
     #: Matched to ``LinkButton``'s own default so the dot sits on the links'
     #: baseline rather than above it.
     SEPARATOR_FONT_PX = 10
 
-    def __init__(self, on_toggled, parent: QWidget | None = None) -> None:
-        """*on_toggled* is called with ``True`` for show and ``False`` for hide."""
+    def __init__(
+        self,
+        on_toggled,
+        parent: QWidget | None = None,
+        *,
+        trailing: tuple[str, str, Callable[[], None]] | None = None,
+    ) -> None:
+        """*on_toggled* is called with ``True`` for show and ``False`` for hide.
+
+        *trailing* is an optional ``(text, tooltip, callback)`` link, right-aligned.
+        """
         from bartlebot.gui.widgets.link_button import LinkButton  # noqa: PLC0415 - import cycle
         from bartlebot.gui.widgets.themed_label import ThemedTextLabel  # noqa: PLC0415 - import cycle
 
@@ -189,3 +208,9 @@ class DescriptionSwitches(QWidget):
         row.addWidget(ThemedTextLabel(" · ", css=f"font-size: {self.SEPARATOR_FONT_PX}px;"), 0)
         row.addWidget(hide, 0)
         row.addStretch(1)
+        if trailing is not None:
+            text, tooltip, on_clicked = trailing
+            link = LinkButton(text)
+            link.setToolTip(tooltip)
+            link.clicked.connect(lambda: on_clicked())
+            row.addWidget(link, 0)

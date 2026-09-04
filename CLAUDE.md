@@ -591,6 +591,17 @@ already has.
   section body rather than on the header, which is a click-through row that
   toggles collapse. `LinkButton` (`gui/widgets/link_button.py`) is the shared
   control.
+- **The route to the app settings is written once, at the far end of that same
+  row.** Setup's rows name the level that answered, and one of the four —
+  *App settings* — is a page the user can actually go to; a link in every hint
+  that mentions it would be eight identical links to one destination. So Setup
+  passes `DescriptionSwitches` a `trailing` link, separated from the two
+  description commands by the stretch because it is not a third one of them.
+  It emits `app_settings_requested` rather than opening the dialog: `exec()` may
+  only be entered from a synchronous slot in `MainWindow`, which also refreshes
+  the rows on `settings_applied` — a level Setup resolves *through* has moved,
+  which is the same event as a declaration edit. Options has no trailing link;
+  it edits declarations, and the app setting is not one.
 - **A numeric option may declare bounds, and both ends enforce them.**
   `BotOptionSpec.minimum` / `maximum` / `suffix` are carried onto the composed
   declaration by `compose_options` — derived, never persisted, exactly like `type`

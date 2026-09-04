@@ -361,7 +361,24 @@ def test_both_switches_are_offered_at_once(qapp, settings):
 
     labels = [b.text() for b in section.findChildren(LinkButton)]
 
-    assert labels == ["Show descriptions", "Hide descriptions"]
+    assert labels == ["Show descriptions", "Hide descriptions", "Open app settings"]
+
+
+def test_the_app_settings_link_asks_rather_than_opening_the_dialog(qapp, settings):
+    """The dialog is modal, so only a synchronous slot in the window may ``exec()`` it.
+
+    The link also rides the switches row rather than each hint that names the app
+    setting, so the section carries exactly one of it however many rows resolve there.
+    """
+    section = _section(settings, _config())
+    seen = []
+    section.app_settings_requested.connect(lambda: seen.append(True))
+
+    links = [b for b in section.findChildren(LinkButton) if b.text() == "Open app settings"]
+    assert len(links) == 1
+    links[0].click()
+
+    assert seen == [True]
 
 
 def test_a_switch_still_acts_on_rows_the_help_button_moved(qapp, settings):

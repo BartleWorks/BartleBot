@@ -173,6 +173,11 @@ class SetupSection(SidebarSection):
     # file dirty for one is the confusion this whole split exists to remove.
     values_changed = pyqtSignal()
 
+    # The reader asked for the level beneath every row: Settings -> Bot.  Emitted
+    # rather than opened here, because the dialog is modal and ``exec()`` may only
+    # be entered from a synchronous Qt slot -- see the qasync rule in CLAUDE.md.
+    app_settings_requested = pyqtSignal()
+
     def __init__(self, parent=None, settings: SettingsManager | None = None):
         super().__init__("Bot Settings", parent)
         self._config: BotConfig | None = None
@@ -187,7 +192,17 @@ class SetupSection(SidebarSection):
         outer = QVBoxLayout()
         outer.setSpacing(4)
 
-        self._switches = DescriptionSwitches(self._on_show_all_toggled)
+        # The app-setting level is the one a row can name but not edit, so the route
+        # to it lives here rather than in every hint that mentions it: eight rows
+        # each carrying the same link is eight things to read and one destination.
+        self._switches = DescriptionSwitches(
+            self._on_show_all_toggled,
+            trailing=(
+                "Open app settings",
+                "Open Settings → Bot, where a row falling back to the app setting reads its value",
+                self.app_settings_requested.emit,
+            ),
+        )
         outer.addWidget(self._switches)
 
         self._rows_layout = QVBoxLayout()
