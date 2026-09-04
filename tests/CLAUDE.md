@@ -6,8 +6,6 @@ What every change ships with, and the two ways this suite goes slow or flaky.
 - No Wizard101 process needed — all node tests use `FakeClient`
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
 
-Every new node, background task, or non-trivial utility class must ship with a corresponding test file. Cover at minimum: the success path, one failure path, and any timeout/retry behavior. The exception is pure `QWidget` subclasses that can't be tested without a `QApplication`; extract any testable logic into a plain function or class.
-
 ## Keeping the suite fast
 
 A node test that sleeps through a production cadence costs that time on every run, so

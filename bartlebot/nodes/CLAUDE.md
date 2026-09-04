@@ -10,9 +10,6 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
 
-## Timing
-Import all timing constants from `bartlebot/nodes/timing.py`. Never define local timeout or interval constants in nodes.
-
 ## Multi-client coordination
 Use `poll_each_until_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
 
