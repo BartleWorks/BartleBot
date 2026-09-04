@@ -749,3 +749,43 @@ def test_a_changed_default_does_not_rebuild_the_row_it_was_changed_in(qapp, sett
     assert structural == []
     assert section.option_widgets["repeat"] is box
     assert section._config.options[0].default is False
+
+
+# ---------------------------------------------------------------------------
+# The canvas has to hear about it
+# ---------------------------------------------------------------------------
+
+
+def test_deleting_an_option_undots_the_edges_that_guarded_on_it(qapp, settings):
+    """An edge is dotted while it is conditional, and a deletion can end that.
+
+    The flags come off the transitions, but an ``EdgeItem`` holds a snapshot of
+    whether it had any, and the Options surface cannot reach the canvas to say
+    otherwise -- so the sweep runs from the controller's ``config_changed``
+    handler, which is what this wires up.
+    """
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas
+
+    transition = TransitionModel(
+        trigger="advance",
+        source="a",
+        dest="a",
+        when="SUCCESS",
+        flag_groups=[FlagGroup(flags=[FlagCondition(option="repeat")])],
+    )
+    config = _config([_repeat()], transitions=[transition])
+    canvas = BotCanvas()
+    try:
+        canvas.setup(config)
+        canvas.enter_edit_mode()
+        section = OptionsSection(settings=settings)
+        section.set_config(config)
+        section.options_changed.connect(canvas.refresh_edge_flags)
+        edge = next(e for s, w, d, e in canvas.scene.edge_items if (s, w, d) == ("a", "SUCCESS", "a"))
+        assert edge.has_flags
+
+        section._on_delete_option("repeat")
+
+        assert not edge.has_flags
+    finally:
+        canvas.prepare_for_shutdown()

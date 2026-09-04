@@ -133,6 +133,11 @@ class EdgeItem(QGraphicsPathItem):
         self._rebuild()
         self.update()
 
+    @property
+    def has_flags(self) -> bool:
+        """Whether this edge is conditional, and so drawn with a dotted pen."""
+        return self._has_flags
+
     def set_has_flags(self, has_flags: bool) -> None:
         """Update whether this edge has boolean flag conditions (affects pen style)."""
         if self._has_flags != has_flags:

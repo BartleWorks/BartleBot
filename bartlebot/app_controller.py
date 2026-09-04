@@ -969,6 +969,11 @@ class AppController(QObject):
         if self._loaded_config is not None:
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
             self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)
+            # An edge is drawn dotted while it is conditional, and deleting an option
+            # strips its conditions off every transition that guarded on it -- from a
+            # surface with no way to reach the canvas.  Cheap: each edge is only
+            # repainted when its own flag actually moved.
+            self._window.bot_canvas.refresh_edge_flags()
             self._window.left_sidebar.refresh_options(self._loaded_config)
             filename = Path(self._last_save_path).name if self._last_save_path else "Untitled"
             self._window.set_bot_name(self._loaded_config.name, filename)
