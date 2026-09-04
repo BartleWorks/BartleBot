@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import json
 
-from bartlebot.bot.schema import BotConfig
+from bartlebot.bot.schema import BotConfig, DropModel, StateModel
 from bartlebot.bot_options import (
     compose_options,
+    options_signature,
     orphaned_flag_options,
     storable_options,
 )
@@ -413,3 +414,73 @@ def _spec_without(option_name: str):
     spec = copy.deepcopy(NODE_SPECS["quicksell"])
     spec.required_bot_options = [o for o in spec.required_bot_options if o.name != option_name]
     return spec
+
+
+# ---------------------------------------------------------------------------
+# The signature the option surfaces skip a rebuild on (#184)
+# ---------------------------------------------------------------------------
+
+
+def test_an_edit_that_touches_no_option_leaves_the_signature_alone():
+    """The common graph edit: a node that declares nothing, moved or added.  Building
+    the rows costs ~55ms on a large bot and composing them costs 0.05ms, so this is
+    what makes the ordinary edit free."""
+    config = _config()
+    before = options_signature(config)
+
+    config.states.append(StateModel(id="s1", node_type="mark_location", params={}))
+
+    assert options_signature(config) == before
+
+
+def test_adding_a_node_that_requires_an_option_moves_the_signature():
+    config = _config(states=[{"id": "s0", "node_type": "mark_location"}])
+    before = options_signature(config)
+
+    config.states.append(StateModel(id="s1", node_type="interact", params={}))
+
+    assert options_signature(config) != before
+
+
+def test_turning_a_conditional_option_off_moves_the_signature():
+    """Challenge Mode is required only while ``offers_challenge_mode`` is on, so the
+    param edit that drops it is a graph edit whose row list genuinely changed."""
+    config = _config()
+    before = options_signature(config)
+
+    config.states[0].params["offers_challenge_mode"] = False
+
+    assert options_signature(config) != before
+
+
+def test_a_new_id_moves_the_signature():
+    """Save As mints one under a loaded bot, and Setup resolves the user's stored
+    values through it -- so those rows have to be re-resolved (#179)."""
+    config = _config()
+    before = options_signature(config)
+
+    config.id = "forked-bot"
+
+    assert options_signature(config) != before
+
+
+def test_a_changed_drop_table_moves_the_signature():
+    """The quicksell keep list is picked from it, so a row is built from it."""
+    config = _config()
+    before = options_signature(config)
+
+    config.drops.append(DropModel(name="Sun Serpent"))
+
+    assert options_signature(config) != before
+
+
+def test_a_declaration_losing_its_node_moves_the_signature():
+    """The composed list can hold the same names either way -- what changes is that
+    the option is no longer *derived*, which is what gives its row an Edit button."""
+    config = _config()
+    config.options = list(compose_options(config))
+    before = options_signature(config)
+
+    config.states.clear()
+
+    assert options_signature(config) != before

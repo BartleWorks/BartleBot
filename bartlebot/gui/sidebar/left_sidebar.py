@@ -27,6 +27,7 @@ from typing import TYPE_CHECKING
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
+from bartlebot.bot_options import options_signature
 from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
@@ -66,6 +67,11 @@ class LeftSidebar(QTabWidget):
         self.setMinimumWidth(300)
         self._config: BotConfig | None = None
         self._editable = False
+        # What the two option surfaces were last built from.  ``None`` is not a
+        # signature any config produces -- an empty one is ``()`` -- so it reads as
+        # "nothing has been built yet" and never as a match.
+        self._built_signature: tuple | None = None
+        self._built_config: BotConfig | None = None
 
         # ── The two option surfaces ─────────────────────────────────
         # Each gets the bot's full description above it, in the same position, so
@@ -205,8 +211,7 @@ class LeftSidebar(QTabWidget):
 
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
-        self.setup.set_config(config)
-        self.options.set_config(config)
+        self._rebuild_option_surfaces(config)
         self.combat_tab.set_config(config)
         self._refresh_description()
 
@@ -214,14 +219,35 @@ class LeftSidebar(QTabWidget):
         """Rebuild both option surfaces alone, without disturbing the other sections.
 
         A graph edit can add or drop a *derived* option, so the composed list has to
-        be recomputed on every config change.  Deliberately not ``set_config``: that
-        also re-binds the combat tab, whose rebind can flush a pending save and come
-        back round through ``config_changed``.
+        be re*computed* on every config change -- but most graph edits touch no node
+        carrying a ``BotOptionSpec``, so the answer is usually the list already on
+        screen.  Composing it costs 0.05ms and building the rows from it costs ~55ms
+        on a 67-state bot, so the comparison pays for itself on the first edit that
+        changes nothing (#184).
+
+        Deliberately not ``set_config``: that also re-binds the combat tab, whose
+        rebind can flush a pending save and come back round through
+        ``config_changed``.
         """
         self._config = config
+        self._rebuild_option_surfaces(config)
+        self._refresh_description()
+
+    def _rebuild_option_surfaces(self, config: BotConfig | None) -> None:
+        """Re-bind Setup and Options, unless they are already showing this list.
+
+        Object identity is checked as well as the signature because undo/redo hands
+        the canvas a brand-new ``BotConfig`` whose contents are usually identical to
+        the one before it: the sections write through the object they hold, so one
+        left bound to the replaced config edits something nothing saves (#53).
+        """
+        signature = options_signature(config)
+        if config is self._built_config and signature == self._built_signature:
+            return
         self.setup.set_config(config)
         self.options.set_config(config)
-        self._refresh_description()
+        self._built_config = config
+        self._built_signature = signature
 
     def rebind_identity(self) -> None:
         """Forward a change of the config's *id* to the surfaces keyed on it.

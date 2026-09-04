@@ -358,6 +358,46 @@ def compose_options(config, specs=None) -> list:
     return composed
 
 
+def options_signature(config, specs=None) -> tuple:
+    """Everything the two option surfaces build their rows from, as a comparable value.
+
+    ``compose_options`` is a pure function of the graph and the stored
+    declarations, and building the rows from it costs ~55ms on a 67-state bot --
+    paid on every graph edit, while most edits touch no node carrying a
+    ``BotOptionSpec`` at all.  Composing costs 0.05ms, so asking whether the answer
+    moved is three orders of magnitude cheaper than rebuilding regardless (#184).
+
+    Carries more than the composed list: the id, because Setup resolves the user's
+    overrides through it and Save As moves it under a loaded bot; the drop table,
+    because the quicksell keep list is picked from it; and which names are
+    *derived*, because that is what decides whether a row on the Options surface
+    gets an Edit button, and it can move while the composed list does not.
+
+    Compared with ``==`` and never hashed -- an option's default can be a list.
+    """
+    if config is None:
+        return ()
+    required = set(required_option_specs(config, specs))
+    return (
+        config.id,
+        tuple((drop.name, drop.category, drop.match_name) for drop in config.drops),
+        tuple(
+            (
+                opt.name,
+                opt.type,
+                opt.default,
+                opt.description,
+                opt.minimum,
+                opt.maximum,
+                opt.suffix,
+                opt.depends_on,
+                opt.name in required,
+            )
+            for opt in compose_options(config, specs)
+        ),
+    )
+
+
 def values_agree(a, b) -> bool:
     """Whether two option values say the same thing.
 
