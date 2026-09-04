@@ -9,6 +9,7 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.credentials import CredentialStore
+from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
@@ -39,6 +40,9 @@ class MainWindow(QMainWindow):
 
         self._build_menu()
         self._build_central()
+        # After _build_central, not inside _build_menu: whether an entry can launch is
+        # asked of the game view, which _build_central is what creates.
+        self._rebuild_launch_menu()
         self._apply_minimum_size()
         self._apply_startup_layout()
 
@@ -153,7 +157,13 @@ class MainWindow(QMainWindow):
 
         # Launch menu
         self._launch_menu = menu_bar.addMenu("Launch")
-        self._rebuild_launch_menu()
+        # Qt suppresses action tooltips in menus unless asked. A disabled entry here
+        # carries the reason it is disabled, and a greyed row with no way to read why is
+        # the thing the disabled-not-hidden rule exists to avoid.
+        self._launch_menu.setToolTipsVisible(True)
+        # Rebuilt on every open: whether a launch fits depends on the client count and
+        # the screen the window is on, both of which move while the menu is closed.
+        self._launch_menu.aboutToShow.connect(self._rebuild_launch_menu)
 
     def _build_central(self) -> None:
         # BotCanvas must be created first — it owns param_panel
@@ -382,6 +392,32 @@ class MainWindow(QMainWindow):
         self.action_redo.setEnabled(can_redo)
         self.action_redo.setText(f"Redo: {redo_desc}" if redo_desc else "Redo")
 
+    @staticmethod
+    def _disable_if_unfittable(action: QAction, reason: str | None) -> None:
+        """Grey *action* out and explain, or leave it alone when *reason* is None."""
+        if reason is None:
+            return
+        action.setEnabled(False)
+        action.setToolTip(reason)
+        action.setStatusTip(reason)
+
+    def _single_account_fit_problem(self) -> str | None:
+        """Why launching one more client would not fit, or None if it would.
+
+        Judged against the *resulting* count, so adding a third client to a fitting pair
+        is refused when the 2x2 grid that forces would not fit. Resolution is fixed at
+        launch and a running client cannot be resized without relaunching it, so the
+        client arriving is the one that has to be refused.
+
+        Sized at the larger of what that client will launch at and what is already on
+        screen: mixed-resolution fleets are supported, and a fleet whose windows are
+        bigger than the current setting still has to be fitted at the size it actually is.
+        """
+        launching = SettingsManager.instance().game_resolution
+        running = self.game_view.largest_game_size
+        resolution = launching if running is None else (max(launching[0], running[0]), max(launching[1], running[1]))
+        return screen_fit.fit_problem(resolution, self.game_view.client_count + 1, self)
+
     def _rebuild_launch_menu(self) -> None:
         """Rebuild Launch menu from current accounts and profiles."""
         self._launch_menu.clear()
@@ -397,6 +433,10 @@ class MainWindow(QMainWindow):
                 name = profile.get("name", "Unnamed")
                 action = QAction(name, self)
                 action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n)))
+                # Disabled rather than dropped, carrying the reason as its tooltip — the
+                # same rule the Quick Launch cards follow. This menu is rebuilt on every
+                # show, so the answer tracks the client count and the screen.
+                self._disable_if_unfittable(action, screen_fit.profile_fit_problem(profile, self))
                 self._launch_menu.addAction(action)
         else:
             empty = QAction("(No profiles)", self)
@@ -420,6 +460,7 @@ class MainWindow(QMainWindow):
                 action.triggered.connect(
                     lambda _checked, u=username, d=display: asyncio.ensure_future(self._launch_single_account(u, d))
                 )
+                self._disable_if_unfittable(action, self._single_account_fit_problem())
                 self._launch_menu.addAction(action)
         else:
             empty2 = QAction("(No accounts)", self)
@@ -505,6 +546,16 @@ class MainWindow(QMainWindow):
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
+            profile = next(
+                (p for p in SettingsManager.instance().launch_profiles if p.get("name") == profile_name), None
+            )
+            # Backstop for a path that did not go through a disabled control — a
+            # keybinding, or a profile edited while its menu entry was already built.
+            # Every surface offering this launch has already refused it, so arriving here
+            # means one of them was stale rather than that the user was warned.
+            if profile is not None and (reason := screen_fit.profile_fit_problem(profile, self)) is not None:
+                QMessageBox.critical(self, "Launch failed", reason)
+                return
             self._game_view_panel.set_launch_profile(profile_name)
             await launch_profile(profile_name, drive=self.auto_select_driver, reserve=self.slot_reserver)
             self._record_recent_launch("profile", profile_name)
@@ -516,6 +567,9 @@ class MainWindow(QMainWindow):
         try:
             from bartlebot.launcher.launch_profile import launch_account
 
+            if (reason := self._single_account_fit_problem()) is not None:
+                QMessageBox.critical(self, "Launch failed", reason)
+                return
             password = CredentialStore.retrieve(username)
             if password is None:
                 QMessageBox.critical(

@@ -42,6 +42,7 @@ read on purpose.
 | `bartlebot/nodes/CLAUDE.md` | adding a node, timing, multi-client coordination, session logs, modal dialogs, UI paths |
 | `tests/CLAUDE.md` | what a change ships with, keeping the suite fast, one QApplication per worker |
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
+| `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |

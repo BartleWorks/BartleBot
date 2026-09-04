@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bartlebot.launcher import launch_profile
+from bartlebot.settings_manager import SettingsManager
 
 # Shaped like the game's own file: a declaration it parses strictly, tags carrying
 # attributes, and neighbours that must survive untouched.
@@ -122,3 +123,128 @@ def test_last_player_is_none_when_the_tag_is_not_a_number(install, config):
     # An empty <LastPlayer/> is what a fresh install writes, and "no character" is not 0.
     config.write_text(CONFIG_XML.replace(">12345678901234567<", "><"), encoding="utf-8")
     assert launch_profile.read_last_player() is None
+
+
+# ---------------------------------------------------------------------------
+# UISize (#101)
+# ---------------------------------------------------------------------------
+#
+# The game's HUD is fixed-pixel, so a launch below 800x600 has to scale it down or the
+# interface overflows the client area. That clamp is the user's own setting being
+# overwritten, which is why every test here is really about giving it back.
+
+_HUGE = 4  # the game's largest UI scale, and its default
+_MICRO = 5  # the smallest, and the only one 400x300 can display
+
+
+@pytest.fixture
+def ui_config(tmp_path):
+    """A config.xml carrying a <UISize>, with the launcher pointed at it."""
+    path = tmp_path / "config.xml"
+    path.write_text(CONFIG_XML.replace("<config>\n", f'<config>\n    <UISize TYPE="INT">{_HUGE}</UISize>\n'), "utf-8")
+    bin_dir = MagicMock()
+    bin_dir.__truediv__ = lambda _self, _name: path
+    root = MagicMock()
+    root.__truediv__ = lambda _self, _name: bin_dir
+    with patch.object(launch_profile, "get_wiz_install", return_value=root):
+        yield path
+
+
+def test_reading_the_ui_scale_finds_the_stored_value(ui_config):
+    assert launch_profile.read_ui_size() == _HUGE
+
+
+def test_the_ui_scale_is_none_when_the_game_never_wrote_one(install):
+    """CONFIG_XML has no <UISize>: nothing to clamp, and nothing to restore."""
+    assert launch_profile.read_ui_size() is None
+
+
+def test_a_small_launch_clamps_the_ui_scale_and_captures_the_original(ui_config):
+    assert launch_profile._ui_size_update(400, 300) == {"UISize": str(_MICRO)}
+    assert SettingsManager.instance().original_ui_size == _HUGE
+
+
+def test_a_launch_the_scale_fits_leaves_it_where_it_is(ui_config):
+    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_HUGE)}
+
+
+def test_the_capture_is_taken_once_and_never_from_our_own_clamp(ui_config):
+    """The bug this exists to prevent: one clamped session leaves Micro in the file.
+
+    Re-reading config.xml would adopt that as the user's preference, and their real one
+    would be gone with nothing left that remembers it.
+    """
+    launch_profile._ui_size_update(400, 300)
+    ui_config.write_text(ui_config.read_text("utf-8").replace(f">{_HUGE}<", f">{_MICRO}<"), "utf-8")
+
+    launch_profile._ui_size_update(400, 300)
+    assert SettingsManager.instance().original_ui_size == _HUGE
+    # ...and the next launch big enough to carry it puts it back, rather than staying
+    # clamped forever because the file now agrees with the clamp.
+    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_HUGE)}
+
+
+def test_nothing_is_written_when_the_game_has_no_ui_scale_to_clamp(install):
+    assert launch_profile._ui_size_update(400, 300) == {}
+    assert SettingsManager.instance().original_ui_size is None
+
+
+def test_the_window_config_patch_clamps_the_scale_alongside_the_resolution(tmp_path, ui_config):
+    (tmp_path / "preferences.xml").write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n<prefs>\n    <Resolution>800x600</Resolution>\n</prefs>\n',
+        encoding="utf-8",
+    )
+    install_root = MagicMock()
+    install_root.__truediv__ = lambda _self, _name: tmp_path
+
+    sm = _settings(disable_quick_friend_teleport=False)
+    try:
+        # The capture and the clamp both go through the real SettingsManager, which the
+        # module-level patch above would otherwise replace with a MagicMock.
+        with (
+            patch.object(launch_profile, "get_wiz_install", return_value=install_root),
+            patch.object(launch_profile, "_ui_size_update", return_value={"UISize": str(_MICRO)}),
+        ):
+            launch_profile._patch_window_config(400, 300, 50, 50)
+    finally:
+        sm.stop()
+
+    assert "400x300" in (tmp_path / "preferences.xml").read_text(encoding="utf-8")
+    # Resolution goes to preferences.xml, UISize to config.xml, and neither file holds
+    # both — the split that makes this worth a test at all.
+    config_text = (tmp_path / "config.xml").read_text(encoding="utf-8")
+    assert f'<UISize TYPE="INT">{_MICRO}</UISize>' in config_text
+    assert "400x300" not in config_text
+    assert "UISize" not in (tmp_path / "preferences.xml").read_text(encoding="utf-8")
+
+
+def test_restoring_puts_the_user_s_scale_back_and_forgets_it(ui_config):
+    launch_profile._ui_size_update(400, 300)
+    launch_profile._patch_xml_fields(ui_config, {"UISize": str(_MICRO)})
+
+    launch_profile.restore_ui_size()
+
+    assert launch_profile.read_ui_size() == _HUGE
+    assert SettingsManager.instance().original_ui_size is None
+
+
+def test_restoring_twice_is_harmless(ui_config):
+    """It runs on quit and again on the next start, since the quit may never have come."""
+    launch_profile._ui_size_update(400, 300)
+    launch_profile.restore_ui_size()
+    launch_profile.restore_ui_size()
+    assert launch_profile.read_ui_size() == _HUGE
+
+
+def test_restoring_with_nothing_captured_touches_nothing(ui_config):
+    before = ui_config.read_text(encoding="utf-8")
+    launch_profile.restore_ui_size()
+    assert ui_config.read_text(encoding="utf-8") == before
+
+
+def test_a_failed_restore_keeps_the_capture_for_the_next_start(ui_config):
+    """Losing the capture would leave the user's game clamped with nothing to undo it."""
+    launch_profile._ui_size_update(400, 300)
+    with patch.object(launch_profile, "_patch_xml_fields", side_effect=OSError("locked")):
+        launch_profile.restore_ui_size()
+    assert SettingsManager.instance().original_ui_size == _HUGE

@@ -22,6 +22,7 @@ from wizwalker.utils import (
 )
 
 from bartlebot.credentials import CredentialStore
+from bartlebot.game_sizing import ui_size_for
 from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
 from bartlebot.settings_manager import SettingsManager
 
@@ -80,18 +81,100 @@ def _launch_config_updates() -> dict[str, str]:
     return {"QuickFriendTeleport": "0"}
 
 
-def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
-    """Set the game window resolution and position before launch.
+# The tag holding the game's UI scale. It lives in config.xml *only* -- preferences.xml
+# has no such element -- while Resolution goes the other way: it appears in both files
+# but only the preferences.xml copy is read, the config.xml one being a mirror the game
+# rewrites at launch. Neither split is guessable, which is why both are spelled out here
+# and in bartlebot/game_sizing.py.
+_UI_SIZE_TAG = "UISize"
 
-    Wizard101 reads Resolution from preferences.xml and WindowedX/WindowedY
-    from config.xml on startup.  Uses the same get_wiz_install() path as
-    patch_open_browser().
+
+def read_ui_size() -> int | None:
+    """The value in ``<UISize>``, or None if it is missing or unreadable.
+
+    None rather than a default: "the game did not write one" is the case where there is
+    no preference to clamp and none to restore, and guessing one would mean handing the
+    user back a scale they never chose.
+    """
+    try:
+        text = _config_path().read_text(encoding="utf-8")
+    except Exception:
+        # Broad: get_wiz_install() raises its own when the install cannot be found, and a
+        # UI scale nobody can read must not be what stops the app starting or quitting.
+        logger.warning("Could not read config.xml to find the game's UI scale", exc_info=True)
+        return None
+    match = re.search(rf"<{_UI_SIZE_TAG}\b[^>]*>([^<]*)</\s*{_UI_SIZE_TAG}\s*>", text)
+    if match is None:
+        return None
+    try:
+        return int(match.group(1).strip())
+    except ValueError:
+        return None
+
+
+def _ui_size_update(width: int, height: int) -> dict[str, str]:
+    """The ``<UISize>`` patch for a launch at *width* x *height*, if there is one.
+
+    The HUD is fixed-pixel, so a resolution below the game's own 800x600 floor needs the
+    UI scaled down to match or the interface overflows the client area -- the two are one
+    coupled setting (see bartlebot/game_sizing.py). The clamp only ever goes down, and
+    the user's own value is captured here, once, before anything overwrites it.
+
+    Captured from *settings* when a capture already exists rather than from the file: one
+    clamped session leaves our value sitting in config.xml, so re-reading it would adopt
+    our own clamp as the user's preference and lose theirs for good.
+    """
+    settings = SettingsManager.instance()
+    preferred = settings.original_ui_size
+    if preferred is None:
+        preferred = read_ui_size()
+        if preferred is not None:
+            settings.original_ui_size = preferred
+            settings.save()
+    target = ui_size_for(preferred, (width, height))
+    return {} if target is None else {_UI_SIZE_TAG: str(target)}
+
+
+def restore_ui_size() -> None:
+    """Put the user's own UI scale back into config.xml, and forget the capture.
+
+    They play Wizard101 outside BartleBot, so a scale this app clamped for its own tiled
+    layout must not be left behind. Called on quit, and again on the next start in case
+    that quit never happened -- it is a no-op with nothing captured, so running it twice
+    costs nothing.
+
+    The capture is kept if the write fails, so the next start tries again rather than
+    leaving the user's game altered with nothing left that remembers what it was.
+    """
+    settings = SettingsManager.instance()
+    original = settings.original_ui_size
+    if original is None:
+        return
+    try:
+        _patch_xml_fields(_config_path(), {_UI_SIZE_TAG: str(original)})
+    except Exception:
+        logger.warning("Could not restore the game's UI scale — will retry on the next start", exc_info=True)
+        return
+    settings.original_ui_size = None
+    settings.save()
+
+
+def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
+    """Set the game window resolution, UI scale and position before launch.
+
+    Wizard101 reads Resolution from preferences.xml and WindowedX/WindowedY/UISize from
+    config.xml on startup.  Uses the same get_wiz_install() path as patch_open_browser().
     """
     bin_dir = get_wiz_install() / "Bin"
     _patch_xml_fields(bin_dir / "preferences.xml", {"Resolution": f"{width}x{height}"})
     _patch_xml_fields(
         bin_dir / "config.xml",
-        {"WindowedX": str(x), "WindowedY": str(y), **_launch_config_updates()},
+        {
+            "WindowedX": str(x),
+            "WindowedY": str(y),
+            **_ui_size_update(width, height),
+            **_launch_config_updates(),
+        },
     )
 
 

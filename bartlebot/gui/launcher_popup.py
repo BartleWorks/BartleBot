@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui import screen_fit
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -41,6 +42,12 @@ class LauncherPopup(QWidget):
             name = profile.get("name", "Unnamed")
             btn = QPushButton(name)
             btn.clicked.connect(lambda _checked, n=name: self._launch(n))
+            # Disabled with the reason on it, never dropped from the list. This popup and
+            # the Quick Launch cards show the same profiles and have to agree about which
+            # of them can launch — see bartlebot/gui/screen_fit.py.
+            if (reason := screen_fit.profile_fit_problem(profile, self)) is not None:
+                btn.setEnabled(False)
+                btn.setToolTip(reason)
             layout.addWidget(btn)
 
         self.adjustSize()

@@ -25,8 +25,33 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
+from bartlebot.gui import screen_fit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+
+
+def _mark_unfittable_resolutions(combo: QComboBox, client_count: int, widget: QWidget) -> None:
+    """Grey out every entry in *combo* that *client_count* clients could not fit at.
+
+    Disabled and explained rather than dropped from the list, which is the same rule the
+    launch surfaces follow: a user who cannot find 1920x1080 in the list learns nothing,
+    while one who sees it greyed out learns that their screen is the reason and that
+    fewer clients would bring it back.
+
+    The item's own resolution is read from its ``userData``, so the "Use global setting"
+    entry — which carries None — is skipped: what it resolves to is the global combo's
+    business, and that combo polices itself.
+    """
+    model = combo.model()
+    for index in range(combo.count()):
+        resolution = combo.itemData(index)
+        if resolution is None:
+            continue
+        reason = screen_fit.fit_problem(tuple(resolution), client_count, widget)
+        item = model.item(index)
+        if item is not None:
+            item.setEnabled(reason is None)
+        combo.setItemData(index, reason or "", Qt.ItemDataRole.ToolTipRole)
 
 
 class _ReorderableList(QListWidget):
@@ -205,6 +230,10 @@ class _ProfileDialog(QDialog):
         res_form.addRow("Resolution:", self._res_combo)
         layout.addLayout(res_form)
 
+        self._res_hint = ThemedTextLabel("", css="font-size: 11px;")
+        self._res_hint.setWordWrap(True)
+        layout.addWidget(self._res_hint)
+
         # --- OK / Cancel ---
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -214,6 +243,26 @@ class _ProfileDialog(QDialog):
         # Populate list with pre-selected accounts
         for username in selected_usernames or []:
             self._add_account_item(username)
+        self._refresh_resolution_fit()
+
+    def _refresh_resolution_fit(self) -> None:
+        """Re-judge which resolutions this profile could launch at, and say what fits.
+
+        Judged against the profile's *own* account count, which is the number of clients
+        this resolution will actually have to hold. Re-run on every change to the list,
+        because adding a fourth account is exactly what turns a fitting profile into one
+        that has to come down a tier.
+        """
+        count = max(1, self._account_list.count())
+        _mark_unfittable_resolutions(self._res_combo, count, self)
+        largest = screen_fit.largest_fitting_resolution(count, self)
+        clients = f"{count} client{'s' if count != 1 else ''}"
+        self._res_hint.setText(
+            f"Largest that fits {clients} on this screen: {largest[0]}×{largest[1]}."
+            if largest is not None
+            else f"No offered resolution fits {clients} on this screen — remove an account, "
+            "or make the sidebars and bot canvas smaller in Settings → General."
+        )
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -247,11 +296,13 @@ class _ProfileDialog(QDialog):
 
     def _on_add_account(self, username: str) -> None:
         self._add_account_item(username)
+        self._refresh_resolution_fit()
 
     def _on_remove(self) -> None:
         row = self._account_list.currentRow()
         if row >= 0:
             self._account_list.takeItem(row)
+            self._refresh_resolution_fit()
 
     def _on_move_up(self) -> None:
         row = self._account_list.currentRow()
@@ -318,13 +369,16 @@ class AccountsTab(QWidget):
         layout.addLayout(res_form)
 
         hint = ThemedTextLabel(
-            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution.",
+            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution. "
+            "Below 800×600 the game's own UI is scaled down to match while BartleBot runs, "
+            "and put back when it closes.",
             css="font-size: 11px;",
         )
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
         self._res_combo.currentIndexChanged.connect(self._on_resolution_changed)
+        self._refresh_resolution_fit()
 
         # ------------------------------------------------------------------
         # Accounts section
@@ -391,6 +445,24 @@ class AccountsTab(QWidget):
         if resolution:
             SettingsManager.instance().game_resolution = resolution
             SettingsManager.instance().save()
+
+    def _refresh_resolution_fit(self) -> None:
+        """Grey out the resolutions the launches this setting governs could not fit at.
+
+        Sized against the largest profile that *follows* this setting, because those are
+        the launches it decides — a profile pinning its own resolution answers to the
+        combo in its own dialog instead. Floored at one client, which is what a single
+        account launched from the Quick Launch screen is.
+
+        Only a hint here, not a gate: a running fleet is not the only thing this value is
+        ever set for, and the launch surfaces refuse an unfittable launch on their own.
+        """
+        counts = [
+            len(profile.get("accounts") or [])
+            for profile in SettingsManager.instance().launch_profiles
+            if not profile.get("resolution")
+        ]
+        _mark_unfittable_resolutions(self._res_combo, max([1, *counts]), self)
 
     # ------------------------------------------------------------------
     # Accounts
@@ -498,6 +570,7 @@ class AccountsTab(QWidget):
     # ------------------------------------------------------------------
 
     def _refresh_profiles(self) -> None:
+        self._refresh_resolution_fit()
         self._profile_list.clear()
         for p in SettingsManager.instance().launch_profiles:
             n = len(p.get("accounts", []))

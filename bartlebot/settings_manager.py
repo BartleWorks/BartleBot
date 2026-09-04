@@ -11,6 +11,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from bartlebot import bot_options
+from bartlebot.game_sizing import MENU_AND_STATUS_PX, SUB_FLOOR_RESOLUTIONS, screen_budget
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +50,8 @@ class _GeneralSettings(BaseModel):
 
 class _GameEmbedSettings(BaseModel):
     resolution: list[int] = [800, 600]
+    # The game's own UI scale as the user had it, so a clamped launch can give it back.
+    original_ui_size: int | None = None
 
 
 class _CanvasSettings(BaseModel):
@@ -103,6 +106,9 @@ _DEFAULTS: dict[str, Any] = {
     },
     "game_embed": {
         "resolution": [800, 600],
+        # The user's own <UISize>, captured once before the first launch clamps it.
+        # See SettingsManager.original_ui_size.
+        "original_ui_size": None,
     },
     "canvas": {
         "minimap_visible": True,
@@ -130,8 +136,15 @@ _DEFAULTS: dict[str, Any] = {
     "bot_option_overrides": {},  # {bot_uuid: {option_name: value}}
 }
 
-# Valid Wizard101 windowed resolutions (width, height)
+# Valid Wizard101 windowed resolutions (width, height), smallest first.
+#
+# The five below 800x600 are the game_sizing ladder: the game's own dropdown stops at
+# 800x600, but that is a UI restriction rather than an engine limit, and each of these
+# is the floor of exactly one UI scale (#101). They are what makes 2-4 embedded clients
+# fit a 1080p screen. Nothing below 400x300 is offered -- that is where the HUD stops
+# working even at Micro, the smallest scale the game has.
 VALID_RESOLUTIONS: list[tuple[int, int]] = [
+    *SUB_FLOOR_RESOLUTIONS,
     (800, 600),
     (1024, 768),
     (1280, 720),
@@ -279,6 +292,31 @@ class SettingsManager:
     @game_resolution.setter
     def game_resolution(self, value: tuple[int, int]) -> None:
         self.set("game_embed", "resolution", value=list(value))
+
+    @property
+    def original_ui_size(self) -> int | None:
+        """The user's own ``<UISize>``, captured before the first launch clamped it.
+
+        Persisted here rather than re-read from config.xml because after one clamped
+        session the file holds *our* value, so reading it back would treat a value we
+        wrote as the user's preference -- and every launch after that would compound it.
+        Deimos hit the identical bug shape with camera frustums.
+
+        It also has to outlive the process: a crash that never reaches the restore leaves
+        the user's game altered, and this is what the next start puts back.
+
+        None means nothing has been captured, which is both the state before the first
+        launch and the state after a restore.
+        """
+        raw = self.get("game_embed", "original_ui_size", default=None)
+        try:
+            return None if raw is None else int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    @original_ui_size.setter
+    def original_ui_size(self, value: int | None) -> None:
+        self.set("game_embed", "original_ui_size", value=None if value is None else int(value))
 
     def get_general(self, key: str, default: Any = None) -> Any:
         return self.get("general", key, default=default)
@@ -645,8 +683,29 @@ class SettingsManager:
     # ------------------------------------------------------------------
 
     def minimum_window_size(self) -> tuple[int, int]:
-        """Return (min_width, min_height) based on the configured game resolution."""
+        """Return (min_width, min_height) based on the configured game resolution.
+
+        This is the floor the window may be *dragged* to, so it is measured against the
+        panel minimums rather than the configured layout sizes -- unlike
+        ``layout_budget``, which asks the opposite question and must not assume the user
+        will crush their sidebars. See bartlebot/game_sizing.py for the two directions.
+        """
         gw, gh = self.game_resolution
         min_w = SIDEBAR_MIN_WIDTH * 2 + gw + SPLITTER_HANDLE_PX * 2
-        min_h = gh + BOTCANVAS_MIN_HEIGHT + 60  # 60px for menu + status bars
+        min_h = gh + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX
         return min_w, min_h
+
+    def layout_budget(self, screen_size: tuple[int, int]) -> tuple[int, int]:
+        """The game-grid space *screen_size* leaves once this layout is placed on it.
+
+        The cap that decides which resolutions may be launched. Reads the user's
+        configured sidebar widths and canvas height -- see ``game_sizing.screen_budget``
+        for why it must not read the minimums instead.
+        """
+        return screen_budget(
+            screen_size,
+            left_sidebar=int(self.get_general("left_sidebar_width", default=300)),
+            right_sidebar=int(self.get_general("right_sidebar_width", default=300)),
+            bottom_section=int(self.get_general("bottom_section_height", default=220)),
+            splitter_handle=SPLITTER_HANDLE_PX,
+        )
