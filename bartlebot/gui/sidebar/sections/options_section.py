@@ -524,8 +524,11 @@ def _build_option_parts(opt, connected: int = 4, get_drops=None) -> tuple[QWidge
     desc_lbl: QLabel | None = None
     if opt.description:
         # Themed, for the same reason field_label is: this is handed back to a
-        # caller that has nothing to restyle it with.
-        desc_lbl = ThemedTextLabel(opt.description, css="font-size: 9px;")
+        # caller that has nothing to restyle it with.  At the base font, matching
+        # the same prose on the Setup surface: the two tabs show the identical
+        # node-authored text, so a size that differs between them reads as a
+        # difference in what the text *is*.
+        desc_lbl = ThemedTextLabel(opt.description)
         desc_lbl.setWordWrap(True)
 
     return row, widget, desc_lbl

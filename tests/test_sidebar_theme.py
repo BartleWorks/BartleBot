@@ -145,7 +145,8 @@ def test_an_option_description_recolours(qapp, theme):
     _switch(qapp, desc, theme, "dark")
 
     assert light not in desc.styleSheet()
-    assert "font-size: 9px" in desc.styleSheet()
+    # The base font, the same size the identical prose is read at on Setup.
+    assert "font-size" not in desc.styleSheet()
 
 
 # ---------------------------------------------------------------------------
