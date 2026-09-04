@@ -355,3 +355,61 @@ def test_cutting_the_node_that_declared_an_option_orphans_its_flag():
     )
 
     assert [name for _t, name in orphaned_flag_options(config)] == ["Challenge Mode"]
+
+
+# ---------------------------------------------------------------------------
+# Parentage
+# ---------------------------------------------------------------------------
+
+
+def _quicksell_config(**overrides) -> BotConfig:
+    return _config(states=[{"id": "s0", "node_type": "quicksell", "params": {}}], **overrides)
+
+
+def test_a_child_option_is_composed_with_its_parent():
+    """``depends_on`` rides the composed declaration exactly as type and bounds do:
+    derived from the NodeSpec, never written to the file."""
+    from bartlebot.nodes.utility import quicksell as qs
+
+    composed = _named(compose_options(_quicksell_config()))
+
+    assert composed[qs.SELL_FLAG_OPTIONS["sell_pets"]].depends_on == qs.OPTION_ENABLED
+    assert composed[qs.OPTION_ENABLED].depends_on is None
+
+
+def test_a_child_option_is_not_persisted_as_one():
+    """Same reason the other three derived fields are not: a stored copy is one more
+    thing to go stale, and the composed one is refreshed on every load."""
+    from bartlebot.nodes.utility import quicksell as qs
+
+    config = _quicksell_config()
+    config.options = [o for o in compose_options(config) if o.name == qs.SELL_FLAG_OPTIONS["sell_pets"]]
+    config.options[0].default = False  # authorial, so the declaration survives the prune
+
+    kept = _named(storable_options(config))
+
+    assert kept[qs.SELL_FLAG_OPTIONS["sell_pets"]].depends_on is None
+
+
+def test_a_child_whose_parent_is_not_in_the_graph_is_not_marked_as_one():
+    """A row indented under a row that is not there reads as a child of whatever
+    precedes it, so the link is dropped rather than left dangling."""
+    from bartlebot.nodes.utility import quicksell as qs
+
+    specs = {"quicksell": _spec_without(qs.OPTION_ENABLED)}
+    config = _quicksell_config()
+
+    composed = _named(compose_options(config, specs=specs))
+
+    assert composed[qs.SELL_FLAG_OPTIONS["sell_pets"]].depends_on is None
+
+
+def _spec_without(option_name: str):
+    """The quicksell NodeSpec with one of its options removed."""
+    import copy
+
+    from bartlebot.nodes.registry import NODE_SPECS
+
+    spec = copy.deepcopy(NODE_SPECS["quicksell"])
+    spec.required_bot_options = [o for o in spec.required_bot_options if o.name != option_name]
+    return spec

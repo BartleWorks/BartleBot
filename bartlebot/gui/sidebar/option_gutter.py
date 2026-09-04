@@ -49,6 +49,12 @@ GUTTER_BTN_PX = 20
 GUTTER_GAP_PX = 2
 GUTTER_TO_BODY_PX = 5
 
+#: How far a child row's *body* is inset past its parent's.  Applied after the
+#: gutter, never inside it, so the bar, the action button and the ``?`` of a child
+#: land on the same three x values as every other row's -- indenting the chrome too
+#: would break the one property the gutter exists to give.
+CHILD_INDENT_PX = 14
+
 
 class OverrideBar(ThemedMixin, QFrame):
     """The gutter marking a row that departs from the level beneath it.
@@ -111,6 +117,26 @@ class HelpToggle(ThemedMixin, QPushButton):
         )
 
 
+class ChildBranch(ThemedMixin, QFrame):
+    """The vertical rule filling a child row's indent.
+
+    Indentation alone says "these belong to the row above" only while the eye
+    happens to compare two left edges; a rule makes the group a thing you can see
+    without measuring, which is what every tree view and every nested settings list
+    does.  It is drawn in the indent the body was pushed over by, so it costs no
+    width of its own, and it is a border rather than a background so that it stays
+    one pixel wide at any row height.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedWidth(CHILD_INDENT_PX)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self.setStyleSheet(f"border: none; border-left: 1px solid {THEME.border};")
+
+
 def keep_slot_when_hidden(button: QPushButton) -> None:
     """Hide *button* without letting its column close up."""
     policy = button.sizePolicy()
@@ -119,12 +145,25 @@ def keep_slot_when_hidden(button: QPushButton) -> None:
     button.setVisible(False)
 
 
-def build_gutter_row(bar: OverrideBar, action_btn: QPushButton, help_btn: HelpToggle, body: QWidget) -> QWidget:
+def build_gutter_row(
+    bar: OverrideBar,
+    action_btn: QPushButton,
+    help_btn: HelpToggle,
+    body: QWidget,
+    *,
+    child: bool = False,
+) -> QWidget:
     """Wrap *body* behind the ``[bar][action][?]`` gutter.
 
     Both buttons top-align, which is what lets one arrangement serve a 20px bool
     row and a 240px drop table alike -- it is what deleted the branch that used to
     put Reset beside a short control and on the head line otherwise.
+
+    *child* insets the **body** by :data:`CHILD_INDENT_PX` and fills that inset with
+    a :class:`ChildBranch` rule.  The gutter itself is untouched, so a child's bar,
+    action button and ``?`` stay in the same three columns as everything else: the
+    indent says what the row belongs to, and the gutter says what can be done to
+    it, and mixing the two would cost the column property the gutter exists for.
 
     **This call is what parents the chrome, so set its visibility only after it.**
     ``setVisible(True)`` on a widget that has no parent yet makes that widget a
@@ -141,6 +180,8 @@ def build_gutter_row(bar: OverrideBar, action_btn: QPushButton, help_btn: HelpTo
     layout.addWidget(action_btn, 0, top)
     layout.addWidget(help_btn, 0, top)
     layout.addSpacing(GUTTER_TO_BODY_PX)
+    if child:
+        layout.addWidget(ChildBranch())
     layout.addWidget(body, 1)
     return outer
 

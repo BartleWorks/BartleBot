@@ -112,6 +112,7 @@ NODE_SPEC = NodeSpec(
             name=SELL_FLAG_OPTIONS["sell_pets"],
             type="bool",
             default=None,
+            depends_on=OPTION_ENABLED,
             description=(
                 "Whether pets are sold along with everything else. The keep list cannot spare an "
                 "individual pet: the quicksell window lists a pet by the nickname its owner gave it, "
@@ -123,6 +124,7 @@ NODE_SPEC = NodeSpec(
             name=SELL_FLAG_OPTIONS["sell_socket_wrenches"],
             type="bool",
             default=None,
+            depends_on=OPTION_ENABLED,
             description=(
                 "Whether items whose name contains 'Socket Wrench' are sold. Off adds that keyword to the keep list."
             ),
@@ -131,6 +133,7 @@ NODE_SPEC = NodeSpec(
             name=SELL_FLAG_OPTIONS["sell_skeleton_keys"],
             type="bool",
             default=None,
+            depends_on=OPTION_ENABLED,
             description=(
                 "Whether items whose name contains 'Skeleton Key' are sold. Off adds that keyword to the keep list."
             ),

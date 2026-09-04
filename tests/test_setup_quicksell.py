@@ -30,7 +30,9 @@ from PyQt6.QtWidgets import QApplication
 
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
+from bartlebot.bot_options import UNSET
 from bartlebot.gui.canvas.drop_keep_list import _COL_ITEM, _COL_KEEP, DropKeepListWidget
+from bartlebot.gui.sidebar.option_gutter import CHILD_INDENT_PX, ChildBranch
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.nodes.utility import quicksell as qs
@@ -432,3 +434,123 @@ def test_the_source_caption_shares_the_name_line(qapp, settings):
         )
     finally:
         section.hide()
+
+
+# ---------------------------------------------------------------------------
+# The children
+# ---------------------------------------------------------------------------
+#
+# The three sell flags say nothing at all while Enable Quicksell is off -- nothing
+# is sold, so there is nothing for them to spare -- and before ``depends_on`` they
+# stayed live and unmarked, three tick boxes that could not affect the run and gave
+# no sign of it. They are indented under the parent now and greyed while it is off.
+
+
+def _sell_flag(name: str = "sell_pets") -> str:
+    return qs.SELL_FLAG_OPTIONS[name]
+
+
+def test_the_sell_flags_are_children_of_enable_quicksell(qapp, settings):
+    section = _section(settings, _config())
+
+    assert {n for n in section.option_widgets if section._parent_of(n)} == set(qs.SELL_FLAG_OPTIONS.values())
+    assert all(section._parent_of(n) == qs.OPTION_ENABLED for n in qs.SELL_FLAG_OPTIONS.values())
+
+
+def test_turning_quicksell_off_greys_its_children(qapp, settings):
+    """The point of the whole change: a control that cannot affect the run says so."""
+    section = _section(settings, _config())
+    assert all(section._chrome[n].body.isEnabled() for n in qs.SELL_FLAG_OPTIONS.values())
+
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
+
+    assert not any(section._chrome[n].body.isEnabled() for n in qs.SELL_FLAG_OPTIONS.values())
+    assert qs.OPTION_ENABLED in section._chrome[_sell_flag()].outer.toolTip()
+
+
+def test_turning_quicksell_back_on_restores_them(qapp, settings):
+    section = _section(settings, _config())
+    widget = section.option_widgets[qs.OPTION_ENABLED]
+
+    widget.setChecked(False)
+    widget.setChecked(True)
+
+    assert all(section._chrome[n].body.isEnabled() for n in qs.SELL_FLAG_OPTIONS.values())
+    assert section._chrome[_sell_flag()].outer.toolTip() == ""
+
+
+def test_reverting_the_parent_reaches_the_children(qapp, settings):
+    """Reset is the other way a parent's value moves, and it does not go through the
+    widget -- so it has to refresh the children itself."""
+    section = _section(settings, _config())
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
+    assert not section._chrome[_sell_flag()].body.isEnabled()
+
+    _revert_button(section, qs.OPTION_ENABLED).click()
+
+    assert section._chrome[_sell_flag()].body.isEnabled()
+
+
+def test_a_bot_opened_with_quicksell_already_off_builds_its_children_greyed(qapp, settings):
+    """The state is refreshed on a rebuild, not only when the parent is clicked."""
+    settings.set_general("default_quicksell_enabled", False)
+
+    section = _section(settings, _config())
+
+    assert not section._chrome[_sell_flag()].body.isEnabled()
+
+
+def test_a_childs_value_survives_the_parent_going_off_and_back_on(qapp, settings):
+    """Greyed, never hidden and never cleared: the user's answer is still theirs, and
+    a disabled row is what says it will be waiting."""
+    config = _config()
+    section = _section(settings, config)
+    section.option_widgets[_sell_flag()].setChecked(False)
+
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(True)
+
+    assert settings.get_option_override(config.id, _sell_flag()) is False
+    assert section.option_widgets[_sell_flag()].isChecked() is False
+
+
+def test_the_gutter_stays_live_on_a_greyed_child(qapp, settings):
+    """Only the body is greyed. The bar still says whose value it is and revert can
+    still discard it -- a value the user cannot see the provenance of, or take back,
+    is worse than one that is merely inactive."""
+    config = _config()
+    section = _section(settings, config)
+    section.option_widgets[_sell_flag()].setChecked(False)
+
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
+
+    assert _revert_button(section, _sell_flag()).isEnabled()
+    _revert_button(section, _sell_flag()).click()
+    assert settings.get_option_override(config.id, _sell_flag()) is UNSET
+
+
+def test_a_child_row_is_indented_but_its_gutter_is_not(qapp, settings):
+    """The indent says what the row belongs to and the gutter says what can be done
+    to it. Indenting the chrome as well would cost the one property the gutter
+    exists for -- see ``test_the_gutter_buttons_line_up_across_every_shape_of_row``."""
+    section = _section(settings, _config())
+    section.resize(400, 900)
+    section.show()
+    qapp.processEvents()
+    try:
+        parent = section._chrome[qs.OPTION_ENABLED]
+        child = section._chrome[_sell_flag()]
+
+        assert _x(section, child.revert_btn) == _x(section, parent.revert_btn)
+        assert _x(section, child.help_btn) == _x(section, parent.help_btn)
+        assert _x(section, child.body) == _x(section, parent.body) + CHILD_INDENT_PX
+    finally:
+        section.hide()
+
+
+def test_a_child_row_draws_the_branch_rule_in_its_indent(qapp, settings):
+    """Indentation alone is only visible while two left edges are being compared."""
+    section = _section(settings, _config())
+
+    assert section._chrome[_sell_flag()].outer.findChildren(ChildBranch)
+    assert not section._chrome[qs.OPTION_ENABLED].outer.findChildren(ChildBranch)

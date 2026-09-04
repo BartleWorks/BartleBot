@@ -350,6 +350,9 @@ def compose_options(config, specs=None) -> list:
                 minimum=spec.minimum,
                 maximum=spec.maximum,
                 suffix=spec.suffix,
+                # Dropped when the parent is not in this graph: a child indented under
+                # a row that is not there reads as a child of whatever precedes it.
+                depends_on=spec.depends_on if spec.depends_on in required else None,
             )
         )
     return composed

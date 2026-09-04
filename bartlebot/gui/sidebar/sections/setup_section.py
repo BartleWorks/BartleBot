@@ -162,7 +162,12 @@ class _RowChrome:
     revert_btn: _RevertButton
     caption: _SourceCaption
     help_btn: HelpToggle
+    outer: QWidget
+    body: QWidget
     description: QWidget | None = None
+    #: The bool option this row is a child of, or ``None``.  A child is indented
+    #: under its parent and greyed while the parent is off.
+    depends_on: str | None = None
 
 
 class SetupSection(SidebarSection):
@@ -342,6 +347,8 @@ class SetupSection(SidebarSection):
             row = self._build_row(opt, connected)
             self._rows_layout.addWidget(row)
             self._rows.append(row)
+        for name in {chrome.depends_on for chrome in self._chrome.values() if chrome.depends_on}:
+            self._refresh_children_of(name)
         self._push_keep_list_context()
 
     def _build_row(self, opt, connected: int) -> QWidget:
@@ -438,7 +445,8 @@ class SetupSection(SidebarSection):
         help_btn = HelpToggle()
         help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
 
-        outer = build_gutter_row(bar, revert_btn, help_btn, body)
+        parent_name = self._parent_of(opt.name)
+        outer = build_gutter_row(bar, revert_btn, help_btn, body, child=parent_name is not None)
         if description is None:
             keep_slot_when_hidden(help_btn)
         else:
@@ -450,7 +458,10 @@ class SetupSection(SidebarSection):
             revert_btn=revert_btn,
             caption=caption,
             help_btn=help_btn,
+            outer=outer,
+            body=body,
             description=description,
+            depends_on=parent_name,
         )
         self._refresh_row(opt.name)
         return outer
@@ -489,6 +500,42 @@ class SetupSection(SidebarSection):
     def _composed_type(self, name: str) -> str | None:
         opt = self._composed.get(name)
         return getattr(opt, "type", None)
+
+    # ------------------------------------------------------------------
+    # Children
+    # ------------------------------------------------------------------
+
+    def _parent_of(self, name: str) -> str | None:
+        """The bool option *name* is a child of, if that option is on this surface.
+
+        Checked against the composed list rather than taken from the declaration on
+        trust: a child indented under a row that is not there reads as a child of
+        whatever happens to precede it, and a hand-edited file can name anything.
+        """
+        parent = getattr(self._composed.get(name), "depends_on", None)
+        if not parent or parent == name:
+            return None
+        return parent if self._composed_type(parent) == "bool" else None
+
+    def _children_of(self, name: str) -> list[str]:
+        return [child for child, chrome in self._chrome.items() if chrome.depends_on == name]
+
+    def _refresh_children_of(self, name: str) -> None:
+        """Grey or restore every row hanging off *name*, from its resolved value.
+
+        A child is disabled rather than hidden.  Hiding it would move every row
+        beneath it the moment the parent is ticked -- the thing this surface avoids
+        everywhere else -- and it would hide the fact that the user still has a
+        value stored there, which comes back untouched when the parent comes back
+        on.  Only the *body* is greyed: the gutter stays live, so the override bar
+        still says whose value it is and revert can still discard it.
+        """
+        resolution = self.resolution_for(name)
+        active = bool(resolution.value) if resolution is not None else True
+        for child in self._children_of(name):
+            chrome = self._chrome[child]
+            chrome.body.setEnabled(active)
+            chrome.outer.setToolTip("" if active else f"{name} is off, so this has no effect.")
 
     def _refresh_row(self, name: str) -> None:
         """Re-mark one row from its current resolution, touching no other row."""
@@ -577,6 +624,7 @@ class SetupSection(SidebarSection):
             logger.exception("Failed to store your value for option %r", name)
             return
         self._refresh_row(name)
+        self._refresh_children_of(name)
         self._push_keep_list_context()
         self.values_changed.emit()
 
@@ -628,6 +676,7 @@ class SetupSection(SidebarSection):
             set_widget_value(chrome.widget, fallback.value)
             chrome.widget.blockSignals(False)
         self._refresh_row(name)
+        self._refresh_children_of(name)
         self._push_keep_list_context()
         if had_override:
             self.values_changed.emit()

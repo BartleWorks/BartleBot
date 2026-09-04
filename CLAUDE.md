@@ -620,6 +620,32 @@ already has.
   (`parse_list_text` still reads a pasted CSV), and the value renders as
   `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
   `_VALUE_PARAM_KEY` changed.
+- **An option that another option switches off is a child of it: indented,
+  greyed, never hidden.** `BotOptionSpec.depends_on` names a bool option on the
+  same bot, and `compose_options` carries it onto the composed declaration the way
+  it carries `type` and the bounds — derived, never persisted, and dropped when
+  the named parent is not in this graph, because a row indented under a row that
+  is not there reads as a child of whatever precedes it. Quicksell's three sell
+  flags are the case: with `Enable Quicksell` off nothing is sold, so there is
+  nothing for them to spare, and they were three live tick boxes that could not
+  affect the run and gave no sign of it.
+
+  Four things that are load-bearing, and all four are the same rule the rest of
+  this surface follows:
+
+  - **Only Setup indents.** Options edits declarations, and `Enable Quicksell` is
+    user-owned, so the parent has no row there to be a child of.
+  - **The indent is applied to the row's *body*, past the gutter, and the gutter
+    is untouched** — `build_gutter_row(..., child=True)`. The indent says what the
+    row belongs to and the gutter says what can be done to it; indenting both
+    costs the one column property the gutter exists for.
+    `test_a_child_row_is_indented_but_its_gutter_is_not` is the guard.
+  - **Greyed, never hidden, and the value is never cleared.** Hiding moves every
+    row beneath it the moment the parent is ticked, and it hides the fact that the
+    user still has a value stored there. Only the body is disabled, so the
+    override bar still says whose value it is and revert can still discard it.
+  - **A `ChildBranch` rule fills the indent.** Indentation alone is only visible
+    while two left edges are being compared.
 - **A derived option has no Edit button, and so no Delete either.** It is
   re-composed from its NodeSpec on every load, so either edit would be undone by
   the round trip. Its *default* is still the author's to change, through the

@@ -27,6 +27,17 @@ class BotOptionSpec:
         maximum:     Highest value the option may take, or None for no ceiling.
         suffix:      Unit shown inside the control, e.g. " s". Presentation only; the
                      stored value is the bare number.
+        depends_on: Name of a **bool bot option** this one is a child of. The Setup
+                     surface indents the child under it and disables it while the parent
+                     resolves false; nothing else changes -- the child is still resolved
+                     the ordinary four-level way, and its stored value survives the
+                     parent being switched off and back on.
+
+                     This is for an option that cannot affect the run at all while
+                     another is off: ``Sell Pets`` says nothing whatever it holds when
+                     ``Enable Quicksell`` is off. Unlike ``required_when`` the option is
+                     still *composed* -- the author is not saying it does not exist, the
+                     user has switched it off, and it has to come back on unchanged.
         required_when: Key of a bool param on the *same node*; the option is required
                      only while that param is True. Empty string = always required.
 
@@ -44,6 +55,7 @@ class BotOptionSpec:
     minimum: float | None = None
     maximum: float | None = None
     suffix: str | None = None
+    depends_on: str = ""
     required_when: str = ""
 
 
