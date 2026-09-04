@@ -162,10 +162,10 @@ BEFORE YOU RUN IT
       is merely inconvenient; the window half is the destructive one.
 
 USAGE
-    poetry run python tools/probe_chat_log_size.py             # one snapshot, all clients
-    poetry run python tools/probe_chat_log_size.py --watch     # resample every 60s
-    poetry run python tools/probe_chat_log_size.py --watch --interval 300 --csv out.local.csv
-    poetry run python tools/probe_chat_log_size.py --pin-working-set 1200   # then farm
+    uv run python tools/probe_chat_log_size.py             # one snapshot, all clients
+    uv run python tools/probe_chat_log_size.py --watch     # resample every 60s
+    uv run python tools/probe_chat_log_size.py --watch --interval 300 --csv out.local.csv
+    uv run python tools/probe_chat_log_size.py --pin-working-set 1200   # then farm
 
     The measurement workflow is snapshot / farm / snapshot, because this probe holds hooks
     and BartleBot cannot run while it does:

@@ -27,8 +27,8 @@ carry authored DSL content and are a separate cleanup.
 
 Run from the project root. Reports only by default; pass ``--apply`` to write:
 
-    poetry run python scripts/migrate_combat_order_removal.py
-    poetry run python scripts/migrate_combat_order_removal.py --apply
+    uv run python scripts/migrate_combat_order_removal.py
+    uv run python scripts/migrate_combat_order_removal.py --apply
 
 Idempotent: a second run is a clean no-op.
 """

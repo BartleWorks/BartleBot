@@ -30,7 +30,7 @@ HOW TO RUN
     1. Log a wizard in and press P to open the deck page.
     2. To also capture section C, first CLICK the tiered spell in the spellbook
        so its variant flyout is open, then run this without closing it.
-    3. poetry run python tools/probe_spell_list.py
+    3. uv run python tools/probe_spell_list.py
 
     Run it on each client that behaves differently — the reported case had one
     wizard with paths A/B/C available and another with only B, which is exactly

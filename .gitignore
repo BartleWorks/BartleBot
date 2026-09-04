@@ -13,9 +13,9 @@ build/
 venv/
 env/
 
-# Poetry
-# Keep poetry.lock for reproducible installs
-# poetry.lock  ← intentionally tracked
+# uv
+# Keep uv.lock for reproducible installs
+# uv.lock  ← intentionally tracked
 
 # IDE
 .vscode/

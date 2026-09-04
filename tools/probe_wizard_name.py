@@ -110,13 +110,13 @@ HOW TO READ THE OUTPUT
 
 HOW TO RUN
     1. Log in ONE wizard whose name you know exactly, as spelled in game.
-    2. poetry run python tools/probe_wizard_name.py "Firstname Lastname"
+    2. uv run python tools/probe_wizard_name.py "Firstname Lastname"
     3. Paste the console output back. The full hit list goes to a report file
        (--out, default probe_wizard_name_report.txt) because a common surname
        matches thousands of times and would otherwise scroll away the answer.
 
 HOW TO RUN THE DURABILITY CHECK (--watch)
-    poetry run python tools/probe_wizard_name.py --watch
+    uv run python tools/probe_wizard_name.py --watch
 
     No name argument and no scanning: it polls the two offsets on every hooked client
     and prints a line whenever anything changes. Leave it running and, in any order:

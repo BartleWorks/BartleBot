@@ -11,9 +11,9 @@ a wiki page introduces a suffix nobody has classified, and the drop silently kee
 name the game never shows — a keep-list entry that matches nothing, and an item that
 sells when the user asked to keep it. This reports those.
 
-    poetry run python tools/drop_name_patterns.py
-    poetry run python tools/drop_name_patterns.py --show-names
-    poetry run python tools/drop_name_patterns.py --json
+    uv run python tools/drop_name_patterns.py
+    uv run python tools/drop_name_patterns.py --show-names
+    uv run python tools/drop_name_patterns.py --json
 
 Exits non-zero when a suffix is unclassified, so it can be used as a check.
 """
@@ -129,7 +129,7 @@ def main() -> None:
     if outstanding:
         # Not an error: the rules are the source of truth and the files catch up.
         print(f"\n{outstanding} drop(s) have no stored in-game name, or a stale one.")
-        print("Run: poetry run python scripts/migrate_drop_entries.py --apply")
+        print("Run: uv run python scripts/migrate_drop_entries.py --apply")
 
     unclassified = per_kind.get(KIND_UNCLASSIFIED, 0)
     if unclassified:

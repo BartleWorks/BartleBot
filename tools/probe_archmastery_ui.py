@@ -82,8 +82,8 @@ HOW TO RUN
     1. Log a wizard in.  Any wizard with an archmastery school set will do;
        archmastery is not tied to a world or a level bracket.
     2. Open the deck page (press P) and leave it open.
-    3. poetry run python tools/probe_archmastery_ui.py            # read-only
-       poetry run python tools/probe_archmastery_ui.py --write    # adds D
+    3. uv run python tools/probe_archmastery_ui.py            # read-only
+       uv run python tools/probe_archmastery_ui.py --write    # adds D
     4. When section C asks, switch the school in-game, then press Enter.
 
     Without ``--write`` the probe never clicks and never writes, and the one

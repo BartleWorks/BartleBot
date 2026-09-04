@@ -5,19 +5,19 @@ it answers the questions the ``probe_*.py`` scripts otherwise have to answer by
 poking at a live client:
 
     # what lives at offset 304 of ClientObject?
-    poetry run python tools/typedump.py at ClientObject 304
+    uv run python tools/typedump.py at ClientObject 304
 
     # every offset on a class, including inherited properties
-    poetry run python tools/typedump.py show ClientObject
+    uv run python tools/typedump.py show ClientObject
 
     # which classes have a property whose name matches this?
-    poetry run python tools/typedump.py prop globalIdFull
+    uv run python tools/typedump.py prop globalIdFull
 
     # annotate wizwalker's hardcoded offsets with property names
-    poetry run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
+    uv run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
 
     # diff two dumps after a game patch
-    poetry run python tools/typedump.py diff tools/r800294_WizardDev.json tools/r810000_WizardDev.json
+    uv run python tools/typedump.py diff tools/r800294_WizardDev.json tools/r810000_WizardDev.json
 """
 
 from __future__ import annotations

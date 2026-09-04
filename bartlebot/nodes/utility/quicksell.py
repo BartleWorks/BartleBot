@@ -206,7 +206,7 @@ UNMATCHABLE_CATEGORIES: dict[str, str] = {
 # out rows where there is no decision to make.
 #
 # Keys must match the category strings the wiki import produces. Run
-# ``poetry run python tools/drop_categories.py`` after importing new bots to
+# ``uv run python tools/drop_categories.py`` after importing new bots to
 # catch a category nobody has classified yet.
 #
 # Provenance: established by hand from how the game behaves, not from any file we

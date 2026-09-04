@@ -121,4 +121,4 @@ def test_the_shipped_library_has_no_unclassified_suffixes():
 
 def test_the_shipped_library_has_no_stale_in_game_names():
     _, _, stale = scan(PROJECT_ROOT / "bots")
-    assert sum(stale.values()) == 0, "Run: poetry run python scripts/migrate_drop_entries.py --apply"
+    assert sum(stale.values()) == 0, "Run: uv run python scripts/migrate_drop_entries.py --apply"

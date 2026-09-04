@@ -23,8 +23,8 @@ WHY A SNAPSHOT IS SAFE
     reported as such by bartlebot.name_tables rather than guessed at.
 
 USAGE
-    poetry run python tools/dump_name_tables.py
-    poetry run python tools/dump_name_tables.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
+    uv run python tools/dump_name_tables.py
+    uv run python tools/dump_name_tables.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
 """
 
 from __future__ import annotations

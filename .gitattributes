@@ -5,5 +5,5 @@
 #
 # Suppress textual diffing: a line-by-line diff of two 26 MB dumps is unreadable noise.
 # Compare them with the tool that understands the structure instead:
-#     poetry run python tools/typedump.py diff <old.json> <new.json>
+#     uv run python tools/typedump.py diff <old.json> <new.json>
 tools/r*_WizardDev.json -diff

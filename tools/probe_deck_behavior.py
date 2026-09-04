@@ -45,7 +45,7 @@ WHY THIS EXISTS
 HOW TO RUN
     1. Log a wizard in on each client.  Leave the deck page CLOSED — section A
        is only meaningful if the deck window has not been opened this session.
-    2. poetry run python tools/probe_deck_behavior.py
+    2. uv run python tools/probe_deck_behavior.py
 
     Section A is read-only.  Sections B/C open the deck page and close it
     again; no cards are added, removed or toggled, so your deck is not

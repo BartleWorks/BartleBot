@@ -11,7 +11,7 @@ form was really buying was a place to write down *why*, and a CI gate.
 
 Both are replaced rather than dropped:
 
-- **The gate is local.** `poetry run pytest -n auto` and `poetry run ruff check`
+- **The gate is local.** `uv run pytest -n auto` and `uv run ruff check`
   run before every commit. CI still runs — `.github/workflows/ci.yml` fires on
   `push: [master]` — but it now confirms after the fact instead of blocking. A
   red master is your own signal to fix forward immediately.
@@ -23,7 +23,7 @@ Both are replaced rather than dropped:
 ## How
 
 ```bash
-poetry run pytest -n auto && poetry run ruff check    # the gate
+uv run pytest -n auto && uv run ruff check    # the gate
 git diff master...HEAD                                # the read-through a PR view used to force
 git switch master
 git merge --no-ff --no-commit <branch>
@@ -107,7 +107,7 @@ they ever disagree.
 - **No blocking Qt `.exec()`** from inside an asyncio task.
   → `bartlebot/gui/CLAUDE.md`
 - **Pinned library changed** — commit tagged `bartlebot-pin-YYYYMMDD` and pushed
-  before the rev bump, `poetry lock` run. → `docs/UPSTREAM.md`
+  before the rev bump, `uv lock` run. → `docs/UPSTREAM.md`
 
 ## When a PR is still right
 

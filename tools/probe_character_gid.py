@@ -76,7 +76,7 @@ HOW TO RUN
 
     1. Launch a client by hand and get a character in game. If the account has only one
        character, this probe cannot tell you anything: step 4 needs a second desk.
-    2. poetry run python tools/probe_character_gid.py
+    2. uv run python tools/probe_character_gid.py
        (--hwnd to pick a specific window when several are open.)
     3. Follow the prompts. The probe reads only, until it asks permission to write.
 

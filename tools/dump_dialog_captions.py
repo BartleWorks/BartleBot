@@ -22,9 +22,9 @@ WHY A SNAPSHOT IS SAFE
     just wrote and reports any key whose fingerprint matches more than one key's text.
 
 USAGE
-    poetry run python tools/dump_dialog_captions.py
-    poetry run python tools/dump_dialog_captions.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
-    poetry run python tools/dump_dialog_captions.py --verify      # no write; check the current file
+    uv run python tools/dump_dialog_captions.py
+    uv run python tools/dump_dialog_captions.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
+    uv run python tools/dump_dialog_captions.py --verify      # no write; check the current file
 """
 
 from __future__ import annotations

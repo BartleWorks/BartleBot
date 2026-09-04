@@ -34,8 +34,8 @@ Every state also loses its now-unknown ``option_overrides`` key, empty or not.
 
 Run from the project root. Reports only by default; pass ``--apply`` to write:
 
-    poetry run python scripts/migrate_option_overrides.py
-    poetry run python scripts/migrate_option_overrides.py --apply
+    uv run python scripts/migrate_option_overrides.py
+    uv run python scripts/migrate_option_overrides.py --apply
 
 Idempotent: a second run is a clean no-op.
 """

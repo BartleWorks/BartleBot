@@ -80,10 +80,10 @@ PET FALSE POSITIVE
     ambiguity is visible rather than silently resolved.
 
 USAGE
-    poetry run python tools/probe_name_behavior.py                 # one-shot, all clients
-    poetry run python tools/probe_name_behavior.py --watch         # poll through zone/char changes
-    poetry run python tools/probe_name_behavior.py --list          # dump every behavior name
-    poetry run python tools/probe_name_behavior.py --record "Fred Dragonrider"
+    uv run python tools/probe_name_behavior.py                 # one-shot, all clients
+    uv run python tools/probe_name_behavior.py --watch         # poll through zone/char changes
+    uv run python tools/probe_name_behavior.py --list          # dump every behavior name
+    uv run python tools/probe_name_behavior.py --record "Fred Dragonrider"
 """
 
 from __future__ import annotations
@@ -99,7 +99,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 from wizwalker.memory.memory_object import Primitive
 
 # Offsets from the r800294 type dump; see tools/typedump.py.
-#   poetry run python tools/typedump.py show ClientWizPlayerNameBehavior
+#   uv run python tools/typedump.py show ClientWizPlayerNameBehavior
 #
 # The dump's *class* name is not the runtime *behavior template* name, and the difference
 # is not derivable -- confirmed against a live client's behavior list:

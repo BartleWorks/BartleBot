@@ -47,8 +47,34 @@ class EntityBrowserDialog(QDialog):
     def __init__(self, client, parent=None) -> None:
         super().__init__(parent)
         self._client = client
+        self._load_task: asyncio.Task | None = None
+        self._closed = False
         self._build_ui()
-        asyncio.ensure_future(self._load_entities())
+        self._start_load()
+
+    def _start_load(self) -> None:
+        """Schedule a fresh entity load, replacing any load still in flight.
+
+        The task reference is kept so it is not garbage-collected mid-flight and
+        so ``closeEvent`` can cancel it — ``_load_entities`` writes to this
+        dialog's widgets after every await, and those writes hit a deleted C++
+        object if the load outlives the dialog.
+        """
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            # No running loop: unit tests construct this dialog directly. The
+            # app always has one (qasync), so this only skips work in tests.
+            return
+        if self._load_task and not self._load_task.done():
+            self._load_task.cancel()
+        self._load_task = asyncio.ensure_future(self._load_entities())
+
+    def closeEvent(self, event) -> None:
+        self._closed = True
+        if self._load_task:
+            self._load_task.cancel()
+        super().closeEvent(event)
 
     # ------------------------------------------------------------------
     # UI construction
@@ -123,10 +149,14 @@ class EntityBrowserDialog(QDialog):
         try:
             player_pos = await self._client.body.position()
             entities = await self._client.get_base_entity_list()
+            if self._closed:
+                return
 
             # Disable sorting during population so inserts don't re-sort on every add
             self._tree.setSortingEnabled(False)
             for e in entities:
+                if self._closed:
+                    return
                 try:
                     name = await e.object_name() or "(unnamed)"
                     loc = await e.location()
@@ -146,17 +176,20 @@ class EntityBrowserDialog(QDialog):
             count = self._tree.topLevelItemCount()
             self._status.setText(f"{count} {'entity' if count == 1 else 'entities'}")
         except Exception:
+            if self._closed:
+                return
             logger.exception("Failed to load entity list")
             self._status.setText("Error loading entities — see logs")
         finally:
-            self._refresh_btn.setEnabled(True)
+            if not self._closed:
+                self._refresh_btn.setEnabled(True)
 
     # ------------------------------------------------------------------
     # Slots
     # ------------------------------------------------------------------
 
     def _on_refresh(self) -> None:
-        asyncio.ensure_future(self._load_entities())
+        self._start_load()
 
     def _on_selection_changed(self) -> None:
         has_selection = bool(self._tree.selectedItems())

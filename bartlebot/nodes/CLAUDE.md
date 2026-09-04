@@ -94,7 +94,7 @@ exit warning and the friend-busy dialog both show a right button, so
 Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per key
 — memory holds the *resolved* text, so an English substring match fails silently on
 any other locale. To add a dialog: append to `KNOWN_KEYS`, run
-`poetry run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.
+`uv run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.
 `--verify` re-checks the snapshot for keys whose text no longer identifies them
 uniquely. An unrecognised caption returns `None`, and callers must fall back rather
 than treat it as "no dialog".

@@ -50,8 +50,8 @@ WHAT IT DOES
     Read-only. Nothing is written to the game or to disk.
 
 USAGE
-    poetry run python tools/probe_control_text.py            # housing page (press U first)
-    poetry run python tools/probe_control_text.py --spiral   # spiral door (open it first)
+    uv run python tools/probe_control_text.py            # housing page (press U first)
+    uv run python tools/probe_control_text.py --spiral   # spiral door (open it first)
 """
 
 from __future__ import annotations

@@ -29,7 +29,7 @@ WHY THIS EXISTS
 HOW TO RUN
     Start with the deck page CLOSED on every client, then:
 
-        poetry run python tools/probe_bare_deck_open.py
+        uv run python tools/probe_bare_deck_open.py
 
     Sections A-D are safe: they read, and the only clicks are a school tab
     change that section D puts back.
@@ -38,7 +38,7 @@ HOW TO RUN
     which is documented (bartlebot/deck_io.py module docstring) to leave the
     spell list in a state that breaks normal card restore:
 
-        poetry run python tools/probe_bare_deck_open.py --tc-test
+        uv run python tools/probe_bare_deck_open.py --tc-test
 
     It restores the state afterwards with a close/reopen, which is what
     refresh_deck_page() does and what the old code relied on.  Do not run it

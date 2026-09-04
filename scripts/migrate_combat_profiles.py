@@ -6,7 +6,7 @@ Also renames use_default_duel_profile → use_default_strategy in every handle_c
 state's params, and strips the old combat fields from BotConfig.
 
 Run from the project root:
-    poetry run python scripts/migrate_combat_profiles.py
+    uv run python scripts/migrate_combat_profiles.py
 
 The script is idempotent: re-running it after migration is a no-op for bots that
 have already had their legacy fields removed.

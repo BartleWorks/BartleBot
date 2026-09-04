@@ -21,7 +21,7 @@ a candidate indicator; the report calls out the ones on the Leave Group button i
 
 HOW TO RUN
     1. Log a wizard in. Only the first client is inspected.
-    2. poetry run python tools/probe_group_ui.py
+    2. uv run python tools/probe_group_ui.py
     3. Follow the prompts: ungrouped first, then grouped.
     4. Paste the report back.
 

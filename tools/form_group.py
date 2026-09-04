@@ -12,16 +12,16 @@ PREREQUISITES
 
 USAGE
     # Survey only — report who is grouped, without inviting anyone.
-    poetry run python tools/form_group.py --check
+    uv run python tools/form_group.py --check
 
     # Detect wizard names only, without touching the group UI.
-    poetry run python tools/form_group.py --names
+    uv run python tools/form_group.py --names
 
     # Form the group (client 1 leads by default).
-    poetry run python tools/form_group.py
+    uv run python tools/form_group.py
 
     # Form the group with a specific leader (1-based, matching the printed list).
-    poetry run python tools/form_group.py --leader 2
+    uv run python tools/form_group.py --leader 2
 
 Start with --check. It exercises the group read (social button, Group tab, Leave Group
 button, member roster) on its own, which is the part most likely to misbehave, and makes

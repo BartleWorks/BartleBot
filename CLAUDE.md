@@ -5,21 +5,20 @@ Wizard101 bot automation app. Python 3.13+, PyQt6, qasync, transitions FSM.
 ## Quick Start
 
 ```bash
-poetry install
-poetry run python bartlebot.py
+uv run python bartlebot.py
 ```
 
 ## Build / Test / Lint
 
 ```bash
-poetry install              # all deps including dev
-poetry run pytest           # pytest-asyncio, asyncio_mode = "auto"
-poetry run pytest -n auto   # same suite in parallel (~10s vs ~33s); what CI runs
-poetry run ruff check       # lint
-poetry run ruff format      # auto-format
+uv sync                 # all deps including dev
+uv run pytest           # pytest-asyncio, asyncio_mode = "auto"
+uv run pytest -n auto   # same suite in parallel; what CI runs
+uv run ruff check       # lint
+uv run ruff format      # auto-format
 ```
 
-Python 3.13+ required. `pyproject.toml` enforces `^3.13`.
+Python 3.13+ required. `pyproject.toml` enforces `requires-python = ">=3.13"`.
 
 ## Architecture
 
@@ -68,7 +67,7 @@ Use synthetic values instead. For anything name-shaped, build it from the shippe
 tables so it stays realistic and verifiable rather than arbitrary:
 
 ```bash
-poetry run python tools/name_keys.py --decode 56900648   # -> "Luke SkullHunter"
+uv run python tools/name_keys.py --decode 56900648   # -> "Luke SkullHunter"
 ```
 
 `tools/name_key_samples.json` is generated this way: real `m_nameKeys` values for

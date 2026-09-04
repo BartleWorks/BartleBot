@@ -35,7 +35,7 @@ first skippable loading screen, ~3-5 s of character-select load, 3-15 s to load 
 HOW TO RUN
 
     1. Close nothing. Have the probe running BEFORE you launch:
-           poetry run python tools/probe_char_select.py
+           uv run python tools/probe_char_select.py
        It waits for a new Wizard101 window to appear, attaches, and starts sampling.
     2. Launch a client and log an account in (BartleBot's launcher or by hand).
     3. Do NOT touch the window. Let the probe drive nothing — it only reads.
@@ -44,7 +44,7 @@ HOW TO RUN
     5. Paste the timeline back.
 
 To attach to a window that is already open instead:
-       poetry run python tools/probe_char_select.py --attach
+       uv run python tools/probe_char_select.py --attach
 
 READ-ONLY, with one caveat: installing the root-window hook writes to the game process.
 That is the thing being tested. No clicks, no keystrokes, no other hooks.
