@@ -164,6 +164,7 @@ class AppController(QObject):
 
         # Left sidebar config changes
         w.left_sidebar.config_changed.connect(self._on_config_changed)
+        w.left_sidebar.metadata_changed.connect(self._on_metadata_changed)
         w.right_sidebar.config_changed.connect(self._on_config_changed)
 
         # Deck import / apply requests from Combat tab
@@ -942,6 +943,19 @@ class AppController(QObject):
     # ------------------------------------------------------------------
     # Signal handlers
     # ------------------------------------------------------------------
+
+    def _on_metadata_changed(self) -> None:
+        """Mark the bot dirty for an edit that cannot have changed its option set.
+
+        The description is the case this exists for.  ``_on_config_changed`` ends in
+        ``refresh_options``, which recomposes and rebuilds every row on both option
+        surfaces -- around 80ms on a 67-state bot, and it was being paid once per
+        *character* typed into the description box, which is what made that field
+        unusable.  Nothing composes an option from prose, so there is nothing here
+        to rebuild.
+        """
+        self._has_unsaved_changes = True
+        self._window.set_save_enabled(True)
 
     def _on_config_changed(self) -> None:
         self._has_unsaved_changes = True

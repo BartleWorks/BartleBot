@@ -182,11 +182,28 @@ def test_editing_the_description_dirties_the_bot(sidebar):
     description is authorial, so it must."""
     sidebar.set_config(_config())
     seen = []
-    sidebar.config_changed.connect(lambda: seen.append(True))
+    sidebar.metadata_changed.connect(lambda: seen.append(True))
 
     sidebar.options_description.set_text("Farms Jade Oni.")
 
     assert seen
+
+
+def test_typing_a_description_does_not_rebuild_the_option_surfaces(sidebar):
+    """``config_changed``'s handler ends in ``refresh_options``, which recomposes
+    and rebuilds every row on both option surfaces — around 80ms on a large bot.
+
+    Routing the description through it paid that per *character* typed, which made
+    the field unusable at roughly 6fps and degrading.  Nothing composes an option
+    from prose, so a description edit goes out as ``metadata_changed`` instead.
+    """
+    sidebar.set_config(_config())
+    rebuilds = []
+    sidebar.config_changed.connect(lambda: rebuilds.append(True))
+
+    sidebar.options_description.set_text("Farms Jade Oni.")
+
+    assert rebuilds == []
 
 
 def test_a_short_description_does_not_reserve_room_for_a_long_one(sidebar):
