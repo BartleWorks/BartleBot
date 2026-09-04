@@ -87,7 +87,9 @@ class MainWindow(QMainWindow):
 
         settings_action = QAction("Settings…", self)
         settings_action.setShortcut(QKeySequence("Ctrl+,"))
-        settings_action.triggered.connect(self._open_settings)
+        # A lambda, not a bare connect: QAction.triggered carries its checked state, so
+        # a direct connection lands that bool in tab_name and asks for a tab called False.
+        settings_action.triggered.connect(lambda: self._open_settings())
         file_menu.addAction(settings_action)
 
         file_menu.addSeparator()

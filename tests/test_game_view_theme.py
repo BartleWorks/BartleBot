@@ -165,4 +165,4 @@ def test_the_canvas_tab_hint_follows_the_theme(qapp, theme):
     _switch(qapp, lbl, theme, "dark")
 
     assert light not in lbl.styleSheet()
-    assert "padding-bottom: 4px" in lbl.styleSheet()
+    assert "padding-bottom: 6px" in lbl.styleSheet()

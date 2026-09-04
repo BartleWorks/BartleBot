@@ -79,8 +79,7 @@ NODE_SPEC = NodeSpec(
             minimum=0.0,
             suffix=" s",
             description=(
-                "Seconds to allow for game-server responses when waiting for UI panels "
-                "to appear, and for the realm list to initially render. "
+                "Seconds to allow for game-server responses when waiting for prompts or menus. "
                 "Increase on high-latency connections."
             ),
         ),

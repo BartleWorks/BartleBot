@@ -44,6 +44,7 @@ class _GeneralSettings(BaseModel):
     disable_quick_friend_teleport: bool = True
     default_friend_name: str = ""
     show_option_descriptions: bool = False
+    streamer_mode: bool = False
 
 
 class _GameEmbedSettings(BaseModel):
@@ -59,6 +60,7 @@ class _CanvasSettings(BaseModel):
     zoom_step: float = 1.15  # wheel zoom multiplier per step (1.05–1.30)
     pan_animation_ms: int = 300  # smooth-pan duration in ms; 0 = instant
     grid_style: str = "dots"  # "dots" | "lines" | "none"
+    bot_library_path: str = "bots"
 
 
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
@@ -219,6 +221,13 @@ class SettingsManager:
                 pass  # corrupt file → use defaults
 
         # Validate structured sections; reset any that fail to their defaults.
+        #
+        # Every key in _DEFAULTS[section] must also be a field on the section's model.
+        # Pydantic ignores an extra key rather than rejecting it, so a key present in
+        # one and not the other is not an error -- it is simply never type-checked, and
+        # a hand-edited settings.json can then put a string where a bool belongs and
+        # have it reach the widget. streamer_mode and bot_library_path were both in
+        # that state; test_every_default_is_declared_on_its_model is the guard.
         for section_key, model_cls in _SECTION_MODELS.items():
             try:
                 model_cls(**self._data[section_key])

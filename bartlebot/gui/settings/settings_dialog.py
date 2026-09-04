@@ -1,4 +1,4 @@
-"""SettingsDialog: modal dialog with General, Canvas, Theme, and Game tabs."""
+"""SettingsDialog: modal dialog with General, Bot, Canvas, Theme, and Game tabs."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.settings.accounts_tab import AccountsTab
+from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.theme_tab import ThemeTab
@@ -29,6 +30,10 @@ class SettingsDialog(QDialog):
         # General tab
         self._general_tab = GeneralTab()
         self._tabs.addTab(self._general_tab, "General")
+
+        # Bot tab (how a run behaves, and the app-setting level of every bot option)
+        self._bot_tab = BotTab()
+        self._tabs.addTab(self._bot_tab, "Bot")
 
         # Canvas tab
         self._canvas_tab = CanvasTab()
@@ -50,10 +55,28 @@ class SettingsDialog(QDialog):
         layout.addWidget(self._tabs, 1)
         layout.addWidget(buttons)
 
+    @property
+    def tabs(self) -> QTabWidget:
+        """The tab bar itself, for anything that needs to ask what tabs there are."""
+        return self._tabs
+
+    def apply_all(self) -> None:
+        """Push every tab's form state into the settings singleton, without saving.
+
+        Driven off the tab bar rather than a hand-written list of four: a list is
+        one line to forget when a tab is added, and forgetting it discards
+        everything the user typed into the new tab with no error anywhere.
+        ``AccountsTab`` persists eagerly and its ``apply`` is a documented no-op,
+        which is what makes iterating safe.
+        """
+        for i in range(self._tabs.count()):
+            self._tabs.widget(i).apply()
+
     def open_tab(self, tab_name: str) -> None:
-        """Switch to the named tab. Valid names: general, canvas, theme, game."""
+        """Switch to the named tab. Valid names: general, bot, canvas, theme, game."""
         widgets = {
             "general": self._general_tab,
+            "bot": self._bot_tab,
             "canvas": self._canvas_tab,
             "theme": self._theme_tab,
             "game": self._accounts_tab,
@@ -71,8 +94,6 @@ class SettingsDialog(QDialog):
         self._accounts_tab.edit_profile(profile_name)
 
     def _on_accept(self) -> None:
-        self._general_tab.apply()
-        self._canvas_tab.apply()
-        self._theme_tab.apply()
+        self.apply_all()
         SettingsManager.instance().save()
         self.accept()

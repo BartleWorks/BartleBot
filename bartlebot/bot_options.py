@@ -75,6 +75,15 @@ SOURCE_NODE_DEFAULT = "Default"
 #: the widest of them, and nothing else may enumerate the levels by hand.
 SOURCE_LEVELS: tuple[str, ...] = (SOURCE_OVERRIDE, SOURCE_BOT_FILE, SOURCE_APP_SETTING, SOURCE_NODE_DEFAULT)
 
+#: The Safety Delay option's description, in the one place both readers of it can
+#: reach. The app setting on the Bot settings tab and the option itself are the same
+#: value after #145, and one value described twice is how two descriptions come to
+#: disagree -- ``test_the_safety_delay_setting_and_option_read_the_same`` is the guard.
+SAFETY_DELAY_DESCRIPTION = (
+    "Seconds to allow for game-server responses when waiting for prompts or menus. "
+    "Increase on high-latency connections."
+)
+
 # Bot options that also exist as an app setting, and the ``general`` key holding it.
 # An option absent from this map simply has no app-setting level -- resolution
 # falls straight through the declaration to the node default.

@@ -164,8 +164,7 @@ def resolve_target(clients: list, params: dict, configured: str = "") -> TargetR
     configured = str(configured or "").strip()
     if not configured:
         return TargetResolution(
-            error="no friend name configured — set Friend Name in Setup, in the pre-run warning, "
-            "or in Settings → General"
+            error="no friend name configured — set Friend Name in Setup, in the pre-run warning, or in Settings → Bot"
         )
     return TargetResolution(name=configured, source="the Friend Name option")
 

@@ -7,26 +7,13 @@ from PyQt6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
-    QLabel,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.settings.rows import hint as _hint
 from bartlebot.settings_manager import SettingsManager
-
-
-def _hint(text: str) -> QLabel:
-    """The dimmed explanation under a settings row.
-
-    A ThemedTextLabel, not a styled QLabel: this hands the label back to a caller
-    that has no way to restyle it, so a plain one keeps whichever theme was active
-    when the tab was built.
-    """
-    lbl = ThemedTextLabel(text, css="font-size: 11px; padding-bottom: 4px;")
-    lbl.setWordWrap(True)
-    return lbl
 
 
 class CanvasTab(QWidget):
@@ -46,11 +33,13 @@ class CanvasTab(QWidget):
         self._minimap_cb = QCheckBox()
         self._minimap_cb.setChecked(sm.get("canvas", "minimap_visible", default=True))
         form.addRow("Enable minimap:", self._minimap_cb)
+        form.addRow(_hint("The overview in the canvas corner. Click or drag inside it to jump the camera."))
 
         # Snap to grid
         self._snap_cb = QCheckBox()
         self._snap_cb.setChecked(sm.get("canvas", "snap_to_grid", default=False))
         form.addRow("Snap nodes to grid:", self._snap_cb)
+        form.addRow(_hint("Align a dragged node to the grid below, instead of leaving it where it was dropped."))
 
         # Grid style
         self._grid_combo = QComboBox()
