@@ -191,6 +191,30 @@ on `aboutToHide`. The swap cannot happen at construction: a menu built in a widg
 
 A menu with no parent, or one parented directly to a window or dialog, is already fine.
 
+### Never show a widget before it has a parent
+
+`setVisible(True)` — or `show()` — on a widget with no parent makes that widget a
+**top-level window**. Qt maps it there and then, and unmaps it again the moment the
+next `addWidget` reparents it, so a list of rows assembled this way flashes one real
+frame per row on screen. It is invisible in a test that only inspects the finished
+tree, because by then nothing is a window any more.
+
+Build first, then set visibility:
+
+```python
+row = build_gutter_row(bar, edit_btn, help_btn, body)   # this is what parents them
+edit_btn.setVisible(self._editable)                     # only now
+```
+
+`setVisible(False)` is safe, and so is showing a child of a hidden parent — only the
+parentless case opens a window. It bites hardest where a rebuild is on a hot path:
+one click of a check box in Edit mode mapped and unmapped **eight** windows on a
+shipped bot, because each row's description and Edit button were shown while still
+loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and the
+way it catches it is worth reusing — an event filter on the `QApplication` recording
+every `Show` delivered to a widget whose `parent()` is `None`.
+
+
 ### qasync + Python 3.13 task re-entrancy rule
 
 **Never call a blocking Qt method (e.g. `QDialog.exec()`, `QMessageBox.exec()`) from inside an `async` function that is running as an asyncio Task.**
@@ -438,6 +462,13 @@ already has.
   author who later improved the declaration it happens to match.
   `values_agree` is the comparison, shared with the save-time prune, so `3` and
   `3.0` agree and `False` and `0` do not.
+- **A default edit goes out on `defaults_changed`, not `options_changed`.** The
+  latter's handler recomposes and rebuilds *both* surfaces, which destroys the
+  check box the click landed on and rebuilds it under the pointer — the same rule
+  the next bullet states for Setup, which Options was breaking. No name can change
+  on a default edit, so there is nothing on that surface to rebuild; it is routed
+  to `metadata_changed` (dirty the file, rebuild nothing) plus a Setup refresh,
+  because a declaration outranks the app setting Setup resolves through.
 - **No chrome appears or disappears with the override state, and a value edit
   refreshes one row rather than rebuilding the list.** Both are the same
   concern: a spin box whose row is rebuilt on `valueChanged` vanishes from under

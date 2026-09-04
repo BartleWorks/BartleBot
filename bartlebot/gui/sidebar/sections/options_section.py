@@ -348,7 +348,17 @@ class _RowChrome:
 class OptionsSection(SidebarSection):
     """Collapsible 'Options' section: per-option declaration widgets + CRUD controls."""
 
+    #: The option *set* changed -- one was added, deleted or renamed.  Both
+    #: surfaces have to be rebuilt from the recomposed list.
     options_changed = pyqtSignal()
+    #: An author changed a *default*, and nothing else.  Kept separate because the
+    #: handler for ``options_changed`` rebuilds this very list -- which destroys the
+    #: check box the click landed on and rebuilds it under the pointer, and (before
+    #: the parenting fix in ``_build_row``) flashed a window per row while doing it.
+    #: No name can change here, so there is nothing on this surface to rebuild; the
+    #: other one still has to re-resolve, since a declaration outranks the app
+    #: setting beneath it.
+    defaults_changed = pyqtSignal()
 
     def __init__(self, parent=None, settings: SettingsManager | None = None):
         super().__init__("Options", parent)
@@ -539,11 +549,12 @@ class OptionsSection(SidebarSection):
         description: QWidget | None = None
         if opt.description:
             # At the base font, and folded away until asked for -- the same prose,
-            # read the same way, as on the other tab.
+            # read the same way, as on the other tab.  Added to the layout *before*
+            # its visibility is set: see the note below.
             description = ThemedTextLabel(opt.description)
             description.setWordWrap(True)
-            description.setVisible(self._show_descriptions)
             body_layout.addWidget(description)
+            description.setVisible(self._show_descriptions)
 
         self._connect_option_widget(widget, opt)
 
@@ -553,20 +564,13 @@ class OptionsSection(SidebarSection):
         bar = OverrideBar()
 
         edit_btn = _EditButton()
-        if derived:
-            keep_slot_when_hidden(edit_btn)
-        else:
+        if not derived:
             edit_btn.setToolTip(f"Edit or delete the option '{opt.name}'")
             edit_btn.clicked.connect(lambda _checked, name=opt.name: self._on_edit_option(name))
-            edit_btn.setVisible(self._editable)
             self._edit_btns.append(edit_btn)
 
         help_btn = HelpToggle()
         help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
-        if description is None:
-            keep_slot_when_hidden(help_btn)
-        else:
-            help_btn.setChecked(self._show_descriptions)
 
         self._option_widgets[opt.name] = widget
         self._chrome[opt.name] = _RowChrome(
@@ -575,7 +579,22 @@ class OptionsSection(SidebarSection):
             help_btn=help_btn,
             description=description,
         )
-        return build_gutter_row(bar, edit_btn, help_btn, body)
+
+        row = build_gutter_row(bar, edit_btn, help_btn, body)
+
+        # Visibility is set only now, once ``build_gutter_row`` has parented the
+        # chrome.  ``setVisible(True)`` on a widget that has no parent yet makes it
+        # a *top-level window*, which Qt maps and unmaps as the row is assembled --
+        # a real frame flashing on screen, once per row, on every rebuild.
+        if derived:
+            keep_slot_when_hidden(edit_btn)
+        else:
+            edit_btn.setVisible(self._editable)
+        if description is None:
+            keep_slot_when_hidden(help_btn)
+        else:
+            help_btn.setChecked(self._show_descriptions)
+        return row
 
     # ------------------------------------------------------------------
     # Descriptions
@@ -702,6 +721,6 @@ class OptionsSection(SidebarSection):
             if self._config is None:
                 return
             self._declaration_for(opt).default = value
-            self.options_changed.emit()
+            self.defaults_changed.emit()
 
         connect_widget(widget, _update)

@@ -20,7 +20,17 @@ from __future__ import annotations
 import sys
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QCheckBox, QDialog, QDoubleSpinBox, QLineEdit, QMessageBox, QSpinBox
+from PyQt6.QtCore import QEvent, QObject
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QDialog,
+    QDoubleSpinBox,
+    QLineEdit,
+    QMessageBox,
+    QSpinBox,
+    QWidget,
+)
 
 from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
@@ -668,3 +678,74 @@ def test_a_multi_line_description_round_trips_through_the_dialog(qapp):
     dlg._on_ok()
 
     assert dlg.get_option().description == prose
+
+
+# ---------------------------------------------------------------------------
+# No window flashes while a row is built
+# ---------------------------------------------------------------------------
+
+
+class _ParentlessShowSpy(QObject):
+    """Records every widget shown while it still has no parent.
+
+    Qt gives such a widget a window of its own, maps it, and unmaps it again the
+    moment the next ``addWidget`` reparents it — so a rebuild of a list of rows is
+    a burst of real frames appearing on screen.  Installed on the ``QApplication``,
+    which sees the events delivered to every object in the process.
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.shown: list[str] = []
+
+    def eventFilter(self, obj, event):  # noqa: N802 - Qt's name
+        if event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.parent() is None:
+            self.shown.append(type(obj).__name__)
+        return False
+
+
+@pytest.mark.parametrize("descriptions_shown", [False, True])
+def test_building_a_row_never_shows_a_parentless_widget(qapp, settings, descriptions_shown):
+    """The user's report: windows flashing on an option edit, worst on a check box.
+
+    Every value edit rebuilds a list of rows, and each row set the visibility of its
+    description and its Edit button *before* the gutter had parented them — one
+    top-level window mapped and unmapped per row, per rebuild.
+    """
+    settings.set("general", "show_option_descriptions", value=descriptions_shown)
+    config = _config([_repeat()])
+    spy = _ParentlessShowSpy()
+    qapp.installEventFilter(spy)
+    try:
+        options = OptionsSection(settings=settings)
+        options.set_editable(True)  # Edit mode: the button the rows would have shown
+        options.set_config(config)
+        SetupSection(settings=settings).set_config(config)
+    finally:
+        qapp.removeEventFilter(spy)
+
+    assert spy.shown == []
+
+
+def test_a_changed_default_does_not_rebuild_the_row_it_was_changed_in(qapp, settings):
+    """A check box whose row is rebuilt on ``toggled`` is destroyed under the pointer.
+
+    Setup has followed this rule since the spin-box bug; Options did not, because a
+    default edit went out on ``options_changed``, whose handler recomposes and
+    rebuilds the whole list.  It is ``defaults_changed`` now — no name can change,
+    so there is nothing here to rebuild.
+    """
+    section = OptionsSection(settings=settings)
+    section.set_config(_config([_repeat()]))
+    box = section.option_widgets["repeat"]
+    structural = []
+    defaults = []
+    section.options_changed.connect(lambda: structural.append(True))
+    section.defaults_changed.connect(lambda: defaults.append(True))
+
+    box.setChecked(False)
+
+    assert defaults == [True]
+    assert structural == []
+    assert section.option_widgets["repeat"] is box
+    assert section._config.options[0].default is False

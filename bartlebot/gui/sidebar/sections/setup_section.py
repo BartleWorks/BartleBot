@@ -409,8 +409,11 @@ class SetupSection(SidebarSection):
             # of prose on the surface, and it is only on screen when asked for.
             description = ThemedTextLabel(opt.description)
             description.setWordWrap(True)
-            description.setVisible(self._show_descriptions)
             body_layout.addWidget(description)
+            # Shown only once it has a parent: ``setVisible(True)`` on a parentless
+            # widget makes it a top-level window, which Qt maps and unmaps as the
+            # row is assembled -- a frame flashing on screen once per row.
+            description.setVisible(self._show_descriptions)
 
         connect_widget(widget, lambda new_value, name=opt.name: self._on_value_changed(name, new_value))
         self._option_widgets[opt.name] = widget
@@ -423,12 +426,12 @@ class SetupSection(SidebarSection):
 
         help_btn = HelpToggle()
         help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
+
+        outer = build_gutter_row(bar, revert_btn, help_btn, body)
         if description is None:
             keep_slot_when_hidden(help_btn)
         else:
             help_btn.setChecked(self._show_descriptions)
-
-        outer = build_gutter_row(bar, revert_btn, help_btn, body)
 
         self._chrome[opt.name] = _RowChrome(
             widget=widget,

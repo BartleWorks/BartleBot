@@ -95,6 +95,13 @@ class LeftSidebar(QTabWidget):
         # to be rebuilt.  The reverse is deliberately *not* wired: an override lives
         # in settings.json, so writing one must never dirty the bot file.
         self.options.options_changed.connect(self._refresh_setup_values)
+        # A changed *default* dirties the bot file but cannot change what its
+        # options are, so it goes out as ``metadata_changed`` for the same reason
+        # the description does: ``config_changed`` would rebuild the Options list
+        # from under the control the user is still holding.  Setup is rebuilt
+        # because the declaration it resolves through has moved.
+        self.options.defaults_changed.connect(self.metadata_changed)
+        self.options.defaults_changed.connect(self._refresh_setup_values)
         # Editing the description *is* an edit to the bot file, unlike an override --
         # but it is prose, and no option is composed from it.  So it goes out as
         # ``metadata_changed``, which only marks the bot dirty: routing it through

@@ -123,6 +123,11 @@ def build_gutter_row(bar: OverrideBar, action_btn: QPushButton, help_btn: HelpTo
     Both buttons top-align, which is what lets one arrangement serve a 20px bool
     row and a 240px drop table alike -- it is what deleted the branch that used to
     put Reset beside a short control and on the head line otherwise.
+
+    **This call is what parents the chrome, so set its visibility only after it.**
+    ``setVisible(True)`` on a widget that has no parent yet makes that widget a
+    top-level window: Qt maps it, and unmaps it again when the next ``addWidget``
+    reparents it, so an ordinary rebuild flashes one real frame per row on screen.
     """
     outer = QWidget()
     layout = QHBoxLayout(outer)
