@@ -289,6 +289,69 @@ def test_an_edit_elsewhere_does_not_move_the_caret(sidebar):
 
 
 # ---------------------------------------------------------------------------
+# Not rebuilding what did not change (#184)
+# ---------------------------------------------------------------------------
+
+
+def test_a_graph_edit_that_changes_no_option_rebuilds_nothing(sidebar):
+    """``refresh_options`` runs on every config change, and building the rows costs
+    ~55ms on a 67-state bot.  Most edits touch no node carrying a ``BotOptionSpec``,
+    so the composed list is the one already on screen; composing it to find that out
+    costs 0.05ms."""
+    config = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
+    sidebar.set_config(config)
+    before = sidebar.setup.option_widgets
+    declarations = sidebar.options.option_widgets
+    assert before and declarations  # otherwise the assertions below hold vacuously
+
+    config.states.append(StateModel(id="b", node_type="mark_location", params={}))
+    sidebar.refresh_options(config)
+
+    # The same widget objects, not merely the same names: a rebuild replaces them.
+    assert sidebar.setup.option_widgets == before
+    assert sidebar.options.option_widgets == declarations
+
+
+def test_an_edit_that_adds_a_required_option_does_rebuild(sidebar):
+    """The reason the call exists: a node can bring a derived option with it."""
+    config = _config()
+    sidebar.set_config(config)
+
+    config.states.append(StateModel(id="b", node_type="interact", params={}))
+    sidebar.refresh_options(config)
+
+    assert "Safety Delay" in sidebar.setup.option_widgets
+
+
+def test_a_replacement_config_rebinds_even_when_it_says_the_same_thing(sidebar):
+    """Undo/redo hands the canvas a brand-new ``BotConfig`` restored from a
+    ``model_dump``, so its contents usually match the one before it.  The sections
+    write through the object they hold: one left bound to the replaced config edits
+    something nothing saves (#53)."""
+    sidebar.set_config(_config(options=[BotOptionModel(name="repeat", type="bool", default=True)]))
+    before = sidebar.setup.option_widgets
+
+    replacement = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
+    sidebar.refresh_options(replacement)
+
+    assert sidebar.setup.option_widgets != before
+    assert sidebar.config is replacement
+
+
+def test_save_as_re_resolves_the_rows_against_the_new_id(sidebar):
+    """A fork inherits none of the original's stored values, so Setup must not go on
+    showing them (#179).  Same object, new id -- the one case identity cannot see."""
+    config = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
+    sidebar.set_config(config)
+    before = sidebar.setup.option_widgets
+
+    config.id = "forked-bot"
+    sidebar.refresh_options(config)
+
+    assert sidebar.setup.option_widgets != before
+
+
+# ---------------------------------------------------------------------------
 # The right sidebar
 # ---------------------------------------------------------------------------
 

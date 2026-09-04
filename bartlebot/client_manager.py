@@ -150,6 +150,11 @@ class ClientManager(QObject):
     def clients(self) -> list:
         return self._clients
 
+    @property
+    def unhooked_clients(self) -> list:
+        """Clients that were unhooked but whose game windows are still open."""
+        return self._unhooked_clients
+
     def set_machine(self, machine) -> None:
         """Called by AppController when a bot starts (machine != None) or stops (machine == None)."""
         self._machine = machine
@@ -332,6 +337,47 @@ class ClientManager(QObject):
             return
         self._assign_rehooked_slots(rehooked)
         self._finish_hook_change(prev_clients)
+
+    async def shutdown(self, *, close_windows: bool) -> list[int]:
+        """Release every client on the way out, optionally closing their game windows.
+
+        Quitting with clients still embedded destroys them: ``ClientTile`` re-parents each
+        game window under the Qt window with ``SetParent``, so Qt takes its children down
+        with it when the window is torn down (#155). Unhooking is what releases them —
+        the same path the Unhook All button already runs — so this unhooks whichever way
+        the user answered, and only then closes the windows it was told to close.
+
+        Returns the hwnds whose process survived the close sequence; always empty when
+        *close_windows* is False.
+        """
+        # The detection loop re-hooks and re-embeds on every tick, so it goes first:
+        # anything it did after the unhook would be a window embedded on the way out.
+        self.stop()
+        # pids are read while the clients still exist — force_close_client falls back to
+        # reading one from the window, which fails once the window is gone.
+        targets = (
+            [(c.window_handle, c.process_id) for c in self._clients + self._unhooked_clients] if close_windows else []
+        )
+        try:
+            await self.unhook_all()
+        except Exception:
+            logger.exception("Error while unhooking clients on shutdown")
+        # Belt and braces: a tile left behind by a failed unhook would still take its
+        # game window down with the Qt window, which is the whole bug.
+        self._game_view.unembed_all()
+        if not targets:
+            return []
+        results = await asyncio.gather(*[self._close_game_window(h, pid) for h, pid in targets])
+        return [hwnd for (hwnd, _), closed in zip(targets, results) if not closed]
+
+    @staticmethod
+    async def _close_game_window(hwnd: int, pid: int | None) -> bool:
+        """Close one game window, reporting rather than raising when it will not go."""
+        try:
+            return await force_close_client(hwnd, pid=pid)
+        except Exception:
+            logger.exception("Failed to close game window hwnd=%d", hwnd)
+            return False
 
     # ------------------------------------------------------------------
     # Hook toggling internals

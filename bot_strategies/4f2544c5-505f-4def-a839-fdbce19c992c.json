@@ -1,0 +1,90 @@
+{
+  "id": "4f2544c5-505f-4def-a839-fdbce19c992c",
+  "name": "Sisyphus Challenge Mode - 3 storms",
+  "bot_id": "c9a90248-41fb-4c46-b0a9-d0290d4b430f",
+  "player_decks": {
+    "1": {
+      "normal": {
+        "King Artorius - Fire - T05 - B": 1,
+        "Attenuate": 1
+      },
+      "tc": {},
+      "item": {
+        "Wand-Fire-180": 2
+      },
+      "card_kinds": {},
+      "archmastery_school": "Life"
+    },
+    "2": {
+      "normal": {
+        "Storm Owl - T05 - A": 1
+      },
+      "tc": {},
+      "item": {
+        "Wand-Storm-180": 3
+      },
+      "card_kinds": {},
+      "archmastery_school": "Storm"
+    },
+    "3": {
+      "normal": {
+        "Storm Owl - T05 - A": 1
+      },
+      "tc": {},
+      "item": {
+        "Wand-Storm-180": 3
+      },
+      "card_kinds": {},
+      "archmastery_school": "Death"
+    },
+    "4": {
+      "normal": {
+        "Storm Owl - T05 - A": 1
+      },
+      "tc": {},
+      "item": {
+        "Wand-Storm-180": 3
+      },
+      "card_kinds": {},
+      "archmastery_school": "Death"
+    }
+  },
+  "default_duel_config": {
+    "min_players": 1,
+    "max_players": 4,
+    "player_assignments": []
+  },
+  "state_assignments": [
+    {
+      "state_ids": [
+        "state_14"
+      ],
+      "duel_config": {
+        "min_players": 4,
+        "max_players": 4,
+        "combat_order": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "player_assignments": [
+          {
+            "players": [
+              1
+            ],
+            "dsl": "{1} pass\n{2} pass\n{3} attenuate @ boss\n{4} art @ boss\nwand @ boss"
+          },
+          {
+            "players": [
+              2,
+              3,
+              4
+            ],
+            "dsl": "{1} pass\n{2} pass\n{3} wand @ boss\n{4} owl @ boss\nwand @ boss"
+          }
+        ]
+      }
+    }
+  ]
+}

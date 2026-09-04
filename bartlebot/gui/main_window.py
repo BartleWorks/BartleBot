@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("BartleBot")
+        self._shutdown_handler = None
 
         self._build_menu()
         self._build_central()
@@ -261,6 +262,21 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def set_shutdown_handler(self, handler) -> None:
+        """Install the quit gate: *handler* returns True to let the window close.
+
+        The window owns the close event but not the clients, so the decision belongs to
+        AppController: it may refuse this close, unhook every client asynchronously, and
+        close the window again once that lands (#155).
+        """
+        self._shutdown_handler = handler
+
+    def closeEvent(self, event) -> None:  # noqa: N802
+        if self._shutdown_handler is not None and not self._shutdown_handler():
+            event.ignore()
+            return
+        super().closeEvent(event)
 
     def set_fsm_state(self, state_id: str) -> None:
         self.bot_canvas.set_state(state_id)

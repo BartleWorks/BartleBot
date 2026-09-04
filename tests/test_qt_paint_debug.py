@@ -7,9 +7,12 @@ CLAUDE.md's testing convention for Qt code.
 
 from bartlebot.qt_paint_debug import (
     DISPLAY_NOISE_SIGNATURE,
+    FONT_NOISE_SIGNATURE,
+    LEGACY_BITMAP_FONTS,
     BurstTracker,
     format_dump,
     is_display_noise,
+    is_legacy_font_noise,
     is_painter_message,
     relevant_frames,
     stack_signature,
@@ -85,6 +88,65 @@ def test_an_overnight_burst_of_noise_collapses_to_one_note_per_interval():
         assert not tracker.should_dump(DISPLAY_NOISE_SIGNATURE, now + i * 0.5)
     assert tracker.should_dump(DISPLAY_NOISE_SIGNATURE, now + 300.0)
     assert tracker.drain_suppressed(DISPLAY_NOISE_SIGNATURE) == 599
+
+
+# ---------------------------------------------------------------------------
+# Legacy stock-font noise (#169)
+# ---------------------------------------------------------------------------
+
+# Verbatim from issue #169 — one line per legacy family, all ten of them.
+_FONT_NOISE_TEMPLATE = (
+    "DirectWrite: CreateFontFaceFromHDC() failed "
+    "(Indicates an error in an input file such as a font file.) for "
+    'QFontDef(Family="{family}", stylename=Regular, pointsize=9, pixelsize={px}, '
+    "styleHint=5, weight=400, stretch=100, hintingPreference=0) "
+    'LOGFONT("{family}", lfWidth=0, lfHeight=-{px}) dpi=96'
+)
+
+# The pixel sizes are the ones the report carried; they are the bitmap fonts'
+# own native sizes, which is why they differ per family.
+FONT_NOISE = [
+    _FONT_NOISE_TEMPLATE.format(family=family, px=px)
+    for family, px in zip(LEGACY_BITMAP_FONTS, (20, 15, 46, 13, 13, 46, 45, 12, 16, 12))
+]
+
+
+def test_every_legacy_font_warning_in_the_report_is_recognised():
+    assert len(FONT_NOISE) == 10
+    assert all(is_legacy_font_noise(m) for m in FONT_NOISE)
+
+
+def test_the_same_failure_for_a_real_font_is_still_reported():
+    """A TrueType font failing to build a face is a genuine problem."""
+    real = _FONT_NOISE_TEMPLATE.format(family="Segoe UI", px=12)
+    assert not is_legacy_font_noise(real)
+
+
+def test_a_family_merely_containing_a_legacy_name_is_not_swallowed():
+    """``Modern``, ``Roman`` and ``System`` are words other families also use."""
+    for family in ("Modern No. 20", "Times New Roman", "System Sans"):
+        assert not is_legacy_font_noise(_FONT_NOISE_TEMPLATE.format(family=family, px=12))
+
+
+def test_another_directwrite_failure_naming_a_legacy_font_is_still_reported():
+    """Only the CreateFontFaceFromHDC failure is known-harmless."""
+    assert not is_legacy_font_noise(
+        'DirectWrite: CreateFontFromLOGFONT() failed for QFontDef(Family="Fixedsys", pointsize=9)'
+    )
+
+
+def test_font_noise_is_not_mistaken_for_the_other_two_kinds():
+    assert not any(is_painter_message(m) for m in FONT_NOISE)
+    assert not any(is_display_noise(m) for m in FONT_NOISE)
+    assert not any(is_legacy_font_noise(m) for m in DISPLAY_NOISE + BURST)
+
+
+def test_the_startup_burst_collapses_to_one_note():
+    """All ten arrive together at startup, and share one signature."""
+    tracker = BurstTracker(interval=300.0)
+    dumps = [tracker.should_dump(FONT_NOISE_SIGNATURE, now=i * 0.001) for i in range(len(FONT_NOISE))]
+    assert sum(dumps) == 1
+    assert tracker.drain_suppressed(FONT_NOISE_SIGNATURE) == 9
 
 
 # ---------------------------------------------------------------------------

@@ -1086,6 +1086,36 @@ class CombatTab(QWidget):
         # otherwise the timer fires against the newly loaded bot's strategy.
         self.flush_pending_save()
         self._config = config
+        self._rebind()
+
+    def rebind_identity(self) -> None:
+        """Re-resolve the strategy display against the config's *current* id.
+
+        Save As mints a fresh id onto the loaded config, and every surface keyed
+        on the old one is stale the moment it does: the chip goes on naming the
+        original's strategy, and the next combat edit writes
+        ``set_active_strategy`` under the *new* id — binding the fork to the
+        original's strategy, which is exactly what minting an id prevents (#179).
+        A fork inherits no strategy, so this leaves the tab showing none.
+
+        Narrower than ``set_config``, which cannot be used here: its
+        ``flush_pending_save`` emits ``combat_config_changed``, and the sidebar
+        forwards that as ``config_changed`` — an unsaved edit against a bot saved
+        a moment ago.  The pending edit is still committed, just silently, and
+        against the strategy that owns it (a BCS carries its own ``bot_id``, so
+        it stays with the original bot).
+        """
+        if self._save_timer.isActive():
+            self._save_timer.stop()
+            blocked = self.blockSignals(True)
+            try:
+                self._save_bcs()
+            finally:
+                self.blockSignals(blocked)
+        self._rebind()
+
+    def _rebind(self) -> None:
+        """Reload the strategy for ``self._config`` and redraw everything on it."""
         self._suppress = True
         self._load_bcs()
         self._rebuild_state_assignments()

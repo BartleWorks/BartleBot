@@ -425,12 +425,12 @@ def test_save_as_mints_a_new_id(tmp_path, monkeypatch):
     assert BotConfig.load(dest).id == config.id
 
 
-def _save_as_controller(config, refreshed=None):
+def _save_as_controller(config, refreshed=None, rebound=None):
     """A stand-in ``self`` for ``_save_bot_as``.
 
     Driven through the real method — it touches the window only to relabel it
-    and to re-resolve the option surfaces, and standing up a MainWindow would
-    test Qt rather than the fork.
+    and to re-resolve the option and combat surfaces, and standing up a
+    MainWindow would test Qt rather than the fork.
     """
     return SimpleNamespace(
         _loaded_config=config,
@@ -442,7 +442,8 @@ def _save_as_controller(config, refreshed=None):
             update_recent_menu=lambda *a: None,
             bot_canvas=SimpleNamespace(refresh_placeholder=lambda: None),
             left_sidebar=SimpleNamespace(
-                refresh_options=lambda cfg: (refreshed if refreshed is not None else []).append(cfg.id)
+                refresh_options=lambda cfg: (refreshed if refreshed is not None else []).append(cfg.id),
+                rebind_identity=lambda: (rebound if rebound is not None else []).append(config.id),
             ),
         ),
     )
@@ -464,6 +465,38 @@ def test_save_as_re_resolves_the_value_surfaces(tmp_path, monkeypatch):
     # Refreshed once, and against the *new* identity — refreshing before the mint
     # would re-resolve the original's overrides and look exactly like the bug.
     assert refreshed == [config.id]
+
+
+def test_save_as_re_binds_the_combat_tab(tmp_path, monkeypatch):
+    """The Combat tab resolves its strategy through the bot id too. Left alone it
+    goes on showing the original's strategy, and the next combat edit writes that
+    strategy under the fork's id — binding the fork to it (#179)."""
+    from PyQt6.QtWidgets import QFileDialog  # noqa: PLC0415
+
+    dest = tmp_path / "fork.json"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(dest), "")))
+    config = _config()
+    rebound: list[str] = []
+
+    AppController._save_bot_as(_save_as_controller(config, rebound=rebound))
+
+    assert rebound == [config.id]
+
+
+def test_a_failed_save_as_leaves_the_combat_tab_alone(tmp_path, monkeypatch):
+    """Nothing was written, so the loaded bot is still the original and still owns
+    its strategy — re-binding would clear a chip that is telling the truth."""
+    from PyQt6.QtWidgets import QFileDialog, QMessageBox  # noqa: PLC0415
+
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(tmp_path / "fork.json"), "")))
+    monkeypatch.setattr(QMessageBox, "critical", staticmethod(lambda *a, **k: None))
+    monkeypatch.setattr(BotConfig, "save", lambda self, path: (_ for _ in ()).throw(OSError("disk full")))
+    config = _config()
+    rebound: list[str] = []
+
+    AppController._save_bot_as(_save_as_controller(config, rebound=rebound))
+
+    assert rebound == []
 
 
 def test_a_failed_save_as_keeps_the_bot_its_identity(tmp_path, monkeypatch):

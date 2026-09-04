@@ -20,6 +20,19 @@ Python frame in the dump named the exact ``drawText`` call in one run.
 Dumps are throttled per distinct stack, because the failure repeats four times
 per glyph per repaint — a single pan produced hundreds of lines.
 
+It also swallows the DirectWrite warnings of issue #169.  Windows still ships
+ten legacy GDI stock fonts (``8514oem``, ``Fixedsys``, ``Modern``, ``MS Sans
+Serif``, ``MS Serif``, ``Roman``, ``Script``, ``Small Fonts``, ``System``,
+``Terminal``).  None of them is TrueType or OpenType, so ``CreateFontFaceFromHDC``
+cannot build a DirectWrite face from one and returns ``DWRITE_E_FILEFORMAT``
+("Indicates an error in an input file such as a font file") — for these ten
+families that outcome is the only possible one, not a symptom.  Qt then falls
+back to its GDI engine and the text renders, which is why the warnings were
+cosmetic.  Nothing we paint asks for these families: they are reached from
+inside Qt's own font matching, when a walk over the installed families crosses
+them, so there is no call site to fix.  The narrow match on the family name is
+what keeps a DirectWrite failure for a *real* font a visible warning.
+
 The handler also swallows the ``qt.qpa.screen`` monitor-enumeration warnings of
 issues #42 and #120.  Windows tears the monitor's device instance out of the
 device tree when the display powers down, so Qt's screen enumeration fails with
@@ -46,8 +59,14 @@ DUMP_INTERVAL_SECONDS = 10.0
 #: How long to wait before acknowledging the monitor-asleep warnings again.
 DISPLAY_NOISE_INTERVAL_SECONDS = 300.0
 
+#: How long to wait before acknowledging the legacy-font warnings again.
+FONT_NOISE_INTERVAL_SECONDS = 300.0
+
 #: Signature the display-noise messages are throttled under, as a group.
 DISPLAY_NOISE_SIGNATURE = "qt.qpa.screen-display-asleep"
+
+#: Signature the legacy-font warnings are throttled under, as a group.
+FONT_NOISE_SIGNATURE = "directwrite-legacy-stock-font"
 
 #: Fragments Qt's Windows QPA plugin emits while a monitor is powered down.
 #: Matched as substrings: the tail varies (device path, adapter id, and a
@@ -57,6 +76,27 @@ DISPLAY_NOISE_SIGNATURE = "qt.qpa.screen-display-asleep"
 _DISPLAY_NOISE_FRAGMENTS = (
     "Unable to open monitor interface to",
     "Unable to get device information for",
+)
+
+#: Head of the DirectWrite warning of issue #169.  Matched as a prefix so the
+#: HRESULT text, the whole ``QFontDef``, the ``LOGFONT`` and the dpi — all of
+#: which vary per family and per screen — are outside the match.
+_FONT_NOISE_PREFIX = "DirectWrite: CreateFontFaceFromHDC() failed"
+
+#: The Windows GDI stock fonts a DirectWrite face can never be built from.
+#: Ten fixed names, so the match stays specific: a DirectWrite failure for any
+#: other family is a real one and is reported.
+LEGACY_BITMAP_FONTS = (
+    "8514oem",
+    "Fixedsys",
+    "Modern",
+    "MS Sans Serif",
+    "MS Serif",
+    "Roman",
+    "Script",
+    "Small Fonts",
+    "System",
+    "Terminal",
 )
 
 _QT_LEVELS = {
@@ -89,6 +129,29 @@ def is_display_noise(message: str, category: str | None = None) -> bool:
     if category is not None and category not in ("qt.qpa.screen", "default"):
         return False
     return any(fragment in message for fragment in _DISPLAY_NOISE_FRAGMENTS)
+
+
+def is_legacy_font_noise(message: str) -> bool:
+    """True for the DirectWrite warnings a legacy GDI stock font produces (#169).
+
+    Both halves are required: the DirectWrite prefix, and one of the ten
+    families that cannot have a face built for them.  A ``CreateFontFaceFromHDC``
+    failure for anything else means a font that *should* work did not, which is
+    worth seeing.
+
+    The family is read out of the ``QFontDef`` Qt formats into the message::
+
+        DirectWrite: CreateFontFaceFromHDC() failed (...) for
+        QFontDef(Family="Fixedsys", ...) LOGFONT("Fixedsys", ...) dpi=96
+
+    so it is matched as ``Family="<name>"`` rather than as a bare substring —
+    ``"Modern"``, ``"Roman"`` and ``"System"`` are words that turn up in other
+    families' names, and a bare match would swallow a real warning about, say,
+    ``Modern No. 20``.
+    """
+    if not message.startswith(_FONT_NOISE_PREFIX):
+        return False
+    return any(f'Family="{family}"' in message for family in LEGACY_BITMAP_FONTS)
 
 
 def relevant_frames(frames: list[str]) -> list[str]:
@@ -154,6 +217,7 @@ def format_dump(message: str, frames: list[str], signature: str, suppressed: int
 
 _tracker = BurstTracker()
 _display_noise_tracker = BurstTracker(DISPLAY_NOISE_INTERVAL_SECONDS)
+_font_noise_tracker = BurstTracker(FONT_NOISE_INTERVAL_SECONDS)
 _installed = False
 
 
@@ -180,6 +244,18 @@ def _handler(msg_type: QtMsgType, context, message: str) -> None:
             )
         return
 
+    if is_legacy_font_noise(message):
+        if _font_noise_tracker.should_dump(FONT_NOISE_SIGNATURE, time.monotonic()):
+            suppressed = _font_noise_tracker.drain_suppressed(FONT_NOISE_SIGNATURE)
+            logger.debug(
+                "DirectWrite cannot build a face for a legacy Windows stock font — expected, ignoring. "
+                "Last message: %s%s (%d suppressed since the previous note)",
+                message,
+                location,
+                suppressed,
+            )
+        return
+
     level = _QT_LEVELS.get(msg_type, logging.WARNING)
     logger.log(level, "Qt: %s%s", message, location)
 
@@ -199,11 +275,12 @@ def _handler(msg_type: QtMsgType, context, message: str) -> None:
 
 def install(interval: float = DUMP_INTERVAL_SECONDS) -> None:
     """Install the Qt message handler. Safe to call more than once."""
-    global _installed, _tracker, _display_noise_tracker
+    global _installed, _tracker, _display_noise_tracker, _font_noise_tracker
     if _installed:
         return
     _tracker = BurstTracker(interval)
     _display_noise_tracker = BurstTracker(DISPLAY_NOISE_INTERVAL_SECONDS)
+    _font_noise_tracker = BurstTracker(FONT_NOISE_INTERVAL_SECONDS)
     qInstallMessageHandler(_handler)
     _installed = True
     logger.info("Qt message handler installed")

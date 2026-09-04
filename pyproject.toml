@@ -23,6 +23,7 @@ dev = [
     "pytest-asyncio>=1.0",
     "ruff>=0.15",
     "pytest-xdist>=3.6",
+    "pre-commit>=4.0",
 ]
 
 # Forks, not upstream: these carry fixes upstream does not have, including the
