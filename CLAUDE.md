@@ -460,8 +460,8 @@ mutually contradictory texts for the one setting.
   `system_option_names()` as derived, wherever it is declared — so an author's own
   option that happens to share a name with one some unrelated node requires is
   filed as dead weight and dropped on the next save, silently, from the only copy.
-  Inherited from `_inject_required_options` (`docs/DESIGN_REVIEW.md`), but sharper
-  now the prune runs every save.
+  Inherited from `_inject_required_options`, but sharper now the prune runs
+  every save.
   `test_no_bot_declares_an_option_borrowed_from_a_node_it_does_not_run` is the
   guard; its two siblings —
   `test_no_bot_stores_a_declaration_that_says_nothing` and
