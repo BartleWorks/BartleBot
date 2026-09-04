@@ -1,33 +1,37 @@
-[tool.poetry]
+[project]
 name = "bartlebot"
 version = "0.1.0"
 description = "Wizard101 behavior tree bot"
-authors = []
-packages = [{include = "bartlebot"}]
+requires-python = ">=3.13"
+dependencies = [
+    "PyQt6>=6.7",
+    "qasync>=0.27",
+    "pyperclip>=1.8",
+    "transitions>=0.9",
+    "pydantic>=2.0",
+    "keyring>=25.0",
+    "wakepy>=1.0",
+    "curl_cffi>=0.15",
+    "beautifulsoup4>=4.0",
+    "wizwalker",
+    "wizsprinter",
+]
 
-[tool.poetry.dependencies]
-python = "^3.13"
-PyQt6 = "^6.7"
-qasync = "^0.27"
-pyperclip = "^1.8"
-transitions = {extras = ["asyncio"], version = "^0.9"}
-pydantic = "^2.0"
-keyring = "^25.0"
-wakepy = "^1.0"
-curl_cffi = "^0.15"
-beautifulsoup4 = "^4.0"
+[dependency-groups]
+dev = [
+    "pytest>=9.0",
+    "pytest-asyncio>=1.0",
+    "ruff>=0.15",
+    "pytest-xdist>=3.6",
+]
+
 # Forks, not upstream: these carry fixes upstream does not have, including the
 # memory offsets bartlebot/deck_io.py depends on. Pinned by exact commit --
 # see "Changing wizwalker or wizsprinter" in CLAUDE.md for the bump workflow.
 # HTTPS URLs so CI can fetch them without SSH credentials.
-wizwalker = {git = "https://github.com/The-World-Tree/wizwalker.git", rev = "ba5c32c44488d4ede56c85dd68980ab7012596f2"}
-WizSprinter = {git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "2118aa77ef530db202d51338988e0fed8c022003"}
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0"
-pytest-asyncio = "^1.0"
-ruff = "^0.15"
-pytest-xdist = "^3.6"
+[tool.uv.sources]
+wizwalker = { git = "https://github.com/The-World-Tree/wizwalker.git", rev = "ba5c32c44488d4ede56c85dd68980ab7012596f2" }
+wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "2118aa77ef530db202d51338988e0fed8c022003" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -60,5 +64,8 @@ quote-style = "double"
 indent-style = "space"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["bartlebot"]

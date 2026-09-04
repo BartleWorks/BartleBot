@@ -9,7 +9,7 @@ HOW TO USE:
     - Any message box visible
     - Normal gameplay (world map, overworld, etc.)
 
-  Run:  poetry run python scripts/probe_windowtext.py
+  Run:  uv run python scripts/probe_windowtext.py
 
   The script walks the entire visible UI tree and for every window that has
   readable text at offset 712 or 736 it reports:

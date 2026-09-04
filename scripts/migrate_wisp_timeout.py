@@ -19,8 +19,8 @@ threshold), not part of the workaround.
 
 Run from the project root. Reports only by default; pass ``--apply`` to write:
 
-    poetry run python scripts/migrate_wisp_timeout.py
-    poetry run python scripts/migrate_wisp_timeout.py --apply
+    uv run python scripts/migrate_wisp_timeout.py
+    uv run python scripts/migrate_wisp_timeout.py --apply
 
 Idempotent: a second run is a clean no-op.
 """

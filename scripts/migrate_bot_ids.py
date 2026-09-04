@@ -23,8 +23,8 @@ strategy assignments at runtime.
 
 Run from the project root.  Reports only by default; pass ``--apply`` to write:
 
-    poetry run python scripts/migrate_bot_ids.py
-    poetry run python scripts/migrate_bot_ids.py --apply
+    uv run python scripts/migrate_bot_ids.py
+    uv run python scripts/migrate_bot_ids.py --apply
 
 Idempotent: a second run is a clean no-op.
 """

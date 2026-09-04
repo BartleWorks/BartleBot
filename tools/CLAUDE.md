@@ -11,13 +11,13 @@ A wiztype dump of every game class with the exact byte offset of each property â
 about 7,000 classes and 49,000 properties. Query it with `tools/typedump.py`:
 
 ```bash
-poetry run python tools/typedump.py at ClientObject 448     # what lives at this offset?
-poetry run python tools/typedump.py show DeckListControl    # full layout, incl. inherited
-poetry run python tools/typedump.py prop "characterId"      # find a property everywhere
-poetry run python tools/typedump.py classes "SpellList"     # find classes by regex
-poetry run python tools/typedump.py gaps DeckListControl    # holes where raw members hide
-poetry run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
-poetry run python tools/typedump.py diff <old.json> <new.json>
+uv run python tools/typedump.py at ClientObject 448     # what lives at this offset?
+uv run python tools/typedump.py show DeckListControl    # full layout, incl. inherited
+uv run python tools/typedump.py prop "characterId"      # find a property everywhere
+uv run python tools/typedump.py classes "SpellList"     # find classes by regex
+uv run python tools/typedump.py gaps DeckListControl    # holes where raw members hide
+uv run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
+uv run python tools/typedump.py diff <old.json> <new.json>
 ```
 
 Two things to know before trusting it:

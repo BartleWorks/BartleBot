@@ -23,11 +23,11 @@ WHY THIS EXISTS
 HOW TO RUN
     Section A is read-only and always runs:
 
-        poetry run python tools/probe_deck_apply_timing.py
+        uv run python tools/probe_deck_apply_timing.py
 
     Sections B and C drive the real ``apply_deck`` path and need --apply:
 
-        poetry run python tools/probe_deck_apply_timing.py --apply
+        uv run python tools/probe_deck_apply_timing.py --apply
 
     Run --apply with as many clients logged in as you normally bot with; the
     whole point is the four-client wall clock.

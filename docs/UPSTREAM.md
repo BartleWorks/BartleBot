@@ -44,7 +44,7 @@ cd ../wizwalker
 git fetch laurenz
 git log --oneline HEAD..laurenz/development     # anything new?
 git merge laurenz/development                   # expect conflicts: our commits touch offsets too
-poetry run pytest                               # then smoke-test against a live client
+uv run pytest                               # then smoke-test against a live client
 git push origin bartlebot
 ```
 
@@ -66,7 +66,7 @@ Local edits do **not** affect the app until they are pushed and the pin moves:
 cd ../wizwalker && git commit -am "..." && git push origin bartlebot
 cd ../BartleBot
 # update the rev in pyproject.toml to the new commit hash
-poetry lock && poetry install
+uv lock && uv sync
 ```
 
 While iterating rapidly, reinstall the local copy as editable instead of bumping
@@ -74,13 +74,13 @@ the pin each time — undo it before trusting a test run, since it silently
 overrides the pinned version:
 
 ```bash
-poetry run pip install -e ../wizwalker    # live editing
-poetry install                            # back to the pinned commit
+uv pip install -e ../wizwalker    # live editing
+uv sync                           # back to the pinned commit
 ```
 
 **Tag every commit you pin.** A pinned SHA reachable only from a branch tip can
-be orphaned by a force-push, rebase, or branch rename, and `poetry install` then
-fails for everyone including CI. Tag it *before* bumping the pin:
+be orphaned by a force-push, rebase, or branch rename, and `uv sync` then fails
+for everyone including CI. Tag it *before* bumping the pin:
 
 ```bash
 cd ../wizwalker && git tag bartlebot-pin-$(date +%Y%m%d) <sha> && git push origin --tags

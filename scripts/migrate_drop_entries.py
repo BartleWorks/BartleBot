@@ -28,8 +28,8 @@ one on re-import later.
 
 Run from the project root.  Reports only by default; pass ``--apply`` to write:
 
-    poetry run python scripts/migrate_drop_entries.py
-    poetry run python scripts/migrate_drop_entries.py --apply
+    uv run python scripts/migrate_drop_entries.py
+    uv run python scripts/migrate_drop_entries.py --apply
 
 Idempotent: a second run is a clean no-op.
 """

@@ -56,9 +56,9 @@ HOW TO RUN
     zeroes the scratch region the first one's hooks jump into -- corrupting live hooks in
     the game process. See the note in launcher/auto_select.py.
 
-    poetry run python tools/probe_last_player.py --show
-    poetry run python tools/probe_last_player.py --account <username> --character 2
-    poetry run python tools/probe_last_player.py --account <username> --character 2 --play
+    uv run python tools/probe_last_player.py --show
+    uv run python tools/probe_last_player.py --account <username> --character 2
+    uv run python tools/probe_last_player.py --account <username> --character 2 --play
 
     The account has to have been played through BartleBot at least twice, on two different
     characters -- the roster is only learned from clients that connect, and a one-character

@@ -26,7 +26,7 @@ It also answers two smaller questions that shape the code:
 
 HOW TO RUN
     1. Log in every wizard you normally bot with -- at least two.
-    2. poetry run python tools/probe_group_state.py
+    2. uv run python tools/probe_group_state.py
     3. Leave it running and do this in-game, watching the table after each step:
          a. Make sure NOBODY is grouped.        -> expect all gid = 0            (Q1)
          b. Invite player 2 into a group.       -> watch BOTH gids change        (Q2, Q3)

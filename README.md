@@ -5,14 +5,14 @@ A Wizard101 bot built on [WizWalker](https://github.com/Deimos-Wizard101/wizwalk
 ## Requirements
 
 - Python 3.13+
-- [Poetry](https://python-poetry.org/docs/#installation)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - Wizard101 running with at least one logged-in client
 - **Run your terminal as Administrator** — BartleBot reads game process memory, which requires elevated privileges.
 
 ## Setup
 
 ```powershell
-poetry install
+uv sync
 ```
 
 If you get an execution policy error activating the venv:
@@ -24,7 +24,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ## Activate the virtual environment
 
 ```powershell
-Invoke-Expression (poetry env activate)
+.venv\Scripts\Activate.ps1
 ```
 
 ## Run

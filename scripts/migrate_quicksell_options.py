@@ -28,7 +28,7 @@ Two quicksell nodes in one bot can disagree about the keep list, and one bot doe
 taken: never sell what an author flagged as valuable in *either* place.  Folding
 that bot's two nodes into one is Phase 7's judgment call, not this script's.
 
-    poetry run python scripts/migrate_quicksell_options.py [--dry-run]
+    uv run python scripts/migrate_quicksell_options.py [--dry-run]
 """
 
 from __future__ import annotations

@@ -3,14 +3,14 @@
 Run once after node sizes or grid constants change to give every bot a clean layout.
 
 Usage:
-    poetry run python scripts/migrate_bot_positions.py
+    uv run python scripts/migrate_bot_positions.py
 """
 
 import json
 import sys
 from pathlib import Path
 
-# These imports require the BartleBot package to be on sys.path (poetry run handles this).
+# These imports require the BartleBot package to be on sys.path (uv run handles this).
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.canvas.layout import auto_layout
 

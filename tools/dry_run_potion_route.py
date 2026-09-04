@@ -23,10 +23,10 @@ so this exercises the real code rather than a copy of it that can drift.
 HOW TO RUN
     Stand the wizards you want to test wherever a bot would call handle_potions from, then:
 
-        poetry run python tools/dry_run_potion_route.py
-        poetry run python tools/dry_run_potion_route.py --client 2      # just one client
-        poetry run python tools/dry_run_potion_route.py --no-recall     # stay in the Commons
-        poetry run python tools/dry_run_potion_route.py --no-shop       # stop before Hilda
+        uv run python tools/dry_run_potion_route.py
+        uv run python tools/dry_run_potion_route.py --client 2      # just one client
+        uv run python tools/dry_run_potion_route.py --no-recall     # stay in the Commons
+        uv run python tools/dry_run_potion_route.py --no-shop       # stop before Hilda
 
     Nothing is bought and no gold is spent. Clients ARE teleported around the spiral, their
     mark location IS overwritten, and any equipped castle is unequipped and re-equipped.

@@ -224,7 +224,7 @@ async def refresh_identities(clients: list) -> list[int]:
 # ---------------------------------------------------------------------------
 
 # Offsets on ClientWizPlayerNameBehavior, from the r800294 type dump.
-#   poetry run python tools/typedump.py show ClientWizPlayerNameBehavior
+#   uv run python tools/typedump.py show ClientWizPlayerNameBehavior
 NAME_KEYS_OFFSET = 0x160  # m_nameKeys, unsigned int
 GENDER_OFFSET = 0x1B0  # m_eGender, enum eGender
 

@@ -21,9 +21,9 @@ WHY A SNAPSHOT IS SAFE
     added, which surfaces as a load-time warning naming the missing key.
 
 USAGE
-    poetry run python tools/dump_world_names.py
-    poetry run python tools/dump_world_names.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
-    poetry run python tools/dump_world_names.py --verify      # no write; check the current file
+    uv run python tools/dump_world_names.py
+    uv run python tools/dump_world_names.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
+    uv run python tools/dump_world_names.py --verify      # no write; check the current file
 """
 
 from __future__ import annotations

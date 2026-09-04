@@ -15,24 +15,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-
+      # --locked fails the run if pyproject.toml was edited without relocking,
+      # rather than silently resolving something the lockfile does not describe.
       - name: Install dependencies
-        run: poetry install
+        run: uv sync --locked
 
       - name: Lint
-        run: poetry run ruff check
+        run: uv run ruff check
 
       - name: Format check
-        run: poetry run ruff format --check
+        run: uv run ruff format --check
 
       - name: Test
         # -n auto, not a fixed count: GitHub runners have far fewer cores than a
         # dev machine, and oversubscribing them stretches the suite's few
         # wall-clock-sensitive tests until they fail.
-        run: poetry run pytest -n auto
+        run: uv run pytest -n auto

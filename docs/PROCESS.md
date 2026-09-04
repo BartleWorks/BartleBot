@@ -70,7 +70,7 @@ are in the `merge` skill. The three things that matter here:
   alternative, the limitation the tests do not cover, the `Closes #N` lines. A
   PR body is GitHub metadata and will not survive the migration to the release
   repo at 1.0.0; a commit message will.
-- **The gate is local.** `poetry run pytest -n auto` and `poetry run ruff check`
+- **The gate is local.** `uv run pytest -n auto` and `uv run ruff check`
   before every commit. CI runs on push to `master` and now confirms after the
   fact rather than blocking, so a failure there is fixed forward at once.
 

@@ -104,7 +104,7 @@ _NO_VALUE = "—"
 # PotionButton carry it; Window does not), so it is listed explicitly.
 #
 # Regenerate with:
-#   poetry run python tools/typedump.py prop m_bGreyed
+#   uv run python tools/typedump.py prop m_bGreyed
 _GREYED_TYPES = frozenset(
     {
         "BadgeButton",

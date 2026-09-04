@@ -4,7 +4,7 @@ Any file whose node positions are off the current grid (x not a multiple of GRID
 automatically reformatted via auto_layout and written back to disk.
 
 Usage:
-    poetry run python scripts/audit_bots.py
+    uv run python scripts/audit_bots.py
 """
 
 from __future__ import annotations

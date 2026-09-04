@@ -22,7 +22,7 @@ This round confirms that and locates the toggled-on/off flag:
 HOW TO RUN
     1. Same setup as before: wizard logged in, deck page open (press P), some
        cards in the normal deck, and a known number of item cards toggled ON.
-    2. poetry run python tools/probe_item_cards.py
+    2. uv run python tools/probe_item_cards.py
 
     WRITE DOWN THE NAMES of the item cards you have toggled ON -- section C
     reports candidate flags, and the names are how we confirm the right one.

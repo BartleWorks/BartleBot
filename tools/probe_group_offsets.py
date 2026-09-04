@@ -24,7 +24,7 @@ This probe does three things:
 
 HOW TO RUN
     1. Log in at least two wizards. Start UNGROUPED.
-    2. poetry run python tools/probe_group_offsets.py
+    2. uv run python tools/probe_group_offsets.py
     3. Follow the prompts: ungrouped -> grouped -> left the group.
     4. Paste the report back.
 

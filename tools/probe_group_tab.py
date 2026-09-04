@@ -41,7 +41,7 @@ This script is kept for re-running after a game update, when the tree may change
 
 HOW TO RUN
     1. Log a wizard in. Only one client is inspected.
-    2. poetry run python tools/probe_group_tab.py
+    2. uv run python tools/probe_group_tab.py
     3. Paste the report back.
 
 Clicks tabs inside the social window and opens/closes that window. Otherwise read-only.

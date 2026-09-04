@@ -25,8 +25,8 @@ shared part showed up as a shared byte, which is what identified one byte per co
     See CLAUDE.md, "No real player data".
 
 USAGE
-    poetry run python tools/name_keys.py --verify           # check every recorded sample
-    poetry run python tools/name_keys.py --decode 55397123
+    uv run python tools/name_keys.py --verify           # check every recorded sample
+    uv run python tools/name_keys.py --decode 55397123
 """
 
 from __future__ import annotations

@@ -23,7 +23,7 @@ after attempting a close.
 
 HOW TO RUN
     1. Log in the same clients you saw the problem on. Start with friends lists CLOSED.
-    2. poetry run python tools/probe_friends_list.py
+    2. uv run python tools/probe_friends_list.py
     3. Paste the report back.
 
 This one DOES click: it opens the friends list and tries to close it, on every client.

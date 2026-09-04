@@ -45,11 +45,11 @@ QUESTIONS THIS ANSWERS
 
 USAGE
     # Log every wizard in, then:
-    poetry run python tools/probe_group_roster.py
+    uv run python tools/probe_group_roster.py
 
     # Run it twice, once grouped and once not, and compare:
-    poetry run python tools/probe_group_roster.py --label ungrouped
-    poetry run python tools/probe_group_roster.py --label grouped
+    uv run python tools/probe_group_roster.py --label ungrouped
+    uv run python tools/probe_group_roster.py --label grouped
 
 Read-only apart from opening and closing the social window, which it restores afterwards.
 """

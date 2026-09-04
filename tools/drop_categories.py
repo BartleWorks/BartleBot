@@ -13,9 +13,9 @@ This reports both, against the classification in
 ``bartlebot/nodes/utility/quicksell.py``.  Run it after importing drops for new
 bots::
 
-    poetry run python tools/drop_categories.py
-    poetry run python tools/drop_categories.py --by-bot
-    poetry run python tools/drop_categories.py --json
+    uv run python tools/drop_categories.py
+    uv run python tools/drop_categories.py --by-bot
+    uv run python tools/drop_categories.py --json
 
 Exits non-zero when a category is unclassified, so it can be used as a check.
 """

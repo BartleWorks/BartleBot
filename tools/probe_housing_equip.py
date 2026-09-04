@@ -53,8 +53,8 @@ Item_1 is still the same castle when it is put back.
 
 HOW TO RUN
     1. Log a wizard in that HAS at least one castle. Only one client is inspected.
-    2. poetry run python tools/probe_housing_equip.py                 # read-only
-       poetry run python tools/probe_housing_equip.py --toggle        # equip/unequip cycle
+    2. uv run python tools/probe_housing_equip.py                 # read-only
+       uv run python tools/probe_housing_equip.py --toggle        # equip/unequip cycle
     3. Paste the report back.
 
     Run it on a wizard with no castle equipped too — that is the case the whole probe

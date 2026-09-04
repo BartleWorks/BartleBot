@@ -13,8 +13,8 @@ from the editor does not reorder the file.
 
 Run from the project root. Reports only by default; pass ``--apply`` to write:
 
-    poetry run python scripts/migrate_bot_tags.py
-    poetry run python scripts/migrate_bot_tags.py --apply
+    uv run python scripts/migrate_bot_tags.py
+    uv run python scripts/migrate_bot_tags.py --apply
 
 Idempotent: a second run is a clean no-op.
 """
