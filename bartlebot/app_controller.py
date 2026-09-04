@@ -78,6 +78,11 @@ class AppController(QObject):
         # Same reason: in-flight client close sequences, one per crashed client.
         self._close_tasks: set[asyncio.Task] = set()
 
+        # Quit gate state. The close event is refused while clients are being released,
+        # and accepted once they are — see _confirm_shutdown.
+        self._shutdown_task: asyncio.Task | None = None
+        self._clients_released: bool = False
+
         # Auto-save state
         self._has_unsaved_changes: bool = False
         self._auto_save_timer = QTimer(self)
@@ -213,6 +218,10 @@ class AppController(QObject):
             lambda msg: QMessageBox.critical(self._window, "Client Recovery Failed", msg)
         )
 
+        # Quit gate: the window asks before it closes, because closing it destroys every
+        # embedded game window (#155).
+        w.set_shutdown_handler(self._confirm_shutdown)
+
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
         w.settings_applied.connect(self._reconfigure_autosave_timer)
         w.settings_applied.connect(w.right_sidebar.log_panel.apply_settings)
@@ -232,6 +241,10 @@ class AppController(QObject):
         # The canvas is never closed: Qt delivers QCloseEvent to the window being
         # closed, not to its children, so its own closeEvent never fires in the app.
         self._app.aboutToQuit.connect(self._window.bot_canvas.prepare_for_shutdown)
+        # Last line of defence for a quit that never reached closeEvent (a session logout,
+        # an app.quit() from elsewhere): releasing the windows is synchronous, so it still
+        # works here, where there is no loop left to await an unhook on.
+        self._app.aboutToQuit.connect(self._window.game_view.unembed_all)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 
@@ -241,6 +254,85 @@ class AppController(QObject):
             self._window.left_sidebar.combat_tab.flush_pending_save()
         except Exception:
             logger.exception("Failed to flush pending combat edits on quit")
+
+    # ------------------------------------------------------------------
+    # Shutdown
+    # ------------------------------------------------------------------
+
+    def _confirm_shutdown(self) -> bool:
+        """The window's quit gate. True lets this close through, False refuses it.
+
+        Quitting with clients attached is destructive twice over: the embedded game
+        windows are Win32 children of the Qt window and die with it, and the WizWalker
+        hooks are never released, so a surviving client cannot be hooked again until it
+        is relaunched (#155). Both are fixed by unhooking first — which is async, and
+        cannot run from ``aboutToQuit`` — so the close is refused here, the release runs
+        as a task, and the task closes the window again when it lands.
+        """
+        if self._clients_released:
+            return True
+        if self._shutdown_task is not None:
+            return False  # already releasing; the task will close the window
+        hooked = len(self._client_manager.clients)
+        unhooked = len(self._client_manager.unhooked_clients)
+        if not hooked and not unhooked:
+            return True
+        close_windows = self._ask_shutdown_choice(hooked + unhooked)
+        if close_windows is None:
+            return False
+        # Safe from the Python 3.13 re-entrancy trap: the dialog above ran in this Qt
+        # slot, before any task existed.
+        self._shutdown_task = asyncio.ensure_future(self._release_clients(close_windows=close_windows))
+        return False
+
+    def _ask_shutdown_choice(self, total: int) -> bool | None:
+        """Ask what to do with the open game windows. True closes them, None cancels."""
+        subject = "One Wizard101 window is" if total == 1 else f"{total} Wizard101 windows are"
+        it = "it" if total == 1 else "them"
+        box = QMessageBox(self._window)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle("Quit BartleBot")
+        box.setText(f"{subject} still open — close {it} too, or leave {it} running?")
+        keep_btn = box.addButton("Close BartleBot only", QMessageBox.ButtonRole.AcceptRole)
+        close_btn = box.addButton("Close BartleBot and Wizard101", QMessageBox.ButtonRole.DestructiveRole)
+        box.addButton(QMessageBox.StandardButton.Cancel)
+        box.setDefaultButton(keep_btn)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked is close_btn:
+            return True
+        if clicked is keep_btn:
+            return False
+        return None
+
+    async def _release_clients(self, *, close_windows: bool) -> None:
+        """Unhook (and optionally close) every client, then let the window close.
+
+        A running bot is stopped rather than waited for: its nodes are about to lose the
+        hooks they read through either way, and a node mid-timeout would hold the quit
+        for a minute.
+        """
+        logger.info("Quitting — releasing clients (close_windows=%s)", close_windows)
+        self._stop_bot()
+        QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+        try:
+            survivors = await self._client_manager.shutdown(close_windows=close_windows)
+            if survivors:
+                logger.warning(
+                    "%d game window(s) survived the close sequence: %s — they are unhooked "
+                    "and have to be closed by hand",
+                    len(survivors),
+                    ", ".join(str(h) for h in survivors),
+                )
+        except Exception:
+            logger.exception("Error while releasing clients on quit")
+        finally:
+            QApplication.restoreOverrideCursor()
+            self._shutdown_task = None
+            self._clients_released = True
+            # Deferred so the close runs from Qt's loop rather than from inside this
+            # task, per the re-entrancy rule in bartlebot/gui/CLAUDE.md.
+            QTimer.singleShot(0, self._window.close)
 
     # ------------------------------------------------------------------
     # File operations
