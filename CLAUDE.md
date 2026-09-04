@@ -455,6 +455,14 @@ already has.
   reset falls back to. That tooltip is the mitigation for storing overrides as
   bare values: an author who later improves a declaration is outranked
   silently, so the one-way door has to be visibly openable.
+
+  **There is one vocabulary for the four levels, and it is
+  `bot_options.SOURCE_*`** — `Your value` / `Bot default` / `App settings` /
+  `Default`, listed in `SOURCE_LEVELS`. `OptionResolution.source` *is* the
+  caption: there is no caption map, because there were two sets of strings for
+  the same four levels and they drifted, so the log said "from the app setting"
+  under a row reading "App settings". The Reset tooltip lowercases the one word
+  it shares with the column — a caption is a label, a tooltip is a sentence.
 - **Setting a value back to the resolved one drops the override.** Reverting by
   hand and pressing Reset are the same act, so they have to leave the same state
   behind — a row marked as changed while holding the value it would have had

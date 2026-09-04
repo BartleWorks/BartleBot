@@ -22,6 +22,7 @@ import sys
 import pytest
 from PyQt6.QtWidgets import QApplication
 
+from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
@@ -83,7 +84,7 @@ def test_the_app_setting_answers_until_a_bot_needs_its_own(qapp, settings):
     section = _section(settings, _config())
 
     assert section.option_widgets[_OPTION].get_value() == _NAME
-    assert section.resolution_for(_OPTION).source == "the app setting"
+    assert section.resolution_for(_OPTION).source == bot_options.SOURCE_APP_SETTING
 
 
 def test_editing_it_writes_an_override_and_never_the_bot_file(qapp, settings):

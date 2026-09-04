@@ -195,7 +195,7 @@ class BotMachine:
         # node, and a line each would be most of the session log.
         if name not in self._logged_option_sources:
             self._logged_option_sources.add(name)
-            self._log_machine(f"Option {name!r} = {resolution.value!r}, from {resolution.source}")
+            self._log_machine(f"Option {name!r} = {resolution.value!r} ({resolution.source})")
         return resolution.value
 
     def _option_specs_for_bot(self):

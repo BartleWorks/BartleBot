@@ -82,15 +82,11 @@ logger = logging.getLogger(__name__)
 
 _PLACEHOLDER = "—"
 
-# What to print under a row, naming the level that answered.  Every level has an
-# entry, including the user's own: a caption that appears and disappears would
-# move every row beneath it each time a value was typed.
-_SOURCE_CAPTION: dict[str, str] = {
-    bot_options.SOURCE_OVERRIDE: "Your value",
-    bot_options.SOURCE_BOT_FILE: "Bot default",
-    bot_options.SOURCE_APP_SETTING: "App settings",
-    bot_options.SOURCE_NODE_DEFAULT: "Default",
-}
+# There is no caption map any more: ``OptionResolution.source`` *is* the caption.
+# The two used to be separate strings for the same four levels, which is how the
+# log came to say "the app setting" under a row reading "App settings" -- one value
+# with two names.  Every level still has a caption, including the user's own: one
+# that appeared and disappeared would move every row beneath it as a value was typed.
 
 #: Pixel size of the source caption.  Set on the *font* rather than in the style
 #: sheet, because a style sheet's ``font-size`` never reaches ``QWidget.font()`` and
@@ -132,7 +128,7 @@ class _SourceCaption(ThemedTextLabel):
         font.setPixelSize(_CAPTION_PX)
         self.setFont(font)
         metrics = QFontMetrics(font)
-        self.setMinimumWidth(max(metrics.horizontalAdvance(text) for text in _SOURCE_CAPTION.values()))
+        self.setMinimumWidth(max(metrics.horizontalAdvance(text) for text in bot_options.SOURCE_LEVELS))
         super().apply_theme_styles()
 
 
@@ -494,7 +490,7 @@ class SetupSection(SidebarSection):
         chrome.revert_btn.setToolTip(
             self._reset_tooltip(name) if overridden else "Already the value this option resolves to"
         )
-        chrome.caption.setText(_SOURCE_CAPTION.get(resolution.source, ""))
+        chrome.caption.setText(resolution.source)
 
     def _fallback_for(self, name: str) -> bot_options.OptionResolution | None:
         """What *name* would resolve to with the user's override taken away.
@@ -529,12 +525,13 @@ class SetupSection(SidebarSection):
         The level is named in running prose rather than parenthesised as a
         capitalised noun phrase -- "Reset to 3.0 - app settings", not
         "Reset to 3.0 (App settings)".  The captions are labels on a column and are
-        capitalised for that; a tooltip is a sentence.
+        capitalised for that; a tooltip is a sentence, so it lowercases the one it
+        shares with the column.
         """
         fallback = self._fallback_for(name)
         if fallback is None:
             return "Reset to the value this bot recommends"
-        level = _SOURCE_CAPTION.get(fallback.source, fallback.source).lower()
+        level = fallback.source.lower()
         return f"Reset to {fallback.value!r} \u2014 {level}"
 
     # ------------------------------------------------------------------
