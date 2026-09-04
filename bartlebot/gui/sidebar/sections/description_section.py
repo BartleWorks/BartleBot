@@ -11,11 +11,18 @@ Two things fall out of that:
   is authorial; the same split that puts declarations in Options puts the writable
   copy there (#180).  The read-only copy is not a lesser variant of the editor — it
   is a wrapping label, so a long block is read in full rather than through a
-  three-line viewport.
+  capped viewport.
 - **It collapses.**  A header the user can fold is what makes a long block
   affordable above a surface they came to the tab to use.
+- **The editor is as tall as its text**, between two and eight lines
+  (``GrowingTextEdit``).  A fixed three-line box was both halves of one bug: at the
+  300px default sidebar three lines is the *median* of the shipped library, so 47%
+  of bots scrolled a viewport while the other half held blank space above the
+  options they had come to edit.  Eight lines fits 94% of them; the three gauntlets
+  whose ``REQUIREMENTS`` blocks run to 20 lines still scroll here, which is the same
+  split as ever — the wrapping label above Setup is where a long block is *read*.
 
-Writing back is guarded by ``_suppress``: ``QPlainTextEdit.setPlainText`` emits
+Writing back is guarded by ``_suppress``: ``setPlainText`` emits
 ``textChanged`` like any other edit, so refreshing from a freshly loaded config
 would otherwise mark the bot dirty the moment it opened.
 """
@@ -25,11 +32,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QPlainTextEdit, QVBoxLayout
+from PyQt6.QtGui import QFont
+from PyQt6.QtWidgets import QVBoxLayout
 
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 if TYPE_CHECKING:
@@ -37,12 +46,24 @@ if TYPE_CHECKING:
 
 NO_DESCRIPTION = "This bot has no description."
 
-_PROMPT = "What this bot does, and anything the user has to set up before running it."
+# One line's worth at the 300px default sidebar, because Qt draws placeholder text
+# as a single unwrapped line and clips the rest: a prompt that says more than this
+# says less.  The full version of it is the section's tooltip.
+_PROMPT = "What this bot does, and any setup it needs."
 
-# Three lines plus the frame — the height the description editor had in the old Bot
-# Info section.  Longer text scrolls; the read-only copy above Setup is where a
-# REQUIREMENTS block is read in full.
-_EDIT_LINES = 3
+_TOOLTIP = "What this bot does, and anything the user has to set up before running it."
+
+# Measured over the 80 shipped bots at the 300px default sidebar: 8% are two lines
+# or fewer, 90% are six or fewer, 94% are eight or fewer, and the tail is three
+# 20-line gauntlets.  Two is a floor that barely ever binds — and the one that a
+# taller floor would cost is the *empty* editor, which is where a new bot's author
+# starts; eight is where the distribution stops and the outliers begin.
+_MIN_LINES = 2
+_MAX_LINES = 8
+
+# On the widget, not in the stylesheet: a stylesheet ``font-size`` never reaches
+# ``QWidget.font()``, and the editor measures its own line height from that font.
+_FONT_PX = 11
 
 
 class DescriptionSection(ThemedMixin, SidebarSection):
@@ -59,12 +80,15 @@ class DescriptionSection(ThemedMixin, SidebarSection):
         vbox.setSpacing(0)
 
         self._label: ThemedTextLabel | None = None
-        self._edit: QPlainTextEdit | None = None
+        self._edit: GrowingTextEdit | None = None
 
         if editable:
-            self._edit = QPlainTextEdit()
+            self._edit = GrowingTextEdit(min_lines=_MIN_LINES, max_lines=_MAX_LINES)
+            font = QFont(self._edit.font())
+            font.setPixelSize(_FONT_PX)
+            self._edit.setFont(font)
             self._edit.setPlaceholderText(_PROMPT)
-            self._edit.setFixedHeight(18 * _EDIT_LINES + 10)
+            self._edit.setToolTip(_TOOLTIP)
             self._edit.textChanged.connect(self._on_text_changed)
             vbox.addWidget(self._edit)
         else:
@@ -110,7 +134,7 @@ class DescriptionSection(ThemedMixin, SidebarSection):
         return self._edit is not None
 
     @property
-    def editor(self) -> QPlainTextEdit | None:
+    def editor(self) -> GrowingTextEdit | None:
         """The text edit, or ``None`` on the read-only copy."""
         return self._edit
 
@@ -143,7 +167,9 @@ class DescriptionSection(ThemedMixin, SidebarSection):
 
     def apply_theme_styles(self) -> None:
         if self._edit is not None:
+            # No ``font-size`` here — it is set on the widget, which is the only
+            # place the editor's own line-height measurement can read it from.
             self._edit.setStyleSheet(
-                f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-                f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+                f"QTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+                f"border-radius: 4px; color: {THEME.text}; padding: 3px; }}"
             )
