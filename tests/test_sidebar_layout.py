@@ -182,11 +182,74 @@ def test_editing_the_description_dirties_the_bot(sidebar):
     description is authorial, so it must."""
     sidebar.set_config(_config())
     seen = []
-    sidebar.config_changed.connect(lambda: seen.append(True))
+    sidebar.metadata_changed.connect(lambda: seen.append(True))
 
     sidebar.options_description.set_text("Farms Jade Oni.")
 
     assert seen
+
+
+def test_typing_a_description_does_not_rebuild_the_option_surfaces(sidebar):
+    """``config_changed``'s handler ends in ``refresh_options``, which recomposes
+    and rebuilds every row on both option surfaces — around 80ms on a large bot.
+
+    Routing the description through it paid that per *character* typed, which made
+    the field unusable at roughly 6fps and degrading.  Nothing composes an option
+    from prose, so a description edit goes out as ``metadata_changed`` instead.
+    """
+    sidebar.set_config(_config())
+    rebuilds = []
+    sidebar.config_changed.connect(lambda: rebuilds.append(True))
+
+    sidebar.options_description.set_text("Farms Jade Oni.")
+
+    assert rebuilds == []
+
+
+def test_a_short_description_does_not_reserve_room_for_a_long_one(sidebar):
+    """The editor is as tall as its text, floored at two lines.
+
+    A fixed three-line box was the median of the shipped library, so it was both
+    too small for half of it and too large for the rest.
+    """
+    editor = sidebar.options_description.editor
+    assert editor is not None
+    sidebar.set_config(_config(description="Endlessly farms Foulgaze in Olde Town."))
+
+    assert editor.preferred_height() == editor._line_height(2)  # noqa: SLF001
+
+
+def test_a_requirements_block_makes_the_editor_grow(sidebar):
+    """The four bots whose descriptions say "change the client resolution to..."
+    are the reason the description is here at all rather than in the header."""
+    editor = sidebar.options_description.editor
+    assert editor is not None
+    short = _config(description="Endlessly farms the Spiral Cup Gauntlet.")
+    sidebar.set_config(short)
+    small = editor.preferred_height()
+
+    sidebar.set_config(
+        _config(
+            description=(
+                "Endlessly farms the Spiral Cup Gauntlet.\n\n"
+                "REQUIREMENTS: Set Friend Name in Setup to the friend who owns the "
+                "gauntlet. Your players enter by porting to them rather than by "
+                "walking in, so that friend must be standing on the entrance sigil."
+            )
+        )
+    )
+
+    assert editor.preferred_height() > small
+
+
+def test_the_editor_stops_growing_before_it_takes_the_tab(sidebar):
+    """Three gauntlets run to 20 lines at the default sidebar width.  They scroll
+    here; the wrapping label above Setup is where a long block is read in full."""
+    editor = sidebar.options_description.editor
+    assert editor is not None
+    sidebar.set_config(_config(description="\n".join(f"line {i}" for i in range(40))))
+
+    assert editor.preferred_height() == editor._line_height(8)  # noqa: SLF001
 
 
 def test_the_read_only_copy_follows_the_editor(sidebar):

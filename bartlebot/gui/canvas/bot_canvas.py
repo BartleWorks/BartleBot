@@ -1815,6 +1815,10 @@ class BotCanvas(QWidget):
         """Propagate recovery state change to the canvas node indicator."""
         self._scene.refresh_recovery(recovery_state_id)
 
+    def refresh_edge_flags(self) -> None:
+        """Re-derive the dotted-pen indicator on every edge from the config."""
+        self._scene.refresh_all_edge_flags()
+
     def _on_scene_changed(self) -> None:
         self._refresh_node_labels()
         self._refresh_node_returns()

@@ -1,7 +1,7 @@
 {
   "id": "18a604ca-c49e-4afe-89d2-931a93eca208",
   "name": "Spiral Cup Gauntlet",
-  "description": "Endlessly farms the Spiral Cup Gauntlet.\n\nREQUIREMENTS: Change the client name in \"Teleport to friend\" to your friend. Must be standing on the gauntlet entrance sigil.\n\nDouble-click to teleport to friend must be disabled.",
+  "description": "Endlessly farms the Spiral Cup Gauntlet.\n\nREQUIREMENTS: Set Friend Name in Setup to the friend who owns the gauntlet. Your players enter by porting to them rather than by walking in, so that friend must be standing on the gauntlet entrance sigil, and \"Double-click to teleport to friend\" must be turned off in the game's options.",
   "version": "2.0",
   "clients": "all",
   "initial": "state_1",

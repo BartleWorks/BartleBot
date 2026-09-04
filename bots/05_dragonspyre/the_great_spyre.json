@@ -26,15 +26,6 @@
   ],
   "options": [
     {
-      "name": "Level Scaling Players",
-      "type": "player_list",
-      "default": [
-        2,
-        3,
-        4
-      ]
-    },
-    {
       "name": "Defeat Gurtok Firebender",
       "type": "bool",
       "default": false,

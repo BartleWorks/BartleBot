@@ -32,6 +32,7 @@ from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
 from bartlebot.gui.canvas.drop_keep_list import _COL_ITEM, _COL_KEEP, DropKeepListWidget
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.settings_manager import SettingsManager
 
@@ -358,8 +359,9 @@ def test_both_switches_are_offered_at_once(qapp, settings):
     """A single toggle names whichever half it last set, not what the rows are doing."""
     section = _section(settings, _config())
 
-    assert section._show_all.text() == "Show descriptions"
-    assert section._hide_all.text() == "Hide descriptions"
+    labels = [b.text() for b in section.findChildren(LinkButton)]
+
+    assert labels == ["Show descriptions", "Hide descriptions"]
 
 
 def test_a_switch_still_acts_on_rows_the_help_button_moved(qapp, settings):

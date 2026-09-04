@@ -14,16 +14,6 @@
   ],
   "options": [
     {
-      "name": "Level Scaling Players",
-      "type": "player_list",
-      "default": [
-        1,
-        2,
-        3,
-        4
-      ]
-    },
-    {
       "name": "Quicksell",
       "type": "bool",
       "default": true,

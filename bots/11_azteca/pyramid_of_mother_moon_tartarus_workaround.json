@@ -665,17 +665,7 @@
     "Spellements",
     "Dungeon"
   ],
-  "options": [
-    {
-      "name": "Level Scaling Players",
-      "type": "player_list",
-      "default": [
-        1,
-        2,
-        3
-      ]
-    }
-  ],
+  "options": [],
   "states": [
     {
       "id": "state_1",

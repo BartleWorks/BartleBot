@@ -191,6 +191,30 @@ on `aboutToHide`. The swap cannot happen at construction: a menu built in a widg
 
 A menu with no parent, or one parented directly to a window or dialog, is already fine.
 
+### Never show a widget before it has a parent
+
+`setVisible(True)` — or `show()` — on a widget with no parent makes that widget a
+**top-level window**. Qt maps it there and then, and unmaps it again the moment the
+next `addWidget` reparents it, so a list of rows assembled this way flashes one real
+frame per row on screen. It is invisible in a test that only inspects the finished
+tree, because by then nothing is a window any more.
+
+Build first, then set visibility:
+
+```python
+row = build_gutter_row(bar, edit_btn, help_btn, body)   # this is what parents them
+edit_btn.setVisible(self._editable)                     # only now
+```
+
+`setVisible(False)` is safe, and so is showing a child of a hidden parent — only the
+parentless case opens a window. It bites hardest where a rebuild is on a hot path:
+one click of a check box in Edit mode mapped and unmapped **eight** windows on a
+shipped bot, because each row's description and Edit button were shown while still
+loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and the
+way it catches it is worth reusing — an event filter on the `QApplication` recording
+every `Show` delivered to a widget whose `parent()` is `None`.
+
+
 ### qasync + Python 3.13 task re-entrancy rule
 
 **Never call a blocking Qt method (e.g. `QDialog.exec()`, `QMessageBox.exec()`) from inside an `async` function that is running as an asyncio Task.**
@@ -391,6 +415,18 @@ mutually contradictory texts for the one setting.
   the editor reports it in the validation banner;
   `test_no_bot_guards_a_transition_on_an_option_nothing_declares` keeps the
   shipped library clean of them.
+- **A hand-added option must not borrow a name any NodeSpec uses.** Both
+  `compose_options` and `storable_options` treat every name in
+  `system_option_names()` as derived, wherever it is declared — so an author's own
+  option that happens to share a name with one some unrelated node requires is
+  filed as dead weight and dropped on the next save, silently, from the only copy.
+  Inherited from `_inject_required_options` (`docs/DESIGN_REVIEW.md`), but sharper
+  now the prune runs every save.
+  `test_no_bot_declares_an_option_borrowed_from_a_node_it_does_not_run` is the
+  guard; its two siblings —
+  `test_no_bot_stores_a_declaration_that_says_nothing` and
+  `test_no_bot_declares_an_option_nothing_reads` — catch a stale copy and a switch
+  wired to nothing.
 - **Editing a derived option in the Options surface materialises it into the
   file.** That surface edits *declarations*, and a declaration has to be in the
   file to exist; `OptionsSection._declaration_for` is where the transient
@@ -426,6 +462,13 @@ already has.
   author who later improved the declaration it happens to match.
   `values_agree` is the comparison, shared with the save-time prune, so `3` and
   `3.0` agree and `False` and `0` do not.
+- **A default edit goes out on `defaults_changed`, not `options_changed`.** The
+  latter's handler recomposes and rebuilds *both* surfaces, which destroys the
+  check box the click landed on and rebuilds it under the pointer — the same rule
+  the next bullet states for Setup, which Options was breaking. No name can change
+  on a default edit, so there is nothing on that surface to rebuild; it is routed
+  to `metadata_changed` (dirty the file, rebuild nothing) plus a Setup refresh,
+  because a declaration outranks the app setting Setup resolves through.
 - **No chrome appears or disappears with the override state, and a value edit
   refreshes one row rather than rebuilding the list.** Both are the same
   concern: a spin box whose row is rebuilt on `valueChanged` vanishes from under
@@ -446,7 +489,15 @@ already has.
   moves is below the button that moved it. `show_option_descriptions` is the
   switch for reading the whole tab at once -- a property of the reader, so it
   lives in `settings.json` and not in the bot.
-- **Every row's chrome lives in a fixed leading gutter, `[bar][revert][?]`.** It
+- **Every row's chrome lives in a fixed leading gutter, `[bar][action][?]`, on
+  both surfaces.** The pieces are shared — `gui/sidebar/option_gutter.py` holds
+  the bar, the `?`, the `Show/Hide descriptions` links and the row builder — so
+  the two tabs' columns land at the same x and a mode switch does not read as a
+  different row. Only the middle slot differs: Setup reverts a *value*, Options
+  edits a *declaration*. Options never paints its bar, because the bar and revert
+  are one affordance in Setup and a lone marker with no paired action would be a
+  fact to correlate rather than something to act on; the width is still reserved,
+  so the `?` columns line up and a meaning can be given to it later. It
   is the only placement that yields one column per button. Right-aligning the `?`
   gives *two* columns, because the head line's right edge sits at two different x
   values; a fixed-width name column fails on any long name, and on a bool row,
@@ -460,7 +511,23 @@ already has.
   blank left inset, and an icon-only revert being less discoverable than the word
   — mitigated by `_reset_tooltip` naming the value and level a click falls back
   to, and by tinting the icon `THEME.accent` only while it can act.
-  `test_the_gutter_buttons_line_up_across_every_shape_of_row` is the guard.
+  `test_the_gutter_buttons_line_up_across_every_shape_of_row` and
+  `test_the_gutter_slots_line_up_across_both_surfaces` are the guards.
+- **A rare button is an argument *for* the gutter, not against it.** Only 24 of
+  the shipped library's 152 Options rows carry an Edit button and 64 of 80 bots
+  carry none, so the slot is empty most of the time. Inline, a button on 16% of
+  rows makes 16% of rows a different shape; in a reserved column every row is the
+  same shape and the rare button appears where one is always looked for. Every
+  slot keeps its size when hidden (`keep_slot_when_hidden`) — a gutter that closes
+  up on the rows with nothing in them is not a column any more.
+- **Delete lives inside the Edit dialog, not in the gutter.** The far slot is the
+  irreversible one, and deleting an option is strictly worse than reverting a
+  value — it takes the declaration, both transition flag forms, and the user's
+  stored override. A 20px icon-only target a few pixels from the `?` was the wrong
+  home for that, so the row's one button leads to both outcomes and the dialog
+  gives Delete a labelled button, a confirmation and a Cancel. `_AddOptionDialog`
+  accepts on delete too, so callers read `was_deleted` before `get_option`: an
+  accepted dialog means the user *finished*, not that they saved.
 - **Revert is furthest from the text, `?` is nearest it.** Two small targets a few
   pixels apart, one meaning "explain this" and the other "discard what I typed",
   and reverting has no undo — on the keep list the loss is a hand-picked selection.
@@ -494,9 +561,18 @@ already has.
   (`parse_list_text` still reads a pasted CSV), and the value renders as
   `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
   `_VALUE_PARAM_KEY` changed.
-- **A derived option has no Edit or Delete button.** It is re-composed from its
-  NodeSpec on every load, so either edit would be undone by the round trip. Its
-  *default* is still the author's to change.
+- **A derived option has no Edit button, and so no Delete either.** It is
+  re-composed from its NodeSpec on every load, so either edit would be undone by
+  the round trip. Its *default* is still the author's to change, through the
+  control itself.
+- **Descriptions fold on both surfaces, at the base font, behind one remembered
+  switch.** Options used to show every description unconditionally and at 9px —
+  75% of base, where Windows subpixel antialiasing starts colouring the strokes —
+  while Setup showed the identical node-authored prose folded and at full size.
+  Two tabs disagreeing about the size of the same text reads as a disagreement
+  about what the text *is*. `show_option_descriptions` is the one setting behind
+  both, because folding the prose away is a property of the reader and should not
+  have to be done twice.
 - **An option may be required only when a param says so.** `BotOptionSpec.required_when`
   names a bool param on the same node; the option is composed only while that param is
   on. Challenge Mode is the case: a handful of dungeons offer one, and composing it
@@ -522,10 +598,14 @@ already has.
   *A node cannot pin a bot-wide option* removed, one level up. Ownership is a
   property of the *option*, not of its type — Safety Delay is an ordinary float —
   so the registry is by name, and it is deliberately narrow: `Sell Pets` stays
-  editable because a bot farming a pet has to be able to say so, and `Level
-  Scaling Players` because eleven shipped bots name which of *their* players visit
-  the station. Nothing prunes such a declaration on save: the resolution stays a
-  plain four levels, a hand-edited file is still honoured, and
+  editable because a bot farming a pet has to be able to say so, and the keep list
+  cannot spare an individual pet. `Level Scaling Players` is the near miss — eleven
+  bots declared it, which read as intent until the values were looked at, and six
+  were one `[2, 3, 4]` propagated by copy. Which of a user's wizards are
+  underlevelled is a fact about their team, so all eleven were dropped; the option
+  stays editable anyway, because a wrong answer there costs an elixir rather than
+  an item, a name, or a run. Nothing prunes such a declaration on save: the
+  resolution stays a plain four levels, a hand-edited file is still honoured, and
   `test_no_bot_declares_a_user_owned_option` is what keeps the library clean.
 - **Renaming an option is three fixups, not one.** The flat `flags` list, the
   `flag_groups` the edge editor actually writes — which take precedence at run
@@ -671,7 +751,10 @@ in this graph*:
 
 A bot option also reaches **every** node in the bot at once. That is not a detail:
 quicksell's flags were per-node, so `hall_of_heroes` needed two quicksell nodes and
-two mutually exclusive bool options to offer one choice between two keep lists.
+two mutually exclusive bool options to offer one choice between two keep lists. It
+is one node now, declaring `["Merciless"]`: the choice is a value the user edits,
+and `Enable Quicksell` already answers the third branch that skipped selling
+altogether.
 
 Three things that fall out of it:
 

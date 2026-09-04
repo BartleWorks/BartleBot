@@ -46,21 +46,25 @@ from typing import TYPE_CHECKING, Any
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QFontMetrics
 from PyQt6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot import bot_options
 from bartlebot.bot_options import UNSET, compose_options, is_set, values_agree
+from bartlebot.gui.sidebar.option_gutter import (
+    GUTTER_BTN_PX,
+    DescriptionSwitches,
+    HelpToggle,
+    OverrideBar,
+    build_gutter_row,
+    keep_slot_when_hidden,
+)
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.icon_button import ThemedIconButton
-from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.option_widgets import (
     TALL_TYPES,
     connect_widget,
@@ -77,14 +81,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _PLACEHOLDER = "—"
-_BAR_WIDTH_PX = 3
-
-# The leading gutter: [bar][revert][?], then the row's own content.  Both buttons
-# are 20px targets around 16px glyphs, and both are *always* present -- a slot that
-# collapses when a row has no description is a column that is not a column.
-_GUTTER_BTN_PX = 20
-_GUTTER_GAP_PX = 2
-_GUTTER_TO_BODY_PX = 5
 
 # What to print under a row, naming the level that answered.  Every level has an
 # entry, including the user's own: a caption that appears and disappears would
@@ -102,10 +98,6 @@ _SOURCE_CAPTION: dict[str, str] = {
 #: ``canvas/bot_header.py`` documents.
 _CAPTION_PX = 9
 
-# The separator between the two description switches, matched to ``LinkButton``'s
-# own default so the dot sits on the links' baseline rather than above it.
-_SWITCH_FONT_PX = 10
-
 
 def _ordered(options: list) -> list:
     """The composed options, with the table-shaped controls moved to the end.
@@ -116,67 +108,6 @@ def _ordered(options: list) -> list:
     rearrangement, and it depends on the control rather than on any option's name.
     """
     return [o for o in options if o.type not in TALL_TYPES] + [o for o in options if o.type in TALL_TYPES]
-
-
-class _OverrideBar(ThemedMixin, QFrame):
-    """The gutter marking a row the user has overridden.
-
-    Always present and always the same width: it changes *colour* rather than
-    appearing, so a row does not shift sideways the moment a value is typed.
-    """
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setFixedWidth(_BAR_WIDTH_PX)
-        self._active = False
-        self.refresh_theme_styles()
-
-    def set_active(self, active: bool) -> None:
-        if active == self._active:
-            return
-        self._active = active
-        self.refresh_theme_styles()
-
-    def apply_theme_styles(self) -> None:
-        colour = THEME.accent if self._active else "transparent"
-        self.setStyleSheet(f"background: {colour}; border: none;")
-
-
-class _HelpToggle(ThemedMixin, QPushButton):
-    """The ``?`` beside an option's name, folding its description in and out.
-
-    Descriptions are node-authored prose -- two or three lines each, and 41% of an
-    ordinary row's height with the control itself taking only 42%.  Every settings
-    surface that shows help inline keeps it to one line (Chrome, Windows, GitHub);
-    the ones whose prose is this long put it behind an affordance instead (Xcode's
-    Quick Help, Unreal's property tooltips).  This is that affordance, and it is a
-    *button* rather than a hover tooltip because the prose is load-bearing -- the
-    only thing that keeps a pet is a sentence in one of these.
-
-    It sits in the row's leading gutter, against the name it explains, and keeps
-    its slot on a row that has no description to show -- so the column stays a
-    column whatever mix of options a bot happens to declare.
-    """
-
-    _SIZE_PX = _GUTTER_BTN_PX
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__("?", parent)
-        self.setCheckable(True)
-        self.setFixedSize(self._SIZE_PX, self._SIZE_PX)
-        self.setToolTip("Show what this option does")
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.refresh_theme_styles()
-
-    def apply_theme_styles(self) -> None:
-        # The node help button in ``param_panel`` is the same affordance one panel
-        # over, so it is the same shape and the same accent, only smaller.
-        self.setStyleSheet(
-            f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 3px; color: {THEME.accent}; font-weight: bold; font-size: 11px; padding: 0; }}"
-            f"QPushButton:hover, QPushButton:checked {{ background: {THEME.accent}; color: #ffffff; }}"
-        )
 
 
 class _SourceCaption(ThemedTextLabel):
@@ -219,7 +150,7 @@ class _RevertButton(ThemedIconButton):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
             "revert",
-            size=_GUTTER_BTN_PX,
+            size=GUTTER_BTN_PX,
             icon_size=16,
             accent_when_enabled=True,
             parent=parent,
@@ -231,10 +162,10 @@ class _RowChrome:
     """The parts of one row that change when its override state does."""
 
     widget: QWidget
-    bar: _OverrideBar
+    bar: OverrideBar
     revert_btn: _RevertButton
     caption: _SourceCaption
-    help_btn: _HelpToggle
+    help_btn: HelpToggle
     description: QWidget | None = None
 
 
@@ -260,38 +191,8 @@ class SetupSection(SidebarSection):
         outer = QVBoxLayout()
         outer.setSpacing(4)
 
-        # Two commands for the reader who wants the whole tab as a document, rather
-        # than a row at a time.  The default is off, and remembered: it is a property
-        # of the person reading, not of the bot.
-        #
-        # Links rather than a check box, and at the top of the *body* rather than on
-        # the section header.  A tick box captioned "Show descriptions" sitting above
-        # a list of options reads as the first option; a link whose text names what a
-        # click will do states its effect without a state to be read first.  The
-        # header is a click-through row that toggles the section, so a control inside
-        # it would be a hit-testing problem for no gain -- and it would hide with the
-        # section it belongs to.
-        #
-        # Both are present at once rather than one link that flips its caption,
-        # because the per-row ``?`` moves rows independently: after one of those the
-        # surface is *mixed*, and a single toggle then names whichever half it last
-        # set rather than what the rows are actually doing -- so the one click the
-        # reader wants ("just fold them all") can be the click that unfolds them all.
-        # Two unconditional commands say what they do whatever state the rows are in.
-        switches = QHBoxLayout()
-        switches.setContentsMargins(0, 0, 0, 0)
-        switches.setSpacing(0)
-        self._show_all = LinkButton("Show descriptions")
-        self._show_all.setToolTip("Show every option's description, instead of one at a time")
-        self._show_all.clicked.connect(lambda: self._on_show_all_toggled(True))
-        self._hide_all = LinkButton("Hide descriptions")
-        self._hide_all.setToolTip("Fold every option's description away")
-        self._hide_all.clicked.connect(lambda: self._on_show_all_toggled(False))
-        switches.addWidget(self._show_all, 0)
-        switches.addWidget(ThemedTextLabel(" · ", css=f"font-size: {_SWITCH_FONT_PX}px;"), 0)
-        switches.addWidget(self._hide_all, 0)
-        switches.addStretch(1)
-        outer.addLayout(switches)
+        self._switches = DescriptionSwitches(self._on_show_all_toggled)
+        outer.addWidget(self._switches)
 
         self._rows_layout = QVBoxLayout()
         self._rows_layout.setSpacing(6)
@@ -419,7 +320,7 @@ class SetupSection(SidebarSection):
 
         options = _ordered(compose_options(self._config) if self._config is not None else [])
         self._composed = {opt.name: opt for opt in options}
-        self._show_all.setVisible(any(opt.description for opt in options))
+        self._switches.setVisible(any(opt.description for opt in options))
         if not options:
             self._empty_lbl.show()
             return
@@ -442,7 +343,7 @@ class SetupSection(SidebarSection):
         a bool row, which has no separate label at all.  In the gutter both buttons
         top-align with the head line whether the row is 20px tall or 240.
 
-        Revert sits against the ``_OverrideBar`` it agrees with, ``?`` against the
+        Revert sits against the ``OverrideBar`` it agrees with, ``?`` against the
         name it explains -- so the destructive button is the one furthest from the
         text being read.
 
@@ -508,41 +409,29 @@ class SetupSection(SidebarSection):
             # of prose on the surface, and it is only on screen when asked for.
             description = ThemedTextLabel(opt.description)
             description.setWordWrap(True)
-            description.setVisible(self._show_descriptions)
             body_layout.addWidget(description)
+            # Shown only once it has a parent: ``setVisible(True)`` on a parentless
+            # widget makes it a top-level window, which Qt maps and unmaps as the
+            # row is assembled -- a frame flashing on screen once per row.
+            description.setVisible(self._show_descriptions)
 
         connect_widget(widget, lambda new_value, name=opt.name: self._on_value_changed(name, new_value))
         self._option_widgets[opt.name] = widget
 
         # The bar is a sibling of the body, not a border on it: a stylesheet border
         # set on the row would be inherited by every control inside it.
-        bar = _OverrideBar()
+        bar = OverrideBar()
         revert_btn = _RevertButton()
         revert_btn.clicked.connect(lambda _checked, name=opt.name: self._on_reset(name))
 
-        help_btn = _HelpToggle()
+        help_btn = HelpToggle()
         help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
+
+        outer = build_gutter_row(bar, revert_btn, help_btn, body)
         if description is None:
-            # Hidden, but still taking its space: a gutter that closes up on the rows
-            # with nothing to explain is not a column any more.
-            policy = help_btn.sizePolicy()
-            policy.setRetainSizeWhenHidden(True)
-            help_btn.setSizePolicy(policy)
-            help_btn.setVisible(False)
+            keep_slot_when_hidden(help_btn)
         else:
             help_btn.setChecked(self._show_descriptions)
-
-        outer = QWidget()
-        outer_layout = QHBoxLayout(outer)
-        outer_layout.setContentsMargins(0, 0, 0, 0)
-        outer_layout.setSpacing(0)
-        top = Qt.AlignmentFlag.AlignTop
-        outer_layout.addWidget(bar)
-        outer_layout.addSpacing(_GUTTER_GAP_PX)
-        outer_layout.addWidget(revert_btn, 0, top)
-        outer_layout.addWidget(help_btn, 0, top)
-        outer_layout.addSpacing(_GUTTER_TO_BODY_PX)
-        outer_layout.addWidget(body, 1)
 
         self._chrome[opt.name] = _RowChrome(
             widget=widget,

@@ -372,15 +372,6 @@
   ],
   "options": [
     {
-      "name": "Level Scaling Players",
-      "type": "player_list",
-      "default": [
-        2,
-        3,
-        4
-      ]
-    },
-    {
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [

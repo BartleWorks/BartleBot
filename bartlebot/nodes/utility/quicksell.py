@@ -39,7 +39,10 @@ logger = logging.getLogger(__name__)
 #
 # There was one bot in the library with two quicksell nodes, and it existed only to
 # offer a choice between two keep lists.  Under bot options that choice is a value
-# the user edits directly, so the reason for a second node is gone.
+# the user edits directly, so the reason for a second node is gone, and
+# ``hall_of_heroes`` is now one node declaring ``["Merciless"]`` -- never sell what
+# the author flagged as valuable, since the user can clear the list in one click
+# whereas the reverse loses gear.
 
 #: The option whose answer decides whether this node does anything at all.
 OPTION_ENABLED = "Enable Quicksell"

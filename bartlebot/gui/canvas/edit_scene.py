@@ -522,6 +522,22 @@ class EditScene(QGraphicsScene):
                 edge.set_has_flags(has_flags)
                 break
 
+    def refresh_all_edge_flags(self) -> None:
+        """Re-derive every edge's dotted-pen indicator from the config.
+
+        Deleting an option strips its conditions off the transitions that used it,
+        which can leave an edge unconditional -- but the edge item is a snapshot,
+        and nothing on the Options surface can reach the canvas to say so.  A whole
+        sweep rather than a per-transition call for the same reason: the deletion
+        can touch any number of edges, and ``set_has_flags`` is a no-op unless the
+        flag actually moved.
+        """
+        if self._config is None:
+            return
+        by_key = {(t.source, t.when, t.dest): bool(t.flags or t.flag_groups) for t in self._config.transitions}
+        for s, w, d, edge in self._edge_items:
+            edge.set_has_flags(by_key.get((s, w, d), False))
+
     def refresh_terminal(self) -> None:
         """Update the terminal-state badge based on current transitions."""
         if self._config is None:
