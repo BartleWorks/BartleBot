@@ -120,11 +120,16 @@ def test_is_recording_false_when_no_task():
 
 
 def test_is_recording_false_when_task_done():
-    loop = asyncio.get_event_loop()
-    task = loop.create_task(asyncio.sleep(0))
-    recording._active_task = task
-    loop.run_until_complete(asyncio.sleep(0))  # let task complete
-    assert is_recording() is False
+    # An explicit loop, not asyncio.get_event_loop(): there is no ambient loop
+    # in a sync test, and relying on one is deprecated.
+    loop = asyncio.new_event_loop()
+    try:
+        task = loop.create_task(asyncio.sleep(0))
+        recording._active_task = task
+        loop.run_until_complete(asyncio.sleep(0))  # let task complete
+        assert is_recording() is False
+    finally:
+        loop.close()
 
 
 async def test_is_recording_true_when_task_running():
