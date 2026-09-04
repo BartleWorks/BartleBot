@@ -68,7 +68,7 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Initiates and completes a combat encounter. Teleports all clients to the "
+        "Initiates and completes a combat encounter. Teleports all players to the "
         "target enemy, waits for them to enter battle, and then runs SprintyCombat "
         "until the duel ends. Detects item drops via chat during the encounter."
     ),

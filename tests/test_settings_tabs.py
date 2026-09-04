@@ -174,3 +174,31 @@ def test_every_default_is_declared_on_its_model():
     for section, model in _SECTION_MODELS.items():
         undeclared = set(_DEFAULTS[section]) - set(model.model_fields)
         assert not undeclared, f"{section}: {sorted(undeclared)} in _DEFAULTS but not on {model.__name__}"
+
+
+# ---------------------------------------------------------------------------
+# #175
+# ---------------------------------------------------------------------------
+
+
+def test_no_node_calls_a_player_a_client():
+    """The word the user reads for one of their wizards is "player" (#175).
+
+    "Client" is the app's word for the process: a window at character select is a
+    client and not a player, which is exactly the distinction ``tile_slots.py``
+    exists to keep. Using it for a wizard in node help made three ``player_list``
+    params read "…Clients" over check boxes captioned "Player 1…4".
+
+    Param *keys* are excluded: they are stored in every bot file and are never
+    shown.
+    """
+    offenders = []
+    for node_type, spec in NODE_SPECS.items():
+        texts = [spec.description, spec.usage_notes, spec.safety_warning or ""]
+        texts += [t for p in spec.params for t in (p.label, p.help, p.default_hint, p.placeholder)]
+        texts += [r.description for r in spec.returns]
+        texts += [o.description or "" for o in spec.required_bot_options]
+        for text in texts:
+            if "client" in text.lower():
+                offenders.append(f"{node_type}: {text[:70]}…")
+    assert not offenders, "node text saying 'client' where it means 'player': " + "; ".join(offenders)

@@ -13,7 +13,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Collect Health Wisps If Below",
         help=(
             "Health threshold (0.0–1.0). Teleport to the closest health wisp while "
-            "the client's health ratio is below this value. Set to 0.0 to skip "
+            "the player's health ratio is below this value. Set to 0.0 to skip "
             "health wisp collection entirely."
         ),
         default=1.0,
@@ -25,7 +25,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Collect Mana Wisps If Below",
         help=(
             "Mana threshold (0.0–1.0). Teleport to the closest mana wisp while "
-            "the client's mana ratio is below this value. Set to 0.0 to skip "
+            "the player's mana ratio is below this value. Set to 0.0 to skip "
             "mana wisp collection entirely."
         ),
         default=1.0,
@@ -48,26 +48,26 @@ PARAM_SCHEMA: list[ParamField] = [
         type="float",
         label="Fail If Health Still Below",
         help=(
-            "Health threshold (0.0–1.0). After wisp collection, if any client's "
+            "Health threshold (0.0–1.0). After wisp collection, if any player's "
             "health ratio is still below this value, the node returns FAILURE. "
             "Useful for routing to a potion node when wisps are insufficient. "
             "Set to 0.0 to never fail on health."
         ),
         default=0.5,
-        default_hint="FAILURE if any client is still below 50% health",
+        default_hint="FAILURE if any player is still below 50% health",
     ),
     ParamField(
         key="fail_if_mana_below",
         type="float",
         label="Fail If Mana Still Below",
         help=(
-            "Mana threshold (0.0–1.0). After wisp collection, if any client's "
+            "Mana threshold (0.0–1.0). After wisp collection, if any player's "
             "mana ratio is still below this value, the node returns FAILURE. "
             "Useful for routing to a potion node when wisps are insufficient. "
             "Set to 0.0 to never fail on mana."
         ),
         default=0.5,
-        default_hint="FAILURE if any client is still below 50% mana",
+        default_hint="FAILURE if any player is still below 50% mana",
     ),
     ParamField(
         key="only_safe",
@@ -85,11 +85,11 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Collects health and mana wisps after combat if clients are below specified "
-        "thresholds. Teleports each client to the nearest wisp repeatedly until the "
+        "Collects health and mana wisps after combat if players are below specified "
+        "thresholds. Teleports each player to the nearest wisp repeatedly until the "
         "threshold is met, no more wisps are in range, or the per-resource timeout expires. "
         "By default, skips wisps within 700 units of an enemy to avoid re-entering combat. "
-        "Returns FAILURE if any client is still below the configured fail thresholds after "
+        "Returns FAILURE if any player is still below the configured fail thresholds after "
         "collection — useful for routing to a potion fallback node."
     ),
     params=PARAM_SCHEMA,

@@ -24,15 +24,15 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="click_clients",
         type="player_list",
-        label="Click Clients",
+        label="Click Players",
         help=(
-            "Which players click the element. Leave all unchecked to click on every client, "
+            "Which players click the element. Leave all unchecked to click on every player, "
             "which is what this node has always done. Select a subset when the UI is only open "
-            "on some clients — a menu opened by interact_menu with a narrower Interact Clients "
+            "on some players — a menu opened by interact_menu with a narrower Interact Players "
             "is not present on the others, and the path matches nothing there."
         ),
         default=[],
-        default_hint="all clients",
+        default_hint="all players",
     ),
     ParamField(
         key="match_text",
@@ -133,7 +133,7 @@ NODE_SPEC = NodeSpec(
         "Paths match on window NAME only, and several elements can share one path — a list menu "
         "whose rows are structurally identical is the usual case. Without Match Text or Match Index "
         "the first match in tree order is clicked, and the log warns when there was more than one. "
-        "Every client clicks unless Click Clients narrows it, so a menu that only some clients "
+        "Every player clicks unless Click Players narrows it, so a menu that only some players "
         "opened needs the same selection here that opened it. "
         "The confirm path is useful when a click opens a dialog or changes a button state "
         "that the next node depends on; it always uses its first match and takes no match params."
