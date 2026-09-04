@@ -19,7 +19,7 @@ Two of the board's built-in workflows still run: an issue is auto-added at
 merge commit does, exactly as a PR body used to. Do not hand-set `Done`.
 
 The third, `In progress` on a linked pull request, no longer fires, because work
-lands by direct merge (see `docs/MERGING.md`). `In progress`, `Ready` and
+lands by direct merge (the `merge` skill). `In progress`, `Ready` and
 `Blocked` are all set by hand now, and all three are judgment calls.
 
 Closing an issue by dragging its card to `Done` is deliberately *not* enabled —
@@ -62,7 +62,7 @@ no commit trail behind it.
 
 Branches land on `master` by **direct merge, not a pull request** — the full
 convention, the merge-commit message template, and the pre-merge read-through
-are in `docs/MERGING.md`. The three things that matter here:
+are in the `merge` skill. The three things that matter here:
 
 - **`git merge --no-ff`, always.** The merge commit is where the message lives,
   and a fast-forward has nowhere to put it.

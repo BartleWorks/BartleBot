@@ -57,4 +57,8 @@ strategies/decks/
 probe_*_report.txt
 
 # Claude
-.claude/
+# Personal Claude state stays out of the repo; project skills are shared
+# tooling and are tracked. A bare `.claude/` would stop git descending at
+# all, so the negation needs the glob form.
+.claude/*
+!.claude/skills/
