@@ -20,16 +20,20 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QStackedWidget,
     QVBoxLayout,
@@ -38,9 +42,19 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import BotOptionModel
 from bartlebot.bot_options import USER_OWNED_OPTIONS, compose_options, is_user_owned, required_option_specs
+from bartlebot.gui.sidebar.option_gutter import (
+    GUTTER_BTN_PX,
+    DescriptionSwitches,
+    HelpToggle,
+    OverrideBar,
+    build_gutter_row,
+    keep_slot_when_hidden,
+)
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.icon_button import ThemedIconButton
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     TYPE_LABELS,
@@ -61,6 +75,26 @@ logger = logging.getLogger(__name__)
 
 _PLACEHOLDER = "—"
 
+# Measured over the 80 shipped bots.  The 22 hand-added descriptions -- the only
+# ones this dialog ever loads, since a derived option has no Edit button -- run to
+# a median of 75 characters and a maximum of 164; the node-declared prose the same
+# field would have to hold if that ever changed runs to 299.  A one-line QLineEdit
+# at the old 320px minimum showed roughly 45.  So not one description in the
+# library fitted, and the median was over twice the visible width.
+#
+# At _DIALOG_MIN_W the field takes about 65 characters a line, which puts the
+# worst stored description at three lines and the worst node-declared one at five.
+# The floor is the ``description_section`` floor and for the same reason: the empty
+# field is where an author starts, and two lines says "prose goes here" where one
+# says "a name goes here".
+_DIALOG_MIN_W = 420
+_DESC_MIN_LINES = 2
+_DESC_MAX_LINES = 6
+
+# On the widget, not in the stylesheet: GrowingTextEdit measures its own line
+# height from ``QWidget.font()``, which a stylesheet ``font-size`` never reaches.
+_DESC_FONT_PX = 11
+
 
 # ---------------------------------------------------------------------------
 # Add / Edit dialog
@@ -78,6 +112,14 @@ class _AddOptionDialog(ThemedMixin, QDialog):
     Safety Delay silently rewrote it as a bool -- a one-click way to break a bot.
     The default control swaps with the type, through the same builder both option
     surfaces use.
+
+    **Delete lives here**, in edit mode only, and it is the reason the row gutter
+    can be one column wide.  Setup's gutter puts the irreversible action furthest
+    from the text because reverting has no undo; deleting an option is strictly
+    worse -- it takes the declaration, both transition flag forms, and the user's
+    stored value -- so a 20px icon-only target a few pixels from the ``?`` was the
+    wrong home for it.  Behind Edit it gets a labelled button, a confirmation, and
+    a Cancel, and the gutter is left holding one thing.
     """
 
     def __init__(
@@ -90,7 +132,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         edit_mode = existing_option is not None
         self.setWindowTitle("Edit Option" if edit_mode else "Add Option")
         self.setModal(True)
-        self.setMinimumWidth(320)
+        self.setMinimumWidth(_DIALOG_MIN_W)
         self._existing_names = [n for n in existing_names if n != existing_option.name] if edit_mode else existing_names
         self._result: BotOptionModel | None = None
         # A declaration of None means "the author has no opinion", which is only
@@ -100,6 +142,8 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         # never *creates* one; it only declines to destroy one it was handed.
         self._was_null = edit_mode and existing_option.default is None
         self._default_touched = False
+        self._delete_btn: QPushButton | None = None
+        self._deleted = False
 
         form = QFormLayout()
         form.setSpacing(6)
@@ -111,7 +155,11 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         for opt_type in OPTION_TYPES:
             self._type_combo.addItem(TYPE_LABELS[opt_type], opt_type)
 
-        self._desc_edit = QLineEdit()
+        # Prose, not a name: see _DESC_* above for what the shipped library needs.
+        self._desc_edit = GrowingTextEdit(min_lines=_DESC_MIN_LINES, max_lines=_DESC_MAX_LINES)
+        desc_font = QFont(self._desc_edit.font())
+        desc_font.setPixelSize(_DESC_FONT_PX)
+        self._desc_edit.setFont(desc_font)
         self._desc_edit.setPlaceholderText("Optional description")
 
         # One page per type, built up front: swapping the visible page is what
@@ -147,6 +195,13 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         ok_btn.clicked.connect(self._on_ok)
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
+        # Left of the stretch, away from Save: the destructive action does not sit
+        # next to the one the Return key presses.
+        if edit_mode:
+            self._delete_btn = QPushButton("Delete")
+            self._delete_btn.setToolTip(f"Remove the option '{existing_option.name}' from this bot")
+            self._delete_btn.clicked.connect(self._on_delete)
+            btn_row.addWidget(self._delete_btn)
         btn_row.addStretch()
         btn_row.addWidget(cancel_btn)
         btn_row.addWidget(ok_btn)
@@ -159,7 +214,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
 
         if edit_mode:
             self._name_edit.setText(existing_option.name)
-            self._desc_edit.setText(existing_option.description or "")
+            self._desc_edit.setPlainText(existing_option.description or "")
             self._select_type(existing_option.type)
             set_widget_value(
                 self._default_widgets[self._current_type()],
@@ -176,10 +231,51 @@ class _AddOptionDialog(ThemedMixin, QDialog):
 
     def apply_theme_styles(self) -> None:
         self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
+        # The app stylesheet's input rule covers QLineEdit and QComboBox, not
+        # QTextEdit, so this field drew Fusion's own derived frame beside two
+        # neighbours drawing the real token.  Same treatment description_section
+        # gives its editor, and no font-size: that is set on the widget, which is
+        # the only place GrowingTextEdit's line-height measurement reads it from.
+        self._desc_edit.setStyleSheet(
+            f"QTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
+            f"border-radius: 4px; color: {THEME.text}; padding: 3px; }}"
+        )
 
     def get_option(self) -> BotOptionModel:
         assert self._result is not None
         return self._result
+
+    @property
+    def was_deleted(self) -> bool:
+        """Whether the user chose Delete rather than Save.
+
+        The dialog still accepts, so the caller reads this before ``get_option``:
+        an accepted dialog means "the user finished", not "the user saved".
+        """
+        return self._deleted
+
+    def _on_delete(self) -> None:
+        """Confirm, then accept with ``was_deleted`` set.
+
+        Deleting takes three things -- the declaration, both transition flag forms
+        that guard on its name, and the user's stored value -- and none of them
+        comes back, so this is the one action in the dialog that asks first.
+        """
+        name = self._name_edit.text().strip() or "this option"
+        confirm = QMessageBox(self)
+        confirm.setWindowTitle("Delete Option")
+        confirm.setIcon(QMessageBox.Icon.Warning)
+        confirm.setText(f"Delete the option '{name}'?")
+        confirm.setInformativeText(
+            "Any transition guarding on it will stop taking that edge, and your stored value for it is forgotten. "
+            "This cannot be undone."
+        )
+        confirm.setStandardButtons(QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes)
+        confirm.setDefaultButton(QMessageBox.StandardButton.Cancel)
+        if confirm.exec() != QMessageBox.StandardButton.Yes:
+            return
+        self._deleted = True
+        self.accept()
 
     def _current_type(self) -> str:
         return self._type_combo.currentData() or "bool"
@@ -209,13 +305,39 @@ class _AddOptionDialog(ThemedMixin, QDialog):
             name=name,
             type=opt_type,
             default=value,
-            description=self._desc_edit.text().strip() or None,
+            description=self._desc_edit.toPlainText().strip() or None,
         )
         self.accept()
 
     def _show_error(self, msg: str) -> None:
         self._err_lbl.setText(msg)
         self._err_lbl.setVisible(True)
+
+
+class _EditButton(ThemedIconButton):
+    """Opens the declaration dialog for one hand-added option.
+
+    It takes the slot Setup gives revert, which is what keeps the two surfaces'
+    ``?`` columns at the same x.  Delete is *not* beside it: see
+    ``_AddOptionDialog``, which owns that action now.
+
+    Icon-only and accented, like revert, and for the same reason -- it is the one
+    action a row can take, so its being there at all is the signal.  The tooltip
+    names the option, because at 20px the glyph cannot.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__("pencil", size=GUTTER_BTN_PX, icon_size=14, accent_when_enabled=True, parent=parent)
+
+
+@dataclass
+class _RowChrome:
+    """The parts of one row that a later click has to reach."""
+
+    widget: QWidget
+    edit_btn: _EditButton | None
+    help_btn: HelpToggle
+    description: QWidget | None
 
 
 # ---------------------------------------------------------------------------
@@ -235,15 +357,19 @@ class OptionsSection(SidebarSection):
         self._editable: bool = False
         self._option_rows: list[QWidget] = []
         self._option_widgets: dict[str, QWidget] = {}
-        self._edit_btns: list[QPushButton] = []
-        self._delete_btns: list[QPushButton] = []
+        self._chrome: dict[str, _RowChrome] = {}
+        self._edit_btns: list[_EditButton] = []
         self._get_clients: Callable[[], list] = lambda: []
+        self._show_descriptions = self._read_show_descriptions()
 
         outer = QVBoxLayout()
         outer.setSpacing(4)
 
+        self._switches = DescriptionSwitches(self._on_show_all_toggled)
+        outer.addWidget(self._switches)
+
         self._options_layout = QVBoxLayout()
-        self._options_layout.setSpacing(4)
+        self._options_layout.setSpacing(6)
 
         self._no_options_lbl = QLabel(_PLACEHOLDER)
         self._no_options_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -317,8 +443,6 @@ class OptionsSection(SidebarSection):
         self._add_option_btn.setVisible(editable)
         for btn in self._edit_btns:
             btn.setVisible(editable)
-        for btn in self._delete_btns:
-            btn.setVisible(editable)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -356,9 +480,10 @@ class OptionsSection(SidebarSection):
             row.deleteLater()
         self._option_rows.clear()
         self._option_widgets.clear()
+        self._chrome.clear()
         self._edit_btns.clear()
-        self._delete_btns.clear()
 
+        self._switches.setVisible(bool(options) and any(o.description for o in options))
         if not options:
             self._no_options_lbl.show()
             return
@@ -368,40 +493,130 @@ class OptionsSection(SidebarSection):
 
         self._no_options_lbl.hide()
         for opt in options:
-            inner, widget, desc_lbl = _build_option_parts(opt, connected, get_drops=self._drops)
-            self._connect_option_widget(widget, opt)
+            row = self._build_row(opt, connected, derived=opt.name in required_names)
+            self._options_layout.addWidget(row)
+            self._option_rows.append(row)
 
-            # A derived option is re-composed from its NodeSpec on every load, so a
-            # rename or a delete here would not survive the round trip.  Its default
-            # is still the author's to change.
-            if opt.name in required_names:
-                if desc_lbl is not None:
-                    inner.layout().addWidget(desc_lbl)
-                outer = inner
-            else:
-                edit_btn = QPushButton("Edit")
-                edit_btn.setToolTip(f"Edit option '{opt.name}'")
-                edit_btn.clicked.connect(lambda _checked, name=opt.name: self._on_edit_option(name))
+    def _build_row(self, opt, connected: int, *, derived: bool) -> QWidget:
+        """One option's row: the gutter, then the head line, control and prose.
 
-                del_btn = QPushButton("Delete")
-                del_btn.setToolTip(f"Remove option '{opt.name}'")
-                del_btn.clicked.connect(lambda _checked, name=opt.name: self._on_delete_option(name))
+        The same anatomy Setup uses, because the two tabs are two views of one list
+        and a row that changes shape between them reads as a different row.  What
+        differs is the middle gutter slot -- Setup reverts a value, this edits a
+        declaration -- and that a *derived* option has nothing to edit at all, since
+        it is re-composed from its NodeSpec on every load and a rename or a delete
+        would not survive the round trip.  Its default is still the author's to
+        change, through the control itself.
+        """
+        body = QWidget()
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(2)
 
-                # Buttons are injected into the value row so they sit on the same
-                # horizontal line as the value widget, not beside the description text.
-                # Set visibility AFTER parenting — calling setVisible on a parentless
-                # widget makes Qt show it as a top-level window (causes a visible flash).
-                outer = _build_option_row_with_buttons(inner, widget, edit_btn, del_btn)
-                if desc_lbl is not None:
-                    inner.layout().addWidget(desc_lbl)
-                edit_btn.setVisible(self._editable)
-                del_btn.setVisible(self._editable)
-                self._edit_btns.append(edit_btn)
-                self._delete_btns.append(del_btn)
+        widget = make_option_widget(
+            opt.type,
+            opt.default,
+            connected=connected,
+            tooltip=opt.description or "",
+            label=opt.name,
+            get_drops=self._drops,
+        )
+        is_bool = isinstance(widget, QCheckBox)
 
-            self._options_layout.addWidget(outer)
-            self._option_rows.append(outer)
-            self._option_widgets[opt.name] = widget
+        # A bool has no separate label: its own caption is the name, so the checkbox
+        # *is* the head line and the whole row fits on it.
+        if is_bool:
+            body_layout.addWidget(widget)
+        else:
+            lbl = field_label(opt.name)
+            if opt.description:
+                # The hover path stays: the ? is the discoverable affordance, not
+                # the only one, and a tooltip costs no height.
+                lbl.setToolTip(opt.description)
+            body_layout.addWidget(lbl)
+            body_layout.addWidget(widget)
+
+        description: QWidget | None = None
+        if opt.description:
+            # At the base font, and folded away until asked for -- the same prose,
+            # read the same way, as on the other tab.
+            description = ThemedTextLabel(opt.description)
+            description.setWordWrap(True)
+            description.setVisible(self._show_descriptions)
+            body_layout.addWidget(description)
+
+        self._connect_option_widget(widget, opt)
+
+        # Never painted here: the bar and revert are one affordance in Setup, and a
+        # lone marker with no paired action would be a fact to correlate rather than
+        # something to act on.  Its width is what lines the two tabs' ? columns up.
+        bar = OverrideBar()
+
+        edit_btn = _EditButton()
+        if derived:
+            keep_slot_when_hidden(edit_btn)
+        else:
+            edit_btn.setToolTip(f"Edit or delete the option '{opt.name}'")
+            edit_btn.clicked.connect(lambda _checked, name=opt.name: self._on_edit_option(name))
+            edit_btn.setVisible(self._editable)
+            self._edit_btns.append(edit_btn)
+
+        help_btn = HelpToggle()
+        help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
+        if description is None:
+            keep_slot_when_hidden(help_btn)
+        else:
+            help_btn.setChecked(self._show_descriptions)
+
+        self._option_widgets[opt.name] = widget
+        self._chrome[opt.name] = _RowChrome(
+            widget=widget,
+            edit_btn=None if derived else edit_btn,
+            help_btn=help_btn,
+            description=description,
+        )
+        return build_gutter_row(bar, edit_btn, help_btn, body)
+
+    # ------------------------------------------------------------------
+    # Descriptions
+    # ------------------------------------------------------------------
+
+    @property
+    def descriptions_visible(self) -> bool:
+        """Whether descriptions are shown for every row by default."""
+        return self._show_descriptions
+
+    def set_descriptions_visible(self, shown: bool) -> None:
+        """Show or fold every option's description, exactly as the switches would."""
+        self._on_show_all_toggled(shown)
+
+    def _read_show_descriptions(self) -> bool:
+        try:
+            return bool(self._sm().get("general", "show_option_descriptions", default=False))
+        except Exception:
+            logger.exception("Failed to read whether option descriptions are shown")
+            return False
+
+    def _on_show_all_toggled(self, shown: bool) -> None:
+        """Set every row at once, and remember the choice.
+
+        The same ``settings.json`` key Setup writes: folding the prose away is a
+        property of the reader, so it should not have to be done twice.
+        """
+        self._show_descriptions = shown
+        try:
+            self._sm().set("general", "show_option_descriptions", value=shown)
+        except Exception:
+            logger.exception("Failed to remember whether option descriptions are shown")
+        for chrome in self._chrome.values():
+            chrome.help_btn.setChecked(shown)
+
+    def _set_row_description(self, name: str, shown: bool) -> None:
+        """Fold one row's description in or out, leaving every other row alone."""
+        chrome = self._chrome.get(name)
+        if chrome is None or chrome.description is None:
+            return
+        chrome.description.setVisible(shown)
 
     def _on_add_option(self) -> None:
         if self._config is None:
@@ -424,6 +639,11 @@ class OptionsSection(SidebarSection):
         existing = [o.name for o in self._composed()]
         dlg = _AddOptionDialog(existing, parent=self, existing_option=original)
         if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        # An accepted dialog means the user finished, not that they saved: Delete
+        # accepts too, so that the row's one button can lead to both outcomes.
+        if dlg.was_deleted:
+            self._on_delete_option(name)
             return
         updated = dlg.get_option()
         if updated.name != name:
@@ -485,84 +705,3 @@ class OptionsSection(SidebarSection):
             self.options_changed.emit()
 
         connect_widget(widget, _update)
-
-
-# ---------------------------------------------------------------------------
-# Option row builder
-# ---------------------------------------------------------------------------
-
-
-def _build_option_parts(opt, connected: int = 4, get_drops=None) -> tuple[QWidget, QWidget, QLabel | None]:
-    """Return (container_widget, input_widget, description_label) for a BotOptionModel.
-
-    *connected* is how many clients are hooked right now; it only greys the player
-    checkboxes that have nobody behind them.  *get_drops* feeds the keep-list picker,
-    and without it that type falls back to a plain comma-separated line.
-
-    The container holds the label and value widget only (no description). The
-    description label is returned separately so callers can place it after
-    injecting buttons into the value row.
-    """
-    row = QWidget()
-    layout = QVBoxLayout(row)
-    layout.setContentsMargins(0, 0, 0, 0)
-    layout.setSpacing(1)
-    tooltip = opt.description or ""
-
-    # None is a declaration meaning "the author has no opinion" -- there is still
-    # a widget to fill, and every type has an empty-handed value to fill it with.
-    widget = make_option_widget(
-        opt.type, opt.default, connected=connected, tooltip=tooltip, label=opt.name, get_drops=get_drops
-    )
-    if opt.type != "bool":
-        lbl = field_label(opt.name)
-        if tooltip:
-            lbl.setToolTip(tooltip)
-        layout.addWidget(lbl)
-    layout.addWidget(widget)
-
-    desc_lbl: QLabel | None = None
-    if opt.description:
-        # Themed, for the same reason field_label is: this is handed back to a
-        # caller that has nothing to restyle it with.  At the base font, matching
-        # the same prose on the Setup surface: the two tabs show the identical
-        # node-authored text, so a size that differs between them reads as a
-        # difference in what the text *is*.
-        desc_lbl = ThemedTextLabel(opt.description)
-        desc_lbl.setWordWrap(True)
-
-    return row, widget, desc_lbl
-
-
-def _build_option_row_with_buttons(
-    inner: QWidget,
-    value_widget: QWidget,
-    edit_btn: QPushButton,
-    del_btn: QPushButton,
-) -> QWidget:
-    """Wrap *inner* so Edit/Delete sit on the same row as the value widget.
-
-    *inner* already contains the label and value widget stacked vertically
-    (produced by ``_build_option_parts``).  We pull the value widget out of
-    that container, replace it with an HBox (value + buttons), then re-attach
-    the description label (if any) below.
-    """
-    inner_layout = inner.layout()
-
-    # Find and remove the value widget from inner's layout so we can re-host it.
-    value_index = inner_layout.indexOf(value_widget)
-    inner_layout.removeWidget(value_widget)
-    value_widget.setParent(None)  # type: ignore[arg-type]
-
-    # Build the replacement row: value widget + Edit + Delete.
-    value_row = QWidget()
-    value_row_layout = QHBoxLayout(value_row)
-    value_row_layout.setContentsMargins(0, 0, 0, 0)
-    value_row_layout.setSpacing(4)
-    value_row_layout.addWidget(value_widget, 1)
-    value_row_layout.addWidget(edit_btn, 0)
-    value_row_layout.addWidget(del_btn, 0)
-
-    inner_layout.insertWidget(value_index, value_row)
-
-    return inner

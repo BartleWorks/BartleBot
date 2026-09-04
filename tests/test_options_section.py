@@ -20,7 +20,7 @@ from __future__ import annotations
 import sys
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QCheckBox, QDoubleSpinBox, QLineEdit, QSpinBox
+from PyQt6.QtWidgets import QApplication, QCheckBox, QDialog, QDoubleSpinBox, QLineEdit, QMessageBox, QSpinBox
 
 from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
@@ -32,8 +32,9 @@ from bartlebot.bot.schema import (
     StateModel,
     TransitionModel,
 )
-from bartlebot.gui.sidebar.sections.options_section import OptionsSection
+from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     BoolChoice,
@@ -373,11 +374,11 @@ def test_the_authoring_controls_follow_set_editable(qapp, settings):
 
     section.set_editable(True)
     assert section._add_option_btn.isVisibleTo(section)
-    assert all(btn.isVisibleTo(section) for btn in section._edit_btns + section._delete_btns)
+    assert all(btn.isVisibleTo(section) for btn in section._edit_btns)
 
     section.set_editable(False)
     assert not section._add_option_btn.isVisibleTo(section)
-    assert not any(btn.isVisibleTo(section) for btn in section._edit_btns + section._delete_btns)
+    assert not any(btn.isVisibleTo(section) for btn in section._edit_btns)
 
 
 def test_a_derived_option_cannot_be_renamed_or_deleted(qapp, settings):
@@ -395,8 +396,8 @@ def test_a_derived_option_cannot_be_renamed_or_deleted(qapp, settings):
     section.set_editable(True)
 
     assert "Challenge Mode" in section.option_widgets
+    # Delete lives inside the Edit dialog now, so the one absent button covers both.
     assert section._edit_btns == []
-    assert section._delete_btns == []
 
 
 # ---------------------------------------------------------------------------
@@ -508,3 +509,162 @@ def test_touching_the_default_of_a_null_declaration_replaces_it(qapp):
 
     assert dlg.get_option().default is True
     dlg.deleteLater()
+
+
+# ---------------------------------------------------------------------------
+# The gutter, and the prose behind it
+# ---------------------------------------------------------------------------
+
+
+def _gutter_children(row):
+    """``[bar, action, help]`` — the three fixed slots at the head of a row."""
+    layout = row.layout()
+    return [layout.itemAt(i).widget() for i in range(layout.count()) if layout.itemAt(i).widget() is not None][:3]
+
+
+def test_the_gutter_slots_line_up_across_both_surfaces(qapp, settings):
+    """Setup and Options are two views of one list, so a row's chrome has to land at
+    the same x on both — otherwise a mode switch reads as a different row."""
+    config = _config([_repeat()])
+    options = OptionsSection(settings=settings)
+    options.set_config(config)
+    setup = SetupSection(settings=settings)
+    setup.set_config(config)
+
+    opt_row, setup_row = options._option_rows[0], setup._rows[0]
+
+    assert [w.width() for w in _gutter_children(opt_row)] == [w.width() for w in _gutter_children(setup_row)]
+
+
+def test_a_derived_option_keeps_its_edit_slot_empty_rather_than_closing_it(qapp, settings):
+    """Only 24 of the library's 152 Options rows carry an Edit button. A gutter that
+    closes up on the other 128 is not a column any more."""
+    config = BotConfig(
+        id="test-bot",
+        name="Test Bot",
+        initial="a",
+        recovery_state="a",
+        states=[StateModel(id="a", node_type="enter_dungeon", params={"offers_challenge_mode": True})],
+        transitions=[],
+    )
+    section = OptionsSection(settings=settings)
+    section.set_config(config)
+    section.set_editable(True)
+
+    _bar, edit_btn, _help = _gutter_children(section._option_rows[0])
+
+    assert not edit_btn.isVisibleTo(section)
+    assert edit_btn.sizePolicy().retainSizeWhenHidden()
+
+
+def test_a_description_is_folded_away_until_asked_for(qapp, settings):
+    """Options showed every description unconditionally; Setup has folded them since
+    the prose was measured at 41% of a row's height."""
+    section = OptionsSection(settings=settings)
+    section.set_config(_config([_repeat()]))
+    section.show()
+    qapp.processEvents()
+    try:
+        assert not section._chrome["repeat"].description.isVisible()
+
+        section._chrome["repeat"].help_btn.setChecked(True)
+
+        assert section._chrome["repeat"].description.isVisible()
+    finally:
+        section.hide()
+
+
+def test_folding_the_prose_away_is_remembered_for_both_surfaces(qapp, settings):
+    """It is a property of the reader, not of the bot, so it is not set twice."""
+    options = OptionsSection(settings=settings)
+    options.set_config(_config([_repeat()]))
+
+    options.set_descriptions_visible(True)
+
+    setup = SetupSection(settings=settings)
+    setup.set_config(_config([_repeat()]))
+    assert setup.descriptions_visible
+
+
+def test_a_description_is_read_at_the_base_font(qapp, settings):
+    """The same prose as on Setup, so it is read at the same size."""
+    section = OptionsSection(settings=settings)
+    section.set_config(_config([_repeat()]))
+
+    assert "font-size" not in section._chrome["repeat"].description.styleSheet()
+
+
+# ---------------------------------------------------------------------------
+# Delete moved into the dialog
+# ---------------------------------------------------------------------------
+
+
+def test_the_dialog_offers_delete_only_when_editing(qapp):
+    """There is nothing to delete while adding, and Add is where a stray click on a
+    button labelled Delete would be most surprising."""
+    assert _AddOptionDialog([])._delete_btn is None
+    assert _AddOptionDialog([], existing_option=_repeat())._delete_btn is not None
+
+
+def test_deleting_from_the_dialog_accepts_without_a_result(qapp, monkeypatch):
+    """An accepted dialog means the user finished, not that they saved — so the
+    caller checks ``was_deleted`` before reaching for the option."""
+    dlg = _AddOptionDialog([], existing_option=_repeat())
+    monkeypatch.setattr(QMessageBox, "exec", lambda self: QMessageBox.StandardButton.Yes)
+
+    dlg._on_delete()
+
+    assert dlg.was_deleted
+    assert dlg.result() == QDialog.DialogCode.Accepted
+
+
+def test_declining_the_confirmation_deletes_nothing(qapp, monkeypatch):
+    dlg = _AddOptionDialog([], existing_option=_repeat())
+    monkeypatch.setattr(QMessageBox, "exec", lambda self: QMessageBox.StandardButton.Cancel)
+
+    dlg._on_delete()
+
+    assert not dlg.was_deleted
+
+
+def test_the_row_button_deletes_through_the_dialog(qapp, settings, monkeypatch):
+    """The gutter's one button leads to both outcomes, which is what lets Delete off
+    a 20px icon-only target a few pixels from the ``?``."""
+    config = _config([_repeat()])
+    section = OptionsSection(settings=settings)
+    section.set_config(config)
+
+    def _delete_it(self):
+        self._deleted = True
+        self.accept()
+        return QDialog.DialogCode.Accepted
+
+    monkeypatch.setattr(_AddOptionDialog, "exec", _delete_it)
+    section._on_edit_option("repeat")
+
+    assert config.options == []
+    assert "repeat" not in section.option_widgets
+
+
+# ---------------------------------------------------------------------------
+# The description field
+# ---------------------------------------------------------------------------
+
+
+def test_the_description_field_holds_more_than_one_line(qapp):
+    """Not one of the 22 hand-added descriptions in the shipped library fitted the
+    old single-line field: the median ran to 75 characters against roughly 45 shown."""
+    dlg = _AddOptionDialog([])
+
+    assert isinstance(dlg._desc_edit, GrowingTextEdit)
+    assert dlg._desc_edit.line_bounds == (2, 6)
+
+
+def test_a_multi_line_description_round_trips_through_the_dialog(qapp):
+    prose = "Which players to check. Empty means no players. Shared by two nodes."
+    dlg = _AddOptionDialog([], existing_option=BotOptionModel(name="x", type="bool", description=prose, default=True))
+
+    dlg._name_edit.setText("x")
+    dlg._on_ok()
+
+    assert dlg.get_option().description == prose

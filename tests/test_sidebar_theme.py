@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import QApplication, QSizePolicy
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.gui.sidebar.sections.options_section import _AddOptionDialog, _build_option_parts
+from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
 from bartlebot.gui.sidebar.sidebar_section import SidebarField, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -138,7 +138,10 @@ def test_a_sidebar_field_recolours_its_caption(qapp, theme):
 def test_an_option_description_recolours(qapp, theme):
     theme("light")
     opt = BotOptionModel(name="Farm", type="bool", description="Keep farming", default=True)
-    _row, _widget, desc = _build_option_parts(opt)
+    section = OptionsSection()
+    row = section._build_row(opt, connected=4, derived=False)
+    row.setParent(section)  # the row owns the label; without an owner Qt frees both
+    desc = section._chrome["Farm"].description
     assert desc is not None
     light = THEME.text_muted
 
@@ -221,3 +224,16 @@ def test_the_revert_button_spends_the_accent_only_while_it_can_act(qapp, theme):
     btn.setEnabled(False)
 
     assert btn.icon().pixmap(16, 16).toImage() != enabled
+
+
+def test_the_add_option_description_editor_recolours(qapp, theme):
+    """A QTextEdit is not covered by the app stylesheet's input rule, so it drew
+    Fusion's own derived frame beside two neighbours drawing the real token."""
+    theme("light")
+    dlg = _AddOptionDialog([])
+    light = THEME.surface
+
+    _switch(qapp, dlg, theme, "dark")
+
+    assert light not in dlg._desc_edit.styleSheet()
+    assert THEME.surface in dlg._desc_edit.styleSheet()

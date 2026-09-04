@@ -458,7 +458,15 @@ already has.
   moves is below the button that moved it. `show_option_descriptions` is the
   switch for reading the whole tab at once -- a property of the reader, so it
   lives in `settings.json` and not in the bot.
-- **Every row's chrome lives in a fixed leading gutter, `[bar][revert][?]`.** It
+- **Every row's chrome lives in a fixed leading gutter, `[bar][action][?]`, on
+  both surfaces.** The pieces are shared — `gui/sidebar/option_gutter.py` holds
+  the bar, the `?`, the `Show/Hide descriptions` links and the row builder — so
+  the two tabs' columns land at the same x and a mode switch does not read as a
+  different row. Only the middle slot differs: Setup reverts a *value*, Options
+  edits a *declaration*. Options never paints its bar, because the bar and revert
+  are one affordance in Setup and a lone marker with no paired action would be a
+  fact to correlate rather than something to act on; the width is still reserved,
+  so the `?` columns line up and a meaning can be given to it later. It
   is the only placement that yields one column per button. Right-aligning the `?`
   gives *two* columns, because the head line's right edge sits at two different x
   values; a fixed-width name column fails on any long name, and on a bool row,
@@ -472,7 +480,23 @@ already has.
   blank left inset, and an icon-only revert being less discoverable than the word
   — mitigated by `_reset_tooltip` naming the value and level a click falls back
   to, and by tinting the icon `THEME.accent` only while it can act.
-  `test_the_gutter_buttons_line_up_across_every_shape_of_row` is the guard.
+  `test_the_gutter_buttons_line_up_across_every_shape_of_row` and
+  `test_the_gutter_slots_line_up_across_both_surfaces` are the guards.
+- **A rare button is an argument *for* the gutter, not against it.** Only 24 of
+  the shipped library's 152 Options rows carry an Edit button and 64 of 80 bots
+  carry none, so the slot is empty most of the time. Inline, a button on 16% of
+  rows makes 16% of rows a different shape; in a reserved column every row is the
+  same shape and the rare button appears where one is always looked for. Every
+  slot keeps its size when hidden (`keep_slot_when_hidden`) — a gutter that closes
+  up on the rows with nothing in them is not a column any more.
+- **Delete lives inside the Edit dialog, not in the gutter.** The far slot is the
+  irreversible one, and deleting an option is strictly worse than reverting a
+  value — it takes the declaration, both transition flag forms, and the user's
+  stored override. A 20px icon-only target a few pixels from the `?` was the wrong
+  home for that, so the row's one button leads to both outcomes and the dialog
+  gives Delete a labelled button, a confirmation and a Cancel. `_AddOptionDialog`
+  accepts on delete too, so callers read `was_deleted` before `get_option`: an
+  accepted dialog means the user *finished*, not that they saved.
 - **Revert is furthest from the text, `?` is nearest it.** Two small targets a few
   pixels apart, one meaning "explain this" and the other "discard what I typed",
   and reverting has no undo — on the keep list the loss is a hand-picked selection.
@@ -506,9 +530,18 @@ already has.
   (`parse_list_text` still reads a pasted CSV), and the value renders as
   `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
   `_VALUE_PARAM_KEY` changed.
-- **A derived option has no Edit or Delete button.** It is re-composed from its
-  NodeSpec on every load, so either edit would be undone by the round trip. Its
-  *default* is still the author's to change.
+- **A derived option has no Edit button, and so no Delete either.** It is
+  re-composed from its NodeSpec on every load, so either edit would be undone by
+  the round trip. Its *default* is still the author's to change, through the
+  control itself.
+- **Descriptions fold on both surfaces, at the base font, behind one remembered
+  switch.** Options used to show every description unconditionally and at 9px —
+  75% of base, where Windows subpixel antialiasing starts colouring the strokes —
+  while Setup showed the identical node-authored prose folded and at full size.
+  Two tabs disagreeing about the size of the same text reads as a disagreement
+  about what the text *is*. `show_option_descriptions` is the one setting behind
+  both, because folding the prose away is a property of the reader and should not
+  have to be done twice.
 - **An option may be required only when a param says so.** `BotOptionSpec.required_when`
   names a bool param on the same node; the option is composed only while that param is
   on. Challenge Mode is the case: a handful of dungeons offer one, and composing it
