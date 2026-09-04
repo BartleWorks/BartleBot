@@ -1,11 +1,28 @@
 {
   "id": "c9a90248-41fb-4c46-b0a9-d0290d4b430f",
   "name": "Sisyphus",
+  "description": "Endlessly defeats Sisyphus in Temple of Sisyphus, Aquila. When run in Challenge Mode, this is the best Aquila spellement farm.",
   "version": "1.0",
   "clients": "all",
   "initial": "state_16",
   "recovery_state": "state_16",
   "drops": [
+    {
+      "name": "12 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "14 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "16 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "18 Olympian Dust",
+      "category": "Reagents"
+    },
     {
       "name": "5 Olympian Dust",
       "category": "Reagents"
@@ -23,7 +40,31 @@
       "category": "Reagents"
     },
     {
+      "name": "Add Health Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Athena Battle Sight",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Avenging Fossil (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Balance-Boon Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance-Giver Citrine",
+      "category": "Jewels"
+    },
+    {
       "name": "Balance-It Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance-Off Citrine",
       "category": "Jewels"
     },
     {
@@ -31,7 +72,23 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Big Energy Opal",
+      "category": "Jewels"
+    },
+    {
       "name": "Calculating Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Canny Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Celestial Calendar (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Cheeky Opal",
       "category": "Jewels"
     },
     {
@@ -86,7 +143,15 @@
       "category": "Jewels"
     },
     {
+      "name": "Death-Eye Onyx",
+      "category": "Jewels"
+    },
+    {
       "name": "Death-Giver Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Proof Onyx",
       "category": "Jewels"
     },
     {
@@ -98,7 +163,27 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Dogged Opal",
+      "category": "Jewels"
+    },
+    {
       "name": "Eager Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Elemental Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Elemental Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Extra Mana Opal",
       "category": "Jewels"
     },
     {
@@ -106,12 +191,40 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Fire Trap",
+      "category": "Treasure Cards"
+    },
+    {
       "name": "Fire-Boon Ruby",
       "category": "Jewels"
     },
     {
+      "name": "Fire-Proof Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fireblade",
+      "category": "Treasure Cards"
+    },
+    {
       "name": "Fires of Mars",
       "category": "Spellements"
+    },
+    {
+      "name": "Healer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Health Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hearty Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hephaestus",
+      "category": "Treasure Cards"
     },
     {
       "name": "Hex",
@@ -126,12 +239,44 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Eye Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Proof Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Shot Sapphire",
+      "category": "Jewels"
+    },
+    {
       "name": "Iceblade",
       "category": "Treasure Cards"
     },
     {
       "name": "Jupiter's Might",
       "category": "Spellements"
+    },
+    {
+      "name": "Life Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Life-Boon Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Life-Eye Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Life-Giver Jade",
+      "category": "Jewels"
     },
     {
       "name": "Life-Proof Jade",
@@ -142,8 +287,36 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Lord of Winter (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mana Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Myth-Eye Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth-Giver Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Myth-Proof Peridot",
+      "category": "Jewels"
+    },
+    {
       "name": "Myth-Shot Peridot",
       "category": "Jewels"
+    },
+    {
+      "name": "Mythblade",
+      "category": "Treasure Cards"
     },
     {
       "name": "Neptune's Fury",
@@ -162,12 +335,36 @@
       "category": "Spellements"
     },
     {
+      "name": "Queen Calypso",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Reshuffle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sabertooth",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sabertooth (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
       "name": "Sandy Skeleturion",
       "category": "Pets"
     },
     {
       "name": "Saturn's Reaping",
       "category": "Spellements"
+    },
+    {
+      "name": "Sharp Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Spinysaur",
+      "category": "Treasure Cards"
     },
     {
       "name": "Spirit Blade",
@@ -182,7 +379,31 @@
       "category": "Treasure Cards"
     },
     {
+      "name": "Storm Owl (Tier 2b)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm-Boon Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Eye Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stormblade",
+      "category": "Treasure Cards"
+    },
+    {
       "name": "Sun Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sun Serpent (Tier 2b)",
       "category": "Treasure Cards"
     },
     {
@@ -205,8 +426,10 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
     "Reagents",
     "Spellements",
+    "Pets",
     "Boss"
   ],
   "options": [],
@@ -337,7 +560,7 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 3080.0,
+        "x": 3520.0,
         "y": -180.0
       },
       "params": {
@@ -366,7 +589,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Mount Olympus",
       "position": {
-        "x": 3520.0,
+        "x": 3960.0,
         "y": -90.0
       },
       "params": {
@@ -390,7 +613,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 3960.0,
+        "x": 4400.0,
         "y": -90.0
       },
       "params": {
@@ -407,7 +630,7 @@
       "node_type": "enter_zone",
       "label": "Exit Mount Olympus",
       "position": {
-        "x": 4400.0,
+        "x": 4840.0,
         "y": -90.0
       },
       "params": {
@@ -431,7 +654,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Sisyphus",
       "position": {
-        "x": 4840.0,
+        "x": 5280.0,
         "y": -180.0
       },
       "params": {
@@ -455,12 +678,12 @@
       "node_type": "handle_combat",
       "label": "Defeat Sisyphus",
       "position": {
-        "x": 5280.0,
+        "x": 5720.0,
         "y": -180.0
       },
       "params": {
         "enemy": "*AQ_Eagles_Sisyphus_A_01",
-        "wiki_page": "Creature:Sisyphus Stone Thrower (Standard)",
+        "wiki_page": "Creature:Sisyphus Stone Thrower (Challenge)",
         "use_default_strategy": false,
         "max_duration": 600.0
       }
@@ -470,7 +693,7 @@
       "node_type": "enter_zone",
       "label": "Exit Temple of Sisyphus",
       "position": {
-        "x": 5720.0,
+        "x": 6160.0,
         "y": -180.0
       },
       "params": {
@@ -506,6 +729,16 @@
           4
         ]
       }
+    },
+    {
+      "id": "state_17",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": -180.0
+      },
+      "params": {}
     }
   ],
   "transitions": [
@@ -792,6 +1025,26 @@
     {
       "trigger": "advance",
       "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
       "dest": "state_7",
       "when": "SUCCESS",
       "flags": [],
@@ -801,8 +1054,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_1",
+      "source": "state_17",
+      "dest": "state_17",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -810,5 +1063,35 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "6b096c3b",
+      "label": "Go to Aquila",
+      "members": [
+        "state_4",
+        "state_3",
+        "state_5",
+        "state_6",
+        "state_16",
+        "state_1",
+        "state_2"
+      ],
+      "color": 1
+    },
+    {
+      "id": "046d7b7b",
+      "label": "Defeat Sisyphus",
+      "members": [
+        "state_13",
+        "state_11",
+        "state_7",
+        "state_9",
+        "state_14",
+        "state_15",
+        "state_12",
+        "state_10"
+      ],
+      "color": 5
+    }
+  ]
 }
