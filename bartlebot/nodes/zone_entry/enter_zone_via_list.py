@@ -70,9 +70,9 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Zone List Aliases",
         help=(
             "Additional display texts that mean the same entry, matched the same way as "
-            "Zone List Entry. The game resolves list text into the client's own language "
+            "Zone List Entry. The game resolves list text into its own display language "
             "before it reaches memory, so an entry named in English is not found on a "
-            "client running in any of the other six locales. Add the other spellings here."
+            "game running in any of the other six locales. Add the other spellings here."
         ),
         default=[],
         default_hint="Only Zone List Entry is matched.",
@@ -115,17 +115,17 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Interacts with a zone-selection list object, navigates its pages to find the specified "
-        "zone entry, selects it, and teleports all clients to that zone."
+        "zone entry, selects it, and teleports all players to that zone."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "Zone entry selected, teleport button clicked, and all clients confirmed in the destination zone.",
+            "Zone entry selected, teleport button clicked, and all players confirmed in the destination zone.",
         ),
         ReturnSpec(
             "FAILURE",
-            "Clients not in the expected zone; interact prompt never appeared; zone list UI never opened; "
+            "Players not in the expected zone; interact prompt never appeared; zone list UI never opened; "
             "zone entry not found on any page; or zone change timed out.",
         ),
     ],

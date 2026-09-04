@@ -87,7 +87,9 @@ class MainWindow(QMainWindow):
 
         settings_action = QAction("Settings…", self)
         settings_action.setShortcut(QKeySequence("Ctrl+,"))
-        settings_action.triggered.connect(self._open_settings)
+        # A lambda, not a bare connect: QAction.triggered carries its checked state, so
+        # a direct connection lands that bool in tab_name and asks for a tab called False.
+        settings_action.triggered.connect(lambda: self._open_settings())
         file_menu.addAction(settings_action)
 
         file_menu.addSeparator()
@@ -201,6 +203,10 @@ class MainWindow(QMainWindow):
         )
         self._game_view_panel.launch_profile_requested.connect(lambda n: asyncio.ensure_future(self._launch_profile(n)))
         self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
+        # Setup's rows name the app setting they fall back to; this is the way there.
+        self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
+        # ...and back: those rows resolve through the values that dialog just wrote.
+        self.settings_applied.connect(self.left_sidebar.refresh_setup_values)
         self._game_view_panel.edit_profile_requested.connect(
             lambda name: self._open_settings(tab_name="game", edit_profile=name)
         )

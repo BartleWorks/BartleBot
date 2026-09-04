@@ -341,6 +341,46 @@ precedent.
 ### Settings
 Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
 
+Two rules about the settings dialog itself:
+
+- **Every key in `_DEFAULTS[section]` must also be a field on that section's
+  pydantic model.** Pydantic *ignores* an extra key rather than rejecting it, so a
+  key in one and not the other is not an error — it is simply never type-checked,
+  and a hand-edited `settings.json` can then put a string where a bool belongs and
+  have it reach the widget. `streamer_mode` and `bot_library_path` were both in
+  that state. `test_every_default_is_declared_on_its_model` is the guard.
+- **A row explains itself on the page, not on hover.** `settings/rows.py`'s
+  `hint()` is the dimmed line under a control; a tooltip is for a longer *why*
+  and never carries the whole explanation on its own. Before this the Log, Layout
+  and Auto-save rows had no explanation at all and the rest had theirs only where
+  a reader has to already suspect it is there.
+  `test_every_settings_row_explains_itself_on_the_page` checks that a hint
+  follows every control, within two rows so a pair sharing one hint is allowed.
+
+`SettingsDialog.apply_all` iterates the tab bar rather than naming four tabs.
+A hand-written list is one line to forget when a tab is added, and forgetting it
+discards everything the user typed into the new tab with no error anywhere;
+`AccountsTab.apply` is a documented no-op (it persists eagerly), which is what
+makes iterating safe.
+
+#### The Bot tab
+
+Every row on it is the **app setting** level of the four-level resolution below,
+so the disclaimer that a bot or a Setup value outranks it is stated once at the
+top of the tab rather than repeated into eight tooltips. That is why it is a tab
+and not a section of General: it is one idea, and General's other five sections
+are not levels of anything.
+
+`Safety Delay`'s description lives in `bot_options.SAFETY_DELAY_DESCRIPTION`,
+because the app setting and the *option* are the same value and one value
+described twice is how the two texts come to disagree —
+`test_the_safety_delay_setting_and_option_read_the_same` checks the tab's hint
+and every NodeSpec that declares the option against it.
+
+Anything naming a settings row in user-facing text has to name its tab too: the
+`relog` node's help, the "waiting at character select" recovery message and
+`teleport_to_friend`'s error all said *Settings → General* and all had to move.
+
 #### Bot options: whose value is it
 
 `BotOptionModel.default` is the **author's** recommended value, never the user's
@@ -455,6 +495,14 @@ already has.
   reset falls back to. That tooltip is the mitigation for storing overrides as
   bare values: an author who later improves a declaration is outranked
   silently, so the one-way door has to be visibly openable.
+
+  **There is one vocabulary for the four levels, and it is
+  `bot_options.SOURCE_*`** — `Your value` / `Bot default` / `App settings` /
+  `Default`, listed in `SOURCE_LEVELS`. `OptionResolution.source` *is* the
+  caption: there is no caption map, because there were two sets of strings for
+  the same four levels and they drifted, so the log said "from the app setting"
+  under a row reading "App settings". The Reset tooltip lowercases the one word
+  it shares with the column — a caption is a label, a tooltip is a sentence.
 - **Setting a value back to the resolved one drops the override.** Reverting by
   hand and pressing Reset are the same act, so they have to leave the same state
   behind — a row marked as changed while holding the value it would have had
@@ -543,6 +591,17 @@ already has.
   section body rather than on the header, which is a click-through row that
   toggles collapse. `LinkButton` (`gui/widgets/link_button.py`) is the shared
   control.
+- **The route to the app settings is written once, at the far end of that same
+  row.** Setup's rows name the level that answered, and one of the four —
+  *App settings* — is a page the user can actually go to; a link in every hint
+  that mentions it would be eight identical links to one destination. So Setup
+  passes `DescriptionSwitches` a `trailing` link, separated from the two
+  description commands by the stretch because it is not a third one of them.
+  It emits `app_settings_requested` rather than opening the dialog: `exec()` may
+  only be entered from a synchronous slot in `MainWindow`, which also refreshes
+  the rows on `settings_applied` — a level Setup resolves *through* has moved,
+  which is the same event as a declaration edit. Options has no trailing link;
+  it edits declarations, and the app setting is not one.
 - **A numeric option may declare bounds, and both ends enforce them.**
   `BotOptionSpec.minimum` / `maximum` / `suffix` are carried onto the composed
   declaration by `compose_options` — derived, never persisted, exactly like `type`
@@ -561,6 +620,32 @@ already has.
   (`parse_list_text` still reads a pasted CSV), and the value renders as
   `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
   `_VALUE_PARAM_KEY` changed.
+- **An option that another option switches off is a child of it: indented,
+  greyed, never hidden.** `BotOptionSpec.depends_on` names a bool option on the
+  same bot, and `compose_options` carries it onto the composed declaration the way
+  it carries `type` and the bounds — derived, never persisted, and dropped when
+  the named parent is not in this graph, because a row indented under a row that
+  is not there reads as a child of whatever precedes it. Quicksell's three sell
+  flags are the case: with `Enable Quicksell` off nothing is sold, so there is
+  nothing for them to spare, and they were three live tick boxes that could not
+  affect the run and gave no sign of it.
+
+  Four things that are load-bearing, and all four are the same rule the rest of
+  this surface follows:
+
+  - **Only Setup indents.** Options edits declarations, and `Enable Quicksell` is
+    user-owned, so the parent has no row there to be a child of.
+  - **The indent is applied to the row's *body*, past the gutter, and the gutter
+    is untouched** — `build_gutter_row(..., child=True)`. The indent says what the
+    row belongs to and the gutter says what can be done to it; indenting both
+    costs the one column property the gutter exists for.
+    `test_a_child_row_is_indented_but_its_gutter_is_not` is the guard.
+  - **Greyed, never hidden, and the value is never cleared.** Hiding moves every
+    row beneath it the moment the parent is ticked, and it hides the fact that the
+    user still has a value stored there. Only the body is disabled, so the
+    override bar still says whose value it is and revert can still discard it.
+  - **A `ChildBranch` rule fills the indent.** Indentation alone is only visible
+    while two left edges are being compared.
 - **A derived option has no Edit button, and so no Delete either.** It is
   re-composed from its NodeSpec on every load, so either edit would be undone by
   the round trip. Its *default* is still the author's to change, through the

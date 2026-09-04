@@ -15,8 +15,8 @@ no Qt, no ``SettingsManager``, no client.  The caller gathers the four inputs an
 this decides between them, so precedence is testable without a settings file.
 
 Following ``resolve_combat``: never raise, always fall back, always say which
-level answered.  The source string is user-facing -- it reads as the tail of
-"Safety Delay = 3.0, from ...".
+level answered.  The source string is user-facing, and is the *same* string the
+Setup surface prints under the row -- see ``SOURCE_OVERRIDE`` and friends below.
 """
 
 from __future__ import annotations
@@ -57,10 +57,32 @@ def is_set(value: Any) -> bool:
     return not isinstance(value, _Unset)
 
 
-SOURCE_OVERRIDE = "your override"
-SOURCE_BOT_FILE = "the bot file"
-SOURCE_APP_SETTING = "the app setting"
-SOURCE_NODE_DEFAULT = "the node default"
+# One vocabulary for the four levels, used wherever a resolution is *named* -- the
+# source caption under a Setup row, the Reset tooltip, the safety dialog's summary,
+# and the once-per-run line ``BotMachine.get_option`` writes to the session log.
+#
+# There were two before, and they disagreed about what the levels were called: these
+# constants read "your override" / "the bot file" while the surface the user was
+# looking at read "Your value" / "Bot default". One value cannot have two names and
+# stay one value, so the captions won -- they are what a user can actually see, and
+# a log line saying "from App settings" names a place the user can go.
+SOURCE_OVERRIDE = "Your value"
+SOURCE_BOT_FILE = "Bot default"
+SOURCE_APP_SETTING = "App settings"
+SOURCE_NODE_DEFAULT = "Default"
+
+#: The four, most local first. Anything laying out a caption slot has to size it to
+#: the widest of them, and nothing else may enumerate the levels by hand.
+SOURCE_LEVELS: tuple[str, ...] = (SOURCE_OVERRIDE, SOURCE_BOT_FILE, SOURCE_APP_SETTING, SOURCE_NODE_DEFAULT)
+
+#: The Safety Delay option's description, in the one place both readers of it can
+#: reach. The app setting on the Bot settings tab and the option itself are the same
+#: value after #145, and one value described twice is how two descriptions come to
+#: disagree -- ``test_the_safety_delay_setting_and_option_read_the_same`` is the guard.
+SAFETY_DELAY_DESCRIPTION = (
+    "Seconds to allow for game-server responses when waiting for prompts or menus. "
+    "Increase on high-latency connections."
+)
 
 # Bot options that also exist as an app setting, and the ``general`` key holding it.
 # An option absent from this map simply has no app-setting level -- resolution
@@ -212,7 +234,7 @@ def resolve_option(
         # itself states, so there is nothing to disagree with.
         if check_type and not value_matches_type(value, declared_type):
             logger.warning(
-                "Discarding %s for %r: it is %s, but the option is now %s.",
+                "%s for option %r discarded: it is %s, but the option is now %s.",
                 level,
                 name,
                 type(value).__name__,
@@ -223,7 +245,7 @@ def resolve_option(
         # settings.json *or* bot file and this is the one funnel both go through.
         if not value_within_bounds(value, minimum, maximum):
             logger.warning(
-                "Discarding %s for %r: %r is outside the allowed range (%s to %s).",
+                "%s for option %r discarded: %r is outside the allowed range (%s to %s).",
                 level,
                 name,
                 value,
@@ -233,11 +255,11 @@ def resolve_option(
             return False
         return True
 
-    if not isinstance(override, _Unset) and usable(override, "your saved value", check_type=True):
+    if not isinstance(override, _Unset) and usable(override, SOURCE_OVERRIDE, check_type=True):
         return OptionResolution(override, SOURCE_OVERRIDE)
-    if declaration is not None and usable(declaration, "the bot file's value"):
+    if declaration is not None and usable(declaration, SOURCE_BOT_FILE):
         return OptionResolution(declaration, SOURCE_BOT_FILE)
-    if not isinstance(app_value, _Unset) and app_value is not None and usable(app_value, "the app setting"):
+    if not isinstance(app_value, _Unset) and app_value is not None and usable(app_value, SOURCE_APP_SETTING):
         return OptionResolution(app_value, SOURCE_APP_SETTING)
     return OptionResolution(spec_default, SOURCE_NODE_DEFAULT)
 
@@ -328,6 +350,9 @@ def compose_options(config, specs=None) -> list:
                 minimum=spec.minimum,
                 maximum=spec.maximum,
                 suffix=spec.suffix,
+                # Dropped when the parent is not in this graph: a child indented under
+                # a row that is not there reads as a child of whatever precedes it.
+                depends_on=spec.depends_on if spec.depends_on in required else None,
             )
         )
     return composed

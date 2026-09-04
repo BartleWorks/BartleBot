@@ -46,7 +46,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="interact_clients",
         type="player_list",
-        label="Interact Clients",
+        label="Interact Players",
         help="Which players perform this interaction.",
         default=[],
         required=True,

@@ -36,7 +36,7 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Recalls all clients to an existing marked location by clicking the RecallButton. "
+        "Recalls all players to an existing marked location by clicking the RecallButton. "
         "Handles the loading screen and verifies arrival zone and position."
     ),
     params=PARAM_SCHEMA,
@@ -44,10 +44,10 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players recalled and arrived at the expected zone and XYZ."),
         ReturnSpec(
             "FAILURE",
-            "One or more clients had no mana; the RecallButton was not enabled within the "
+            "One or more players had no mana; the RecallButton was not enabled within the "
             "timeout (no mark set); the game refused the recall (most often because the marked "
-            "dungeon's timer ended and it has been reset); clients did not move or enter a "
-            "loading screen within the trigger timeout; or not all clients arrived in the "
+            "dungeon's timer ended and it has been reset); players did not move or enter a "
+            "loading screen within the trigger timeout; or not all players arrived in the "
             "expected zone and position after recalling.",
         ),
     ],

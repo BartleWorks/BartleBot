@@ -82,15 +82,11 @@ logger = logging.getLogger(__name__)
 
 _PLACEHOLDER = "—"
 
-# What to print under a row, naming the level that answered.  Every level has an
-# entry, including the user's own: a caption that appears and disappears would
-# move every row beneath it each time a value was typed.
-_SOURCE_CAPTION: dict[str, str] = {
-    bot_options.SOURCE_OVERRIDE: "Your value",
-    bot_options.SOURCE_BOT_FILE: "Bot default",
-    bot_options.SOURCE_APP_SETTING: "App settings",
-    bot_options.SOURCE_NODE_DEFAULT: "Default",
-}
+# There is no caption map any more: ``OptionResolution.source`` *is* the caption.
+# The two used to be separate strings for the same four levels, which is how the
+# log came to say "the app setting" under a row reading "App settings" -- one value
+# with two names.  Every level still has a caption, including the user's own: one
+# that appeared and disappeared would move every row beneath it as a value was typed.
 
 #: Pixel size of the source caption.  Set on the *font* rather than in the style
 #: sheet, because a style sheet's ``font-size`` never reaches ``QWidget.font()`` and
@@ -132,7 +128,7 @@ class _SourceCaption(ThemedTextLabel):
         font.setPixelSize(_CAPTION_PX)
         self.setFont(font)
         metrics = QFontMetrics(font)
-        self.setMinimumWidth(max(metrics.horizontalAdvance(text) for text in _SOURCE_CAPTION.values()))
+        self.setMinimumWidth(max(metrics.horizontalAdvance(text) for text in bot_options.SOURCE_LEVELS))
         super().apply_theme_styles()
 
 
@@ -166,7 +162,12 @@ class _RowChrome:
     revert_btn: _RevertButton
     caption: _SourceCaption
     help_btn: HelpToggle
+    outer: QWidget
+    body: QWidget
     description: QWidget | None = None
+    #: The bool option this row is a child of, or ``None``.  A child is indented
+    #: under its parent and greyed while the parent is off.
+    depends_on: str | None = None
 
 
 class SetupSection(SidebarSection):
@@ -176,6 +177,11 @@ class SetupSection(SidebarSection):
     # ``config_changed``: an override is not an edit to the bot, and marking the
     # file dirty for one is the confusion this whole split exists to remove.
     values_changed = pyqtSignal()
+
+    # The reader asked for the level beneath every row: Settings -> Bot.  Emitted
+    # rather than opened here, because the dialog is modal and ``exec()`` may only
+    # be entered from a synchronous Qt slot -- see the qasync rule in CLAUDE.md.
+    app_settings_requested = pyqtSignal()
 
     def __init__(self, parent=None, settings: SettingsManager | None = None):
         super().__init__("Bot Settings", parent)
@@ -191,7 +197,17 @@ class SetupSection(SidebarSection):
         outer = QVBoxLayout()
         outer.setSpacing(4)
 
-        self._switches = DescriptionSwitches(self._on_show_all_toggled)
+        # The app-setting level is the one a row can name but not edit, so the route
+        # to it lives here rather than in every hint that mentions it: eight rows
+        # each carrying the same link is eight things to read and one destination.
+        self._switches = DescriptionSwitches(
+            self._on_show_all_toggled,
+            trailing=(
+                "Open app settings",
+                "Open Settings → Bot, where a row falling back to the app setting reads its value",
+                self.app_settings_requested.emit,
+            ),
+        )
         outer.addWidget(self._switches)
 
         self._rows_layout = QVBoxLayout()
@@ -331,6 +347,8 @@ class SetupSection(SidebarSection):
             row = self._build_row(opt, connected)
             self._rows_layout.addWidget(row)
             self._rows.append(row)
+        for name in {chrome.depends_on for chrome in self._chrome.values() if chrome.depends_on}:
+            self._refresh_children_of(name)
         self._push_keep_list_context()
 
     def _build_row(self, opt, connected: int) -> QWidget:
@@ -427,7 +445,8 @@ class SetupSection(SidebarSection):
         help_btn = HelpToggle()
         help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
 
-        outer = build_gutter_row(bar, revert_btn, help_btn, body)
+        parent_name = self._parent_of(opt.name)
+        outer = build_gutter_row(bar, revert_btn, help_btn, body, child=parent_name is not None)
         if description is None:
             keep_slot_when_hidden(help_btn)
         else:
@@ -439,7 +458,10 @@ class SetupSection(SidebarSection):
             revert_btn=revert_btn,
             caption=caption,
             help_btn=help_btn,
+            outer=outer,
+            body=body,
             description=description,
+            depends_on=parent_name,
         )
         self._refresh_row(opt.name)
         return outer
@@ -479,6 +501,42 @@ class SetupSection(SidebarSection):
         opt = self._composed.get(name)
         return getattr(opt, "type", None)
 
+    # ------------------------------------------------------------------
+    # Children
+    # ------------------------------------------------------------------
+
+    def _parent_of(self, name: str) -> str | None:
+        """The bool option *name* is a child of, if that option is on this surface.
+
+        Checked against the composed list rather than taken from the declaration on
+        trust: a child indented under a row that is not there reads as a child of
+        whatever happens to precede it, and a hand-edited file can name anything.
+        """
+        parent = getattr(self._composed.get(name), "depends_on", None)
+        if not parent or parent == name:
+            return None
+        return parent if self._composed_type(parent) == "bool" else None
+
+    def _children_of(self, name: str) -> list[str]:
+        return [child for child, chrome in self._chrome.items() if chrome.depends_on == name]
+
+    def _refresh_children_of(self, name: str) -> None:
+        """Grey or restore every row hanging off *name*, from its resolved value.
+
+        A child is disabled rather than hidden.  Hiding it would move every row
+        beneath it the moment the parent is ticked -- the thing this surface avoids
+        everywhere else -- and it would hide the fact that the user still has a
+        value stored there, which comes back untouched when the parent comes back
+        on.  Only the *body* is greyed: the gutter stays live, so the override bar
+        still says whose value it is and revert can still discard it.
+        """
+        resolution = self.resolution_for(name)
+        active = bool(resolution.value) if resolution is not None else True
+        for child in self._children_of(name):
+            chrome = self._chrome[child]
+            chrome.body.setEnabled(active)
+            chrome.outer.setToolTip("" if active else f"{name} is off, so this has no effect.")
+
     def _refresh_row(self, name: str) -> None:
         """Re-mark one row from its current resolution, touching no other row."""
         chrome = self._chrome.get(name)
@@ -494,7 +552,7 @@ class SetupSection(SidebarSection):
         chrome.revert_btn.setToolTip(
             self._reset_tooltip(name) if overridden else "Already the value this option resolves to"
         )
-        chrome.caption.setText(_SOURCE_CAPTION.get(resolution.source, ""))
+        chrome.caption.setText(resolution.source)
 
     def _fallback_for(self, name: str) -> bot_options.OptionResolution | None:
         """What *name* would resolve to with the user's override taken away.
@@ -529,12 +587,13 @@ class SetupSection(SidebarSection):
         The level is named in running prose rather than parenthesised as a
         capitalised noun phrase -- "Reset to 3.0 - app settings", not
         "Reset to 3.0 (App settings)".  The captions are labels on a column and are
-        capitalised for that; a tooltip is a sentence.
+        capitalised for that; a tooltip is a sentence, so it lowercases the one it
+        shares with the column.
         """
         fallback = self._fallback_for(name)
         if fallback is None:
             return "Reset to the value this bot recommends"
-        level = _SOURCE_CAPTION.get(fallback.source, fallback.source).lower()
+        level = fallback.source.lower()
         return f"Reset to {fallback.value!r} \u2014 {level}"
 
     # ------------------------------------------------------------------
@@ -565,6 +624,7 @@ class SetupSection(SidebarSection):
             logger.exception("Failed to store your value for option %r", name)
             return
         self._refresh_row(name)
+        self._refresh_children_of(name)
         self._push_keep_list_context()
         self.values_changed.emit()
 
@@ -616,6 +676,7 @@ class SetupSection(SidebarSection):
             set_widget_value(chrome.widget, fallback.value)
             chrome.widget.blockSignals(False)
         self._refresh_row(name)
+        self._refresh_children_of(name)
         self._push_keep_list_context()
         if had_override:
             self.values_changed.emit()

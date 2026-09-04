@@ -47,7 +47,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="float",
         label="Use Potion If Health Below",
         help=(
-            "Health ratio (0.0–1.0) below which a client should use a potion. "
+            "Health ratio (0.0–1.0) below which a player should use a potion. "
             "Set to 0.0 to skip health-based potion use."
         ),
         default=0.5,
@@ -58,7 +58,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="float",
         label="Use Potion If Mana Below",
         help=(
-            "Mana ratio (0.0–1.0) below which a client should use a potion. Set to 0.0 to skip mana-based potion use."
+            "Mana ratio (0.0–1.0) below which a player should use a potion. Set to 0.0 to skip mana-based potion use."
         ),
         default=0.15,
         required=True,
@@ -69,7 +69,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Refill Potions",
         help=(
             "If enabled, navigate to Hilda Brewer in the Commons to buy potions "
-            "when any client has no potion charges remaining."
+            "when any player has no potion charges remaining."
         ),
         default=True,
         required=True,
@@ -79,10 +79,10 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Mark Zone",
         help=(
-            "Optional. If provided, all clients that need to buy potions must already "
+            "Optional. If provided, all players that need to buy potions must already "
             "be in this zone when handle_potions executes. Returns FAILURE if they are "
             "not. Use this to ensure the mark is placed at a predictable location "
-            "(e.g., a dungeon entrance) rather than wherever clients happen to be."
+            "(e.g., a dungeon entrance) rather than wherever players happen to be."
         ),
         default="",
         required=False,
@@ -92,8 +92,8 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Uses potions on clients below health or mana thresholds. "
-        "If refill_potions is enabled and any client has no potion charges remaining, "
+        "Uses potions on players below health or mana thresholds. "
+        "If refill_potions is enabled and any player has no potion charges remaining, "
         "marks the current location, navigates to Hilda Brewer in the Commons to buy "
         "potions, then recalls back to the mark."
     ),

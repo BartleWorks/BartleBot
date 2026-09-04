@@ -39,14 +39,14 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Dismisses dialogue on all clients. Polls for at least Safety Delay (plus Animation Delay) seconds; "
-        "if no client has dialogue for the full delay, returns SUCCESS. Each time dialogue is dismissed, the "
+        "Dismisses dialogue on all players. Polls for at least Safety Delay (plus Animation Delay) seconds; "
+        "if no player has dialogue for the full delay, returns SUCCESS. Each time dialogue is dismissed, the "
         "timer resets, preventing premature exit between consecutive dialogue windows. Set timeout to 0 for "
         "no time limit."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All clients have been dialogue-free for at least the quiet period."),
+        ReturnSpec("SUCCESS", "All players have been dialogue-free for at least the quiet period."),
         ReturnSpec("FAILURE", "The timeout expired while players were still in dialogue."),
     ],
     required_bot_options=[

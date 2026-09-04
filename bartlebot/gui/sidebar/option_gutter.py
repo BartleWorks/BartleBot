@@ -34,6 +34,8 @@ inline, a button on 16% of rows makes 16% of rows a different shape.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
 
@@ -46,6 +48,12 @@ BAR_WIDTH_PX = 3
 GUTTER_BTN_PX = 20
 GUTTER_GAP_PX = 2
 GUTTER_TO_BODY_PX = 5
+
+#: How far a child row's *body* is inset past its parent's.  Applied after the
+#: gutter, never inside it, so the bar, the action button and the ``?`` of a child
+#: land on the same three x values as every other row's -- indenting the chrome too
+#: would break the one property the gutter exists to give.
+CHILD_INDENT_PX = 14
 
 
 class OverrideBar(ThemedMixin, QFrame):
@@ -109,6 +117,26 @@ class HelpToggle(ThemedMixin, QPushButton):
         )
 
 
+class ChildBranch(ThemedMixin, QFrame):
+    """The vertical rule filling a child row's indent.
+
+    Indentation alone says "these belong to the row above" only while the eye
+    happens to compare two left edges; a rule makes the group a thing you can see
+    without measuring, which is what every tree view and every nested settings list
+    does.  It is drawn in the indent the body was pushed over by, so it costs no
+    width of its own, and it is a border rather than a background so that it stays
+    one pixel wide at any row height.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedWidth(CHILD_INDENT_PX)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self.setStyleSheet(f"border: none; border-left: 1px solid {THEME.border};")
+
+
 def keep_slot_when_hidden(button: QPushButton) -> None:
     """Hide *button* without letting its column close up."""
     policy = button.sizePolicy()
@@ -117,12 +145,25 @@ def keep_slot_when_hidden(button: QPushButton) -> None:
     button.setVisible(False)
 
 
-def build_gutter_row(bar: OverrideBar, action_btn: QPushButton, help_btn: HelpToggle, body: QWidget) -> QWidget:
+def build_gutter_row(
+    bar: OverrideBar,
+    action_btn: QPushButton,
+    help_btn: HelpToggle,
+    body: QWidget,
+    *,
+    child: bool = False,
+) -> QWidget:
     """Wrap *body* behind the ``[bar][action][?]`` gutter.
 
     Both buttons top-align, which is what lets one arrangement serve a 20px bool
     row and a 240px drop table alike -- it is what deleted the branch that used to
     put Reset beside a short control and on the head line otherwise.
+
+    *child* insets the **body** by :data:`CHILD_INDENT_PX` and fills that inset with
+    a :class:`ChildBranch` rule.  The gutter itself is untouched, so a child's bar,
+    action button and ``?`` stay in the same three columns as everything else: the
+    indent says what the row belongs to, and the gutter says what can be done to
+    it, and mixing the two would cost the column property the gutter exists for.
 
     **This call is what parents the chrome, so set its visibility only after it.**
     ``setVisible(True)`` on a widget that has no parent yet makes that widget a
@@ -139,6 +180,8 @@ def build_gutter_row(bar: OverrideBar, action_btn: QPushButton, help_btn: HelpTo
     layout.addWidget(action_btn, 0, top)
     layout.addWidget(help_btn, 0, top)
     layout.addSpacing(GUTTER_TO_BODY_PX)
+    if child:
+        layout.addWidget(ChildBranch())
     layout.addWidget(body, 1)
     return outer
 
@@ -164,14 +207,31 @@ class DescriptionSwitches(QWidget):
     what the rows are actually doing -- so the one click the reader wants ("just
     fold them all") can be the click that unfolds them all.  Two unconditional
     commands say what they do whatever state the rows are in.
+
+    A third link may be added at the *far* end of the row, for the one place a
+    surface has somewhere else to send the reader -- Setup's route to the app
+    settings its rows resolve through.  It is separated by the stretch rather than
+    the dot, because it is not a third description command: the two on the left are
+    one group and it is not in it.  It rides this row so that the link is written
+    once rather than repeated into every row's hint, where the eye would have to
+    learn that eight identical links all go to the same page.
     """
 
     #: Matched to ``LinkButton``'s own default so the dot sits on the links'
     #: baseline rather than above it.
     SEPARATOR_FONT_PX = 10
 
-    def __init__(self, on_toggled, parent: QWidget | None = None) -> None:
-        """*on_toggled* is called with ``True`` for show and ``False`` for hide."""
+    def __init__(
+        self,
+        on_toggled,
+        parent: QWidget | None = None,
+        *,
+        trailing: tuple[str, str, Callable[[], None]] | None = None,
+    ) -> None:
+        """*on_toggled* is called with ``True`` for show and ``False`` for hide.
+
+        *trailing* is an optional ``(text, tooltip, callback)`` link, right-aligned.
+        """
         from bartlebot.gui.widgets.link_button import LinkButton  # noqa: PLC0415 - import cycle
         from bartlebot.gui.widgets.themed_label import ThemedTextLabel  # noqa: PLC0415 - import cycle
 
@@ -189,3 +249,9 @@ class DescriptionSwitches(QWidget):
         row.addWidget(ThemedTextLabel(" · ", css=f"font-size: {self.SEPARATOR_FONT_PX}px;"), 0)
         row.addWidget(hide, 0)
         row.addStretch(1)
+        if trailing is not None:
+            text, tooltip, on_clicked = trailing
+            link = LinkButton(text)
+            link.setToolTip(tooltip)
+            link.clicked.connect(lambda: on_clicked())
+            row.addWidget(link, 0)

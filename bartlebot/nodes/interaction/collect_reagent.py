@@ -23,7 +23,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Starting XYZ",
         help=(
-            "Optional coordinates to teleport all clients to before searching for reagents. "
+            "Optional coordinates to teleport all players to before searching for reagents. "
             "Leave blank to collect from the current position."
         ),
         default=None,
@@ -36,7 +36,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Entity Names",
         help=(
             "Internal object names of the reagents to collect — use the Nearest Entity "
-            "display in the client widget to find them. Partial matches work "
+            "display in the Players tab to find them. Partial matches work "
             "(e.g. 'Fungi' matches 'FungusWort'). Wildcards (* ? []) match the whole "
             "name instead, so use '*Fungi*' to match anywhere and 'Fungi*' to match only "
             "names starting with it. All listed reagents are collected in one pass."
@@ -49,8 +49,8 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Finds all present instances of a named reagent entity in the zone and collects them. "
-        "Optionally teleports all clients to a starting position first. "
-        "Each client searches and collects independently, so clients on different servers "
+        "Optionally teleports all players to a starting position first. "
+        "Each player searches and collects independently, so players on different servers "
         "work from their own entity lists. "
         "An empty spawn is a normal outcome, not a failure — the node succeeds with nothing collected."
     ),
@@ -63,7 +63,7 @@ NODE_SPEC = NodeSpec(
         ),
         ReturnSpec(
             "FAILURE",
-            "The search could not be performed: a client is in the wrong zone, or entity_names is empty.",
+            "The search could not be performed: a player is in the wrong zone, or entity_names is empty.",
         ),
     ],
     required_bot_options=[

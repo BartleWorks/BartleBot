@@ -89,8 +89,8 @@ NODE_SPEC = NodeSpec(
         "somewhere.\n\n"
         "The group is lost on logout and re-formed afterwards when 'Automatically group "
         "players' is enabled in Settings.\n\n"
-        "You may not need this node at all: Settings → General → 'Relog players every' does "
-        "the same job on a timer, and can also bring back a client too broken to use its own "
+        "You may not need this node at all: Settings → Bot → 'Relog players every' does "
+        "the same job on a timer, and can also bring back a player too broken to use its own "
         "menu. Use the node when the moment matters — after a fixed number of passes, or on a "
         "FAILURE transition as a last resort before giving up."
     ),

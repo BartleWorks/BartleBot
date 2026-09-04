@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.settings.rows import hint, section_label
 from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
 from bartlebot.settings_manager import SettingsManager
 
@@ -141,16 +142,6 @@ def _button_style(hex_color: str) -> str:
     )
 
 
-def _section_label(title: str) -> QLabel:
-    lbl = QLabel(title)
-    font = lbl.font()
-    font.setBold(True)
-    font.setPointSize(font.pointSize() + 1)
-    lbl.setFont(font)
-    lbl.setContentsMargins(0, 10, 0, 2)
-    return lbl
-
-
 def _system_base() -> _Theme:
     """Return DARK or LIGHT based on the current Windows system preference."""
     return DARK if _detect_system_dark_mode() else LIGHT
@@ -195,6 +186,13 @@ class ThemeTab(QWidget):
                 self._theme_combo.setCurrentIndex(i)
                 break
         mode_form.addRow("Theme:", self._theme_combo)
+        mode_form.addRow(
+            hint(
+                "System follows the Windows light/dark setting and re-reads it while the app is "
+                "open. Custom starts from whichever of Light or Dark Windows is on now, and "
+                "reveals the colour list below."
+            )
+        )
         outer.addLayout(mode_form)
 
         # ------------------------------------------------------------------
@@ -240,7 +238,7 @@ class ThemeTab(QWidget):
 
         grid_row = 0
         for section_title, tokens in _SECTIONS:
-            hdr = _section_label(section_title)
+            hdr = section_label(section_title, top=10, bottom=2)
             grid.addWidget(hdr, grid_row, 0, 1, 2)
             grid_row += 1
 

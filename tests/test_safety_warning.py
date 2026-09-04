@@ -64,7 +64,7 @@ def test_quicksell_shows_the_resolved_value_and_names_the_level_that_decided_it(
 
     details = dict(collect_safety_warnings(config)[0].details)
 
-    assert details["Sell Pets"] == "No (the app setting)"
+    assert details["Sell Pets"] == "No (App settings)"
 
 
 def test_a_declared_flag_is_shown_as_coming_from_the_bot():
@@ -76,7 +76,7 @@ def test_a_declared_flag_is_shown_as_coming_from_the_bot():
 
     details = dict(collect_safety_warnings(config)[0].details)
 
-    assert details["Sell Pets"] == "Yes (the bot file)"
+    assert details["Sell Pets"] == "Yes (Bot default)"
 
 
 def test_the_users_own_value_is_shown_as_theirs():
@@ -85,7 +85,7 @@ def test_the_users_own_value_is_shown_as_theirs():
 
     details = dict(collect_safety_warnings(config)[0].details)
 
-    assert details["Sell Pets"] == "No (your override)"
+    assert details["Sell Pets"] == "No (Your value)"
 
 
 def test_quicksell_details_cover_the_switch_the_flags_and_the_keep_list():

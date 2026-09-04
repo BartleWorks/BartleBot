@@ -40,7 +40,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Reset XYZ",
         help=(
-            "Optional. A safe position to teleport clients back to when the zone "
+            "Optional. A safe position to teleport players back to when the zone "
             "change does not fire (e.g. a trigger that requires a scripted event to "
             "complete first). When set, the node retries up to 3 times before "
             "returning FAILURE."
@@ -52,12 +52,12 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="stagger",
         type="bool",
-        label="Stagger Clients",
+        label="Stagger Players",
         help=(
-            "Send the first client through the transition alone and wait for it to fully "
-            "load into the destination zone before sending the rest. Prevents clients from "
+            "Send the first player through the transition alone and wait for it to fully "
+            "load into the destination zone before sending the rest. Prevents players from "
             "being split across different realms of the destination zone. Only takes effect "
-            "when exactly 4 clients are connected — with 3 or fewer this has not been observed "
+            "when exactly 4 players are connected — with 3 or fewer this has not been observed "
             "to be an issue."
         ),
         default=False,
@@ -66,21 +66,21 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Transitions all clients from one zone to another by teleporting them "
+        "Transitions all players from one zone to another by teleporting them "
         "into the destination zone's transition bounding box. Optionally staggers "
-        "the transition (lead client first, then the rest) when 4 clients are "
-        "connected, to avoid clients landing in different realms."
+        "the transition (lead player first, then the rest) when 4 players are "
+        "connected, to avoid players landing in different realms."
     ),
     params=PARAM_SCHEMA,
     returns=[
         ReturnSpec(
             "SUCCESS",
-            "All clients are now in to_zone.",
+            "All players are now in to_zone.",
         ),
         ReturnSpec(
             "FAILURE",
-            "Clients were not in from_zone at the start, timed out leaving the zone "
-            "(all retry attempts exhausted when reset_xyz is set), or not all clients "
+            "Players were not in from_zone at the start, timed out leaving the zone "
+            "(all retry attempts exhausted when reset_xyz is set), or not all players "
             "reached to_zone after the transition.",
         ),
     ],

@@ -1287,7 +1287,7 @@ class ClientManager(QObject):
         self.recovery_error.emit(
             f"{names} {'have' if len(targets) > 1 else 'has'} been relaunched and "
             f"{'are' if len(targets) > 1 else 'is'} waiting at character select.\n\n"
-            "Log in to resume the run, or turn on Settings → General → "
+            "Log in to resume the run, or turn on Settings → Bot → "
             "Automatically select a character to have this done for you."
         )
 

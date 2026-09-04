@@ -29,7 +29,7 @@ PARAM_SCHEMA: list[ParamField] = [
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Blocks until all clients' health ratio reaches or exceeds the threshold, "
+        "Blocks until every player's health ratio reaches or exceeds the threshold, "
         "then returns SUCCESS. Set timeout to 0 for no time limit."
     ),
     params=PARAM_SCHEMA,
