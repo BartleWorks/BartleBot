@@ -846,8 +846,8 @@ def test_no_bot_declares_an_option_borrowed_from_a_node_it_does_not_run():
     ``compose_options`` and ``storable_options`` both treat every name in
     ``system_option_names()`` as derived, so such an option is filed as dead weight
     rather than as author intent -- and it is the file that is the only copy. Inherited
-    from ``_inject_required_options`` (docs/DESIGN_REVIEW.md), but sharper now that the
-    prune runs on every save.
+    from ``_inject_required_options``, but sharper now that the prune runs on every
+    save.
 
     ``test_no_bot_stores_a_declaration_that_says_nothing`` catches the symptom -- a
     borrowed option is dropped like any other -- but names the wrong cause, and the

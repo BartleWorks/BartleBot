@@ -1,0 +1,110 @@
+# Reading the game's own data
+
+Two sources answer most "what is this offset / where does this value come from"
+questions without probing a live client. **Check both before writing a probe** —
+several days of `probe_*.py` work has been spent rediscovering things that were
+sitting in one of these.
+
+## Type dumps: `tools/r<rev>_WizardDev.json`
+
+A wiztype dump of every game class with the exact byte offset of each property —
+about 7,000 classes and 49,000 properties. Query it with `tools/typedump.py`:
+
+```bash
+poetry run python tools/typedump.py at ClientObject 448     # what lives at this offset?
+poetry run python tools/typedump.py show DeckListControl    # full layout, incl. inherited
+poetry run python tools/typedump.py prop "characterId"      # find a property everywhere
+poetry run python tools/typedump.py classes "SpellList"     # find classes by regex
+poetry run python tools/typedump.py gaps DeckListControl    # holes where raw members hide
+poetry run python tools/typedump.py annotate ../wizwalker/wizwalker/memory/memory_objects/client_object.py
+poetry run python tools/typedump.py diff <old.json> <new.json>
+```
+
+Two things to know before trusting it:
+
+- **It covers reflected PropertyClass properties only.** Raw C++ members — child
+  pointers, manager handles, the entry vectors `deck_io.py` reads — never appear.
+  `gaps` is the workaround: it brackets those between named neighbours, which is
+  how `deck_io`'s `0x300` entry vector shows up as a 40-byte hole between
+  `m_treasureFrame` and `m_cardSize`.
+- **A class name is not the runtime behavior template name**, and the difference
+  is not derivable: `ClientWizPlayerNameBehavior` → `"WizPlayerNameBehavior"`,
+  `ClientTreasureBookBehavior` → `"BasicTreasureBookBehavior"`,
+  `ClientInventoryBehavior` → `"WizardInventoryBehavior"`. The authoritative list
+  is `await client_object.list_behavior_names()` on a live client.
+
+**Dumps are committed, and old ones are never deleted.** A dump can only be
+captured from a running client, so once a patch ships there is no way back to the
+previous layout. The checked-in dumps are the only record of what the offsets were
+when our code last worked; `typedump.py diff` against a fresh dump then says
+exactly what moved. `.gitattributes` disables textual diffing for them — use the
+tool, not `git diff`.
+
+## Game data: `Root.wad`
+
+WizWalker can read the game's own archives, which hold the lookup tables the
+client resolves IDs against. Many fields in memory are keys, not text —
+`m_badgeTitle` reads `'Badges_00006184'`, and a wizard's name is three indices,
+never characters — so a memory scan for display text will find nothing while the
+answer sits in a WAD.
+
+```python
+from wizwalker.file_readers.wad import Wad
+
+wad = Wad(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
+names = await wad.names()                       # ~172,000 entries
+data = await wad.get_file("CharacterNames.xml") # bytes
+```
+
+Conventions worth knowing:
+
+- `<Thing>.xml` holds the **ordered key list**; `Locale/<loc>/<Thing>.lang` maps
+  key → display text. IDs index **position in the XML list**, not the numeric
+  suffix of the key (`First_Boy_102` is "Luke" but sits at index 100).
+- `.lang` files are UTF-16LE with CRLF, in fixed three-line records: `key`,
+  translator description, display text. The description reads as blank in most
+  records, which makes the format look like `key / blank / value` — a parser that
+  *requires* it blank silently drops every documented key rather than failing. Slice
+  at a fixed stride; see `parse_lang` in `tools/dump_dialog_captions.py`.
+- Locales are `de el en-US es fr it pl`. Non-English tables can be shorter —
+  later additions were not always translated.
+
+Don't read a WAD at runtime: a 172k-entry archive read per lookup, plus a hard
+dependency on the game being installed at a guessable path. Extract what you need
+into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
+`bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
+
+The three snapshots and their tools:
+
+| snapshot | tool | regenerate when |
+|---|---|---|
+| `data/name_tables.json` | `dump_name_tables.py` | the game adds name entries |
+| `data/dialog_captions.json` | `dump_dialog_captions.py` | a modal is reworded, or a key is added to `KNOWN_KEYS` |
+| `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
+
+`WorldNames.lang` is worth knowing about on its own, because its key **is** the world
+segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
+the localized text the spiral door lists. That correspondence is what lets `go_to_world`
+verify arrival with the glob `"<key>/*"` rather than a per-world table of spiral chamber
+zone names.
+
+What it does *not* tell you is which worlds the door actually offers. `Darkmoor` (a world,
+on the door) and `G14_DM` (Castle Darkmoor, a dungeon entered from Nightside) both have
+WorldNames entries and both have GameData wads; nothing separates them. So
+`worlds.SPIRAL_DOOR_WORLDS` is curated by hand, every exclusion is named with its reason,
+and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
+Darkmoor wrong once already.
+
+## What neither source answers: window layout
+
+**UI window names are not in the type dump and not in any WAD.** The dump covers
+reflected `PropertyClass` properties, and the archives hold game data; the window
+layout is compiled into the client binary. Searching every UI-ish XML across
+`Root.wad`, `GUI-WorldData.wad` and `_Shared-WorldData.wad` for names the app
+already relies on — `DeckConfiguration`, `CardsInDeck`, `ItemSpells` — returns
+zero content hits, and `GUI/` in `Root.wad` is textures.
+
+So the rule above inverts for anything shaped like "what is this control called":
+go straight to a live client. Either the in-app **UI Tree Browser**, or a probe
+that dumps the subtree and diffs it across a change the user makes by hand —
+`tools/probe_archmastery_ui.py` is the worked example of the second.
