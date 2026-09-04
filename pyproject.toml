@@ -37,6 +37,10 @@ wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev =
 asyncio_mode = "auto"
 
 [tool.ruff]
+# ruff 0.16 formats fenced code blocks inside Markdown. Our .md files use
+# hand-aligned comment columns in their examples, which that collapses; the
+# docs are prose, not compiled code, so they stay out of the formatter.
+extend-exclude = ["*.md"]
 line-length = 120
 target-version = "py313"
 
