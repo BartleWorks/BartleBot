@@ -1,0 +1,814 @@
+{
+  "id": "c9a90248-41fb-4c46-b0a9-d0290d4b430f",
+  "name": "Sisyphus",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_16",
+  "recovery_state": "state_16",
+  "drops": [
+    {
+      "name": "5 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "6 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "7 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "8 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Balance-It Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balanceblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Calculating Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cleanse Charm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dagger of Gorgon Imprisonment (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon Imprisonment"
+    },
+    {
+      "name": "Dagger of Gorgon Infamy (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon Infamy"
+    },
+    {
+      "name": "Dagger of Gorgon Petrification (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon Petrification"
+    },
+    {
+      "name": "Dagger of Gorgon Suffering (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon Suffering"
+    },
+    {
+      "name": "Dagger of Gorgon Venom (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon Venom"
+    },
+    {
+      "name": "Dagger of Gorgon Volatility (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon Volatility"
+    },
+    {
+      "name": "Dagger of Gorgon's Gaze (Level 90+)",
+      "category": "Athames",
+      "match_name": "Dagger of Gorgon's Gaze"
+    },
+    {
+      "name": "Death Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Death-Away Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Giver Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deathblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Eager Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Feint",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire-Boon Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fires of Mars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Hex",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Iceblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Jupiter's Might",
+      "category": "Spellements"
+    },
+    {
+      "name": "Life-Proof Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Lifeblade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Myth-Shot Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pierce",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sandy Skeleturion",
+      "category": "Pets"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spirit Blade",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spirit Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Storm Owl",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Sun Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ultra Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unbalancer Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wisp Bonus Opal",
+      "category": "Jewels"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Reagents",
+    "Spellements",
+    "Boss"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "go_to_world",
+      "label": "Go to Wizard City",
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      },
+      "params": {
+        "world": "WizardCity"
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Commons",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1381.32,
+          "y": -3682.01,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1295.43,
+          "y": -2843.03,
+          "z": -27.99
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Olde Town",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "xyz": {
+          "x": -6043.28,
+          "y": -3272.64,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -5385.62,
+          "y": -3318.33,
+          "z": -29.36
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "enter_zone",
+      "label": "Enter Cyclops Lane",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
+        "to_zone": "WizardCity/WC_Streets/WC_Cyclops",
+        "xyz": {
+          "x": -5365.34,
+          "y": 3131.86,
+          "z": -595.39
+        },
+        "reset_xyz": {
+          "x": -4925.93,
+          "y": 2716.51,
+          "z": -598.02
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone_via_object",
+      "label": "Take Chariot to Aquila",
+      "position": {
+        "x": 2200.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Cyclops",
+        "to_zone": "Aquila/AQ_Z00_Hub",
+        "interact_xyz": {
+          "x": -10087.3,
+          "y": 8245.32,
+          "z": 25.9
+        },
+        "reset_xyz": {
+          "x": -9754.92,
+          "y": 8440.24,
+          "z": 25.9
+        },
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 3080.0,
+        "y": -180.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.25,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Garden of Hesperides",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Mount Olympus",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z01_MountOlympus",
+        "sigil_xyz": {
+          "x": -669.19,
+          "y": 4202.56,
+          "z": -89.76
+        },
+        "reset_xyz": {
+          "x": -177.05,
+          "y": 3852.35,
+          "z": -115.42
+        },
+        "offers_challenge_mode": false
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "collect_wisps",
+      "label": "Collect health and mana wisps",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Exit Mount Olympus",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z01_MountOlympus",
+        "to_zone": "Aquila/AQ_Z00_Hub",
+        "xyz": {
+          "x": -11.1,
+          "y": -1196.7,
+          "z": -68.29
+        },
+        "reset_xyz": {
+          "x": 5.68,
+          "y": 85.87,
+          "z": -68.29
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "enter_dungeon",
+      "label": "Enter Temple of Sisyphus",
+      "position": {
+        "x": 4840.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus*",
+        "sigil_xyz": {
+          "x": 1180.28,
+          "y": 3764.68,
+          "z": -46.81
+        },
+        "reset_xyz": {
+          "x": 826.78,
+          "y": 3268.84,
+          "z": -100.0
+        },
+        "offers_challenge_mode": true
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "handle_combat",
+      "label": "Defeat Sisyphus",
+      "position": {
+        "x": 5280.0,
+        "y": -180.0
+      },
+      "params": {
+        "enemy": "*AQ_Eagles_Sisyphus_A_01",
+        "wiki_page": "Creature:Sisyphus Stone Thrower (Standard)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "enter_zone",
+      "label": "Exit Temple of Sisyphus",
+      "position": {
+        "x": 5720.0,
+        "y": -180.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus*",
+        "to_zone": "Aquila/AQ_Z00_Hub",
+        "xyz": {
+          "x": 10.6,
+          "y": -3749.86,
+          "z": 189.57
+        },
+        "reset_xyz": {
+          "x": -2.81,
+          "y": -3343.28,
+          "z": 189.58
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "check_zone",
+      "label": "Check if in Aquila",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Aquila/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_9",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_9",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}
