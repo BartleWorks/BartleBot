@@ -53,7 +53,10 @@ async def test_the_load_task_is_kept_referenced(qapp):
 async def test_closing_cancels_an_in_flight_load(qapp):
     client = _StubClient()
     dlg = EntityBrowserDialog(client)
-    await asyncio.wait_for(client.started.wait(), timeout=1)
+    # A ceiling, not a cadence: the event is set on the load task's first await,
+    # so this nominally costs nothing and is generous purely so it cannot flake
+    # under -n auto on a loaded machine. See tests/CLAUDE.md.
+    await asyncio.wait_for(client.started.wait(), timeout=10)
 
     dlg.close()
 
