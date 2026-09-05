@@ -460,22 +460,22 @@ class AccountsTab(QWidget):
             SettingsManager.instance().save()
 
     def _refresh_resolution_fit(self) -> None:
-        """Grey out the resolutions the launches this setting governs could not fit at.
+        """Grey out the resolutions a *single* client could not fit at.
 
-        Sized against the largest profile that *follows* this setting, because those are
-        the launches it decides — a profile pinning its own resolution answers to the
-        combo in its own dialog instead. Floored at one client, which is what a single
-        account launched from the Quick Launch screen is.
+        One client, deliberately, even though this setting is also what a profile without
+        its own resolution launches at. Sizing it against the largest such profile is
+        defensible and was what this did, but it greys out most of the list for anyone who
+        happens to keep a four-account profile around — and a user running several clients
+        is a user who has a launch profile, which carries its own resolution combo sized
+        against its own accounts. Judging the global default by the rarer case made the
+        common one look broken.
 
-        Only a hint here, not a gate: a running fleet is not the only thing this value is
-        ever set for, and the launch surfaces refuse an unfittable launch on their own.
+        Only a hint either way, not a gate: this value is set for more than a running
+        fleet, and the launch surfaces refuse an unfittable launch on their own — a profile
+        that inherits a resolution too large for its account count is still stopped there,
+        with a reason naming both numbers.
         """
-        counts = [
-            len(profile.get("accounts") or [])
-            for profile in SettingsManager.instance().launch_profiles
-            if not profile.get("resolution")
-        ]
-        _mark_unfittable_resolutions(self._res_combo, max([1, *counts]), self, self._live_game_area)
+        _mark_unfittable_resolutions(self._res_combo, 1, self, self._live_game_area)
 
     # ------------------------------------------------------------------
     # Accounts

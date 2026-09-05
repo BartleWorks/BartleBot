@@ -166,12 +166,14 @@ def test_a_small_launch_clamps_the_ui_scale_and_captures_the_original(ui_config)
 
 
 def test_a_launch_the_scale_fits_leaves_it_where_it_is(ui_config):
-    """1280x960, not 800x600: a 4:3 client at the stock floor only carries Large.
+    """Widescreen, not 4:3: no 4:3 resolution carries Huge at any size.
 
-    Huge occludes the teleporter buttons all the way up to 1024x768, so the smallest
-    narrow resolution that leaves a Huge preference untouched is the one above it.
+    1280x720 is the smallest offered resolution that leaves a Huge preference untouched.
+    A 4:3 client always pays a ladder step, so there is no 4:3 size that would do here --
+    2048x1536 still clamps to Large.
     """
-    assert launch_profile._ui_size_update(1280, 960) == {"UISize": str(_HUGE)}
+    assert launch_profile._ui_size_update(1280, 720) == {"UISize": str(_HUGE)}
+    assert launch_profile._ui_size_update(2048, 1536) == {"UISize": str(_LARGE)}
 
 
 def test_the_stock_floor_still_clamps_a_huge_preference_down(ui_config):
@@ -192,7 +194,7 @@ def test_the_capture_is_taken_once_and_never_from_our_own_clamp(ui_config):
     assert SettingsManager.instance().original_ui_size == _HUGE
     # ...and the next launch big enough to carry it puts it back, rather than staying
     # clamped forever because the file now agrees with the clamp.
-    assert launch_profile._ui_size_update(1280, 960) == {"UISize": str(_HUGE)}
+    assert launch_profile._ui_size_update(1280, 720) == {"UISize": str(_HUGE)}
 
 
 def test_nothing_is_written_when_the_game_has_no_ui_scale_to_clamp(install):

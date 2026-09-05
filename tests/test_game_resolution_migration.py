@@ -42,7 +42,7 @@ def test_the_replacement_is_never_smaller_than_what_was_stored(settings):
 
 
 def test_a_stored_resolution_larger_than_anything_offered_falls_back_to_the_default(settings):
-    settings.set("game_embed", "resolution", value=[3840, 2160])
+    settings.set("game_embed", "resolution", value=[7680, 4320])
     assert settings.game_resolution == (800, 600)
 
 

@@ -140,17 +140,30 @@ _DEFAULTS: dict[str, Any] = {
     "bot_option_overrides": {},  # {bot_uuid: {option_name: value}}
 }
 
-# The windowed resolutions the game's own dropdown offers, at and above its 800x600 floor.
+# Resolutions from the game's own dropdown, at and above its 800x600 floor. A subset of
+# it: the dropdown also offers 1128x634, 1760x990, 3072x1728 and 3200x1800, which are
+# real 16:9 sizes but match no monitor anyone runs, so they are left out rather than
+# padding every picker with sizes nobody picks.
+#
+# Nothing here is off the dropdown. 1280x800 and 1280x960 used to be, and were removed
+# when the aspect bands were measured: neither is a size the game offers, 1280x960 was
+# the resolution the mistaken Huge narrow floor was built on, and 1280x800 existed mainly
+# as the one entry that sat exactly on the 16:10 boundary. 1680x1050 is 8:5 as well and
+# is measured, so the boundary keeps a live case.
 _STOCK_RESOLUTIONS: list[tuple[int, int]] = [
     (800, 600),
     (1024, 768),
     (1280, 720),
-    (1280, 800),
-    (1280, 960),
     (1280, 1024),
     (1366, 768),
     (1600, 900),
+    (1600, 1200),
+    (1680, 1050),
     (1920, 1080),
+    (1920, 1200),
+    (2048, 1536),
+    (2560, 1440),
+    (3840, 2160),
 ]
 
 # Valid Wizard101 windowed resolutions (width, height), smallest first.
@@ -166,6 +179,9 @@ _STOCK_RESOLUTIONS: list[tuple[int, int]] = [
 # Sorted rather than concatenated because the two lists interleave: a rung's 16:9 form is
 # wider than its 4:3 one, so 854x480 and 960x540 both sort above 800x600 while still
 # being sub-floor sizes in the sense that matters -- they take a UI scale below Huge.
+#
+# "Sub-floor" is about the scale, not the size: the 4:3 entries at and above 800x600 top
+# out at Large too, because no 4:3 resolution reaches Huge at any size.
 VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
 
 # Minimum BotCanvas height (toolbar + enough graph space)

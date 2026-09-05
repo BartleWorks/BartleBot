@@ -52,9 +52,8 @@ The verified render ladder — exactly 80x60 apart, all 4:3:
 | Huge | 4 | 800x600 |
 
 **Rendering is not the whole story, and this ladder alone is not safe to launch
-against.** A second, higher floor sits under each rung — see "The HUD draws before it is
-reachable" below. 400x300 is not offered at all as a result, and `UI_SIZE_LADDER` carries
-both floors per rung.
+against.** A narrow client has to run *below* its render floor — see "The HUD draws
+before it is reachable" below. 400x300 is not offered at all as a result.
 
 **The stored values are not in size order.** Micro was appended after the original five
 and took the next free number. `UI_SIZE_LADDER` is in ascending *visual* order and that
@@ -81,37 +80,62 @@ go-home (which `go_to_world` is built on), `mark_location` and `teleport_to_mark
 
 There are two ways out, and the ladder uses both.
 
-### Narrow: take one scale less
+### Narrowness is priced in ladder steps
 
-At 4:3 the fix is simply to run **one UI scale below what the render floor allows**,
-measured on a live client with a sigil prompt up. That is `min_narrow_resolution`:
+How far below the render floor a client has to run depends on its **aspect ratio, and
+nothing else**:
 
-| UI size | render floor | narrow floor |
-|---|---|---|
-| Micro | 400x300 | 480x360 |
-| Tiny | 480x360 | 560x420 |
-| Small | 560x420 | 640x480 |
-| Regular | 640x480 | 720x540 |
-| Large | 720x540 | 800x600 |
-| Huge | 800x600 | **1280x960** |
+| band | steps below the render floor |
+|---|---|
+| 16:10 or wider | 0 |
+| 4:3 | 1 |
+| narrower than 4:3 | 2 |
 
-So 640x480 takes Small, 800x600 takes Large, and **1024x768 takes Large rather than
-Huge** — Huge still occludes there, which is the measurement that puts Huge off the
-one-step pattern the other five follow. Nothing 4:3 is offered between 1024x768 and
-1280x960, so the true Huge boundary is somewhere in that gap and untested; measure it
-rather than guessing if a size in it is ever added.
+Every pairing below was driven on a live client with a sigil prompt up, checking whether
+the prompt covered the hub and dorm buttons. `MEASURED_PAIRINGS` in
+`tests/test_game_sizing.py` is this table, and the model is held to it — **if a change and
+a measurement disagree, the measurement wins.**
 
-**400x300 is therefore not offered at all.** It renders at Micro, but the prompt covers
-the buttons and there is no scale below Micro to step down to. `has_unoccluded_ui_size`
-is the guard, and a test holds all of `VALID_RESOLUTIONS` to it — that check, not the
-render floor, is the bar a new entry has to clear. A settings file that still holds
-400x300 is migrated on read by the `game_resolution` getter rather than launched.
+| resolution | ratio | max scale | | resolution | ratio | max scale |
+|---|---|---|---|---|---|---|
+| 534x300 | ~16:9 | Micro | | 480x360 | 4:3 | Micro |
+| 640x360 | 16:9 | Tiny | | 560x420 | 4:3 | Tiny |
+| 746x420 | ~16:9 | Small | | 640x480 | 4:3 | Small |
+| 854x480 | ~16:9 | Regular | | 720x540 | 4:3 | Regular |
+| 960x540 | 16:9 | Large | | 800x600 | 4:3 | Large |
+| 1128x634 | ~16:9 | Huge | | 1024x768 | 4:3 | Large |
+| 1280x720 | 16:9 | Huge | | 1600x1200 | 4:3 | Large |
+| 1680x1050 | 8:5 | Huge | | 2048x1536 | 4:3 | Large |
+| 1920x1080 | 16:9 | Huge | | 1280x1024 | 5:4 | Regular |
+
+**It is the ratio, not the size — that is the whole finding.** 2048x1536 is 4:3 with 1536
+lines of height and still will not take Huge. So no amount of screen makes a 4:3 client
+outgrow the occlusion, and **no 4:3 resolution reaches Huge at all**: Huge is the top rung,
+and one step down from the top rung is Large.
+
+This replaced a per-rung `min_narrow_resolution` column that stored the same thing as a
+floor. Every entry in that column was, exactly, the *next* rung's render floor — Micro's
+was 480x360, which is Tiny's floor, and so on for all five. Only Huge's could not be
+derived that way, because there is no rung above it, and the invented value put there
+(1280x960) was the one number in the file that was wrong. It made Huge look reachable at
+4:3 given enough pixels, which is what 1600x1200 and 2048x1536 disprove. **Do not
+reintroduce a per-rung narrow floor**; it is one subtraction, and the column existing is
+what let a guess sit next to five measurements looking like data.
+
+1280x1024 is the other correction from the same round. It had been recorded as Huge on the
+reasoning that 5:4 is "close enough to 4:3, and it is big anyway". It is Regular.
+
+**400x300 is therefore not offered at all.** It renders at Micro, but it is 4:3, and Micro
+has no step to give. `has_unoccluded_ui_size` is the guard, and a test holds all of
+`VALID_RESOLUTIONS` to it — that check, not the render floor, is the bar a new entry has to
+clear. A settings file that still holds 400x300 is migrated on read by the
+`game_resolution` getter rather than launched.
 
 ### Wide: take the width instead
 
 `widescreen_form` derives a second resolution per rung — **the same height, the width
-widened to 16:9** — which moves the edge-anchored buttons away from the centred prompt
-and so keeps the render floor's scale:
+widened to 16:9** — which moves the edge-anchored buttons away from the centred prompt, so
+the rung pays no steps and keeps the render floor's scale:
 
 | UI size | 16:9 | scale |
 |---|---|---|
@@ -127,11 +151,20 @@ inherits the render floor's verification. Deriving the 16:9 size from the *width
 (400x225) would cut the height below the floor, which is exactly the broken pairing the
 ladder exists to prevent.
 
-`is_widescreen` draws the line at **16:10**, compared by cross-multiplying integers so
-1280x800 — the one offered resolution sitting exactly on it — is not decided by a float.
-16:9 is what was measured; 16:10 is a judgement that it is close enough, and 1280x800 is
-the only resolution where that judgement changes an answer (Huge rather than Large). If
-it turns out to be wrong, that is the one entry to look at.
+**These are the game's own series, continued downward.** `widescreen_form` rounds the width
+to an even pixel, and fed the heights from the game's own dropdown it returns the game's
+own entries: 634 → 1128x634, 990 → 1760x990, 720 → 1280x720, 1080 → 1920x1080. So the
+sub-floor widescreen rungs are not an aspect ratio of our invention — they are the rule the
+game already applies above 800x600, applied below it.
+
+`is_widescreen` draws the band at **16:10**, compared by cross-multiplying integers so a
+ratio sitting exactly on the line cannot be decided either way by a float. This is a
+**measurement**: 1680x1050 is 8:5 and takes Huge with the prompt clear.
+
+**Do not tighten the band toward exact 16:9.** The even-pixel rounding above lands some
+derived rungs fractionally *under* 16:9 — 746x420 is 1.7762 against 1.7778 — so an exact
+16:9 test would price them as narrow and cost each one a scale it does not owe. 7:4 is the
+tightest safe boundary if it ever has to move.
 
 The aspect ratio itself costs nothing. `Resolution` is free-form and the engine sets its
 own frustum at launch, which is how the 16:9 sizes already in `VALID_RESOLUTIONS`
@@ -139,10 +172,23 @@ own frustum at launch, which is how the 16:9 sizes already in `VALID_RESOLUTIONS
 correction discussed under Deimos below, which only arises when something resizes a
 *running* client.
 
+## What is offered, and why those
+
 `VALID_RESOLUTIONS` is a sorted union rather than a concatenation, because the two sets
 interleave: a rung's 16:9 form is wider than the stock floor, so 854x480 and 960x540 sort
 above 800x600 while still being sub-floor sizes in the sense that matters — they take a UI
-scale below Huge.
+scale below Huge. "Sub-floor" there is about the *scale*, not the size: the 4:3 entries at
+and above 800x600 top out at Large too.
+
+Every entry has one of exactly two provenances, and a test enforces it: the game's own
+dropdown offers it, or it is a ladder rung run through `widescreen_form`.
+
+The dropdown offers seventeen sizes. Four are left out as sizes no monitor is — 1128x634,
+1760x990, 3072x1728, 3200x1800 — rather than padding every picker with entries nobody
+picks. Two entries that were *not* on the dropdown have been removed: 1280x960, which is
+where the mistaken Huge narrow floor came from, and 1280x800, which existed mostly as the
+one resolution sitting exactly on the 16:10 boundary. That boundary still has a live case
+in 1680x1050, and a measured one.
 
 ## Where the two values live
 
@@ -250,7 +296,7 @@ Three and four land on Micro's **16:9** form, the smallest offered resolution. R
 by area, so the widescreen form wins there while still fitting the 2x2 grid — 2*(534+12) =
 1092 against a 1304 budget. Two clients keep the 4:3 640x480, which shows more game than
 640x360; the 16:9 forms only ever win where they are genuinely bigger. Note that 640x480
-now reads **Small**, not Regular: it is 4:3, so the narrow floor binds.
+now reads **Small**, not Regular: it is 4:3, so it pays a ladder step.
 
 This is the **inverse** of `SettingsManager.minimum_window_size()`, which derives a window
 minimum from a game size already chosen. Both are kept, and they ask opposite questions:
@@ -296,6 +342,27 @@ The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 (`gui/game_embed/launch_cards.py`), the Launch menu (`gui/main_window.py`),
 `LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos
 (`gui/settings/accounts_tab.py`).
+
+### Which client count the settings combos judge against
+
+The launch surfaces size against the count they are about to produce, which is exact.
+The two settings combos have no such moment, and they answer it differently:
+
+| combo | sized against | why |
+|---|---|---|
+| a profile's own resolution | that profile's account count | it is the number of clients this value will actually have to hold |
+| the global default | **one client** | the common case, and the only one it is the sole answer for |
+
+The global one used to be sized against the largest profile that inherits it. That is
+defensible — those are launches this value decides — but it greys out most of the list for
+anyone who merely keeps a four-account profile around, and four accounts is rare where one
+or two is not. A user running several clients has a launch profile, and that profile has
+its own combo judged against its own accounts. Judging the global default by the rarer case
+made the common one look broken.
+
+This is safe because neither combo is a gate. A profile that inherits a resolution too
+large for its account count is still refused at launch, by `ProfileCard` and the Launch
+menu, with `fit_problem`'s sentence naming both numbers and all three ways out.
 
 An earlier suggestion of a preferred size plus a scroll area is explicitly rejected: the
 user should never have to scroll to see a game window.
@@ -366,10 +433,6 @@ and belongs in its own issue.
 - **Splitter positions are not persisted.** They are seeds, by design — the fit check
   reads the live geometry instead, so this costs nothing there, but a dragged layout is
   still forgotten at restart.
-- **Which client count a cap is sized against.** The launch surfaces size against the
-  resulting count, which is exact at the moment of launching. The *settings* combos have
-  no such moment, so the global one is sized against the largest profile that follows it
-  and the per-profile one against that profile's own accounts.
 - **Monitor changes.** The budget depends on which screen the window is on and that
   screen's scale factor, so moving the window between monitors re-evaluates fit. What
   happens to an already-running configuration that no longer fits after such a move is

@@ -31,7 +31,7 @@ def test_the_ladder_is_in_ascending_visual_order_and_not_in_value_order():
     resolutions = [rung.min_resolution for rung in gs.UI_SIZE_LADDER]
     assert resolutions == sorted(resolutions)
     assert [rung.value for rung in gs.UI_SIZE_LADDER] != sorted(rung.value for rung in gs.UI_SIZE_LADDER)
-    assert gs.UI_SIZE_LADDER[0] == gs.UiSize("Micro", 5, (400, 300), (480, 360))
+    assert gs.UI_SIZE_LADDER[0] == gs.UiSize("Micro", 5, (400, 300))
 
 
 def test_every_rung_is_a_step_of_eighty_by_sixty_and_four_by_three():
@@ -42,53 +42,85 @@ def test_every_rung_is_a_step_of_eighty_by_sixty_and_four_by_three():
         assert width * 3 == height * 4
 
 
+# Every (resolution, UI size) pairing driven in a live client on a sigil, checking whether
+# the centred interact prompt covered the compass and teleporter buttons. This is the table
+# the model exists to reproduce; if a change here and a measurement disagree, the
+# measurement wins. Do not add a row that was reasoned rather than driven -- 1280x1024 was
+# recorded as Huge on the reasoning that 5:4 was "close enough to 4:3", and it is Regular.
+MEASURED_PAIRINGS = [
+    # 16:10 and wider: no step, the render floor is the whole answer.
+    ((534, 300), "Micro"),
+    ((640, 360), "Tiny"),
+    ((746, 420), "Small"),
+    ((854, 480), "Regular"),
+    ((960, 540), "Large"),
+    ((1128, 634), "Huge"),  # the smallest 16:9 the game's own dropdown offers
+    ((1280, 720), "Huge"),
+    ((1680, 1050), "Huge"),  # 8:5 -- what makes the 16:10 band boundary a measurement
+    ((1920, 1080), "Huge"),  # nothing above the top rung asks for more than Huge
+    # 4:3: one step.
+    ((480, 360), "Micro"),
+    ((560, 420), "Tiny"),
+    ((640, 480), "Small"),
+    ((720, 540), "Regular"),
+    ((800, 600), "Large"),
+    ((1024, 768), "Large"),
+    ((1600, 1200), "Large"),
+    ((2048, 1536), "Large"),
+    # Narrower than 4:3: two steps.
+    ((1280, 1024), "Regular"),
+]
+
+
+@pytest.mark.parametrize(("resolution", "expected"), MEASURED_PAIRINGS)
+def test_the_model_reproduces_every_measured_pairing(resolution, expected):
+    assert gs.max_ui_size(resolution).name == expected
+
+
 @pytest.mark.parametrize(
-    ("resolution", "expected"),
+    ("resolution", "expected_steps"),
     [
-        ((480, 360), "Micro"),
-        ((560, 420), "Tiny"),
-        ((640, 480), "Small"),
-        ((720, 540), "Regular"),
-        ((800, 600), "Large"),
-        ((1024, 768), "Large"),  # the measured one: Huge still occludes here
-        ((1280, 960), "Huge"),
-        ((1280, 1024), "Huge"),  # 5:4, narrower than 4:3, and still clear at that size
+        ((1920, 1080), 0),  # 16:9
+        ((1680, 1050), 0),  # 8:5, measured
+        ((1024, 768), 1),  # 4:3
+        ((1280, 1024), 2),  # 5:4
     ],
 )
-def test_a_narrow_resolution_takes_one_scale_less_than_its_render_floor_allows(resolution, expected):
-    """The occlusion floor binds, not the render floor: 640x480 renders Regular fine.
+def test_narrowness_is_priced_in_ladder_steps(resolution, expected_steps):
+    assert gs.scale_steps(resolution) == expected_steps
 
-    It is one step down for every scale except Huge, which needs more than 1024x768.
+
+def test_a_four_by_three_client_runs_one_scale_below_what_it_could_draw():
+    """The occlusion step, stated on its own: 640x480 *renders* Regular perfectly well."""
+    for resolution in [(480, 360), (560, 420), (640, 480), (720, 540), (800, 600)]:
+        drawn = gs.max_ui_size(gs.widescreen_form(resolution)).name
+        clicked = gs.max_ui_size(resolution).name
+        names = [rung.name for rung in gs.UI_SIZE_LADDER]
+        assert names.index(clicked) == names.index(drawn) - 1
+
+
+def test_no_four_by_three_resolution_reaches_huge_at_any_size():
+    """2048x1536 is the one that settles it: the cap is the aspect ratio, not the size.
+
+    This is what the old per-rung "narrow floor" column got wrong. Huge was given a floor
+    of 1280x960, which made Huge look reachable at 4:3 given enough pixels. There is no
+    rung above Huge to step down from, so there is nothing to reach it with.
     """
-    assert gs.max_ui_size(resolution).name == expected
-
-
-@pytest.mark.parametrize(
-    ("resolution", "expected"),
-    [
-        ((534, 300), "Micro"),
-        ((640, 360), "Tiny"),
-        ((746, 420), "Small"),
-        ((854, 480), "Regular"),
-        ((960, 540), "Large"),
-        ((1280, 720), "Huge"),
-        ((1920, 1080), "Huge"),  # nothing above the top rung asks for more than Huge
-    ],
-)
-def test_a_widescreen_resolution_keeps_the_scale_its_render_floor_allows(resolution, expected):
-    """No step down: the prompt clears the edge-anchored buttons once the client is wide."""
-    assert gs.max_ui_size(resolution).name == expected
+    for resolution in [(800, 600), (1024, 768), (1280, 960), (1600, 1200), (2048, 1536), (4096, 3072)]:
+        assert gs.max_ui_size(resolution).name != "Huge", resolution
 
 
 def test_sixteen_by_ten_counts_as_widescreen():
-    """1280x800 sits exactly on the line, and is the only offered resolution that does.
+    """Measured, not assumed: 1680x1050 is 8:5 and takes Huge with the prompt clear.
 
-    Narrow it would take Large, because Huge needs 1280x960. It is also the one place the
-    16:10 boundary is a judgement rather than a measurement -- 16:9 is what was tested.
+    The boundary must not be tightened toward exact 16:9. widescreen_form rounds to an
+    even pixel, which lands 746x420 at 1.7762 -- fractionally *under* 16:9 -- so an exact
+    16:9 test would price it as narrow and cost it a scale it does not owe.
     """
-    assert gs.is_widescreen((1280, 800))
-    assert gs.max_ui_size((1280, 800)).name == "Huge"
-    assert not gs.is_widescreen((1280, 960))
+    assert gs.is_widescreen((1680, 1050))
+    assert gs.max_ui_size((1680, 1050)).name == "Huge"
+    assert gs.is_widescreen((746, 420))
+    assert not gs.is_widescreen((1280, 1024))
 
 
 def test_a_resolution_with_no_working_pairing_is_recognised_as_such():
@@ -311,3 +343,50 @@ def test_one_client_is_not_described_as_one_clients():
     reason = gs.fit_problem((1920, 1080), 1, _DEFAULT_BUDGET)
     assert reason is not None
     assert reason.startswith("1 client at")
+
+
+def test_every_offered_resolution_is_one_the_game_offers_or_a_widescreen_form_of_a_rung():
+    """The list is not freeform, and the provenance of each entry is one of exactly two.
+
+    Either the game's own dropdown offers it, or it is a ladder rung widened to 16:9 by
+    ``widescreen_form`` -- which is the same even-pixel rule the dropdown's own 16:9 sizes
+    follow, so the derived ones are that series continued below the game's 800x600 floor
+    rather than an aspect ratio of our invention.
+    """
+    # The dropdown, transcribed in full; the offered list is a subset of this plus the
+    # derived forms, never a superset.
+    game_dropdown = {
+        (800, 600),
+        (1024, 768),
+        (1128, 634),
+        (1280, 720),
+        (1280, 1024),
+        (1366, 768),
+        (1600, 900),
+        (1600, 1200),
+        (1680, 1050),
+        (1760, 990),
+        (1920, 1080),
+        (1920, 1200),
+        (2048, 1536),
+        (2560, 1440),
+        (3072, 1728),
+        (3200, 1800),
+        (3840, 2160),
+    }
+    derived = {gs.widescreen_form(rung.min_resolution) for rung in gs.UI_SIZE_LADDER}
+    ladder_floors = {rung.min_resolution for rung in gs.UI_SIZE_LADDER}
+    for resolution in VALID_RESOLUTIONS:
+        assert resolution in game_dropdown | derived | ladder_floors, resolution
+
+
+def test_the_widescreen_form_reproduces_the_game_s_own_sixteen_by_nine_entries():
+    """Not a coincidence worth relying on silently: it is why the derived sizes are safe.
+
+    Fed the heights the game's own dropdown uses, ``widescreen_form`` returns the game's
+    own widths. The rule below 800x600 is the rule the game already applies above it.
+    """
+    assert gs.widescreen_form((0, 634)) == (1128, 634)
+    assert gs.widescreen_form((0, 990)) == (1760, 990)
+    assert gs.widescreen_form((0, 720)) == (1280, 720)
+    assert gs.widescreen_form((0, 1080)) == (1920, 1080)

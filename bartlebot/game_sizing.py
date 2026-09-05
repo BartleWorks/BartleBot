@@ -17,9 +17,9 @@ default UI size, and the two must never be independently selectable.
 A rendering HUD is not the same as a reachable one, though. The interact prompt is
 centred and the compass and teleporter buttons are anchored to an edge, so on a narrow
 client the prompt covers them -- and those buttons are clicked by coordinate, so a
-covered one swallows the click. That puts a *second*, higher floor under each scale,
-and it is why 400x300 is not offered at all: it would need a scale below Micro, and
-there is not one.
+covered one swallows the click. Narrowness therefore costs ladder steps off the render
+floor: none at 16:10 or wider, one at 4:3, two below that. It is why 400x300 is not
+offered at all -- it is 4:3, and Micro has no step to give.
 
 The game does not clamp UI size against resolution itself: a UI too large for the client
 area is reachable in-game and simply renders broken. That very likely explains the stock
@@ -76,61 +76,95 @@ MENU_AND_STATUS_PX = 60
 
 
 class UiSize(NamedTuple):
-    """One rung: what the game calls this scale, what it stores, and its two floors.
-
-    Two floors, because two different things break as a client shrinks, at different
-    sizes and for different reasons.
+    """One rung: what the game calls this scale, what it stores, and its render floor.
 
     *min_resolution* is the smallest client area whose HUD at this scale still *renders*
-    -- established by driving every control at each pairing in a live client. Below it
-    the interface overflows the client area outright.
+    -- established by driving every control at each pairing in a live client. Below it the
+    interface overflows the client area outright.
 
-    *min_narrow_resolution* is the smallest client area at this scale where the centred
-    interact prompt does not *cover* the compass and teleporter buttons. It applies only
-    to narrow aspect ratios: widening a client at the same height moves those
-    edge-anchored buttons away from the centred prompt, so at 16:10 or wider the render
-    floor is the only one that binds. That is what the 16:9 rungs are for.
+    That floor is not the whole answer, because a HUD that draws is not necessarily one
+    that can be clicked; see ``ASPECT_BAND_STEPS`` for the second half.
     """
 
     name: str
     value: int
     min_resolution: tuple[int, int]
-    min_narrow_resolution: tuple[int, int]
 
 
 # In ascending *visual* order, which is the only order anything here may use. The stored
 # values are not ordered by size: Micro was appended after the original five and got the
 # next free number. Nothing may sort or compare these numerically.
-#
-# The narrow floors were measured the same way as the render floors -- a live client on a
-# sigil at each pairing, checking whether the prompt covered the hub and dorm buttons. For
-# Micro through Large the answer landed exactly one ladder step above the render floor.
-# Huge is not on that pattern: it still occludes at 1024x768, and 1280x960 is the smallest
-# offered 4:3 size seen clear. Nothing is offered between those two, so the real boundary
-# is somewhere in that gap and is untested -- if a 4:3 size in it is ever added, measure
-# it rather than assuming either end.
 UI_SIZE_LADDER: tuple[UiSize, ...] = (
-    UiSize("Micro", 5, (400, 300), (480, 360)),
-    UiSize("Tiny", 0, (480, 360), (560, 420)),
-    UiSize("Small", 1, (560, 420), (640, 480)),
-    UiSize("Regular", 2, (640, 480), (720, 540)),
-    UiSize("Large", 3, (720, 540), (800, 600)),
-    UiSize("Huge", 4, (800, 600), (1280, 960)),
+    UiSize("Micro", 5, (400, 300)),
+    UiSize("Tiny", 0, (480, 360)),
+    UiSize("Small", 1, (560, 420)),
+    UiSize("Regular", 2, (640, 480)),
+    UiSize("Large", 3, (720, 540)),
+    UiSize("Huge", 4, (800, 600)),
 )
 
 
-# 16:10. Verified at 16:9, where the prompt clears the edge-anchored teleporter buttons;
-# 16:10 is close enough to be treated the same. Held as integers and compared by
-# cross-multiplication so 1280x800 -- the one offered resolution sitting exactly on the
-# line -- cannot be decided either way by a float.
-WIDESCREEN_RATIO: tuple[int, int] = (16, 10)
+# ---------------------------------------------------------------------------
+# What narrowness costs
+# ---------------------------------------------------------------------------
+# The second floor, and the one that is not about rendering at all. The HUD anchors the
+# compass and teleporter buttons to a screen edge and centres the interact prompt, so on a
+# narrow client the prompt covers them -- and those buttons are clicked by coordinate
+# (node_helpers.click_by_path -> wizwalker click_window), so a covered one swallows the
+# click and the node runs out its timeout instead of failing loudly.
+#
+# The cost is measured in ladder steps off the render floor, and it depends on the aspect
+# ratio *alone*. Not on size: 2048x1536 is 4:3 with 1536 lines of height and still will not
+# take Huge, which rules out any model where a big enough client outgrows the problem. Ten
+# pairings were driven in a live client on a sigil, and this reproduces all ten:
+#
+#     >= 16:10   0 steps   1128x634 Huge, 1680x1050 Huge, and every 16:9 rung
+#     >= 4:3     1 step    480x360 Micro, 560x420 Tiny, 640x480 Small, 720x540 Regular,
+#                          800x600 Large, 1024x768 Large, 1600x1200 Large, 2048x1536 Large
+#     narrower   2 steps   1280x1024 Regular
+#
+# One step off the render floor is also, exactly, the next rung's render floor -- which is
+# why this was first written as a per-rung "narrow floor" column and read as data. It was
+# only ever one number wide, and the single entry that column could not derive was the one
+# that was wrong: Huge was given a narrow floor of 1280x960, and 1600x1200 and 2048x1536
+# both say no 4:3 size takes Huge at any size at all. There is no rung above Huge to step
+# down from, which is the whole of it.
+#
+# Bands are held as integers and compared by cross-multiplication so a ratio sitting
+# exactly on a boundary cannot be decided either way by a float. Ordered widest first.
+#
+# 16:10 is measured, not a judgement: 1680x1050 is 8:5 and takes Huge. Do not tighten it
+# toward exact 16:9 -- ``widescreen_form``'s even-pixel rounding lands some rungs
+# fractionally *below* 16:9 (746x420 is 1.7762), so they would misclassify as narrow. 7:4
+# is the tightest safe boundary if this ever has to move.
+ASPECT_BAND_STEPS: tuple[tuple[tuple[int, int], int], ...] = (
+    ((16, 10), 0),
+    ((4, 3), 1),
+)
+
+# What anything narrower than the last band costs. 5:4 is the only such ratio offered.
+NARROW_BAND_STEPS = 2
+
+# Retained as the name the rest of the code asks by; it is simply the first band.
+WIDESCREEN_RATIO: tuple[int, int] = ASPECT_BAND_STEPS[0][0]
+
+
+def scale_steps(resolution: tuple[int, int]) -> int:
+    """How many ladder steps below its render floor *resolution* has to run.
+
+    Zero for anything 16:10 or wider, where the centred prompt clears the edge-anchored
+    buttons on its own and the render floor is the only thing that binds.
+    """
+    width, height = resolution
+    for (num, den), steps in ASPECT_BAND_STEPS:
+        if width * den >= height * num:
+            return steps
+    return NARROW_BAND_STEPS
 
 
 def is_widescreen(resolution: tuple[int, int]) -> bool:
     """Whether *resolution* is wide enough for the centred prompt to clear the HUD edges."""
-    width, height = resolution
-    num, den = WIDESCREEN_RATIO
-    return width * den >= height * num
+    return scale_steps(resolution) == 0
 
 
 def widescreen_form(resolution: tuple[int, int]) -> tuple[int, int]:
@@ -140,74 +174,77 @@ def widescreen_form(resolution: tuple[int, int]) -> tuple[int, int]:
     control in a live client. A HUD cannot be broken by being handed more room on one axis
     and the same on the other, so the 16:9 form of a rung inherits the verification of that
     rung's render floor -- and, by moving the edge-anchored buttons away from the centred
-    prompt, escapes the narrow floor rather than having to clear it. Holding the *width*
-    and deriving the height instead (400x300 -> 400x225) would drop below the render
-    floor, which is the broken pairing the ladder exists to prevent.
+    prompt, pays no narrowness steps rather than having to clear a higher floor. Holding
+    the *width* and deriving the height instead (400x300 -> 400x225) would drop below the
+    render floor, which is the broken pairing the ladder exists to prevent.
 
-    The width is rounded to an even pixel, the convention every stock 16:9 size in
-    ``VALID_RESOLUTIONS`` already follows -- 16:9 is not integral at these heights.
+    The width is rounded to an even pixel. That is not only the convention every stock 16:9
+    size in ``VALID_RESOLUTIONS`` follows -- 16:9 is not integral at these heights -- it is
+    the game's own: fed the heights from its dropdown this returns its own entries exactly,
+    634 -> 1128x634 and 990 -> 1760x990.
     """
     _, height = resolution
     return round(height * 16 / 9 / 2) * 2, height
 
 
-# Every offered resolution below the stock floor: each ladder rung's 16:9 form, and the
-# 4:3 floors from Tiny up. Discrete rather than freeform -- every offered resolution maps
-# to exactly one maximum UI size, which is what keeps the pairing testable.
+# Every offered resolution below the stock floor: each ladder rung's 16:9 form, and the 4:3
+# floors from Tiny up. Discrete rather than freeform -- every offered resolution maps to
+# exactly one maximum UI size, which is what keeps the pairing testable.
 #
-# The 16:9 forms are not only a matter of taste. The HUD anchors the compass and
-# teleporter buttons to a screen edge and centres an interact prompt, so at 400x300 with
-# Micro the prompt covers the hub and dorm buttons -- and every one of those buttons is
-# clicked by coordinate (node_helpers.click_by_path -> wizwalker click_window), so a
-# covered button swallows the click instead of failing loudly, and the node runs out its
-# timeout. The 16:9 form of a rung pushes the edges further from the centre at the same
-# height. At 1080p it is bigger as well: 534x300 still fits the 2x2 grid that 400x300
-# does, with a third more game in every tile.
-#
-# Micro's own 4:3 floor, 400x300, is deliberately not in here. It renders fine, but the
-# prompt covers the teleporter buttons at that width and there is no scale below Micro to
-# step down to, so no pairing at 400x300 works at all -- ``has_unoccluded_ui_size`` is the
-# guard. The only way out at that height is width, and that is 534x300.
+# Micro's own 4:3 floor, 400x300, is deliberately not in here. It renders fine, but 4:3
+# costs a ladder step and there is no scale below Micro to spend it, so no pairing at
+# 400x300 works at all -- ``has_unoccluded_ui_size`` is the guard. The only way out at that
+# height is width, and that is 534x300.
 SUB_FLOOR_RESOLUTIONS: list[tuple[int, int]] = sorted(
     {rung.min_resolution for rung in UI_SIZE_LADDER[1:-1]}
     | {widescreen_form(rung.min_resolution) for rung in UI_SIZE_LADDER[:-1]}
 )
 
 
+def _render_floor_index(resolution: tuple[int, int]) -> int | None:
+    """The highest rung *resolution* can render, or None if it is under every floor."""
+    width, height = resolution
+    best: int | None = None
+    for index, rung in enumerate(UI_SIZE_LADDER):
+        if width >= rung.min_resolution[0] and height >= rung.min_resolution[1]:
+            best = index
+    return best
+
+
+def _reachable_index(resolution: tuple[int, int]) -> int | None:
+    """The highest rung *resolution* can both draw and be clicked at, or None if there is none."""
+    floor = _render_floor_index(resolution)
+    if floor is None:
+        return None
+    index = floor - scale_steps(resolution)
+    return index if index >= 0 else None
+
+
 def max_ui_size(resolution: tuple[int, int]) -> UiSize:
     """The largest UI scale *resolution* can carry with the HUD both drawn and reachable.
 
-    Which floor binds depends on the aspect ratio: at 16:10 or wider only the render
-    floor does; narrower than that the occlusion floor does, which is at least one ladder
-    step higher. So a 4:3 client takes one scale less than its render floor alone would
-    allow, and 1024x768 takes Large rather than Huge.
+    The render floor sets the ceiling and the aspect ratio takes steps off it, so a 4:3
+    client runs one scale below what it could draw and 1024x768 takes Large rather than
+    Huge. No 4:3 size takes Huge, at any size.
 
-    Always returns a rung, including for a resolution under every floor -- there is no
-    scale below Micro to fall back to, so Micro is what is left. That case is not
-    reachable from the offered list: ``has_unoccluded_ui_size`` is what keeps a resolution
-    with no working pairing out of ``VALID_RESOLUTIONS``.
+    Always returns a rung, including for a resolution that has no working pairing -- there
+    is no scale below Micro to fall back to, so Micro is what is left. That case is not
+    reachable from the offered list: ``has_unoccluded_ui_size`` is what keeps such a
+    resolution out of ``VALID_RESOLUTIONS``.
     """
-    width, height = resolution
-    wide = is_widescreen(resolution)
-    best = UI_SIZE_LADDER[0]
-    for rung in UI_SIZE_LADDER:
-        min_w, min_h = rung.min_resolution if wide else rung.min_narrow_resolution
-        if width >= min_w and height >= min_h:
-            best = rung
-    return best
+    index = _reachable_index(resolution)
+    return UI_SIZE_LADDER[index] if index is not None else UI_SIZE_LADDER[0]
 
 
 def has_unoccluded_ui_size(resolution: tuple[int, int]) -> bool:
     """Whether *any* UI scale works at *resolution*, prompt occlusion included.
 
-    False is precisely why 400x300 is no longer offered, and it is the check a new entry
-    in ``VALID_RESOLUTIONS`` has to pass. ``max_ui_size`` still answers Micro for such a
-    resolution because it has to answer something; this is the question that tells the
-    two cases apart.
+    False is precisely why 400x300 is not offered -- 4:3 costs a step and Micro has none to
+    give -- and it is the check a new entry in ``VALID_RESOLUTIONS`` has to pass.
+    ``max_ui_size`` still answers Micro for such a resolution because it has to answer
+    something; this is the question that tells the two cases apart.
     """
-    floor = UI_SIZE_LADDER[0]
-    min_w, min_h = floor.min_resolution if is_widescreen(resolution) else floor.min_narrow_resolution
-    return resolution[0] >= min_w and resolution[1] >= min_h
+    return _reachable_index(resolution) is not None
 
 
 def ui_size_for(preferred_value: int | None, resolution: tuple[int, int]) -> int | None:
