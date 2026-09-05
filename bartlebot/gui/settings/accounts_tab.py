@@ -353,6 +353,65 @@ class _ProfileDialog(QDialog):
         return self._res_combo.currentData()
 
 
+def edit_launch_profile(
+    old_name: str,
+    parent: QWidget | None = None,
+    live_game_area: tuple[int, int] | None = None,
+) -> bool:
+    """Open the editor for the launch profile named *old_name*; save it if accepted.
+
+    A module function rather than a method because the two places that edit a profile —
+    the Game tab's Edit button and the gear on a launch card — have nothing else in
+    common, and routing the card through the tab meant building the whole Settings dialog
+    to reach one editor (#193). What the card needs is the editor and the save; what it
+    does not need is a second OK/Cancel around them, applying to every tab.
+
+    Returns whether the profile was actually written, which is the caller's cue to
+    refresh whatever it draws profiles with. False covers all three ways nothing was
+    saved: no such profile, the editor cancelled, and a name the save refused.
+
+    *live_game_area* is passed through so the editor's resolution picker judges a launch
+    the same way the surface behind it does — see gui/screen_fit.budget_for.
+
+    Must be called from a synchronous Qt slot. ``exec()`` re-enters Qt's event loop,
+    which Python 3.13 forbids from inside a running asyncio task — see the qasync
+    section of CLAUDE.md.
+    """
+    profile = next((p for p in SettingsManager.instance().launch_profiles if p.get("name") == old_name), None)
+    if profile is None:
+        return False
+    raw_res = profile.get("resolution")
+    existing_res = tuple(raw_res) if raw_res else None
+    dlg = _ProfileDialog(
+        name=old_name,
+        selected_usernames=profile.get("accounts", []),
+        resolution=existing_res,
+        parent=parent,
+        live_game_area=live_game_area,
+    )
+    if dlg.exec() != QDialog.DialogCode.Accepted:
+        return False
+    new_name = dlg.name
+    if not new_name:
+        QMessageBox.warning(parent, "Invalid", "Profile name cannot be empty.")
+        return False
+    profiles = SettingsManager.instance().launch_profiles
+    if new_name != old_name and any(p["name"] == new_name for p in profiles):
+        QMessageBox.warning(parent, "Duplicate", f"Profile '{new_name}' already exists.")
+        return False
+    for p in profiles:
+        if p["name"] == old_name:
+            p["name"] = new_name
+            p["accounts"] = dlg.selected_usernames
+            if dlg.resolution is not None:
+                p["resolution"] = list(dlg.resolution)
+            else:
+                p.pop("resolution", None)
+            break
+    SettingsManager.instance().launch_profiles = profiles
+    return True
+
+
 class AccountsTab(QWidget):
     def __init__(self, parent=None, live_game_area: tuple[int, int] | None = None) -> None:
         super().__init__(parent)
@@ -622,54 +681,9 @@ class AccountsTab(QWidget):
         row = self._profile_list.currentRow()
         if row < 0:
             return
-        self.edit_profile(self._profile_list.item(row).data(Qt.ItemDataRole.UserRole).get("name", ""))
-
-    def edit_profile(self, old_name: str) -> None:
-        """Open the profile editor for the profile named *old_name*.
-
-        Public and keyed by name rather than by list row because the launch screen's
-        profile cards open this too, and a card knows the name it stands for and nothing
-        about this tab's selection. One editor for a profile, wherever it is reached
-        from: the card shows what a profile will do, and the dialog is where it is
-        changed.
-
-        Must be called from a synchronous Qt slot. ``exec()`` re-enters Qt's event loop,
-        which Python 3.13 forbids from inside a running asyncio task — see the qasync
-        section of CLAUDE.md.
-        """
-        profile = next((p for p in SettingsManager.instance().launch_profiles if p.get("name") == old_name), None)
-        if profile is None:
-            return
-        raw_res = profile.get("resolution")
-        existing_res = tuple(raw_res) if raw_res else None
-        dlg = _ProfileDialog(
-            name=old_name,
-            selected_usernames=profile.get("accounts", []),
-            resolution=existing_res,
-            parent=self,
-            live_game_area=self._live_game_area,
-        )
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        new_name = dlg.name
-        if not new_name:
-            QMessageBox.warning(self, "Invalid", "Profile name cannot be empty.")
-            return
-        profiles = SettingsManager.instance().launch_profiles
-        if new_name != old_name and any(p["name"] == new_name for p in profiles):
-            QMessageBox.warning(self, "Duplicate", f"Profile '{new_name}' already exists.")
-            return
-        for p in profiles:
-            if p["name"] == old_name:
-                p["name"] = new_name
-                p["accounts"] = dlg.selected_usernames
-                if dlg.resolution is not None:
-                    p["resolution"] = list(dlg.resolution)
-                else:
-                    p.pop("resolution", None)
-                break
-        SettingsManager.instance().launch_profiles = profiles
-        self._refresh_profiles()
+        name = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole).get("name", "")
+        if edit_launch_profile(name, self, self._live_game_area):
+            self._refresh_profiles()
 
     def _on_profile_delete(self) -> None:
         row = self._profile_list.currentRow()

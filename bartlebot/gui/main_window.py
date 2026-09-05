@@ -235,9 +235,10 @@ class MainWindow(QMainWindow):
         self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
         # ...and back: those rows resolve through the values that dialog just wrote.
         self.settings_applied.connect(self.left_sidebar.refresh_setup_values)
-        self._game_view_panel.edit_profile_requested.connect(
-            lambda name: self._open_settings(tab_name="game", edit_profile=name)
-        )
+        # Straight to the one editor the gear asks for. It used to go through
+        # _open_settings, which built the whole Settings dialog to reach it and left it
+        # standing behind — see _edit_launch_profile.
+        self._game_view_panel.edit_profile_requested.connect(self._edit_launch_profile)
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -583,11 +584,30 @@ class MainWindow(QMainWindow):
         elif tab == "combat":
             self.left_sidebar.switch_to_combat()
 
-    def _open_settings(self, tab_name: str = "general", edit_profile: str | None = None) -> None:
-        """Open Settings, optionally landing straight in one launch profile's editor.
+    def _edit_launch_profile(self, name: str) -> None:
+        """Edit one launch profile, from the gear on its card.
 
-        *edit_profile* is the launch screen's route: a profile card names the profile it
-        stands for, and the settings dialog owns where that profile is edited.
+        The card asks to edit a profile, so that is the only dialog it gets. This used to
+        open Settings on the Game tab with the editor on top, which left the whole
+        dialog standing behind the editor once it was dismissed — and worse, made the
+        refresh below conditional on *that* dialog being accepted, so cancelling it
+        dropped the refresh for a profile the editor had already saved (#193).
+
+        Called from a synchronous Qt slot: edit_launch_profile runs exec(), which Python
+        3.13 forbids from inside a running asyncio task — see CLAUDE.md.
+        """
+        from bartlebot.gui.settings.accounts_tab import edit_launch_profile
+
+        if edit_launch_profile(name, self, self.live_game_area):
+            self._rebuild_launch_menu()
+            self.refresh_minimum_size()
+        # Unconditional, as in _open_settings: the cards are rebuilt whether or not the
+        # profile changed, because the editor is modal and the screen behind it has been
+        # sitting on cards nothing has re-judged since it opened.
+        self._game_view_panel.refresh_launch_lists()
+
+    def _open_settings(self, tab_name: str = "general") -> None:
+        """Open Settings on the named tab.
 
         Called from synchronous Qt slots only. exec() re-enters Qt's event loop, which
         Python 3.13 forbids from inside a running asyncio task — see CLAUDE.md.
@@ -598,8 +618,6 @@ class MainWindow(QMainWindow):
         # way the Launch menu behind them does — a splitter drag moves both.
         dlg = SettingsDialog(self, live_game_area=self.live_game_area)
         dlg.open_tab(tab_name)
-        if edit_profile:
-            dlg.edit_profile(edit_profile)
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
