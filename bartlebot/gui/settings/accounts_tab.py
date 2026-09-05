@@ -25,8 +25,38 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
+from bartlebot.gui import screen_fit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
+
+
+def _mark_unfittable_resolutions(
+    combo: QComboBox,
+    client_count: int,
+    widget: QWidget,
+    live_area: tuple[int, int] | None = None,
+) -> None:
+    """Grey out every entry in *combo* that *client_count* clients could not fit at.
+
+    Disabled and explained rather than dropped from the list, which is the same rule the
+    launch surfaces follow: a user who cannot find 1920x1080 in the list learns nothing,
+    while one who sees it greyed out learns that their screen is the reason and that
+    fewer clients would bring it back.
+
+    The item's own resolution is read from its ``userData``, so the "Use global setting"
+    entry — which carries None — is skipped: what it resolves to is the global combo's
+    business, and that combo polices itself.
+    """
+    model = combo.model()
+    for index in range(combo.count()):
+        resolution = combo.itemData(index)
+        if resolution is None:
+            continue
+        reason = screen_fit.fit_problem(tuple(resolution), client_count, widget, live_area)
+        item = model.item(index)
+        if item is not None:
+            item.setEnabled(reason is None)
+        combo.setItemData(index, reason or "", Qt.ItemDataRole.ToolTipRole)
 
 
 class _ReorderableList(QListWidget):
@@ -134,8 +164,13 @@ class _ProfileDialog(QDialog):
         selected_usernames: list[str] | None = None,
         resolution: tuple[int, int] | None = None,
         parent=None,
+        live_game_area: tuple[int, int] | None = None,
     ) -> None:
         super().__init__(parent)
+        # The game area behind the settings dialog, so this picker and the Launch menu
+        # agree about which resolutions can be launched. None falls back to the
+        # configured layout alone — see gui/screen_fit.budget_for.
+        self._live_game_area = live_game_area
         self.setWindowTitle("Launch Profile")
         self.setMinimumWidth(340)
 
@@ -205,6 +240,10 @@ class _ProfileDialog(QDialog):
         res_form.addRow("Resolution:", self._res_combo)
         layout.addLayout(res_form)
 
+        self._res_hint = ThemedTextLabel("", css="font-size: 11px;")
+        self._res_hint.setWordWrap(True)
+        layout.addWidget(self._res_hint)
+
         # --- OK / Cancel ---
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -214,6 +253,26 @@ class _ProfileDialog(QDialog):
         # Populate list with pre-selected accounts
         for username in selected_usernames or []:
             self._add_account_item(username)
+        self._refresh_resolution_fit()
+
+    def _refresh_resolution_fit(self) -> None:
+        """Re-judge which resolutions this profile could launch at, and say what fits.
+
+        Judged against the profile's *own* account count, which is the number of clients
+        this resolution will actually have to hold. Re-run on every change to the list,
+        because adding a fourth account is exactly what turns a fitting profile into one
+        that has to come down a tier.
+        """
+        count = max(1, self._account_list.count())
+        _mark_unfittable_resolutions(self._res_combo, count, self, self._live_game_area)
+        largest = screen_fit.largest_fitting_resolution(count, self, self._live_game_area)
+        clients = f"{count} client{'s' if count != 1 else ''}"
+        self._res_hint.setText(
+            f"Largest that fits {clients} on this screen: {largest[0]}×{largest[1]}."
+            if largest is not None
+            else f"No offered resolution fits {clients} on this screen — remove an account, "
+            "or make the sidebars and bot canvas smaller in Settings → General."
+        )
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -247,11 +306,13 @@ class _ProfileDialog(QDialog):
 
     def _on_add_account(self, username: str) -> None:
         self._add_account_item(username)
+        self._refresh_resolution_fit()
 
     def _on_remove(self) -> None:
         row = self._account_list.currentRow()
         if row >= 0:
             self._account_list.takeItem(row)
+            self._refresh_resolution_fit()
 
     def _on_move_up(self) -> None:
         row = self._account_list.currentRow()
@@ -293,8 +354,10 @@ class _ProfileDialog(QDialog):
 
 
 class AccountsTab(QWidget):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, live_game_area: tuple[int, int] | None = None) -> None:
         super().__init__(parent)
+        # Set before the resolution section is built: its own fit pass reads it.
+        self._live_game_area = live_game_area
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
@@ -318,13 +381,17 @@ class AccountsTab(QWidget):
         layout.addLayout(res_form)
 
         hint = ThemedTextLabel(
-            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution.",
+            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution. "
+            "At smaller sizes the game's own UI is scaled down to match while BartleBot runs, "
+            "and put back when it closes. Widescreen sizes keep a larger UI than 4:3 ones of "
+            "the same height.",
             css="font-size: 11px;",
         )
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
         self._res_combo.currentIndexChanged.connect(self._on_resolution_changed)
+        self._refresh_resolution_fit()
 
         # ------------------------------------------------------------------
         # Accounts section
@@ -391,6 +458,24 @@ class AccountsTab(QWidget):
         if resolution:
             SettingsManager.instance().game_resolution = resolution
             SettingsManager.instance().save()
+
+    def _refresh_resolution_fit(self) -> None:
+        """Grey out the resolutions a *single* client could not fit at.
+
+        One client, deliberately, even though this setting is also what a profile without
+        its own resolution launches at. Sizing it against the largest such profile is
+        defensible and was what this did, but it greys out most of the list for anyone who
+        happens to keep a four-account profile around — and a user running several clients
+        is a user who has a launch profile, which carries its own resolution combo sized
+        against its own accounts. Judging the global default by the rarer case made the
+        common one look broken.
+
+        Only a hint either way, not a gate: this value is set for more than a running
+        fleet, and the launch surfaces refuse an unfittable launch on their own — a profile
+        that inherits a resolution too large for its account count is still stopped there,
+        with a reason naming both numbers.
+        """
+        _mark_unfittable_resolutions(self._res_combo, 1, self, self._live_game_area)
 
     # ------------------------------------------------------------------
     # Accounts
@@ -498,6 +583,7 @@ class AccountsTab(QWidget):
     # ------------------------------------------------------------------
 
     def _refresh_profiles(self) -> None:
+        self._refresh_resolution_fit()
         self._profile_list.clear()
         for p in SettingsManager.instance().launch_profiles:
             n = len(p.get("accounts", []))
@@ -514,7 +600,7 @@ class AccountsTab(QWidget):
         self._profile_delete_btn.setEnabled(has_sel)
 
     def _on_profile_add(self) -> None:
-        dlg = _ProfileDialog(parent=self)
+        dlg = _ProfileDialog(parent=self, live_game_area=self._live_game_area)
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return
         name = dlg.name
@@ -561,6 +647,7 @@ class AccountsTab(QWidget):
             selected_usernames=profile.get("accounts", []),
             resolution=existing_res,
             parent=self,
+            live_game_area=self._live_game_area,
         )
         if dlg.exec() != QDialog.DialogCode.Accepted:
             return

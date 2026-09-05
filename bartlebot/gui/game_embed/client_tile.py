@@ -7,16 +7,15 @@ from PyQt6.QtGui import QFont, QPainter
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot import streamer_mode
+from bartlebot.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 
-FOCUS_BORDER = 6  # logical pixels of red fill around the game window when focused
-_LABEL_GAP = 3  # logical pixels between the bottom of the pill and the top of the focus border
-_LABEL_PILL_H = 26  # conservative upper bound on pill height (max(text_h, ICON_SIZE) + 6)
-LABEL_RESERVE = (
-    FOCUS_BORDER + _LABEL_GAP + _LABEL_PILL_H + 4
-)  # = 39 px; keeps label clear of border at minimum tile size
+# FOCUS_BORDER and LABEL_RESERVE are imported rather than defined here: how much chrome
+# a tile wraps around its game window is a term in the screen-fit arithmetic as well as
+# a drawing constant, and bartlebot/game_sizing.py cannot import a QWidget to find out.
+__all__ = ["FOCUS_BORDER", "LABEL_RESERVE", "ClientTile", "DetachedTile", "pill_text"]
 
 # Pill icon constants
 _ICON_SIZE = 18
@@ -209,7 +208,7 @@ class ClientTile(QWidget):
         pill_w = text_w + _ICON_GAP + _ICON_SIZE + 16  # 8px left + 8px right padding
         pill_h = max(text_h, _ICON_SIZE) + 6
         pill_x = (self.width() - pill_w) // 2
-        pill_y = gy - FOCUS_BORDER - _LABEL_GAP - pill_h
+        pill_y = gy - FOCUS_BORDER - LABEL_GAP - pill_h
 
         # Pill background
         painter.setBrush(THEME.qcolor_client_pill_bg())
@@ -304,7 +303,7 @@ class DetachedTile(QWidget):
         pill_w = text_w + _ICON_GAP + _ICON_SIZE + 16
         pill_h = max(text_h, _ICON_SIZE) + 6
         pill_x = (self.width() - pill_w) // 2
-        pill_y = FOCUS_BORDER + _LABEL_GAP
+        pill_y = FOCUS_BORDER + LABEL_GAP
 
         painter.setBrush(THEME.qcolor_client_pill_bg())
         painter.setPen(Qt.PenStyle.NoPen)

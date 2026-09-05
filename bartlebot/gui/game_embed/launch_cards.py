@@ -277,12 +277,53 @@ class _LaunchCard(ThemedMixin, QWidget):
         self._name_lbl: QLabel | None = None
         self._detail_lbl: QLabel | None = None
         self._quiet_lbl: QLabel | None = None
+        # Why this card cannot launch right now, or None while it can. Set rather than
+        # the card being dropped from the list: see set_unavailable.
+        self._unavailable: str | None = None
         # The account palette slot this card's left edge is striped with, when it stands
         # for a single account. None means no stripe -- a profile brings several accounts
         # and has no one colour, which is what its pills are for.
         self._stripe_key: int | None = None
 
+    def set_unavailable(self, reason: str | None) -> None:
+        """Grey the card out and say why, or None to make it launchable again.
+
+        Disabled rather than hidden. A profile that silently vanishes from the list
+        leaves the user hunting for it with nothing on screen saying what happened,
+        whereas a greyed row carrying "4 clients at 800×600 needs …" says both that it
+        still exists and what would bring it back. The reason goes in the card's quiet
+        line and in its tooltip, so it is readable without hovering.
+        """
+        if reason == self._unavailable:
+            return
+        self._unavailable = reason
+        self.setCursor(Qt.CursorShape.ArrowCursor if reason else Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(reason or "")
+        if self._quiet_lbl is not None:
+            self._quiet_lbl.setText(reason or self._available_quiet_text())
+            self._quiet_lbl.setWordWrap(bool(reason))
+        self.refresh_theme_styles()
+
+    def _available_quiet_text(self) -> str:
+        """What the quiet line says when the card can launch. Subclasses that have one override."""
+        return ""
+
+    @property
+    def unavailable_reason(self) -> str | None:
+        """Why this card cannot launch, or None if it can."""
+        return self._unavailable
+
+    @property
+    def quiet_text(self) -> str:
+        """What the card's quiet line currently reads — its summary, or the refusal."""
+        return "" if self._quiet_lbl is None else self._quiet_lbl.text()
+
     def apply_theme_styles(self) -> None:
+        if self._unavailable is not None:
+            # Fill and text both move, because either alone reads as enabled — the same
+            # finding as the app-wide disabled palette (tests/test_disabled_affordance.py).
+            self._apply_unavailable_styles()
+            return
         bg = THEME.node_fill if self._hovered else THEME.surface
         border = THEME.accent if self._hovered else THEME.border
         # The stripe rule comes after the shorthand, which sets all four sides: written
@@ -301,6 +342,18 @@ class _LaunchCard(ThemedMixin, QWidget):
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
             if lbl is not None:
                 lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+
+    def _apply_unavailable_styles(self) -> None:
+        """The greyed-out palette. The stripe goes too: it names an account, not a state."""
+        self.setStyleSheet(
+            f"#LaunchCard {{ background: {THEME.surface_disabled}; "
+            f"border: 1px solid {THEME.border}; border-radius: 4px; }}"
+        )
+        if self._name_lbl is not None:
+            self._name_lbl.setStyleSheet(f"color: {THEME.text_disabled}; background: transparent;")
+        for lbl in (self._detail_lbl, self._quiet_lbl):
+            if lbl is not None:
+                lbl.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px; background: transparent;")
 
     def _make_name_label(self, text: str) -> QLabel:
         label = QLabel(text)
@@ -321,7 +374,9 @@ class _LaunchCard(ThemedMixin, QWidget):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
+        # The whole card is the launch target, so an unfittable one has to swallow its
+        # own clicks — there is no QPushButton here whose disabled state would do it.
+        if event.button() == Qt.MouseButton.LeftButton and self._unavailable is None:
             self.launch_requested.emit()
         super().mousePressEvent(event)
 
@@ -393,6 +448,13 @@ class AccountCard(_LaunchCard):
         self._detail_lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self._detail_lbl)
 
+        # Empty and therefore invisible until set_unavailable fills it. Built here rather
+        # than on demand so the reason has somewhere to land without rebuilding the card.
+        self._quiet_lbl = QLabel("")
+        self._quiet_lbl.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._quiet_lbl.setMinimumWidth(1)
+        layout.addWidget(self._quiet_lbl)
+
     def resizeEvent(self, event) -> None:
         """Re-fit the character line: how many names fit is a function of the width.
 
@@ -445,6 +507,16 @@ class ProfileCard(_LaunchCard):
         self.refresh_theme_styles()
         self.launch_requested.connect(lambda: self.launch_profile_requested.emit(self._name))
 
+    @property
+    def profile(self) -> dict:
+        """The launch profile this card stands for.
+
+        Public because whether the card can launch is re-judged from outside it — the
+        screen it is on can change without the profile changing — and the judge needs the
+        accounts and the resolution to ask about.
+        """
+        return self._profile
+
     def _build(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 7, 10, 7)
@@ -486,7 +558,12 @@ class ProfileCard(_LaunchCard):
         layout.addLayout(pills)
 
         self._quiet_lbl = QLabel(profile_summary(self._profile))
+        self._quiet_lbl.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._quiet_lbl.setMinimumWidth(1)
         layout.addWidget(self._quiet_lbl)
+
+    def _available_quiet_text(self) -> str:
+        return profile_summary(self._profile)
 
     def apply_theme_styles(self) -> None:
         super().apply_theme_styles()
@@ -497,6 +574,8 @@ class ProfileCard(_LaunchCard):
             self._edit_btn.setIcon(svg_icon("gear", size=14))
 
     def enterEvent(self, event) -> None:
+        # Still revealed on an unfittable card: editing it — lowering its resolution, or
+        # dropping an account — is exactly what the greyed row is telling them to do.
         self._edit_btn.setVisible(True)
         super().enterEvent(event)
 

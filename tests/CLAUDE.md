@@ -1,6 +1,6 @@
 # Testing
 
-What every change ships with, and the two ways this suite goes slow or flaky.
+What every change ships with, and the ways this suite goes slow or flaky.
 
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
@@ -41,6 +41,36 @@ breaks.
 Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
 in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
 `_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
+
+## Widget lifetime
+
+**`deleteLater()` frees nothing in a test.** It posts a `DeferredDelete` event that only
+arrives on an event-loop spin, and no Qt event loop runs during the suite. Left to itself
+every widget every test builds stays alive for the whole session, and that is quadratic
+rather than merely untidy: `QApplication.setStyleSheet` delivers a `StyleChange` to every
+live widget, so one app-wide theme broadcast cost 26 s at 27,918 live widgets and 0.001 s
+at zero. That single leak was most of an 8-minute `-n auto` run (#189).
+
+`_free_widgets_this_test_created` in `conftest.py` handles it: at teardown it closes and
+destroys the *top-level* widgets that did not exist when it was set up, then flushes the
+`DeferredDelete` queue by hand. A test does not need to call `deleteLater()` for its own
+widgets — the ones already there are harmless, not load-bearing.
+
+Two rules follow:
+
+- **Reap per test, never globally.** A blanket sweep over `topLevelWidgets()` frees
+  widgets a module- or session-scoped fixture is still holding, and the next
+  `processEvents()` touches the corpse: exit 127, no traceback. Being autouse and
+  function-scoped is what makes the fixture safe — anything a wider-scoped fixture built
+  already existed when it was set up, so it survives.
+- **A widget a test stashes somewhere longer-lived than the test will be freed under it.**
+  If something genuinely has to outlive a test, it belongs to a module- or session-scoped
+  fixture, which is exactly the boundary the reaping respects.
+
+`pytest-qt` supplies the session-scoped `qapp` fixture the GUI tests request; the 47
+hand-rolled copies of it are gone. Its `qtbot` is available for a test that wants signal
+waiting or key/mouse simulation; `qtbot.addWidget` is redundant here, since the fixture
+above already owns the lifetime of everything a test builds.
 
 ## One QApplication per worker
 

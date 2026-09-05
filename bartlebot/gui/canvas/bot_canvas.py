@@ -40,6 +40,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
+from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
@@ -823,6 +824,11 @@ class BotCanvas(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # The floor the bottom pane may be dragged to, set explicitly so that the header
+        # and the favourites bar -- which hint 536px and 844px wide -- cannot raise the
+        # window's own minimum past what the screen-fit arithmetic budgeted for the
+        # canvas. See "The panel floors" in game_sizing.py.
+        self.setMinimumSize(BOTCANVAS_MIN_WIDTH, BOTCANVAS_MIN_HEIGHT)
         self._config: BotConfig | None = None
         self._mode = BotMode.RUN
         self._run_state = _IDLE

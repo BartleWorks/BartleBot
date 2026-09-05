@@ -8,10 +8,13 @@ from wizwalker import XYZ
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import MARK_BUTTON_PATH, RECALL_BUTTON_PATH, RECALL_TIMER_PATH
-from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, jitter
-
-POST_MARK_WAIT = 2.0  # seconds to wait for UI to reflect mark state after PAGE_DOWN
-STABILIZE_TIMEOUT = 5.0  # seconds to wait for server position to match teleport target
+from bartlebot.nodes.timing import (
+    COMPASS_TELEPORT_TIMEOUT,
+    POLL_INTERVAL,
+    POSITION_STABILIZE_TIMEOUT,
+    POST_MARK_WAIT,
+    jitter,
+)
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -159,9 +162,11 @@ async def _mark_client(machine, client) -> bool:
 
 async def _wait_stabilized(machine, client, target: XYZ) -> None:
     """Poll until the server-reported position is within 1.0 unit of target."""
-    if not await node_helpers.poll_until(lambda: _position_near(client, target), STABILIZE_TIMEOUT, POLL_INTERVAL):
+    if not await node_helpers.poll_until(
+        lambda: _position_near(client, target), POSITION_STABILIZE_TIMEOUT, POLL_INTERVAL
+    ):
         machine.log(
-            f"Position did not stabilize within {STABILIZE_TIMEOUT}s after teleport",
+            f"Position did not stabilize within {POSITION_STABILIZE_TIMEOUT}s after teleport",
             logging.DEBUG,
         )
 

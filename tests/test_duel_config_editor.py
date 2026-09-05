@@ -9,18 +9,11 @@ tests exercise it standalone, without a DuelStrategyEditor or CombatTab wrapping
 it, to prove that split actually holds.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
 from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
 from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor, move_item
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def test_load_populates_fields_from_the_config(qapp):

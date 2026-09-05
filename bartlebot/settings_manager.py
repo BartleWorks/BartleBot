@@ -11,6 +11,15 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from bartlebot import bot_options
+from bartlebot.game_sizing import (
+    BOTCANVAS_MIN_HEIGHT,
+    LEFT_SIDEBAR_MIN_WIDTH,
+    RIGHT_SIDEBAR_MIN_WIDTH,
+    SPLITTER_HANDLE_PX,
+    SUB_FLOOR_RESOLUTIONS,
+    required_window_size,
+    screen_budget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +36,7 @@ class _GeneralSettings(BaseModel):
     window_width: int = 1400
     window_height: int = 800
     left_sidebar_width: int = 300
-    right_sidebar_width: int = 300
+    right_sidebar_width: int = RIGHT_SIDEBAR_MIN_WIDTH
     bottom_section_height: int = 220
     auto_save_enabled: bool = True
     auto_save_interval_seconds: int = 300
@@ -49,6 +58,8 @@ class _GeneralSettings(BaseModel):
 
 class _GameEmbedSettings(BaseModel):
     resolution: list[int] = [800, 600]
+    # The game's own UI scale as the user had it, so a clamped launch can give it back.
+    original_ui_size: int | None = None
 
 
 class _CanvasSettings(BaseModel):
@@ -82,7 +93,7 @@ _DEFAULTS: dict[str, Any] = {
         "window_width": 1400,
         "window_height": 800,
         "left_sidebar_width": 300,
-        "right_sidebar_width": 300,
+        "right_sidebar_width": RIGHT_SIDEBAR_MIN_WIDTH,
         "bottom_section_height": 220,
         "auto_save_enabled": True,
         "auto_save_interval_seconds": 300,
@@ -103,6 +114,9 @@ _DEFAULTS: dict[str, Any] = {
     },
     "game_embed": {
         "resolution": [800, 600],
+        # The user's own <UISize>, captured once before the first launch clamps it.
+        # See SettingsManager.original_ui_size.
+        "original_ui_size": None,
     },
     "canvas": {
         "minimap_visible": True,
@@ -130,25 +144,51 @@ _DEFAULTS: dict[str, Any] = {
     "bot_option_overrides": {},  # {bot_uuid: {option_name: value}}
 }
 
-# Valid Wizard101 windowed resolutions (width, height)
-VALID_RESOLUTIONS: list[tuple[int, int]] = [
+# Resolutions from the game's own dropdown, at and above its 800x600 floor. A subset of
+# it: the dropdown also offers 1128x634, 1760x990, 3072x1728 and 3200x1800, which are
+# real 16:9 sizes but match no monitor anyone runs, so they are left out rather than
+# padding every picker with sizes nobody picks.
+#
+# Nothing here is off the dropdown. 1280x800 and 1280x960 used to be, and were removed
+# when the aspect bands were measured: neither is a size the game offers, 1280x960 was
+# the resolution the mistaken Huge narrow floor was built on, and 1280x800 existed mainly
+# as the one entry that sat exactly on the 16:10 boundary. 1680x1050 is 8:5 as well and
+# is measured, so the boundary keeps a live case.
+_STOCK_RESOLUTIONS: list[tuple[int, int]] = [
     (800, 600),
     (1024, 768),
     (1280, 720),
-    (1280, 800),
-    (1280, 960),
     (1280, 1024),
     (1366, 768),
     (1600, 900),
+    (1600, 1200),
+    (1680, 1050),
     (1920, 1080),
+    (1920, 1200),
+    (2048, 1536),
+    (2560, 1440),
+    (3840, 2160),
 ]
 
-# Minimum BotCanvas height (toolbar + enough graph space)
-BOTCANVAS_MIN_HEIGHT = 180
-# Sidebar minimum widths
-SIDEBAR_MIN_WIDTH = 220
-# Splitter handle allowance
-SPLITTER_HANDLE_PX = 8
+# Valid Wizard101 windowed resolutions (width, height), smallest first.
+#
+# The sub-floor ones are the game_sizing ladder: the game's own dropdown stops at
+# 800x600, but that is a UI restriction rather than an engine limit, and each of them
+# pairs with exactly one UI scale (#101). They are what makes 2-4 embedded clients fit a
+# 1080p screen. The smallest offered is 534x300; 400x300 renders but leaves the
+# teleporter buttons under the interact prompt with no smaller UI scale to escape to,
+# so game_sizing.has_unoccluded_ui_size rejects it and a test holds the whole list to
+# that bar.
+#
+# Sorted rather than concatenated because the two lists interleave: a rung's 16:9 form is
+# wider than its 4:3 one, so 854x480 and 960x540 both sort above 800x600 while still
+# being sub-floor sizes in the sense that matters -- they take a UI scale below Huge.
+#
+# "Sub-floor" is about the scale, not the size: the 4:3 entries at and above 800x600 top
+# out at Large too, because no 4:3 resolution reaches Huge at any size.
+VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
+
+# The panel floors moved to game_sizing.py, beside the arithmetic they are terms in.
 
 
 def _appdata_dir() -> Path:
@@ -270,15 +310,56 @@ class SettingsManager:
 
     @property
     def game_resolution(self) -> tuple[int, int]:
+        """The launch resolution, mapped onto the offered list if it has moved on.
+
+        A stored value that is no longer offered is not left alone. 400x300 was offered
+        before the interact prompt was found to cover the teleporter buttons there, and a
+        settings file written then would otherwise keep launching a client whose hub and
+        dorm buttons cannot be clicked -- silently, because the click lands on the prompt.
+        The replacement is the smallest offered resolution at least as large on both axes
+        (400x300 -> 534x300: the same height and UI scale, widened until the prompt
+        clears), or the default if the stored size is larger than anything offered.
+        """
         raw = self.get("game_embed", "resolution", default=[800, 600])
         try:
-            return int(raw[0]), int(raw[1])
+            stored = int(raw[0]), int(raw[1])
         except (TypeError, IndexError, ValueError):
             return 800, 600
+        if stored in VALID_RESOLUTIONS:
+            return stored
+        at_least_as_big = [r for r in VALID_RESOLUTIONS if r[0] >= stored[0] and r[1] >= stored[1]]
+        if not at_least_as_big:
+            return 800, 600
+        return min(at_least_as_big, key=lambda r: (r[0] * r[1], r))
 
     @game_resolution.setter
     def game_resolution(self, value: tuple[int, int]) -> None:
         self.set("game_embed", "resolution", value=list(value))
+
+    @property
+    def original_ui_size(self) -> int | None:
+        """The user's own ``<UISize>``, captured before the first launch clamped it.
+
+        Persisted here rather than re-read from config.xml because after one clamped
+        session the file holds *our* value, so reading it back would treat a value we
+        wrote as the user's preference -- and every launch after that would compound it.
+        Deimos hit the identical bug shape with camera frustums.
+
+        It also has to outlive the process: a crash that never reaches the restore leaves
+        the user's game altered, and this is what the next start puts back.
+
+        None means nothing has been captured, which is both the state before the first
+        launch and the state after a restore.
+        """
+        raw = self.get("game_embed", "original_ui_size", default=None)
+        try:
+            return None if raw is None else int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    @original_ui_size.setter
+    def original_ui_size(self, value: int | None) -> None:
+        self.set("game_embed", "original_ui_size", value=None if value is None else int(value))
 
     def get_general(self, key: str, default: Any = None) -> Any:
         return self.get("general", key, default=default)
@@ -644,9 +725,45 @@ class SettingsManager:
     # Window sizing helper
     # ------------------------------------------------------------------
 
-    def minimum_window_size(self) -> tuple[int, int]:
-        """Return (min_width, min_height) based on the configured game resolution."""
-        gw, gh = self.game_resolution
-        min_w = SIDEBAR_MIN_WIDTH * 2 + gw + SPLITTER_HANDLE_PX * 2
-        min_h = gh + BOTCANVAS_MIN_HEIGHT + 60  # 60px for menu + status bars
-        return min_w, min_h
+    def minimum_window_size(
+        self,
+        client_count: int = 1,
+        dpr: float = 1.0,
+        right_sidebar_floor: int | None = None,
+    ) -> tuple[int, int]:
+        """Return (min_width, min_height) based on the configured game resolution.
+
+        This is the floor the window may be *dragged* to, so it is measured against the
+        panel minimums rather than the configured layout sizes -- unlike
+        ``layout_budget``, which asks the opposite question and must not assume the user
+        will crush their sidebars. See bartlebot/game_sizing.py for the two directions.
+
+        *client_count* is 1 by default because that is the floor the window is *given*:
+        embedding more raises the game view's own minimum and Qt grows the window to
+        match, which is the documented behaviour that lets a launch bigger than the
+        current window correct itself.
+        """
+        return required_window_size(self.game_resolution, client_count, dpr, right_sidebar_floor)
+
+    def layout_budget(self, screen_size: tuple[int, int], right_sidebar_floor: int | None = None) -> tuple[int, int]:
+        """The game-grid space *screen_size* leaves once this layout is placed on it.
+
+        The cap that decides which resolutions may be launched. Reads the user's
+        configured sidebar widths and canvas height -- see ``game_sizing.screen_budget``
+        for why it must not read the minimums instead.
+
+        Held *at* those minimums, though, and for the same reason the minimums exist: a
+        stored width below a panel's floor describes a layout the app cannot produce, so
+        budgeting against it hands the game area space the splitter will not give it. The
+        clamp is on the read rather than the stored value, which stays the user's.
+        """
+        return screen_budget(
+            screen_size,
+            left_sidebar=max(int(self.get_general("left_sidebar_width", default=300)), LEFT_SIDEBAR_MIN_WIDTH),
+            right_sidebar=max(
+                int(self.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
+                right_sidebar_floor if right_sidebar_floor is not None else RIGHT_SIDEBAR_MIN_WIDTH,
+            ),
+            bottom_section=max(int(self.get_general("bottom_section_height", default=220)), BOTCANVAS_MIN_HEIGHT),
+            splitter_handle=SPLITTER_HANDLE_PX,
+        )

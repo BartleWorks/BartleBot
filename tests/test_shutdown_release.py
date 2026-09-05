@@ -10,19 +10,10 @@ the task closes the window afterwards — so these cover both halves: what
 from __future__ import annotations
 
 import asyncio
-import sys
 from unittest.mock import AsyncMock, MagicMock
-
-import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.app_controller import AppController
 from bartlebot.client_manager import ClientManager
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _client(hwnd: int, pid: int, log: list) -> MagicMock:

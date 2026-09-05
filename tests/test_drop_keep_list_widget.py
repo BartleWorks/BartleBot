@@ -8,11 +8,9 @@ tests/test_quicksell_keep_list.py.
 """
 
 import re
-import sys
 
-import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication, QMessageBox
+from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.canvas.drop_keep_list import (
@@ -34,11 +32,6 @@ _DROPS = [
 # The resolved sell_* answers the host pushes as context. Supplied in full, so
 # these tests do not depend on the settings of the machine they run on.
 _SELL_ALL = {"sell_pets": True, "sell_socket_wrenches": True, "sell_skeleton_keys": True}
-
-
-@pytest.fixture
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _plain(text: str) -> str:

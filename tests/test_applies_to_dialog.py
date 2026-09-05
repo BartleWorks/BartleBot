@@ -7,18 +7,10 @@ stops OK turning an empty list into an unlabelled delete.
 
 from __future__ import annotations
 
-import sys
-
-import pytest
-from PyQt6.QtWidgets import QApplication, QDialogButtonBox
+from PyQt6.QtWidgets import QDialogButtonBox
 
 from bartlebot.bot.schema import StateModel
 from bartlebot.gui.sidebar.applies_to_dialog import AppliesToDialog
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _exposed() -> list[StateModel]:

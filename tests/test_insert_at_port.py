@@ -14,17 +14,9 @@ No dialog is ever shown: choosing the node type is separated from performing the
 insert precisely so the insert can be driven directly.
 """
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig, FlagCondition, StateModel, TransitionModel
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _config(transitions=None, states=None):

@@ -5,22 +5,14 @@ stylesheet on a long-lived widget: a label rebuilt on every refresh, and an icon
 whose tint was baked in at render time by svg_icon.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.settings.canvas_tab import _hint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

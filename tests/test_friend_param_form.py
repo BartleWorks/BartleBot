@@ -6,18 +6,8 @@ cannot reach a bot file through the panel, and that the two target modes visibly
 each other.
 """
 
-import sys
-
-import pytest
-from PyQt6.QtWidgets import QApplication
-
 from bartlebot.gui.canvas.param_panel import _DynamicParamForm
 from bartlebot.nodes.teleportation.teleport_to_friend import PARAM_SCHEMA
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _form(params: dict) -> _DynamicParamForm:

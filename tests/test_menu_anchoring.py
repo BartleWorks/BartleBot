@@ -13,8 +13,6 @@ around, so a Qt upgrade that removes it shows up here rather than as a silently
 pointless helper.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QPoint, qInstallMessageHandler
 from PyQt6.QtWidgets import (
@@ -29,11 +27,6 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.menu_utils import anchor_menu_to_window, popup_menu
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 class _Harness:

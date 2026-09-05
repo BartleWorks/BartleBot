@@ -6,21 +6,12 @@ property of Qt's sort calling CategoryThenNameTreeItem.__lt__ — there is nothi
 to assert about it short of building the tree and reading the rows back.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sections.possible_drops_section import _DropsListWidget
 from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    app = QApplication.instance() or QApplication(sys.argv)
-    yield app
 
 
 @pytest.fixture

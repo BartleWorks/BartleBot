@@ -149,6 +149,32 @@ async def _some_async_method(self):
 
 For `QThread`, call `thread.quit()` and `thread.wait()` in `closeEvent` before letting the dialog be destroyed.
 
+## How big a game window is, and what will not fit
+
+`docs/WINDOW_SIZING.md` is the file. The short form, because both halves are easy to
+undo by accident:
+
+- **Resolution and UI size are one coupled setting.** The HUD is fixed-pixel, so a
+  resolution below 800x600 needs the game's own UI scale clamped down to match, and the
+  pairing is `bartlebot/game_sizing.py`'s ladder. `Resolution` is written to
+  `preferences.xml`, `UISize` only to `config.xml`; neither file holds both. The user's
+  own UI scale is captured **once** into `settings.json` and given back on quit — never
+  re-read from `config.xml`, which after one session holds our clamp rather than their
+  preference.
+- **A configuration that will not fit cannot be launched**, and the entry that cannot
+  launch is **disabled with the reason, never hidden**. `bartlebot/gui/screen_fit.py` is
+  the one place that asks; the surfaces that must agree are `ProfileCard`/`AccountCard`,
+  the Launch menu, `LauncherPopup`, and both resolution combos in `accounts_tab.py`.
+- **The user never scrolls to see a game window.** Screen space caps the game size
+  (configured layout, not the panel minimums), and `minimum_window_size` runs the other
+  way to keep the window and the splitters off the game. Both are kept; they are not
+  alternatives.
+- **The budget is the larger of the configured layout and the *live* game area.**
+  Sidebar widths and the canvas height are startup seeds — nothing persists a splitter
+  drag — so without the live term a user who makes room by dragging is still refused.
+  Re-judging on a resize calls `set_unavailable` on the cards that already exist; it must
+  never rebuild them, or a drag destroys and recreates every card several times a second.
+
 ## Game view slots vs. player indices
 
 A tile's position and a tile's caption come from **two different numbers**, and conflating

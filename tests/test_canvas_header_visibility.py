@@ -6,17 +6,9 @@ above the bot library, at the one moment the library should be the whole surface
 It is hidden until a bot is open, and the library takes the space back.
 """
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig, StateModel
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

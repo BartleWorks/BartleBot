@@ -28,6 +28,7 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
 from bartlebot.bot_options import options_signature
+from bartlebot.game_sizing import LEFT_SIDEBAR_MIN_WIDTH, SIDEBAR_MIN_HEIGHT
 from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
@@ -64,7 +65,14 @@ class LeftSidebar(QTabWidget):
         parent=None,
     ):
         super().__init__(parent)
-        self.setMinimumWidth(300)
+        # Explicit, and the arithmetic's own term rather than a comfortable width: an
+        # explicit minimum is the one thing that wins over a layout's minimum in
+        # ``qSmartMinSize``, so this is what stops a fat tab -- the parameter panel hints
+        # 562px wide before a bot is even loaded -- becoming the window's floor and
+        # pushing it past the screen the launch was sized to fit. Content clips or
+        # scrolls at this width; that is the trade, and only for a sidebar dragged to the
+        # stop. See "The panel floors" in game_sizing.py.
+        self.setMinimumSize(LEFT_SIDEBAR_MIN_WIDTH, SIDEBAR_MIN_HEIGHT)
         self._config: BotConfig | None = None
         self._editable = False
         # What the two option surfaces were last built from.  ``None`` is not a

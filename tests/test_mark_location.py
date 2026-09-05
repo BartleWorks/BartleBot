@@ -110,7 +110,7 @@ async def test_correct_zone_wrong_xyz_teleports_to_target():
         _TIMER_CLEAR,
         _RECALL_ENABLED,
         patch.object(ml, "POST_MARK_WAIT", 0),
-        patch.object(ml, "STABILIZE_TIMEOUT", 0),
+        patch.object(ml, "POSITION_STABILIZE_TIMEOUT", 0),
         patch.object(ml, "POLL_INTERVAL", 0),
     ):
         result = await ml.run(FakeMachine(), [client], _PARAMS)

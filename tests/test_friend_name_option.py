@@ -17,10 +17,7 @@ Real widget tests (QApplication required).  The settings store is injected.
 
 from __future__ import annotations
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
@@ -33,11 +30,6 @@ from bartlebot.settings_manager import SettingsManager
 
 _OPTION = ttf.OPTION_FRIEND_NAME
 _NAME = "Luke SkullHunter"  # synthetic — see CLAUDE.md, "No real player data"
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

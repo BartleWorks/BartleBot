@@ -471,7 +471,7 @@ async def test_close_potion_shop_clicks_until_the_window_is_gone():
     visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=[True, True, False]))
     click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
 
-    with visible, click as c, patch.object(hp, "_EXIT_CLICK_INTERVAL", 0):
+    with visible, click as c, patch.object(hp, "SHOP_EXIT_CLICK_INTERVAL", 0):
         await hp.close_potion_shop(client)
 
     assert c.await_count == 2
@@ -534,7 +534,7 @@ async def test_shop_window_never_opens_returns_false():
     with (
         npc_patch,
         shop_patch,
-        patch.object(hp, "_SHOP_OPEN_TIMEOUT", 0.01),
+        patch.object(hp, "SHOP_OPEN_TIMEOUT", 0.01),
         patch.object(hp, "POLL_INTERVAL", 0),
     ):
         result = await hp._open_potion_shop(FakeMachine(), [client])
@@ -552,7 +552,7 @@ async def test_shop_opens_on_second_attempt():
     with (
         npc_patch,
         shop_patch,
-        patch.object(hp, "_SHOP_OPEN_TIMEOUT", 0.01),
+        patch.object(hp, "SHOP_OPEN_TIMEOUT", 0.01),
         patch.object(hp, "POLL_INTERVAL", 0),
     ):
         result = await hp._open_potion_shop(FakeMachine(), [client])
@@ -659,7 +659,7 @@ async def test_buy_reopens_shop_if_closed_at_start_of_iteration():
         click_patch,
         vis_patch,
         _SLEEP,
-        patch.object(hp, "_SHOP_OPEN_TIMEOUT", 0.01),
+        patch.object(hp, "SHOP_OPEN_TIMEOUT", 0.01),
         patch.object(hp, "POLL_INTERVAL", 0),
     ):
         await hp._buy_potions_for_client(FakeMachine(), client)

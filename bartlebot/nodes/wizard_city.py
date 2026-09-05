@@ -16,7 +16,7 @@ import logging
 from bartlebot import dialog_captions
 from bartlebot.nodes import housing, node_helpers
 from bartlebot.nodes.paths import GOTO_DORM_BUTTON_PATH
-from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL
+from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, HOME_LOADING_TIMEOUT, POLL_INTERVAL
 from bartlebot.nodes.zone_entry import enter_zone
 
 # ── Zone names ─────────────────────────────────────────────────────────────────
@@ -30,8 +30,6 @@ DORM_EXIT_XYZ = {"x": -197.23, "y": 1.41, "z": 0.0}
 
 # Ravenwood exit bounding box — triggers Ravenwood → Commons transition.
 RAVENWOOD_EXIT_XYZ = {"x": -0.7323388457298279, "y": -2200.223388671875, "z": -155.97055053710938}
-
-_HOME_LOADING_TIMEOUT = 15.0  # max seconds to wait for a loading screen after HOME.
 
 
 async def go_to_ravenwood(machine, clients: list) -> bool:
@@ -122,7 +120,7 @@ async def _press_home_until_dorm(machine, clients: list) -> bool:
                     seen_loading.add(i)
             if len(seen_loading) == len(needs_home):
                 break
-            if asyncio.get_event_loop().time() - loop_start > _HOME_LOADING_TIMEOUT:
+            if asyncio.get_event_loop().time() - loop_start > HOME_LOADING_TIMEOUT:
                 still_waiting = [i for i in range(len(needs_home)) if i not in seen_loading]
                 machine.log(f"Clients not loading at timeout: {still_waiting}", logging.DEBUG)
                 break

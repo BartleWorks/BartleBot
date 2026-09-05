@@ -22,7 +22,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.game_embed.client_tile import FOCUS_BORDER, LABEL_RESERVE, ClientTile, DetachedTile
+from bartlebot.game_sizing import grid_for, required_game_area
+from bartlebot.gui import screen_fit
+from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
@@ -35,14 +37,6 @@ logger = logging.getLogger(__name__)
 
 _user32 = ctypes.windll.user32
 _VK_LBUTTON = 0x01
-
-# Grid layouts: number of clients → (rows, cols)
-_GRID: dict[int, tuple[int, int]] = {
-    1: (1, 1),
-    2: (1, 2),
-    3: (2, 2),
-    4: (2, 2),
-}
 
 _OVERLAY_BTN_SIZE = 34
 _OVERLAY_BTN_MARGIN = 4
@@ -66,6 +60,10 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         super().__init__(parent)
         # Set before _build_ui: the constructor's own refresh() reads it.
         self._roster_source = None
+        # The live cards, held so a resize can re-judge them without rebuilding. Rebuilding
+        # on a splitter drag would destroy and recreate every widget several times a
+        # second; re-judging is a few integer comparisons that usually change nothing.
+        self._launch_cards: list = []
         self._build_ui()
         self.refresh_theme_styles()
         self.refresh()
@@ -191,7 +189,15 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        """Rebuild the account and profile cards from current settings."""
+        """Rebuild the account and profile cards from current settings.
+
+        Each card is asked whether what it would launch fits this screen, and greyed out
+        with the reason if it does not — see bartlebot/gui/screen_fit.py for why an
+        unfittable launch is refused rather than warned about. The screen is only known
+        once the widget is on one, so a card built before the window is shown is measured
+        against the primary screen and re-measured on the way back in, which showEvent
+        already triggers.
+        """
         sm = SettingsManager.instance()
         accounts = sm.accounts
 
@@ -209,6 +215,49 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             card.edit_profile_requested.connect(self.edit_profile_requested)
             profile_cards.append(card)
         self._rebuild_list(self._profiles_area, profile_cards, empty_hint="(No profiles)")
+
+        # Assigned only after _rebuild_list has deleteLater'd the previous cards, so
+        # nothing here can be a reference to a widget that is on its way out.
+        self._launch_cards = [*account_cards, *profile_cards]
+        self.refresh_fit()
+
+    def refresh_fit(self) -> None:
+        """Re-judge every card against the game area as it is now.
+
+        Cheap by construction: ``set_unavailable`` returns immediately when the reason has
+        not changed, so a drag costs a few comparisons per card per event and restyles
+        only on the frame where a verdict actually flips.
+        """
+        live = self.game_area_size
+        resolution = SettingsManager.instance().game_resolution
+        for card in self._launch_cards:
+            if isinstance(card, ProfileCard):
+                card.set_unavailable(screen_fit.profile_fit_problem(card.profile, self, live))
+            else:
+                # This screen is only up when nothing is embedded, so an account card
+                # always launches the first client. The +1 case — adding a client to a
+                # running fleet — is the Launch menu's, which is reachable while tiles are
+                # on screen.
+                card.set_unavailable(screen_fit.fit_problem(resolution, 1, self, live))
+
+    @property
+    def game_area_size(self) -> tuple[int, int]:
+        """The space the tiles would have: this widget fills the GameView exactly.
+
+        ``GameView._recompute_geometry`` sets the placeholder to the view's full rect, so
+        measuring self and measuring the game area are the same measurement.
+        """
+        return self.width(), self.height()
+
+    def resizeEvent(self, event) -> None:
+        """Re-judge on a splitter drag, which is what makes the answer track the layout.
+
+        Sidebar widths and the canvas height are startup seeds written only by the
+        settings dialog — nothing persists a drag — so without this the cards go on
+        describing a layout the user has already moved away from.
+        """
+        super().resizeEvent(event)
+        self.refresh_fit()
 
     def showEvent(self, event) -> None:
         """Rebuild on the way back in.
@@ -506,6 +555,45 @@ class GameView(ThemedMixin, QWidget):
     def has_detached(self) -> bool:
         return bool(self._detached_hwnds)
 
+    @property
+    def game_area_size(self) -> tuple[int, int]:
+        """The logical pixels the tile grid actually has, right now.
+
+        Named rather than left as ``width()``/``height()`` because this is the live
+        budget a launch is judged against (see gui/screen_fit.budget_for), and "the size
+        of this widget" does not say that. It is exact where the configured layout is an
+        estimate: the sidebars, the bot canvas, the menu and status bars and the game
+        panel's own header are already subtracted, because they are simply not in it.
+        """
+        return self.width(), self.height()
+
+    @property
+    def largest_game_size(self) -> tuple[int, int] | None:
+        """The widest and tallest game window on screen, or None if there is none.
+
+        Componentwise, not one tile's size: mixed-resolution fleets are supported —
+        ``_group_by_resolution`` launches a batch per resolution — so the grid has to be
+        measured against the largest of each axis rather than against whichever tile a
+        dict happened to yield first, which understated it whenever they differed.
+
+        Detached windows are not counted: they are not parented here, so their size
+        cannot be read without going back to Win32, and a re-attach re-measures anyway.
+        """
+        sizes = [tile.game_size for tile in self._tiles.values()]
+        if not sizes:
+            return None
+        return max(size[0] for size in sizes), max(size[1] for size in sizes)
+
+    @property
+    def client_count(self) -> int:
+        """How many windows this view is holding a place for, embedded or detached.
+
+        A detached window still owns its slot and comes back into the same grid, so it
+        counts: the question this answers is how many tiles the layout has to fit, not
+        how many are currently parented here.
+        """
+        return len(self._tiles) + len(self._detached_tiles)
+
     def set_wizard_names(self, names: list) -> None:
         """Show each client's wizard name on its tile pill.
 
@@ -531,6 +619,15 @@ class GameView(ThemedMixin, QWidget):
         through to it.
         """
         self._placeholder.refresh()
+
+    def refresh_launch_fit(self) -> None:
+        """Re-judge which Quick Launch entries can launch, without rebuilding them.
+
+        The cheap half of ``refresh_launch_lists``: what a card *says* has not changed,
+        only whether the space is there for it. Called on every geometry change, so it
+        must stay cheap — see the placeholder's ``refresh_fit``.
+        """
+        self._placeholder.refresh_fit()
 
     def set_roster_source(self, source) -> None:
         """Supply what the account cards ask for their characters — see the placeholder."""
@@ -590,6 +687,11 @@ class GameView(ThemedMixin, QWidget):
     def _recompute_geometry(self) -> None:
         """Lay out tiles in the grid and update placeholder/overlay position."""
         self._placeholder.setGeometry(0, 0, self.width(), self.height())
+        # Re-judged here rather than left to the placeholder's own resizeEvent: Qt defers
+        # a resize event to a hidden widget until it is shown, and the launch screen is
+        # hidden for the whole life of an embedded client. Its own handler stays as well,
+        # for a resize that reaches it directly.
+        self._placeholder.refresh_fit()
 
         self._overlay_btn.move(
             self.width() - _OVERLAY_BTN_SIZE - _OVERLAY_BTN_MARGIN,
@@ -601,7 +703,7 @@ class GameView(ThemedMixin, QWidget):
         if n == 0:
             return
 
-        rows, cols = _GRID.get(n, (2, 2))
+        rows, cols = grid_for(n)
         tile_w = self.width() // cols
         tile_h = self.height() // rows
 
@@ -615,23 +717,28 @@ class GameView(ThemedMixin, QWidget):
                 self._detached_tiles[idx].setGeometry(*geo)
 
     def _update_minimum_size(self) -> None:
-        """Set GameView minimum size to fit the current client grid plus padding."""
+        """Set GameView minimum size to fit the current client grid plus padding.
+
+        This is what stops the window and the splitters being dragged to where the game
+        windows get clipped: a tile shows its client at 1:1 and cannot scale, so anything
+        narrower than the grid needs simply cuts the game off. Resolutions are capped to
+        the screen before launch (see bartlebot/game_sizing.py), so the minimum this
+        derives is always satisfiable rather than a size the window cannot reach.
+
+        The grid is measured against the **largest** client on screen, not an arbitrary
+        one. Mixed-resolution fleets are supported — ``_group_by_resolution`` launches a
+        batch per resolution — so reading whichever tile the dict happened to yield first
+        understated the minimum whenever they differed, and the biggest client was the one
+        that got clipped.
+        """
         n = len(self._tiles) + len(self._detached_tiles)
         if n == 0:
             self.setMinimumSize(0, 0)
             return
-        rows, cols = _GRID.get(n, (2, 2))
-        if self._tiles:
-            tile = next(iter(self._tiles.values()))
-            dpr = self.devicePixelRatio() or 1.0
-            game_w, game_h = tile.game_size
-        else:
-            dpr = self.devicePixelRatio() or 1.0
-            game_w, game_h = SettingsManager.instance().game_resolution
-        self.setMinimumSize(
-            int(cols * game_w / dpr) + (cols * 2 * FOCUS_BORDER),
-            int(rows * game_h / dpr) + (rows * LABEL_RESERVE) + (rows * 2 * FOCUS_BORDER),
-        )
+        # Everything detached leaves no window to measure; the setting is what those
+        # windows were launched at, and what a re-attach brings back.
+        largest = self.largest_game_size or SettingsManager.instance().game_resolution
+        self.setMinimumSize(*required_game_area(largest, n, self.devicePixelRatio() or 1.0))
 
     def _detach_client(self, idx: int) -> None:
         """Save hwnd, create a DetachedTile, and unembed the ClientTile."""

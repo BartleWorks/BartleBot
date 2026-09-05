@@ -9,19 +9,11 @@ readable either way, so "disabled" was indistinguishable from "enabled".
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PyQt6.QtGui import QIcon, QPalette
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.theme import DARK, LIGHT
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.mark.parametrize("theme", [LIGHT, DARK], ids=["light", "dark"])

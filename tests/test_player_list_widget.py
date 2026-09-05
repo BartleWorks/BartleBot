@@ -13,18 +13,10 @@ whole point is that they behave differently:
 Real widget tests (QApplication required), in the style of test_menu_anchoring.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

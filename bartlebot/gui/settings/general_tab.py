@@ -17,8 +17,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.rows import hint, section_label
-from bartlebot.settings_manager import BOTCANVAS_MIN_HEIGHT, SIDEBAR_MIN_WIDTH, SettingsManager
+from bartlebot.settings_manager import SettingsManager
 
 
 class GeneralTab(QWidget):
@@ -100,16 +102,19 @@ class GeneralTab(QWidget):
         )
 
         self._left_sb = QSpinBox()
-        self._left_sb.setRange(SIDEBAR_MIN_WIDTH, 1200)
+        self._left_sb.setRange(LEFT_SIDEBAR_MIN_WIDTH, 1200)
         self._left_sb.setSuffix(" px")
         self._left_sb.setValue(sm.get_general("left_sidebar_width", default=300))
         layout_form.addRow("Default left sidebar width:", self._left_sb)
         layout_form.addRow(hint("The bot's own configuration — Setup and Combat, or Options and Properties."))
 
         self._right_sb = QSpinBox()
-        self._right_sb.setRange(SIDEBAR_MIN_WIDTH, 1200)
+        # The measured floor, not the constant: on a machine with larger system text the
+        # panel will not go as narrow as the constant says, and a spin box that offers a
+        # width the splitter refuses is a setting that silently does not take.
+        self._right_sb.setRange(screen_fit.right_sidebar_floor(), 1200)
         self._right_sb.setSuffix(" px")
-        self._right_sb.setValue(sm.get_general("right_sidebar_width", default=300))
+        self._right_sb.setValue(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH))
         layout_form.addRow("Default right sidebar width:", self._right_sb)
         layout_form.addRow(hint("Players, Drops and Log."))
 

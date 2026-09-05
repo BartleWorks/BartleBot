@@ -16,18 +16,10 @@ Real widget tests (QApplication required). Nothing reads pixels; these check the
 wiring, the text, and the camera.
 """
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _config():

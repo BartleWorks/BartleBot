@@ -14,10 +14,7 @@ which the store no longer consults now that it resolves its default root via
 ``bartlebot.paths.project_root()`` instead of the process cwd.
 """
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot import strategy_store as store_mod
 from bartlebot.bot.strategy_models import (
@@ -36,12 +33,6 @@ from bartlebot.strategy_store import (
 )
 
 _ID_ROLE = 0x100
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    """Session-scoped QApplication required by the QTimer inside each editor."""
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

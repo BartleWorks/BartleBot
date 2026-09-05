@@ -5,19 +5,10 @@ column sorts as a number rather than as text (#116), and that the numeric cell
 still reads back as text for the CSV export.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.gui.sidebar.sections.drop_section import DropSection
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    app = QApplication.instance() or QApplication(sys.argv)
-    yield app
 
 
 @pytest.fixture

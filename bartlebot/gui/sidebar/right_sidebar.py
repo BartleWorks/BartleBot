@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QEvent, pyqtSignal
 from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
 
+from bartlebot.game_sizing import SIDEBAR_MIN_HEIGHT
+from bartlebot.gui import screen_fit
 from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.sections.client_section import ClientSection
 from bartlebot.gui.sidebar.sections.drop_section import DropSection
@@ -45,7 +47,12 @@ class RightSidebar(QTabWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumWidth(300)
+        # The arithmetic's term, set explicitly so it is the floor Qt enforces -- see the
+        # same call in LeftSidebar, and "The panel floors" in game_sizing.py. Wider than
+        # the left one because the player card's tool row does not shrink, and *measured*
+        # rather than fixed because how wide it needs to be is font metrics: the same
+        # three buttons want 300px at 100% system text and 375 at 125%.
+        self._apply_width_floor()
 
         self.clients = ClientSection()
         self.drops = DropSection()
@@ -81,6 +88,21 @@ class RightSidebar(QTabWidget):
 
         self.possible_drops.drops_changed.connect(self.config_changed)
         self.currentChanged.connect(self._on_tab_changed)
+
+    def _apply_width_floor(self) -> None:
+        self.setMinimumSize(screen_fit.right_sidebar_floor(), SIDEBAR_MIN_HEIGHT)
+
+    def changeEvent(self, event) -> None:  # noqa: N802 - Qt override
+        """Re-measure the floor when the text size under it changes.
+
+        The theme is applied to the whole application after this widget is built, and a
+        theme carrying a different font would otherwise leave the panel holding a floor
+        measured against the old one -- narrower than its own buttons, which is the state
+        this floor exists to prevent.
+        """
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.FontChange:
+            self._apply_width_floor()
 
     # ------------------------------------------------------------------
     # Tab switching

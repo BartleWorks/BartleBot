@@ -13,12 +13,6 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture(scope="session")
-def qapp():
-    """Session-scoped QApplication required by QTimer inside UndoManager."""
-    return QApplication.instance() or QApplication(sys.argv)
-
-
 @pytest.fixture
 def mgr(qapp):
     return UndoManager()

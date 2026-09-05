@@ -22,11 +22,8 @@ nothing here touches the real ``settings.json``.
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
@@ -37,11 +34,6 @@ from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.settings_manager import SettingsManager
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

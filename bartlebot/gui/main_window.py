@@ -9,6 +9,8 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.credentials import CredentialStore
+from bartlebot.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
@@ -25,6 +27,19 @@ def _shorten_recent_path(path: str, root: Path) -> str:
         return path
 
 
+def _splitter_sizes(total: int, fixed: list[int], flexible: int) -> list[int]:
+    """*fixed* pane sizes with the rest of *total* given to the pane at index *flexible*.
+
+    Pure so it can be tested without a QApplication, which is the whole point: the
+    arithmetic is what went wrong, not the widgets. Clamped at zero rather than allowed
+    to go negative -- a window too narrow for both sidebars hands Qt a nonsense size for
+    the middle otherwise, where zero lets it fall back on the panes' own minimums.
+    """
+    sizes = list(fixed)
+    sizes.insert(flexible, max(0, total - sum(fixed)))
+    return sizes
+
+
 class MainWindow(QMainWindow):
     # Emitted when a recent-file menu entry is clicked (passes the file path)
     open_recent_requested = pyqtSignal(str)
@@ -39,7 +54,13 @@ class MainWindow(QMainWindow):
 
         self._build_menu()
         self._build_central()
+        # After _build_central, not inside _build_menu: whether an entry can launch is
+        # asked of the game view, which _build_central is what creates.
+        self._rebuild_launch_menu()
         self._apply_minimum_size()
+        # Cleared by the first showEvent, which is the earliest the splitters have a real
+        # extent to size against -- see _apply_configured_splitter_sizes.
+        self._startup_sizes_pending = True
         self._apply_startup_layout()
 
     # ------------------------------------------------------------------
@@ -153,7 +174,13 @@ class MainWindow(QMainWindow):
 
         # Launch menu
         self._launch_menu = menu_bar.addMenu("Launch")
-        self._rebuild_launch_menu()
+        # Qt suppresses action tooltips in menus unless asked. A disabled entry here
+        # carries the reason it is disabled, and a greyed row with no way to read why is
+        # the thing the disabled-not-hidden rule exists to avoid.
+        self._launch_menu.setToolTipsVisible(True)
+        # Rebuilt on every open: whether a launch fits depends on the client count and
+        # the screen the window is on, both of which move while the menu is closed.
+        self._launch_menu.aboutToShow.connect(self._rebuild_launch_menu)
 
     def _build_central(self) -> None:
         # BotCanvas must be created first — it owns param_panel
@@ -220,10 +247,10 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         sm = SettingsManager.instance()
-        left_w = sm.get_general("left_sidebar_width", default=300)
-        right_w = sm.get_general("right_sidebar_width", default=300)
         bot_h = sm.get_general("bottom_section_height", default=220)
-        self._top_splitter.setSizes([left_w, 800, right_w])
+        # A seed only. Nothing here sticks: the splitter has no extent yet, so this is a
+        # ratio rather than a size, and the real one is applied on the first showEvent.
+        self._top_splitter.setSizes([300, 800, 300])
 
         # Outer vertical splitter: top row (game + sidebars) | bot canvas
         self._outer_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -246,12 +273,73 @@ class MainWindow(QMainWindow):
         self.action_stop_bot.triggered.connect(lambda: self.bot_canvas.stop_button.click())
 
     def _apply_minimum_size(self) -> None:
-        min_w, min_h = SettingsManager.instance().minimum_window_size()
+        """Declare the floor the panes below are built to honour.
+
+        Measured at this window's own scale factor: a resolution is physical pixels while
+        everything else in the sum is logical ones, so on a 150% display the undivided
+        number is half again too big a floor to hold the window to.
+        """
+        min_w, min_h = SettingsManager.instance().minimum_window_size(
+            dpr=self.devicePixelRatio() or 1.0,
+            right_sidebar_floor=screen_fit.right_sidebar_floor(),
+        )
         self.setMinimumSize(min_w, min_h)
+
+    def _apply_configured_splitter_sizes(self) -> None:
+        """Give the sidebars and the bot canvas their configured sizes, and the game panel the rest.
+
+        Applied once the window has been shown, not only from ``_build_central``. A
+        ``setSizes`` call against a splitter that has not been laid out yet is a *ratio*
+        rather than a size -- Qt scales it to whatever extent the splitter has at the
+        time, and the window then grows to its startup size with the surplus shared out
+        across all three panes. A 1400x900 window opened that way put 480px in each
+        sidebar and 600px in the bot canvas, none of which the user asked for.
+
+        That is not only a cosmetic mis-layout. The game area left over is what a launch
+        is judged against (see gui/screen_fit.budget_for), so the panes taking space they
+        were never configured for is what refused profiles the screen had room for --
+        and dragging a sidebar could not always give it back, because the height had gone
+        to the canvas at the same time.
+
+        Sized against the splitters' *current* extent rather than the screen, so it is
+        correct whether the window was resized or maximized, and clamped at zero so a
+        window narrower than both sidebars leaves Qt its own minimums to enforce.
+        """
+        sm = SettingsManager.instance()
+        left_w = int(sm.get_general("left_sidebar_width", default=300))
+        right_w = max(
+            int(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
+            screen_fit.right_sidebar_floor(),
+        )
+        bot_h = int(sm.get_general("bottom_section_height", default=220))
+
+        top_total = sum(self._top_splitter.sizes())
+        if top_total > 0:
+            self._top_splitter.setSizes(_splitter_sizes(top_total, [left_w, right_w], flexible=1))
+        outer_total = sum(self._outer_splitter.sizes())
+        # Skipped while the game view is hidden: the bot canvas owns the whole window
+        # then, and handing the top pane a size would put an empty strip above it.
+        if outer_total > 0 and self._game_view_visible:
+            self._outer_splitter.setSizes(_splitter_sizes(outer_total, [bot_h], flexible=0))
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        """Apply the configured layout on the way in, once.
+
+        Once, because every later show -- restoring from minimised, coming back from
+        another desktop -- would otherwise throw away every splitter drag the user has
+        made since, and nothing persists those.
+        """
+        super().showEvent(event)
+        if self._startup_sizes_pending:
+            self._startup_sizes_pending = False
+            self._apply_configured_splitter_sizes()
 
     def _apply_startup_layout(self) -> None:
         sm = SettingsManager.instance()
-        min_w, min_h = sm.minimum_window_size()
+        min_w, min_h = sm.minimum_window_size(
+            dpr=self.devicePixelRatio() or 1.0,
+            right_sidebar_floor=screen_fit.right_sidebar_floor(),
+        )
         if sm.get_general("maximize_on_open", default=False):
             self.showMaximized()
         else:
@@ -262,6 +350,16 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    @property
+    def game_view_panel(self) -> GameViewPanel:
+        """The pane the game view sits in, its own header strip included.
+
+        Public because the height of that strip is a term in the window-floor arithmetic
+        (``GAME_PANEL_CHROME_PX``), and the guard that keeps the declared floor and the
+        enforced one in step has to be able to measure it.
+        """
+        return self._game_view_panel
 
     def set_shutdown_handler(self, handler) -> None:
         """Install the quit gate: *handler* returns True to let the window close.
@@ -382,6 +480,42 @@ class MainWindow(QMainWindow):
         self.action_redo.setEnabled(can_redo)
         self.action_redo.setText(f"Redo: {redo_desc}" if redo_desc else "Redo")
 
+    @property
+    def live_game_area(self) -> tuple[int, int]:
+        """The logical pixels the tile grid has right now.
+
+        Public because it is what every launch surface has to be judged against, including
+        the settings dialog, which is handed it rather than reaching back through its own
+        parent chain to find this window. See gui/screen_fit.budget_for.
+        """
+        return self.game_view.game_area_size
+
+    @staticmethod
+    def _disable_if_unfittable(action: QAction, reason: str | None) -> None:
+        """Grey *action* out and explain, or leave it alone when *reason* is None."""
+        if reason is None:
+            return
+        action.setEnabled(False)
+        action.setToolTip(reason)
+        action.setStatusTip(reason)
+
+    def _single_account_fit_problem(self) -> str | None:
+        """Why launching one more client would not fit, or None if it would.
+
+        Judged against the *resulting* count, so adding a third client to a fitting pair
+        is refused when the 2x2 grid that forces would not fit. Resolution is fixed at
+        launch and a running client cannot be resized without relaunching it, so the
+        client arriving is the one that has to be refused.
+
+        Sized at the larger of what that client will launch at and what is already on
+        screen: mixed-resolution fleets are supported, and a fleet whose windows are
+        bigger than the current setting still has to be fitted at the size it actually is.
+        """
+        launching = SettingsManager.instance().game_resolution
+        running = self.game_view.largest_game_size
+        resolution = launching if running is None else (max(launching[0], running[0]), max(launching[1], running[1]))
+        return screen_fit.fit_problem(resolution, self.game_view.client_count + 1, self, self.live_game_area)
+
     def _rebuild_launch_menu(self) -> None:
         """Rebuild Launch menu from current accounts and profiles."""
         self._launch_menu.clear()
@@ -397,6 +531,10 @@ class MainWindow(QMainWindow):
                 name = profile.get("name", "Unnamed")
                 action = QAction(name, self)
                 action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n)))
+                # Disabled rather than dropped, carrying the reason as its tooltip — the
+                # same rule the Quick Launch cards follow. This menu is rebuilt on every
+                # show, so the answer tracks the client count and the screen.
+                self._disable_if_unfittable(action, screen_fit.profile_fit_problem(profile, self, self.live_game_area))
                 self._launch_menu.addAction(action)
         else:
             empty = QAction("(No profiles)", self)
@@ -420,6 +558,7 @@ class MainWindow(QMainWindow):
                 action.triggered.connect(
                     lambda _checked, u=username, d=display: asyncio.ensure_future(self._launch_single_account(u, d))
                 )
+                self._disable_if_unfittable(action, self._single_account_fit_problem())
                 self._launch_menu.addAction(action)
         else:
             empty2 = QAction("(No accounts)", self)
@@ -455,7 +594,9 @@ class MainWindow(QMainWindow):
         """
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
 
-        dlg = SettingsDialog(self)
+        # Handed the live game area so its resolution pickers judge a launch the same
+        # way the Launch menu behind them does — a splitter drag moves both.
+        dlg = SettingsDialog(self, live_game_area=self.live_game_area)
         dlg.open_tab(tab_name)
         if edit_profile:
             dlg.edit_profile(edit_profile)
@@ -505,6 +646,17 @@ class MainWindow(QMainWindow):
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
+            profile = next(
+                (p for p in SettingsManager.instance().launch_profiles if p.get("name") == profile_name), None
+            )
+            # Backstop for a path that did not go through a disabled control — a
+            # keybinding, or a profile edited while its menu entry was already built.
+            # Every surface offering this launch has already refused it, so arriving here
+            # means one of them was stale rather than that the user was warned.
+            reason = None if profile is None else screen_fit.profile_fit_problem(profile, self, self.live_game_area)
+            if reason is not None:
+                QMessageBox.critical(self, "Launch failed", reason)
+                return
             self._game_view_panel.set_launch_profile(profile_name)
             await launch_profile(profile_name, drive=self.auto_select_driver, reserve=self.slot_reserver)
             self._record_recent_launch("profile", profile_name)
@@ -516,6 +668,9 @@ class MainWindow(QMainWindow):
         try:
             from bartlebot.launcher.launch_profile import launch_account
 
+            if (reason := self._single_account_fit_problem()) is not None:
+                QMessageBox.critical(self, "Launch failed", reason)
+                return
             password = CredentialStore.retrieve(username)
             if password is None:
                 QMessageBox.critical(

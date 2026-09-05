@@ -20,6 +20,17 @@ Two rules about the settings dialog itself:
   `test_every_settings_row_explains_itself_on_the_page` checks that a hint
   follows every control, within two rows so a pair sharing one hint is allowed.
 
+- **The dialog fits the screen; the tabs do not have to.** A visible hint under
+  every row is two rows of height per setting, which grew the dialog taller than a
+  1080p screen and put OK and Cancel under the taskbar (#188). The height stays —
+  it is what the descriptions cost — and the three form tabs are wrapped in
+  `rows.ScrollableTab` instead. Wrap a new form tab too. Do **not** wrap a tab
+  that carries the layout's stretch, as the Game tab's two lists do: inside a
+  scroll area they collapse to a couple of visible rows. `_fit_to_screen` caps the
+  dialog at `screen_fit.size_within_screen` on the way up as the last defence, and
+  a wrapper forwards `apply()` so the tab in the bar is still one `apply_all` can
+  call.
+
 `SettingsDialog.apply_all` iterates the tab bar rather than naming four tabs.
 A hand-written list is one line to forget when a tab is added, and forgetting it
 discards everything the user typed into the new tab with no error anywhere;

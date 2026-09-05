@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-from bartlebot.nodes.timing import WISP_COLLECT_TIMEOUT, jitter
+from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -103,10 +103,6 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=15,
 )
 
-# Small delay between wisp teleports so the wisp collection registers before
-# the health/mana ratio is re-checked. Matches Deimos utils.py pattern.
-_WISP_COLLECT_DELAY = 0.1
-
 
 async def run(machine, clients: list, params: dict) -> str:
     """
@@ -195,7 +191,7 @@ async def _collect_for_client(
             found = await client.tp_to_closest_health_wisp(only_safe=only_safe)
             if not found:
                 break
-            await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
+            await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
 
     if if_mana_below > 0.0:
         loop_start = asyncio.get_event_loop().time()
@@ -205,7 +201,7 @@ async def _collect_for_client(
             found = await client.tp_to_closest_mana_wisp(only_safe=only_safe)
             if not found:
                 break
-            await asyncio.sleep(jitter(_WISP_COLLECT_DELAY))
+            await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
 
 
 async def _get_ratios(client) -> tuple[float, float]:

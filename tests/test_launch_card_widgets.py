@@ -6,12 +6,9 @@ the thing it stands for, that the edit button does *not* launch, and that a them
 reaches a card's labels.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
-from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.account_accent import account_accent
@@ -21,11 +18,6 @@ from bartlebot.gui.widgets.tag_pill import AccountPill
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"], "resolution": [1280, 720]}
 ROSTER = [{"gid": 1001, "name": "Luke SkullHunter"}]
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

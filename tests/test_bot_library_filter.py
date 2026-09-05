@@ -4,13 +4,12 @@ The panel itself is a QWidget, so the filtering is a pure module-level function 
 only that is tested here — same convention as tests/test_bot_canvas_paths.py.
 """
 
-import sys
 from pathlib import Path
 
 import pytest
 from PyQt6.QtCore import QEvent, QPointF
 from PyQt6.QtGui import QEnterEvent
-from PyQt6.QtWidgets import QApplication, QLabel
+from PyQt6.QtWidgets import QLabel
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, filter_bot_metas
@@ -129,11 +128,6 @@ def test_whitespace_only_query_is_treated_as_no_query():
 
 def test_a_tag_no_bot_carries_yields_nothing():
     assert filter_bot_metas(ALL, "", {"Mounts"})[0] == []
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 # ---------------------------------------------------------------------------

@@ -9,18 +9,10 @@ These are real widget tests (QApplication required), in the style of
 test_combat_tab.  Only the wiring is exercised — nothing reads pixels.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _config(transitions=None):

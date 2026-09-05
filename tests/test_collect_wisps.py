@@ -20,7 +20,7 @@ async def test_full_health_mana_skips_collection():
     client.calc_health_ratio.return_value = 1.0
     client.calc_mana_ratio.return_value = 1.0
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
@@ -37,7 +37,7 @@ async def test_collects_health_wisps_until_threshold():
     client.calc_mana_ratio.return_value = 1.0
     client.tp_to_closest_health_wisp.return_value = True
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
@@ -52,7 +52,7 @@ async def test_collects_mana_wisps_until_threshold():
     client.calc_mana_ratio.side_effect = [0.3, 0.7, 1.0, 1.0]
     client.tp_to_closest_mana_wisp.return_value = True
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
@@ -66,7 +66,7 @@ async def test_no_wisps_above_fail_threshold_succeeds():
     client.calc_mana_ratio.return_value = 1.0
     client.tp_to_closest_health_wisp.return_value = False  # no wisps
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)  # fail threshold = 0.5
 
     assert result == "SUCCESS"
@@ -80,7 +80,7 @@ async def test_no_wisps_below_fail_threshold_fails():
     client.calc_mana_ratio.return_value = 1.0
     client.tp_to_closest_health_wisp.return_value = False  # no wisps
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
@@ -100,7 +100,7 @@ async def test_multiple_clients_one_fails():
     bad.calc_mana_ratio.return_value = 1.0
     bad.tp_to_closest_health_wisp.return_value = False
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [good, bad], _DEFAULT_PARAMS)
 
     assert result == "FAILURE"
@@ -116,7 +116,7 @@ async def test_both_collect_and_fail_check():
     client.calc_mana_ratio.return_value = 1.0
     client.tp_to_closest_health_wisp.side_effect = [True, False]
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)  # fail threshold = 0.5
 
     assert result == "FAILURE"
@@ -132,7 +132,7 @@ async def test_timeout_stops_infinite_collection():
 
     params = {**_DEFAULT_PARAMS, "timeout": 0.05, "fail_if_health_below": 0.0}
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
@@ -148,7 +148,7 @@ async def test_zero_timeout_does_not_limit_collection():
 
     params = {**_DEFAULT_PARAMS, "timeout": 0.0}
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"
@@ -163,7 +163,7 @@ async def test_zero_collect_threshold_skips_collection():
 
     params = {**_DEFAULT_PARAMS, "if_health_below": 0.0, "fail_if_health_below": 0.0}
 
-    with patch.object(cw, "_WISP_COLLECT_DELAY", 0):
+    with patch.object(cw, "WISP_COLLECT_DELAY", 0):
         result = await cw.run(FakeMachine(), [client], params)
 
     assert result == "SUCCESS"

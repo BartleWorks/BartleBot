@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -9,34 +10,58 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
+from bartlebot.gui.settings.rows import ScrollableTab
 from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.settings_manager import SettingsManager
+
+# The size the dialog opens at when the screen has room for it. Chosen to clear the
+# General tab whole on a 1080p screen with a taskbar, and deliberately shorter than the
+# tallest tab wants to be: a tab that does not fit scrolls, and a dialog that opens the
+# height of its longest page is unreadable long before it is off-screen.
+_PREFERRED_SIZE = (760, 860)
+
+# Qt's own ceiling for a widget maximum. An unmeasurable screen reports a size nothing
+# can exceed, and handing that straight to ``setMaximumSize`` earns a warning and a
+# silent clamp rather than the "no cap" it is meant to say.
+_QT_MAX_SIZE = (1 << 24) - 1
 
 
 class SettingsDialog(QDialog):
     """Modal settings dialog opened via Settings menu or Ctrl+,."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, live_game_area: tuple[int, int] | None = None) -> None:
+        """*live_game_area* is the game area the window behind this dialog currently has.
+
+        Passed in rather than looked up: the Game tab's resolution pickers judge a launch
+        exactly as the launch surfaces do, and a splitter drag moves that answer without
+        moving any setting. Reaching back up the parent chain from a settings tab to find
+        the main window would couple the tab to the window that happens to open it.
+        """
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setMinimumSize(480, 400)
 
         self._tabs = QTabWidget()
 
+        # The three form tabs are as tall as their rows make them -- every setting is a
+        # row plus a visible description under it -- so each is wrapped in a scroll area
+        # (#188). Theme scrolls its own colour grid already, and Game is elastic.
+
         # General tab
-        self._general_tab = GeneralTab()
+        self._general_tab = ScrollableTab(GeneralTab())
         self._tabs.addTab(self._general_tab, "General")
 
         # Bot tab (how a run behaves, and the app-setting level of every bot option)
-        self._bot_tab = BotTab()
+        self._bot_tab = ScrollableTab(BotTab())
         self._tabs.addTab(self._bot_tab, "Bot")
 
         # Canvas tab
-        self._canvas_tab = CanvasTab()
+        self._canvas_tab = ScrollableTab(CanvasTab())
         self._tabs.addTab(self._canvas_tab, "Canvas")
 
         # Theme tab
@@ -44,7 +69,7 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(self._theme_tab, "Theme")
 
         # Game tab (accounts, launch profiles, game embed resolution)
-        self._accounts_tab = AccountsTab()
+        self._accounts_tab = AccountsTab(live_game_area=live_game_area)
         self._tabs.addTab(self._accounts_tab, "Game")
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -54,6 +79,53 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(self._tabs, 1)
         layout.addWidget(buttons)
+
+        self.resize(*_PREFERRED_SIZE)
+        self._fit_to_screen()
+
+    def showEvent(self, event) -> None:
+        """Refit on the way up: only now is ``screen()`` the screen it opens on.
+
+        Construction happens before the dialog is placed, so on a multi-monitor setup
+        the size worked out in ``__init__`` is the primary screen's answer, not the
+        one the user is looking at.
+        """
+        super().showEvent(event)
+        self._fit_to_screen()
+
+    def _fit_to_screen(self) -> None:
+        """Cap the dialog at the screen's usable area, and pull it back on if it spills.
+
+        The bug this exists for: with no maximum, the dialog was as tall as its tallest
+        tab asked to be, which on a 1080p screen put OK and Cancel under the taskbar with
+        no way to reach them (#188). The cap is the last line of defence -- the scroll
+        areas are what keep it from being needed -- so it is deliberately not conditional
+        on which tabs happen to be present.
+
+        ``screen_metrics`` answers for an unmeasurable screen with something nothing can
+        exceed, so a headless run is capped at the minimum of nothing rather than at 40
+        pixels square.
+        """
+        available, _dpr = screen_fit.screen_metrics(self)
+        minimum = (self.minimumWidth(), self.minimumHeight())
+
+        max_w, max_h = screen_fit.size_within_screen(available, minimum, available)
+        self.setMaximumSize(min(max_w, _QT_MAX_SIZE), min(max_h, _QT_MAX_SIZE))
+
+        width, height = screen_fit.size_within_screen((self.width(), self.height()), minimum, available)
+        if (width, height) != (self.width(), self.height()):
+            self.resize(width, height)
+
+        # Shrinking a window does not move it, so one already opening past the bottom
+        # edge stays there at its new size until it is put back on the screen.
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen is None:
+            return
+        usable = screen.availableGeometry()
+        frame = self.frameGeometry()
+        if not usable.contains(frame):
+            frame.moveCenter(usable.center())
+            self.move(frame.topLeft())
 
     @property
     def tabs(self) -> QTabWidget:

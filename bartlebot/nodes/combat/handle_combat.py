@@ -85,14 +85,13 @@ NODE_SPEC = NodeSpec(
 )
 
 from bartlebot.nodes.timing import (
+    COMBAT_TP_RETRY_INTERVAL,
     ENTER_COMBAT_TIMEOUT,
     POLL_INTERVAL,
     TARGET_ACQUIRE_DELAY,
     TARGET_ACQUIRE_RETRIES,
     jitter,
 )
-
-_TP_RETRY_INTERVAL = 5.0  # re-teleport this often if still not in battle
 
 
 async def run(machine, clients: list, params: dict) -> str:
@@ -110,7 +109,7 @@ async def run(machine, clients: list, params: dict) -> str:
       5. Teleport clients to their targets:
          - If the resolved Duel Combat Strategy sets a combat order: send clients one at
            a time in that order, waiting for each to report in_battle().
-         - Otherwise: teleport all clients simultaneously, retrying every _TP_RETRY_INTERVAL
+         - Otherwise: teleport all clients simultaneously, retrying every COMBAT_TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
       6. If max_duration is set and has elapsed, return FAILURE.
       7. Run SprintyCombat for all clients in parallel until combat ends.
@@ -251,7 +250,7 @@ async def _find_target(client, enemy_name: str):
 
 
 async def _tp_and_wait_for_combat(client, enemy_name: str, timeout: float) -> bool:
-    """Teleport to target, retrying every _TP_RETRY_INTERVAL seconds until in combat."""
+    """Teleport to target, retrying every COMBAT_TP_RETRY_INTERVAL seconds until in combat."""
     deadline = asyncio.get_event_loop().time() + timeout
     while True:
         target = await _find_target(client, enemy_name)
@@ -259,8 +258,8 @@ async def _tp_and_wait_for_combat(client, enemy_name: str, timeout: float) -> bo
             return False
         await client.tp_to(target)
 
-        # Poll in_battle() for up to _TP_RETRY_INTERVAL (or remaining time)
-        retry_at = min(asyncio.get_event_loop().time() + _TP_RETRY_INTERVAL, deadline)
+        # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time)
+        retry_at = min(asyncio.get_event_loop().time() + COMBAT_TP_RETRY_INTERVAL, deadline)
         while asyncio.get_event_loop().time() < retry_at:
             if await client.in_battle():
                 return True
