@@ -382,8 +382,9 @@ class AccountsTab(QWidget):
 
         hint = ThemedTextLabel(
             "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution. "
-            "Below 800×600 the game's own UI is scaled down to match while BartleBot runs, "
-            "and put back when it closes.",
+            "At smaller sizes the game's own UI is scaled down to match while BartleBot runs, "
+            "and put back when it closes. Widescreen sizes keep a larger UI than 4:3 ones of "
+            "the same height.",
             css="font-size: 11px;",
         )
         hint.setWordWrap(True)

@@ -11,8 +11,15 @@ WHY RESOLUTION AND UI SIZE ARE ONE SETTING
 The HUD does not scale with the window -- shrink the resolution alone and the interface
 stays at its original pixel size and overflows the client area. The compensation is the
 game's own UI scale, which goes down to Micro, one step below anything the in-game menu
-offers. So 400x300 is perfectly usable *paired with Micro* and broken at the default UI
-size, and the two must never be independently selectable.
+offers. So 400x300 *renders* perfectly well paired with Micro and is broken at the
+default UI size, and the two must never be independently selectable.
+
+A rendering HUD is not the same as a reachable one, though. The interact prompt is
+centred and the compass and teleporter buttons are anchored to an edge, so on a narrow
+client the prompt covers them -- and those buttons are clicked by coordinate, so a
+covered one swallows the click. That puts a *second*, higher floor under each scale,
+and it is why 400x300 is not offered at all: it would need a scale below Micro, and
+there is not one.
 
 The game does not clamp UI size against resolution itself: a UI too large for the client
 area is reachable in-game and simply renders broken. That very likely explains the stock
@@ -69,48 +76,138 @@ MENU_AND_STATUS_PX = 60
 
 
 class UiSize(NamedTuple):
-    """One rung: what the game calls this scale, what it stores, and its floor.
+    """One rung: what the game calls this scale, what it stores, and its two floors.
 
-    *min_resolution* is the smallest client area whose HUD at this scale still works,
-    established by driving every control at each pairing in a live client.
+    Two floors, because two different things break as a client shrinks, at different
+    sizes and for different reasons.
+
+    *min_resolution* is the smallest client area whose HUD at this scale still *renders*
+    -- established by driving every control at each pairing in a live client. Below it
+    the interface overflows the client area outright.
+
+    *min_narrow_resolution* is the smallest client area at this scale where the centred
+    interact prompt does not *cover* the compass and teleporter buttons. It applies only
+    to narrow aspect ratios: widening a client at the same height moves those
+    edge-anchored buttons away from the centred prompt, so at 16:10 or wider the render
+    floor is the only one that binds. That is what the 16:9 rungs are for.
     """
 
     name: str
     value: int
     min_resolution: tuple[int, int]
+    min_narrow_resolution: tuple[int, int]
 
 
 # In ascending *visual* order, which is the only order anything here may use. The stored
 # values are not ordered by size: Micro was appended after the original five and got the
 # next free number. Nothing may sort or compare these numerically.
+#
+# The narrow floors were measured the same way as the render floors -- a live client on a
+# sigil at each pairing, checking whether the prompt covered the hub and dorm buttons. For
+# Micro through Large the answer landed exactly one ladder step above the render floor.
+# Huge is not on that pattern: it still occludes at 1024x768, and 1280x960 is the smallest
+# offered 4:3 size seen clear. Nothing is offered between those two, so the real boundary
+# is somewhere in that gap and is untested -- if a 4:3 size in it is ever added, measure
+# it rather than assuming either end.
 UI_SIZE_LADDER: tuple[UiSize, ...] = (
-    UiSize("Micro", 5, (400, 300)),
-    UiSize("Tiny", 0, (480, 360)),
-    UiSize("Small", 1, (560, 420)),
-    UiSize("Regular", 2, (640, 480)),
-    UiSize("Large", 3, (720, 540)),
-    UiSize("Huge", 4, (800, 600)),
+    UiSize("Micro", 5, (400, 300), (480, 360)),
+    UiSize("Tiny", 0, (480, 360), (560, 420)),
+    UiSize("Small", 1, (560, 420), (640, 480)),
+    UiSize("Regular", 2, (640, 480), (720, 540)),
+    UiSize("Large", 3, (720, 540), (800, 600)),
+    UiSize("Huge", 4, (800, 600), (1280, 960)),
 )
 
-# The five ladder steps below the stock floor. Discrete rather than freeform: every
-# offered resolution maps to exactly one maximum UI size, which is what keeps the
-# pairing testable.
-SUB_FLOOR_RESOLUTIONS: list[tuple[int, int]] = [rung.min_resolution for rung in UI_SIZE_LADDER[:-1]]
+
+# 16:10. Verified at 16:9, where the prompt clears the edge-anchored teleporter buttons;
+# 16:10 is close enough to be treated the same. Held as integers and compared by
+# cross-multiplication so 1280x800 -- the one offered resolution sitting exactly on the
+# line -- cannot be decided either way by a float.
+WIDESCREEN_RATIO: tuple[int, int] = (16, 10)
+
+
+def is_widescreen(resolution: tuple[int, int]) -> bool:
+    """Whether *resolution* is wide enough for the centred prompt to clear the HUD edges."""
+    width, height = resolution
+    num, den = WIDESCREEN_RATIO
+    return width * den >= height * num
+
+
+def widescreen_form(resolution: tuple[int, int]) -> tuple[int, int]:
+    """The 16:9 form of *resolution*: the same height, widened to a 16:9 width.
+
+    Widening rather than shortening is what lets this be offered without re-driving every
+    control in a live client. A HUD cannot be broken by being handed more room on one axis
+    and the same on the other, so the 16:9 form of a rung inherits the verification of that
+    rung's render floor -- and, by moving the edge-anchored buttons away from the centred
+    prompt, escapes the narrow floor rather than having to clear it. Holding the *width*
+    and deriving the height instead (400x300 -> 400x225) would drop below the render
+    floor, which is the broken pairing the ladder exists to prevent.
+
+    The width is rounded to an even pixel, the convention every stock 16:9 size in
+    ``VALID_RESOLUTIONS`` already follows -- 16:9 is not integral at these heights.
+    """
+    _, height = resolution
+    return round(height * 16 / 9 / 2) * 2, height
+
+
+# Every offered resolution below the stock floor: each ladder rung's 16:9 form, and the
+# 4:3 floors from Tiny up. Discrete rather than freeform -- every offered resolution maps
+# to exactly one maximum UI size, which is what keeps the pairing testable.
+#
+# The 16:9 forms are not only a matter of taste. The HUD anchors the compass and
+# teleporter buttons to a screen edge and centres an interact prompt, so at 400x300 with
+# Micro the prompt covers the hub and dorm buttons -- and every one of those buttons is
+# clicked by coordinate (node_helpers.click_by_path -> wizwalker click_window), so a
+# covered button swallows the click instead of failing loudly, and the node runs out its
+# timeout. The 16:9 form of a rung pushes the edges further from the centre at the same
+# height. At 1080p it is bigger as well: 534x300 still fits the 2x2 grid that 400x300
+# does, with a third more game in every tile.
+#
+# Micro's own 4:3 floor, 400x300, is deliberately not in here. It renders fine, but the
+# prompt covers the teleporter buttons at that width and there is no scale below Micro to
+# step down to, so no pairing at 400x300 works at all -- ``has_unoccluded_ui_size`` is the
+# guard. The only way out at that height is width, and that is 534x300.
+SUB_FLOOR_RESOLUTIONS: list[tuple[int, int]] = sorted(
+    {rung.min_resolution for rung in UI_SIZE_LADDER[1:-1]}
+    | {widescreen_form(rung.min_resolution) for rung in UI_SIZE_LADDER[:-1]}
+)
 
 
 def max_ui_size(resolution: tuple[int, int]) -> UiSize:
-    """The largest UI scale whose HUD fits inside *resolution*.
+    """The largest UI scale *resolution* can carry with the HUD both drawn and reachable.
 
-    Always returns a rung: 400x300 is the floor of the resolution list, so the smallest
-    one always qualifies, and anything at or above 800x600 gets Huge.
+    Which floor binds depends on the aspect ratio: at 16:10 or wider only the render
+    floor does; narrower than that the occlusion floor does, which is at least one ladder
+    step higher. So a 4:3 client takes one scale less than its render floor alone would
+    allow, and 1024x768 takes Large rather than Huge.
+
+    Always returns a rung, including for a resolution under every floor -- there is no
+    scale below Micro to fall back to, so Micro is what is left. That case is not
+    reachable from the offered list: ``has_unoccluded_ui_size`` is what keeps a resolution
+    with no working pairing out of ``VALID_RESOLUTIONS``.
     """
     width, height = resolution
+    wide = is_widescreen(resolution)
     best = UI_SIZE_LADDER[0]
     for rung in UI_SIZE_LADDER:
-        min_w, min_h = rung.min_resolution
+        min_w, min_h = rung.min_resolution if wide else rung.min_narrow_resolution
         if width >= min_w and height >= min_h:
             best = rung
     return best
+
+
+def has_unoccluded_ui_size(resolution: tuple[int, int]) -> bool:
+    """Whether *any* UI scale works at *resolution*, prompt occlusion included.
+
+    False is precisely why 400x300 is no longer offered, and it is the check a new entry
+    in ``VALID_RESOLUTIONS`` has to pass. ``max_ui_size`` still answers Micro for such a
+    resolution because it has to answer something; this is the question that tells the
+    two cases apart.
+    """
+    floor = UI_SIZE_LADDER[0]
+    min_w, min_h = floor.min_resolution if is_widescreen(resolution) else floor.min_narrow_resolution
+    return resolution[0] >= min_w and resolution[1] >= min_h
 
 
 def ui_size_for(preferred_value: int | None, resolution: tuple[int, int]) -> int | None:

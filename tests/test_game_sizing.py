@@ -31,7 +31,7 @@ def test_the_ladder_is_in_ascending_visual_order_and_not_in_value_order():
     resolutions = [rung.min_resolution for rung in gs.UI_SIZE_LADDER]
     assert resolutions == sorted(resolutions)
     assert [rung.value for rung in gs.UI_SIZE_LADDER] != sorted(rung.value for rung in gs.UI_SIZE_LADDER)
-    assert gs.UI_SIZE_LADDER[0] == gs.UiSize("Micro", 5, (400, 300))
+    assert gs.UI_SIZE_LADDER[0] == gs.UiSize("Micro", 5, (400, 300), (480, 360))
 
 
 def test_every_rung_is_a_step_of_eighty_by_sixty_and_four_by_three():
@@ -45,17 +45,59 @@ def test_every_rung_is_a_step_of_eighty_by_sixty_and_four_by_three():
 @pytest.mark.parametrize(
     ("resolution", "expected"),
     [
-        ((400, 300), "Micro"),
-        ((480, 360), "Tiny"),
-        ((560, 420), "Small"),
-        ((640, 480), "Regular"),
-        ((720, 540), "Large"),
-        ((800, 600), "Huge"),
+        ((480, 360), "Micro"),
+        ((560, 420), "Tiny"),
+        ((640, 480), "Small"),
+        ((720, 540), "Regular"),
+        ((800, 600), "Large"),
+        ((1024, 768), "Large"),  # the measured one: Huge still occludes here
+        ((1280, 960), "Huge"),
+        ((1280, 1024), "Huge"),  # 5:4, narrower than 4:3, and still clear at that size
+    ],
+)
+def test_a_narrow_resolution_takes_one_scale_less_than_its_render_floor_allows(resolution, expected):
+    """The occlusion floor binds, not the render floor: 640x480 renders Regular fine.
+
+    It is one step down for every scale except Huge, which needs more than 1024x768.
+    """
+    assert gs.max_ui_size(resolution).name == expected
+
+
+@pytest.mark.parametrize(
+    ("resolution", "expected"),
+    [
+        ((534, 300), "Micro"),
+        ((640, 360), "Tiny"),
+        ((746, 420), "Small"),
+        ((854, 480), "Regular"),
+        ((960, 540), "Large"),
+        ((1280, 720), "Huge"),
         ((1920, 1080), "Huge"),  # nothing above the top rung asks for more than Huge
     ],
 )
-def test_max_ui_size_is_the_largest_scale_the_resolution_can_display(resolution, expected):
+def test_a_widescreen_resolution_keeps_the_scale_its_render_floor_allows(resolution, expected):
+    """No step down: the prompt clears the edge-anchored buttons once the client is wide."""
     assert gs.max_ui_size(resolution).name == expected
+
+
+def test_sixteen_by_ten_counts_as_widescreen():
+    """1280x800 sits exactly on the line, and is the only offered resolution that does.
+
+    Narrow it would take Large, because Huge needs 1280x960. It is also the one place the
+    16:10 boundary is a judgement rather than a measurement -- 16:9 is what was tested.
+    """
+    assert gs.is_widescreen((1280, 800))
+    assert gs.max_ui_size((1280, 800)).name == "Huge"
+    assert not gs.is_widescreen((1280, 960))
+
+
+def test_a_resolution_with_no_working_pairing_is_recognised_as_such():
+    """400x300 renders at Micro and is still unusable: nothing steps down far enough."""
+    assert not gs.has_unoccluded_ui_size((400, 300))
+    assert gs.has_unoccluded_ui_size((534, 300))  # the same height, widened until it clears
+    assert gs.has_unoccluded_ui_size((480, 360))
+    # It still answers something, because it has to -- which is why the guard is separate.
+    assert gs.max_ui_size((400, 300)).name == "Micro"
 
 
 def test_a_resolution_that_carries_the_preference_leaves_it_alone():
@@ -66,7 +108,7 @@ def test_a_resolution_that_carries_the_preference_leaves_it_alone():
 
 def test_a_resolution_too_small_for_the_preference_clamps_it_down():
     huge = gs.UI_SIZE_LADDER[-1].value
-    assert gs.ui_size_for(huge, (400, 300)) == gs.UI_SIZE_LADDER[0].value  # Micro
+    assert gs.ui_size_for(huge, (534, 300)) == gs.UI_SIZE_LADDER[0].value  # Micro
 
 
 def test_the_preference_comes_back_when_a_later_launch_can_carry_it():
@@ -76,29 +118,81 @@ def test_the_preference_comes_back_when_a_later_launch_can_carry_it():
     launch after the first small one, because nothing else ever writes the tag.
     """
     huge = gs.UI_SIZE_LADDER[-1].value
-    assert gs.ui_size_for(huge, (400, 300)) != huge
-    assert gs.ui_size_for(huge, (800, 600)) == huge
+    assert gs.ui_size_for(huge, (534, 300)) != huge
+    assert gs.ui_size_for(huge, (1920, 1080)) == huge
 
 
 def test_no_capture_means_no_write():
     """Nothing read the user's value, so there is nothing to clamp and nothing to give back."""
-    assert gs.ui_size_for(None, (400, 300)) is None
+    assert gs.ui_size_for(None, (534, 300)) is None
 
 
 def test_a_value_outside_the_enum_takes_the_ceiling():
-    assert gs.ui_size_for(99, (400, 300)) == gs.UI_SIZE_LADDER[0].value
+    assert gs.ui_size_for(99, (534, 300)) == gs.UI_SIZE_LADDER[0].value
 
 
-def test_the_offered_resolutions_start_at_the_ladder_floor():
-    """The five sub-800x600 steps are what this issue adds, and 400x300 is the bottom."""
-    assert VALID_RESOLUTIONS[:6] == [(400, 300), (480, 360), (560, 420), (640, 480), (720, 540), (800, 600)]
-    assert min(VALID_RESOLUTIONS) == (400, 300)
+def test_every_offered_resolution_has_a_ui_scale_that_actually_works():
+    """The bar a new entry has to clear, and what removed 400x300 from the list.
+
+    Rendering is not enough: the scale it renders at must also leave the teleporter
+    buttons clear of the interact prompt.
+    """
+    assert (400, 300) not in VALID_RESOLUTIONS
+    for resolution in VALID_RESOLUTIONS:
+        assert gs.has_unoccluded_ui_size(resolution), resolution
 
 
-def test_every_offered_resolution_below_the_stock_floor_is_a_ladder_rung():
-    """No freeform sizes: each one maps to exactly one maximum UI size."""
-    rungs = {rung.min_resolution for rung in gs.UI_SIZE_LADDER}
-    assert {r for r in VALID_RESOLUTIONS if r < (800, 600)} <= rungs
+def test_the_offered_resolutions_start_at_the_smallest_that_works():
+    assert min(VALID_RESOLUTIONS, key=lambda r: (r[0] * r[1], r)) == (534, 300)
+    for rung in gs.UI_SIZE_LADDER[1:]:
+        assert rung.min_resolution in VALID_RESOLUTIONS
+
+
+def test_every_offered_sub_floor_resolution_is_a_ladder_pairing():
+    """No freeform sizes: each one maps to exactly one maximum UI size.
+
+    Stated over ``SUB_FLOOR_RESOLUTIONS`` rather than over "smaller than 800x600",
+    because a rung's 16:9 form is *wider* than the stock floor while still taking a UI
+    scale below Huge -- 854x480 is sub-floor in the sense that matters here.
+    """
+    for resolution in gs.SUB_FLOOR_RESOLUTIONS:
+        assert resolution in VALID_RESOLUTIONS
+        assert gs.max_ui_size(resolution).name != "Huge"
+
+
+# ---------------------------------------------------------------------------
+# The 16:9 forms
+#
+# Their reason for existing is not screen space: the HUD anchors the compass and
+# teleporter buttons to an edge and centres the interact prompt, so at 400x300 the prompt
+# covers the hub and dorm buttons, and those are clicked by coordinate.
+# ---------------------------------------------------------------------------
+
+
+def test_the_widescreen_form_keeps_the_height_and_only_widens():
+    """The whole basis for offering these without re-driving every control in a client.
+
+    A rung's floor is verified; more width at the same height cannot take it back below
+    that floor, so the 16:9 form inherits the 4:3 form's verification.
+    """
+    for rung in gs.UI_SIZE_LADDER:
+        wide_w, wide_h = gs.widescreen_form(rung.min_resolution)
+        floor_w, floor_h = rung.min_resolution
+        assert wide_h == floor_h
+        assert wide_w > floor_w
+
+
+def test_the_widescreen_form_is_sixteen_by_nine_on_an_even_pixel():
+    for rung in gs.UI_SIZE_LADDER:
+        width, height = gs.widescreen_form(rung.min_resolution)
+        assert width % 2 == 0
+        assert abs(width / height - 16 / 9) < 0.01
+
+
+def test_a_widescreen_form_takes_the_same_ui_scale_as_the_rung_it_came_from():
+    """It must not buy a larger UI scale by being wider -- the height is what was verified."""
+    for rung in gs.UI_SIZE_LADDER:
+        assert gs.max_ui_size(gs.widescreen_form(rung.min_resolution)).name == rung.name
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +224,7 @@ def test_a_layout_larger_than_the_screen_leaves_no_budget_rather_than_a_negative
 
 @pytest.mark.parametrize(
     ("clients", "expected"),
-    [(1, (1280, 720)), (2, (640, 480)), (3, (400, 300)), (4, (400, 300))],
+    [(1, (1280, 720)), (2, (640, 480)), (3, (534, 300)), (4, (534, 300))],
 )
 def test_the_largest_tier_that_fits_1080p_at_the_default_layout(clients, expected):
     """The table from #101: Micro is what a four-client 1080p user actually runs.
@@ -138,18 +232,34 @@ def test_the_largest_tier_that_fits_1080p_at_the_default_layout(clients, expecte
     Solo differs from that table, which ranked the six ladder rungs alone and so stopped
     at 800x600. The offered list is not only the ladder — one client on a 1080p screen
     has room for 1280x720, which is the answer a user would expect to be given.
+
+    Three and four now land on Micro's 16:9 form rather than its 4:3 one: same height,
+    same UI scale, and it still fits the 2x2 grid. Two is unchanged, because 640x480
+    shows more game than 640x360 and ranking is by area.
     """
     assert gs.largest_fitting(VALID_RESOLUTIONS, clients, _DEFAULT_BUDGET) == expected
 
 
+def test_the_widescreen_micro_rung_costs_a_four_client_user_nothing():
+    """It is the case the 16:9 forms were added for, so it must not shrink the grid."""
+    wide = gs.widescreen_form((400, 300))
+    assert gs.fits(wide, 4, _DEFAULT_BUDGET)
+    assert wide[0] * wide[1] > 400 * 300
+
+
 @pytest.mark.parametrize(
     ("clients", "expected"),
-    [(1, "Huge"), (2, "Regular"), (3, "Micro"), (4, "Micro")],
+    [(1, "Huge"), (2, "Small"), (3, "Micro"), (4, "Micro")],
 )
-def test_the_ui_scale_that_comes_with_the_largest_fitting_ladder_rung(clients, expected):
-    """#101's table verbatim, ranked over the ladder rungs it was actually about."""
-    rungs = [rung.min_resolution for rung in gs.UI_SIZE_LADDER]
-    largest = gs.largest_fitting(rungs, clients, _DEFAULT_BUDGET)
+def test_the_ui_scale_that_comes_with_the_largest_fitting_resolution(clients, expected):
+    """#101's table, moved on twice.
+
+    Ranked over the offered list rather than the ladder rungs alone, so solo gets 1280x720
+    rather than stopping at 800x600. And two clients now read Small rather than Regular:
+    the resolution is still 640x480, but a 4:3 client takes one scale less than its render
+    floor allows, or the prompt covers the teleporter buttons.
+    """
+    largest = gs.largest_fitting(VALID_RESOLUTIONS, clients, _DEFAULT_BUDGET)
     assert gs.max_ui_size(largest).name == expected
 
 

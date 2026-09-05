@@ -134,7 +134,8 @@ def test_last_player_is_none_when_the_tag_is_not_a_number(install, config):
 # overwritten, which is why every test here is really about giving it back.
 
 _HUGE = 4  # the game's largest UI scale, and its default
-_MICRO = 5  # the smallest, and the only one 400x300 can display
+_MICRO = 5  # the smallest, and the only one 534x300 can display
+_LARGE = 3  # what a 4:3 client at the stock 800x600 floor can display
 
 
 @pytest.fixture
@@ -160,12 +161,22 @@ def test_the_ui_scale_is_none_when_the_game_never_wrote_one(install):
 
 
 def test_a_small_launch_clamps_the_ui_scale_and_captures_the_original(ui_config):
-    assert launch_profile._ui_size_update(400, 300) == {"UISize": str(_MICRO)}
+    assert launch_profile._ui_size_update(534, 300) == {"UISize": str(_MICRO)}
     assert SettingsManager.instance().original_ui_size == _HUGE
 
 
 def test_a_launch_the_scale_fits_leaves_it_where_it_is(ui_config):
-    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_HUGE)}
+    """1280x960, not 800x600: a 4:3 client at the stock floor only carries Large.
+
+    Huge occludes the teleporter buttons all the way up to 1024x768, so the smallest
+    narrow resolution that leaves a Huge preference untouched is the one above it.
+    """
+    assert launch_profile._ui_size_update(1280, 960) == {"UISize": str(_HUGE)}
+
+
+def test_the_stock_floor_still_clamps_a_huge_preference_down(ui_config):
+    """800x600 is 4:3, so it takes Large -- the clamp is not only a sub-floor concern."""
+    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_LARGE)}
 
 
 def test_the_capture_is_taken_once_and_never_from_our_own_clamp(ui_config):
@@ -174,18 +185,18 @@ def test_the_capture_is_taken_once_and_never_from_our_own_clamp(ui_config):
     Re-reading config.xml would adopt that as the user's preference, and their real one
     would be gone with nothing left that remembers it.
     """
-    launch_profile._ui_size_update(400, 300)
+    launch_profile._ui_size_update(534, 300)
     ui_config.write_text(ui_config.read_text("utf-8").replace(f">{_HUGE}<", f">{_MICRO}<"), "utf-8")
 
-    launch_profile._ui_size_update(400, 300)
+    launch_profile._ui_size_update(534, 300)
     assert SettingsManager.instance().original_ui_size == _HUGE
     # ...and the next launch big enough to carry it puts it back, rather than staying
     # clamped forever because the file now agrees with the clamp.
-    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_HUGE)}
+    assert launch_profile._ui_size_update(1280, 960) == {"UISize": str(_HUGE)}
 
 
 def test_nothing_is_written_when_the_game_has_no_ui_scale_to_clamp(install):
-    assert launch_profile._ui_size_update(400, 300) == {}
+    assert launch_profile._ui_size_update(534, 300) == {}
     assert SettingsManager.instance().original_ui_size is None
 
 
@@ -205,21 +216,21 @@ def test_the_window_config_patch_clamps_the_scale_alongside_the_resolution(tmp_p
             patch.object(launch_profile, "get_wiz_install", return_value=install_root),
             patch.object(launch_profile, "_ui_size_update", return_value={"UISize": str(_MICRO)}),
         ):
-            launch_profile._patch_window_config(400, 300, 50, 50)
+            launch_profile._patch_window_config(534, 300, 50, 50)
     finally:
         sm.stop()
 
-    assert "400x300" in (tmp_path / "preferences.xml").read_text(encoding="utf-8")
+    assert "534x300" in (tmp_path / "preferences.xml").read_text(encoding="utf-8")
     # Resolution goes to preferences.xml, UISize to config.xml, and neither file holds
     # both — the split that makes this worth a test at all.
     config_text = (tmp_path / "config.xml").read_text(encoding="utf-8")
     assert f'<UISize TYPE="INT">{_MICRO}</UISize>' in config_text
-    assert "400x300" not in config_text
+    assert "534x300" not in config_text
     assert "UISize" not in (tmp_path / "preferences.xml").read_text(encoding="utf-8")
 
 
 def test_restoring_puts_the_user_s_scale_back_and_forgets_it(ui_config):
-    launch_profile._ui_size_update(400, 300)
+    launch_profile._ui_size_update(534, 300)
     launch_profile._patch_xml_fields(ui_config, {"UISize": str(_MICRO)})
 
     launch_profile.restore_ui_size()
@@ -230,7 +241,7 @@ def test_restoring_puts_the_user_s_scale_back_and_forgets_it(ui_config):
 
 def test_restoring_twice_is_harmless(ui_config):
     """It runs on quit and again on the next start, since the quit may never have come."""
-    launch_profile._ui_size_update(400, 300)
+    launch_profile._ui_size_update(534, 300)
     launch_profile.restore_ui_size()
     launch_profile.restore_ui_size()
     assert launch_profile.read_ui_size() == _HUGE
@@ -244,7 +255,7 @@ def test_restoring_with_nothing_captured_touches_nothing(ui_config):
 
 def test_a_failed_restore_keeps_the_capture_for_the_next_start(ui_config):
     """Losing the capture would leave the user's game clamped with nothing to undo it."""
-    launch_profile._ui_size_update(400, 300)
+    launch_profile._ui_size_update(534, 300)
     with patch.object(launch_profile, "_patch_xml_fields", side_effect=OSError("locked")):
         launch_profile.restore_ui_size()
     assert SettingsManager.instance().original_ui_size == _HUGE

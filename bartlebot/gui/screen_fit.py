@@ -167,7 +167,7 @@ def largest_fitting_resolution(
     """The biggest offered resolution *client_count* clients fit at, or None if none do.
 
     Only ever used to *say* what would work. Nothing picks a resolution on the user's
-    behalf: running four clients at 400x300 on a 4K screen to save the machine some work
+    behalf: running four clients at 534x300 on a 4K screen to save the machine some work
     is a legitimate choice, so small resolutions are a performance lever rather than only
     a screen-space workaround, and nothing should nudge users toward the biggest that fits.
     """

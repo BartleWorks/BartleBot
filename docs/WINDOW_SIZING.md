@@ -36,13 +36,13 @@ keeps its original pixel size and overflows the client area. The compensation is
 game's own UI scale, which goes down to **Micro** — a step below anything the in-game
 options menu offers.
 
-So 400x300 is fully usable *paired with Micro* — every control works, including the
-Archmastery selector — and broken at the default scale. The two must never be
+So 400x300 *renders* correctly paired with Micro — every control draws, including the
+Archmastery selector — and is broken at the default scale. The two must never be
 independently selectable, or users land in the broken combination.
 
-The verified ladder, exactly 80x60 apart and all 4:3:
+The verified render ladder — exactly 80x60 apart, all 4:3:
 
-| UI size | `UISize` value | minimum resolution |
+| UI size | `UISize` value | render floor |
 |---|---|---|
 | Micro | 5 | 400x300 |
 | Tiny | 0 | 480x360 |
@@ -50,6 +50,11 @@ The verified ladder, exactly 80x60 apart and all 4:3:
 | Regular | 2 | 640x480 |
 | Large | 3 | 720x540 |
 | Huge | 4 | 800x600 |
+
+**Rendering is not the whole story, and this ladder alone is not safe to launch
+against.** A second, higher floor sits under each rung — see "The HUD draws before it is
+reachable" below. 400x300 is not offered at all as a result, and `UI_SIZE_LADDER` carries
+both floors per rung.
 
 **The stored values are not in size order.** Micro was appended after the original five
 and took the next free number. `UI_SIZE_LADDER` is in ascending *visual* order and that
@@ -60,6 +65,84 @@ area is reachable in-game and simply renders broken. That very likely explains t
 800x600 floor: it is the lowest resolution at which the *largest* UI size still works, so
 the game never has to police the pairing. Going below it is not fighting the engine — it
 is relaxing a conservative floor by controlling the pairing ourselves.
+
+## The HUD draws before it is reachable
+
+**The failure is a click that silently misses, not a rendering glitch.** The HUD anchors
+the compass and teleporter buttons (`compassAndTeleporterButtons`) to a screen edge and
+centres the interact prompt. On a narrow client the prompt is wide enough to cover the hub
+and dorm buttons — and those buttons are clicked *by coordinate*: `node_helpers.click_by_path`
+resolves the window and hands its centre to wizwalker's `mouse_handler.click_window`, so
+whatever is drawn on top takes the click. A covered button therefore fails **quietly**:
+`click_by_path` returns True (the window exists and is not grayed), the click lands on the
+prompt, and the node burns its `TRIGGER_TIMEOUT` waiting for a loading screen that never
+starts. Four nodes ride on that button group — `teleport_to_world_hub`, `wizard_city`'s
+go-home (which `go_to_world` is built on), `mark_location` and `teleport_to_marked_location`.
+
+There are two ways out, and the ladder uses both.
+
+### Narrow: take one scale less
+
+At 4:3 the fix is simply to run **one UI scale below what the render floor allows**,
+measured on a live client with a sigil prompt up. That is `min_narrow_resolution`:
+
+| UI size | render floor | narrow floor |
+|---|---|---|
+| Micro | 400x300 | 480x360 |
+| Tiny | 480x360 | 560x420 |
+| Small | 560x420 | 640x480 |
+| Regular | 640x480 | 720x540 |
+| Large | 720x540 | 800x600 |
+| Huge | 800x600 | **1280x960** |
+
+So 640x480 takes Small, 800x600 takes Large, and **1024x768 takes Large rather than
+Huge** — Huge still occludes there, which is the measurement that puts Huge off the
+one-step pattern the other five follow. Nothing 4:3 is offered between 1024x768 and
+1280x960, so the true Huge boundary is somewhere in that gap and untested; measure it
+rather than guessing if a size in it is ever added.
+
+**400x300 is therefore not offered at all.** It renders at Micro, but the prompt covers
+the buttons and there is no scale below Micro to step down to. `has_unoccluded_ui_size`
+is the guard, and a test holds all of `VALID_RESOLUTIONS` to it — that check, not the
+render floor, is the bar a new entry has to clear. A settings file that still holds
+400x300 is migrated on read by the `game_resolution` getter rather than launched.
+
+### Wide: take the width instead
+
+`widescreen_form` derives a second resolution per rung — **the same height, the width
+widened to 16:9** — which moves the edge-anchored buttons away from the centred prompt
+and so keeps the render floor's scale:
+
+| UI size | 16:9 | scale |
+|---|---|---|
+| Micro | 534x300 | Micro |
+| Tiny | 640x360 | Tiny |
+| Small | 746x420 | Small |
+| Regular | 854x480 | Regular |
+| Large | 960x540 | Large |
+
+**Widening, never shortening — that is what makes these safe to offer.** More width at the
+same height cannot take a HUD back below a floor it already cleared, so the 16:9 form
+inherits the render floor's verification. Deriving the 16:9 size from the *width* instead
+(400x225) would cut the height below the floor, which is exactly the broken pairing the
+ladder exists to prevent.
+
+`is_widescreen` draws the line at **16:10**, compared by cross-multiplying integers so
+1280x800 — the one offered resolution sitting exactly on it — is not decided by a float.
+16:9 is what was measured; 16:10 is a judgement that it is close enough, and 1280x800 is
+the only resolution where that judgement changes an answer (Huge rather than Large). If
+it turns out to be wrong, that is the one entry to look at.
+
+The aspect ratio itself costs nothing. `Resolution` is free-form and the engine sets its
+own frustum at launch, which is how the 16:9 sizes already in `VALID_RESOLUTIONS`
+(1280x720, 1600x900, 1920x1080) work. That is a separate question from the runtime frustum
+correction discussed under Deimos below, which only arises when something resizes a
+*running* client.
+
+`VALID_RESOLUTIONS` is a sorted union rather than a concatenation, because the two sets
+interleave: a rung's 16:9 form is wider than the stock floor, so 854x480 and 960x540 sort
+above 800x600 while still being sub-floor sizes in the sense that matters — they take a UI
+scale below Huge.
 
 ## Where the two values live
 
@@ -90,7 +173,7 @@ be left behind.
   next start, because a session that crashed never reached the quit path and nothing else
   would ever undo it.
 - A launch at a resolution that *can* carry the preference writes it back rather than
-  doing nothing. Without that, one launch at 400x300 leaves Micro behind for every launch
+  doing nothing. Without that, one launch at 534x300 leaves Micro behind for every launch
   after it.
 
 The known gap: a user who changes their UI scale in-game while a clamp is captured has
@@ -155,13 +238,19 @@ avoids.
 
 Worked example, 1080p at the default layout (budget 1304x800), over the ladder rungs:
 
-| clients | grid | largest rung that fits |
-|---|---|---|
-| 1 | 1x1 | 800x600 (Huge) |
-| 2 | 1x2 | 640x480 (Regular) |
-| 3-4 | 2x2 | 400x300 (Micro) |
+| clients | grid | largest that fits | scale |
+|---|---|---|---|
+| 1 | 1x1 | 1280x720 | Huge |
+| 2 | 1x2 | 640x480 | Small |
+| 3-4 | 2x2 | 534x300 | Micro |
 
 Micro is not an edge case — it is what a four-client 1080p user actually runs.
+
+Three and four land on Micro's **16:9** form, the smallest offered resolution. Ranking is
+by area, so the widescreen form wins there while still fitting the 2x2 grid — 2*(534+12) =
+1092 against a 1304 budget. Two clients keep the 4:3 640x480, which shows more game than
+640x360; the 16:9 forms only ever win where they are genuinely bigger. Note that 640x480
+now reads **Small**, not Regular: it is 4:3, so the narrow floor binds.
 
 This is the **inverse** of `SettingsManager.minimum_window_size()`, which derives a window
 minimum from a game size already chosen. Both are kept, and they ask opposite questions:
@@ -213,7 +302,7 @@ user should never have to scroll to see a game window.
 
 ## Beyond that, stay out of the way
 
-Nothing picks a resolution on the user's behalf. Running four clients at 400x300 on a 4K
+Nothing picks a resolution on the user's behalf. Running four clients at 534x300 on a 4K
 monitor to save the machine some work is a legitimate and probably common choice — small
 resolutions are a performance lever, not only a screen-space workaround — so nothing
 should push users toward "the biggest that fits". `largest_fitting_resolution` exists only
@@ -233,7 +322,7 @@ The two efforts solve complementary halves, and the half they solved is not the 
 | render at arbitrary size | yes (asm hooks) | yes (`preferences.xml`) |
 | at runtime, no relaunch | yes | no — launch time only |
 | per-account sizing | yes | no — one global setting |
-| arbitrary aspect ratio | yes (frustum correction) | no — 4:3 only |
+| arbitrary aspect ratio | yes (frustum correction) | no — 4:3 and 16:9, fixed at launch |
 | **HUD usable when small** | **no** | **yes (`UISize`)** |
 
 They never touch `UISize` — no reference to it anywhere in their source — and their floor
@@ -245,7 +334,7 @@ The cost would be two pattern-scanned asm hooks, a build-specific struct offset,
 in-process WndProc hook — their own `VideoManagerHook` docstring records the function
 being recompiled in a 2026-06 client update and needing a new pattern. That is the
 per-patch offset chasing `docs/UPSTREAM.md` exists to manage, for a feature XML patching
-already covers from 400x300 through 4K.
+already covers from 534x300 through 4K.
 
 Cheap lessons kept from that review:
 
@@ -254,11 +343,13 @@ Cheap lessons kept from that review:
   rules out the tempting shortcut of stretching the game window to fill its tile —
   WizWalker clicks would land in the wrong place, failing subtly rather than loudly.
   `ClientTile`'s 1:1 contract is load-bearing.
-- **If non-4:3 tiles are ever wanted, frustum correction must be restored on teardown.**
-  Their code assumes first-seen extents are native, so a corrected frustum left behind
-  makes the next hook read it as native and the POV creeps further on every cycle. We
-  unhook and rehook routinely (`ClientHealthMonitor`, relogging, `_rehook_one`), so this
-  would bite considerably harder here.
+- **If an aspect ratio is ever changed at *runtime*, frustum correction must be restored
+  on teardown.** This does not apply to the 16:9 rungs above — those are set in
+  `preferences.xml` before launch and the engine builds its own frustum — only to a hook
+  that reshapes a running client. Their code assumes first-seen extents are native, so a
+  corrected frustum left behind makes the next hook read it as native and the POV creeps
+  further on every cycle. We unhook and rehook routinely (`ClientHealthMonitor`,
+  relogging, `_rehook_one`), so this would bite considerably harder here.
 - **Exactly one backbuffer forcer per client**, if this is ever revisited: a second one
   pattern-scans `setMode` after the first hooked it, finds a `jmp` where the original
   bytes were, and fails with `PatternFailed`.

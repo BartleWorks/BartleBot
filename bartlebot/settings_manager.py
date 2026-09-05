@@ -11,7 +11,11 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 
 from bartlebot import bot_options
-from bartlebot.game_sizing import MENU_AND_STATUS_PX, SUB_FLOOR_RESOLUTIONS, screen_budget
+from bartlebot.game_sizing import (
+    MENU_AND_STATUS_PX,
+    SUB_FLOOR_RESOLUTIONS,
+    screen_budget,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -136,15 +140,8 @@ _DEFAULTS: dict[str, Any] = {
     "bot_option_overrides": {},  # {bot_uuid: {option_name: value}}
 }
 
-# Valid Wizard101 windowed resolutions (width, height), smallest first.
-#
-# The five below 800x600 are the game_sizing ladder: the game's own dropdown stops at
-# 800x600, but that is a UI restriction rather than an engine limit, and each of these
-# is the floor of exactly one UI scale (#101). They are what makes 2-4 embedded clients
-# fit a 1080p screen. Nothing below 400x300 is offered -- that is where the HUD stops
-# working even at Micro, the smallest scale the game has.
-VALID_RESOLUTIONS: list[tuple[int, int]] = [
-    *SUB_FLOOR_RESOLUTIONS,
+# The windowed resolutions the game's own dropdown offers, at and above its 800x600 floor.
+_STOCK_RESOLUTIONS: list[tuple[int, int]] = [
     (800, 600),
     (1024, 768),
     (1280, 720),
@@ -155,6 +152,21 @@ VALID_RESOLUTIONS: list[tuple[int, int]] = [
     (1600, 900),
     (1920, 1080),
 ]
+
+# Valid Wizard101 windowed resolutions (width, height), smallest first.
+#
+# The sub-floor ones are the game_sizing ladder: the game's own dropdown stops at
+# 800x600, but that is a UI restriction rather than an engine limit, and each of them
+# pairs with exactly one UI scale (#101). They are what makes 2-4 embedded clients fit a
+# 1080p screen. The smallest offered is 534x300; 400x300 renders but leaves the
+# teleporter buttons under the interact prompt with no smaller UI scale to escape to,
+# so game_sizing.has_unoccluded_ui_size rejects it and a test holds the whole list to
+# that bar.
+#
+# Sorted rather than concatenated because the two lists interleave: a rung's 16:9 form is
+# wider than its 4:3 one, so 854x480 and 960x540 both sort above 800x600 while still
+# being sub-floor sizes in the sense that matters -- they take a UI scale below Huge.
+VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
 
 # Minimum BotCanvas height (toolbar + enough graph space)
 BOTCANVAS_MIN_HEIGHT = 180
@@ -283,11 +295,27 @@ class SettingsManager:
 
     @property
     def game_resolution(self) -> tuple[int, int]:
+        """The launch resolution, mapped onto the offered list if it has moved on.
+
+        A stored value that is no longer offered is not left alone. 400x300 was offered
+        before the interact prompt was found to cover the teleporter buttons there, and a
+        settings file written then would otherwise keep launching a client whose hub and
+        dorm buttons cannot be clicked -- silently, because the click lands on the prompt.
+        The replacement is the smallest offered resolution at least as large on both axes
+        (400x300 -> 534x300: the same height and UI scale, widened until the prompt
+        clears), or the default if the stored size is larger than anything offered.
+        """
         raw = self.get("game_embed", "resolution", default=[800, 600])
         try:
-            return int(raw[0]), int(raw[1])
+            stored = int(raw[0]), int(raw[1])
         except (TypeError, IndexError, ValueError):
             return 800, 600
+        if stored in VALID_RESOLUTIONS:
+            return stored
+        at_least_as_big = [r for r in VALID_RESOLUTIONS if r[0] >= stored[0] and r[1] >= stored[1]]
+        if not at_least_as_big:
+            return 800, 600
+        return min(at_least_as_big, key=lambda r: (r[0] * r[1], r))
 
     @game_resolution.setter
     def game_resolution(self, value: tuple[int, int]) -> None:

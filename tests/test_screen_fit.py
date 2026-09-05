@@ -96,8 +96,9 @@ def test_a_wider_sidebar_can_take_a_resolution_away(screen):
 
 
 def test_the_largest_fitting_resolution_is_offered_as_a_hint(screen):
+    """Micro's 16:9 form: the smallest offered resolution, and it still fits a 2x2 grid."""
     screen(_1080P)
-    assert screen_fit.largest_fitting_resolution(4) == (400, 300)
+    assert screen_fit.largest_fitting_resolution(4) == (534, 300)
 
 
 def test_a_screen_that_cannot_be_measured_refuses_nothing(monkeypatch, qapp):
