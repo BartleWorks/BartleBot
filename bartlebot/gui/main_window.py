@@ -26,6 +26,19 @@ def _shorten_recent_path(path: str, root: Path) -> str:
         return path
 
 
+def _splitter_sizes(total: int, fixed: list[int], flexible: int) -> list[int]:
+    """*fixed* pane sizes with the rest of *total* given to the pane at index *flexible*.
+
+    Pure so it can be tested without a QApplication, which is the whole point: the
+    arithmetic is what went wrong, not the widgets. Clamped at zero rather than allowed
+    to go negative -- a window too narrow for both sidebars hands Qt a nonsense size for
+    the middle otherwise, where zero lets it fall back on the panes' own minimums.
+    """
+    sizes = list(fixed)
+    sizes.insert(flexible, max(0, total - sum(fixed)))
+    return sizes
+
+
 class MainWindow(QMainWindow):
     # Emitted when a recent-file menu entry is clicked (passes the file path)
     open_recent_requested = pyqtSignal(str)
@@ -44,6 +57,9 @@ class MainWindow(QMainWindow):
         # asked of the game view, which _build_central is what creates.
         self._rebuild_launch_menu()
         self._apply_minimum_size()
+        # Cleared by the first showEvent, which is the earliest the splitters have a real
+        # extent to size against -- see _apply_configured_splitter_sizes.
+        self._startup_sizes_pending = True
         self._apply_startup_layout()
 
     # ------------------------------------------------------------------
@@ -230,10 +246,10 @@ class MainWindow(QMainWindow):
         self._top_splitter.addWidget(self.right_sidebar)
         self._top_splitter.setStretchFactor(1, 1)
         sm = SettingsManager.instance()
-        left_w = sm.get_general("left_sidebar_width", default=300)
-        right_w = sm.get_general("right_sidebar_width", default=300)
         bot_h = sm.get_general("bottom_section_height", default=220)
-        self._top_splitter.setSizes([left_w, 800, right_w])
+        # A seed only. Nothing here sticks: the splitter has no extent yet, so this is a
+        # ratio rather than a size, and the real one is applied on the first showEvent.
+        self._top_splitter.setSizes([300, 800, 300])
 
         # Outer vertical splitter: top row (game + sidebars) | bot canvas
         self._outer_splitter = QSplitter(Qt.Orientation.Vertical)
@@ -258,6 +274,52 @@ class MainWindow(QMainWindow):
     def _apply_minimum_size(self) -> None:
         min_w, min_h = SettingsManager.instance().minimum_window_size()
         self.setMinimumSize(min_w, min_h)
+
+    def _apply_configured_splitter_sizes(self) -> None:
+        """Give the sidebars and the bot canvas their configured sizes, and the game panel the rest.
+
+        Applied once the window has been shown, not only from ``_build_central``. A
+        ``setSizes`` call against a splitter that has not been laid out yet is a *ratio*
+        rather than a size -- Qt scales it to whatever extent the splitter has at the
+        time, and the window then grows to its startup size with the surplus shared out
+        across all three panes. A 1400x900 window opened that way put 480px in each
+        sidebar and 600px in the bot canvas, none of which the user asked for.
+
+        That is not only a cosmetic mis-layout. The game area left over is what a launch
+        is judged against (see gui/screen_fit.budget_for), so the panes taking space they
+        were never configured for is what refused profiles the screen had room for --
+        and dragging a sidebar could not always give it back, because the height had gone
+        to the canvas at the same time.
+
+        Sized against the splitters' *current* extent rather than the screen, so it is
+        correct whether the window was resized or maximized, and clamped at zero so a
+        window narrower than both sidebars leaves Qt its own minimums to enforce.
+        """
+        sm = SettingsManager.instance()
+        left_w = int(sm.get_general("left_sidebar_width", default=300))
+        right_w = int(sm.get_general("right_sidebar_width", default=300))
+        bot_h = int(sm.get_general("bottom_section_height", default=220))
+
+        top_total = sum(self._top_splitter.sizes())
+        if top_total > 0:
+            self._top_splitter.setSizes(_splitter_sizes(top_total, [left_w, right_w], flexible=1))
+        outer_total = sum(self._outer_splitter.sizes())
+        # Skipped while the game view is hidden: the bot canvas owns the whole window
+        # then, and handing the top pane a size would put an empty strip above it.
+        if outer_total > 0 and self._game_view_visible:
+            self._outer_splitter.setSizes(_splitter_sizes(outer_total, [bot_h], flexible=0))
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        """Apply the configured layout on the way in, once.
+
+        Once, because every later show -- restoring from minimised, coming back from
+        another desktop -- would otherwise throw away every splitter drag the user has
+        made since, and nothing persists those.
+        """
+        super().showEvent(event)
+        if self._startup_sizes_pending:
+            self._startup_sizes_pending = False
+            self._apply_configured_splitter_sizes()
 
     def _apply_startup_layout(self) -> None:
         sm = SettingsManager.instance()
