@@ -29,6 +29,17 @@ reads back virtualized coordinates — on a 125% display every result comes back
 Qt sets awareness itself, so app code such as `ClientTile.game_size` already measures true
 physical pixels.
 
+That table also says the engine's `Resolution` is *physical* pixels, which is why
+`tile_size` divides it by the screen's scale factor — a 2048x1536 client is 1638x1229
+logical points of tile at 125%. It holds only because the client runs DPI-aware. The exe
+declares no `dpiAware` manifest entry and imports no `SetProcessDPIAware`, so what makes
+it aware on the machine this was measured on is the per-exe compatibility flag
+(`HKCU\...\AppCompatFlags\Layers` -> `HIGHDPIAWARE`, the "Override high DPI scaling
+behavior: Application" checkbox). Without it Windows virtualizes the process and the same
+2048x1536 request becomes a 2560x1920 physical window — bigger than the tile the fit
+arithmetic reserved, not smaller. Unverified on a machine without the flag; if tiles ever
+clip on a scaled display, this is the first thing to measure.
+
 ## Resolution and UI size are one setting
 
 The HUD does not scale with the window. Shrink the resolution alone and the interface

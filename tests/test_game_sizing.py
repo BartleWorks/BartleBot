@@ -339,6 +339,19 @@ def test_the_reason_names_both_sizes_and_every_way_out():
     assert "make the game area larger" in reason
 
 
+def test_the_reason_is_printed_in_the_units_the_resolution_is_in():
+    """On a scaled display the sentence must not read as needing less than the resolution.
+
+    The fit arithmetic is logical pixels and the resolution is physical ones, so at 125%
+    an unscaled sentence says 2048x1536 "needs 1650x1279" -- smaller than the client it
+    is describing, which reads as a bug rather than as two coordinate spaces.
+    """
+    reason = gs.fit_problem((2048, 1536), 1, (2108, 1088), 1.25)
+    assert reason is not None
+    assert "needs 2062×1599" in reason  # the tile, in the same pixels as 2048x1536
+    assert "there is 2635×1360 available" in reason
+
+
 def test_one_client_is_not_described_as_one_clients():
     reason = gs.fit_problem((1920, 1080), 1, _DEFAULT_BUDGET)
     assert reason is not None

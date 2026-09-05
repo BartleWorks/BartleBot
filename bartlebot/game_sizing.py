@@ -376,6 +376,14 @@ def fit_problem(
         return None
     need_w, need_h = required_game_area(resolution, client_count, dpr)
     budget_w, budget_h = budget
+    # Both numbers are logical pixels, and the resolution beside them is physical ones, so
+    # on a scaled display the sentence would otherwise read as a client needing *less*
+    # space than its own resolution -- 2048x1536 "needs 1650x1279" at 125%. The comparison
+    # stays logical; only what is printed is converted, so all three numbers are in the
+    # units the user picked the resolution in. dpr 1.0 leaves them untouched.
+    scale = dpr or 1.0
+    need_w, need_h = round(need_w * scale), round(need_h * scale)
+    budget_w, budget_h = round(budget_w * scale), round(budget_h * scale)
     clients = f"{client_count} client{'s' if client_count != 1 else ''}"
     # Three ways out, and the third is not a screen-space one: the budget is the larger of
     # the configured layout and the live game area (see gui/screen_fit.budget_for), so
