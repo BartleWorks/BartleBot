@@ -80,6 +80,13 @@ def right_sidebar_floor() -> int:
     if app is None:
         return game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
     # Parentless and never shown: it exists only to be asked what a tool button costs.
+    # "Never shown" is load-bearing, not incidental — a parentless QWidget *is* a
+    # top-level window, so anything here that made it visible (a setVisible, a show(), a
+    # style that needs it realised) would put a button-sized window on the user's screen
+    # for as long as this function runs. That is exactly the flash the launch cards had:
+    # see _make_quiet_label in gui/game_embed/launch_cards.py. sizeHint() alone does not
+    # realise it — verified: WA_WState_Created stays False, with and without the app
+    # stylesheet. If this probe ever has to be shown or realised, give it a parent.
     probe = QPushButton("Unhook")
     probe.setFont(app.font())
     return game_sizing.right_sidebar_floor(QFontMetrics(app.font()).height(), probe.sizeHint().width())

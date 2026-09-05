@@ -7,8 +7,9 @@ reaches a card's labels.
 """
 
 import pytest
-from PyQt6.QtCore import QEvent, QPoint, Qt
+from PyQt6.QtCore import QEvent, QObject, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
+from PyQt6.QtWidgets import QWidget
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.account_accent import account_accent
@@ -228,3 +229,50 @@ def test_a_theme_switch_restyles_an_account_pill(qapp, theme):
     qapp.setStyleSheet(theme_mod.THEME.global_stylesheet())
 
     assert pill.styleSheet() != light
+
+
+# ---------------------------------------------------------------------------
+# Nothing a card builds is a window
+# ---------------------------------------------------------------------------
+
+
+class _WindowShowWatcher(QObject):
+    """Records every widget that becomes a *top-level window* while installed."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.shown: list[QWidget] = []
+
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.isWindow():
+            self.shown.append(obj)
+        return False
+
+
+def _windows_shown_by(qapp, build):
+    watcher = _WindowShowWatcher()
+    qapp.installEventFilter(watcher)
+    try:
+        build()
+    finally:
+        qapp.removeEventFilter(watcher)
+    return watcher.shown
+
+
+@pytest.mark.parametrize(
+    "build",
+    [
+        pytest.param(lambda: AccountCard(ACCOUNT, ROSTER), id="account"),
+        pytest.param(lambda: ProfileCard(PROFILE, [ACCOUNT]), id="profile"),
+    ],
+)
+def test_building_a_card_puts_no_window_on_the_screen(qapp, build):
+    """A card's children must be the card's children from birth.
+
+    A parentless QWidget *is* a top-level window, so ``setVisible(True)`` on one — which
+    the quiet line does whenever it has text — shows a label-sized window for the frame
+    between there and the layout reparenting it. The user sees a flash in the corner of
+    the display every time the cards are rebuilt, and the profile editor rebuilds them on
+    the way out.
+    """
+    assert _windows_shown_by(qapp, build) == []

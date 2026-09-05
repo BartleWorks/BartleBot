@@ -361,7 +361,7 @@ class _LaunchCard(ThemedMixin, QWidget):
                 lbl.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px; background: transparent;")
 
     def _make_name_label(self, text: str) -> QLabel:
-        label = QLabel(text)
+        label = QLabel(text, self)
         font = label.font()
         font.setBold(True)
         label.setFont(font)
@@ -380,8 +380,14 @@ class _LaunchCard(ThemedMixin, QWidget):
         Ignored horizontally, with a minimum of one pixel, for the same reason as the
         detail line: the text is fitted to whatever width the card ends up with, and must
         never be what decides that width.
+
+        Parented to the card *at construction*, before the visibility below is set. A
+        parentless widget is a top-level window, so ``setVisible(True)`` on one puts a
+        label-sized window on the screen for the frame between here and ``addWidget``
+        reparenting it -- a flash in the corner of the display every time the cards are
+        rebuilt, which the profile editor does on the way out.
         """
-        label = QLabel(text)
+        label = QLabel(text, self)
         policy = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         policy.setHeightForWidth(True)
         label.setSizePolicy(policy)
@@ -462,7 +468,7 @@ class AccountCard(_LaunchCard):
         header.addStretch()
         layout.addLayout(header)
 
-        self._detail_lbl = QLabel(character_summary(self._roster))
+        self._detail_lbl = QLabel(character_summary(self._roster), self)
         # Ignored, with a minimum of one pixel: the line is fitted to whatever width the
         # card ends up with, so its own text must never be what decides that width.
         # Left as Preferred, a long roster would push the card's minimum width out and
