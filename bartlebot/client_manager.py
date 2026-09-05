@@ -9,6 +9,7 @@ from wizwalker.utils import get_window_title
 
 from bartlebot import account_identity, recovery_readiness, relog
 from bartlebot.credentials import CredentialStore
+from bartlebot.launch_tracker import LaunchTracker
 from bartlebot.launcher import auto_select
 from bartlebot.nodes.timing import (
     CLIENT_DETECT_ERROR_BACKOFF,
@@ -115,6 +116,9 @@ class ClientManager(QObject):
         self._rosters: dict[str, list[dict]] = {}
         # Desired slot ordering; None marks a slot currently being recovered.
         self._client_order: list[str | None] = []
+        # Accounts with a launch running right now. Separate from the ordering above
+        # because a reservation outlives the launch that made it -- see launch_tracker.
+        self._launches = LaunchTracker()
         # Slots pending recovery: original_position → username
         self._pending_recovery: dict[int, str] = {}
         # Slot each username last occupied, remembered across a disconnect so a client
@@ -917,6 +921,75 @@ class ClientManager(QObject):
             described,
         )
 
+    def begin_launch(self, usernames: list[str]) -> list[str]:
+        """Claim slots and open a launch for *usernames*, returning the ones accepted.
+
+        The single door both launch routes go through. They used to reserve by different
+        paths -- a single account called ``reserve_slots`` from the window, a profile
+        handed the reserver down into ``launch_profile`` -- and neither could see the
+        other, so a click during a launch reserved nothing new and spawned a second batch
+        anyway. Rejecting an account already in flight is the whole point, and it can only
+        be done where both routes meet.
+
+        The rejected ones are dropped rather than failing the batch: a profile of four with
+        one account already launching should bring up the other three. Callers pair this
+        with ``end_launch`` in a ``finally`` -- an attempt that is never ended leaves the
+        account unlaunchable for the rest of the session.
+        """
+        accepted = self._launches.begin(usernames)
+        if accepted:
+            self.reserve_slots(accepted)
+            self._sync_tiles()
+        rejected = [u for u in usernames if u not in accepted]
+        if rejected:
+            logger.info("Ignoring launch for account(s) already launching: %s", ", ".join(rejected))
+        return accepted
+
+    def end_launch(self, usernames: list[str]) -> None:
+        """Close the launches for *usernames*, freeing the slot of any that never arrived.
+
+        Called from the caller's ``finally``, so it runs on the failure paths too -- and
+        those are the ones that matter. Nothing else takes a reservation back: a launch
+        that dies at the login screen would otherwise hold its slot, and the grid would
+        keep a place for a window that is not coming until the app restarts.
+
+        A slot is only released if no window turned up for it. An account that reached the
+        login screen keeps its slot whether or not the drive that followed succeeded --
+        there is a real window sitting in it, and moving it would be the tile shuffle the
+        reserved ordering exists to prevent.
+        """
+        self._launches.end(usernames)
+        self._release_unarrived(usernames)
+        self._sync_tiles()
+
+    @property
+    def launching(self) -> list[str]:
+        """Accounts with a launch running, for a caller deciding whether to offer another."""
+        return list(self._launches.in_flight())
+
+    def _release_unarrived(self, usernames: list[str]) -> None:
+        """Give back the reserved slots of accounts that never produced a window.
+
+        Trailing empties are trimmed as well, so a failed launch does not leave the
+        ordering longer than the fleet it describes. That length is what ``_assign_slot``
+        hands out from, and letting it grow is the slot drift its docstring describes.
+        """
+        arrived = set(self._hwnd_account_map.values())
+        released = False
+        for username in usernames:
+            if username in arrived:
+                continue
+            for pos, held in enumerate(self._client_order):
+                if held == username:
+                    self._client_order[pos] = None
+                    self._vacated_slots.pop(username, None)
+                    released = True
+        if not released:
+            return
+        while self._client_order and self._client_order[-1] is None:
+            self._client_order.pop()
+        logger.info("Released slot(s) for launch(es) that produced no window: %s", self._client_order)
+
     def reserve_slots(self, usernames: list[str]) -> None:
         """Pin the slot order for a batch of accounts about to be launched.
 
@@ -1057,6 +1130,7 @@ class ClientManager(QObject):
             embeddable_hwnds=self._embeddable_hwnds(),
             client_hwnds=[c.window_handle for c in self._clients],
             account_label=self._account_label,
+            launching=self._launches.in_flight(),
         )
 
     def _sync_tiles(self) -> None:

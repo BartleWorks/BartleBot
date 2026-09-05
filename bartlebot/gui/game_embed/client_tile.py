@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QRect, Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QPainter
+from PyQt6.QtCore import QRect, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QPainter
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot import streamer_mode
@@ -15,7 +15,7 @@ from bartlebot.gui.theme import THEME
 # FOCUS_BORDER and LABEL_RESERVE are imported rather than defined here: how much chrome
 # a tile wraps around its game window is a term in the screen-fit arithmetic as well as
 # a drawing constant, and bartlebot/game_sizing.py cannot import a QWidget to find out.
-__all__ = ["FOCUS_BORDER", "LABEL_RESERVE", "ClientTile", "DetachedTile", "pill_text"]
+__all__ = ["FOCUS_BORDER", "LABEL_RESERVE", "ClientTile", "DetachedTile", "PendingTile", "pill_text"]
 
 # Pill icon constants
 _ICON_SIZE = 18
@@ -234,14 +234,24 @@ class ClientTile(QWidget):
         self._icon_rect = QRect(ix - 2, pill_y, _ICON_SIZE + 4, pill_h)  # 2px buffer
 
 
-class DetachedTile(QWidget):
-    """Placeholder shown in a grid slot when the game window is detached (floating free).
+class _WindowlessTile(QWidget):
+    """Shared drawing for the tile kinds that hold a slot without a game window in it.
 
-    Renders the same pill label as ClientTile but with an attach icon.  Clicking
-    the icon emits ``reattach_requested`` so GameView can re-embed the window.
+    Two of them now -- a detached window, and a launch that has not produced a window yet
+    (#186) -- and they differ only in the icon on the pill and the line of body text under
+    it. The pill layout is the part worth having in one place: it has to agree with
+    ``ClientTile``'s to the pixel, because a tile changing kind must not move its caption,
+    and it was already written twice before there was a third kind to write it a third
+    time.
+
+    ``ClientTile`` is deliberately not folded in here. It paints its pill *around* a Win32
+    child surface, at coordinates derived from the embedded window's own geometry, and the
+    order of that against the focus highlight is most of why its paintEvent looks the way
+    it does. Sharing the layout constants is the honest amount of sharing there.
     """
 
-    reattach_requested = pyqtSignal()
+    #: Icon drawn at the right of the pill, and the click target for ``_on_icon_clicked``.
+    _pill_icon = ""
 
     def __init__(self, label: str, parent=None) -> None:
         super().__init__(parent)
@@ -249,6 +259,11 @@ class DetachedTile(QWidget):
         self._wizard_name: str | None = None
         self._pill_rect: QRect = QRect()
         self._icon_rect: QRect = QRect()
+
+    @property
+    def label(self) -> str:
+        """The slot label shown on the pill."""
+        return self._label
 
     def set_label(self, label: str) -> None:
         """Set the slot label, repainting if it changed."""
@@ -262,34 +277,49 @@ class DetachedTile(QWidget):
             self._wizard_name = name
             self.update()
 
+    @property
+    def wizard_name(self) -> str | None:
+        """The wizard name currently shown on this tile, if any."""
+        return self._wizard_name
+
+    def _body_text(self) -> str:
+        """The line drawn under the pill, saying why there is no game window here."""
+        return ""
+
+    def _on_icon_clicked(self) -> None:
+        """Called when the pill icon is clicked. Subclasses emit their own signal."""
+
     # ------------------------------------------------------------------
     # Qt event overrides
     # ------------------------------------------------------------------
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._icon_rect.contains(event.pos()):
-            self.reattach_requested.emit()
+            self._on_icon_clicked()
         else:
             super().mousePressEvent(event)
 
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
+        self._paint_body(painter)
+        self._paint_pill(painter)
 
-        # Body text
+    def _paint_body(self, painter: QPainter) -> None:
+        """Draw the explanatory line in the space a game window would occupy."""
         body_top = LABEL_RESERVE
-        body_h = self.height() - body_top
         painter.setPen(THEME.qcolor("text_muted"))
         body_font = QFont()
         body_font.setPointSize(9)
         painter.setFont(body_font)
         painter.drawText(
-            QRect(0, body_top, self.width(), body_h),
+            QRect(0, body_top, self.width(), self.height() - body_top),
             Qt.AlignmentFlag.AlignCenter,
-            "Player game window not currently embedded",
+            self._body_text(),
         )
 
-        # Pill label (same layout as ClientTile, but with attach icon)
+    def _paint_pill(self, painter: QPainter) -> None:
+        """Draw the caption pill, where ClientTile draws its own."""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         pill_font = QFont()
         pill_font.setPointSize(9)
@@ -300,7 +330,11 @@ class DetachedTile(QWidget):
         text_w = metrics.horizontalAdvance(text)
         text_h = metrics.height()
 
-        pill_w = text_w + _ICON_GAP + _ICON_SIZE + 16
+        # A tile with nothing to click has no icon, and then the space and the gap for one
+        # are not reserved either -- a pill padded out around an absent icon reads as a
+        # button that has lost its glyph rather than as a caption.
+        icon_w = _ICON_GAP + _ICON_SIZE if self._pill_icon else 0
+        pill_w = text_w + icon_w + 16  # 8px left + 8px right padding
         pill_h = max(text_h, _ICON_SIZE) + 6
         pill_x = (self.width() - pill_w) // 2
         pill_y = FOCUS_BORDER + LABEL_GAP
@@ -316,10 +350,136 @@ class DetachedTile(QWidget):
             text,
         )
 
-        icon_pm = svg_pixmap("attach", _ICON_SIZE, tint="#ffffff")
+        self._pill_rect = QRect(pill_x, pill_y, pill_w, pill_h)
+        if not self._pill_icon:
+            self._icon_rect = QRect()
+            return
+
+        icon_pm = svg_pixmap(self._pill_icon, _ICON_SIZE, tint="#ffffff")
         ix = pill_x + 8 + text_w + _ICON_GAP
         iy = pill_y + (pill_h - _ICON_SIZE) // 2
         painter.drawPixmap(ix, iy, icon_pm)
+        self._icon_rect = QRect(ix - 2, pill_y, _ICON_SIZE + 4, pill_h)  # 2px buffer
 
-        self._pill_rect = QRect(pill_x, pill_y, pill_w, pill_h)
-        self._icon_rect = QRect(ix - 2, pill_y, _ICON_SIZE + 4, pill_h)
+
+class DetachedTile(_WindowlessTile):
+    """Placeholder shown in a grid slot when the game window is detached (floating free).
+
+    Renders the same pill label as ClientTile but with an attach icon.  Clicking
+    the icon emits ``reattach_requested`` so GameView can re-embed the window.
+    """
+
+    reattach_requested = pyqtSignal()
+
+    _pill_icon = "attach"
+
+    def _body_text(self) -> str:
+        return "Player game window not currently embedded"
+
+    def _on_icon_clicked(self) -> None:
+        self.reattach_requested.emit()
+
+
+# Busy indicator geometry and motion. One revolution every _SPINNER_PERIOD_MS, advanced by
+# a repaint every _SPINNER_TICK_MS -- slow enough that several pending tiles spinning at
+# once cost nothing, fast enough to read as motion rather than as a stuck frame.
+_SPINNER_RADIUS = 14
+_SPINNER_THICKNESS = 3
+_SPINNER_ARC_DEGREES = 100
+_SPINNER_PERIOD_MS = 1200
+_SPINNER_TICK_MS = 50
+# Gap between the spinner and the caption under it.
+_SPINNER_CAPTION_GAP = 14
+
+
+class PendingTile(_WindowlessTile):
+    """Placeholder shown in a reserved slot while that account's launch is still running.
+
+    Drawn from the moment the launch is asked for, which is the point of it: a launch takes
+    tens of seconds to minutes before a window exists, and until this the app looked like
+    nothing had happened for that whole window -- so the natural response to a slow launch
+    was to click again, and a second click really did start a second batch (#186).
+
+    Its life is short relative to the launch. The window is titled seconds after login and
+    takes over the slot as a real ``ClientTile`` then, long before the character is in game,
+    so this covers spawn-to-login rather than the whole wait. That is the honest boundary:
+    once there is a window on screen the user can see for themselves that something is
+    happening.
+    """
+
+    #: No icon: there is nothing to click on a launch that has not produced a window yet.
+    _pill_icon = ""
+
+    def __init__(self, label: str, parent=None) -> None:
+        super().__init__(label, parent)
+        self._angle = 0
+        self._spin_timer = QTimer(self)
+        self._spin_timer.setInterval(_SPINNER_TICK_MS)
+        self._spin_timer.timeout.connect(self._advance)
+        self._spin_timer.start()
+
+    def _advance(self) -> None:
+        """Step the spinner and repaint.
+
+        Parented to the tile, so Qt stops the timer when the tile is deleted -- a pending
+        tile is destroyed the moment its window appears, and a timer outliving it would
+        repaint a widget that is on its way out.
+        """
+        self._angle = (self._angle + round(360 * _SPINNER_TICK_MS / _SPINNER_PERIOD_MS)) % 360
+        self.update()
+
+    def _body_text(self) -> str:
+        return "Launching…"
+
+    def _paint_body(self, painter: QPainter) -> None:
+        """Draw the spinner with the caption beneath it, together in the tile's body.
+
+        Overridden rather than added to: the base centres its one line in the whole body,
+        and a spinner drawn independently would either sit on top of that line or push it
+        off centre. Laying both out here keeps the pair centred as a unit.
+        """
+        body_top = LABEL_RESERVE
+        body_h = self.height() - body_top
+        if body_h <= 0:
+            return
+
+        font = QFont()
+        font.setPointSize(9)
+        painter.setFont(font)
+        text_h = painter.fontMetrics().height()
+
+        block_h = 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP + text_h
+        top = body_top + max(0, (body_h - block_h) // 2)
+        centre_x = self.width() // 2
+
+        self._paint_spinner(painter, centre_x, top + _SPINNER_RADIUS)
+
+        painter.setPen(THEME.qcolor("text_muted"))
+        painter.drawText(
+            QRect(0, top + 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP, self.width(), text_h),
+            Qt.AlignmentFlag.AlignCenter,
+            self._body_text(),
+        )
+
+    def _paint_spinner(self, painter: QPainter, cx: int, cy: int) -> None:
+        """Draw the busy ring centred on (cx, cy): a faint full circle under a bright arc."""
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        box = QRect(cx - _SPINNER_RADIUS, cy - _SPINNER_RADIUS, 2 * _SPINNER_RADIUS, 2 * _SPINNER_RADIUS)
+
+        track = QColor(THEME.qcolor("text_muted"))
+        track.setAlpha(60)
+        pen = painter.pen()
+        pen.setWidth(_SPINNER_THICKNESS)
+        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+        pen.setColor(track)
+        painter.setPen(pen)
+        painter.drawEllipse(box)
+
+        pen.setColor(THEME.qcolor("accent"))
+        painter.setPen(pen)
+        # Qt angles are in 1/16 degree units and run anticlockwise, so the negated angle is
+        # what makes the arc sweep the way every other spinner on the platform does.
+        painter.drawArc(box, -self._angle * 16, -_SPINNER_ARC_DEGREES * 16)
+        painter.restore()

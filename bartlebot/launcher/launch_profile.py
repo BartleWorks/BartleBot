@@ -34,11 +34,6 @@ logger = logging.getLogger(__name__)
 # on and the auto-select setting that decides whether it does anything at all.
 DriveFn = Callable[[str], Awaitable[bool]]
 
-# Claims the slot order for a batch of accounts before their windows exist. Injected for
-# the same reason as DriveFn: the ordering lives on ClientManager, which the launcher does
-# not know about. Without it the order is decided by whichever character loads in first.
-ReserveFn = Callable[[list[str]], None]
-
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
 # every window gets reparented and re-centered by ClientTile (see
 # gui/game_embed/client_tile.py) as soon as it's embedded, so the position it
@@ -319,9 +314,9 @@ async def launch_accounts(
 async def launch_profile(
     profile_name: str,
     drive: DriveFn | None = None,
-    reserve: ReserveFn | None = None,
+    usernames: list[str] | None = None,
 ) -> None:
-    """Launch all accounts in the named profile.
+    """Launch the accounts in the named profile.
 
     Looks up the profile in SettingsManager and retrieves passwords from
     CredentialStore (Windows Credential Manager).
@@ -329,9 +324,15 @@ async def launch_profile(
     The accounts go out as one batch — see ``launch_accounts`` for the shape and why it
     is faster than launching them one at a time.
 
-    *reserve* is handed the profile's accounts, in profile order, before any window
-    exists — that call is the only thing that makes the players come up in the order the
-    profile asked for, since nothing about a window carries it.
+    *usernames* narrows the launch to those accounts, still in profile order; None launches
+    the whole profile. It is how a caller that has already claimed the slots passes on
+    which of them it got — an account whose launch is already running is dropped by
+    ``ClientManager.begin_launch`` and must not be spawned a second time here.
+
+    Slot reservation is the caller's, not this function's. It was taken through here by a
+    ``reserve`` callback until the guard needed a single place both launch routes meet
+    (#186), which is one level up: reserving from inside the launch cannot reject a launch
+    that has not started yet.
 
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
@@ -345,6 +346,11 @@ async def launch_profile(
     account_usernames: list[str] = profile.get("accounts", [])
     if not account_usernames:
         raise ValueError(f"Launch profile '{profile_name}' has no accounts")
+    if usernames is not None:
+        wanted = set(usernames)
+        account_usernames = [u for u in account_usernames if u in wanted]
+        if not account_usernames:
+            return
 
     # Build (username, password, display_name) tuples
     accounts_meta = {a["username"]: a for a in settings.accounts}
@@ -357,13 +363,6 @@ async def launch_profile(
         alias = meta.get("alias") or None
         display_name = CredentialStore.display_name(username, alias)
         accounts.append((username, password, display_name))
-
-    # Claim the slot order now, while the profile's own order is still the only order in
-    # play. Doing this after launch would be too late: the windows are indistinguishable
-    # (one shared spawn anchor) and each client is published whenever its own character
-    # finishes loading in.
-    if reserve is not None:
-        reserve([username for username, _password, _display in accounts])
 
     # A per-profile resolution overrides the global setting; the whole profile shares it,
     # which is what lets the accounts go out as one batch.

@@ -24,14 +24,14 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.game_sizing import FitProblem, grid_for, required_game_area
 from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile
+from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.tile_slots import TileSlot, plan_tile_changes
+from bartlebot.tile_slots import TileKey, TileSlot, plan_tile_changes
 
 logger = logging.getLogger(__name__)
 
@@ -478,6 +478,14 @@ class GameView(ThemedMixin, QWidget):
         super().__init__(parent)
         self._tiles: dict[int, ClientTile] = {}
         self._detached_tiles: dict[int, DetachedTile] = {}
+        # Slots holding a launch that has not produced a window yet. A third tile kind
+        # rather than a flag on the other two: it has no hwnd, so almost nothing the
+        # other dicts are asked for has an answer here. See PendingTile.
+        self._pending_tiles: dict[int, PendingTile] = {}
+        # Account per pending slot. Kept beside the widgets because it is the pending
+        # tile's identity in plan_tile_changes -- a PendingTile itself only knows the
+        # label it is drawn with, which is a display name and not a key.
+        self._pending_accounts: dict[int, str] = {}
         # Last known wizard name per client index. Kept so a tile created later — a new
         # client, or a detach/reattach — gets its name immediately instead of waiting for
         # the name to change again, which for a stable character never happens.
@@ -544,8 +552,9 @@ class GameView(ThemedMixin, QWidget):
         tile sits at its ``slot`` and is captioned from its ``player``, so a window with no
         player index is drawn under its account name rather than a number it does not have.
         """
-        current = {slot: tile.hwnd for slot, tile in self._tiles.items()}
-        current.update(self._detached_hwnds)
+        current: dict[int, TileKey] = {slot: ("hwnd", tile.hwnd) for slot, tile in self._tiles.items()}
+        current.update({slot: ("hwnd", hwnd) for slot, hwnd in self._detached_hwnds.items()})
+        current.update({slot: ("pending", name) for slot, name in self._pending_accounts.items()})
         changes = plan_tile_changes(current, tiles)
 
         if not changes.is_empty:
@@ -559,32 +568,55 @@ class GameView(ThemedMixin, QWidget):
         # a tile that is already on screen its player number for the first time.
         self._tile_players = {t.slot: t.player for t in tiles}
         for t in tiles:
-            widget = self._tiles.get(t.slot) or self._detached_tiles.get(t.slot)
+            widget = self._widget_at(t.slot)
             if widget is not None:
                 widget.set_label(t.label)
                 widget.set_wizard_name(self._wizard_name_for(t.player))
 
         if changes.is_empty:
             return
-        self._placeholder.setVisible(not self._tiles and not self._detached_tiles)
+        self._placeholder.setVisible(not self._occupied_slots())
         self._recompute_geometry()
         self._update_minimum_size()
         self._set_embed_state(bool(self._tiles))
         self._update_overlay()
 
     def _create_tile(self, spec: TileSlot) -> None:
-        """Build and embed a tile for a window that does not have one yet."""
+        """Build the tile for a slot that does not have one yet, embedded or pending."""
+        if spec.is_pending:
+            self._create_pending_tile(spec)
+            return
         tile = ClientTile(spec.hwnd, spec.label, parent=self)
         tile.set_wizard_name(self._wizard_name_for(spec.player))
         self._tiles[spec.slot] = tile
         tile.detach_requested.connect(lambda slot=spec.slot: self._detach_client(slot))
         tile.show()
         self._remove_detached_tile(spec.slot)
+        self._remove_pending_tile(spec.slot)
+
+    def _create_pending_tile(self, spec: TileSlot) -> None:
+        """Put a busy tile in a slot whose account is launching but has no window yet."""
+        self._remove_pending_tile(spec.slot)
+        tile = PendingTile(spec.label, parent=self)
+        self._pending_tiles[spec.slot] = tile
+        self._pending_accounts[spec.slot] = spec.username or ""
+        tile.show()
+
+    def _remove_pending_tile(self, slot: int) -> None:
+        """Tear down the pending tile in *slot*, if there is one."""
+        self._pending_accounts.pop(slot, None)
+        tile = self._pending_tiles.pop(slot, None)
+        if tile is None:
+            return
+        tile.hide()
+        tile.setParent(None)  # type: ignore[arg-type]
+        tile.deleteLater()
 
     def _destroy_tile(self, slot: int) -> None:
-        """Tear down whatever occupies *slot*, embedded or detached."""
+        """Tear down whatever occupies *slot*, embedded, detached or pending."""
         self._detached_hwnds.pop(slot, None)
         self._remove_detached_tile(slot)
+        self._remove_pending_tile(slot)
         tile = self._tiles.pop(slot, None)
         if tile is None:
             return
@@ -609,6 +641,8 @@ class GameView(ThemedMixin, QWidget):
         tiles = {slot: tile for slot, tile in self._tiles.items() if slot not in vacated}
         detached_tiles = {slot: tile for slot, tile in self._detached_tiles.items() if slot not in vacated}
         detached_hwnds = {slot: hwnd for slot, hwnd in self._detached_hwnds.items() if slot not in vacated}
+        pending_tiles = {slot: tile for slot, tile in self._pending_tiles.items() if slot not in vacated}
+        pending_accounts = {slot: name for slot, name in self._pending_accounts.items() if slot not in vacated}
         for old, new in moves:
             if old in self._tiles:
                 tiles[new] = self._tiles[old]
@@ -616,9 +650,15 @@ class GameView(ThemedMixin, QWidget):
                 detached_tiles[new] = self._detached_tiles[old]
             if old in self._detached_hwnds:
                 detached_hwnds[new] = self._detached_hwnds[old]
+            if old in self._pending_tiles:
+                pending_tiles[new] = self._pending_tiles[old]
+            if old in self._pending_accounts:
+                pending_accounts[new] = self._pending_accounts[old]
         self._tiles = tiles
         self._detached_tiles = detached_tiles
         self._detached_hwnds = detached_hwnds
+        self._pending_tiles = pending_tiles
+        self._pending_accounts = pending_accounts
         for slot, tile in self._tiles.items():
             self._reconnect_detach(tile, slot)
         for slot, dtile in self._detached_tiles.items():
@@ -651,7 +691,7 @@ class GameView(ThemedMixin, QWidget):
         if client_idx not in self._tiles:
             return
         self._destroy_tile(client_idx)
-        self._placeholder.setVisible(not self._tiles and not self._detached_tiles)
+        self._placeholder.setVisible(not self._occupied_slots())
         self._recompute_geometry()
         self._update_minimum_size()
         self._set_embed_state(bool(self._tiles))
@@ -705,6 +745,26 @@ class GameView(ThemedMixin, QWidget):
         return bool(self._detached_hwnds)
 
     @property
+    def pending_slots(self) -> dict[int, str]:
+        """Slot → account, for every launch drawn here that has no window yet.
+
+        Public because "what is this view still waiting for" is a question about the
+        launch rather than about the widgets, and the only alternative is reaching into
+        the tile dicts from outside.
+        """
+        return dict(self._pending_accounts)
+
+    def tile_geometry(self, slot: int):
+        """The rectangle the tile in *slot* occupies, or None if that slot is empty.
+
+        The grid is laid out by hand rather than by a QLayout — see _recompute_geometry —
+        so where a tile ended up is not readable from anything Qt exposes about this
+        widget, and a tile left out of the layout silently overlaps the one in slot 0.
+        """
+        widget = self._widget_at(slot)
+        return None if widget is None else widget.geometry()
+
+    @property
     def game_area_size(self) -> tuple[int, int]:
         """The logical pixels the tile grid actually has, right now.
 
@@ -739,9 +799,11 @@ class GameView(ThemedMixin, QWidget):
 
         A detached window still owns its slot and comes back into the same grid, so it
         counts: the question this answers is how many tiles the layout has to fit, not
-        how many are currently parented here.
+        how many are currently parented here. So does a launching one, for the same
+        reason and one step earlier -- its window is coming, and the grid it lands in
+        should be the grid that was already drawn for it rather than a resize on arrival.
         """
-        return len(self._tiles) + len(self._detached_tiles)
+        return len(self._occupied_slots())
 
     def set_wizard_names(self, names: list) -> None:
         """Show each client's wizard name on its tile pill.
@@ -756,7 +818,7 @@ class GameView(ThemedMixin, QWidget):
         """
         self._wizard_names = list(names)
         for slot, player in self._tile_players.items():
-            tile = self._tiles.get(slot) or self._detached_tiles.get(slot)
+            tile = self._widget_at(slot)
             if tile is not None:
                 tile.set_wizard_name(self._wizard_name_for(player))
 
@@ -789,7 +851,7 @@ class GameView(ThemedMixin, QWidget):
         and nothing else would prompt a repaint: a tile only updates when its name or
         label *changes*, and neither did. Called from the settings-applied signal.
         """
-        for tile in (*self._tiles.values(), *self._detached_tiles.values()):
+        for tile in (*self._tiles.values(), *self._detached_tiles.values(), *self._pending_tiles.values()):
             tile.update()
 
     def _wizard_name_for(self, player: int | None) -> str | None:
@@ -805,6 +867,21 @@ class GameView(ThemedMixin, QWidget):
     def _player_for(self, slot: int) -> int | None:
         """The player index last synced for *slot*, or None if it has none."""
         return self._tile_players.get(slot)
+
+    def _occupied_slots(self) -> list[int]:
+        """Every slot holding a tile of any kind, in grid order.
+
+        One question with one answer, because the three dicts have to be consulted
+        together everywhere it is asked -- the grid layout, the minimum size, the tile
+        count and whether the launch screen shows. Each of those read two of the three
+        before pending tiles existed, and a pending tile missing from any one of them is a
+        tile drawn on top of another.
+        """
+        return sorted(set(self._tiles) | set(self._detached_tiles) | set(self._pending_tiles))
+
+    def _widget_at(self, slot: int):
+        """Whatever tile occupies *slot*, of any kind, or None."""
+        return self._tiles.get(slot) or self._detached_tiles.get(slot) or self._pending_tiles.get(slot)
 
     def toggle(self) -> None:
         """Show or hide the GameView (used by the toggle_embed keybinding)."""
@@ -847,7 +924,7 @@ class GameView(ThemedMixin, QWidget):
             _OVERLAY_BTN_MARGIN,
         )
 
-        all_slots = sorted(set(self._tiles) | set(self._detached_tiles))
+        all_slots = self._occupied_slots()
         n = len(all_slots)
         if n == 0:
             return
@@ -860,10 +937,9 @@ class GameView(ThemedMixin, QWidget):
             row = pos // cols
             col = pos % cols
             geo = (col * tile_w, row * tile_h, tile_w, tile_h)
-            if idx in self._tiles:
-                self._tiles[idx].setGeometry(*geo)
-            elif idx in self._detached_tiles:
-                self._detached_tiles[idx].setGeometry(*geo)
+            widget = self._widget_at(idx)
+            if widget is not None:
+                widget.setGeometry(*geo)
 
     def _update_minimum_size(self) -> None:
         """Set GameView minimum size to fit the current client grid plus padding.
@@ -880,7 +956,7 @@ class GameView(ThemedMixin, QWidget):
         understated the minimum whenever they differed, and the biggest client was the one
         that got clipped.
         """
-        n = len(self._tiles) + len(self._detached_tiles)
+        n = len(self._occupied_slots())
         if n == 0:
             self.setMinimumSize(0, 0)
             return

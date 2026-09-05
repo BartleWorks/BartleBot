@@ -65,18 +65,20 @@ class _FakeTile:
 
 
 class _StubView:
-    def __init__(self, tiles=None, detached=None, players=None):
+    def __init__(self, tiles=None, detached=None, pending=None, players=None):
         self._tiles = tiles or {}
         self._detached_tiles = detached or {}
+        self._pending_tiles = pending or {}
         self._wizard_names: list = []
         # Slot → player. Defaults to the two agreeing, which is the steady state; a test
         # about a window that is not in game says so explicitly.
         if players is None:
-            players = {slot: slot for slot in (*self._tiles, *self._detached_tiles)}
+            players = {slot: slot for slot in (*self._tiles, *self._detached_tiles, *self._pending_tiles)}
         self._tile_players = players
 
     set_wizard_names = GameView.set_wizard_names
     _wizard_name_for = GameView._wizard_name_for
+    _widget_at = GameView._widget_at
 
 
 def test_names_are_applied_to_existing_tiles():
@@ -125,3 +127,18 @@ def test_a_window_that_is_not_in_game_gets_no_name():
     view = _StubView(tiles={0: _FakeTile()}, players={0: None})
     view.set_wizard_names(["Luke SkullHunter"])
     assert view._tiles[0].wizard_name is None
+
+
+def test_a_launching_tile_is_offered_a_name_like_any_other():
+    """A pending tile has no player index and so never gets a name — but it is still asked.
+
+    The lookup walks every slot the view is holding, and a pending tile missing from that
+    walk is a tile the *next* thing to iterate the slots would also miss. Asking it and
+    getting None is the correct outcome, not an omission.
+    """
+    pending = _FakeTile()
+    view = _StubView(tiles={0: _FakeTile()}, pending={1: pending}, players={0: 0, 1: None})
+    view.set_wizard_names(["Luke SkullHunter"])
+
+    assert view._tiles[0].wizard_name == "Luke SkullHunter"
+    assert pending.wizard_name is None

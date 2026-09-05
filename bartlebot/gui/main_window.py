@@ -221,15 +221,18 @@ class MainWindow(QMainWindow):
         self.bot_canvas.undo_state_changed.connect(self._on_undo_state_changed)
 
         # Set by AppController once ClientManager exists; see set_auto_select_driver
-        # and set_slot_reserver.
+        # and set_launch_registrar.
         self._auto_select_driver = None
-        self._slot_reserver = None
+        self._begin_launch = None
+        self._end_launch = None
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
-            lambda u, d: asyncio.ensure_future(self._launch_single_account(u, d))
+            lambda u, d: asyncio.ensure_future(self.launch_account_named(u, d))
         )
-        self._game_view_panel.launch_profile_requested.connect(lambda n: asyncio.ensure_future(self._launch_profile(n)))
+        self._game_view_panel.launch_profile_requested.connect(
+            lambda n: asyncio.ensure_future(self.launch_profile_named(n))
+        )
         self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
         # Setup's rows name the app setting they fall back to; this is the way there.
         self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
@@ -531,7 +534,7 @@ class MainWindow(QMainWindow):
             for profile in profiles:
                 name = profile.get("name", "Unnamed")
                 action = QAction(name, self)
-                action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n)))
+                action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self.launch_profile_named(n)))
                 # Disabled rather than dropped, carrying the reason as its tooltip — the
                 # same rule the Quick Launch cards follow. This menu is rebuilt on every
                 # show, so the answer tracks the client count and the screen.
@@ -557,7 +560,7 @@ class MainWindow(QMainWindow):
                 display = CredentialStore.display_name(username, alias)
                 action = QAction(display, self)
                 action.triggered.connect(
-                    lambda _checked, u=username, d=display: asyncio.ensure_future(self._launch_single_account(u, d))
+                    lambda _checked, u=username, d=display: asyncio.ensure_future(self.launch_account_named(u, d))
                 )
                 self._disable_if_unfittable(action, self._single_account_fit_problem())
                 self._launch_menu.addAction(action)
@@ -647,20 +650,45 @@ class MainWindow(QMainWindow):
     def auto_select_driver(self):
         return self._auto_select_driver
 
-    def set_slot_reserver(self, reserver) -> None:
-        """Supply the callable that claims player slots for accounts about to be launched.
+    def set_launch_registrar(self, begin, end) -> None:
+        """Supply the pair that opens and closes a launch for a set of accounts.
 
-        Injected alongside the driver, and for the same reason — the slot ordering belongs
-        to ClientManager. Without it, players come up in whatever order their characters
-        finish loading in rather than the order the profile lists them.
+        Injected alongside the driver, and for the same reason — both the slot ordering and
+        the set of launches in flight belong to ClientManager. Without *begin*, players come
+        up in whatever order their characters finish loading in rather than the order the
+        profile lists them, and nothing rejects a second click on an account that is already
+        launching.
+
+        Two callables rather than one because the launch has an end as well as a start, and
+        the end is the half that was missing: a launch that fails holds its slot forever
+        unless something gives it back. See ``ClientManager.end_launch``.
         """
-        self._slot_reserver = reserver
+        self._begin_launch = begin
+        self._end_launch = end
 
-    @property
-    def slot_reserver(self):
-        return self._slot_reserver
+    def _open_launch(self, usernames: list[str]) -> list[str]:
+        """Claim slots for *usernames*, returning the ones not already launching.
 
-    async def _launch_profile(self, profile_name: str) -> None:
+        Every account launched from this window passes through here, whichever surface
+        asked — a Quick Launch card, the menu, or the floating popup. That is the point:
+        the guard can only reject a duplicate where all of them meet.
+        """
+        if self._begin_launch is None:
+            return list(usernames)
+        return self._begin_launch(usernames)
+
+    def _close_launch(self, usernames: list[str]) -> None:
+        """Release the launches opened by ``_open_launch``. Always from a ``finally``."""
+        if self._end_launch is not None:
+            self._end_launch(usernames)
+
+    async def launch_profile_named(self, profile_name: str) -> None:
+        """Launch a profile's accounts, skipping any that are already launching.
+
+        Public because it is the only way in: the Quick Launch cards, the File menu and
+        the floating launcher popup all land here, so the in-flight guard and the recent
+        list see every launch this window makes.
+        """
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
@@ -675,14 +703,31 @@ class MainWindow(QMainWindow):
             if reason is not None:
                 QMessageBox.critical(self, "Launch failed", reason)
                 return
-            self._game_view_panel.set_launch_profile(profile_name)
-            await launch_profile(profile_name, drive=self.auto_select_driver, reserve=self.slot_reserver)
+
+            # Claimed here rather than inside launch_profile, so a second click on a
+            # profile that is already coming up is rejected before anything spawns. The
+            # accounts already in flight drop out and the rest still launch — a profile of
+            # four with one account up should bring up the other three.
+            accepted = self._open_launch(list(profile.get("accounts", [])))
+            if not accepted:
+                logger.info("Launch profile '%s' is already launching", profile_name)
+                return
+            try:
+                self._game_view_panel.set_launch_profile(profile_name)
+                await launch_profile(profile_name, drive=self.auto_select_driver, usernames=accepted)
+            finally:
+                # In a finally so the slots come back on the paths that do not return
+                # normally, which is every failure the launcher has: a missing password
+                # raises from inside launch_profile, and a window that never reaches the
+                # login screen never gets one to hold a slot for.
+                self._close_launch(accepted)
             self._record_recent_launch("profile", profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
             logger.exception("Profile launch failed")
 
-    async def _launch_single_account(self, username: str, display_name: str) -> None:
+    async def launch_account_named(self, username: str, display_name: str) -> None:
+        """Launch one account, unless a launch for it is already running."""
         try:
             from bartlebot.launcher.launch_profile import launch_account
 
@@ -700,9 +745,13 @@ class MainWindow(QMainWindow):
             # Claim the slot at the moment of launching, so launching two accounts
             # back-to-back orders them by when they were asked for, not by which one
             # happens to load in first.
-            if self.slot_reserver is not None:
-                self.slot_reserver([username])
-            await launch_account(username, password, display_name, drive=self.auto_select_driver)
+            if not self._open_launch([username]):
+                logger.info("Account '%s' is already launching", username)
+                return
+            try:
+                await launch_account(username, password, display_name, drive=self.auto_select_driver)
+            finally:
+                self._close_launch([username])
             self._record_recent_launch("account", username)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))

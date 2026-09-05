@@ -115,22 +115,30 @@ def test_reserving_is_idempotent(harness):
 
 
 # ---------------------------------------------------------------------------
-# launch_profile hands over the profile's order
+# launch_profile launches the subset it is given
+#
+# Reservation itself moved out of launch_profile with #186: it is the caller's, because
+# rejecting a launch that is already running cannot be done from inside the launch. What
+# is left here is the other half of that handover -- launch_profile spawning exactly the
+# accounts the caller says it claimed, and no others.
 # ---------------------------------------------------------------------------
 
 
-async def test_launch_profile_reserves_before_starting_instances():
-    """Reservation has to happen while the profile's order is still the only order in play."""
-    events: list[str] = []
+async def test_launch_profile_spawns_only_the_accounts_it_was_given():
+    """An account already launching is dropped by the caller and must not be spawned again."""
+    logins: list[str] = []
 
     with (
         patch("bartlebot.launcher.launch_profile.patch_open_browser"),
         patch("bartlebot.launcher.launch_profile._patch_window_config"),
         patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
-        patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2, 3])),
+        patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
         patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
-        patch("bartlebot.launcher.launch_profile.start_instance", lambda: events.append("start")),
-        patch("bartlebot.launcher.launch_profile.instance_login"),
+        patch("bartlebot.launcher.launch_profile.start_instance") as start,
+        patch(
+            "bartlebot.launcher.launch_profile.instance_login",
+            lambda _h, username, _pw: logins.append(username),
+        ),
         patch("bartlebot.launcher.launch_profile.set_window_title"),
         patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
         patch("bartlebot.launcher.launch_profile.CredentialStore") as creds,
@@ -143,20 +151,41 @@ async def test_launch_profile_reserves_before_starting_instances():
             launch_profiles=[{"name": "Team", "accounts": ["alpha", "beta", "gamma"]}],
             accounts=[{"username": u} for u in ("alpha", "beta", "gamma")],
         )
-        reserved: list[list[str]] = []
 
-        def _reserve(usernames: list[str]) -> None:
-            events.append("reserve")
-            reserved.append(usernames)
+        await launch_profile("Team", usernames=["alpha", "gamma"])
 
-        await launch_profile("Team", reserve=_reserve)
-
-    assert reserved == [["alpha", "beta", "gamma"]]
-    assert events[0] == "reserve", f"reserved too late: {events}"
+    assert logins == ["alpha", "gamma"]
+    assert start.call_count == 2, "spawned a window for an account it was told to skip"
 
 
-async def test_launch_profile_without_a_reserver_still_works():
-    """The reserver is optional — a launch must not depend on it being wired up."""
+async def test_launch_profile_spawns_nothing_when_every_account_is_filtered_out():
+    """A profile whose accounts are all already launching is a no-op, not an empty batch."""
+    with (
+        patch("bartlebot.launcher.launch_profile.patch_open_browser") as browser,
+        patch("bartlebot.launcher.launch_profile._patch_window_config"),
+        patch("bartlebot.launcher.launch_profile.start_instance") as start,
+        patch("bartlebot.launcher.launch_profile.CredentialStore") as creds,
+        patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+    ):
+        creds.retrieve.return_value = "pw"
+        creds.display_name.side_effect = lambda u, _a: u
+        sm.instance.return_value = MagicMock(
+            game_resolution=(800, 600),
+            launch_profiles=[{"name": "Team", "accounts": ["alpha", "beta"]}],
+            accounts=[{"username": u} for u in ("alpha", "beta")],
+        )
+
+        await launch_profile("Team", usernames=[])
+
+    assert start.call_count == 0
+    # Returning before config.xml is touched matters as much as not spawning: the patch is
+    # global to the install, so writing it for a launch that never happens would change the
+    # resolution the *next* manual launch comes up at.
+    assert browser.call_count == 0
+
+
+async def test_launch_profile_launches_the_whole_profile_by_default():
+    """usernames is a filter, not a requirement — None launches everything."""
     with (
         patch("bartlebot.launcher.launch_profile.patch_open_browser"),
         patch("bartlebot.launcher.launch_profile._patch_window_config"),
