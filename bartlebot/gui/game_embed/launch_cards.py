@@ -52,6 +52,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QToolButton, QVBox
 
 from bartlebot import streamer_mode
 from bartlebot.credentials import CredentialStore
+from bartlebot.game_sizing import FitProblem
 from bartlebot.gui.account_accent import account_accent, account_color_key, account_color_keys
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
@@ -250,6 +251,25 @@ def profile_summary(profile: dict) -> str:
     return f"{count} client{'s' if count != 1 else ''}"
 
 
+def _card_line_for(reason: FitProblem | str | None) -> str:
+    """What a refused card's quiet line reads -- its numbers, never the advice."""
+    if reason is None:
+        return ""
+    return reason.numbers if isinstance(reason, FitProblem) else reason
+
+
+def _tooltip_for(reason: FitProblem | str | None) -> str:
+    """What a refused card's tooltip reads: the whole thing, advice included.
+
+    A tooltip is read one at a time and only on purpose, so the repetition the card line
+    avoids does not arise here -- and the pointer is already on the card that raised the
+    question, which is the moment the advice is most wanted.
+    """
+    if reason is None:
+        return ""
+    return reason.sentence if isinstance(reason, FitProblem) else reason
+
+
 # ---------------------------------------------------------------------------
 # Widgets
 # ---------------------------------------------------------------------------
@@ -285,22 +305,32 @@ class _LaunchCard(ThemedMixin, QWidget):
         # and has no one colour, which is what its pills are for.
         self._stripe_key: int | None = None
 
-    def set_unavailable(self, reason: str | None) -> None:
+    def set_unavailable(self, reason: FitProblem | str | None) -> None:
         """Grey the card out and say why, or None to make it launchable again.
 
         Disabled rather than hidden. A profile that silently vanishes from the list
         leaves the user hunting for it with nothing on screen saying what happened,
-        whereas a greyed row carrying "4 clients at 800×600 needs …" says both that it
-        still exists and what would bring it back. The reason goes in the card's quiet
-        line and in its tooltip, so it is readable without hovering.
+        whereas a greyed row carrying "Needs 1624×651 …" says both that it still exists
+        and that its size is what is wrong. The reason goes in the card's quiet line and
+        in its tooltip, so it is readable without hovering.
+
+        A ``FitProblem`` is split rather than printed: the card takes only its numbers,
+        and the advice that goes with them is shown once for the whole column by the
+        launch screen. Printing the whole sentence here is what put the same three
+        wrapped lines on every account card, since every one of them asks the identical
+        question -- one client, app resolution, this screen. A plain string is
+        still taken whole, for a refusal that is not about size.
+
+        What lands on the line is ``_refusal_line``, which a subclass whose whole column
+        shares one refusal overrides away entirely -- see ``AccountCard``.
         """
         if reason == self._unavailable:
             return
         self._unavailable = reason
         self.setCursor(Qt.CursorShape.ArrowCursor if reason else Qt.CursorShape.PointingHandCursor)
-        self.setToolTip(reason or "")
+        self.setToolTip(_tooltip_for(reason))
         if self._quiet_lbl is not None:
-            text = reason or self._available_quiet_text()
+            text = self._refusal_line(reason) or self._available_quiet_text()
             self._quiet_lbl.setText(text)
             self._quiet_lbl.setWordWrap(bool(reason))
             # Hidden rather than empty: an empty QLabel still reserves a line in the
@@ -313,15 +343,33 @@ class _LaunchCard(ThemedMixin, QWidget):
         """What the quiet line says when the card can launch. Subclasses that have one override."""
         return ""
 
+    def _refusal_line(self, reason: FitProblem | str | None) -> str:
+        """What the quiet line says while the card cannot launch, "" to leave it alone."""
+        return _card_line_for(reason)
+
     @property
-    def unavailable_reason(self) -> str | None:
-        """Why this card cannot launch, or None if it can."""
+    def unavailable_reason(self) -> FitProblem | str | None:
+        """Why this card cannot launch, or None if it can.
+
+        The refusal as it was handed in, not as it is drawn: the launch screen reads this
+        back to decide what its column banner should say, and that needs the parts.
+        """
         return self._unavailable
 
     @property
     def quiet_text(self) -> str:
         """What the card's quiet line currently reads — its summary, or the refusal."""
         return "" if self._quiet_lbl is None else self._quiet_lbl.text()
+
+    @property
+    def detail_text(self) -> str:
+        """What the card's middle line reads — an account card's characters, or "".
+
+        Public alongside ``quiet_text`` because what survives a refusal is part of this
+        card's contract: an account card that goes grey keeps this line, since the reason
+        it went grey is its column's and not its own.
+        """
+        return "" if self._detail_lbl is None else self._detail_lbl.text()
 
     def apply_theme_styles(self) -> None:
         if self._unavailable is not None:
@@ -453,6 +501,22 @@ class AccountCard(_LaunchCard):
     def color_key(self) -> int:
         """The account palette slot this card is striped with, and its pills outlined in."""
         return self._stripe_key
+
+    def _refusal_line(self, reason: FitProblem | str | None) -> str:
+        """Nothing: an account card's refusal belongs to its column, numbers included.
+
+        Every card in this column launches one client at the app resolution on the one
+        screen, so all of them get the same numbers as well as the same advice, and the
+        column banner already carries both. Repeating them here would put four identical
+        lines under four different account names -- the whole bug -- and it would cost the
+        card the line it is actually for, which is its characters. So the card stays grey
+        and keeps its own summary, and the tooltip still holds the full sentence for
+        anyone who asks a specific card.
+
+        A ``ProfileCard`` keeps its line, because two profiles genuinely need different
+        amounts of room.
+        """
+        return ""
 
     def _build(self) -> None:
         layout = QVBoxLayout(self)

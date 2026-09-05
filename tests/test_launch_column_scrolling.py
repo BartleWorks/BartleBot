@@ -124,8 +124,12 @@ def test_a_narrow_column_wraps_the_refusal_without_inventing_scroll(qapp, width)
 
     The card has to grow to hold them -- the refusal is the thing the greyed card is for
     -- but the column must still be exactly as tall as what the cards draw.
+
+    Profile cards, because they are the ones that still draw a refusal: an account card's
+    reason is its whole column's and is shown once above it, so an account card carries no
+    wrapping line to inflate anything.
     """
-    cards = _cards("account", 2, REASON)
+    cards = _cards("profile", 2, REASON)
     _host, area = _column(qapp, cards, 900, width=width)
 
     drawn = _drawn_height(area, cards)

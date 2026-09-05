@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.game_sizing import grid_for, required_game_area
+from bartlebot.game_sizing import FitProblem, grid_for, required_game_area
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
@@ -42,6 +42,126 @@ _OVERLAY_BTN_SIZE = 34
 _OVERLAY_BTN_MARGIN = 4
 
 _LOGO_SIZE = 160  # diameter of the circular logo widget
+
+
+def _size(pair: tuple[int, int]) -> str:
+    return f"{pair[0]}×{pair[1]}"
+
+
+def account_banner_text(problem: FitProblem | None) -> str:
+    """What the Accounts column says when a single client will not fit, or "".
+
+    Every card in that column asks the identical question -- one client, the *default*
+    resolution, this screen -- so this sentence is the whole refusal for all of them and
+    the cards carry none of it.
+
+    It names the default resolution specifically, because that is the setting to change:
+    an account card never launches at a pinned one. And it offers two ways out rather than
+    the three a profile gets. "Launch fewer clients" is advice that cannot be taken here
+    -- one account is one client -- and a remedy the user cannot act on reads as the app
+    not knowing what it is refusing.
+    """
+    if problem is None:
+        return ""
+    return (
+        f"Your default game resolution ({_size(problem.resolution)}) needs "
+        f"{_size(problem.need)}, but only {_size(problem.available)} is available. "
+        f"Either lower the default game resolution or increase the size of the game view panel."
+    )
+
+
+def profile_banner_text(problems: list[FitProblem], total: int) -> str:
+    """What the Launch Profiles column says about *problems* out of *total*, or "".
+
+    Sized against the *panel*, not a resolution, which is the one number every profile in
+    the column shares: profiles may each pin their own resolution, so naming one would
+    point at a setting that is not the problem for the cards beside it.
+
+    Whether some or all of them fail changes what the user needs to be told. All of them
+    is a fact about the panel and comes with the ways out. Some of them is a fact about
+    those profiles -- the column still works, and each greyed card carries its own numbers
+    saying what it wanted -- so the banner says which state the list is in and leaves the
+    per-profile detail on the per-profile cards.
+    """
+    if not problems:
+        return ""
+    where = f"in the game view panel at its current size ({_size(problems[0].available)})"
+    if len(problems) < total:
+        return f"Some launch profiles do not fit {where} and have been disabled."
+    if total == 1:
+        return f"This launch profile does not fit {where}."
+    return (
+        f"No launch profiles fit {where}. Lower the resolution they launch at, "
+        f"increase the size of the game view panel, or launch fewer clients."
+    )
+
+
+class _FitBanner(ThemedMixin, QWidget):
+    """One column's "these will not fit" notice, and the way out of it.
+
+    A fit refusal has a half that belongs to the entry -- how much room this profile
+    wanted -- and a half that belongs to the column, because the ways out are properties
+    of the layout rather than of any one profile. Saying the second half once here is what
+    stops the account column printing the identical wrapped paragraph under every account
+    name, which is what it did when each card carried the whole sentence.
+
+    The two columns word it differently and deliberately: they are refusing different
+    things, they point at different settings, and one of the three standard remedies does
+    not apply to a single account at all. ``account_banner_text`` and
+    ``profile_banner_text`` hold the wording, out here where they can be read and tested
+    without a QApplication.
+
+    The link goes to the same place as the screen's own "Game settings" -- the tab holding
+    the resolution -- because advice the user then has to go hunting to follow is half an
+    answer.
+    """
+
+    settings_requested = pyqtSignal()
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 2)
+        layout.setSpacing(2)
+        # Height-for-width, for the same reason as a card's quiet line: a wrapping label
+        # whose layout does not know it wraps reports a sizeHint height measured at some
+        # other width, and the column inherits it.
+        self._text = ThemedTextLabel("", color="warning")
+        self._text.setWordWrap(True)
+        policy = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        policy.setHeightForWidth(True)
+        self._text.setSizePolicy(policy)
+        self._text.setMinimumWidth(1)
+        layout.addWidget(self._text)
+
+        self._link = QPushButton("Change resolution")
+        self._link.setFlat(True)
+        self._link.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._link.clicked.connect(self.settings_requested)
+        layout.addWidget(self._link, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        self.setVisible(False)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self._link.setStyleSheet(
+            f"color: {THEME.accent}; text-decoration: underline; border: none; padding: 0px; text-align: left;"
+        )
+
+    @property
+    def text(self) -> str:
+        """What the banner currently says -- empty while it is hidden."""
+        return self._text.text()
+
+    def set_text(self, text: str) -> None:
+        """Show *text*, or hide the banner entirely when it is empty.
+
+        Hidden rather than blank: an empty wrapping label still holds a line of the
+        column's height, and that is scroll range over nothing once the cards below it
+        fill the viewport.
+        """
+        self._text.setText(text)
+        self.setVisible(bool(text))
 
 
 class _GamePlaceholder(ThemedMixin, QWidget):
@@ -105,6 +225,9 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         sep_l.setFrameShape(QFrame.Shape.HLine)
         sep_l.setFrameShadow(QFrame.Shadow.Sunken)
         left.addWidget(sep_l)
+        self._accounts_banner = _FitBanner()
+        self._accounts_banner.settings_requested.connect(self.manage_accounts_requested)
+        left.addWidget(self._accounts_banner)
         self._accounts_area = self._make_scroll_area()
         left.addWidget(self._accounts_area, stretch=1)
         body.addLayout(left, stretch=1)
@@ -148,6 +271,9 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         sep_r.setFrameShape(QFrame.Shape.HLine)
         sep_r.setFrameShadow(QFrame.Shadow.Sunken)
         right.addWidget(sep_r)
+        self._profiles_banner = _FitBanner()
+        self._profiles_banner.settings_requested.connect(self.manage_accounts_requested)
+        right.addWidget(self._profiles_banner)
         self._profiles_area = self._make_scroll_area()
         right.addWidget(self._profiles_area, stretch=1)
         body.addLayout(right, stretch=1)
@@ -227,18 +353,33 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         Cheap by construction: ``set_unavailable`` returns immediately when the reason has
         not changed, so a drag costs a few comparisons per card per event and restyles
         only on the frame where a verdict actually flips.
+
+        Each column's banner is then given what its refusals have in common. The account
+        column's answer is one answer by construction — every card asks the same question
+        — so the whole sentence, numbers included, belongs there and not on each card. A
+        profile column's cards keep their own numbers; see _FitBanner.
         """
         live = self.game_area_size
         resolution = SettingsManager.instance().game_resolution
+        # This screen is only up when nothing is embedded, so an account card always
+        # launches the first client. The +1 case — adding a client to a running fleet —
+        # is the Launch menu's, which is reachable while tiles are on screen.
+        account_problem = screen_fit.fit_details(resolution, 1, self, live)
+        accounts = 0
+        profile_problems: list[FitProblem] = []
+        profiles = 0
         for card in self._launch_cards:
             if isinstance(card, ProfileCard):
-                card.set_unavailable(screen_fit.profile_fit_problem(card.profile, self, live))
+                profiles += 1
+                problem = screen_fit.profile_fit_details(card.profile, self, live)
+                card.set_unavailable(problem)
+                if problem is not None:
+                    profile_problems.append(problem)
             else:
-                # This screen is only up when nothing is embedded, so an account card
-                # always launches the first client. The +1 case — adding a client to a
-                # running fleet — is the Launch menu's, which is reachable while tiles are
-                # on screen.
-                card.set_unavailable(screen_fit.fit_problem(resolution, 1, self, live))
+                accounts += 1
+                card.set_unavailable(account_problem)
+        self._accounts_banner.set_text(account_banner_text(account_problem) if accounts else "")
+        self._profiles_banner.set_text(profile_banner_text(profile_problems, profiles))
 
     @property
     def game_area_size(self) -> tuple[int, int]:

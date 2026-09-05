@@ -10,10 +10,10 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QMouseEvent, QResizeEvent
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QPushButton
 
 from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, profile_summary
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, character_summary, profile_summary
 from bartlebot.settings_manager import SettingsManager
 
 # A 1080p screen at the default layout, which is where two 800x600 clients stop fitting.
@@ -298,3 +298,159 @@ def test_a_window_taller_than_the_screen_is_cut_down_to_it():
 def test_the_minimum_wins_over_a_screen_too_small_for_it():
     """Clamping past the minimum is a second way to lose the buttons, not a fix."""
     assert screen_fit.size_within_screen((620, 720), (480, 400), (500, 300)) == (480, 400)
+
+
+# ---------------------------------------------------------------------------
+# Where each half of a refusal is said
+# ---------------------------------------------------------------------------
+
+
+def _accounts(*usernames):
+    return [{"username": name} for name in usernames]
+
+
+def test_a_profile_card_carries_the_numbers_and_not_the_advice(qapp):
+    """The half that differs between profiles goes on the card; the half that does not, does not."""
+    problem = screen_fit.fit_details((800, 600), 2, None, (200, 100))
+    card = ProfileCard(_profile(["a", "b"]), [])
+    card.set_unavailable(problem)
+
+    assert problem.numbers in card.quiet_text
+    assert "lower the resolution" not in card.quiet_text.lower()
+    # The tooltip is read one at a time, so it can afford the whole thing.
+    assert card.toolTip() == problem.sentence
+
+
+def test_an_account_card_keeps_its_characters_and_carries_no_numbers(qapp, screen):
+    """Its column's banner is the whole refusal, numbers included -- every card shares it."""
+    screen(((900, 600), 1.0))
+    account = {"username": "one"}
+    roster = [{"name": "Someone Spellthorn"}]
+    card = AccountCard(account, roster)
+
+    card.set_unavailable(screen_fit.fit_details((800, 600), 1))
+
+    assert card.unavailable_reason is not None
+    # Nothing is added: not the numbers, not the advice. The card goes grey and goes on
+    # showing the one thing it is for.
+    assert card.quiet_text == ""
+    assert card.detail_text == character_summary(roster)
+    # Still answerable about itself if asked directly.
+    assert "800" in card.toolTip()
+
+
+def test_the_accounts_banner_names_the_default_resolution_and_two_ways_out(qapp, monkeypatch):
+    """The bug: an identical paragraph on every card, because they ask an identical question.
+
+    "Launch fewer clients" is left out on purpose -- an account card launches exactly one,
+    so it is a remedy that cannot be taken.
+    """
+    from bartlebot.gui.game_embed.game_view import GameView
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
+    SettingsManager.instance().game_resolution = (800, 600)
+    SettingsManager.instance().accounts = _accounts("one", "two", "three")
+    SettingsManager.instance().launch_profiles = []
+
+    view = GameView()
+    cards = view.findChildren(AccountCard)
+    assert len(cards) == 3
+    assert all(card.unavailable_reason is not None for card in cards)
+
+    banners = _banner_texts(view)
+    assert len(banners) == 1
+    text = banners[0]
+    assert text.startswith("Your default game resolution (800×600) needs ")
+    assert "is available" in text
+    assert "increase the size of the game view panel" in text
+    assert "fewer clients" not in text
+    # Said once above the column, and not again on any of the three cards below it.
+    for card in cards:
+        assert "resolution" not in card.quiet_text.lower()
+        assert "available" not in card.quiet_text.lower()
+
+
+def test_the_profiles_banner_is_sized_against_the_panel_not_a_resolution(qapp, monkeypatch):
+    """Profiles may each pin their own, so naming one would point at the wrong setting."""
+    from bartlebot.gui.game_embed.game_view import GameView
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
+    SettingsManager.instance().game_resolution = (640, 480)
+    SettingsManager.instance().accounts = []
+    SettingsManager.instance().launch_profiles = [
+        _profile(["a", "b"], (800, 600)),
+        _profile(["a", "b"], (1024, 768)),
+    ]
+
+    text = _banner_texts(GameView())[0]
+    assert text.startswith("No launch profiles fit in the game view panel at its current size (")
+    assert "800" not in text and "1024" not in text
+    assert "launch fewer clients" in text
+
+
+def test_a_lone_unfittable_profile_is_not_described_as_a_list(qapp, monkeypatch):
+    from bartlebot.gui.game_embed.game_view import GameView
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
+    SettingsManager.instance().game_resolution = (640, 480)
+    SettingsManager.instance().accounts = []
+    SettingsManager.instance().launch_profiles = [_profile(["a", "b"], (800, 600))]
+
+    assert _banner_texts(GameView())[0].startswith("This launch profile does not fit")
+
+
+def test_the_banner_goes_away_once_everything_fits(qapp, monkeypatch):
+    from bartlebot.gui.game_embed.game_view import GameView
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((3840, 2160), 1.0))
+    SettingsManager.instance().game_resolution = (640, 480)
+    SettingsManager.instance().accounts = _accounts("one", "two")
+    SettingsManager.instance().launch_profiles = []
+
+    assert _banner_texts(GameView()) == []
+
+
+def test_a_partly_fitting_profile_column_says_some_rather_than_none(qapp, monkeypatch):
+    """Counting greyed rows is not how the user should learn that one of them still works."""
+    from bartlebot.gui.game_embed.game_view import GameView
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: _1080P)
+    SettingsManager.instance().game_resolution = (640, 480)
+    SettingsManager.instance().accounts = []
+    # One 800x600 client fits a 1080p screen and two do not -- the pair this whole
+    # module is named for.
+    SettingsManager.instance().launch_profiles = [
+        _profile(["a"], (800, 600)),
+        _profile(["a", "b"], (800, 600)),
+    ]
+
+    text = _banner_texts(GameView())[0]
+    assert text.startswith("Some launch profiles do not fit")
+    assert text.endswith("have been disabled.")
+    # The ways out are left to the cards that still work and the ones that do not: this
+    # column is not broken, two of its entries are.
+    assert "launch fewer clients" not in text
+
+
+def test_the_banner_link_opens_the_settings_the_advice_points_at(qapp, monkeypatch):
+    """ "Lower the resolution" the user then has to go hunting for is half an answer."""
+    from bartlebot.gui.game_embed.game_view import GameView, _FitBanner
+
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
+    SettingsManager.instance().game_resolution = (800, 600)
+    SettingsManager.instance().accounts = _accounts("one")
+    SettingsManager.instance().launch_profiles = []
+
+    view = GameView()
+    fired = []
+    view.manage_accounts_requested.connect(lambda: fired.append(True))
+    banner = next(b for b in view.findChildren(_FitBanner) if b.text)
+    banner.findChild(QPushButton).click()
+    assert fired == [True]
+
+
+def _banner_texts(view):
+    """What every visible fit banner in *view* says."""
+    from bartlebot.gui.game_embed.game_view import _FitBanner
+
+    return [banner.text for banner in view.findChildren(_FitBanner) if banner.text]

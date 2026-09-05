@@ -464,18 +464,73 @@ def largest_fitting(
     return max(fitting, key=lambda r: (r[0] * r[1], r))
 
 
-def fit_problem(
+class FitProblem(NamedTuple):
+    """Why a launch will not fit, in the pieces a surface needs separately.
+
+    One sentence was enough while the only surface was a tooltip. It is not enough for
+    the launch screen, where every account card asks the same question -- 1 client at the
+    app resolution, on the one screen -- and so gets back the same paragraph, wrapped
+    three lines deep, once per card. The parts differ in how they repeat:
+
+        ``numbers``  belongs to the card. Two profiles bringing different client counts
+                     genuinely need different amounts of room.
+        ``remedy``   belongs to the column. It is the same advice for every entry that
+                     does not fit, because the three ways out are properties of the
+                     layout rather than of any one profile.
+
+    ``sentence`` is still both, and is still what a tooltip and a disabled menu entry
+    carry -- those are read one at a time, so there is nothing there to repeat.
+
+    Sizes are logical pixels scaled back to the units the *resolution* is quoted in, so
+    all three numbers in a sentence are comparable. See ``fit_details``.
+    """
+
+    resolution: tuple[int, int]
+    client_count: int
+    need: tuple[int, int]
+    available: tuple[int, int]
+
+    @property
+    def clients(self) -> str:
+        return f"{self.client_count} client{'s' if self.client_count != 1 else ''}"
+
+    @property
+    def numbers(self) -> str:
+        """The card's line: what this entry needs, and what there is. No advice."""
+        return f"Needs {self.need[0]}×{self.need[1]} · {self.available[0]}×{self.available[1]} available"
+
+    @property
+    def remedy(self) -> str:
+        """The advice, which is the same for every entry that does not fit.
+
+        Three ways out, and the third is not a screen-space one: the budget is the larger
+        of the configured layout and the live game area (see gui/screen_fit.budget_for),
+        so dragging a sidebar narrower widens it there and then.
+        """
+        return "Lower the resolution, launch fewer clients, or make the game area larger."
+
+    @property
+    def sentence(self) -> str:
+        """Both halves, for a surface that shows one of these at a time."""
+        return (
+            f"{self.clients} at {self.resolution[0]}×{self.resolution[1]} "
+            f"needs {self.need[0]}×{self.need[1]}; "
+            f"there is {self.available[0]}×{self.available[1]} available — "
+            f"{self.remedy[0].lower()}{self.remedy[1:]}"
+        )
+
+
+def fit_details(
     resolution: tuple[int, int],
     client_count: int,
     budget: tuple[int, int],
     dpr: float = 1.0,
-) -> str | None:
+) -> FitProblem | None:
     """Why *client_count* clients at *resolution* will not fit, or None if they will.
 
-    The sentence names both numbers and every way out. An entry that cannot launch is
-    shown disabled carrying this rather than hidden: a profile that has vanished leaves
-    the user hunting for it with no indication of why, which is worse than a greyed row
-    that says what would bring it back.
+    An entry that cannot launch is shown disabled carrying this rather than hidden: a
+    profile that has vanished leaves the user hunting for it with no indication of why,
+    which is worse than a greyed row that says what would bring it back.
     """
     if fits(resolution, client_count, budget, dpr):
         return None
@@ -484,17 +539,23 @@ def fit_problem(
     # Both numbers are logical pixels, and the resolution beside them is physical ones, so
     # on a scaled display the sentence would otherwise read as a client needing *less*
     # space than its own resolution -- 2048x1536 "needs 1650x1279" at 125%. The comparison
-    # stays logical; only what is printed is converted, so all three numbers are in the
+    # stays logical; only what is reported is converted, so all three numbers are in the
     # units the user picked the resolution in. dpr 1.0 leaves them untouched.
     scale = dpr or 1.0
-    need_w, need_h = round(need_w * scale), round(need_h * scale)
-    budget_w, budget_h = round(budget_w * scale), round(budget_h * scale)
-    clients = f"{client_count} client{'s' if client_count != 1 else ''}"
-    # Three ways out, and the third is not a screen-space one: the budget is the larger of
-    # the configured layout and the live game area (see gui/screen_fit.budget_for), so
-    # dragging a sidebar narrower widens it there and then.
-    return (
-        f"{clients} at {resolution[0]}×{resolution[1]} needs {need_w}×{need_h}; "
-        f"there is {budget_w}×{budget_h} available — "
-        f"lower the resolution, launch fewer clients, or make the game area larger."
+    return FitProblem(
+        resolution=resolution,
+        client_count=client_count,
+        need=(round(need_w * scale), round(need_h * scale)),
+        available=(round(budget_w * scale), round(budget_h * scale)),
     )
+
+
+def fit_problem(
+    resolution: tuple[int, int],
+    client_count: int,
+    budget: tuple[int, int],
+    dpr: float = 1.0,
+) -> str | None:
+    """``fit_details`` as one sentence, for tooltips and disabled menu entries."""
+    problem = fit_details(resolution, client_count, budget, dpr)
+    return None if problem is None else problem.sentence

@@ -22,6 +22,10 @@ fit at the resolution those two are already running at.
 The entry that cannot launch stays visible and disabled carrying its reason. Hiding it
 leaves the user hunting for a profile that has vanished with no indication why, which is
 strictly worse than a greyed row that says what would bring it back.
+
+That reason comes in two halves — see ``game_sizing.FitProblem``. A surface showing many
+entries at once puts the numbers on each and the advice once for the lot; a surface
+showing one at a time takes the whole sentence.
 """
 
 from __future__ import annotations
@@ -151,20 +155,35 @@ def budget_for(
     return (max(budget[0], live_area[0]), max(budget[1], live_area[1])), dpr
 
 
+def fit_details(
+    resolution: tuple[int, int],
+    client_count: int,
+    widget: QWidget | None = None,
+    live_area: tuple[int, int] | None = None,
+) -> game_sizing.FitProblem | None:
+    """Why *client_count* clients at *resolution* will not fit here, or None if they will.
+
+    Cheap enough to call on a resize: a few settings lookups and some integer arithmetic,
+    with the answer only built on the failing path. Callers on a drag re-ask rather than
+    caching, so it cannot go stale.
+
+    The structured form is what the launch screen wants: it shows the numbers on the card
+    and the advice once per column, rather than the whole sentence once per card. A
+    surface that shows one refusal at a time wants ``fit_problem`` instead.
+    """
+    budget, dpr = budget_for(widget, live_area)
+    return game_sizing.fit_details(resolution, client_count, budget, dpr)
+
+
 def fit_problem(
     resolution: tuple[int, int],
     client_count: int,
     widget: QWidget | None = None,
     live_area: tuple[int, int] | None = None,
 ) -> str | None:
-    """Why *client_count* clients at *resolution* will not fit here, or None if they will.
-
-    Cheap enough to call on a resize: a few settings lookups and some integer arithmetic,
-    with the sentence only built on the failing path. Callers on a drag re-ask rather than
-    caching, so the answer cannot go stale.
-    """
-    budget, dpr = budget_for(widget, live_area)
-    return game_sizing.fit_problem(resolution, client_count, budget, dpr)
+    """``fit_details`` as one sentence, for a tooltip or a disabled menu entry."""
+    problem = fit_details(resolution, client_count, widget, live_area)
+    return None if problem is None else problem.sentence
 
 
 def profile_resolution(profile: dict) -> tuple[int, int]:
@@ -179,11 +198,11 @@ def profile_resolution(profile: dict) -> tuple[int, int]:
     return SettingsManager.instance().game_resolution
 
 
-def profile_fit_problem(
+def profile_fit_details(
     profile: dict,
     widget: QWidget | None = None,
     live_area: tuple[int, int] | None = None,
-) -> str | None:
+) -> game_sizing.FitProblem | None:
     """Why *profile* cannot be launched on this screen, or None if it can.
 
     An empty profile has nothing to fit and is refused elsewhere, on its own grounds —
@@ -193,7 +212,17 @@ def profile_fit_problem(
     accounts = profile.get("accounts") or []
     if not accounts:
         return None
-    return fit_problem(profile_resolution(profile), len(accounts), widget, live_area)
+    return fit_details(profile_resolution(profile), len(accounts), widget, live_area)
+
+
+def profile_fit_problem(
+    profile: dict,
+    widget: QWidget | None = None,
+    live_area: tuple[int, int] | None = None,
+) -> str | None:
+    """``profile_fit_details`` as one sentence, for a tooltip or a disabled menu entry."""
+    problem = profile_fit_details(profile, widget, live_area)
+    return None if problem is None else problem.sentence
 
 
 def largest_fitting_resolution(

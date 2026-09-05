@@ -424,6 +424,38 @@ so dragging a sidebar narrower widens it there and then. The same applies to
 the resolution pickers: a resolution too large for the current screen and client count
 appears disabled with the reason, rather than being quietly dropped from the list.
 
+**A surface showing many entries at once says the reason once, not once per entry.**
+`fit_details` returns a `FitProblem` rather than a string, so a caller can take the half
+it needs: `numbers` ("Needs 1624×651 · 1304×800 available") belongs to the entry, and the
+ways out belong to the surface, because they are properties of the layout rather than of
+any one profile. `fit_problem` still returns the whole sentence, which is what a tooltip
+and a disabled menu entry take — those are read one at a time and have nothing to repeat.
+
+On the Quick Launch screen each column carries a `_FitBanner` under its header, linking to
+the resolution setting so advice the user has to go hunting to follow is not half an
+answer. **The two columns are worded separately, and must stay that way** — they refuse
+different things:
+
+| column | the banner says | the cards say |
+|---|---|---|
+| Accounts | "Your default game resolution (2048×1536) needs 1650×1279, but only 1200×800 is available. Either lower the default game resolution or increase the size of the game view panel." | nothing — they stay grey and keep showing their characters |
+| Launch Profiles, none fitting | "No launch profiles fit in the game view panel at its current size (1304×800). Lower the resolution they launch at, increase the size of the game view panel, or launch fewer clients." | each its own "Needs …" |
+| Launch Profiles, some fitting | "Some launch profiles do not fit in the game view panel at its current size (1304×800) and have been disabled." | each its own "Needs …" |
+
+Three things in that table are the point rather than phrasing:
+
+- **The accounts banner offers two ways out, not three.** "Launch fewer clients" cannot be
+  taken there — an account card launches exactly one — and a remedy the user cannot act on
+  reads as the app not knowing what it is refusing.
+- **The accounts banner names the *default* resolution**, because that is the setting to
+  change: an account card never launches at a pinned one.
+- **The profiles banner is sized against the panel, not a resolution.** Profiles may each
+  pin their own, so naming one would point at a setting that is not the problem for the
+  cards beside it. It is also why the numbers stay on the profile cards, where they differ,
+  and come off the account cards, where every one of them is the same number — that
+  repetition is the bug this shape exists to prevent, and it is easy to reintroduce by
+  "simplifying" the two columns into one message.
+
 The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 (`gui/game_embed/launch_cards.py`), the Launch menu (`gui/main_window.py`),
 `LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos
