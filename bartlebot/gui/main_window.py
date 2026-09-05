@@ -9,6 +9,7 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.credentials import CredentialStore
+from bartlebot.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
@@ -272,7 +273,16 @@ class MainWindow(QMainWindow):
         self.action_stop_bot.triggered.connect(lambda: self.bot_canvas.stop_button.click())
 
     def _apply_minimum_size(self) -> None:
-        min_w, min_h = SettingsManager.instance().minimum_window_size()
+        """Declare the floor the panes below are built to honour.
+
+        Measured at this window's own scale factor: a resolution is physical pixels while
+        everything else in the sum is logical ones, so on a 150% display the undivided
+        number is half again too big a floor to hold the window to.
+        """
+        min_w, min_h = SettingsManager.instance().minimum_window_size(
+            dpr=self.devicePixelRatio() or 1.0,
+            right_sidebar_floor=screen_fit.right_sidebar_floor(),
+        )
         self.setMinimumSize(min_w, min_h)
 
     def _apply_configured_splitter_sizes(self) -> None:
@@ -297,7 +307,10 @@ class MainWindow(QMainWindow):
         """
         sm = SettingsManager.instance()
         left_w = int(sm.get_general("left_sidebar_width", default=300))
-        right_w = int(sm.get_general("right_sidebar_width", default=300))
+        right_w = max(
+            int(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
+            screen_fit.right_sidebar_floor(),
+        )
         bot_h = int(sm.get_general("bottom_section_height", default=220))
 
         top_total = sum(self._top_splitter.sizes())
@@ -323,7 +336,10 @@ class MainWindow(QMainWindow):
 
     def _apply_startup_layout(self) -> None:
         sm = SettingsManager.instance()
-        min_w, min_h = sm.minimum_window_size()
+        min_w, min_h = sm.minimum_window_size(
+            dpr=self.devicePixelRatio() or 1.0,
+            right_sidebar_floor=screen_fit.right_sidebar_floor(),
+        )
         if sm.get_general("maximize_on_open", default=False):
             self.showMaximized()
         else:
@@ -334,6 +350,16 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    @property
+    def game_view_panel(self) -> GameViewPanel:
+        """The pane the game view sits in, its own header strip included.
+
+        Public because the height of that strip is a term in the window-floor arithmetic
+        (``GAME_PANEL_CHROME_PX``), and the guard that keeps the declared floor and the
+        enforced one in step has to be able to measure it.
+        """
+        return self._game_view_panel
 
     def set_shutdown_handler(self, handler) -> None:
         """Install the quit gate: *handler* returns True to let the window close.

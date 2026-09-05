@@ -69,6 +69,50 @@ LABEL_RESERVE = FOCUS_BORDER + LABEL_GAP + LABEL_PILL_H + 4  # = 39; keeps the p
 # area nor the bot canvas.
 MENU_AND_STATUS_PX = 60
 
+# The game panel's own header strip, above the view the tiles sit in.
+GAME_PANEL_CHROME_PX = 32
+
+
+# ---------------------------------------------------------------------------
+# The panel floors
+# ---------------------------------------------------------------------------
+# What each pane of the main window may be dragged down to. These are terms in the
+# arithmetic below, not suggestions: a pane whose *enforced* minimum is larger than the
+# term named here makes ``required_window_size`` understate the floor Qt will hold the
+# window to, and the window then cannot be given the size the fit was computed for --
+# which is how a 2560x1440 launch cleared the fit and then could not open on a 4K screen.
+#
+# Qt takes the larger of a widget's ``minimumSize`` and its layout's minimum, *except*
+# that an explicitly set ``minimumSize`` wins outright (``qSmartMinSize``). So each pane
+# sets these on itself and its content is clipped -- or scrolls, where a scroll area is
+# already in the way -- rather than being allowed to raise the window's floor.
+# ``tests/test_window_minimum.py`` is the guard.
+
+# Minimum BotCanvas size (toolbar + enough graph space)
+BOTCANVAS_MIN_WIDTH = 320
+BOTCANVAS_MIN_HEIGHT = 180
+# Sidebar minimums. The two differ because their content does: the left sidebar's tabs
+# are lists and forms that elide or scroll, while the right one's player card is a row of
+# buttons -- "Entities", "UI Tree", "Unhook" -- that carry a ``Minimum`` size policy and
+# so run off the panel rather than getting narrower. A floor is only worth having at a
+# width the panel is still usable at, so the arithmetic takes the two separately.
+LEFT_SIDEBAR_MIN_WIDTH = 220
+# The right one's floor is *font metrics*, not pixels: the buttons, their padding and the
+# scrollbar beside them all scale with the system text size, so a machine at 125% needs
+# the same layout in a quarter more pixels. Pinning a pixel count would mean choosing
+# between clipping that machine and charging every other one for it -- on a 1080p screen
+# an extra 80px of sidebar costs a whole rung of the ladder. So the constant is the floor
+# *at the reference text height*, and ``right_sidebar_floor`` scales it. 300 rounds up a
+# measured 288 (the tool row plus the players tab's own margins, frame and scrollbar) and
+# is deliberately the old default sidebar width, so nothing changes at 100%.
+RIGHT_SIDEBAR_MIN_WIDTH = 300
+REFERENCE_TEXT_HEIGHT_PX = 16  # QFontMetrics(...).height() for Segoe UI 9pt at 100%
+# Shared: the height must stay under the shortest tile any offered resolution produces,
+# or a sidebar rather than the game view becomes the top row's floor.
+SIDEBAR_MIN_HEIGHT = 240
+# Splitter handle allowance: two vertical handles in the top row, one horizontal below it
+SPLITTER_HANDLE_PX = 8
+
 
 # ---------------------------------------------------------------------------
 # The ladder
@@ -312,6 +356,51 @@ def required_game_area(resolution: tuple[int, int], client_count: int, dpr: floa
     rows, cols = grid_for(client_count)
     tile_w, tile_h = tile_size(resolution, dpr)
     return cols * tile_w, rows * tile_h
+
+
+def right_sidebar_floor(text_height_px: float | None = None) -> int:
+    """``RIGHT_SIDEBAR_MIN_WIDTH`` scaled to a system text height of *text_height_px*.
+
+    Linear in the text height, which is an approximation -- a button is text plus padding,
+    and only the text part truly scales -- but one that errs wide, and being a little
+    generous at 150% is the harmless direction. Never below the reference: a smaller font
+    does not make the tab bar or the scrollbar narrower.
+
+    ``None`` means "not measured" and returns the reference, which is what the pure
+    arithmetic and its tests use. Everything inside the running app must instead go
+    through ``gui/screen_fit.right_sidebar_floor``, so that the width the widget enforces
+    and the width the fit is computed against cannot come from two different fonts.
+    """
+    if not text_height_px:
+        return RIGHT_SIDEBAR_MIN_WIDTH
+    scaled = round(RIGHT_SIDEBAR_MIN_WIDTH * text_height_px / REFERENCE_TEXT_HEIGHT_PX)
+    return max(RIGHT_SIDEBAR_MIN_WIDTH, scaled)
+
+
+def required_window_size(
+    resolution: tuple[int, int],
+    client_count: int = 1,
+    dpr: float = 1.0,
+    right_sidebar: int | None = None,
+) -> tuple[int, int]:
+    """The window floor a grid of *client_count* clients at *resolution* implies.
+
+    The inverse of ``screen_budget``: that one runs screen -> game size to decide what may
+    be launched, this one runs game size -> window floor once a size has been chosen. It
+    is the size the window may be *dragged* to, so it is measured against the panel floors
+    above rather than the user's configured layout -- unlike ``screen_budget``, which must
+    not assume the user will crush their sidebars.
+
+    Every term the window actually contains is here. The tile chrome and the game panel's
+    header used to be left out, which made the declared floor smaller than the one Qt
+    enforces -- and a declared floor that is not the real one is worse than none, because
+    it is the number the rest of the app reasons about.
+    """
+    game_w, game_h = required_game_area(resolution, client_count, dpr)
+    right = right_sidebar if right_sidebar is not None else RIGHT_SIDEBAR_MIN_WIDTH
+    width = LEFT_SIDEBAR_MIN_WIDTH + right + game_w + 2 * SPLITTER_HANDLE_PX
+    height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX + SPLITTER_HANDLE_PX
+    return width, height
 
 
 def screen_budget(

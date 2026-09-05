@@ -324,6 +324,70 @@ The splitter half of that works only because `GameViewPanel` wraps `GameView` in
 so the view's minimum becomes the panel's and `QSplitter` honours it —
 `test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter` is the guard.
 
+### The floor is only a floor if the panes honour it
+
+`required_window_size` is not a description of the window — it is a *claim* about it, and
+Qt holds the window to the larger of the claim and what the layout inside actually needs.
+So every term in it has to be a size the corresponding pane will really go down to:
+
+```
+width  = LEFT_SIDEBAR_MIN_WIDTH + right_sidebar_floor() + game_w + 2*SPLITTER_HANDLE_PX
+height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX
+         + SPLITTER_HANDLE_PX
+```
+
+where `game_w, game_h` is `required_game_area` — the tiles' own chrome included, which the
+old sum left out.
+
+A pane that lets its *content* set its floor breaks the claim silently. Both sidebars used
+to, and the widest thing either can hold is not in it at construction: the tab sets are
+mode-swapped, so the 562px parameter panel only arrives when the user switches to edit
+mode. On a 3840x2160 screen a 2560x1440 launch therefore passed the fit and produced a
+window with a 3770x2100 floor — against a 2081px work area, which Windows refused with
+`QWindowsWindow::setGeometry: Unable to set geometry` and a clipped window.
+
+The fix is that each pane sets the arithmetic's term on itself with `setMinimumSize`. That
+is not the same as being merely narrow: an explicit minimum is the one input that wins
+outright over a layout's own minimum in Qt's `qSmartMinSize`, so it caps the pane rather
+than competing with its content. Below that width the content clips, or scrolls where a
+`QScrollArea` is already in the way, which is the right trade for a size only reachable by
+dragging a splitter to its stop.
+
+Two of the terms are floors with nothing on the other side of them, so they carry their own
+constraints: `SIDEBAR_MIN_HEIGHT` must stay under the shortest tile any offered resolution
+produces, and `BOTCANVAS_MIN_WIDTH` under the narrowest window the ladder implies —
+otherwise a sidebar or the canvas, which have no height and width term respectively, become
+the floor instead of the game view. `tests/test_window_minimum.py` holds all of it together,
+including the 4K case above as a regression.
+
+### One of the floors is measured, not fixed
+
+The right sidebar's is. Its player card ends in a row of three buttons — `Entities`,
+`UI Tree`, `Unhook` — and those, their padding and the scrollbar beside them are all font
+metrics: the layout that fits in 300px at 100% system text needs 375 at 125%. A pixel
+constant would have to choose which machine to be wrong on. Pinned low it clips the row on
+a scaled display, which is how this came up; pinned high it charges every 1080p user 75px
+of sidebar for a text size they are not running, and 75px there is a whole rung of the
+ladder — 1280x720 solo becomes 960x540.
+
+So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference text height** (16px, Segoe UI
+9pt at 100%), and `game_sizing.right_sidebar_floor(text_height)` scales it, never below the
+reference. 300 rounds up a measured 288 and is deliberately the old default sidebar width,
+so a machine at 100% sees no change at all.
+
+Everything inside the running app takes that number from **`gui/screen_fit.right_sidebar_floor()`**,
+which measures `QApplication.font()` — never a particular widget's. The width the sidebar
+enforces and the width `layout_budget` subtracts have to be the same number, and two
+call sites measuring two different fonts is the same class of bug one level down.
+`RightSidebar` re-measures on `FontChange`, because the theme is applied to the
+application after the widget is built.
+
+**Still an estimate on the screen side.** `screen_budget` does *not* subtract
+`GAME_PANEL_CHROME_PX`, the horizontal splitter handle, or the window frame — roughly 78px
+of height. It is why the worked example above offers 1280x720 to a 1080p screen that can
+only just carry it. Tightening it would re-tier the offered ladder, so it is left as the
+known estimate `budget_for` already describes it as.
+
 ## Prevent, do not warn; disable, do not hide
 
 An unfittable configuration is **not launchable**, rather than launchable with a warning.

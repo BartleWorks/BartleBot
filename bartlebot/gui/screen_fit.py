@@ -26,6 +26,7 @@ strictly worse than a greyed row that says what would bring it back.
 
 from __future__ import annotations
 
+from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QApplication, QWidget
 
 from bartlebot import game_sizing
@@ -53,6 +54,26 @@ def screen_metrics(widget: QWidget | None = None) -> tuple[tuple[int, int], floa
         return _UNMEASURABLE, 1.0
     available = screen.availableGeometry()
     return (available.width(), available.height()), screen.devicePixelRatio() or 1.0
+
+
+def right_sidebar_floor() -> int:
+    """How wide the right sidebar has to be *on this machine* for its player card to fit.
+
+    Always measured from the application font, never from a particular widget's, because
+    two numbers derived here have to be the same number: the width ``RightSidebar``
+    enforces, and the width ``layout_budget`` subtracts before deciding what may launch.
+    A floor the arithmetic does not know about is the whole failure this guards against
+    -- see "The floor is only a floor if the panes honour it" in docs/WINDOW_SIZING.md.
+
+    Font metrics rather than a constant because the card is buttons and a scrollbar, which
+    grow with the system text size. A user at 125% needs 375px for the row that fits in
+    300 at 100%, and charging every 1080p user that 75px would cost them a rung of the
+    ladder for a screen they are not on.
+    """
+    app = QApplication.instance()
+    if app is None:
+        return game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
+    return game_sizing.right_sidebar_floor(QFontMetrics(app.font()).height())
 
 
 # Left clear of the screen edges when a window is fitted to it, so the frame and the
@@ -108,7 +129,7 @@ def budget_for(
     launch anyway.
     """
     screen_size, dpr = screen_metrics(widget)
-    budget = SettingsManager.instance().layout_budget(screen_size)
+    budget = SettingsManager.instance().layout_budget(screen_size, right_sidebar_floor=right_sidebar_floor())
     if live_area is None:
         return budget, dpr
     return (max(budget[0], live_area[0]), max(budget[1], live_area[1])), dpr

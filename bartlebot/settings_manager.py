@@ -12,8 +12,12 @@ from pydantic import BaseModel, ValidationError
 
 from bartlebot import bot_options
 from bartlebot.game_sizing import (
-    MENU_AND_STATUS_PX,
+    BOTCANVAS_MIN_HEIGHT,
+    LEFT_SIDEBAR_MIN_WIDTH,
+    RIGHT_SIDEBAR_MIN_WIDTH,
+    SPLITTER_HANDLE_PX,
     SUB_FLOOR_RESOLUTIONS,
+    required_window_size,
     screen_budget,
 )
 
@@ -32,7 +36,7 @@ class _GeneralSettings(BaseModel):
     window_width: int = 1400
     window_height: int = 800
     left_sidebar_width: int = 300
-    right_sidebar_width: int = 300
+    right_sidebar_width: int = RIGHT_SIDEBAR_MIN_WIDTH
     bottom_section_height: int = 220
     auto_save_enabled: bool = True
     auto_save_interval_seconds: int = 300
@@ -89,7 +93,7 @@ _DEFAULTS: dict[str, Any] = {
         "window_width": 1400,
         "window_height": 800,
         "left_sidebar_width": 300,
-        "right_sidebar_width": 300,
+        "right_sidebar_width": RIGHT_SIDEBAR_MIN_WIDTH,
         "bottom_section_height": 220,
         "auto_save_enabled": True,
         "auto_save_interval_seconds": 300,
@@ -184,12 +188,7 @@ _STOCK_RESOLUTIONS: list[tuple[int, int]] = [
 # out at Large too, because no 4:3 resolution reaches Huge at any size.
 VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STOCK_RESOLUTIONS})
 
-# Minimum BotCanvas height (toolbar + enough graph space)
-BOTCANVAS_MIN_HEIGHT = 180
-# Sidebar minimum widths
-SIDEBAR_MIN_WIDTH = 220
-# Splitter handle allowance
-SPLITTER_HANDLE_PX = 8
+# The panel floors moved to game_sizing.py, beside the arithmetic they are terms in.
 
 
 def _appdata_dir() -> Path:
@@ -726,30 +725,45 @@ class SettingsManager:
     # Window sizing helper
     # ------------------------------------------------------------------
 
-    def minimum_window_size(self) -> tuple[int, int]:
+    def minimum_window_size(
+        self,
+        client_count: int = 1,
+        dpr: float = 1.0,
+        right_sidebar_floor: int | None = None,
+    ) -> tuple[int, int]:
         """Return (min_width, min_height) based on the configured game resolution.
 
         This is the floor the window may be *dragged* to, so it is measured against the
         panel minimums rather than the configured layout sizes -- unlike
         ``layout_budget``, which asks the opposite question and must not assume the user
         will crush their sidebars. See bartlebot/game_sizing.py for the two directions.
-        """
-        gw, gh = self.game_resolution
-        min_w = SIDEBAR_MIN_WIDTH * 2 + gw + SPLITTER_HANDLE_PX * 2
-        min_h = gh + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX
-        return min_w, min_h
 
-    def layout_budget(self, screen_size: tuple[int, int]) -> tuple[int, int]:
+        *client_count* is 1 by default because that is the floor the window is *given*:
+        embedding more raises the game view's own minimum and Qt grows the window to
+        match, which is the documented behaviour that lets a launch bigger than the
+        current window correct itself.
+        """
+        return required_window_size(self.game_resolution, client_count, dpr, right_sidebar_floor)
+
+    def layout_budget(self, screen_size: tuple[int, int], right_sidebar_floor: int | None = None) -> tuple[int, int]:
         """The game-grid space *screen_size* leaves once this layout is placed on it.
 
         The cap that decides which resolutions may be launched. Reads the user's
         configured sidebar widths and canvas height -- see ``game_sizing.screen_budget``
         for why it must not read the minimums instead.
+
+        Held *at* those minimums, though, and for the same reason the minimums exist: a
+        stored width below a panel's floor describes a layout the app cannot produce, so
+        budgeting against it hands the game area space the splitter will not give it. The
+        clamp is on the read rather than the stored value, which stays the user's.
         """
         return screen_budget(
             screen_size,
-            left_sidebar=int(self.get_general("left_sidebar_width", default=300)),
-            right_sidebar=int(self.get_general("right_sidebar_width", default=300)),
-            bottom_section=int(self.get_general("bottom_section_height", default=220)),
+            left_sidebar=max(int(self.get_general("left_sidebar_width", default=300)), LEFT_SIDEBAR_MIN_WIDTH),
+            right_sidebar=max(
+                int(self.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
+                right_sidebar_floor if right_sidebar_floor is not None else RIGHT_SIDEBAR_MIN_WIDTH,
+            ),
+            bottom_section=max(int(self.get_general("bottom_section_height", default=220)), BOTCANVAS_MIN_HEIGHT),
             splitter_handle=SPLITTER_HANDLE_PX,
         )
