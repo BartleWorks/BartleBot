@@ -729,7 +729,16 @@ class MainWindow(QMainWindow):
             # four with one account up should bring up the other three.
             accepted = self._open_launch(list(profile.get("accounts", [])))
             if not accepted:
-                logger.info("Launch profile '%s' is already launching", profile_name)
+                # Said out loud rather than logged, because this is the click that looks
+                # broken: nothing spawns, nothing changes on screen, and the tiles that
+                # explain why were already there before the click. Only when the *whole*
+                # profile drops out -- a partial one still visibly brings up the rest.
+                logger.info("Launch profile '%s' has nothing left to launch", profile_name)
+                QMessageBox.information(
+                    self,
+                    "Nothing to launch",
+                    f"Every account in '{profile_name}' is already running or launching.",
+                )
                 return
             try:
                 self._game_view_panel.set_launch_profile(profile_name)
@@ -770,7 +779,12 @@ class MainWindow(QMainWindow):
             # back-to-back orders them by when they were asked for, not by which one
             # happens to load in first.
             if not self._open_launch([username]):
-                logger.info("Account '%s' is already launching", username)
+                logger.info("Account '%s' is already running or launching", username)
+                QMessageBox.information(
+                    self,
+                    "Nothing to launch",
+                    f"'{display_name}' is already running or launching.",
+                )
                 return
             try:
                 await launch_account(

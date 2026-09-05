@@ -931,16 +931,29 @@ class ClientManager(QObject):
         anyway. Rejecting an account already in flight is the whole point, and it can only
         be done where both routes meet.
 
+        An account is rejected for either of two reasons, and they are different states:
+        a launch is already running for it, or it is already *here* -- a window open and
+        recognised, whether hooked, embedded, or set aside unhooked. The second is the one
+        a profile hits: a profile lists accounts, not windows, so starting a four-account
+        profile with two of them already up would spawn a second window for each of those
+        two, logged into the same account as the one on screen. The in-flight tracker
+        cannot see that, because those launches finished -- successfully -- some time ago.
+
         The rejected ones are dropped rather than failing the batch: a profile of four with
         one account already launching should bring up the other three. Callers pair this
         with ``end_launch`` in a ``finally`` -- an attempt that is never ended leaves the
         account unlaunchable for the rest of the session.
         """
-        accepted = self._launches.begin(usernames)
+        active = set(self.active_accounts)
+        wanted = [u for u in usernames if u not in active]
+        accepted = self._launches.begin(wanted)
         if accepted:
             self.reserve_slots(accepted)
             self._sync_tiles()
-        rejected = [u for u in usernames if u not in accepted]
+        already_here = [u for u in usernames if u in active]
+        if already_here:
+            logger.info("Ignoring launch for account(s) already running: %s", ", ".join(already_here))
+        rejected = [u for u in wanted if u not in accepted]
         if rejected:
             logger.info("Ignoring launch for account(s) already launching: %s", ", ".join(rejected))
         return accepted
@@ -1007,6 +1020,25 @@ class ClientManager(QObject):
     def launching(self) -> list[str]:
         """Accounts with a launch running, for a caller deciding whether to offer another."""
         return list(self._launches.in_flight())
+
+    @property
+    def active_accounts(self) -> list[str]:
+        """Accounts that already have a game window open under this app.
+
+        Read off the account map rather than ``clients``, because the question is about
+        windows and not about hooks. ``_refresh_account_map`` runs over every live window
+        each tick -- hooked, unhooked, and still at character select -- so the map names
+        an account from the moment the launcher titles its window until that window
+        closes, which is exactly the span during which launching it again would produce a
+        duplicate.
+
+        An adopted window BartleBot has never launched is in here too, once
+        ``_refresh_account_identity`` has fingerprinted it. One belonging to an account
+        with no fingerprint on file stays unidentified and so cannot be guarded -- the
+        same known limitation ``account_identity`` documents, and the same fix: launching
+        that account from here once teaches it permanently.
+        """
+        return list(dict.fromkeys(self._hwnd_account_map.values()))
 
     def _release_unarrived(self, usernames: list[str]) -> None:
         """Give back the reserved slots of accounts that never produced a window.

@@ -112,6 +112,31 @@ class TestLaunchGuard:
         assert _begin(harness, ["alpha"]) == []
         assert harness._client_order == ["alpha"], "a rejected launch still moved the ordering"
 
+    def test_an_account_already_running_is_not_launched_again(self, harness) -> None:
+        """The profile case: a launch finished long ago, so the in-flight set is empty.
+
+        Without this the guard only saw launches still running, and starting a profile
+        whose accounts were already up, hooked and embedded spawned a second window for
+        each of them.
+        """
+        _window_arrives(harness, "alpha", 100)
+        assert _begin(harness, ["alpha"]) == []
+        assert harness._client_order == [], "a rejected launch still reserved a slot"
+
+    def test_a_profile_brings_up_only_the_accounts_not_already_running(self, harness) -> None:
+        _window_arrives(harness, "beta", 101)
+        assert _begin(harness, ["alpha", "beta", "gamma"]) == ["alpha", "gamma"]
+
+    def test_an_account_whose_window_closed_can_be_launched_again(self, harness) -> None:
+        _window_arrives(harness, "alpha", 100)
+        del harness._hwnd_account_map[100]
+        assert _begin(harness, ["alpha"]) == ["alpha"]
+
+    def test_active_accounts_names_each_account_once(self, harness) -> None:
+        _window_arrives(harness, "alpha", 100)
+        _window_arrives(harness, "beta", 101)
+        assert harness.active_accounts == ["alpha", "beta"]
+
     def test_a_launch_that_produced_no_window_gives_its_slot_back(self, harness) -> None:
         """Without this the ordering keeps a hole per failed launch for the whole session."""
         _begin(harness, ["alpha", "beta"])

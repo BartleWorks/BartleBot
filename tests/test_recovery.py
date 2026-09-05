@@ -57,6 +57,7 @@ class RecoveryHarness:
     report_launch_failed = ClientManager.report_launch_failed
     dismiss_launch = ClientManager.dismiss_launch
     launching = ClientManager.launching
+    active_accounts = ClientManager.active_accounts
     _release_unarrived = ClientManager._release_unarrived
     reserve_slots = ClientManager.reserve_slots
     _sync_tiles = ClientManager._sync_tiles
