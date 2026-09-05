@@ -14,10 +14,8 @@ or the older tests can see:
 
 from __future__ import annotations
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication, QFormLayout
+from PyQt6.QtWidgets import QFormLayout
 
 from bartlebot import bot_options
 from bartlebot.gui import screen_fit
@@ -30,12 +28,6 @@ from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import _DEFAULTS, _SECTION_MODELS, SettingsManager
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
-
 
 # ---------------------------------------------------------------------------
 # The split itself

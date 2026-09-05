@@ -7,21 +7,13 @@ That distinction is the thing worth pinning, along with the scroll position it h
 to preserve to be usable while reading.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog, _DetailPanel
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

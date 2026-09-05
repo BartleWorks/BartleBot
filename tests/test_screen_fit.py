@@ -7,8 +7,6 @@ unfittable launch is *refused* — a card that cannot be clicked — rather than
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QMouseEvent, QResizeEvent
@@ -21,11 +19,6 @@ from bartlebot.settings_manager import SettingsManager
 # A 1080p screen at the default layout, which is where two 800x600 clients stop fitting.
 _1080P = ((1920, 1080), 1.0)
 _4K = ((3840, 2160), 1.0)
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

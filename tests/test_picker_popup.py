@@ -5,12 +5,9 @@ QApplication, and is tested because the parts that break (row rebuild, live
 selection, the self-styling recursion trap) are not extractable.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent, QRect, QSize, Qt
 from PyQt6.QtTest import QTest
-from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.theme import THEME
@@ -29,11 +26,6 @@ from bartlebot.gui.widgets.picker_popup import (
     should_open,
     summarize,
 )
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

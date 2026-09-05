@@ -8,11 +8,8 @@ counts hidden items, both decide how the bot header's byline wraps, so those hav
 tests of their own at the bottom.
 """
 
-import sys
-
-import pytest
 from PyQt6.QtCore import QSize
-from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QWidget
 
 from bartlebot.gui.widgets.flow_layout import flow_container, flow_geometry
 
@@ -96,11 +93,6 @@ def test_narrowing_the_width_adds_rows_rather_than_dropping_items():
 # These need a QApplication because they are about real widgets, but what they
 # assert is not Qt plumbing: preferred and minimum are different questions, and
 # for a long while this layout answered both with the minimum.
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _host(*widths: int):

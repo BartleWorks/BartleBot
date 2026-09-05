@@ -6,10 +6,8 @@ The one widget-backed test covers the filter rule that is easy to get wrong:
 an invisible parent must survive as a spine to its visible children.
 """
 
-import sys
-
 import pytest
-from PyQt6.QtWidgets import QApplication, QTreeWidget, QTreeWidgetItem
+from PyQt6.QtWidgets import QTreeWidget, QTreeWidgetItem
 
 from bartlebot.gui.ui_tree_browser import (
     _COL_ELEMENT,
@@ -28,11 +26,6 @@ from bartlebot.gui.ui_tree_browser import (
 _VISIBLE_BIT = 1
 _DISABLED_BIT = 2147483648
 _NOCLIP_BIT = 2
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 # ----------------------------------------------------------------------

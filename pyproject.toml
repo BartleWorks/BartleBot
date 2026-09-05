@@ -24,6 +24,8 @@ dev = [
     "ruff>=0.15",
     "pytest-xdist>=3.6",
     "pre-commit>=4.0",
+    # Supplies the session-scoped `qapp` fixture the GUI tests share (#189).
+    "pytest-qt>=4.5.0",
 ]
 
 # Forks, not upstream: these carry fixes upstream does not have, including the
@@ -36,6 +38,8 @@ wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev =
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# Stated rather than sniffed, so pytest-qt cannot pick a different binding than the app.
+qt_api = "pyqt6"
 
 [tool.ruff]
 # ruff 0.16 formats fenced code blocks inside Markdown. Our .md files use

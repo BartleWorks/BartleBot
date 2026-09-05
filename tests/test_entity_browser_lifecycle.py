@@ -8,17 +8,10 @@ land on a deleted C++ object. See "Background task lifetime in GUI widgets" in
 """
 
 import asyncio
-import sys
 
 import pytest
-from PyQt6.QtWidgets import QApplication
 
 from bartlebot.gui.entity_browser import EntityBrowserDialog
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 class _StubClient:

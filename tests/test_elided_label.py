@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-
-import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontMetrics
-from PyQt6.QtWidgets import QApplication, QLabel, QSizePolicy
+from PyQt6.QtWidgets import QLabel, QSizePolicy
 
 from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 
@@ -20,11 +17,6 @@ _ZONE = "WizardCity/WC_Streets/Interiors/Golem_Court"
 def _half_width(lbl: ElidedLabel) -> int:
     """Half the width the full text wants — wide enough to show several characters, narrow enough to force elision."""
     return QFontMetrics(lbl.font()).horizontalAdvance(lbl.full_text()) // 2
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def test_does_not_demand_the_full_text_width(qapp):

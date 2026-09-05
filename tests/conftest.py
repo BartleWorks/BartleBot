@@ -420,3 +420,64 @@ def _restore_app_stylesheet():
     app = QApplication.instance()
     if app is not None and before is not None and app.styleSheet() != before:
         app.setStyleSheet(before)
+
+
+# ---------------------------------------------------------------------------
+# Widget lifetime
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _free_widgets_this_test_created():
+    """Destroy the top-level widgets a test built, before the next test starts.
+
+    ``deleteLater()`` on its own frees nothing here: it posts a ``DeferredDelete``
+    event that only arrives on an event-loop spin, and no Qt event loop runs during
+    the suite. So every widget every test constructed used to stay alive for the
+    whole session — 27,918 of them after 20 GUI files in one process (#189).
+
+    That is quadratic, not merely wasteful, because ``QApplication.setStyleSheet``
+    delivers a ``StyleChange`` to every live widget: one app-wide theme broadcast
+    cost 26 s at that population and 0.001 s at zero. Two tests in
+    ``test_game_view_theme.py`` were spending 130 s between them on it.
+
+    What is reaped, and why that is safe:
+
+    * Only *top-level* widgets, since deleting one takes its children with it.
+      41 parentless widgets were holding the other 20,000 alive, kept off the
+      garbage collector by signal connections into the long-lived singletons.
+    * Only widgets that did not exist when this fixture was set up. Being autouse
+      and function-scoped, it is set up after every module- and session-scoped
+      fixture and torn down after every other function-scoped one, so a widget
+      owned by a wider-scoped fixture is already in ``before`` and survives, and a
+      function-scoped fixture's widget is only freed once that fixture's own
+      teardown has run.
+
+    The scoping is the whole point. A blanket sweep over ``topLevelWidgets()``
+    frees widgets a still-live fixture is holding, and the next
+    ``processEvents()`` touches the corpse: exit 127, no traceback, reproducibly
+    inside ``test_launch_card_widgets.py``. Reap per test, never globally.
+
+    ``sendPostedEvents(None, DeferredDelete)`` is what actually performs the
+    deletion, standing in for the event-loop spin. It flushes the whole queue,
+    which is fine precisely because nothing accumulates in it any more: any
+    ``deleteLater()`` a test posted names a widget this same teardown is freeing.
+    """
+    from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
+
+    before = QApplication.topLevelWidgets() if QApplication.instance() is not None else []
+    before_ids = {id(w) for w in before}
+    yield
+    if QApplication.instance() is None:
+        return
+    from PyQt6 import sip  # noqa: PLC0415
+    from PyQt6.QtCore import QEvent  # noqa: PLC0415
+
+    for widget in QApplication.topLevelWidgets():
+        if id(widget) in before_ids or sip.isdeleted(widget):
+            continue
+        widget.close()
+        widget.deleteLater()
+    QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    # Held until here only so an id() cannot be recycled onto a new widget.
+    del before

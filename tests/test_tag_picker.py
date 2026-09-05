@@ -1,10 +1,7 @@
 """Tests for the bot-tag picker shared by the bot header and the library panel."""
 
-import sys
-
-import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QWidget
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
@@ -18,12 +15,6 @@ from bartlebot.gui.widgets.tag_picker import (
     tag_sections,
 )
 from bartlebot.gui.widgets.tag_pill import TagChip, TagPill
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
-
 
 # ---------------------------------------------------------------------------
 # Section building (pure)

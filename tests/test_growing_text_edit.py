@@ -6,18 +6,11 @@ wherever possible: the line height comes from the platform font, so a pixel
 assertion would be measuring the CI runner's fonts rather than the widget.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QApplication, QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QScrollArea, QVBoxLayout, QWidget
 
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

@@ -7,11 +7,9 @@ instance. Fixing the factory fixed all three without touching them, which is why
 tests here are mostly about ThemedTextLabel and the two factories that return it.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication, QSizePolicy
+from PyQt6.QtWidgets import QSizePolicy
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.bot.schema import BotOptionModel
@@ -19,11 +17,6 @@ from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddO
 from bartlebot.gui.sidebar.sidebar_section import SidebarField, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

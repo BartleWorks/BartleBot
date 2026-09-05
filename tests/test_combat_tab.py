@@ -11,11 +11,10 @@ model — lives entirely in the Qt wiring.
 
 from __future__ import annotations
 
-import sys
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QInputDialog, QMessageBox, QScrollArea
+from PyQt6.QtWidgets import QInputDialog, QMessageBox, QScrollArea
 
 from bartlebot import strategy_store as store_mod
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -35,11 +34,6 @@ from bartlebot.gui.sidebar.combat_tab import (
     _DefaultBinding,
     _DuelBindingPanel,
 )
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

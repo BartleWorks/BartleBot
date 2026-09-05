@@ -463,7 +463,7 @@ async def resolve_path_match(
     return candidates[match_index], count
 
 
-async def poll_until(condition_coro, timeout: float | None, poll_interval: float = 0.25) -> bool:
+async def poll_until(condition_coro, timeout: float | None, poll_interval: float = POLL_INTERVAL) -> bool:
     """Poll condition_coro every poll_interval until it returns True or timeout expires.
 
     Always evaluates condition_coro at least once before the timeout clock starts, so a

@@ -6,17 +6,7 @@ that wrote its label back into the bot would produce a world key the zone glob n
 matches, and it would do it silently, so the round trip is worth pinning down.
 """
 
-import sys
-
-import pytest
-from PyQt6.QtWidgets import QApplication
-
 from bartlebot.nodes.param_schema import ParamField
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _form(fields, params):

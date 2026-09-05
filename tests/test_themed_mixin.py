@@ -7,20 +7,14 @@ and that the base class's ``changeEvent`` still runs.
 """
 
 import logging
-import sys
 
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication, QLabel, QPushButton, QWidget
+from PyQt6.QtWidgets import QLabel, QPushButton, QWidget
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

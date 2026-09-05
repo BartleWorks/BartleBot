@@ -8,19 +8,9 @@ implied and used to discard.
 
 from __future__ import annotations
 
-import sys
-
-import pytest
-from PyQt6.QtWidgets import QApplication
-
 from bartlebot.gui.canvas.param_panel import _DynamicParamForm, _WikiPageLineEdit
 from bartlebot.nodes.combat.handle_combat import PARAM_SCHEMA
 from bartlebot.wiki_pages import WIKI_HOST, WIKI_PAGE_PARAM, resolve_wiki_page
-
-
-@pytest.fixture
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _form(params=None):

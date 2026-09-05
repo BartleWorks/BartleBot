@@ -11,8 +11,6 @@ is still exercised there against this class.
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QApplication, QWidget
@@ -21,11 +19,6 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_header import BotHeader, _ElidedLabel
 from bartlebot.gui.game_embed.game_view_panel import client_summary
 from bartlebot.gui.widgets.tag_pill import TagPill
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _config(**overrides) -> BotConfig:

@@ -12,8 +12,6 @@ complex control is a takeover, and which parts of the control it claims is not
 something the text of the rule says.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QImage
@@ -27,11 +25,6 @@ from PyQt6.QtWidgets import (
 )
 
 import bartlebot.gui.theme as theme_mod
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture(params=["light", "dark"])

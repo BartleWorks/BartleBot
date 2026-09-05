@@ -12,19 +12,12 @@ covers.
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PyQt6.QtWidgets import QApplication, QWidget
 
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 def _config(**overrides) -> BotConfig:

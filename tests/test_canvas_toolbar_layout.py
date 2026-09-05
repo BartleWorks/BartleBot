@@ -7,17 +7,10 @@ happened to fit the same pixels.  And the clusters at the right-hand end are
 fixed-width slots, so switching mode does not slide them around under the pointer.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtWidgets import QApplication
 
 from bartlebot.bot.schema import BotConfig, StateModel
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

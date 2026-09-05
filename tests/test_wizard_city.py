@@ -93,7 +93,7 @@ async def test_home_loading_timeout_still_checks_zone():
 
     with (
         none_load,
-        patch.object(wc, "_HOME_LOADING_TIMEOUT", 0.01),
+        patch.object(wc, "HOME_LOADING_TIMEOUT", 0.01),
         patch.object(wc, "POLL_INTERVAL", 0),
     ):
         result = await wc._press_home_until_dorm(FakeMachine(), [client])

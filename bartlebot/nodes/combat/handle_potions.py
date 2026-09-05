@@ -34,12 +34,13 @@ _HILDA_XYZ = XYZ(-4398.70654296875, 1016.1954345703125, 229.00079345703125)
 _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
 
 # ── Timing constants ───────────────────────────────────────────────────────────
-from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL
-
-_SHOP_OPEN_TIMEOUT = 5.0  # max seconds to wait for the potion shop window.
-_SHOP_CLICK_DELAY = 0.25  # seconds to wait after clicking Fill All / Buy to let the UI settle.
-_EXIT_CLICK_INTERVAL = 0.125  # seconds between repeated Exit clicks while the shop window is still open.
-
+from bartlebot.nodes.timing import (
+    MAX_RETRIES,
+    POLL_INTERVAL,
+    SHOP_CLICK_DELAY,
+    SHOP_EXIT_CLICK_INTERVAL,
+    SHOP_OPEN_TIMEOUT,
+)
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -344,7 +345,7 @@ async def close_potion_shop(client) -> None:
     """
     while await node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH):
         await node_helpers.click_by_path(client, POTION_EXIT_PATH)
-        await asyncio.sleep(_EXIT_CLICK_INTERVAL)
+        await asyncio.sleep(SHOP_EXIT_CLICK_INTERVAL)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -372,7 +373,7 @@ async def _open_potion_shop(machine, clients: list) -> bool:
         machine.log("Pressing X to open potion shop…", logging.DEBUG)
         await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
 
-        if await node_helpers.poll_until(lambda: _all_shop_open(clients), _SHOP_OPEN_TIMEOUT, POLL_INTERVAL):
+        if await node_helpers.poll_until(lambda: _all_shop_open(clients), SHOP_OPEN_TIMEOUT, POLL_INTERVAL):
             return True
 
         machine.log(f"Potion shop did not open (attempt {attempt}); resetting…", logging.DEBUG)
@@ -405,14 +406,14 @@ async def _buy_potions_for_client(machine, client) -> None:
             await client.send_key(Keycode.X, 0.1)
             await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
-                _SHOP_OPEN_TIMEOUT,
+                SHOP_OPEN_TIMEOUT,
                 POLL_INTERVAL,
             )
 
         await node_helpers.click_by_path(client, POTION_FILL_ALL_PATH)
-        await asyncio.sleep(_SHOP_CLICK_DELAY)
+        await asyncio.sleep(SHOP_CLICK_DELAY)
         await node_helpers.click_by_path(client, POTION_BUY_PATH)
-        await asyncio.sleep(_SHOP_CLICK_DELAY)
+        await asyncio.sleep(SHOP_CLICK_DELAY)
 
         await close_potion_shop(client)
 
@@ -432,7 +433,7 @@ async def _buy_potions_for_client(machine, client) -> None:
             await client.send_key(Keycode.X, 0.1)
             await node_helpers.poll_until(
                 lambda: node_helpers.is_visible_by_path(client, POTION_SHOP_BASE_PATH),
-                _SHOP_OPEN_TIMEOUT,
+                SHOP_OPEN_TIMEOUT,
                 POLL_INTERVAL,
             )
 

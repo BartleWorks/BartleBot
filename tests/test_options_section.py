@@ -17,12 +17,9 @@ patched — both sections take one — so nothing here touches the real
 
 from __future__ import annotations
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent, QObject
 from PyQt6.QtWidgets import (
-    QApplication,
     QCheckBox,
     QDialog,
     QDoubleSpinBox,
@@ -55,11 +52,6 @@ from bartlebot.gui.widgets.option_widgets import (
 )
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.settings_manager import SettingsManager
-
-
-@pytest.fixture(scope="module")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

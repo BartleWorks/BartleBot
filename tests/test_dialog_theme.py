@@ -7,22 +7,14 @@ settings non-modal, or add the live preview a theme tab invites, and all four br
 at once. They were fixed rather than allowlisted for that reason.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent
-from PyQt6.QtWidgets import QApplication
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.strategy_library.deck_preset_picker_dialog import DeckPresetPickerDialog
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.wiki_import_dialog import WikiImportDialog
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture

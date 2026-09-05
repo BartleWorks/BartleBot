@@ -470,6 +470,38 @@ CHARACTER_PAGE_SETTLE = 0.5
 # rather than once per client.
 
 
+SHOP_OPEN_TIMEOUT = 5.0
+# Seconds to wait for the potion vendor's shop window to open after the buy prompt is
+# accepted. Opening the shop is a local UI action with no server round-trip.
+
+SHOP_CLICK_DELAY = 0.25
+# Pause after clicking Fill All / Buy, to let the shop window settle before the next click.
+
+SHOP_EXIT_CLICK_INTERVAL = 0.125
+# Interval between repeated Exit clicks while the shop window is still showing. Faster
+# than POLL_INTERVAL because each pass is a click, not a state read: the window closes on
+# whichever click lands first.
+
+COMBAT_TP_RETRY_INTERVAL = 5.0
+# How often handle_combat re-teleports to its target while the clients are still not in
+# battle. A teleport that missed leaves nothing to poll for, so the action is repeated.
+
+POST_MARK_WAIT = 2.0
+# Seconds to wait after PAGE_DOWN for the UI to reflect the new mark state.
+
+POSITION_STABILIZE_TIMEOUT = 5.0
+# Seconds to wait for the server-reported position to match a teleport target. The client
+# moves first and the server confirms after, so this covers the gap.
+
+HOME_LOADING_TIMEOUT = 15.0
+# Seconds to wait for a loading screen to appear after HOME. Longer than TRIGGER_TIMEOUT
+# because the dorm teleport is a full zone load requested from a keypress.
+
+WISP_COLLECT_DELAY = 0.1
+# Pause between wisp teleports, so a collection registers before the health/mana ratio is
+# read again. Matches the Deimos utils.py pattern.
+
+
 def jitter(base: float, factor: float = 0.2) -> float:
     """Return base ± (factor * base) as a uniform random value.
 

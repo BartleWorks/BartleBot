@@ -17,12 +17,10 @@ whether it handles all of it. The help button beside the node type dropdown was 
 of the seven it missed.
 """
 
-import sys
-
 import pytest
 from PyQt6.QtCore import QEvent
 from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QApplication, QLabel
+from PyQt6.QtWidgets import QLabel
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.bot.schema import StateModel, TransitionModel
@@ -33,11 +31,6 @@ from bartlebot.gui.canvas.param_panel import (
 )
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.param_schema import ParamField
-
-
-@pytest.fixture(scope="session")
-def qapp():
-    return QApplication.instance() or QApplication(sys.argv)
 
 
 @pytest.fixture
