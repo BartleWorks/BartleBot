@@ -61,6 +61,15 @@ class LaunchStage(Enum):
     STARTING = "Starting"
     LOGGING_IN = "Logging in"
     LOADING = "Loading"
+    # Terminal. A launch that gave up, which is a thing the launcher does quietly far more
+    # often than it does loudly -- the auto-select drive returning False is a timeout, not
+    # an exception, and nothing was reading it.
+    FAILED = "Launch failed"
+
+    @property
+    def is_terminal(self) -> bool:
+        """Whether this is a stage a launch stops at rather than moves through."""
+        return self is LaunchStage.FAILED
 
 
 @dataclass
@@ -125,13 +134,34 @@ class LaunchTracker:
         attempt.stage_since = time.monotonic()
         return True
 
+    def fail(self, username: str) -> bool:
+        """Mark an in-flight account as failed, leaving its attempt open."""
+        return self.set_stage(username, LaunchStage.FAILED)
+
     def end(self, usernames: list[str] | None = None) -> None:
-        """Close the attempts for *usernames*, or every attempt when None."""
+        """Close the attempts for *usernames*, or every attempt when None.
+
+        A failed attempt survives this. The ``finally`` that ends a batch runs in the same
+        breath as the failure that set it, so closing it there would take the explanation
+        off screen in the tick it appeared -- and a launch that gave up quietly has nothing
+        else to say it: no exception, no message box, and no window to look at. It stays
+        until ``dismiss``, which is what the user clicking it does.
+        """
         if usernames is None:
-            self._attempts.clear()
+            self._attempts = {u: a for u, a in self._attempts.items() if a.stage.is_terminal}
             return
         for username in usernames:
-            self._attempts.pop(username, None)
+            attempt = self._attempts.get(username)
+            if attempt is not None and not attempt.stage.is_terminal:
+                del self._attempts[username]
+
+    def dismiss(self, username: str) -> bool:
+        """Close one attempt whatever stage it is in. True if there was one to close."""
+        return self._attempts.pop(username, None) is not None
+
+    def failed(self) -> list[str]:
+        """Every account whose attempt is sitting in a terminal stage."""
+        return [u for u, a in self._attempts.items() if a.stage.is_terminal]
 
     def attempt(self, username: str) -> LaunchAttempt | None:
         """The open attempt for *username*, or None."""

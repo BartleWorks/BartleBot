@@ -48,6 +48,7 @@ class GameViewPanel(ThemedMixin, QWidget):
     launch_profile_requested = pyqtSignal(str)  # forwarded from GameView
     edit_profile_requested = pyqtSignal(str)  # forwarded from GameView
     manage_accounts_requested = pyqtSignal()  # forwarded from GameView
+    dismiss_launch_requested = pyqtSignal(str)  # forwarded from GameView
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -61,6 +62,7 @@ class GameViewPanel(ThemedMixin, QWidget):
         self.game_view.launch_profile_requested.connect(self.launch_profile_requested)
         self.game_view.edit_profile_requested.connect(self.edit_profile_requested)
         self.game_view.manage_accounts_requested.connect(self.manage_accounts_requested)
+        self.game_view.dismiss_launch_requested.connect(self.dismiss_launch_requested)
 
     # ------------------------------------------------------------------
     # Construction

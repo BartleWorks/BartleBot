@@ -33,7 +33,12 @@ _ICON_SIZE = 18
 _ICON_GAP = 6  # pixels between label text and detach icon
 
 
-def launch_status_text(status: str | None, since: float | None, now: float | None = None) -> str:
+def launch_status_text(
+    status: str | None,
+    since: float | None,
+    now: float | None = None,
+    failed: bool = False,
+) -> str:
     """The caption under a pending tile's spinner: the stage, and how long it has run.
 
     The elapsed part only appears once a stage has run longer than a stage normally does.
@@ -45,8 +50,13 @@ def launch_status_text(status: str | None, since: float | None, now: float | Non
 
     A stage with no name yet — the launcher has not reported one — still says something,
     because a tile that says nothing is the state this replaced.
+
+    A failed launch gets neither the ellipsis nor the clock: it is not still doing the
+    thing, and how long it has been finished is not information.
     """
     label = status or "Launching"
+    if failed:
+        return label
     if since is None:
         return f"{label}…"
     elapsed = (time.monotonic() if now is None else now) - since
@@ -440,18 +450,29 @@ class PendingTile(_WindowlessTile):
     happening.
     """
 
-    #: No icon: there is nothing to click on a launch that has not produced a window yet.
-    _pill_icon = ""
+    #: Emitted when the user clicks the dismiss icon on a failed launch.
+    dismiss_requested = pyqtSignal()
 
     def __init__(self, label: str, parent=None) -> None:
         super().__init__(label, parent)
         self._status: str | None = None
         self._status_since: float | None = None
+        self._failed = False
         self._angle = 0
         self._spin_timer = QTimer(self)
         self._spin_timer.setInterval(_SPINNER_TICK_MS)
         self._spin_timer.timeout.connect(self._advance)
         self._spin_timer.start()
+
+    @property
+    def _pill_icon(self) -> str:
+        """No icon while a launch is running — there is nothing to do about it yet.
+
+        A failed one gets a dismiss cross, which is the only thing that clears it: the
+        attempt is deliberately left open so the tile can keep saying what happened, and
+        the user acknowledging it is what gives the slot back.
+        """
+        return "dismiss" if self._failed else ""
 
     def _advance(self) -> None:
         """Step the spinner and repaint.
@@ -463,7 +484,7 @@ class PendingTile(_WindowlessTile):
         self._angle = (self._angle + round(360 * _SPINNER_TICK_MS / _SPINNER_PERIOD_MS)) % 360
         self.update()
 
-    def set_status(self, status: str | None, since: float | None) -> None:
+    def set_status(self, status: str | None, since: float | None, failed: bool = False) -> None:
         """Say which stage this launch is in, and when it entered that stage.
 
         *since* is a ``time.monotonic`` reading rather than a duration, so the caption ages
@@ -472,15 +493,30 @@ class PendingTile(_WindowlessTile):
         — and a caption that only changed when a report arrived would freeze for exactly
         the stretch the user most wants to know about.
         """
-        if (status, since) == (self._status, self._status_since):
+        if (status, since, failed) == (self._status, self._status_since, self._failed):
             return
-        self._status, self._status_since = status, since
+        self._status, self._status_since, self._failed = status, since, failed
+        # A stopped launch does not spin. Leaving the timer running would also keep
+        # repainting a tile that has nothing left to say, several times a second, for as
+        # long as the user leaves it up.
+        if failed:
+            self._spin_timer.stop()
+        elif not self._spin_timer.isActive():
+            self._spin_timer.start()
         self.update()
 
     @property
     def status_text(self) -> str:
         """The caption as it currently reads, elapsed hint and all."""
-        return launch_status_text(self._status, self._status_since)
+        return launch_status_text(self._status, self._status_since, failed=self._failed)
+
+    @property
+    def failed(self) -> bool:
+        """Whether this tile is showing a launch that gave up."""
+        return self._failed
+
+    def _on_icon_clicked(self) -> None:
+        self.dismiss_requested.emit()
 
     def _body_text(self) -> str:
         return self.status_text
@@ -504,9 +540,9 @@ class PendingTile(_WindowlessTile):
 
         block_h = 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP + text_h
         top = body_top + max(0, (body_h - block_h) // 2)
-        centre_x = self.width() // 2
 
-        self._paint_spinner(painter, centre_x, top + _SPINNER_RADIUS)
+        if not self._failed:
+            self._paint_spinner(painter, self.width() // 2, top + _SPINNER_RADIUS)
 
         painter.setPen(THEME.qcolor("text_muted"))
         painter.drawText(
@@ -514,6 +550,17 @@ class PendingTile(_WindowlessTile):
             Qt.AlignmentFlag.AlignCenter,
             self._body_text(),
         )
+        if self._failed:
+            # The caption alone says what happened; this says what to do about it, and is
+            # the reason a failed tile is not simply removed on the user's behalf.
+            hint_font = QFont()
+            hint_font.setPointSize(8)
+            painter.setFont(hint_font)
+            painter.drawText(
+                QRect(0, top + 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP + text_h + 4, self.width(), text_h),
+                Qt.AlignmentFlag.AlignCenter,
+                "Dismiss to free the slot, then try again",
+            )
 
     def _paint_spinner(self, painter: QPainter, cx: int, cy: int) -> None:
         """Draw the busy ring centred on (cx, cy): a faint full circle under a bright arc."""

@@ -509,3 +509,255 @@ class TestPendingTileCaption:
 
         assert view.pending_status(0) == "Loading…"
         view.deleteLater()
+
+
+# ---------------------------------------------------------------------------
+# Failure, and dismissing it
+#
+# The failures that matter here are the quiet ones. A launch that raises already gets a
+# message box; the auto-select drive returning False and a window that never reaches the
+# login screen are timeouts, and until #186 nothing read either -- so the launch simply
+# looked like it had finished, and the tile spun until the app was restarted.
+# ---------------------------------------------------------------------------
+
+
+class TestFailedAttempts:
+    def test_a_failed_attempt_survives_the_end_of_its_batch(self) -> None:
+        """The finally that ends a batch runs in the same breath as the failure that set it.
+
+        Closing it there would take the explanation off screen in the tick it appeared,
+        and a launch that gave up quietly has nothing else to say it.
+        """
+        tracker = LaunchTracker()
+        tracker.begin(["alpha", "beta"])
+        tracker.fail("alpha")
+        tracker.end(["alpha", "beta"])
+
+        assert tracker.failed() == ["alpha"]
+        assert "beta" not in tracker
+
+    def test_ending_every_attempt_still_keeps_the_failed_ones(self) -> None:
+        tracker = LaunchTracker()
+        tracker.begin(["alpha", "beta"])
+        tracker.fail("alpha")
+        tracker.end()
+        assert tracker.failed() == ["alpha"]
+
+    def test_dismissing_closes_an_attempt_end_would_not(self) -> None:
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"])
+        tracker.fail("alpha")
+        assert tracker.dismiss("alpha") is True
+        assert "alpha" not in tracker
+
+    def test_a_failed_account_is_still_guarded_until_it_is_dismissed(self) -> None:
+        """What makes the dismissal meaningful: the slot is still spoken for."""
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"])
+        tracker.fail("alpha")
+        assert tracker.begin(["alpha"]) == []
+
+
+class TestFailureOnScreen:
+    def test_a_failed_launch_keeps_its_tile_after_the_batch_ends(self, harness) -> None:
+        _begin(harness, ["alpha"])
+        harness.report_launch_failed("alpha")
+        _end(harness, ["alpha"])
+
+        assert harness._game_view.pending == {0: "alpha"}
+        (tile,) = _tiles_now(harness)
+        assert tile.failed
+        assert tile.status == "Launch failed"
+
+    def test_a_failed_launch_holds_its_slot_until_dismissed(self, harness) -> None:
+        """Releasing it early would move the tile out from under the explanation."""
+        _begin(harness, ["alpha"])
+        harness.report_launch_failed("alpha")
+        _end(harness, ["alpha"])
+        assert harness._client_order == ["alpha"]
+
+        harness.dismiss_launch("alpha")
+        assert harness._client_order == []
+        assert harness._game_view.pending == {}
+
+    def test_a_dismissed_account_can_be_launched_again(self, harness) -> None:
+        _begin(harness, ["alpha"])
+        harness.report_launch_failed("alpha")
+        _end(harness, ["alpha"])
+        assert _begin(harness, ["alpha"]) == [], "a failed launch stopped guarding its account"
+
+        harness.dismiss_launch("alpha")
+        assert _begin(harness, ["alpha"]) == ["alpha"]
+
+    def test_a_drive_that_failed_after_the_window_came_up_is_not_left_undismissable(self, harness) -> None:
+        """That account's slot holds a real client tile, so there is nowhere to draw the
+        failure and nothing for the user to click -- it has to close itself."""
+        _begin(harness, ["alpha"])
+        _window_arrives(harness, "alpha", 100)
+        harness.report_launch_failed("alpha")
+        _end(harness, ["alpha"])
+
+        assert harness.launching == []
+        assert harness._client_order == ["alpha"]
+
+    def test_dismissing_something_that_is_not_there_does_nothing(self, harness) -> None:
+        harness.dismiss_launch("alpha")
+        assert harness._client_order == []
+
+
+class TestLauncherReportsFailure:
+    async def test_a_drive_that_gives_up_is_reported(self) -> None:
+        """The quiet failure: auto_select returns False on a timeout rather than raising."""
+        from bartlebot.launcher.launch_profile import launch_account
+
+        seen: list[tuple[str, LaunchStage]] = []
+        with (
+            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
+            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
+            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
+            patch("bartlebot.launcher.launch_profile.instance_login"),
+            patch("bartlebot.launcher.launch_profile.set_window_title"),
+            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        ):
+            sm.instance.return_value = MagicMock(game_resolution=(800, 600))
+            await launch_account(
+                "alpha",
+                "pw",
+                "Alpha",
+                drive=AsyncMock(return_value=False),
+                progress=lambda u, s: seen.append((u, s)),
+            )
+
+        assert seen[-1] == ("alpha", LaunchStage.FAILED)
+
+    async def test_a_window_that_never_reaches_the_login_screen_fails_alone(self) -> None:
+        """One window failing to come up is not a reason to abandon the ones that did --
+        and it must not be typed into at whatever screen it is actually showing."""
+        from bartlebot.launcher.launch_profile import launch_accounts
+
+        seen: list[tuple[str, LaunchStage]] = []
+        logins: list[str] = []
+
+        async def _login_screen(handle, *_args, **_kwargs):
+            return handle != 1
+
+        with (
+            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
+            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
+            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", _login_screen),
+            patch("bartlebot.launcher.launch_profile.start_instance"),
+            patch(
+                "bartlebot.launcher.launch_profile.instance_login",
+                lambda _h, username, _pw: logins.append(username),
+            ),
+            patch("bartlebot.launcher.launch_profile.set_window_title"),
+            patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
+            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        ):
+            sm.instance.return_value = MagicMock(game_resolution=(800, 600))
+            titles = await launch_accounts(
+                [("alpha", "pw", "Alpha"), ("beta", "pw", "Beta")],
+                progress=lambda u, s: seen.append((u, s)),
+            )
+
+        assert logins == ["beta"], "typed credentials into a window that was not at the login screen"
+        assert titles == ["[Beta] Wizard101"]
+        assert ("alpha", LaunchStage.FAILED) in seen
+        assert ("beta", LaunchStage.FAILED) not in seen
+
+    async def test_one_drive_raising_does_not_swallow_the_others_result(self) -> None:
+        """Every account in the batch has a window by now and is owed an answer about it."""
+        from bartlebot.launcher.launch_profile import launch_accounts
+
+        seen: list[tuple[str, LaunchStage]] = []
+
+        async def _drive(title):
+            if title == "[Alpha] Wizard101":
+                raise RuntimeError("hook handler died")
+            return False
+
+        with (
+            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
+            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
+            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
+            patch("bartlebot.launcher.launch_profile.start_instance"),
+            patch("bartlebot.launcher.launch_profile.instance_login"),
+            patch("bartlebot.launcher.launch_profile.set_window_title"),
+            patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
+            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        ):
+            sm.instance.return_value = MagicMock(game_resolution=(800, 600))
+            await launch_accounts(
+                [("alpha", "pw", "Alpha"), ("beta", "pw", "Beta")],
+                drive=_drive,
+                progress=lambda u, s: seen.append((u, s)),
+            )
+
+        assert ("alpha", LaunchStage.FAILED) in seen
+        assert ("beta", LaunchStage.FAILED) in seen
+
+    async def test_a_login_screen_that_never_arrives_gives_up(self) -> None:
+        """The wait was unbounded, so this window would have held its launch open forever."""
+        from bartlebot.launcher.launch_profile import _wait_for_login_screen
+
+        with patch("bartlebot.launcher.launch_profile.get_window_title", return_value="Wizard101 Patcher"):
+            assert await _wait_for_login_screen(1, timeout=0.05) is False
+
+    async def test_windows_that_never_spawn_fail_the_whole_batch(self) -> None:
+        """Not attributable to an account — the handles have not been paired with anybody —
+        and it means the windows were never started at all."""
+        from bartlebot.launcher.launch_profile import _wait_for_n_new_handles
+
+        with patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]):
+            with pytest.raises(TimeoutError):
+                await _wait_for_n_new_handles(set(), 2, timeout=0.05)
+
+
+class TestFailedTileRendering:
+    def test_a_failed_caption_drops_the_ellipsis_and_the_clock(self) -> None:
+        """It is not still doing the thing, and how long it has been finished is not news."""
+        assert launch_status_text("Launch failed", 0.0, now=9999.0, failed=True) == "Launch failed"
+
+    def test_a_failed_tile_stops_spinning_and_offers_a_way_out(self, qapp) -> None:
+        from bartlebot.gui.game_embed.client_tile import PendingTile
+
+        tile = PendingTile("Alpha")
+        assert tile._spin_timer.isActive()
+
+        tile.set_status("Launch failed", None, failed=True)
+        assert tile.failed
+        assert not tile._spin_timer.isActive(), "a stopped launch kept repainting itself"
+        assert tile.status_text == "Launch failed"
+        tile.deleteLater()
+
+    def test_a_failed_tile_asks_the_view_to_dismiss_its_account(self, qapp) -> None:
+        from bartlebot.gui.game_embed.game_view import GameView
+
+        view = GameView()
+        view.resize(800, 600)
+        asked: list[str] = []
+        view.dismiss_launch_requested.connect(asked.append)
+        view.sync_tiles(
+            [
+                TileSlot(
+                    slot=0,
+                    hwnd=None,
+                    label="Alpha",
+                    player=None,
+                    username="alpha",
+                    status="Launch failed",
+                    failed=True,
+                )
+            ]
+        )
+
+        assert view.pending_failed(0) is True
+        view._pending_tiles[0].dismiss_requested.emit()
+        assert asked == ["alpha"]
+        view.deleteLater()

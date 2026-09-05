@@ -24,7 +24,12 @@ from wizwalker.utils import (
 from bartlebot.credentials import CredentialStore
 from bartlebot.game_sizing import ui_size_for
 from bartlebot.launch_tracker import LaunchStage
-from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
+from bartlebot.nodes.timing import (
+    LAUNCH_LOGIN_SCREEN_TIMEOUT,
+    LAUNCH_SPAWN_TIMEOUT,
+    LAUNCH_STAGGER_DELAY,
+    jitter,
+)
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
@@ -196,10 +201,23 @@ def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
     )
 
 
-async def _wait_for_login_screen(handle: int) -> None:
-    """Poll until the window title equals 'Wizard101' (login screen is ready)."""
+async def _wait_for_login_screen(handle: int, timeout: float = LAUNCH_LOGIN_SCREEN_TIMEOUT) -> bool:
+    """Poll until the window title equals 'Wizard101' (login screen is ready).
+
+    Returns whether it got there. The wait was unbounded until #186, which meant a window
+    that never reached the login screen -- a crash on startup, a patcher that opened
+    instead -- left its launch running forever, and so its tile spinning, for the rest of
+    the session. Reported rather than raised because a batch is several of these at once
+    and one window failing to come up is not a reason to abandon the ones that did.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
     while get_window_title(handle) != "Wizard101":
+        if loop.time() >= deadline:
+            logger.error("Launch: window %d never reached the login screen after %.0fs", handle, timeout)
+            return False
         await asyncio.sleep(0.1)
+    return True
 
 
 async def _start_and_claim_handle(known_handles: set[int]) -> int:
@@ -217,7 +235,7 @@ async def _start_and_claim_handle(known_handles: set[int]) -> int:
         await asyncio.sleep(0.1)
 
 
-async def _wait_for_n_new_handles(known_handles: set[int], n: int) -> list[int]:
+async def _wait_for_n_new_handles(known_handles: set[int], n: int, timeout: float = LAUNCH_SPAWN_TIMEOUT) -> list[int]:
     """Poll until *n* handles beyond *known_handles* exist, then return the new ones.
 
     Used to claim a whole batch of instances started back-to-back, instead of
@@ -225,11 +243,20 @@ async def _wait_for_n_new_handles(known_handles: set[int], n: int) -> list[int]:
     doesn't matter, since login credentials are just typed into whichever
     window, so there's no need to correlate a given handle back to the
     start_instance() call that spawned it.
+
+    Raises ``TimeoutError`` if they never appear. Unlike a login screen that does not
+    arrive, this one is not attributable to an account — the handles have not been paired
+    with anybody yet — so the whole batch fails together, which is also what it means: the
+    windows were never started.
     """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
     while True:
         new_handles = set(get_all_wizard_handles()).difference(known_handles)
         if len(new_handles) >= n:
             return list(new_handles)[:n]
+        if loop.time() >= deadline:
+            raise TimeoutError(f"Only {len(new_handles)} of {n} game windows started within {timeout:.0f}s")
         await asyncio.sleep(0.1)
 
 
@@ -262,14 +289,19 @@ async def launch_account(
     _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
     _report(progress, username, LaunchStage.STARTING)
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
-    await _wait_for_login_screen(handle)
+    if not await _wait_for_login_screen(handle):
+        _report(progress, username, LaunchStage.FAILED)
+        raise RuntimeError(f"'{display_name}' never reached the login screen.")
     _report(progress, username, LaunchStage.LOGGING_IN)
     instance_login(handle, username, password)
     title = f"[{display_name}] Wizard101"
     set_window_title(handle, title)
     _report(progress, username, LaunchStage.LOADING)
-    if drive is not None:
-        await drive(title)
+    if drive is not None and not await drive(title):
+        # The quiet failure, and the common one: the drive times out rather than raising,
+        # so until this was read the window sat wherever it stopped and the launch looked
+        # like it had simply finished.
+        _report(progress, username, LaunchStage.FAILED)
     return title
 
 
@@ -324,7 +356,7 @@ async def launch_accounts(
     handles = await _wait_for_n_new_handles(known, len(accounts))
 
     # Single shared wait for all instances to reach the login screen
-    await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
+    reached = await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
 
     # Stagger login attempts too — the login server intermittently rejects logins that
     # arrive in too-tight succession.
@@ -334,8 +366,15 @@ async def launch_accounts(
     # overlapping them with the remaining stagger delays is most of the reason a team
     # launch is faster than doing this by hand.
     titles: list[str] = []
-    drives: list[asyncio.Task] = []
+    drives: list[tuple[str, asyncio.Task]] = []
     for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
+        # A window that never reached the login screen is skipped rather than typed into.
+        # Its siblings are unaffected — that is the whole reason the wait reports instead
+        # of raising — and typing credentials at whatever screen it is actually showing is
+        # the one outcome worse than not launching it.
+        if not reached[i]:
+            _report(progress, username, LaunchStage.FAILED)
+            continue
         _report(progress, username, LaunchStage.LOGGING_IN)
         instance_login(handle, username, password)
         title = f"[{display_name}] Wizard101"
@@ -343,12 +382,21 @@ async def launch_accounts(
         titles.append(title)
         _report(progress, username, LaunchStage.LOADING)
         if drive is not None:
-            drives.append(asyncio.create_task(drive(title)))
+            drives.append((username, asyncio.create_task(drive(title))))
         if i < len(accounts) - 1:
             await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
 
     if drives:
-        await asyncio.gather(*drives)
+        # return_exceptions so one drive blowing up does not cancel the report for the
+        # others: every account in this batch has a window by now and each is owed an
+        # answer about its own.
+        outcomes = await asyncio.gather(*(task for _u, task in drives), return_exceptions=True)
+        for (username, _task), outcome in zip(drives, outcomes):
+            if isinstance(outcome, BaseException):
+                logger.error("Auto-select drive for '%s' raised", username, exc_info=outcome)
+                _report(progress, username, LaunchStage.FAILED)
+            elif not outcome:
+                _report(progress, username, LaunchStage.FAILED)
     return titles
 
 

@@ -957,10 +957,41 @@ class ClientManager(QObject):
         login screen keeps its slot whether or not the drive that followed succeeded --
         there is a real window sitting in it, and moving it would be the tile shuffle the
         reserved ordering exists to prevent.
+
+        A launch that failed keeps its attempt open so its tile can say so, but only where
+        there is a tile to say it on: an account whose window came up and whose *drive*
+        then failed is closed here like any other, because its slot holds a real client
+        tile and a failure state with nowhere to be drawn is a launch the user can never
+        dismiss.
         """
-        self._launches.end(usernames)
-        self._release_unarrived(usernames)
+        arrived = set(self._hwnd_account_map.values())
+        for username in usernames:
+            if username in arrived:
+                self._launches.dismiss(username)
+            else:
+                self._launches.end([username])
+        # Only the launches that actually closed give their slots back. One left open
+        # because it failed is still holding a tile, and the tile has to stay where it is
+        # for the user to read it and click it away.
+        self._release_unarrived([u for u in usernames if u not in self._launches])
         self._sync_tiles()
+
+    def dismiss_launch(self, username: str) -> None:
+        """Clear a failed launch the user has acknowledged, giving its slot back.
+
+        The other half of leaving a failed attempt open. Nothing else closes one -- that is
+        the point of the terminal stage -- so without this a failure is exactly the
+        permanent artifact the pending tile was built to avoid.
+        """
+        if not self._launches.dismiss(username):
+            return
+        self._release_unarrived([username])
+        self._sync_tiles()
+
+    def report_launch_failed(self, username: str) -> None:
+        """Mark a launch as having given up, and redraw its tile to say so."""
+        if self._launches.fail(username):
+            self._sync_tiles()
 
     def report_launch_stage(self, username: str, stage: LaunchStage) -> None:
         """Record which part of its launch *username* has reached, and redraw its tile.

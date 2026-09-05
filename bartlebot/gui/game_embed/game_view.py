@@ -171,7 +171,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         [Accounts list] | [Logo + settings links] | [Launch Profiles list]
     """
 
-    launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
+    launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
     edit_profile_requested = pyqtSignal(str)  # (profile_name)
     manage_accounts_requested = pyqtSignal()
@@ -473,6 +473,9 @@ class GameView(ThemedMixin, QWidget):
     edit_profile_requested = pyqtSignal(str)
     manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
+    # A failed launch's tile was clicked away. Carries the account, not the slot: a pending
+    # tile's slot can still move under it, and the launch is keyed by account throughout.
+    dismiss_launch_requested = pyqtSignal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -577,7 +580,7 @@ class GameView(ThemedMixin, QWidget):
             # and the only thing that changed is what the tile says.
             pending = self._pending_tiles.get(t.slot)
             if pending is not None:
-                pending.set_status(t.status, t.status_since)
+                pending.set_status(t.status, t.status_since, t.failed)
 
         if changes.is_empty:
             return
@@ -604,9 +607,14 @@ class GameView(ThemedMixin, QWidget):
         """Put a busy tile in a slot whose account is launching but has no window yet."""
         self._remove_pending_tile(spec.slot)
         tile = PendingTile(spec.label, parent=self)
-        tile.set_status(spec.status, spec.status_since)
+        tile.set_status(spec.status, spec.status_since, spec.failed)
         self._pending_tiles[spec.slot] = tile
         self._pending_accounts[spec.slot] = spec.username or ""
+        # Connected to the account rather than to the slot, unlike the detach and reattach
+        # buttons: a pending tile's slot can still move under it, and the thing being
+        # dismissed is the launch, which is keyed by account all the way down.
+        username = spec.username or ""
+        tile.dismiss_requested.connect(lambda u=username: self.dismiss_launch_requested.emit(u))
         tile.show()
 
     def _remove_pending_tile(self, slot: int) -> None:
@@ -760,6 +768,11 @@ class GameView(ThemedMixin, QWidget):
         the tile dicts from outside.
         """
         return dict(self._pending_accounts)
+
+    def pending_failed(self, slot: int) -> bool:
+        """Whether the pending tile in *slot* is showing a launch that gave up."""
+        tile = self._pending_tiles.get(slot)
+        return tile is not None and tile.failed
 
     def pending_status(self, slot: int) -> str | None:
         """What the pending tile in *slot* currently says, or None if it is not pending.

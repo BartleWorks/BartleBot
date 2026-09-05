@@ -84,6 +84,9 @@ class TileSlot:
     # Only a pending tile has either: a window on screen speaks for itself.
     status: str | None = None
     status_since: float | None = None
+    # Whether that status is a launch that gave up. A failed tile waits to be dismissed
+    # instead of spinning, so it is the one pending tile with something to click.
+    failed: bool = False
 
     @property
     def key(self) -> TileKey:
@@ -185,6 +188,7 @@ def build_tile_slots(
                         username=username,
                         status=None if attempt is None else attempt.stage.value,
                         status_since=None if attempt is None else attempt.stage_since,
+                        failed=attempt is not None and attempt.stage.is_terminal,
                     )
                 )
             continue

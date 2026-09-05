@@ -226,6 +226,7 @@ class MainWindow(QMainWindow):
         self._begin_launch = None
         self._end_launch = None
         self._launch_progress = None
+        self._dismiss_launch_fn = None
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
@@ -235,6 +236,7 @@ class MainWindow(QMainWindow):
             lambda n: asyncio.ensure_future(self.launch_profile_named(n))
         )
         self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
+        self._game_view_panel.dismiss_launch_requested.connect(self._dismiss_launch)
         # Setup's rows name the app setting they fall back to; this is the way there.
         self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
         # ...and back: those rows resolve through the values that dialog just wrote.
@@ -651,7 +653,7 @@ class MainWindow(QMainWindow):
     def auto_select_driver(self):
         return self._auto_select_driver
 
-    def set_launch_registrar(self, begin, end, progress=None) -> None:
+    def set_launch_registrar(self, begin, end, progress=None, dismiss=None) -> None:
         """Supply the pair that opens and closes a launch for a set of accounts.
 
         Injected alongside the driver, and for the same reason — both the slot ordering and
@@ -666,11 +668,13 @@ class MainWindow(QMainWindow):
 
         *progress* is the third: what the launcher calls as each account moves between the
         stages of its launch, so a pending tile can say which one it is in rather than only
-        that it is in one.
+        that it is in one. *dismiss* clears a launch that failed, which nothing else does:
+        a failed attempt is kept open on purpose so its tile can keep saying so.
         """
         self._begin_launch = begin
         self._end_launch = end
         self._launch_progress = progress
+        self._dismiss_launch_fn = dismiss
 
     def _open_launch(self, usernames: list[str]) -> list[str]:
         """Claim slots for *usernames*, returning the ones not already launching.
@@ -687,6 +691,15 @@ class MainWindow(QMainWindow):
         """Release the launches opened by ``_open_launch``. Always from a ``finally``."""
         if self._end_launch is not None:
             self._end_launch(usernames)
+
+    def _dismiss_launch(self, username: str) -> None:
+        """Clear a failed launch the user clicked away, and give its slot back.
+
+        A failed launch is the one attempt that ``_close_launch`` leaves open — it has a
+        tile and something to say on it — so this is the only thing that ever ends one.
+        """
+        if self._dismiss_launch_fn is not None:
+            self._dismiss_launch_fn(username)
 
     async def launch_profile_named(self, profile_name: str) -> None:
         """Launch a profile's accounts, skipping any that are already launching.
