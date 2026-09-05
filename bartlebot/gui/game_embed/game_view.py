@@ -303,8 +303,16 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(hint)
         else:
+            # Expanding across, so a card fills the column; height-for-width down, so the
+            # column asks each card how tall it is *at the width it got*. Fixed vertically
+            # is what this used to be, and it pinned both the card's minimum and its
+            # maximum to a sizeHint that a wrapped refusal line computes at some unrelated
+            # width -- with setWidgetResizable the scroll area then could not be shorter
+            # than that sum, which is the scroll bar over empty space in #191.
             for card in cards:
-                card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+                policy.setHeightForWidth(True)
+                card.setSizePolicy(policy)
                 layout.addWidget(card)
 
         layout.addStretch()

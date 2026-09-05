@@ -300,8 +300,13 @@ class _LaunchCard(ThemedMixin, QWidget):
         self.setCursor(Qt.CursorShape.ArrowCursor if reason else Qt.CursorShape.PointingHandCursor)
         self.setToolTip(reason or "")
         if self._quiet_lbl is not None:
-            self._quiet_lbl.setText(reason or self._available_quiet_text())
+            text = reason or self._available_quiet_text()
+            self._quiet_lbl.setText(text)
             self._quiet_lbl.setWordWrap(bool(reason))
+            # Hidden rather than empty: an empty QLabel still reserves a line in the
+            # card's minimum height while drawing nothing, and that difference is scroll
+            # range over blank space once a column holds enough cards.
+            self._quiet_lbl.setVisible(bool(text))
         self.refresh_theme_styles()
 
     def _available_quiet_text(self) -> str:
@@ -361,6 +366,28 @@ class _LaunchCard(ThemedMixin, QWidget):
         font.setBold(True)
         label.setFont(font)
         self._name_lbl = label
+        return label
+
+    def _make_quiet_label(self, text: str = "") -> QLabel:
+        """The card's bottom line: its summary while it can launch, its refusal when it cannot.
+
+        Height-for-width, because ``set_unavailable`` turns word wrap on and a wrapping
+        QLabel's sizeHint height is computed at a width that has nothing to do with the
+        column's. Without the flag the layout believes that phantom height, the card's
+        sizeHint grows to several times what it draws, and the scroll area it sits in
+        cannot be shorter than the sum -- a scroll bar over empty space (#191).
+
+        Ignored horizontally, with a minimum of one pixel, for the same reason as the
+        detail line: the text is fitted to whatever width the card ends up with, and must
+        never be what decides that width.
+        """
+        label = QLabel(text)
+        policy = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        policy.setHeightForWidth(True)
+        label.setSizePolicy(policy)
+        label.setMinimumWidth(1)
+        label.setVisible(bool(text))
+        self._quiet_lbl = label
         return label
 
     def enterEvent(self, event) -> None:
@@ -448,12 +475,9 @@ class AccountCard(_LaunchCard):
         self._detail_lbl.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         layout.addWidget(self._detail_lbl)
 
-        # Empty and therefore invisible until set_unavailable fills it. Built here rather
-        # than on demand so the reason has somewhere to land without rebuilding the card.
-        self._quiet_lbl = QLabel("")
-        self._quiet_lbl.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self._quiet_lbl.setMinimumWidth(1)
-        layout.addWidget(self._quiet_lbl)
+        # Empty, and so hidden, until set_unavailable fills it. Built here rather than on
+        # demand so the reason has somewhere to land without rebuilding the card.
+        layout.addWidget(self._make_quiet_label())
 
     def resizeEvent(self, event) -> None:
         """Re-fit the character line: how many names fit is a function of the width.
@@ -557,10 +581,7 @@ class ProfileCard(_LaunchCard):
         pills.addStretch()
         layout.addLayout(pills)
 
-        self._quiet_lbl = QLabel(profile_summary(self._profile))
-        self._quiet_lbl.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self._quiet_lbl.setMinimumWidth(1)
-        layout.addWidget(self._quiet_lbl)
+        layout.addWidget(self._make_quiet_label(profile_summary(self._profile)))
 
     def _available_quiet_text(self) -> str:
         return profile_summary(self._profile)
