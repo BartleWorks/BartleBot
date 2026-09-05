@@ -225,6 +225,7 @@ class MainWindow(QMainWindow):
         self._auto_select_driver = None
         self._begin_launch = None
         self._end_launch = None
+        self._launch_progress = None
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
@@ -650,7 +651,7 @@ class MainWindow(QMainWindow):
     def auto_select_driver(self):
         return self._auto_select_driver
 
-    def set_launch_registrar(self, begin, end) -> None:
+    def set_launch_registrar(self, begin, end, progress=None) -> None:
         """Supply the pair that opens and closes a launch for a set of accounts.
 
         Injected alongside the driver, and for the same reason — both the slot ordering and
@@ -662,9 +663,14 @@ class MainWindow(QMainWindow):
         Two callables rather than one because the launch has an end as well as a start, and
         the end is the half that was missing: a launch that fails holds its slot forever
         unless something gives it back. See ``ClientManager.end_launch``.
+
+        *progress* is the third: what the launcher calls as each account moves between the
+        stages of its launch, so a pending tile can say which one it is in rather than only
+        that it is in one.
         """
         self._begin_launch = begin
         self._end_launch = end
+        self._launch_progress = progress
 
     def _open_launch(self, usernames: list[str]) -> list[str]:
         """Claim slots for *usernames*, returning the ones not already launching.
@@ -714,7 +720,12 @@ class MainWindow(QMainWindow):
                 return
             try:
                 self._game_view_panel.set_launch_profile(profile_name)
-                await launch_profile(profile_name, drive=self.auto_select_driver, usernames=accepted)
+                await launch_profile(
+                    profile_name,
+                    drive=self.auto_select_driver,
+                    usernames=accepted,
+                    progress=self._launch_progress,
+                )
             finally:
                 # In a finally so the slots come back on the paths that do not return
                 # normally, which is every failure the launcher has: a missing password
@@ -749,7 +760,13 @@ class MainWindow(QMainWindow):
                 logger.info("Account '%s' is already launching", username)
                 return
             try:
-                await launch_account(username, password, display_name, drive=self.auto_select_driver)
+                await launch_account(
+                    username,
+                    password,
+                    display_name,
+                    drive=self.auto_select_driver,
+                    progress=self._launch_progress,
+                )
             finally:
                 self._close_launch([username])
             self._record_recent_launch("account", username)

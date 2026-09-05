@@ -227,6 +227,13 @@ DECK_CARD_CONFIRM_POLL = 0.05
 # Gap between deck-count reads while confirming a card went in.
 
 LAUNCH_STAGGER_DELAY = 1.0
+
+# How long one launch stage may run before its pending tile starts showing how long it has
+# been in it. Below this the number is noise -- every stage takes some seconds and a
+# counter on all of them reads as a stopwatch rather than as a warning. Above it the
+# distinction the caption cannot otherwise draw is the one that matters: a launch stalled
+# at the login screen and a launch doing fine look identical without it.
+LAUNCH_STAGE_ELAPSED_HINT = 20.0
 # Seconds to wait between starting successive Wizard101 instances, and between
 # successive auto-login attempts, in a multi-account launch profile. The
 # login server intermittently rejects logins that arrive in too-tight

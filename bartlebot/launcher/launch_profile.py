@@ -23,6 +23,7 @@ from wizwalker.utils import (
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.game_sizing import ui_size_for
+from bartlebot.launch_tracker import LaunchStage
 from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
 from bartlebot.settings_manager import SettingsManager
 
@@ -33,6 +34,28 @@ logger = logging.getLogger(__name__)
 # ClientManager, which owns both the "is this client hooked yet" signal the drive waits
 # on and the auto-select setting that decides whether it does anything at all.
 DriveFn = Callable[[str], Awaitable[bool]]
+
+# Called with (username, stage) each time one account's launch moves on, so a caller
+# drawing the wait can say which part of it is running. Injected rather than imported for
+# the same reason as DriveFn -- and optional, because nothing about the launch itself
+# depends on anyone listening.
+ProgressFn = Callable[[str, LaunchStage], None]
+
+
+def _report(progress: ProgressFn | None, username: str, stage: LaunchStage) -> None:
+    """Send one stage report, if anyone is listening, without letting it break the launch.
+
+    A progress callback lands in GUI code, and a launch must not die because a caption
+    failed to draw -- the client is already spawned by the time most of these are sent, so
+    an exception here would strand a real window with no one logging into it.
+    """
+    if progress is None:
+        return
+    try:
+        progress(username, stage)
+    except Exception:
+        logger.exception("Launch progress callback raised for '%s'", username)
+
 
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
 # every window gets reparented and re-centered by ClientTile (see
@@ -216,6 +239,7 @@ async def launch_account(
     display_name: str,
     resolution: tuple[int, int] | None = None,
     drive: DriveFn | None = None,
+    progress: ProgressFn | None = None,
 ) -> str:
     """Start one Wizard101 instance and auto-login with *username*/*password*.
 
@@ -230,15 +254,20 @@ async def launch_account(
     the character is in-game or the drive gives up. Whether the drive actually presses
     anything is the drive's own call — it is where the auto-select setting is read.
     Callers that never want a window advanced pass drive=None.
+
+    If *progress* is given it is told which stage this launch is in, as it enters each one.
     """
     patch_open_browser()
     w, h = resolution if resolution is not None else SettingsManager.instance().game_resolution
     _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
+    _report(progress, username, LaunchStage.STARTING)
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
     await _wait_for_login_screen(handle)
+    _report(progress, username, LaunchStage.LOGGING_IN)
     instance_login(handle, username, password)
     title = f"[{display_name}] Wizard101"
     set_window_title(handle, title)
+    _report(progress, username, LaunchStage.LOADING)
     if drive is not None:
         await drive(title)
     return title
@@ -249,6 +278,7 @@ async def launch_accounts(
     *,
     resolution: tuple[int, int] | None = None,
     drive: DriveFn | None = None,
+    progress: ProgressFn | None = None,
 ) -> list[str]:
     """Start one instance per account, log each in, and advance them all together.
 
@@ -265,6 +295,13 @@ async def launch_accounts(
     *resolution* is patched into config.xml once for the whole batch, so every account
     here must want the same one — the game reads that file at its own startup and there
     is only one of it. Callers with mixed resolutions launch a batch per resolution.
+
+    *progress* is told which stage each account is in. The batch shape is visible in what
+    it can honestly say: every window's login screen is waited for in one shared gather, so
+    the whole batch sits at STARTING until the slowest of them is up, and the accounts only
+    diverge from ``instance_login`` onward. That is not a reporting gap to paper over — it
+    is what is actually happening, and a per-client stage invented for the shared wait
+    would claim progress that has not been made.
     """
     if not accounts:
         return []
@@ -278,6 +315,8 @@ async def launch_accounts(
     # reach the login screen before starting the next, while the stagger still avoids
     # hitting the process spawn / login server in one tight burst.
     known = set(get_all_wizard_handles())
+    for username, _password, _display in accounts:
+        _report(progress, username, LaunchStage.STARTING)
     for i, _ in enumerate(accounts):
         start_instance()
         if i < len(accounts) - 1:
@@ -297,10 +336,12 @@ async def launch_accounts(
     titles: list[str] = []
     drives: list[asyncio.Task] = []
     for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
+        _report(progress, username, LaunchStage.LOGGING_IN)
         instance_login(handle, username, password)
         title = f"[{display_name}] Wizard101"
         set_window_title(handle, title)
         titles.append(title)
+        _report(progress, username, LaunchStage.LOADING)
         if drive is not None:
             drives.append(asyncio.create_task(drive(title)))
         if i < len(accounts) - 1:
@@ -315,6 +356,7 @@ async def launch_profile(
     profile_name: str,
     drive: DriveFn | None = None,
     usernames: list[str] | None = None,
+    progress: ProgressFn | None = None,
 ) -> None:
     """Launch the accounts in the named profile.
 
@@ -369,7 +411,7 @@ async def launch_profile(
     profile_res = profile.get("resolution")
     resolution = tuple(profile_res) if profile_res else None
 
-    await launch_accounts(accounts, resolution=resolution, drive=drive)
+    await launch_accounts(accounts, resolution=resolution, drive=drive, progress=progress)
 
 
 # ---------------------------------------------------------------------------

@@ -101,6 +101,7 @@ class AppController(QObject):
         self._window.set_launch_registrar(
             self._client_manager.begin_launch,
             self._client_manager.end_launch,
+            self._client_manager.report_launch_stage,
         )
         self._wire()
         self._window.show()

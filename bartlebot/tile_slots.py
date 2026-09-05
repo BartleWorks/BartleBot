@@ -80,6 +80,10 @@ class TileSlot:
     # The account this tile belongs to, where one is known. A client BartleBot did not
     # launch has none; a pending tile is nothing *but* this.
     username: str | None = None
+    # What a pending tile says it is doing, and the monotonic time it started doing it.
+    # Only a pending tile has either: a window on screen speaks for itself.
+    status: str | None = None
+    status_since: float | None = None
 
     @property
     def key(self) -> TileKey:
@@ -130,7 +134,7 @@ def build_tile_slots(
     embeddable_hwnds: Collection[int],
     client_hwnds: Sequence[int],
     account_label: Callable[[str], str],
-    launching: Collection[str] = (),
+    launching: Collection[str] | Mapping[str, object] = (),
 ) -> list[TileSlot]:
     """Every tile that should be on screen, in slot order.
 
@@ -139,8 +143,9 @@ def build_tile_slots(
     comes from the window title and is therefore known well before hooks. *embeddable_hwnds*
     is every window that may be shown -- hooked or not, but excluding ones deliberately
     unhooked or whose hooks failed. *client_hwnds* is the live client list, in order, and
-    is the only thing that decides a player index. *launching* is the accounts with a
-    launch running (see ``bartlebot.launch_tracker``).
+    is the only thing that decides a player index. *launching* maps each account with a
+    launch running to its ``LaunchAttempt`` (see ``bartlebot.launch_tracker``); any
+    collection of usernames works too, and then the pending tiles carry no stage caption.
 
     A window with no account is skipped unless it is already a live client. Nothing else
     can place it: an untitled window is one that has not logged in yet, and guessing a slot
@@ -157,6 +162,9 @@ def build_tile_slots(
     """
     live = set(embeddable_hwnds)
     player_of = {hwnd: index for index, hwnd in enumerate(client_hwnds)}
+    # A mapping gives stage captions as well as membership; a bare collection gives only
+    # membership, which is all the tile strictly needs in order to exist.
+    attempts = launching if isinstance(launching, Mapping) else {}
     in_flight = set(launching)
 
     tiles: list[TileSlot] = []
@@ -167,6 +175,7 @@ def build_tile_slots(
         hwnd = next((h for h, u in hwnd_accounts.items() if u == username and h in live), None)
         if hwnd is None:
             if username in in_flight:
+                attempt = attempts.get(username)
                 tiles.append(
                     TileSlot(
                         slot=slot,
@@ -174,6 +183,8 @@ def build_tile_slots(
                         label=account_label(username),
                         player=None,
                         username=username,
+                        status=None if attempt is None else attempt.stage.value,
+                        status_since=None if attempt is None else attempt.stage_since,
                     )
                 )
             continue

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from PyQt6.QtCore import QRect, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QPainter
 from PyQt6.QtWidgets import QWidget
@@ -11,15 +13,46 @@ from bartlebot.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
+from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
 
 # FOCUS_BORDER and LABEL_RESERVE are imported rather than defined here: how much chrome
 # a tile wraps around its game window is a term in the screen-fit arithmetic as well as
 # a drawing constant, and bartlebot/game_sizing.py cannot import a QWidget to find out.
-__all__ = ["FOCUS_BORDER", "LABEL_RESERVE", "ClientTile", "DetachedTile", "PendingTile", "pill_text"]
+__all__ = [
+    "FOCUS_BORDER",
+    "LABEL_RESERVE",
+    "ClientTile",
+    "DetachedTile",
+    "PendingTile",
+    "launch_status_text",
+    "pill_text",
+]
 
 # Pill icon constants
 _ICON_SIZE = 18
 _ICON_GAP = 6  # pixels between label text and detach icon
+
+
+def launch_status_text(status: str | None, since: float | None, now: float | None = None) -> str:
+    """The caption under a pending tile's spinner: the stage, and how long it has run.
+
+    The elapsed part only appears once a stage has run longer than a stage normally does.
+    Below that threshold the number is noise — every launch spends some seconds in every
+    stage, and a counter running on all of them reads as a stopwatch rather than as a
+    warning. Above it, it draws the distinction the stage name cannot: a launch stalled at
+    the login screen and a launch progressing normally say the same thing otherwise, which
+    was the whole complaint (#186).
+
+    A stage with no name yet — the launcher has not reported one — still says something,
+    because a tile that says nothing is the state this replaced.
+    """
+    label = status or "Launching"
+    if since is None:
+        return f"{label}…"
+    elapsed = (time.monotonic() if now is None else now) - since
+    if elapsed < LAUNCH_STAGE_ELAPSED_HINT:
+        return f"{label}…"
+    return f"{label}… {int(elapsed)}s"
 
 
 def pill_text(label: str, wizard_name: str | None) -> str:
@@ -412,6 +445,8 @@ class PendingTile(_WindowlessTile):
 
     def __init__(self, label: str, parent=None) -> None:
         super().__init__(label, parent)
+        self._status: str | None = None
+        self._status_since: float | None = None
         self._angle = 0
         self._spin_timer = QTimer(self)
         self._spin_timer.setInterval(_SPINNER_TICK_MS)
@@ -428,8 +463,27 @@ class PendingTile(_WindowlessTile):
         self._angle = (self._angle + round(360 * _SPINNER_TICK_MS / _SPINNER_PERIOD_MS)) % 360
         self.update()
 
+    def set_status(self, status: str | None, since: float | None) -> None:
+        """Say which stage this launch is in, and when it entered that stage.
+
+        *since* is a ``time.monotonic`` reading rather than a duration, so the caption ages
+        on its own between reports. It has to: the stages are coarse and the slow one is
+        the last, so a launch can sit in ``Loading`` for minutes with nothing new to report
+        — and a caption that only changed when a report arrived would freeze for exactly
+        the stretch the user most wants to know about.
+        """
+        if (status, since) == (self._status, self._status_since):
+            return
+        self._status, self._status_since = status, since
+        self.update()
+
+    @property
+    def status_text(self) -> str:
+        """The caption as it currently reads, elapsed hint and all."""
+        return launch_status_text(self._status, self._status_since)
+
     def _body_text(self) -> str:
-        return "Launching…"
+        return self.status_text
 
     def _paint_body(self, painter: QPainter) -> None:
         """Draw the spinner with the caption beneath it, together in the tile's body.

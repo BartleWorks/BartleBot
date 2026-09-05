@@ -9,7 +9,7 @@ from wizwalker.utils import get_window_title
 
 from bartlebot import account_identity, recovery_readiness, relog
 from bartlebot.credentials import CredentialStore
-from bartlebot.launch_tracker import LaunchTracker
+from bartlebot.launch_tracker import LaunchStage, LaunchTracker
 from bartlebot.launcher import auto_select
 from bartlebot.nodes.timing import (
     CLIENT_DETECT_ERROR_BACKOFF,
@@ -961,6 +961,16 @@ class ClientManager(QObject):
         self._launches.end(usernames)
         self._release_unarrived(usernames)
         self._sync_tiles()
+
+    def report_launch_stage(self, username: str, stage: LaunchStage) -> None:
+        """Record which part of its launch *username* has reached, and redraw its tile.
+
+        Handed to the launcher as its progress callback. Syncing only on a real change
+        keeps this off the tick path: the launcher reports a stage per account per phase,
+        which is a handful of calls per launch, and a repeated report costs a dict lookup.
+        """
+        if self._launches.set_stage(username, stage):
+            self._sync_tiles()
 
     @property
     def launching(self) -> list[str]:

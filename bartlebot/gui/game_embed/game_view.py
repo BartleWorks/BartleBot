@@ -572,6 +572,12 @@ class GameView(ThemedMixin, QWidget):
             if widget is not None:
                 widget.set_label(t.label)
                 widget.set_wizard_name(self._wizard_name_for(t.player))
+            # Pushed on every sync alongside the captions, and for the same reason: a
+            # launch changing stage moves no tile, so the reconciler has nothing to report
+            # and the only thing that changed is what the tile says.
+            pending = self._pending_tiles.get(t.slot)
+            if pending is not None:
+                pending.set_status(t.status, t.status_since)
 
         if changes.is_empty:
             return
@@ -598,6 +604,7 @@ class GameView(ThemedMixin, QWidget):
         """Put a busy tile in a slot whose account is launching but has no window yet."""
         self._remove_pending_tile(spec.slot)
         tile = PendingTile(spec.label, parent=self)
+        tile.set_status(spec.status, spec.status_since)
         self._pending_tiles[spec.slot] = tile
         self._pending_accounts[spec.slot] = spec.username or ""
         tile.show()
@@ -753,6 +760,15 @@ class GameView(ThemedMixin, QWidget):
         the tile dicts from outside.
         """
         return dict(self._pending_accounts)
+
+    def pending_status(self, slot: int) -> str | None:
+        """What the pending tile in *slot* currently says, or None if it is not pending.
+
+        Public for the same reason as ``pending_slots``: the caption is a fact about the
+        launch, and reading it is otherwise a reach into the tile widgets.
+        """
+        tile = self._pending_tiles.get(slot)
+        return None if tile is None else tile.status_text
 
     def tile_geometry(self, slot: int):
         """The rectangle the tile in *slot* occupies, or None if that slot is empty.

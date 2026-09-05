@@ -37,8 +37,30 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
+from enum import Enum
 
-__all__ = ["LaunchAttempt", "LaunchTracker"]
+__all__ = ["LaunchAttempt", "LaunchStage", "LaunchTracker"]
+
+
+class LaunchStage(Enum):
+    """How far a launch has got, in the coarse steps the launcher actually sequences.
+
+    Deliberately coarse, because the launcher is. ``launch_accounts`` waits for every
+    window's login screen in one shared gather, so "waiting for the login screen" is a fact
+    about the *batch* and has no per-client answer to report; the clients only diverge from
+    ``instance_login`` onward. Past that, the auto-select drive is a single call that
+    returns a bool at the end, so breaking LOADING down further would mean new
+    instrumentation inside ``auto_select`` rather than passing through something that
+    already exists. It is not worth it: what the user is actually asking of a slow launch
+    is whether it is stuck, and ``LaunchAttempt.elapsed`` answers that without knowing any
+    more about the phase than its name.
+
+    ``value`` is the caption, so the view does not need a second table to render one.
+    """
+
+    STARTING = "Starting"
+    LOGGING_IN = "Logging in"
+    LOADING = "Loading"
 
 
 @dataclass
@@ -46,7 +68,16 @@ class LaunchAttempt:
     """One account's in-flight launch."""
 
     username: str
+    stage: LaunchStage = LaunchStage.STARTING
     started_at: float = field(default_factory=time.monotonic)
+    # When the current stage was entered. Elapsed is reported per stage rather than per
+    # launch: the question a stalled launch raises is "stuck doing what, and for how long",
+    # and a total that keeps climbing across a normal stage change does not answer it.
+    stage_since: float = field(default_factory=time.monotonic)
+
+    def elapsed(self, now: float | None = None) -> float:
+        """Seconds spent in the current stage."""
+        return (time.monotonic() if now is None else now) - self.stage_since
 
 
 class LaunchTracker:
@@ -78,6 +109,21 @@ class LaunchTracker:
         for username in accepted:
             self._attempts[username] = LaunchAttempt(username)
         return accepted
+
+    def set_stage(self, username: str, stage: LaunchStage) -> bool:
+        """Move an in-flight account to *stage*. True if that changed anything.
+
+        An account with no attempt open is ignored rather than resurrected: stage reports
+        come from the launcher, which does not know that the batch it was handed has since
+        been ended by a caller's ``finally``, and a launch the user is no longer waiting on
+        should not reappear on screen because a late report arrived for it.
+        """
+        attempt = self._attempts.get(username)
+        if attempt is None or attempt.stage is stage:
+            return False
+        attempt.stage = stage
+        attempt.stage_since = time.monotonic()
+        return True
 
     def end(self, usernames: list[str] | None = None) -> None:
         """Close the attempts for *usernames*, or every attempt when None."""

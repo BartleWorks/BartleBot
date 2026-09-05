@@ -16,11 +16,13 @@ second click. ``FakeGameView`` in test_client_slots applies a real ``plan_tile_c
 result, so the tile assertions are about where things ended up.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from bartlebot.launch_tracker import LaunchTracker
+from bartlebot.gui.game_embed.client_tile import launch_status_text
+from bartlebot.launch_tracker import LaunchStage, LaunchTracker
+from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
 from bartlebot.tile_slots import TileSlot, build_tile_slots, plan_tile_changes
 from tests.test_client_slots import FakeClient, FakeGameView
 from tests.test_recovery import RecoveryHarness
@@ -322,4 +324,188 @@ class TestGameViewPendingTiles:
         assert view.client_count == 0
         assert view.tile_geometry(0) is None
         assert view.minimumSize().width() == 0
+        view.deleteLater()
+
+
+# ---------------------------------------------------------------------------
+# Stage captions, and the elapsed-time hint
+#
+# The stages are coarse because the launcher is coarse -- a shared login-screen wait for
+# the whole batch, then one drive call per client that reports nothing until it returns.
+# What separates a stalled launch from a healthy one is therefore not a finer stage name
+# but how long the current stage has run, which is what launch_status_text adds.
+# ---------------------------------------------------------------------------
+
+
+def _tiles_now(harness) -> list[TileSlot]:
+    with patch("bartlebot.client_manager.SettingsManager") as sm:
+        sm.instance.return_value = MagicMock(accounts=[])
+        return harness.tile_slots()
+
+
+class TestLaunchStages:
+    def test_a_launch_starts_in_the_first_stage(self) -> None:
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"])
+        assert tracker.attempt("alpha").stage is LaunchStage.STARTING
+
+    def test_moving_to_a_new_stage_restarts_the_stage_clock(self) -> None:
+        """Elapsed is per stage, not per launch.
+
+        A total that keeps climbing across a normal stage change does not answer the
+        question a stalled launch raises, which is "stuck doing what, and for how long".
+        """
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"])
+        attempt = tracker.attempt("alpha")
+        attempt.stage_since -= 60.0
+
+        assert tracker.set_stage("alpha", LaunchStage.LOGGING_IN) is True
+        assert attempt.elapsed() < 1.0
+
+    def test_repeating_a_stage_changes_nothing(self) -> None:
+        """The return value is what keeps a repeated report off the redraw path."""
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"])
+        assert tracker.set_stage("alpha", LaunchStage.LOADING) is True
+        assert tracker.set_stage("alpha", LaunchStage.LOADING) is False
+
+    def test_a_report_for_an_account_no_longer_launching_is_dropped(self) -> None:
+        """Reports come from the launcher, which does not know the caller's finally has run.
+
+        A late one must not put a launch nobody is waiting on back on screen.
+        """
+        tracker = LaunchTracker()
+        tracker.begin(["alpha"])
+        tracker.end(["alpha"])
+        assert tracker.set_stage("alpha", LaunchStage.LOADING) is False
+        assert tracker.attempt("alpha") is None
+
+    def test_the_stage_reaches_the_tile(self, harness) -> None:
+        _begin(harness, ["alpha"])
+        harness.report_launch_stage("alpha", LaunchStage.LOGGING_IN)
+        (tile,) = _tiles_now(harness)
+        assert tile.status == "Logging in"
+
+    def test_a_tile_with_no_report_yet_still_says_something(self) -> None:
+        """A bare collection of usernames carries no stages, and the tile must survive it."""
+        (tile,) = _build(["alpha"], {}, [], launching=["alpha"])
+        assert tile.status is None
+        assert launch_status_text(tile.status, tile.status_since) == "Launching…"
+
+
+class TestLaunchStatusText:
+    def test_a_young_stage_shows_no_number(self) -> None:
+        text = launch_status_text("Loading", 100.0, now=100.0 + LAUNCH_STAGE_ELAPSED_HINT - 1)
+        assert text == "Loading…"
+
+    def test_a_stage_that_has_run_long_shows_how_long(self) -> None:
+        """The one thing that separates a stalled launch from a healthy one on screen."""
+        assert launch_status_text("Logging in", 100.0, now=145.0) == "Logging in… 45s"
+
+    def test_the_number_appears_once_the_stage_has_run_the_threshold(self) -> None:
+        text = launch_status_text("Loading", 0.0, now=LAUNCH_STAGE_ELAPSED_HINT)
+        assert text == f"Loading… {int(LAUNCH_STAGE_ELAPSED_HINT)}s"
+
+    def test_a_stage_with_no_clock_never_shows_a_number(self) -> None:
+        assert launch_status_text("Starting", None, now=9999.0) == "Starting…"
+
+
+class TestLauncherReportsStages:
+    async def test_a_single_account_launch_reports_each_stage_in_order(self) -> None:
+        from bartlebot.launcher.launch_profile import launch_account
+
+        seen: list[tuple[str, LaunchStage]] = []
+        with (
+            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
+            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
+            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+            patch("bartlebot.launcher.launch_profile.instance_login"),
+            patch("bartlebot.launcher.launch_profile.set_window_title"),
+            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        ):
+            sm.instance.return_value = MagicMock(game_resolution=(800, 600))
+            await launch_account("alpha", "pw", "Alpha", progress=lambda u, s: seen.append((u, s)))
+
+        assert seen == [
+            ("alpha", LaunchStage.STARTING),
+            ("alpha", LaunchStage.LOGGING_IN),
+            ("alpha", LaunchStage.LOADING),
+        ]
+
+    async def test_a_batch_holds_every_account_at_starting_until_the_shared_wait_ends(self) -> None:
+        """Not a reporting gap to paper over.
+
+        The login screens really are waited for in one gather, so no account has diverged
+        yet -- a per-client stage invented for that stretch would claim progress that has
+        not been made.
+        """
+        from bartlebot.launcher.launch_profile import launch_accounts
+
+        seen: list[tuple[str, LaunchStage]] = []
+
+        async def _wait(_known, _n):
+            assert {stage for _u, stage in seen} == {LaunchStage.STARTING}
+            return [1, 2]
+
+        with (
+            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
+            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", _wait),
+            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+            patch("bartlebot.launcher.launch_profile.start_instance"),
+            patch("bartlebot.launcher.launch_profile.instance_login"),
+            patch("bartlebot.launcher.launch_profile.set_window_title"),
+            patch("bartlebot.launcher.launch_profile.jitter", return_value=0.0),
+            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        ):
+            sm.instance.return_value = MagicMock(game_resolution=(800, 600))
+            await launch_accounts(
+                [("alpha", "pw", "Alpha"), ("beta", "pw", "Beta")],
+                progress=lambda u, s: seen.append((u, s)),
+            )
+
+        assert seen[:2] == [("alpha", LaunchStage.STARTING), ("beta", LaunchStage.STARTING)]
+        assert seen[-1] == ("beta", LaunchStage.LOADING)
+
+    async def test_a_progress_callback_that_raises_does_not_strand_the_launch(self) -> None:
+        """The callback lands in GUI code, and the window is already spawned by then.
+
+        An exception escaping it would leave a real client with nobody logging into it.
+        """
+        from bartlebot.launcher.launch_profile import launch_account
+
+        def _boom(_username, _stage):
+            raise RuntimeError("caption failed to draw")
+
+        with (
+            patch("bartlebot.launcher.launch_profile.patch_open_browser"),
+            patch("bartlebot.launcher.launch_profile._patch_window_config"),
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
+            patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock()),
+            patch("bartlebot.launcher.launch_profile.instance_login") as login,
+            patch("bartlebot.launcher.launch_profile.set_window_title"),
+            patch("bartlebot.launcher.launch_profile.SettingsManager") as sm,
+        ):
+            sm.instance.return_value = MagicMock(game_resolution=(800, 600))
+            assert await launch_account("alpha", "pw", "Alpha", progress=_boom) == "[Alpha] Wizard101"
+
+        login.assert_called_once()
+
+
+class TestPendingTileCaption:
+    def test_a_stage_change_redraws_a_tile_that_did_not_move(self, qapp) -> None:
+        """The reconciler reports nothing here -- the only thing that changed is the words."""
+        from bartlebot.gui.game_embed.game_view import GameView
+
+        view = GameView()
+        view.resize(800, 600)
+        view.sync_tiles([_pending(0, "alpha")])
+        view.sync_tiles([TileSlot(slot=0, hwnd=None, label="Alpha", player=None, username="alpha", status="Loading")])
+
+        assert view.pending_status(0) == "Loading…"
         view.deleteLater()
