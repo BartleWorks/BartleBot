@@ -55,6 +55,29 @@ def screen_metrics(widget: QWidget | None = None) -> tuple[tuple[int, int], floa
     return (available.width(), available.height()), screen.devicePixelRatio() or 1.0
 
 
+# Left clear of the screen edges when a window is fitted to it, so the frame and the
+# taskbar are never what a dialog's buttons end up behind.
+WINDOW_SCREEN_MARGIN = 40
+
+
+def size_within_screen(
+    preferred: tuple[int, int],
+    minimum: tuple[int, int],
+    available: tuple[int, int],
+    margin: int = WINDOW_SCREEN_MARGIN,
+) -> tuple[int, int]:
+    """*preferred*, shrunk to fit *available* less *margin*, but never below *minimum*.
+
+    The minimum wins over the screen on purpose. A window squeezed under its own minimum
+    is one Qt will hand back a size it cannot honour anyway, and clamping past it is a
+    second way to lose the buttons rather than a fix for the first.
+    """
+    return (
+        max(minimum[0], min(preferred[0], available[0] - margin)),
+        max(minimum[1], min(preferred[1], available[1] - margin)),
+    )
+
+
 def budget_for(
     widget: QWidget | None = None, live_area: tuple[int, int] | None = None
 ) -> tuple[tuple[int, int], float]:

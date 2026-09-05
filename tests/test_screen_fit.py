@@ -284,3 +284,23 @@ def _resize(widget, width, height):
     old = widget.size()
     widget.resize(width, height)
     widget.resizeEvent(QResizeEvent(widget.size(), old))
+
+
+# ---------------------------------------------------------------------------
+# Fitting a window to the screen (#188)
+# ---------------------------------------------------------------------------
+
+
+def test_a_window_that_already_fits_is_left_at_its_preferred_size():
+    assert screen_fit.size_within_screen((620, 720), (480, 400), (1920, 1080)) == (620, 720)
+
+
+def test_a_window_taller_than_the_screen_is_cut_down_to_it():
+    width, height = screen_fit.size_within_screen((620, 1400), (480, 400), (1920, 1080))
+    assert height == 1080 - screen_fit.WINDOW_SCREEN_MARGIN
+    assert width == 620
+
+
+def test_the_minimum_wins_over_a_screen_too_small_for_it():
+    """Clamping past the minimum is a second way to lose the buttons, not a fix."""
+    assert screen_fit.size_within_screen((620, 720), (480, 400), (500, 300)) == (480, 400)

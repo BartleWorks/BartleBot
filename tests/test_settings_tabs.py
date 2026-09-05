@@ -20,9 +20,11 @@ import pytest
 from PyQt6.QtWidgets import QApplication, QFormLayout
 
 from bartlebot import bot_options
+from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
+from bartlebot.gui.settings.rows import ScrollableTab
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -202,3 +204,66 @@ def test_no_node_calls_a_player_a_client():
             if "client" in text.lower():
                 offenders.append(f"{node_type}: {text[:70]}…")
     assert not offenders, "node text saying 'client' where it means 'player': " + "; ".join(offenders)
+
+
+# ---------------------------------------------------------------------------
+# #188 — the dialog has to fit the screen it opens on
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def screen(monkeypatch):
+    """Pin the screen the dialog is fitted to, so the result is not the runner's."""
+
+    def _use(size):
+        monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: (size, 1.0))
+
+    return _use
+
+
+def test_the_dialog_opens_inside_a_1080p_screen(qapp, screen):
+    """It used to open as tall as its tallest tab, putting OK and Cancel off-screen."""
+    screen((1920, 1080))
+    dlg = SettingsDialog()
+
+    assert dlg.height() <= 1080
+    assert dlg.width() <= 1920
+    # And it can never be dragged past the edge either.
+    assert dlg.maximumHeight() <= 1080
+
+
+def test_a_short_screen_shrinks_the_dialog_rather_than_the_other_way_round(qapp, screen):
+    """A netbook-height screen: the cap, not the preferred size, decides."""
+    screen((1024, 600))
+    dlg = SettingsDialog()
+
+    assert dlg.height() <= 600
+    # Not shrunk past what the dialog can actually lay out.
+    assert dlg.height() >= dlg.minimumHeight()
+
+
+def test_the_form_tabs_scroll_rather_than_setting_the_dialogs_height(qapp, screen):
+    """Every row carries a visible description, which is two rows of height each.
+
+    The Game tab is deliberately not wrapped: its two lists carry the layout's
+    stretch, so inside a scroll area they would collapse to their size hint.
+    """
+    screen((1920, 1080))
+    dlg = SettingsDialog()
+    wrapped = {dlg.tabs.tabText(i): isinstance(dlg.tabs.widget(i), ScrollableTab) for i in range(dlg.tabs.count())}
+
+    assert wrapped == {"General": True, "Bot": True, "Canvas": True, "Theme": False, "Game": False}
+    # The point of wrapping: the tallest tab no longer sets the dialog's height.
+    assert dlg.height() < BotTab().sizeHint().height()
+
+
+def test_a_wrapped_tab_still_applies_what_was_typed_into_it(qapp):
+    """A bare QScrollArea in the tab bar would silently discard the whole tab."""
+    tab = BotTab()
+    wrapper = ScrollableTab(tab)
+    _field(tab, "Default Safety Delay:").setValue(4.5)
+
+    wrapper.apply()
+
+    assert SettingsManager.instance().default_safety_delay == 4.5
+    assert wrapper.content is tab
