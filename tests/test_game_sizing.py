@@ -185,13 +185,16 @@ def test_a_fitting_configuration_has_no_problem_to_report():
     assert gs.fit_problem((640, 480), 2, _DEFAULT_BUDGET) is None
 
 
-def test_the_reason_names_both_sizes_and_both_ways_out():
+def test_the_reason_names_both_sizes_and_every_way_out():
     reason = gs.fit_problem((800, 600), 2, _DEFAULT_BUDGET)
     assert reason is not None
     assert "1624×651" in reason  # what 2 clients at 800x600 need
-    assert "1304×800" in reason  # what this screen has
+    assert "1304×800" in reason  # what is available
     assert "lower the resolution" in reason
     assert "fewer clients" in reason
+    # The third way out is real: the budget is the larger of the configured layout and
+    # the live game area, so widening the game area by dragging a sidebar is a fix.
+    assert "make the game area larger" in reason
 
 
 def test_one_client_is_not_described_as_one_clients():

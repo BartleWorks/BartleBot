@@ -20,7 +20,14 @@ from bartlebot.settings_manager import SettingsManager
 class SettingsDialog(QDialog):
     """Modal settings dialog opened via Settings menu or Ctrl+,."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None, live_game_area: tuple[int, int] | None = None) -> None:
+        """*live_game_area* is the game area the window behind this dialog currently has.
+
+        Passed in rather than looked up: the Game tab's resolution pickers judge a launch
+        exactly as the launch surfaces do, and a splitter drag moves that answer without
+        moving any setting. Reaching back up the parent chain from a settings tab to find
+        the main window would couple the tab to the window that happens to open it.
+        """
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setMinimumSize(480, 400)
@@ -44,7 +51,7 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(self._theme_tab, "Theme")
 
         # Game tab (accounts, launch profiles, game embed resolution)
-        self._accounts_tab = AccountsTab()
+        self._accounts_tab = AccountsTab(live_game_area=live_game_area)
         self._tabs.addTab(self._accounts_tab, "Game")
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)

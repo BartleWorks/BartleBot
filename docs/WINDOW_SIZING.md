@@ -116,6 +116,43 @@ This reads the user's **configured** layout values (`left_sidebar_width`,
 canvas crushed to its floor, which nobody does — it would offer a resolution that only
 fits as long as they never touch a splitter.
 
+### ...but the live game area counts too
+
+Those three values are startup **seeds**, written only by the General settings tab.
+Nothing connects `splitterMoved` and nothing persists a window resize, so the configured
+layout can describe something the user dragged away from hours ago — which is why fixing
+the layout by hand used to leave a launch still refused, and only editing the defaults
+unlocked it.
+
+So `screen_fit.budget_for` takes the **larger of each axis** of two terms:
+
+| term | is | why it is in the max |
+|---|---|---|
+| screen | `layout_budget(available screen)` | the floor of what is always achievable — embedding raises the game view's minimum and Qt grows the window to satisfy it, so a launch bigger than the current window corrects itself provided it fits the screen |
+| live | `GameView.game_area_size` | the only thing that sees a splitter drag, and exact where the screen term estimates: sidebars, canvas, menu, status bar and the panel's own header are already subtracted, because they are simply not in it |
+
+Taking the max rather than the live term alone is what stops a merely *small* window
+refusing a resolution the screen could carry — including at construction, before the
+window has been shown and the game view still holds a default size. Dragging a sidebar
+*wider* therefore costs nothing, which is correct: the window minimum pushes back at
+launch anyway.
+
+Re-judging is deliberately **not** a rebuild. `_GamePlaceholder.refresh_fit()` calls
+`set_unavailable` on the cards it already has, and that returns immediately when the
+reason has not changed — so a drag costs a few integer comparisons per card per event and
+restyles only on the frame a verdict flips. Rebuilding the cards instead would
+`deleteLater` and recreate every widget several times a second for the length of a drag.
+It is driven from `GameView._recompute_geometry` rather than from the placeholder's own
+`resizeEvent`, because Qt defers a resize event to a hidden widget until it is shown and
+the launch screen is hidden for the whole life of an embedded client.
+
+The live area is **passed in**, never looked up: `MainWindow.live_game_area` feeds the
+Launch menu and the launch guards directly, `LauncherPopup` reads it from its parent, and
+`SettingsDialog(..., live_game_area=...)` carries it down to the Game tab's two resolution
+pickers — so the settings combos and the Launch menu cannot disagree. A settings tab
+reaching back up its parent chain to find the main window would be the coupling this
+avoids.
+
 Worked example, 1080p at the default layout (budget 1304x800), over the ladder rungs:
 
 | clients | grid | largest rung that fits |
@@ -159,8 +196,10 @@ be reached.
 
 **An entry that cannot launch is disabled with the reason, never hidden.** A profile that
 silently vanishes leaves the user hunting for it with nothing on screen saying why, which
-is worse than a greyed row reading "2 clients at 800×600 needs 1624×651; this screen has
-1304×800 available — lower the resolution or launch fewer clients." The same applies to
+is worse than a greyed row reading "2 clients at 800×600 needs 1624×651; there is
+1304×800 available — lower the resolution, launch fewer clients, or make the game area
+larger." That third way out is real, not padding: the budget includes the live game area,
+so dragging a sidebar narrower widens it there and then. The same applies to
 the resolution pickers: a resolution too large for the current screen and client count
 appears disabled with the reason, rather than being quietly dropped from the list.
 
@@ -233,6 +272,9 @@ and belongs in its own issue.
 
 ## Still open
 
+- **Splitter positions are not persisted.** They are seeds, by design — the fit check
+  reads the live geometry instead, so this costs nothing there, but a dragged layout is
+  still forgotten at restart.
 - **Which client count a cap is sized against.** The launch surfaces size against the
   resulting count, which is exact at the moment of launching. The *settings* combos have
   no such moment, so the global one is sized against the largest profile that follows it

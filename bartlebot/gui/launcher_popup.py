@@ -45,7 +45,7 @@ class LauncherPopup(QWidget):
             # Disabled with the reason on it, never dropped from the list. This popup and
             # the Quick Launch cards show the same profiles and have to agree about which
             # of them can launch — see bartlebot/gui/screen_fit.py.
-            if (reason := screen_fit.profile_fit_problem(profile, self)) is not None:
+            if (reason := screen_fit.profile_fit_problem(profile, self, self._live_game_area)) is not None:
                 btn.setEnabled(False)
                 btn.setToolTip(reason)
             layout.addWidget(btn)
@@ -54,6 +54,16 @@ class LauncherPopup(QWidget):
 
     def _launch(self, profile_name: str) -> None:
         asyncio.ensure_future(self._run_launch(profile_name))
+
+    @property
+    def _live_game_area(self):
+        """The main window's live game area, or None when this popup has no main window.
+
+        Read from the parent for the same reason the driver and the reserver below are:
+        the popup is a floating list of buttons and owns nothing the answer depends on.
+        None simply leaves the judgement to the configured layout.
+        """
+        return getattr(self.parent(), "live_game_area", None)
 
     @property
     def _auto_select_driver(self):

@@ -169,6 +169,11 @@ undo by accident:
   (configured layout, not the panel minimums), and `minimum_window_size` runs the other
   way to keep the window and the splitters off the game. Both are kept; they are not
   alternatives.
+- **The budget is the larger of the configured layout and the *live* game area.**
+  Sidebar widths and the canvas height are startup seeds — nothing persists a splitter
+  drag — so without the live term a user who makes room by dragging is still refused.
+  Re-judging on a resize calls `set_unavailable` on the cards that already exist; it must
+  never rebuild them, or a drag destroys and recreates every card several times a second.
 
 ## Game view slots vs. player indices
 

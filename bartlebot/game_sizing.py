@@ -233,7 +233,7 @@ def fit_problem(
 ) -> str | None:
     """Why *client_count* clients at *resolution* will not fit, or None if they will.
 
-    The sentence names both numbers and both ways out. An entry that cannot launch is
+    The sentence names both numbers and every way out. An entry that cannot launch is
     shown disabled carrying this rather than hidden: a profile that has vanished leaves
     the user hunting for it with no indication of why, which is worse than a greyed row
     that says what would bring it back.
@@ -243,8 +243,11 @@ def fit_problem(
     need_w, need_h = required_game_area(resolution, client_count, dpr)
     budget_w, budget_h = budget
     clients = f"{client_count} client{'s' if client_count != 1 else ''}"
+    # Three ways out, and the third is not a screen-space one: the budget is the larger of
+    # the configured layout and the live game area (see gui/screen_fit.budget_for), so
+    # dragging a sidebar narrower widens it there and then.
     return (
         f"{clients} at {resolution[0]}×{resolution[1]} needs {need_w}×{need_h}; "
-        f"this screen has {budget_w}×{budget_h} available — "
-        f"lower the resolution or launch fewer clients."
+        f"there is {budget_w}×{budget_h} available — "
+        f"lower the resolution, launch fewer clients, or make the game area larger."
     )

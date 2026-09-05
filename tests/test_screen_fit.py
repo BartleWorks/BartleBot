@@ -11,7 +11,7 @@ import sys
 
 import pytest
 from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtGui import QMouseEvent, QResizeEvent
 from PyQt6.QtWidgets import QApplication
 
 from bartlebot.gui import screen_fit
@@ -200,3 +200,87 @@ def test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter(qap
     assert after.width() >= 1200
     assert after.height() >= 900
     assert (after.width(), after.height()) > (before.width(), before.height())
+
+
+# ---------------------------------------------------------------------------
+# The live game area
+# ---------------------------------------------------------------------------
+#
+# Sidebar widths and the canvas height are startup seeds written only by the settings
+# dialog — nothing persists a splitter drag — so the configured layout can describe
+# something the user moved away from. These are the guards on that gap.
+
+
+def test_the_budget_takes_the_larger_of_the_layout_and_the_live_area(screen):
+    screen(_1080P)
+    configured, _dpr = screen_fit.budget_for()
+    assert configured == (1304, 800)
+
+    wider, _dpr = screen_fit.budget_for(live_area=(1700, 700))
+    assert wider == (1700, 800)  # width from the drag, height from the layout
+
+
+def test_dragging_a_sidebar_narrower_unlocks_the_tier_it_made_room_for(screen):
+    """The reported bug: fixing the layout by hand left the launch still refused."""
+    screen(_1080P)
+    profile = _profile(["a", "b"], (800, 600))
+    assert screen_fit.profile_fit_problem(profile) is not None
+
+    # Two 800x600 tiles need 1624 wide; a drag that gets the game area there is enough.
+    assert screen_fit.profile_fit_problem(profile, None, (1624, 651)) is None
+
+
+def test_a_merely_small_window_refuses_nothing_the_screen_could_carry(screen):
+    """Why the budget is a max and not the live area alone.
+
+    A launch bigger than the current window corrects itself — embedding raises the game
+    view's minimum and Qt grows the window — so a small window is not a reason to refuse.
+    It is also the state every card is built in, before the window has ever been shown.
+    """
+    screen(_1080P)
+    assert screen_fit.fit_problem((640, 480), 2, None, (200, 100)) is None
+
+
+def test_the_hint_grows_with_the_live_area_too(screen):
+    screen(_1080P)
+    assert screen_fit.largest_fitting_resolution(2) == (640, 480)
+    assert screen_fit.largest_fitting_resolution(2, None, (1700, 900)) == (800, 600)
+
+
+def test_the_launch_screen_re_judges_its_cards_on_a_resize_without_rebuilding_them(qapp, monkeypatch):
+    """A splitter drag has to move the answer, and must not destroy every card doing it.
+
+    Rebuilding on resize would deleteLater and recreate every widget several times a
+    second for the length of a drag; re-judging is a few comparisons that usually change
+    nothing.
+
+    The resize is delivered by hand because Qt defers a resize event to a hidden widget
+    until it is shown — which is also why ``_recompute_geometry`` drives the re-judge
+    rather than leaving it to the placeholder's own handler.
+    """
+    from bartlebot.gui.game_embed.game_view import GameView
+
+    # A screen with room for one 800x600 tile and not two, so only the live game area can
+    # decide this pair.
+    monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((1300, 800), 1.0))
+    SettingsManager.instance().launch_profiles = [_profile(["a", "b"], (800, 600))]
+
+    view = GameView()
+    card = view.findChild(ProfileCard)
+    container = card.parent()
+
+    _resize(view, 900, 800)
+    assert card.unavailable_reason is not None
+
+    _resize(view, 1700, 800)
+    assert card.unavailable_reason is None
+    # Same widget throughout: the resize re-judged it rather than replacing it.
+    assert view.findChild(ProfileCard) is card
+    assert card.parent() is container
+
+
+def _resize(widget, width, height):
+    """Resize *widget* and deliver the event Qt would if it were on screen."""
+    old = widget.size()
+    widget.resize(width, height)
+    widget.resizeEvent(QResizeEvent(widget.size(), old))

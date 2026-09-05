@@ -507,6 +507,16 @@ class ProfileCard(_LaunchCard):
         self.refresh_theme_styles()
         self.launch_requested.connect(lambda: self.launch_profile_requested.emit(self._name))
 
+    @property
+    def profile(self) -> dict:
+        """The launch profile this card stands for.
+
+        Public because whether the card can launch is re-judged from outside it — the
+        screen it is on can change without the profile changing — and the judge needs the
+        accounts and the resolution to ask about.
+        """
+        return self._profile
+
     def _build(self) -> None:
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 7, 10, 7)

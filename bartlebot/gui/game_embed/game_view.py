@@ -60,6 +60,10 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         super().__init__(parent)
         # Set before _build_ui: the constructor's own refresh() reads it.
         self._roster_source = None
+        # The live cards, held so a resize can re-judge them without rebuilding. Rebuilding
+        # on a splitter drag would destroy and recreate every widget several times a
+        # second; re-judging is a few integer comparisons that usually change nothing.
+        self._launch_cards: list = []
         self._build_ui()
         self.refresh_theme_styles()
         self.refresh()
@@ -200,10 +204,6 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         account_cards: list[QWidget] = []
         for account in accounts:
             card = AccountCard(account, self._characters_for(account.get("username", "")), accounts)
-            # This screen is only up when nothing is embedded, so an account card always
-            # launches the first client. The +1 case — adding a client to a running
-            # fleet — is the Launch menu's, which is reachable while tiles are on screen.
-            card.set_unavailable(screen_fit.fit_problem(sm.game_resolution, 1, self))
             card.launch_account_requested.connect(self.launch_account_requested)
             account_cards.append(card)
         self._rebuild_list(self._accounts_area, account_cards, empty_hint="(No accounts)")
@@ -211,11 +211,53 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         profile_cards: list[QWidget] = []
         for profile in sm.launch_profiles:
             card = ProfileCard(profile, accounts)
-            card.set_unavailable(screen_fit.profile_fit_problem(profile, self))
             card.launch_profile_requested.connect(self.launch_profile_requested)
             card.edit_profile_requested.connect(self.edit_profile_requested)
             profile_cards.append(card)
         self._rebuild_list(self._profiles_area, profile_cards, empty_hint="(No profiles)")
+
+        # Assigned only after _rebuild_list has deleteLater'd the previous cards, so
+        # nothing here can be a reference to a widget that is on its way out.
+        self._launch_cards = [*account_cards, *profile_cards]
+        self.refresh_fit()
+
+    def refresh_fit(self) -> None:
+        """Re-judge every card against the game area as it is now.
+
+        Cheap by construction: ``set_unavailable`` returns immediately when the reason has
+        not changed, so a drag costs a few comparisons per card per event and restyles
+        only on the frame where a verdict actually flips.
+        """
+        live = self.game_area_size
+        resolution = SettingsManager.instance().game_resolution
+        for card in self._launch_cards:
+            if isinstance(card, ProfileCard):
+                card.set_unavailable(screen_fit.profile_fit_problem(card.profile, self, live))
+            else:
+                # This screen is only up when nothing is embedded, so an account card
+                # always launches the first client. The +1 case — adding a client to a
+                # running fleet — is the Launch menu's, which is reachable while tiles are
+                # on screen.
+                card.set_unavailable(screen_fit.fit_problem(resolution, 1, self, live))
+
+    @property
+    def game_area_size(self) -> tuple[int, int]:
+        """The space the tiles would have: this widget fills the GameView exactly.
+
+        ``GameView._recompute_geometry`` sets the placeholder to the view's full rect, so
+        measuring self and measuring the game area are the same measurement.
+        """
+        return self.width(), self.height()
+
+    def resizeEvent(self, event) -> None:
+        """Re-judge on a splitter drag, which is what makes the answer track the layout.
+
+        Sidebar widths and the canvas height are startup seeds written only by the
+        settings dialog — nothing persists a drag — so without this the cards go on
+        describing a layout the user has already moved away from.
+        """
+        super().resizeEvent(event)
+        self.refresh_fit()
 
     def showEvent(self, event) -> None:
         """Rebuild on the way back in.
@@ -514,6 +556,18 @@ class GameView(ThemedMixin, QWidget):
         return bool(self._detached_hwnds)
 
     @property
+    def game_area_size(self) -> tuple[int, int]:
+        """The logical pixels the tile grid actually has, right now.
+
+        Named rather than left as ``width()``/``height()`` because this is the live
+        budget a launch is judged against (see gui/screen_fit.budget_for), and "the size
+        of this widget" does not say that. It is exact where the configured layout is an
+        estimate: the sidebars, the bot canvas, the menu and status bars and the game
+        panel's own header are already subtracted, because they are simply not in it.
+        """
+        return self.width(), self.height()
+
+    @property
     def largest_game_size(self) -> tuple[int, int] | None:
         """The widest and tallest game window on screen, or None if there is none.
 
@@ -565,6 +619,15 @@ class GameView(ThemedMixin, QWidget):
         through to it.
         """
         self._placeholder.refresh()
+
+    def refresh_launch_fit(self) -> None:
+        """Re-judge which Quick Launch entries can launch, without rebuilding them.
+
+        The cheap half of ``refresh_launch_lists``: what a card *says* has not changed,
+        only whether the space is there for it. Called on every geometry change, so it
+        must stay cheap — see the placeholder's ``refresh_fit``.
+        """
+        self._placeholder.refresh_fit()
 
     def set_roster_source(self, source) -> None:
         """Supply what the account cards ask for their characters — see the placeholder."""
@@ -624,6 +687,11 @@ class GameView(ThemedMixin, QWidget):
     def _recompute_geometry(self) -> None:
         """Lay out tiles in the grid and update placeholder/overlay position."""
         self._placeholder.setGeometry(0, 0, self.width(), self.height())
+        # Re-judged here rather than left to the placeholder's own resizeEvent: Qt defers
+        # a resize event to a hidden widget until it is shown, and the launch screen is
+        # hidden for the whole life of an embedded client. Its own handler stays as well,
+        # for a resize that reaches it directly.
+        self._placeholder.refresh_fit()
 
         self._overlay_btn.move(
             self.width() - _OVERLAY_BTN_SIZE - _OVERLAY_BTN_MARGIN,

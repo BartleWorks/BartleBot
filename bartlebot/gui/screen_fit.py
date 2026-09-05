@@ -1,9 +1,11 @@
 """Whether a launch will fit on screen, asked from a widget.
 
 ``bartlebot/game_sizing.py`` owns the arithmetic and knows nothing about Qt or settings.
-This is the thin layer that supplies it with the three things only the running app has:
-which screen the window is on, what that screen's scale factor is, and how wide the user
-has made their sidebars.
+This is the thin layer that supplies it with the things only the running app has: which
+screen the window is on, that screen's scale factor, how wide the user has configured
+their sidebars, and — where a caller can see it — how big the game area actually is right
+now. ``budget_for`` explains why the last of those is needed and why it is a *maximum*
+taken with the others rather than a replacement for them.
 
 WHY THE ANSWER IS A REFUSAL RATHER THAN A WARNING
 
@@ -53,10 +55,55 @@ def screen_metrics(widget: QWidget | None = None) -> tuple[tuple[int, int], floa
     return (available.width(), available.height()), screen.devicePixelRatio() or 1.0
 
 
-def fit_problem(resolution: tuple[int, int], client_count: int, widget: QWidget | None = None) -> str | None:
-    """Why *client_count* clients at *resolution* will not fit here, or None if they will."""
+def budget_for(
+    widget: QWidget | None = None, live_area: tuple[int, int] | None = None
+) -> tuple[tuple[int, int], float]:
+    """The space a game grid may use here, and the scale factor to measure it at.
+
+    Two terms, and the larger of each axis wins:
+
+    - the **screen** term, derived from the user's configured layout. This is the floor
+      of what is always achievable rather than a description of the window right now,
+      because ``GameView._update_minimum_size`` raises the view's minimum when clients
+      embed and Qt grows the top-level window to satisfy it. So a launch bigger than the
+      current window corrects itself, provided it fits the screen — which is exactly what
+      this term guarantees.
+    - the **live** term, the game area as it currently is. Sidebar widths and the canvas
+      height are startup *seeds* written only by the settings dialog — nothing persists a
+      splitter drag — so the configured layout can describe something the user moved away
+      from hours ago. Dragging a sidebar narrower has to unlock the tier it just made room
+      for, and only a live measurement sees that.
+
+    The live term is also better arithmetic where it applies: it has the sidebars, the bot
+    canvas, the menu and status bars and the game panel's own header subtracted out
+    exactly, where the screen term subtracts ``MENU_AND_STATUS_PX``, an estimate.
+
+    Taking the max rather than the live term alone is what stops a merely *small* window
+    refusing a resolution the screen could carry — including at construction, before the
+    window has been shown and the game view still holds a default size. Dragging a sidebar
+    *wider* therefore costs nothing, which is correct: the window minimum pushes back at
+    launch anyway.
+    """
     screen_size, dpr = screen_metrics(widget)
     budget = SettingsManager.instance().layout_budget(screen_size)
+    if live_area is None:
+        return budget, dpr
+    return (max(budget[0], live_area[0]), max(budget[1], live_area[1])), dpr
+
+
+def fit_problem(
+    resolution: tuple[int, int],
+    client_count: int,
+    widget: QWidget | None = None,
+    live_area: tuple[int, int] | None = None,
+) -> str | None:
+    """Why *client_count* clients at *resolution* will not fit here, or None if they will.
+
+    Cheap enough to call on a resize: a few settings lookups and some integer arithmetic,
+    with the sentence only built on the failing path. Callers on a drag re-ask rather than
+    caching, so the answer cannot go stale.
+    """
+    budget, dpr = budget_for(widget, live_area)
     return game_sizing.fit_problem(resolution, client_count, budget, dpr)
 
 
@@ -72,7 +119,11 @@ def profile_resolution(profile: dict) -> tuple[int, int]:
     return SettingsManager.instance().game_resolution
 
 
-def profile_fit_problem(profile: dict, widget: QWidget | None = None) -> str | None:
+def profile_fit_problem(
+    profile: dict,
+    widget: QWidget | None = None,
+    live_area: tuple[int, int] | None = None,
+) -> str | None:
     """Why *profile* cannot be launched on this screen, or None if it can.
 
     An empty profile has nothing to fit and is refused elsewhere, on its own grounds —
@@ -82,10 +133,14 @@ def profile_fit_problem(profile: dict, widget: QWidget | None = None) -> str | N
     accounts = profile.get("accounts") or []
     if not accounts:
         return None
-    return fit_problem(profile_resolution(profile), len(accounts), widget)
+    return fit_problem(profile_resolution(profile), len(accounts), widget, live_area)
 
 
-def largest_fitting_resolution(client_count: int, widget: QWidget | None = None) -> tuple[int, int] | None:
+def largest_fitting_resolution(
+    client_count: int,
+    widget: QWidget | None = None,
+    live_area: tuple[int, int] | None = None,
+) -> tuple[int, int] | None:
     """The biggest offered resolution *client_count* clients fit at, or None if none do.
 
     Only ever used to *say* what would work. Nothing picks a resolution on the user's
@@ -93,6 +148,5 @@ def largest_fitting_resolution(client_count: int, widget: QWidget | None = None)
     is a legitimate choice, so small resolutions are a performance lever rather than only
     a screen-space workaround, and nothing should nudge users toward the biggest that fits.
     """
-    screen_size, dpr = screen_metrics(widget)
-    budget = SettingsManager.instance().layout_budget(screen_size)
+    budget, dpr = budget_for(widget, live_area)
     return game_sizing.largest_fitting(VALID_RESOLUTIONS, client_count, budget, dpr)

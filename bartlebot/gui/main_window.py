@@ -392,6 +392,16 @@ class MainWindow(QMainWindow):
         self.action_redo.setEnabled(can_redo)
         self.action_redo.setText(f"Redo: {redo_desc}" if redo_desc else "Redo")
 
+    @property
+    def live_game_area(self) -> tuple[int, int]:
+        """The logical pixels the tile grid has right now.
+
+        Public because it is what every launch surface has to be judged against, including
+        the settings dialog, which is handed it rather than reaching back through its own
+        parent chain to find this window. See gui/screen_fit.budget_for.
+        """
+        return self.game_view.game_area_size
+
     @staticmethod
     def _disable_if_unfittable(action: QAction, reason: str | None) -> None:
         """Grey *action* out and explain, or leave it alone when *reason* is None."""
@@ -416,7 +426,7 @@ class MainWindow(QMainWindow):
         launching = SettingsManager.instance().game_resolution
         running = self.game_view.largest_game_size
         resolution = launching if running is None else (max(launching[0], running[0]), max(launching[1], running[1]))
-        return screen_fit.fit_problem(resolution, self.game_view.client_count + 1, self)
+        return screen_fit.fit_problem(resolution, self.game_view.client_count + 1, self, self.live_game_area)
 
     def _rebuild_launch_menu(self) -> None:
         """Rebuild Launch menu from current accounts and profiles."""
@@ -436,7 +446,7 @@ class MainWindow(QMainWindow):
                 # Disabled rather than dropped, carrying the reason as its tooltip — the
                 # same rule the Quick Launch cards follow. This menu is rebuilt on every
                 # show, so the answer tracks the client count and the screen.
-                self._disable_if_unfittable(action, screen_fit.profile_fit_problem(profile, self))
+                self._disable_if_unfittable(action, screen_fit.profile_fit_problem(profile, self, self.live_game_area))
                 self._launch_menu.addAction(action)
         else:
             empty = QAction("(No profiles)", self)
@@ -496,7 +506,9 @@ class MainWindow(QMainWindow):
         """
         from bartlebot.gui.settings.settings_dialog import SettingsDialog
 
-        dlg = SettingsDialog(self)
+        # Handed the live game area so its resolution pickers judge a launch the same
+        # way the Launch menu behind them does — a splitter drag moves both.
+        dlg = SettingsDialog(self, live_game_area=self.live_game_area)
         dlg.open_tab(tab_name)
         if edit_profile:
             dlg.edit_profile(edit_profile)
@@ -553,7 +565,8 @@ class MainWindow(QMainWindow):
             # keybinding, or a profile edited while its menu entry was already built.
             # Every surface offering this launch has already refused it, so arriving here
             # means one of them was stale rather than that the user was warned.
-            if profile is not None and (reason := screen_fit.profile_fit_problem(profile, self)) is not None:
+            reason = None if profile is None else screen_fit.profile_fit_problem(profile, self, self.live_game_area)
+            if reason is not None:
                 QMessageBox.critical(self, "Launch failed", reason)
                 return
             self._game_view_panel.set_launch_profile(profile_name)
