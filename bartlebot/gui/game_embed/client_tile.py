@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 
 from PyQt6.QtCore import QRect, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QPainter
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot import streamer_mode
@@ -346,7 +346,13 @@ class _WindowlessTile(QWidget):
         super().paintEvent(event)
         painter = QPainter(self)
         self._paint_body(painter)
-        self._paint_pill(painter)
+        # PendingTile repaints just its spinner, several times a second; the pill is
+        # nowhere near it and is the expensive half of this widget (font metrics, and an
+        # SVG rasterised for the icon). Its rect is left as the last full paint set it,
+        # which is still where it is -- the layout only moves on a resize, and a resize
+        # repaints the whole tile.
+        if self._pill_rect.isEmpty() or event.rect().intersects(self._pill_rect):
+            self._paint_pill(painter)
 
     def _paint_body(self, painter: QPainter) -> None:
         """Draw the explanatory line in the space a game window would occupy."""
@@ -423,14 +429,34 @@ class DetachedTile(_WindowlessTile):
         self.reattach_requested.emit()
 
 
-# Busy indicator geometry and motion. One revolution every _SPINNER_PERIOD_MS, advanced by
-# a repaint every _SPINNER_TICK_MS -- slow enough that several pending tiles spinning at
-# once cost nothing, fast enough to read as motion rather than as a stuck frame.
+def _body_font() -> QFont:
+    """The caption font under the spinner.
+
+    A function rather than a module constant because ``_spinner_rect`` has to measure the
+    same font ``_paint_body`` lays the caption out in: the two disagreeing by a pixel puts
+    the partial-repaint rect off the ring it is meant to cover, and the arc then leaves a
+    sliver of the previous frame behind as it turns.
+    """
+    font = QFont()
+    font.setPointSize(9)
+    return font
+
+
+# Busy indicator geometry and motion. One revolution every _SPINNER_PERIOD_MS, repainted
+# every _SPINNER_TICK_MS.
+#
+# The tick is a frame rate, not the motion itself: the angle is read from the clock at
+# paint time, so a tick that arrives late draws the frame it should have drawn rather than
+# the next one along. That distinction is the whole reason the spinner looks smooth during
+# a launch -- a launch spends much of its time in synchronous memory reads and Win32 calls
+# that hold the event loop for tens of milliseconds, so ticks *do* arrive late, and an
+# angle accumulated per tick turns every one of those into a visible hitch (a jump, then a
+# slow patch) instead of a frame that is merely skipped.
 _SPINNER_RADIUS = 14
 _SPINNER_THICKNESS = 3
 _SPINNER_ARC_DEGREES = 100
 _SPINNER_PERIOD_MS = 1200
-_SPINNER_TICK_MS = 50
+_SPINNER_TICK_MS = 16
 # Gap between the spinner and the caption under it.
 _SPINNER_CAPTION_GAP = 14
 
@@ -458,9 +484,14 @@ class PendingTile(_WindowlessTile):
         self._status: str | None = None
         self._status_since: float | None = None
         self._failed = False
-        self._angle = 0
+        self._painted_text: str | None = None
+        self._spin_start = time.monotonic()
         self._spin_timer = QTimer(self)
         self._spin_timer.setInterval(_SPINNER_TICK_MS)
+        # Coarse timers -- Qt's default above 20ms -- are allowed to drift their interval
+        # by up to 5% to coalesce wakeups with other timers, which at a 16ms frame is
+        # exactly the jitter this is trying not to show.
+        self._spin_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self._spin_timer.timeout.connect(self._advance)
         self._spin_timer.start()
 
@@ -474,15 +505,52 @@ class PendingTile(_WindowlessTile):
         """
         return "dismiss" if self._failed else ""
 
+    @property
+    def _angle(self) -> float:
+        """Where the arc has got to, in degrees, read from the clock rather than counted.
+
+        See the note on _SPINNER_TICK_MS: at 60fps a frame the event loop misses has to
+        cost a frame, not a step, or the launch's own stalls come back out as stutter.
+        """
+        return (time.monotonic() - self._spin_start) * 1000 / _SPINNER_PERIOD_MS * 360 % 360
+
+    def _spinner_rect(self) -> QRect:
+        """The square the ring is drawn in, padded by the pen width it is stroked with."""
+        body_top = LABEL_RESERVE
+        body_h = self.height() - body_top
+        if body_h <= 0:
+            return QRect()
+        block_h = 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP + QFontMetrics(_body_font()).height()
+        top = body_top + max(0, (body_h - block_h) // 2)
+        cx = self.width() // 2
+        pad = _SPINNER_THICKNESS
+        return QRect(
+            cx - _SPINNER_RADIUS - pad,
+            top - pad,
+            2 * (_SPINNER_RADIUS + pad),
+            2 * (_SPINNER_RADIUS + pad),
+        )
+
     def _advance(self) -> None:
-        """Step the spinner and repaint.
+        """Repaint the ring, and only the ring.
+
+        The caption under it is unchanged for a second at a time and the pill above it for
+        the whole life of the tile, so repainting the tile 60 times a second to move an
+        arc would redraw both of those 60 times for nothing -- and with several tiles
+        pending at once, that is the difference between a spinner that costs nothing and
+        one that competes with the launch it is reporting on. ``_paint_caption`` asks for
+        the rest when the text actually changes.
 
         Parented to the tile, so Qt stops the timer when the tile is deleted -- a pending
         tile is destroyed the moment its window appears, and a timer outliving it would
         repaint a widget that is on its way out.
         """
-        self._angle = (self._angle + round(360 * _SPINNER_TICK_MS / _SPINNER_PERIOD_MS)) % 360
-        self.update()
+        # The caption ages on the clock, not on a report (see set_status), so the tick is
+        # also what notices it has changed -- roughly once a second, against sixty frames.
+        if self.status_text != self._painted_text:
+            self.update()
+        else:
+            self.update(self._spinner_rect())
 
     def set_status(self, status: str | None, since: float | None, failed: bool = False) -> None:
         """Say which stage this launch is in, and when it entered that stage.
@@ -533,9 +601,7 @@ class PendingTile(_WindowlessTile):
         if body_h <= 0:
             return
 
-        font = QFont()
-        font.setPointSize(9)
-        painter.setFont(font)
+        painter.setFont(_body_font())
         text_h = painter.fontMetrics().height()
 
         block_h = 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP + text_h
@@ -545,10 +611,11 @@ class PendingTile(_WindowlessTile):
             self._paint_spinner(painter, self.width() // 2, top + _SPINNER_RADIUS)
 
         painter.setPen(THEME.qcolor("text_muted"))
+        self._painted_text = self._body_text()
         painter.drawText(
             QRect(0, top + 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP, self.width(), text_h),
             Qt.AlignmentFlag.AlignCenter,
-            self._body_text(),
+            self._painted_text,
         )
         if self._failed:
             # The caption alone says what happened; this says what to do about it, and is
@@ -582,5 +649,5 @@ class PendingTile(_WindowlessTile):
         painter.setPen(pen)
         # Qt angles are in 1/16 degree units and run anticlockwise, so the negated angle is
         # what makes the arc sweep the way every other spinner on the platform does.
-        painter.drawArc(box, -self._angle * 16, -_SPINNER_ARC_DEGREES * 16)
+        painter.drawArc(box, -round(self._angle * 16), -_SPINNER_ARC_DEGREES * 16)
         painter.restore()

@@ -744,6 +744,59 @@ class TestLauncherReportsFailure:
                 await _wait_for_n_new_handles(set(), 2, timeout=0.05)
 
 
+class TestSpinnerMotion:
+    """The spinner has to stay smooth through the launch's own event-loop stalls."""
+
+    def test_the_angle_comes_from_the_clock_not_from_a_tick_count(self, qapp) -> None:
+        """A tick the event loop swallows costs a frame, not a step. Counting steps instead
+        turns every synchronous memory read during a launch into a visible hitch."""
+        import time
+
+        from bartlebot.gui.game_embed.client_tile import _SPINNER_PERIOD_MS, PendingTile
+
+        tile = PendingTile("Alpha")
+        tile._spin_start = time.monotonic() - _SPINNER_PERIOD_MS / 1000 / 4
+        first = tile._angle
+        assert 80 < first < 100, f"a quarter turn should be near 90 degrees, got {first}"
+
+        # No ticks at all in between: the angle still advances, because nothing about it
+        # is accumulated.
+        tile._spin_start -= _SPINNER_PERIOD_MS / 1000 / 4
+        assert 170 < tile._angle < 190
+        tile.deleteLater()
+
+    def test_a_tick_repaints_the_ring_and_leaves_the_rest_alone(self, qapp) -> None:
+        """At 60fps, repainting the whole tile would redraw an unchanged caption and pill
+        sixty times a second, for every pending tile at once."""
+        from bartlebot.gui.game_embed.client_tile import PendingTile
+
+        tile = PendingTile("Alpha")
+        tile.resize(400, 300)
+        asked: list[object] = []
+        tile.update = lambda *args: asked.append(args)  # type: ignore[method-assign]
+
+        tile._painted_text = tile.status_text
+        tile._advance()
+        assert asked == [(tile._spinner_rect(),)]
+        assert not tile._spinner_rect().isEmpty()
+        tile.deleteLater()
+
+    def test_a_changed_caption_repaints_the_whole_tile(self, qapp) -> None:
+        """The caption ages on the clock rather than on a report, so the tick is also what
+        notices it has changed — a partial repaint alone would freeze the elapsed hint."""
+        from bartlebot.gui.game_embed.client_tile import PendingTile
+
+        tile = PendingTile("Alpha")
+        tile.resize(400, 300)
+        asked: list[object] = []
+        tile.update = lambda *args: asked.append(args)  # type: ignore[method-assign]
+
+        tile._painted_text = "something else entirely"
+        tile._advance()
+        assert asked == [()], "a caption that changed did not get a full repaint"
+        tile.deleteLater()
+
+
 class TestFailedTileRendering:
     def test_a_failed_caption_drops_the_ellipsis_and_the_clock(self) -> None:
         """It is not still doing the thing, and how long it has been finished is not news."""
