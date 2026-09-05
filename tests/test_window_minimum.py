@@ -22,7 +22,7 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtWidgets import QStyleFactory, QWidget
 
 from bartlebot import game_sizing as gs
 from bartlebot.gui import screen_fit
@@ -156,8 +156,11 @@ def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
 
     Measured against the card's natural width for that reason, with two of them so the
     vertical scrollbar is in the viewport and counted, and against the floor *this machine*
-    reports rather than the constant: both sides are font metrics, so a runner with larger
-    system text has to see them grow together or this asserts nothing.
+    reports rather than the constant: both sides are style and font metrics, so a runner
+    with larger system text or a wider-buttoned style has to see them grow together or
+    this asserts nothing. It once did not — the floor scaled on the text height only, and
+    CI, which resolves the ``windows11`` style where a button's minimum is 81px rather
+    than 75, needed 303px inside the 300 it was promised.
     """
     sidebar = RightSidebar()
     sidebar.clients.set_all_clients([_FakeClient(), _FakeClient()], [])
@@ -172,6 +175,42 @@ def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
     )
 
     assert needed <= screen_fit.right_sidebar_floor()
+
+
+def test_the_player_card_fits_the_right_sidebar_under_every_available_style(qapp):
+    """The same assertion as above, asked of the styles this machine can build.
+
+    The one above only ever sees the style this machine happens to resolve, which is how a
+    3px overflow reached CI: a developer box on ``windowsvista`` and a runner on
+    ``windows11`` disagree about a push button's minimum width while agreeing about every
+    font metric. Sweeping the styles asks the question locally that only CI was asking.
+
+    The style is process-global, like the font — see "One QApplication per worker" in
+    tests/CLAUDE.md — so it goes back, and each sidebar is built after the swap because
+    the floor is declared once, in ``__init__``.
+    """
+    original = qapp.style().objectName()
+    try:
+        for name in QStyleFactory.keys():
+            style = QStyleFactory.create(name)
+            if style is None:  # pragma: no cover - a key that will not build
+                continue
+            qapp.setStyle(style)
+            sidebar = RightSidebar()
+            sidebar.clients.set_all_clients([_FakeClient(), _FakeClient()], [])
+            players_tab = sidebar.widget(_PLAYERS_TAB)
+
+            needed = (
+                sidebar.clients.sizeHint().width()
+                + _PLAYERS_CONTENT_MARGINS_PX
+                + 2 * players_tab.frameWidth()
+                + players_tab.verticalScrollBar().sizeHint().width()
+                + _TAB_CHROME_PX
+            )
+
+            assert needed <= screen_fit.right_sidebar_floor(), f"{name} style"
+    finally:
+        qapp.setStyle(QStyleFactory.create(original))
 
 
 def test_the_bot_canvas_declares_the_floor_the_arithmetic_budgets_for_it(qapp):
@@ -222,6 +261,37 @@ def test_the_floor_grows_with_the_system_text_size(text_height, expected):
     rung of the ladder for a text size it is not using.
     """
     assert gs.right_sidebar_floor(text_height) == expected
+
+
+@pytest.mark.parametrize(
+    ("button_width", "expected"),
+    [
+        (None, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
+        (75, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
+        (80, 320),  # Fusion
+        (81, 324),  # windows11 — the style CI resolves, and the one that broke it
+        (60, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # a narrower button does not narrow the panel
+    ],
+)
+def test_the_floor_grows_with_the_style_s_button_minimum(button_width, expected):
+    """The half of the card's width that the text height does not predict.
+
+    A ``QPushButton`` is never narrower than its style's minimum, and that number is not a
+    font metric: at one unchanged 16px text height the same three-button row wants 288px
+    of panel under ``windowsvista`` and 303 under ``windows11``. Scaling on the text alone
+    left the second machine 3px short of a floor it was told it had.
+    """
+    assert gs.right_sidebar_floor(button_width_px=button_width) == expected
+
+
+def test_the_floor_takes_whichever_measurement_asks_for_more():
+    """They move independently, so neither alone is the floor.
+
+    Large text under a narrow-button style is the 150% case; reference text under a
+    wide-button style is the CI one. Each has to survive the other being unremarkable.
+    """
+    assert gs.right_sidebar_floor(24, 75) == 450  # text wins
+    assert gs.right_sidebar_floor(16, 81) == 324  # the style wins
 
 
 def test_the_floor_the_widget_holds_is_the_floor_the_budget_subtracts(qapp):

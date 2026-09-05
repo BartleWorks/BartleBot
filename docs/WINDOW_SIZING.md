@@ -370,17 +370,28 @@ a scaled display, which is how this came up; pinned high it charges every 1080p 
 of sidebar for a text size they are not running, and 75px there is a whole rung of the
 ladder — 1280x720 solo becomes 960x540.
 
-So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference text height** (16px, Segoe UI
-9pt at 100%), and `game_sizing.right_sidebar_floor(text_height)` scales it, never below the
+So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference metrics** (16px text and a
+75px button, Segoe UI 9pt at 100% under `windowsvista`), and
+`game_sizing.right_sidebar_floor(text_height, button_width)` scales it, never below the
 reference. 300 rounds up a measured 288 and is deliberately the old default sidebar width,
-so a machine at 100% sees no change at all.
+so a machine at the reference sees no change at all.
 
-Everything inside the running app takes that number from **`gui/screen_fit.right_sidebar_floor()`**,
-which measures `QApplication.font()` — never a particular widget's. The width the sidebar
-enforces and the width `layout_budget` subtracts have to be the same number, and two
-call sites measuring two different fonts is the same class of bug one level down.
-`RightSidebar` re-measures on `FontChange`, because the theme is applied to the
-application after the widget is built.
+**The text height is only half of it.** A `QPushButton` is never narrower than its style's
+own minimum width, and that number is not a font metric: 75px under `windowsvista`, 80
+under Fusion, 81 under `windows11`, all at the same 16px text. So the same card wants 288px
+of panel on a developer box and 303 on CI, which resolves `windows11` — three pixels over a
+floor scaled on the text alone, and the reason this takes two measurements rather than one.
+The larger scale wins.
+
+Everything inside the running app takes those numbers from **`gui/screen_fit.right_sidebar_floor()`**,
+which measures `QApplication.font()` — never a particular widget's — and a throwaway
+`QPushButton` carrying the widest tool label. The width the sidebar enforces and the width
+`layout_budget` subtracts have to be the same number, and two call sites measuring two
+different fonts is the same class of bug one level down. `RightSidebar` re-measures on
+`FontChange`, because the theme is applied to the application after the widget is built.
+
+`test_the_player_card_fits_the_right_sidebar_under_every_available_style` sweeps
+`QStyleFactory.keys()` so the question CI was asking gets asked locally too.
 
 **Still an estimate on the screen side.** `screen_budget` does *not* subtract
 `GAME_PANEL_CHROME_PX`, the horizontal splitter handle, or the window frame — roughly 78px

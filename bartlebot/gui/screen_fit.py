@@ -27,7 +27,7 @@ strictly worse than a greyed row that says what would bring it back.
 from __future__ import annotations
 
 from PyQt6.QtGui import QFontMetrics
-from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtWidgets import QApplication, QPushButton, QWidget
 
 from bartlebot import game_sizing
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -65,15 +65,24 @@ def right_sidebar_floor() -> int:
     A floor the arithmetic does not know about is the whole failure this guards against
     -- see "The floor is only a floor if the panes honour it" in docs/WINDOW_SIZING.md.
 
-    Font metrics rather than a constant because the card is buttons and a scrollbar, which
+    Measured rather than a constant because the card is buttons and a scrollbar, which
     grow with the system text size. A user at 125% needs 375px for the row that fits in
     300 at 100%, and charging every 1080p user that 75px would cost them a rung of the
     ladder for a screen they are not on.
+
+    Two measurements, because the text size is only half of it: the three tool buttons sit
+    at the *style's* minimum width, which is not a font metric — the same 16px text needs
+    288px of panel under ``windowsvista`` and 303 under ``windows11``. A throwaway button
+    carrying the widest of the three labels reports that minimum for whatever style is in
+    force, including one no Windows version here has yet.
     """
     app = QApplication.instance()
     if app is None:
         return game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
-    return game_sizing.right_sidebar_floor(QFontMetrics(app.font()).height())
+    # Parentless and never shown: it exists only to be asked what a tool button costs.
+    probe = QPushButton("Unhook")
+    probe.setFont(app.font())
+    return game_sizing.right_sidebar_floor(QFontMetrics(app.font()).height(), probe.sizeHint().width())
 
 
 # Left clear of the screen edges when a window is fitted to it, so the frame and the

@@ -97,16 +97,23 @@ BOTCANVAS_MIN_HEIGHT = 180
 # so run off the panel rather than getting narrower. A floor is only worth having at a
 # width the panel is still usable at, so the arithmetic takes the two separately.
 LEFT_SIDEBAR_MIN_WIDTH = 220
-# The right one's floor is *font metrics*, not pixels: the buttons, their padding and the
+# The right one's floor is *measured*, not pixels: the buttons, their padding and the
 # scrollbar beside them all scale with the system text size, so a machine at 125% needs
 # the same layout in a quarter more pixels. Pinning a pixel count would mean choosing
 # between clipping that machine and charging every other one for it -- on a 1080p screen
 # an extra 80px of sidebar costs a whole rung of the ladder. So the constant is the floor
-# *at the reference text height*, and ``right_sidebar_floor`` scales it. 300 rounds up a
+# *at the reference metrics*, and ``right_sidebar_floor`` scales it. 300 rounds up a
 # measured 288 (the tool row plus the players tab's own margins, frame and scrollbar) and
-# is deliberately the old default sidebar width, so nothing changes at 100%.
+# is deliberately the old default sidebar width, so nothing changes at the reference.
 RIGHT_SIDEBAR_MIN_WIDTH = 300
 REFERENCE_TEXT_HEIGHT_PX = 16  # QFontMetrics(...).height() for Segoe UI 9pt at 100%
+# The tool row is three buttons, and a QPushButton is never narrower than the *style's*
+# minimum -- which is not a font metric and does not move with the text size: 75px under
+# ``windowsvista``, 80 under Fusion, 81 under ``windows11``. Scaling on the text height
+# alone therefore missed a whole class of machine, and the panel that fits its card in
+# 288px here needs 303 on a runner that resolves a different style. So the button's own
+# size hint is the second reference, and the floor takes whichever scale is larger.
+REFERENCE_BUTTON_WIDTH_PX = 75  # QPushButton("Unhook").sizeHint().width(), same reference
 # Shared: the height must stay under the shortest tile any offered resolution produces,
 # or a sidebar rather than the game view becomes the top row's floor.
 SIDEBAR_MIN_HEIGHT = 240
@@ -358,23 +365,32 @@ def required_game_area(resolution: tuple[int, int], client_count: int, dpr: floa
     return cols * tile_w, rows * tile_h
 
 
-def right_sidebar_floor(text_height_px: float | None = None) -> int:
-    """``RIGHT_SIDEBAR_MIN_WIDTH`` scaled to a system text height of *text_height_px*.
+def right_sidebar_floor(text_height_px: float | None = None, button_width_px: float | None = None) -> int:
+    """``RIGHT_SIDEBAR_MIN_WIDTH`` scaled to the metrics *this machine* reports.
 
-    Linear in the text height, which is an approximation -- a button is text plus padding,
-    and only the text part truly scales -- but one that errs wide, and being a little
-    generous at 150% is the harmless direction. Never below the reference: a smaller font
-    does not make the tab bar or the scrollbar narrower.
+    Two of them, because two different things set the card's width and neither implies the
+    other. *text_height_px* covers everything that grows with the system text size; the
+    labelled rows, the margins, the tab bar. *button_width_px* covers the tool row, whose
+    three buttons sit at the style's own minimum width and so move with the *style* rather
+    than the font -- 75px under ``windowsvista``, 81 under ``windows11``, at the same 16px
+    text height. The larger of the two scales wins, and neither ever narrows the floor: a
+    smaller font does not make the tab bar or the scrollbar narrower.
 
-    ``None`` means "not measured" and returns the reference, which is what the pure
-    arithmetic and its tests use. Everything inside the running app must instead go
+    Linear in each, which is an approximation -- a button is text plus padding, and only
+    the text part truly scales -- but one that errs wide, and being a little generous at
+    150% is the harmless direction.
+
+    ``None`` for both means "not measured" and returns the reference, which is what the
+    pure arithmetic and its tests use. Everything inside the running app must instead go
     through ``gui/screen_fit.right_sidebar_floor``, so that the width the widget enforces
-    and the width the fit is computed against cannot come from two different fonts.
+    and the width the fit is computed against cannot come from two different measurements.
     """
-    if not text_height_px:
-        return RIGHT_SIDEBAR_MIN_WIDTH
-    scaled = round(RIGHT_SIDEBAR_MIN_WIDTH * text_height_px / REFERENCE_TEXT_HEIGHT_PX)
-    return max(RIGHT_SIDEBAR_MIN_WIDTH, scaled)
+    scale = max(
+        1.0,
+        (text_height_px or 0) / REFERENCE_TEXT_HEIGHT_PX,
+        (button_width_px or 0) / REFERENCE_BUTTON_WIDTH_PX,
+    )
+    return round(RIGHT_SIDEBAR_MIN_WIDTH * scale)
 
 
 def required_window_size(
